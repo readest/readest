@@ -7,32 +7,14 @@ extern crate cocoa;
 extern crate objc;
 
 #[cfg(target_os = "macos")]
+mod menu;
+#[cfg(target_os = "macos")]
 mod tauri_traffic_light_positioner_plugin;
 
 #[cfg(target_os = "macos")]
-use {
-    tauri::menu::{SubmenuBuilder, HELP_SUBMENU_ID},
-    tauri::TitleBarStyle,
-    tauri_plugin_shell::ShellExt,
-};
+use tauri::TitleBarStyle;
 
 use tauri::{WebviewUrl, WebviewWindowBuilder};
-
-fn handle_menu_event(app: &tauri::AppHandle, event: &tauri::menu::MenuEvent) {
-    if event.id() == "privacy_policy" {
-        if let Err(e) = app.shell().open("https://readest.com/privacy-policy", None) {
-            eprintln!("Failed to open privacy policy: {}", e);
-        }
-    } else if event.id() == "report_issue" {
-        if let Err(e) = app.shell().open("mailto:support@bilingify.com", None) {
-            eprintln!("Failed to open mail client: {}", e);
-        }
-    } else if event.id() == "readest_help" {
-        if let Err(e) = app.shell().open("https://readest.com/support", None) {
-            eprintln!("Failed to open support page: {}", e);
-        }
-    }
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -75,24 +57,7 @@ pub fn run() {
             win_builder.build().unwrap();
 
             #[cfg(target_os = "macos")]
-            {
-                let global_menu = app.menu().unwrap();
-                if let Some(item) = global_menu.get(HELP_SUBMENU_ID) {
-                    global_menu.remove(&item)?;
-                }
-                global_menu.append(
-                    &SubmenuBuilder::new(app, "Help")
-                        .text("privacy_policy", "Privacy Policy")
-                        .separator()
-                        .text("report_issue", "Report An Issue...")
-                        .text("readest_help", "Readest Help")
-                        .build()?,
-                )?;
-
-                app.on_menu_event(move |app, event| {
-                    handle_menu_event(app, &event);
-                });
-            }
+            menu::setup_macos_menu(&app.handle())?;
 
             Ok(())
         })

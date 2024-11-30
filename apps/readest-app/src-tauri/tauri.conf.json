@@ -56,7 +56,7 @@
       "requireLiteralLeadingDot": false
     },
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNDMDdERDIyMTQ1QzE5NUQKUldSZEdWd1VJdDBIUE50UXVDeHZtUXVyb1lnNUtVUFVKS0Fva2FDRVc0K0NubWpmajlxY2I1bCsK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU0OTAxMURGQkUzQjFENTQKUldSVUhUdSszeEdRNUExdmFkWnlvYWNYNG5wamkxMmUxRk5SejlMOTJVd28yNXlVTDh6Wld4OC8K",
       "endpoints": ["https://github.com/chrox/readest/releases/latest/download/latest.json"]
     }
   }
