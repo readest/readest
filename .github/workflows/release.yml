@@ -88,6 +88,7 @@ jobs:
           echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> .env.local
           echo "NEXT_PUBLIC_DEEPL_API_KEY=${{ secrets.NEXT_PUBLIC_DEEPL_API_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
 
       - name: Copy .env.local to apps/readest-app
         run: cp .env.local apps/readest-app/.env.local
