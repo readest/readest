@@ -6,7 +6,7 @@ import { getStyles } from '@/utils/style';
 import { useTheme } from '@/hooks/useTheme';
 
 const cssRegex =
-  /((?:\s*)([\w#.@*,:\-.:>+~\[\]\"=(),*\s]+)\s*{(?:[\s]*)((?:[A-Za-z\- \s]+[:]\s*['"0-9\w .,\/\()\-!#%]+;?)*)*\s*}(?:\s*))/gim;
+  /((?:\s*)([\w#.@*,:\-.:>+~$$$$\"=(),*\s]+)\s*{(?:[\s]*)((?:[^\}]+[:][^\}]+;?)*)*\s*}(?:\s*))/gim;
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
