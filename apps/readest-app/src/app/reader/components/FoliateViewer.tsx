@@ -162,6 +162,9 @@ const FoliateViewer: React.FC<{
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
         if (msg.data.type === 'iframe-single-click') {
+          if (viewSettings.disableClick!) {
+            return;
+          }
           const viewElement = containerRef.current;
           if (viewElement) {
             const rect = viewElement.getBoundingClientRect();

@@ -38,6 +38,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   marginPx: 44,
   gapPercent: 5,
   scrolled: false,
+  disableClick: false,
   maxColumnCount: 2,
   maxInlineSize: 720,
   maxBlockSize: 1440,

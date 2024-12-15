@@ -40,6 +40,7 @@ export interface BookLayout {
   marginPx: number;
   gapPercent: number;
   scrolled: boolean;
+  disableClick: boolean;
   maxColumnCount: number;
   maxInlineSize: number;
   maxBlockSize: number;
