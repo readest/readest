@@ -100,11 +100,11 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Control</h2>
+        <h2 className='mb-2 font-medium'>Behavior</h2>
         <div className='card bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
-              <span className='text-gray-700'>Disable Page Turn on Click</span>
+              <span className='text-gray-700'>Disable Click-to-Flip</span>
               <input
                 type='checkbox'
                 className='toggle'
