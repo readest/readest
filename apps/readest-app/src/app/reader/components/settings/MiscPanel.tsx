@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import cssbeautify from 'cssbeautify';
@@ -61,11 +61,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     viewSettings.animated = animated;
-    viewSettings.disableClick = isDisableClick;
     setViewSettings(bookKey, viewSettings);
     if (isFontLayoutSettingsGlobal) {
       settings.globalViewSettings.animated = animated;
-      settings.globalViewSettings.disableClick = isDisableClick;
       setSettings(settings);
     }
     if (animated) {
@@ -74,7 +72,17 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       getView(bookKey)?.renderer.removeAttribute('animated');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animated,isDisableClick]);
+  }, [animated]);
+
+  useEffect(() => {
+    viewSettings.disableClick = isDisableClick;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.disableClick = isDisableClick;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDisableClick]);
 
   return (
     <div className='my-4 w-full space-y-6'>
