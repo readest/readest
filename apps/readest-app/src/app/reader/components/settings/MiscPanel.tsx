@@ -15,6 +15,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { themeCode } = useTheme();
 
   const [animated, setAnimated] = useState(viewSettings.animated!);
+  const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
   const [userStylesheet, setUserStylesheet] = useState(viewSettings.userStylesheet!);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +74,12 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
 
+  useEffect(() => {
+    viewSettings!.disableClick = isDisableClick;
+    setViewSettings(bookKey, viewSettings!);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDisableClick]);
+
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full'>
@@ -86,6 +93,23 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='toggle'
                 checked={animated}
                 onChange={() => setAnimated(!animated)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>Control</h2>
+        <div className='card bg-base-100 border shadow'>
+          <div className='divide-y'>
+            <div className='config-item config-item-top config-item-bottom'>
+              <span className='text-gray-700'>Disable Page Turn on Click</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={isDisableClick}
+                onChange={() => setIsDisableClick(!isDisableClick)}
               />
             </div>
           </div>

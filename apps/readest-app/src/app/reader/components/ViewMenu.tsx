@@ -28,7 +28,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { themeMode, isDarkMode, themeCode, updateThemeMode } = useTheme();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
   const [isInvertedColors, setInvertedColors] = useState(viewSettings!.invert);
-  const [isDisableClick, setIsDisableClick] = useState(viewSettings!.disableClick);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
 
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + 10, 200));
@@ -36,7 +35,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleInvertedColors = () => setInvertedColors(!isInvertedColors);
-  const toggleDisableClick = () => setIsDisableClick(!isDisableClick);
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
@@ -85,14 +83,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomLevel]);
-
-  useEffect(() => {
-    const view = getView(bookKey);
-    if (!view) return;
-    viewSettings!.disableClick = isDisableClick;
-    setViewSettings(bookKey, viewSettings!);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDisableClick]);
 
   return (
     <div
@@ -143,13 +133,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         shortcut='Shift+J'
         icon={isScrolledMode ? <MdCheck size={20} /> : undefined}
         onClick={toggleScrolledMode}
-      />
-
-      <MenuItem
-          label='Disable Click'
-          shortcut='Shift+D'
-          icon={isDisableClick ? <MdCheck size={20} /> : undefined}
-          onClick={toggleDisableClick}
       />
 
       <hr className='border-base-200 my-1' />
