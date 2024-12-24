@@ -225,7 +225,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       cfi,
       text: selection.text,
       note: '',
-      created: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
 
     const existingIndex = annotations.findIndex(
@@ -260,7 +261,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       color,
       text: selection.text,
       note: '',
-      created: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     const existingIndex = annotations.findIndex(
       (annotation) => annotation.cfi === cfi && annotation.type === 'annotation',
@@ -389,7 +391,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         />
       )}
 
-      {toastMessage && <Toast message={toastMessage} />}
+      {toastMessage && <Toast message={toastMessage} alertClass='bg-neutual text-content' />}
     </div>
   );
 };

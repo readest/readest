@@ -26,7 +26,7 @@ export const getBaseFilename = (filename: string) => {
   return baseName;
 };
 export const INIT_BOOK_CONFIG: BookConfig = {
-  lastUpdated: 0,
+  updatedAt: 0,
 };
 
 interface LanguageMap {

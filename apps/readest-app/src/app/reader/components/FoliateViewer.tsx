@@ -1,10 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc, getDirection } from '@/libs/document';
-import { BookConfig, BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
+import { BookConfig } from '@/types/book';
+import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
+import { useClickEvent } from '../hooks/useClickEvent';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { getOSPlatform } from '@/utils/misc';
+import { useProgressSync } from '../hooks/useProgressSync';
+import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { useTheme } from '@/hooks/useTheme';
 import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
@@ -15,57 +18,7 @@ import {
   handleClick,
   handleWheel,
 } from '../utils/iframeEventHandlers';
-import { eventDispatcher } from '@/utils/event';
-
-export interface FoliateView extends HTMLElement {
-  open: (book: BookDoc) => Promise<void>;
-  close: () => void;
-  init: (options: { lastLocation: string }) => void;
-  goTo: (href: string) => void;
-  goToFraction: (fraction: number) => void;
-  prev: (distance: number) => void;
-  next: (distance: number) => void;
-  goLeft: () => void;
-  goRight: () => void;
-  getCFI: (index: number, range: Range) => string;
-  addAnnotation: (note: BookNote, remove?: boolean) => { index: number; label: string };
-  search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
-  clearSearch: () => void;
-  select: (target: string | number | { fraction: number }) => void;
-  deselect: () => void;
-  history: {
-    canGoBack: boolean;
-    canGoForward: boolean;
-    back: () => void;
-    forward: () => void;
-    clear: () => void;
-  };
-  renderer: {
-    scrolled?: boolean;
-    viewSize: number;
-    setAttribute: (name: string, value: string | number) => void;
-    removeAttribute: (name: string) => void;
-    next: () => Promise<void>;
-    prev: () => Promise<void>;
-    goTo?: (params: { index: number; anchor: number }) => void;
-    setStyles?: (css: string) => void;
-    addEventListener: (type: string, listener: EventListener) => void;
-    removeEventListener: (type: string, listener: EventListener) => void;
-  };
-}
-
-const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
-  const originalAddAnnotation = originalView.addAnnotation.bind(originalView);
-  originalView.addAnnotation = (note: BookNote, remove = false) => {
-    // transform BookNote to foliate annotation
-    const annotation = {
-      value: note.cfi,
-      ...note,
-    };
-    return originalAddAnnotation(annotation, remove);
-  };
-  return originalView;
-};
+import Toast from '@/components/Toast';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -75,12 +28,18 @@ const FoliateViewer: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<FoliateView | null>(null);
   const isViewCreated = useRef(false);
-  const { getView, setView: setFoliateView, setProgress, getViewSettings } = useReaderStore();
-  const { hoveredBookKey, setHoveredBookKey, setViewSettings } = useReaderStore();
+  const { getView, setView: setFoliateView, setProgress } = useReaderStore();
+  const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { themeCode } = useTheme();
 
-  const shouldAutoHideScrollbar = ['macos', 'ios'].includes(getOSPlatform());
+  const [toastMessage, setToastMessage] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setToastMessage(''), 2000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  useProgressSync(bookKey, config, setToastMessage);
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -88,34 +47,7 @@ const FoliateViewer: React.FC<{
     setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
   };
 
-  const handleScrollbarAutoHide = (doc: Document) => {
-    if (doc && doc.defaultView && doc.defaultView.frameElement) {
-      const iframe = doc.defaultView.frameElement as HTMLIFrameElement;
-      const container = iframe.parentElement?.parentElement;
-      if (!container) return;
-
-      let hideScrollbarTimeout: ReturnType<typeof setTimeout>;
-      const showScrollbar = () => {
-        container.style.overflow = 'auto';
-        container.style.scrollbarWidth = 'thin';
-      };
-
-      const hideScrollbar = () => {
-        container.style.overflow = 'hidden';
-        container.style.scrollbarWidth = 'none';
-        requestAnimationFrame(() => {
-          container.style.overflow = 'auto';
-        });
-      };
-      container.addEventListener('scroll', () => {
-        showScrollbar();
-        clearTimeout(hideScrollbarTimeout);
-        hideScrollbarTimeout = setTimeout(hideScrollbar, 1000);
-      });
-      hideScrollbar();
-    }
-  };
-
+  const { shouldAutoHideScrollbar, handleScrollbarAutoHide } = useAutoHideScrollbar();
   const docLoadHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     console.log('doc loaded:', detail);
@@ -157,72 +89,7 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  const handleTurnPage = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (msg instanceof MessageEvent) {
-      if (msg.data && msg.data.bookKey === bookKey) {
-        const viewSettings = getViewSettings(bookKey)!;
-        if (msg.data.type === 'iframe-single-click') {
-          if (viewSettings.disableClick!) {
-            return;
-          }
-          const viewElement = containerRef.current;
-          if (viewElement) {
-            const rect = viewElement.getBoundingClientRect();
-            const { screenX, screenY } = msg.data;
-            const consumed = eventDispatcher.dispatchSync('iframe-single-click', {
-              screenX,
-              screenY,
-            });
-            if (!consumed) {
-              const centerStartX = rect.left + rect.width * 0.375;
-              const centerEndX = rect.left + rect.width * 0.625;
-              const centerStartY = rect.top + rect.height * 0.375;
-              const centerEndY = rect.top + rect.height * 0.625;
-              if (
-                screenX >= centerStartX &&
-                screenX <= centerEndX &&
-                screenY >= centerStartY &&
-                screenY <= centerEndY
-              ) {
-                // toggle visibility of the header bar and the footer bar
-                setHoveredBookKey(hoveredBookKey ? '' : bookKey);
-              } else if (screenX >= rect.left + rect.width / 2) {
-                viewRef.current?.goRight();
-              } else if (screenX < rect.left + rect.width / 2) {
-                viewRef.current?.goLeft();
-              }
-            }
-          }
-        } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
-          const { deltaY } = msg.data;
-          if (deltaY > 0) {
-            viewRef.current?.next(1);
-          } else if (deltaY < 0) {
-            viewRef.current?.prev(1);
-          }
-        }
-      }
-    } else {
-      const { clientX } = msg;
-      const width = window.innerWidth;
-      const leftThreshold = width * 0.5;
-      const rightThreshold = width * 0.5;
-      if (clientX < leftThreshold) {
-        viewRef.current?.goLeft();
-      } else if (clientX > rightThreshold) {
-        viewRef.current?.goRight();
-      }
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('message', handleTurnPage);
-    return () => {
-      window.removeEventListener('message', handleTurnPage);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredBookKey, viewRef]);
-
+  const { handleTurnPage } = useClickEvent(bookKey, viewRef, containerRef);
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
     onRelocate: progressRelocateHandler,
@@ -291,11 +158,16 @@ const FoliateViewer: React.FC<{
   }, []);
 
   return (
-    <div
-      className='foliate-viewer h-[100%] w-[100%]'
-      onClick={(event) => handleTurnPage(event)}
-      ref={containerRef}
-    />
+    <>
+      <div
+        className='foliate-viewer h-[100%] w-[100%]'
+        onClick={(event) => handleTurnPage(event)}
+        ref={containerRef}
+      />
+      {toastMessage && (
+        <Toast message={toastMessage} toastClass='toast-top toast-end' alertClass='alert-success' />
+      )}
+    </>
   );
 };
 

@@ -6,7 +6,7 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
-import { FoliateView } from './FoliateViewer';
+import { FoliateView } from '@/types/view';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import Popup from '@/components/Popup';
 

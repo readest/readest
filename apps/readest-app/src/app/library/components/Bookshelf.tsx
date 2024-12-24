@@ -26,19 +26,19 @@ const generateBookshelfItems = (books: Book[]): BookshelfItem[] => {
     const booksGroup = acc[acc.findIndex((group) => group.name === book.group)];
     if (booksGroup) {
       booksGroup.books.push(book);
-      booksGroup.lastUpdated = Math.max(acc[groupIndex]!.lastUpdated, book.lastUpdated);
+      booksGroup.updatedAt = Math.max(acc[groupIndex]!.updatedAt, book.updatedAt);
     } else {
       acc.push({
         name: book.group,
         books: [book],
-        lastUpdated: book.lastUpdated,
+        updatedAt: book.updatedAt,
       });
     }
     return acc;
   }, []);
   const ungroupedBooks: Book[] = groups.find((group) => group.name === UNGROUPED_NAME)?.books || [];
   const groupedBooks: BooksGroup[] = groups.filter((group) => group.name !== UNGROUPED_NAME);
-  return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.lastUpdated - a.lastUpdated);
+  return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
 };
 
 interface BookshelfProps {

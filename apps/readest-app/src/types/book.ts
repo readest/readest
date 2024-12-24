@@ -12,9 +12,13 @@ export interface Book {
   author: string;
   group?: string;
   tags?: string[];
-  lastUpdated: number;
-  isRemoved?: boolean;
   coverImageUrl?: string | null;
+
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number;
+
+  lastUpdated?: number; // deprecated in favor of updatedAt
 }
 
 export interface PageInfo {
@@ -24,6 +28,7 @@ export interface PageInfo {
 }
 
 export interface BookNote {
+  bookHash?: string;
   id: string;
   type: BookNoteType;
   cfi: string;
@@ -31,8 +36,10 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
-  created: number;
-  modified?: number;
+
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number;
 }
 
 export interface BookLayout {
@@ -107,18 +114,32 @@ export interface BookSearchResult {
 }
 
 export interface BookConfig {
-  lastUpdated: number;
+  bookHash?: string;
   progress?: [number, number];
   location?: string;
   booknotes?: BookNote[];
-  searchConfig?: BookSearchConfig;
+  searchConfig?: Partial<BookSearchConfig>;
   viewSettings?: Partial<ViewSettings>;
+
+  lastSyncedAtConfig?: number;
+  lastSyncedAtNotes?: number;
+
+  updatedAt: number;
+}
+
+export interface BookDataRecord {
+  id: string;
+  book_hash: string;
+  user_id: string;
+  updated_at: number | null;
+  deleted_at: number | null;
 }
 
 export interface BooksGroup {
   name: string;
   books: Book[];
-  lastUpdated: number;
+
+  updatedAt: number;
 }
 export interface BookContent {
   book: Book;

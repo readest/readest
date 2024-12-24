@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { FoliateView } from '@/app/reader/components/FoliateViewer';
+import { FoliateView } from '@/types/view';
 
 type FoliateEventHandler = {
   onLoad?: (event: Event) => void;

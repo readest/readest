@@ -17,6 +17,7 @@ interface BookData {
 interface BookDataState {
   booksData: { [id: string]: BookData };
   getConfig: (key: string | null) => BookConfig | null;
+  setConfig: (key: string, config: BookConfig) => void;
   saveConfig: (
     envConfig: EnvConfigType,
     bookKey: string,
@@ -38,6 +39,20 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const id = key.split('-')[0]!;
     return get().booksData[id]?.config || null;
   },
+  setConfig: (key: string, config: BookConfig) => {
+    set((state: BookDataState) => {
+      const id = key.split('-')[0]!;
+      return {
+        booksData: {
+          ...state.booksData,
+          [id]: {
+            ...state.booksData[id]!,
+            config,
+          },
+        },
+      };
+    });
+  },
   saveConfig: async (
     envConfig: EnvConfigType,
     bookKey: string,
@@ -49,10 +64,10 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const bookIndex = library.findIndex((b) => b.hash === bookKey.split('-')[0]);
     if (bookIndex == -1) return;
     const book = library.splice(bookIndex, 1)[0]!;
-    book.lastUpdated = Date.now();
+    book.updatedAt = Date.now();
     library.unshift(book);
     setLibrary(library);
-    config.lastUpdated = Date.now();
+    config.updatedAt = Date.now();
     appService.saveBookConfig(book, config, settings);
     appService.saveLibraryBooks(library);
   },
@@ -67,7 +82,7 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
       );
       updatedConfig = {
         ...book.config,
-        lastUpdated: Date.now(),
+        updatedAt: Date.now(),
         booknotes: dedupedBooknotes,
       };
       return {
@@ -77,7 +92,7 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
             ...book,
             config: {
               ...book.config,
-              lastUpdated: Date.now(),
+              updatedAt: Date.now(),
               booknotes: dedupedBooknotes,
             },
           },

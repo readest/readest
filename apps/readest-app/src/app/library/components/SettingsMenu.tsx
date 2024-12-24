@@ -8,6 +8,8 @@ import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
+import { useEnv } from '@/context/EnvContext';
+import { useSettingsStore } from '@/store/settingsStore';
 import MenuItem from '@/components/MenuItem';
 
 interface BookMenuProps {
@@ -16,7 +18,9 @@ interface BookMenuProps {
 
 const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
+  const { envConfig } = useEnv();
   const { user, logout } = useAuth();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -34,6 +38,9 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
 
   const handleUserLogout = () => {
     logout();
+    settings.keepLogin = false;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
     setIsDropdownOpen?.(false);
   };
 

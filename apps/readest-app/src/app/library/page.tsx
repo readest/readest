@@ -13,6 +13,7 @@ import { checkForAppUpdates } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
 
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -26,6 +27,7 @@ import { AboutWindow } from '@/components/AboutWindow';
 const LibraryPage = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
+  const { token, user } = useAuth();
   const {
     library: libraryBooks,
     setLibrary,
@@ -33,7 +35,7 @@ const LibraryPage = () => {
     clearOpenWithBooks,
   } = useLibraryStore();
   useTheme();
-  const { setSettings } = useSettingsStore();
+  const { setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -74,6 +76,20 @@ const LibraryPage = () => {
     if (isInitiating.current) return;
     isInitiating.current = true;
 
+    const initLogin = async () => {
+      const appService = await envConfig.getAppService();
+      const settings = await appService.loadSettings();
+      if (token && user) {
+        if (!settings.keepLogin) {
+          settings.keepLogin = true;
+          setSettings(settings);
+          saveSettings(envConfig, settings);
+        }
+      } else if (settings.keepLogin) {
+        router.push('/auth');
+      }
+    };
+
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
     const initLibrary = async () => {
       const appService = await envConfig.getAppService();
@@ -104,6 +120,7 @@ const LibraryPage = () => {
       }
     };
 
+    initLogin();
     initLibrary();
     return () => {
       clearOpenWithBooks();

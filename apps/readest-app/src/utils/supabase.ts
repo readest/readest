@@ -6,3 +6,15 @@ const supabaseAnonKey =
   process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env['NEXT_PUBLIC_DEV_SUPABASE_ANON_KEY']!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const createSupabaseClient = (accessToken?: string) => {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: accessToken
+        ? {
+            Authorization: `Bearer ${accessToken}`,
+          }
+        : {},
+    },
+  });
+};

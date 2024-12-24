@@ -73,7 +73,8 @@ const Notebook: React.FC = ({}) => {
       cfi,
       note,
       text: selection.text,
-      created: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     annotations.push(annotation);
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
@@ -89,7 +90,7 @@ const Notebook: React.FC = ({}) => {
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((item) => item.id === annotation.id);
     if (existingIndex === -1) return;
-    annotation.modified = Date.now();
+    annotation.updatedAt = Date.now();
     annotations[existingIndex] = annotation;
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
     if (updatedConfig) {
@@ -117,10 +118,10 @@ const Notebook: React.FC = ({}) => {
   const { booknotes: allNotes = [] } = config || {};
   const annotationNotes = allNotes
     .filter((note) => note.type === 'annotation' && note.note)
-    .sort((a, b) => b.created - a.created);
+    .sort((a, b) => b.createdAt - a.createdAt);
   const excerptNotes = allNotes
     .filter((note) => note.type === 'excerpt')
-    .sort((a, b) => a.created - b.created);
+    .sort((a, b) => a.createdAt - b.createdAt);
 
   return isNotebookVisible ? (
     <>

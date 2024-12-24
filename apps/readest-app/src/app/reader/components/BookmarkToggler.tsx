@@ -38,7 +38,8 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         cfi,
         text: truncatedText,
         note: '',
-        created: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
       bookmarks.push(bookmark);
       const updatedConfig = updateBooknotes(bookKey, bookmarks);

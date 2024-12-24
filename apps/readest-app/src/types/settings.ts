@@ -18,6 +18,11 @@ export interface ReadSettings {
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
+  keepLogin: boolean;
+
+  lastSyncedAtBooks: number;
+  lastSyncedAtConfigs: number;
+  lastSyncedAtNotes: number;
 
   globalReadSettings: ReadSettings;
   globalViewSettings: ViewSettings;

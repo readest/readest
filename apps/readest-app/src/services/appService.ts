@@ -2,7 +2,7 @@ import { AppPlatform, AppService, ToastType } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, BaseDir } from '@/types/system';
-import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
+import { Book, BookConfig, BookContent, BookFormat } from '@/types/book';
 import {
   getDir,
   getFilename,
@@ -26,6 +26,7 @@ import {
   DEFAULT_BOOK_SEARCH_CONFIG,
 } from './constants';
 import { isValidURL } from '@/utils/misc';
+import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 
 export abstract class BaseAppService implements AppService {
   localBooksDir: string = '';
@@ -70,6 +71,10 @@ export abstract class BaseAppService implements AppService {
       settings = {
         version: SYSTEM_SETTINGS_VERSION,
         localBooksDir: await this.getInitBooksDir(),
+        lastSyncedAtBooks: 0,
+        lastSyncedAtConfigs: 0,
+        lastSyncedAtNotes: 0,
+        keepLogin: false,
         globalReadSettings: DEFAULT_READSETTINGS,
         globalViewSettings: {
           ...DEFAULT_BOOK_LAYOUT,
@@ -126,10 +131,10 @@ export abstract class BaseAppService implements AppService {
       const hash = await partialMD5(fileobj);
       const existingBook = books.filter((b) => b.hash === hash)[0];
       if (existingBook) {
-        if (existingBook.isRemoved) {
-          delete existingBook.isRemoved;
+        if (existingBook.deletedAt) {
+          delete existingBook.deletedAt;
         }
-        existingBook.lastUpdated = Date.now();
+        existingBook.updatedAt = Date.now();
       }
 
       const book: Book = {
@@ -137,7 +142,8 @@ export abstract class BaseAppService implements AppService {
         format,
         title: formatTitle(loadedBook.metadata.title),
         author: formatAuthors(loadedBook.metadata.language, loadedBook.metadata.author),
-        lastUpdated: Date.now(),
+        createdAt: existingBook ? existingBook.createdAt : Date.now(),
+        updatedAt: Date.now(),
       };
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
         await this.fs.createDir(getDir(book), 'Books');
@@ -206,33 +212,22 @@ export abstract class BaseAppService implements AppService {
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
     try {
       const str = await this.fs.readFile(getConfigFilename(book), 'Books', 'text');
-      const config = JSON.parse(str as string) as BookConfig;
       const { globalViewSettings } = settings;
-      const { viewSettings } = config;
-      config.viewSettings = { ...globalViewSettings, ...viewSettings };
-      config.searchConfig ??= DEFAULT_BOOK_SEARCH_CONFIG;
-      return config;
+      return deserializeConfig(str as string, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
     } catch {
       return INIT_BOOK_CONFIG;
     }
   }
 
   async saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings) {
+    let serializedConfig: string;
     if (settings) {
-      config = JSON.parse(JSON.stringify(config));
-      const globalViewSettings = settings.globalViewSettings as ViewSettings;
-      const viewSettings = config.viewSettings as Partial<ViewSettings>;
-      config.viewSettings = Object.entries(viewSettings).reduce(
-        (acc: Partial<Record<keyof ViewSettings, unknown>>, [key, value]) => {
-          if (globalViewSettings[key as keyof ViewSettings] !== value) {
-            acc[key as keyof ViewSettings] = value;
-          }
-          return acc;
-        },
-        {} as Partial<Record<keyof ViewSettings, unknown>>,
-      ) as Partial<ViewSettings>;
+      const { globalViewSettings } = settings;
+      serializedConfig = serializeConfig(config, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+    } else {
+      serializedConfig = JSON.stringify(config);
     }
-    await this.fs.writeFile(getConfigFilename(book), 'Books', JSON.stringify(config));
+    await this.fs.writeFile(getConfigFilename(book), 'Books', serializedConfig);
   }
 
   async loadLibraryBooks(): Promise<Book[]> {
@@ -255,6 +250,7 @@ export abstract class BaseAppService implements AppService {
         } else {
           book.coverImageUrl = this.getCoverImageUrl(book);
         }
+        book.updatedAt ??= book.lastUpdated || Date.now();
         return book;
       }),
     );

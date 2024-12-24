@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
-import { FoliateView } from '@/app/reader/components/FoliateViewer';
+import { FoliateView } from '@/types/view';
 import { BookDoc, DocumentLoader, SectionItem, TOCItem } from '@/libs/document';
 import { updateTocCFI, updateTocID } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
@@ -182,7 +182,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ...bookData,
             config: {
               ...bookData.config,
-              lastUpdated: Date.now(),
+              updatedAt: Date.now(),
               viewSettings,
             },
           },
@@ -216,7 +216,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const oldConfig = bookData.config;
       const newConfig = {
         ...bookData.config,
-        lastUpdated: Date.now(),
+        updatedAt: Date.now(),
         progress: [pageinfo.current, pageinfo.total] as [number, number],
         location,
       };

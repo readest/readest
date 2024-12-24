@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchSession = async () => {
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
       if (session) {
         const { access_token, user } = session;
@@ -40,8 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(user);
         localStorage.setItem('token', access_token);
         localStorage.setItem('user', JSON.stringify(user));
-      } else if (error) {
-        console.error('Error fetching session:', error);
+      } else {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setToken(null);
@@ -54,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   const login = (newToken: string, newUser: User) => {
+    console.log('Logging in');
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
@@ -61,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
+    console.log('Logging out');
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
