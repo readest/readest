@@ -1,7 +1,7 @@
 use tauri::menu::MenuEvent;
 use tauri::menu::{SubmenuBuilder, HELP_SUBMENU_ID};
 use tauri::AppHandle;
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_opener::OpenerExt;
 
 pub fn setup_macos_menu(app: &AppHandle) -> tauri::Result<()> {
     let global_menu = app.menu().unwrap();
@@ -27,17 +27,12 @@ pub fn setup_macos_menu(app: &AppHandle) -> tauri::Result<()> {
 }
 
 pub fn handle_menu_event(app: &AppHandle, event: &MenuEvent) {
+    let opener = app.opener();
     if event.id() == "privacy_policy" {
-        if let Err(e) = app.shell().open("https://readest.com/privacy-policy", None) {
-            eprintln!("Failed to open privacy policy: {}", e);
-        }
+        let _ = opener.open_url("https://readest.com/privacy-policy", None::<&str>);
     } else if event.id() == "report_issue" {
-        if let Err(e) = app.shell().open("mailto:support@bilingify.com", None) {
-            eprintln!("Failed to open mail client: {}", e);
-        }
+        let _ = opener.open_url("https://github.com/readest/readest/issues", None::<&str>);
     } else if event.id() == "readest_help" {
-        if let Err(e) = app.shell().open("https://readest.com/support", None) {
-            eprintln!("Failed to open support page: {}", e);
-        }
+        let _ = opener.open_url("https://readest.com/support", None::<&str>);
     }
 }

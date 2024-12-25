@@ -33,6 +33,7 @@ tauri-plugin-devtools = "2.0.0"
 tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 tauri-plugin-oauth = "2"
+tauri-plugin-opener = "2.2.2"
 [patch.crates-io]
 tauri = { path = "../../../packages/tauri/crates/tauri" }
 

@@ -82,6 +82,13 @@ This project is a monorepo. The code for the `readest-app` is in the `app/reades
 | `pnpm dev-web`   | Starts the development server for the web app only |
 | `pnpm build-web` | Builds the web app                                 |
 
+Recommended Visual Studio Code plugins for development:
+
+- JavaScript and TypeScript Nightly (ms-vscode.vscode-typescript-next)
+- VS Code ESLint extension (dbaeumer.vscode-eslint)
+- Prettier - Code formatter (esbenp.prettier-vscode)
+- rust-analyzer (rust-lang.rust-analyzer) (for Tauri development only)
+
 ### When you're done
 
 Check that your code follows the project's style guidelines by running:

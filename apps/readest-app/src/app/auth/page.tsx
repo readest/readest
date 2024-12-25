@@ -14,8 +14,8 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/utils/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { isTauriAppPlatform } from '@/services/environment';
-import { open } from '@tauri-apps/plugin-shell';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { IoArrowBack } from 'react-icons/io5';
 
@@ -68,7 +68,7 @@ export default function AuthPage() {
       console.error('Authentication error:', error);
       return;
     }
-    open(data.url);
+    openUrl(data.url);
   };
 
   const startOAuthServer = async () => {
@@ -146,7 +146,10 @@ export default function AuthPage() {
 
   return isTauriAppPlatform() ? (
     <div className='flex pt-11'>
-      <button onClick={() => router.back()} className='fixed top-11 left-0 btn btn-ghost h-8 min-h-8 w-8 p-0'>
+      <button
+        onClick={() => router.back()}
+        className='btn btn-ghost fixed left-3 top-11 h-8 min-h-8 w-8 p-0'
+      >
         <IoArrowBack size={20} />
       </button>
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
@@ -187,7 +190,10 @@ export default function AuthPage() {
     </div>
   ) : (
     <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem', paddingTop: '4rem' }}>
-      <button onClick={() => router.back()} className='fixed top-6 left-10 btn btn-ghost h-8 min-h-8 w-8 p-0'>
+      <button
+        onClick={() => router.back()}
+        className='btn btn-ghost fixed left-10 top-6 h-8 min-h-8 w-8 p-0'
+      >
         <IoArrowBack size={20} />
       </button>
       <Auth
