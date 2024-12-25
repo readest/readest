@@ -298,7 +298,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
       
       {/* Modal Component */}
       {selectedBook && (
-        <BookDetailModal isOpen={isModalOpen} onClose={closeModal} book={selectedBook} />
+        <BookDetailModal isOpen={isModalOpen} onClose={closeModal} book={selectedBook} envConfig={envConfig} />
       )}
     </div>
   );

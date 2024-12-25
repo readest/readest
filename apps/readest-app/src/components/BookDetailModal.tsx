@@ -1,47 +1,112 @@
-import React from "react";
-import { Book } from '@/types/book';
+import React, { useEffect, useState } from 'react';
 
-const BookDetailModal = ({ isOpen, onClose, book }: { isOpen: boolean; onClose: () => void; book: Book }) => {
+import { Book } from '@/types/book';
+import { EnvConfigType } from '@/services/environment';
+import { fetchBookDetails } from '@/services/bookService';
+
+import WindowButtons from '@/components/WindowButtons';
+
+const BookDetailModal = ({
+  isOpen,
+  onClose,
+  book,
+  envConfig,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  book: Book;
+  envConfig: EnvConfigType;
+}) => {
   if (!isOpen) return null;
+  const [bookMeta, setBookMeta] = useState<null | {
+    title: string;
+    language: string | string[];
+    editor?: string;
+    publisher?: string;
+    description?: string;
+  }>(null);
+
+  useEffect(() => {
+    fetchBookDetails(book, envConfig).then((details) => setBookMeta(details));
+  }, [book]);
+
+  if (!bookMeta)
+    return (
+      <div className='fixed inset-0 z-50 flex items-center justify-center'>
+        {/* Transparent gray overlay */}
+        <div className='fixed inset-0 bg-gray-800 bg-opacity-70' onClick={onClose} />
+
+        <div className='bg-base-200 relative z-50 w-full max-w-md rounded-lg p-6 shadow-xl'>
+          {/* Close button */}
+          <WindowButtons
+            className='window-buttons absolute right-4 top-4 !ml-2 flex'
+            showMinimize={false}
+            showMaximize={false}
+            onClose={onClose}
+          />
+          <h2 className='text-base-content text-center text-2xl font-semibold'>
+            Loading Book Details...
+          </h2>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* Transparent gray overlay */}
-      <div 
-        className="fixed inset-0 bg-gray-800 bg-opacity-70" 
-        onClick={onClose}
-      />
-      
-      <div className="relative z-50 w-96 bg-white rounded-lg shadow-xl p-6">
-        {/* Close button */}
-        <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
-          onClick={onClose}
-          aria-label="Close modal"
-        >
-          <svg 
-            className="w-5 h-5" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            viewBox="0 0 24 24" 
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+      <div className='fixed inset-0 bg-gray-800 bg-opacity-70' onClick={onClose} />
 
-        <h2 className="text-2xl font-semibold mb-2">{book.title}</h2>
-        <p className="text-gray-700 mb-1"><span className="font-medium">Author:</span> {book.author}</p>
-        <p className="text-gray-700 mb-1"><span className="font-medium">Format:</span> {book.format}</p>
-        <p className="text-gray-700 mb-4"><span className="font-medium">Last Updated:</span> {new Date(book.lastUpdated).toLocaleDateString()}</p>
-        
-        <button
-          className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          onClick={onClose}
-        >
-          Close
-        </button>
+      <div className='bg-base-200 relative z-50 w-full max-w-md rounded-lg p-6 shadow-xl'>
+        {/* Close button */}
+        <WindowButtons
+          className='window-buttons absolute right-4 top-4 !ml-2 flex'
+          showMinimize={false}
+          showMaximize={false}
+          onClose={onClose}
+        />
+
+        {/* Book Cover */}
+        <div className='mb-4 flex flex-col items-center'>
+          {book.coverImageUrl ? (
+            <img
+              src={book.coverImageUrl}
+              alt={book.title}
+              className='mb-4 h-32 w-32 object-contain'
+            />
+          ) : (
+            <div className='mb-4 flex h-32 w-32 items-center justify-center bg-gray-300'>
+              <span className='text-gray-500'>No Image</span>
+            </div>
+          )}
+        </div>
+
+        {/* Book Details */}
+        {bookMeta && (
+          <>
+            <h2 className='text-base-content text-center text-2xl font-semibold'>
+              {bookMeta.title || 'Untitled'}
+            </h2>
+            <p className='text-neutral-content'>
+              <span className='font-medium'>Author:</span> {book.author || 'Unknown Author'}
+            </p>
+            <p className='text-gray-700'>
+              <span className='font-medium'>Publisher:</span>{' '}
+              {bookMeta.publisher || 'Unknown Publisher'}
+            </p>
+            <p className='text-neutral-content'>
+              <span className='font-medium'>Updated:</span>{' '}
+              {new Date(book.lastUpdated).toLocaleDateString()}
+            </p>
+            <p className='text-gray-700'>
+              <span className='font-medium'>Language:</span>{' '}
+              {bookMeta.language || 'Unknown Language'}
+            </p>
+            <p className='text-neutral-content'>
+              <span className='font-medium'>Description:</span>{' '}
+              {bookMeta.description || 'No Description'}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
