@@ -49,6 +49,11 @@
     "macOS": {
       "minimumSystemVersion": "12.0"
     },
+    "linux": {
+      "deb": {
+        "section": "text"
+      }
+    },
     "fileAssociations": [
       {
         "name": "epub",
@@ -126,7 +131,7 @@
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU0OTAxMURGQkUzQjFENTQKUldSVUhUdSszeEdRNUExdmFkWnlvYWNYNG5wamkxMmUxRk5SejlMOTJVd28yNXlVTDh6Wld4OC8K",
-      "endpoints": ["https://github.com/chrox/readest/releases/latest/download/latest.json"]
+      "endpoints": ["https://github.com/readest/readest/releases/latest/download/latest.json"]
     }
   }
 }
