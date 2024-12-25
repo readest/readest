@@ -104,7 +104,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const detail = (event as CustomEvent).detail;
     const { value: cfi, index, range } = detail;
     const { booknotes = [] } = config;
-    const annotations = booknotes.filter((booknote) => booknote.type === 'annotation');
+    const annotations = booknotes.filter(
+      (booknote) => booknote.type === 'annotation' && !booknote.deletedAt,
+    );
     const annotation = annotations.find((annotation) => annotation.cfi === cfi);
     if (!annotation) return;
     const selection = { key: bookKey, annotated: true, text: annotation.text ?? '', range, index };
@@ -235,7 +237,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     };
 
     const existingIndex = annotations.findIndex(
-      (annotation) => annotation.cfi === cfi && annotation.type === 'excerpt',
+      (annotation) =>
+        annotation.cfi === cfi && annotation.type === 'excerpt' && !annotation.deletedAt,
     );
     if (existingIndex !== -1) {
       annotations[existingIndex] = annotation;
@@ -270,7 +273,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       updatedAt: Date.now(),
     };
     const existingIndex = annotations.findIndex(
-      (annotation) => annotation.cfi === cfi && annotation.type === 'annotation',
+      (annotation) =>
+        annotation.cfi === cfi && annotation.type === 'annotation' && !annotation.deletedAt,
     );
     const views = getViewsById(bookKey.split('-')[0]!);
     if (existingIndex !== -1) {

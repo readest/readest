@@ -22,7 +22,7 @@ const BooknoteView: React.FC<{
   const { getConfig } = useBookDataStore();
   const config = getConfig(bookKey)!;
   const { booknotes: allNotes = [] } = config;
-  const booknotes = allNotes.filter((note) => note.type === type);
+  const booknotes = allNotes.filter((note) => note.type === type && !note.deletedAt);
 
   const booknoteGroups: { [href: string]: BooknoteGroup } = {};
   for (const booknote of booknotes) {

@@ -39,8 +39,12 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
     const config = getConfig(bookKey);
     if (!config) return;
     const { booknotes = [] } = config;
-    const updatedNotes = booknotes.filter((item) => item.id !== note.id);
-    const updatedConfig = updateBooknotes(bookKey, updatedNotes);
+    booknotes.forEach((item) => {
+      if (item.id === note.id) {
+        item.deletedAt = Date.now();
+      }
+    });
+    const updatedConfig = updateBooknotes(bookKey, booknotes);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }

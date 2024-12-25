@@ -84,14 +84,18 @@ const Notebook: React.FC = ({}) => {
     setNotebookNewAnnotation(null);
   };
 
-  const handleEditNote = (annotation: BookNote) => {
+  const handleEditNote = (note: BookNote, isDelete: boolean) => {
     if (!sideBarBookKey) return;
     const config = getConfig(sideBarBookKey)!;
     const { booknotes: annotations = [] } = config;
-    const existingIndex = annotations.findIndex((item) => item.id === annotation.id);
+    const existingIndex = annotations.findIndex((item) => item.id === note.id);
     if (existingIndex === -1) return;
-    annotation.updatedAt = Date.now();
-    annotations[existingIndex] = annotation;
+    if (isDelete) {
+      note.deletedAt = Date.now();
+    } else {
+      note.updatedAt = Date.now();
+    }
+    annotations[existingIndex] = note;
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);
@@ -100,27 +104,16 @@ const Notebook: React.FC = ({}) => {
   };
 
   const { handleMouseDown } = useDragBar(handleDragMove);
-  const deleteNote = (note: BookNote) => {
-    if (!sideBarBookKey) return;
-    const config = getConfig(sideBarBookKey);
-    if (!config) return;
-    const { booknotes = [] } = config;
-    const updatedNotes = booknotes.filter((item) => item.id !== note.id);
-    const updatedConfig = updateBooknotes(sideBarBookKey, updatedNotes);
-    if (updatedConfig) {
-      saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);
-    }
-  };
 
   if (!sideBarBookKey) return null;
 
   const config = getConfig(sideBarBookKey);
   const { booknotes: allNotes = [] } = config || {};
   const annotationNotes = allNotes
-    .filter((note) => note.type === 'annotation' && note.note)
+    .filter((note) => note.type === 'annotation' && note.note && !note.deletedAt)
     .sort((a, b) => b.createdAt - a.createdAt);
   const excerptNotes = allNotes
-    .filter((note) => note.type === 'excerpt')
+    .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
     .sort((a, b) => a.createdAt - b.createdAt);
 
   return isNotebookVisible ? (
@@ -176,7 +169,7 @@ const Notebook: React.FC = ({}) => {
                           'btn btn-ghost settings-content hover:bg-transparent',
                           'flex h-[1em] min-h-[1em] items-end p-0',
                         )}
-                        onClick={deleteNote.bind(null, item)}
+                        onClick={handleEditNote.bind(null, item, true)}
                       >
                         <div className='align-bottom text-xs text-red-400'>Delete</div>
                       </button>
@@ -192,7 +185,7 @@ const Notebook: React.FC = ({}) => {
             )}
           </div>
           {(notebookNewAnnotation || notebookEditAnnotation) && (
-            <NoteEditor onSave={handleSaveNote} onEdit={handleEditNote} />
+            <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
           )}
           <ul className=''>
             {annotationNotes.map((item, index) => (
