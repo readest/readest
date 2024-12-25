@@ -17,6 +17,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { open } from '@tauri-apps/plugin-shell';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { handleAuthCallback } from '@/helpers/auth';
+import { IoArrowBack } from 'react-icons/io5';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -48,6 +49,7 @@ export default function AuthPage() {
   const { isDarkMode } = useTheme();
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const signIn = async (provider: OAuthProvider) => {
     if (!supabase) {
@@ -134,8 +136,19 @@ export default function AuthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
   return isTauriAppPlatform() ? (
     <div className='flex pt-11'>
+      <button onClick={() => router.back()} className='fixed top-11 left-0 btn btn-ghost h-8 min-h-8 w-8 p-0'>
+        <IoArrowBack size={20} />
+      </button>
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
         <ProviderLogin
           provider='google'
@@ -173,7 +186,10 @@ export default function AuthPage() {
       </div>
     </div>
   ) : (
-    <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
+    <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem', paddingTop: '4rem' }}>
+      <button onClick={() => router.back()} className='fixed top-6 left-10 btn btn-ghost h-8 min-h-8 w-8 p-0'>
+        <IoArrowBack size={20} />
+      </button>
       <Auth
         supabaseClient={supabase}
         appearance={{ theme: ThemeSupa }}
