@@ -8,12 +8,20 @@ import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
+import { Menu, MenuItem } from '@tauri-apps/api/menu';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { Book, BooksGroup } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { navigateToReader } from '@/utils/nav';
+import { getOSPlatform } from '@/utils/misc';
+import { getFilename } from '@/utils/book';
+import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
+
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
+import { isTauriAppPlatform } from '@/services/environment';
 
 type BookshelfItem = Book | BooksGroup;
 
@@ -51,6 +59,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
+  const { settings } = useSettingsStore();
   const { deleteBook } = useLibraryStore();
   const [loading, setLoading] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
@@ -123,6 +132,32 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     setShowDeleteAlert(true);
   };
 
+  const bookContextMenuHandler = async (book: Book, e: React.MouseEvent) => {
+    if (!isTauriAppPlatform()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const osPlatform = getOSPlatform();
+    const fileRevealLabel =
+      FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
+    const showBookInFinderMenuItem = await MenuItem.new({
+      text: fileRevealLabel,
+      action: async () => {
+        const folder = `${settings.localBooksDir}/${getFilename(book)}`;
+        revealItemInDir(folder);
+      },
+    });
+    const deleteBookMenuItem = await MenuItem.new({
+      text: 'Delete',
+      action: async () => {
+        deleteBook(envConfig, book);
+      },
+    });
+    const menu = await Menu.new();
+    menu.append(showBookInFinderMenuItem);
+    menu.append(deleteBookMenuItem);
+    menu.popup();
+  };
+
   return (
     <div className='bookshelf'>
       <div className='grid grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
@@ -135,6 +170,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
               {'format' in item ? (
                 <div
                   className='book-item cursor-pointer'
+                  onContextMenu={bookContextMenuHandler.bind(null, item as Book)}
                   onClick={() => handleBookClick(item.hash)}
                 >
                   <div key={(item as Book).hash} className='bg-base-100 shadow-md'>
