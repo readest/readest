@@ -16,7 +16,7 @@ export interface Book {
 
   createdAt: number;
   updatedAt: number;
-  deletedAt?: number;
+  deletedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
 }
@@ -39,7 +39,7 @@ export interface BookNote {
 
   createdAt: number;
   updatedAt: number;
-  deletedAt?: number;
+  deletedAt?: number | null;
 }
 
 export interface BookLayout {

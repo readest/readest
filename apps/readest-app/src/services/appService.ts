@@ -132,7 +132,7 @@ export abstract class BaseAppService implements AppService {
       const existingBook = books.filter((b) => b.hash === hash)[0];
       if (existingBook) {
         if (existingBook.deletedAt) {
-          delete existingBook.deletedAt;
+          existingBook.deletedAt = null;
         }
         existingBook.updatedAt = Date.now();
       }

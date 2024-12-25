@@ -20,8 +20,9 @@ export const useNotesSync = (bookKey: string) => {
 
   const lastSyncTime = useRef<number>(0);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!config?.location || !user) return;
+
+  const getNewNotes = () => {
+    if (!config?.location || !user) return [];
     const bookNotes = config.booknotes ?? [];
     const newNotes = bookNotes.filter(
       (note) => lastSyncedAtNotes < note.updatedAt || lastSyncedAtNotes < (note.deletedAt ?? 0),
@@ -29,16 +30,23 @@ export const useNotesSync = (bookKey: string) => {
     newNotes.forEach((note) => {
       note.bookHash = bookHash;
     });
+    return newNotes;
+  };
+
+  useEffect(() => {
+    if (!config?.location || !user) return;
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncTime.current;
     if (timeSinceLastSync > SYNC_NOTES_INTERVAL_SEC * 1000) {
       lastSyncTime.current = now;
+      const newNotes = getNewNotes();
       syncNotes(newNotes, bookHash, 'both');
     } else {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(
         () => {
           lastSyncTime.current = Date.now();
+          const newNotes = getNewNotes();
           syncNotes(newNotes, bookHash, 'both');
           syncTimeoutRef.current = null;
         },

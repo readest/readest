@@ -41,7 +41,15 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      bookmarks.push(bookmark);
+      const existingBookmark = bookmarks.find(
+        (item) => item.type === 'bookmark' && item.cfi === cfi,
+      );
+      if (existingBookmark) {
+        existingBookmark.deletedAt = null;
+        existingBookmark.updatedAt = Date.now();
+      } else {
+        bookmarks.push(bookmark);
+      }
       const updatedConfig = updateBooknotes(bookKey, bookmarks);
       if (updatedConfig) {
         saveConfig(envConfig, bookKey, updatedConfig, settings);
@@ -50,14 +58,15 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
       setIsBookmarked(false);
       const start = CFI.collapse(cfi);
       const end = CFI.collapse(cfi, true);
-      const updatedConfig = updateBooknotes(
-        bookKey,
-        bookmarks.filter(
-          (item) =>
-            item.type !== 'bookmark' ||
-            CFI.compare(start, item.cfi) * CFI.compare(end, item.cfi) > 0,
-        ),
-      );
+      bookmarks.forEach((item) => {
+        if (
+          item.type === 'bookmark' &&
+          CFI.compare(start, item.cfi) * CFI.compare(end, item.cfi) <= 0
+        ) {
+          item.deletedAt = Date.now();
+        }
+      });
+      const updatedConfig = updateBooknotes(bookKey, bookmarks);
       if (updatedConfig) {
         saveConfig(envConfig, bookKey, updatedConfig, settings);
       }
@@ -72,7 +81,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
     const start = CFI.collapse(cfi);
     const end = CFI.collapse(cfi, true);
     const locationBookmarked = booknotes
-      .filter((booknote) => booknote.type === 'bookmark')
+      .filter((booknote) => booknote.type === 'bookmark' && !booknote.deletedAt)
       .some((item) => CFI.compare(start, item.cfi) * CFI.compare(end, item.cfi) <= 0);
     setIsBookmarked(locationBookmarked);
     setBookmarkRibbonVisibility(bookKey, locationBookmarked);
