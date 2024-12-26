@@ -219,6 +219,12 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
+  async fetchBookDetails(book: Book, settings: SystemSettings) {
+    const { file } = await this.loadBookContent(book, settings) as BookContent;
+    const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
+    return bookDoc.metadata;
+  }
+
   async saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings) {
     let serializedConfig: string;
     if (settings) {

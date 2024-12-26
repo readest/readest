@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Book } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
-import { fetchBookDetails } from '@/services/bookService';
+import { useSettingsStore } from '@/store/settingsStore';
 
 import WindowButtons from '@/components/WindowButtons';
 
@@ -29,8 +29,15 @@ const BookDetailModal = ({
     identifier?: string;
   }>(null);
 
+  const { settings } = useSettingsStore();
+
   useEffect(() => {
-    fetchBookDetails(book, envConfig).then((details) => setBookMeta(details));
+    const fetchBookDetails = async () => {
+      const appService = await envConfig.getAppService();
+      const details = await appService.fetchBookDetails(book, settings);
+      setBookMeta(details);
+    };
+    fetchBookDetails();
   }, [book]);
 
   if (!bookMeta)
@@ -73,15 +80,15 @@ const BookDetailModal = ({
             <img
               src={book.coverImageUrl}
               alt={book.title}
-              className='mr-4 h-40 w-40 rounded-lg object-contain shadow-md'
+              className='mr-4 h-40 w-30 rounded-lg object-contain shadow-md'
             />
           ) : (
-            <div className='mr-4 flex h-40 w-40 items-center justify-center rounded-lg bg-gray-300'>
+            <div className='mr-4 flex h-40 w-30 items-center justify-center rounded-lg bg-gray-300'>
               <span className='text-gray-500'>No Image</span>
             </div>
           )}
 
-          <div>
+          <div className='h-40 flex flex-col justify-between'>
             <h2 className='text-base-content mb-2 text-2xl font-bold'>
               {bookMeta.title || 'Untitled'}
             </h2>

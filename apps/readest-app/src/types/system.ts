@@ -1,5 +1,6 @@
 import { SystemSettings } from './settings';
 import { Book, BookConfig, BookContent } from './book';
+import { BookDoc } from '@/libs/document';
 
 export type AppPlatform = 'web' | 'tauri';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Log' | 'Cache' | 'None';
@@ -38,6 +39,7 @@ export interface AppService {
   ): Promise<Book | null>;
   deleteBook(book: Book): Promise<void>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
+  fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookDoc['metadata']>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
   loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent>;
   loadLibraryBooks(): Promise<Book[]>;
