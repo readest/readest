@@ -1,0 +1,43 @@
+{
+  "releases": {
+    "0.8.6": {
+      "date": "2024-12-25",
+      "notes": [
+        "Support back navigation in login page.",
+        "Support context menu on book cover for desktop version.",
+        "Resolve the issue with restoring footnotes and bookmarks after deletion."
+      ]
+    },
+    "0.8.5": {
+      "date": "2024-12-24",
+      "notes": [
+        "Support progress and notes sync across devices.",
+        "Support for Non-ASCII characters in custom CSS.",
+        "Support to disable click-to-flip."
+      ]
+    },
+    "0.8.3": {
+      "date": "2024-12-12",
+      "notes": [
+        "Support popover footnotes.",
+        "Support left / right popover on vertical writing documents.",
+        "Support loading additional fonts."
+      ]
+    },
+    "0.8.2": {
+      "date": "2024-12-06",
+      "notes": [
+        "Support file associations for one-click open with Readest.",
+        "Support APP auto updater.",
+        "Suppport online web version."
+      ]
+    },
+    "0.7.9": {
+      "date": "2024-12-01",
+      "notes": [
+        "Initial release with full functionality for ePub rendering.",
+        "Support multi-book reading with Parallel Read."
+      ]
+    }
+  }
+}

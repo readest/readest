@@ -6,12 +6,13 @@ on:
     types: [published]
 
 jobs:
-  create-release:
+  get-release:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     outputs:
-      release_id: ${{ steps.create-release.outputs.result }}
+      release_id: ${{ steps.get-release.outputs.result }}
+      release_note: ${{ steps.get-release-notes.outputs.result }}
 
     steps:
       - uses: actions/checkout@v3
@@ -19,8 +20,8 @@ jobs:
         uses: actions/setup-node@v3
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/readest-app/package.json').version")" >> $GITHUB_ENV
-      - name: create release
-        id: create-release
+      - name: get release
+        id: get-release
         uses: actions/github-script@v6
         with:
           script: |
@@ -29,9 +30,22 @@ jobs:
               repo: context.repo.repo,
             })
             return data.id
+      - name: get release notes
+        id: get-release-notes
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const version = require('./apps/readest-app/package.json').version;
+            const releaseNotesFileContent = fs.readFileSync('./apps/readest-app/release-notes.json', 'utf8');
+            const releaseNotes = JSON.parse(releaseNotesFileContent).releases[version] || {};
+            const notes = releaseNotes.notes || [];
+            const releaseNote = notes.map(note => `- ${note}`).join('\n');
+            console.log('Release note:\n', releaseNote);
+            return releaseNote;
 
   build-tauri:
-    needs: create-release
+    needs: get-release
     permissions:
       contents: write
     strategy:
@@ -49,7 +63,7 @@ jobs:
             rust_target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v3
 
@@ -115,27 +129,30 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: apps/readest-app
-          releaseId: ${{ needs.create-release.outputs.release_id }}
+          releaseId: ${{ needs.get-release.outputs.release_id }}
+          releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.os == 'macos-latest' && '--target universal-apple-darwin' || '' }}
 
-  publish-release:
+  update-release:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-tauri]
+    needs: [get-release, build-tauri]
 
     steps:
-      - name: publish release
-        id: publish-release
+      - name: update release
+        id: update-release
         uses: actions/github-script@v6
         env:
-          release_id: ${{ needs.create-release.outputs.release_id }}
+          release_id: ${{ needs.get-release.outputs.release_id }}
+          release_note: ${{ needs.get-release.outputs.release_note }}
         with:
           script: |
             github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.release_id,
+              body: process.env.release_note,
               draft: false,
               prerelease: false
             })
