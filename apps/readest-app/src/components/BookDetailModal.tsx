@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Book } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
+import Image from 'next/image';
 
 import WindowButtons from '@/components/WindowButtons';
 
@@ -17,7 +18,6 @@ const BookDetailModal = ({
   book: Book;
   envConfig: EnvConfigType;
 }) => {
-  if (!isOpen) return null;
   const [bookMeta, setBookMeta] = useState<null | {
     title: string;
     language: string | string[];
@@ -39,6 +39,8 @@ const BookDetailModal = ({
     };
     fetchBookDetails();
   }, [book]);
+
+  if (!isOpen) return null;
 
   if (!bookMeta)
     return (
@@ -77,9 +79,11 @@ const BookDetailModal = ({
 
         <div className='mb-6 flex items-start'>
           {book.coverImageUrl ? (
-            <img
+            <Image
               src={book.coverImageUrl}
               alt={book.title}
+              width={110}
+              height={165}
               className='mr-4 h-40 w-30 rounded-lg object-contain shadow-md'
             />
           ) : (
