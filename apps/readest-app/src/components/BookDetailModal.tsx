@@ -23,7 +23,10 @@ const BookDetailModal = ({
     language: string | string[];
     editor?: string;
     publisher?: string;
+    published?: string;
     description?: string;
+    subject?: string[];
+    identifier?: string;
   }>(null);
 
   useEffect(() => {
@@ -33,17 +36,17 @@ const BookDetailModal = ({
   if (!bookMeta)
     return (
       <div className='fixed inset-0 z-50 flex items-center justify-center'>
-        {/* Transparent gray overlay */}
         <div className='fixed inset-0 bg-gray-800 bg-opacity-70' onClick={onClose} />
 
         <div className='bg-base-200 relative z-50 w-full max-w-md rounded-lg p-6 shadow-xl'>
-          {/* Close button */}
-          <WindowButtons
-            className='window-buttons absolute right-4 top-4 !ml-2 flex'
-            showMinimize={false}
-            showMaximize={false}
-            onClose={onClose}
-          />
+          <div className='absolute right-4 top-4 flex space-x-2'>
+            <WindowButtons
+              className='window-buttons flex'
+              showMinimize={false}
+              showMaximize={false}
+              onClose={onClose}
+            />
+          </div>
           <h2 className='text-base-content text-center text-2xl font-semibold'>
             Loading Book Details...
           </h2>
@@ -53,60 +56,84 @@ const BookDetailModal = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
-      {/* Transparent gray overlay */}
       <div className='fixed inset-0 bg-gray-800 bg-opacity-70' onClick={onClose} />
 
       <div className='bg-base-200 relative z-50 w-full max-w-md rounded-lg p-6 shadow-xl'>
-        {/* Close button */}
-        <WindowButtons
-          className='window-buttons absolute right-4 top-4 !ml-2 flex'
-          showMinimize={false}
-          showMaximize={false}
-          onClose={onClose}
-        />
+        <div className='absolute right-4 top-4 flex space-x-2'>
+          <WindowButtons
+            className='window-buttons flex'
+            showMinimize={false}
+            showMaximize={false}
+            onClose={onClose}
+          />
+        </div>
 
-        {/* Book Cover */}
-        <div className='mb-4 flex flex-col items-center'>
+        <div className='mb-6 flex items-start'>
           {book.coverImageUrl ? (
             <img
               src={book.coverImageUrl}
               alt={book.title}
-              className='mb-4 h-32 w-32 object-contain'
+              className='mr-4 h-40 w-40 rounded-lg object-contain shadow-md'
             />
           ) : (
-            <div className='mb-4 flex h-32 w-32 items-center justify-center bg-gray-300'>
+            <div className='mr-4 flex h-40 w-40 items-center justify-center rounded-lg bg-gray-300'>
               <span className='text-gray-500'>No Image</span>
             </div>
           )}
-        </div>
 
-        {/* Book Details */}
-        {bookMeta && (
-          <>
-            <h2 className='text-base-content text-center text-2xl font-semibold'>
+          <div>
+            <h2 className='text-base-content mb-2 text-2xl font-bold'>
               {bookMeta.title || 'Untitled'}
             </h2>
-            <p className='text-neutral-content'>
-              <span className='font-medium'>Author:</span> {book.author || 'Unknown Author'}
-            </p>
-            <p className='text-neutral-content'>
-              <span className='font-medium'>Publisher:</span>{' '}
-              {bookMeta.publisher || 'Unknown Publisher'}
-            </p>
-            <p className='text-neutral-content'>
-              <span className='font-medium'>Updated:</span>{' '}
-              {book.lastUpdated ? new Date(book.lastUpdated).toLocaleDateString() : 'Unknown Date'}
-            </p>
-            <p className='text-neutral-content'>
-              <span className='font-medium'>Language:</span>{' '}
-              {bookMeta.language || 'Unknown Language'}
-            </p>
-            <p className='text-neutral-content'>
-              <span className='font-medium'>Description:</span>{' '}
-              {bookMeta.description || 'No Description'}
-            </p>
-          </>
-        )}
+            <p className='text-neutral-content mb-4'>{book.author || 'Unknown Author'}</p>
+            <button className='mt-4 rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600'>
+              More Info
+            </button>
+          </div>
+        </div>
+
+        <div className='text-base-content mb-4'>
+          <div className='mb-4 grid grid-cols-3 gap-4'>
+            <div>
+              <span className='font-bold'>Publisher:</span>
+              <p className='text-neutral-content'>{bookMeta.publisher || 'Unknown'}</p>
+            </div>
+            <div>
+              <span className='font-bold'>Published:</span>
+              <p className='text-neutral-content'>{bookMeta.published || 'Unknown Date'}</p>
+            </div>
+            <div>
+              <span className='font-bold'>Updated:</span>
+              <p className='text-neutral-content'>
+                {book.lastUpdated
+                  ? new Date(book.lastUpdated).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : 'Unknown Date'}
+              </p>
+            </div>
+          </div>
+
+          <div className='grid grid-cols-3 gap-4'>
+            <div>
+              <span className='font-bold'>Language:</span>
+              <p className='text-neutral-content'>{bookMeta.language || 'Unknown'}</p>
+            </div>
+            <div>
+              <span className='font-bold'>Identifier:</span>
+              <p className='text-neutral-content'>
+                {bookMeta.identifier ? bookMeta.identifier.slice(-8) : 'N/A'}
+              </p>{' '}
+              {/* Show last 8 characters */}
+            </div>
+            <div>
+              <span className='font-bold'>Subjects:</span>
+              <p className='text-neutral-content'>{bookMeta.subject?.join(', ') || 'None'}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
