@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Spinner: React.FC<{
   loading: boolean;
 }> = ({ loading }) => {
+  const _ = useTranslation();
   if (!loading) return null;
 
   return (
@@ -11,7 +13,7 @@ const Spinner: React.FC<{
       role='status'
     >
       <span className='loading loading-dots loading-lg'></span>
-      <span className='hidden'>Loading...</span>
+      <span className='hidden'>{_('Loading...')}</span>
     </div>
   );
 };

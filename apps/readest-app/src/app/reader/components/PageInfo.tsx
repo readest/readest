@@ -1,5 +1,6 @@
-import { PageInfo } from '@/types/book';
 import React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { PageInfo } from '@/types/book';
 
 interface PageInfoProps {
   bookFormat: string;
@@ -9,13 +10,17 @@ interface PageInfoProps {
 }
 
 const PageInfoView: React.FC<PageInfoProps> = ({ bookFormat, section, pageinfo, gapRight }) => {
+  const _ = useTranslation();
   const pageInfo =
     bookFormat === 'PDF'
       ? section
         ? `${section.current + 1} / ${section.total}`
         : ''
       : pageinfo
-        ? `Loc. ${pageinfo.current + 1} / ${pageinfo.total}`
+        ? _('Loc. {{currentPage}} / {{totalPage}}', {
+            currentPage: pageinfo.current + 1,
+            totalPage: pageinfo.total,
+          })
         : '';
 
   return (

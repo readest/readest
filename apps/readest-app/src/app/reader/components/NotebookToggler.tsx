@@ -3,6 +3,7 @@ import { TbLayoutSidebarRight, TbLayoutSidebarRightFilled } from 'react-icons/tb
 
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import Button from '@/components/Button';
 
 interface NotebookTogglerProps {
@@ -10,6 +11,7 @@ interface NotebookTogglerProps {
 }
 
 const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { isNotebookVisible, toggleNotebook } = useNotebookStore();
   const handleToggleSidebar = () => {
@@ -30,7 +32,7 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
         )
       }
       onClick={handleToggleSidebar}
-      tooltip='Notebook'
+      tooltip={_('Notebook')}
       tooltipDirection='bottom'
     ></Button>
   );

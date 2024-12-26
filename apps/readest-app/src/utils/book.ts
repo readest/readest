@@ -80,3 +80,21 @@ export const formatAuthors = (
 export const formatTitle = (title: string | LanguageMap) => {
   return typeof title === 'string' ? title : formatLanguageMap(title);
 };
+
+export const formatDate = (date: string | number | Date | undefined) => {
+  if (!date) return;
+  try {
+    return new Date(date).toLocaleDateString(userLang, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return;
+  }
+};
+
+export const formatSubject = (subject: string | string[] | undefined) => {
+  if (!subject) return '';
+  return Array.isArray(subject) ? subject.join(', ') : subject;
+};

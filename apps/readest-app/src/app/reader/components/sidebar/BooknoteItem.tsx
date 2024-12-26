@@ -6,8 +6,9 @@ import { BookNote } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
-import useScrollToItem from '../../hooks/useScrollToItem';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useTranslation } from '@/hooks/useTranslation';
+import useScrollToItem from '../../hooks/useScrollToItem';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -16,6 +17,7 @@ interface BooknoteItemProps {
 }
 
 const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = false }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
@@ -115,7 +117,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
                 )}
                 onClick={editNote.bind(null, item)}
               >
-                <div className='align-bottom text-blue-400'>Edit</div>
+                <div className='align-bottom text-blue-400'>{_('Edit')}</div>
               </button>
             )}
             <button
@@ -125,7 +127,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
               )}
               onClick={deleteNote.bind(null, item)}
             >
-              <div className='align-bottom text-red-400'>Delete</div>
+              <div className='align-bottom text-red-400'>{_('Delete')}</div>
             </button>
           </div>
         </div>

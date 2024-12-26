@@ -5,6 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
@@ -24,6 +25,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   searchTerm: term,
   onSearchResultChange,
 }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig } = useBookDataStore();
@@ -149,7 +151,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           value={searchTerm}
           spellCheck={false}
           onChange={handleInputChange}
-          placeholder='Search...'
+          placeholder={_('Search...')}
           className='w-full bg-transparent p-2 font-sans text-sm font-light focus:outline-none'
         />
 

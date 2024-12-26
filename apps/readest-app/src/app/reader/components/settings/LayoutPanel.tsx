@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import NumberInput from './NumberInput';
 import { useTheme } from '@/hooks/useTheme';
 
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const view = getView(bookKey);
@@ -112,7 +114,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Paragraph</h2>
+        <h2 className='mb-2 font-medium'>{_('Paragraph')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <NumberInput
@@ -125,7 +127,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={0.1}
             />
             <div className='config-item config-item-bottom'>
-              <span className=''>Full Justification</span>
+              <span className=''>{_('Full Justification')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -134,7 +136,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               />
             </div>
             <div className='config-item config-item-bottom'>
-              <span className=''>Hyphenation</span>
+              <span className=''>{_('Hyphenation')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -147,12 +149,12 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Page</h2>
+        <h2 className='mb-2 font-medium'>{_('Page')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label='Margins (px)'
+              label={_('Margins (px)')}
               value={marginPx}
               onChange={setMarginPx}
               min={0}
@@ -160,21 +162,21 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={4}
             />
             <NumberInput
-              label='Gaps (%)'
+              label={_('Gaps (%)')}
               value={gapPercent}
               onChange={setGapPercent}
               min={0}
               max={30}
             />
             <NumberInput
-              label='Maximum Number of Columns'
+              label={_('Maximum Number of Columns')}
               value={maxColumnCount}
               onChange={setMaxColumnCount}
               min={1}
               max={2}
             />
             <NumberInput
-              label='Maximum Inline Size'
+              label={_('Maximum Inline Size')}
               value={maxInlineSize}
               onChange={setMaxInlineSize}
               min={500}
@@ -182,7 +184,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={100}
             />
             <NumberInput
-              label='Maximum Block Size'
+              label={_('Maximum Block Size')}
               value={maxBlockSize}
               onChange={setMaxBlockSize}
               min={500}

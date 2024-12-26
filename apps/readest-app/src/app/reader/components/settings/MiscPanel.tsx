@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import cssbeautify from 'cssbeautify';
 import { getStyles } from '@/utils/style';
 import { useTheme } from '@/hooks/useTheme';
@@ -9,6 +10,7 @@ const cssRegex =
   /((?:\s*)([\w#.@*,:\-.:>+~$$$$\"=(),*\s]+)\s*{(?:[\s]*)((?:[^\}]+[:][^\}]+;?)*)*\s*}(?:\s*))/gim;
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
@@ -87,11 +89,11 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Animation</h2>
+        <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
         <div className='card bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
-              <span className='text-gray-700'>Paging Animation</span>
+              <span className='text-gray-700'>{_('Paging Animation')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -104,11 +106,11 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Behavior</h2>
+        <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
         <div className='card bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
-              <span className='text-gray-700'>Disable Click-to-Flip</span>
+              <span className='text-gray-700'>{_('Disable Click-to-Flip')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -121,7 +123,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>Custom CSS</h2>
+        <h2 className='mb-2 font-medium'>{_('Custom CSS')}</h2>
         <div className={`card bg-base-100 border shadow ${error ? 'border-red-500' : ''}`}>
           <div className='divide-y'>
             <div className='css-text-area config-item-top config-item-bottom p-1'>

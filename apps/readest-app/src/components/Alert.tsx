@@ -1,5 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Alert: React.FC<{
   title: string;
@@ -7,6 +8,7 @@ const Alert: React.FC<{
   onClickCancel: () => void;
   onClickConfirm: () => void;
 }> = ({ title, message, onClickCancel, onClickConfirm }) => {
+  const _ = useTranslation();
   return (
     <div
       role='alert'
@@ -37,10 +39,10 @@ const Alert: React.FC<{
       </div>
       <div className='flex space-x-2'>
         <button className='btn btn-sm' onClick={onClickCancel}>
-          Cancel
+          {_('Cancel')}
         </button>
         <button className='btn btn-sm btn-warning' onClick={onClickConfirm}>
-          Confirm
+          {_('Confirm')}
         </button>
       </div>
     </div>

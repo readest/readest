@@ -6,9 +6,11 @@ import { TbSunMoon } from 'react-icons/tb';
 import { useTheme } from '@/hooks/useTheme';
 import { themes } from '@/styles/themes';
 import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 
 const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { themeMode, themeColor, themeCode, isDarkMode, updateThemeMode, updateThemeColor } =
     useTheme();
   const { getViews, getViewSettings } = useReaderStore();
@@ -24,9 +26,9 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='flex items-center justify-between'>
-        <h2 className='font-medium'>Theme Mode</h2>
+        <h2 className='font-medium'>{_('Theme Mode')}</h2>
         <div className='flex gap-2'>
-          <div className='tooltip tooltip-bottom' data-tip='Auto Mode'>
+          <div className='tooltip tooltip-bottom' data-tip={_('Auto Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('auto')}
@@ -35,7 +37,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </button>
           </div>
 
-          <div className='tooltip tooltip-bottom' data-tip='Light Mode'>
+          <div className='tooltip tooltip-bottom' data-tip={_('Light Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'light' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('light')}
@@ -44,7 +46,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </button>
           </div>
 
-          <div className='tooltip tooltip-bottom' data-tip='Dark Mode'>
+          <div className='tooltip tooltip-bottom' data-tip={_('Dark Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'dark' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('dark')}
@@ -56,7 +58,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       <div>
-        <h2 className='mb-2 font-medium'>Theme Color</h2>
+        <h2 className='mb-2 font-medium'>{_('Theme Color')}</h2>
         <div className='grid grid-cols-3 gap-4'>
           {themes.map(({ name, label, colors }) => (
             <label

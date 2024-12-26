@@ -5,6 +5,7 @@ import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import Button from '@/components/Button';
 
 interface FooterBarProps {
@@ -14,6 +15,7 @@ interface FooterBarProps {
 }
 
 const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
+  const _ = useTranslation();
   const { hoveredBookKey, setHoveredBookKey, getView } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const view = getView(bookKey);
@@ -53,17 +55,21 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <Button icon={<RiArrowLeftWideLine size={20} />} onClick={handleGoPrev} tooltip='Go Left' />
+      <Button
+        icon={<RiArrowLeftWideLine size={20} />}
+        onClick={handleGoPrev}
+        tooltip={_('Go Left')}
+      />
       <Button
         icon={<RiArrowGoBackLine size={20} />}
         onClick={handleGoBack}
-        tooltip='Go Back'
+        tooltip={_('Go Back')}
         disabled={!view?.history.canGoBack}
       />
       <Button
         icon={<RiArrowGoForwardLine size={20} />}
         onClick={handleGoForward}
-        tooltip='Go Forward'
+        tooltip={_('Go Forward')}
         disabled={!view?.history.canGoForward}
       />
       <span className='mx-2 text-center text-sm'>
@@ -77,7 +83,11 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
         value={pageinfoValid ? progressFraction * 100 : 0}
         onChange={(e) => handleProgressChange(e)}
       />
-      <Button icon={<RiArrowRightWideLine size={20} />} onClick={handleGoNext} tooltip='Go Right' />
+      <Button
+        icon={<RiArrowRightWideLine size={20} />}
+        onClick={handleGoNext}
+        tooltip={_('Go Right')}
+      />
     </div>
   );
 };

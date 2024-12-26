@@ -15,6 +15,7 @@ import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDemoBooks } from './hooks/useDemoBooks';
@@ -35,6 +36,7 @@ const LibraryPage = () => {
     clearOpenWithBooks,
   } = useLibraryStore();
   useTheme();
+  const _ = useTranslation();
   const { setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
@@ -237,12 +239,14 @@ const LibraryPage = () => {
           <div className='hero h-screen items-center justify-center'>
             <div className='hero-content text-neutral-content text-center'>
               <div className='max-w-md'>
-                <h1 className='mb-5 text-5xl font-bold'>Your Library</h1>
+                <h1 className='mb-5 text-5xl font-bold'>{_('Your Library')}</h1>
                 <p className='mb-5'>
-                  Welcome to your library. You can import your books here and read them anytime.
+                  {_(
+                    'Welcome to your library. You can import your books here and read them anytime.',
+                  )}
                 </p>
                 <button className='btn btn-primary rounded-xl' onClick={handleImportBooks}>
-                  Import Books
+                  {_('Import Books')}
                 </button>
               </div>
             </div>

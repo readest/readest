@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 
@@ -10,6 +11,7 @@ interface NoteEditorProps {
 }
 
 const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
+  const _ = useTranslation();
   const { notebookNewAnnotation, notebookEditAnnotation } = useNotebookStore();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [note, setNote] = React.useState('');
@@ -62,7 +64,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
             rows={1}
             spellCheck={false}
             onChange={handleChange}
-            placeholder='Add your notes here...'
+            placeholder={_('Add your notes here...')}
           ></textarea>
         </div>
         <button
@@ -73,7 +75,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
           )}
           onClick={handleSaveNote}
         >
-          <div className='pr-1 align-bottom text-xs text-blue-400'>Save</div>
+          <div className='pr-1 align-bottom text-xs text-blue-400'>{_('Save')}</div>
         </button>
       </div>
       <div className='flex items-start pt-2'>

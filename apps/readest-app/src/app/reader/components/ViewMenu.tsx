@@ -8,6 +8,7 @@ import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import MenuItem from '@/components/MenuItem';
 import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme, ThemeMode } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
 
@@ -22,6 +23,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   setIsDropdownOpen,
   onSetSettingsDialogOpen,
 }) => {
+  const _ = useTranslation();
   const { getView, getViews, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
@@ -126,10 +128,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr className='border-base-200 my-1' />
 
-      <MenuItem label='Font & Layout' shortcut='Shift+F' onClick={openFontLayoutMenu} />
+      <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
 
       <MenuItem
-        label='Scrolled Mode'
+        label={_('Scrolled Mode')}
         shortcut='Shift+J'
         icon={isScrolledMode ? <MdCheck size={20} /> : undefined}
         onClick={toggleScrolledMode}
@@ -139,7 +141,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <MenuItem
         label={
-          themeMode === 'dark' ? 'Dark Mode' : themeMode === 'light' ? 'Light Mode' : 'Auto Mode'
+          themeMode === 'dark'
+            ? _('Dark Mode')
+            : themeMode === 'light'
+              ? _('Light Mode')
+              : _('Auto Mode')
         }
         icon={
           themeMode === 'dark' ? (
@@ -153,7 +159,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={cycleThemeMode}
       />
       <MenuItem
-        label='Invert Colors in Dark Mode'
+        label={_('Invert Colors in Dark Mode')}
         icon={isInvertedColors ? <MdCheck size={20} className='text-base-content' /> : undefined}
         onClick={toggleInvertedColors}
         disabled={!isDarkMode}

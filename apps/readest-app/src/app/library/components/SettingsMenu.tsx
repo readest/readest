@@ -10,6 +10,7 @@ import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import MenuItem from '@/components/MenuItem';
 
 interface BookMenuProps {
@@ -17,6 +18,7 @@ interface BookMenuProps {
 }
 
 const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
+  const _ = useTranslation();
   const router = useRouter();
   const { envConfig } = useEnv();
   const { user, logout } = useAuth();
@@ -56,13 +58,17 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     >
       {user ? (
         <MenuItem
-          label={userDisplayName ? `Logged in as ${userDisplayName}` : 'Logged in'}
+          label={
+            userDisplayName
+              ? _('Logged in as {{userDisplayName}}', { userDisplayName })
+              : _('Logged in')
+          }
           labelClass='!max-w-40'
           icon={
             avatarUrl ? (
               <Image
                 src={avatarUrl}
-                alt='User Avatar'
+                alt={_('User avatar')}
                 className='h-5 w-5 rounded-full'
                 referrerPolicy='no-referrer'
                 width={20}
@@ -74,19 +80,19 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           }
         >
           <ul>
-            <MenuItem label='Sign Out' noIcon onClick={handleUserLogout} />
+            <MenuItem label={_('Sign Out')} noIcon onClick={handleUserLogout} />
           </ul>
         </MenuItem>
       ) : (
         <MenuItem
-          label='Sign In'
+          label={_('Sign In')}
           icon={<PiUserCircle size={20} />}
           onClick={handleUserLogin}
         ></MenuItem>
       )}
       <hr className='border-base-200 my-1' />
-      {isWebApp && <MenuItem label='Download Readest' onClick={downloadReadest} />}
-      <MenuItem label='About Readest' onClick={showAboutReadest} />
+      {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
+      <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
@@ -15,6 +16,7 @@ interface BookmarkTogglerProps {
 }
 
 const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
@@ -98,7 +100,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         )
       }
       onClick={toggleBookmark}
-      tooltip='Bookmark'
+      tooltip={_('Bookmark')}
       tooltipDirection='bottom'
     ></Button>
   );

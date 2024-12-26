@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookConfig } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
@@ -15,8 +16,11 @@ import Dropdown from '@/components/Dropdown';
 import DialogMenu from './DialogMenu';
 import MiscPanel from './MiscPanel';
 
+type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Misc';
+
 const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ bookKey }) => {
-  const [activePanel, setActivePanel] = useState('Font');
+  const _ = useTranslation();
+  const [activePanel, setActivePanel] = useState<SettingsPanelType>('Font');
   const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -43,28 +47,28 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
               onClick={() => setActivePanel('Font')}
             >
               <RiFontSize size={20} className='mr-0' />
-              Font
+              {_('Font')}
             </button>
             <button
               className={`btn btn-ghost text-base-content h-8 min-h-8 px-4 ${activePanel === 'Layout' ? 'btn-active' : ''}`}
               onClick={() => setActivePanel('Layout')}
             >
               <RiDashboardLine size={20} className='mr-0' />
-              Layout
+              {_('Layout')}
             </button>
             <button
               className={`btn btn-ghost text-base-content h-8 min-h-8 px-4 ${activePanel === 'Color' ? 'btn-active' : ''}`}
               onClick={() => setActivePanel('Color')}
             >
               <VscSymbolColor size={20} className='mr-0' />
-              Color
+              {_('Color')}
             </button>
             <button
               className={`btn btn-ghost text-base-content h-8 min-h-8 px-4 ${activePanel === 'Misc' ? 'btn-active' : ''}`}
               onClick={() => setActivePanel('Misc')}
             >
               <IoAccessibilityOutline size={20} className='mr-0' />
-              Misc
+              {_('Misc')}
             </button>
           </div>
           <div className='flex h-full items-center justify-end'>

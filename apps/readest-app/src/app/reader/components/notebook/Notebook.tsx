@@ -6,6 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import useDragBar from '../../hooks/useDragBar';
 import NotebookHeader from './Header';
@@ -19,6 +20,7 @@ const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
 
 const Notebook: React.FC = ({}) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
@@ -139,7 +141,7 @@ const Notebook: React.FC = ({}) => {
         />
         <NotebookHeader isPinned={isNotebookPinned} handleTogglePin={handleTogglePin} />
         <div className='max-h-[calc(100vh-44px)] overflow-y-auto px-3'>
-          <div>{excerptNotes.length > 0 && <p className='pt-1 text-sm'>Excerpts</p>}</div>
+          <div>{excerptNotes.length > 0 && <p className='pt-1 text-sm'>{_('Excerpts')}</p>}</div>
           <ul className=''>
             {excerptNotes.map((item, index) => (
               <li key={`${index}-${item.id}`} className='my-2'>
@@ -171,7 +173,7 @@ const Notebook: React.FC = ({}) => {
                         )}
                         onClick={handleEditNote.bind(null, item, true)}
                       >
-                        <div className='align-bottom text-xs text-red-400'>Delete</div>
+                        <div className='align-bottom text-xs text-red-400'>{_('Delete')}</div>
                       </button>
                     </div>
                   </div>
@@ -181,7 +183,7 @@ const Notebook: React.FC = ({}) => {
           </ul>
           <div>
             {(notebookNewAnnotation || annotationNotes.length > 0) && (
-              <p className='pt-1 text-sm'>Notes</p>
+              <p className='pt-1 text-sm'>{_('Notes')}</p>
             )}
           </div>
           {(notebookNewAnnotation || notebookEditAnnotation) && (

@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import packageJson from '../../package.json';
 import WindowButtons from './WindowButtons';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export const setAboutDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('about_window');
@@ -13,6 +14,7 @@ export const setAboutDialogVisible = (visible: boolean) => {
 };
 
 export const AboutWindow = () => {
+  const _ = useTranslation();
   return (
     <dialog id='about_window' className='modal'>
       <form method='dialog' className='modal-box w-96 max-w-lg p-4'>
@@ -30,7 +32,9 @@ export const AboutWindow = () => {
           </div>
           <h2 className='text-2xl font-bold'>Readest</h2>
           <p className='text-neutral-content text-sm'>Bilingify LLC</p>
-          <span className='badge badge-primary mt-2'>Version {packageJson.version}</span>
+          <span className='badge badge-primary mt-2'>
+            {_('Version {{version}}', { version: packageJson.version })}
+          </span>
         </div>
 
         <div className='divider'></div>
@@ -55,7 +59,7 @@ export const AboutWindow = () => {
           <p className='text-neutral-content mt-2 text-xs'>
             Source code is available at{' '}
             <a
-              href='https://github.com/chrox/readest'
+              href='https://github.com/readest/readest'
               target='_blank'
               rel='noopener noreferrer'
               className='text-blue-500 underline'

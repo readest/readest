@@ -3,12 +3,13 @@ import React, { useEffect, useRef } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAllDuotone } from 'react-icons/pi';
+import { MdOutlineMenu } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
-import { MdOutlineMenu } from 'react-icons/md';
 import SettingsMenu from './SettingsMenu';
 
 interface LibraryHeaderProps {
@@ -22,6 +23,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onImportBooks,
   onToggleSelectMode,
 }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const { isTrafficLightVisible } = useTrafficLight();
   const headerRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </span>
           <input
             type='text'
-            placeholder='Search books...'
+            placeholder={_('Search books...')}
             spellCheck='false'
             className={clsx(
               'input rounded-badge bg-base-300/50 h-7 w-full pl-10 pr-10',
@@ -73,13 +75,20 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               >
                 <li>
                   <button className='text-base-content' onClick={onImportBooks}>
-                    From Local File
+                    {_('From Local File')}
                   </button>
                 </li>
               </ul>
             </div>
-            <button onClick={onToggleSelectMode} aria-label='Select Multiple Books' className='h-6'>
-              <div className='lg:tooltip lg:tooltip-bottom cursor-pointer' data-tip='Select books'>
+            <button
+              onClick={onToggleSelectMode}
+              aria-label={_('Select multiple books')}
+              className='h-6'
+            >
+              <div
+                className='lg:tooltip lg:tooltip-bottom cursor-pointer'
+                data-tip={_('Select books')}
+              >
                 <PiSelectionAllDuotone
                   role='button'
                   className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}

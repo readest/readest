@@ -1,6 +1,7 @@
 import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { BookSearchConfig } from '@/types/book';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface SearchOptionsProps {
   searchConfig: BookSearchConfig;
@@ -13,6 +14,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
   onSearchConfigChanged,
   setIsDropdownOpen,
 }) => {
+  const _ = useTranslation();
   const handleSetScope = () => {
     onSearchConfigChanged({
       ...searchConfig,
@@ -46,7 +48,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
           <span style={{ minWidth: '20px' }}>
             {searchConfig.scope === 'book' && <MdCheck size={20} className='text-base-content' />}
           </span>
-          <span className='ml-2'>Book</span>
+          <span className='ml-2'>{_('Book')}</span>
         </div>
       </button>
 
@@ -60,7 +62,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
               <MdCheck size={20} className='text-base-content' />
             )}
           </span>
-          <span className='ml-2'>Chapter</span>
+          <span className='ml-2'>{_('Chapter')}</span>
         </div>
       </button>
 
@@ -74,7 +76,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
           <span style={{ minWidth: '20px' }}>
             {searchConfig.matchCase && <MdCheck size={20} className='text-base-content' />}
           </span>
-          <span className='ml-2'>Match Case</span>
+          <span className='ml-2'>{_('Match Case')}</span>
         </div>
       </button>
 
@@ -86,7 +88,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
           <span style={{ minWidth: '20px' }}>
             {searchConfig.matchWholeWords && <MdCheck size={20} className='text-base-content' />}
           </span>
-          <span className='ml-2'>Match Whole Words</span>
+          <span className='ml-2'>{_('Match Whole Words')}</span>
         </div>
       </button>
 
@@ -98,7 +100,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
           <span style={{ minWidth: '20px' }}>
             {searchConfig.matchDiacritics && <MdCheck size={20} className='text-base-content' />}
           </span>
-          <span className='ml-2'>Match Diacritics</span>
+          <span className='ml-2'>{_('Match Diacritics')}</span>
         </div>
       </button>
     </div>

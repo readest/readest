@@ -15,7 +15,7 @@ const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='en'>
+    <html>
       <head>
         <title>{title}</title>
         <meta name='mobile-web-app-capable' content='yes' />

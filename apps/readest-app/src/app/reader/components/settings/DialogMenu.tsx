@@ -1,12 +1,14 @@
 import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface DialogMenuProps {
   toggleDropdown?: () => void;
 }
 
 const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
+  const _ = useTranslation();
   const { isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } = useSettingsStore();
 
   const handleToggleGlobal = () => {
@@ -28,7 +30,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
             {isFontLayoutSettingsGlobal && <MdCheck size={20} className='text-base-content' />}
           </span>
           <div className='tooltip' data-tip='Uncheck for current book settings'>
-            <span className='ml-2'>Global Settings</span>
+            <span className='ml-2'>{_('Global Settings')}</span>
           </div>
         </div>
       </button>

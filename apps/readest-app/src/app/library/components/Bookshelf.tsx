@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
 import { MdDelete, MdOpenInNew } from 'react-icons/md';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
-import { CiCircleMore } from "react-icons/ci";
+import { CiCircleMore } from 'react-icons/ci';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -15,6 +15,7 @@ import { Book, BooksGroup } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { navigateToReader } from '@/utils/nav';
 import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
@@ -58,6 +59,7 @@ interface BookshelfProps {
 }
 
 const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImportBooks }) => {
+  const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
@@ -153,14 +155,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     const fileRevealLabel =
       FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
     const showBookInFinderMenuItem = await MenuItem.new({
-      text: fileRevealLabel,
+      text: _(fileRevealLabel),
       action: async () => {
         const folder = `${settings.localBooksDir}/${getFilename(book)}`;
         revealItemInDir(folder);
       },
     });
     const deleteBookMenuItem = await MenuItem.new({
-      text: 'Delete',
+      text: _('Delete'),
       action: async () => {
         deleteBook(envConfig, book);
       },
@@ -185,7 +187,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                   className='book-item cursor-pointer'
                   onContextMenu={bookContextMenuHandler.bind(null, item as Book)}
                 >
-                  <div key={(item as Book).hash} 
+                  <div
+                    key={(item as Book).hash}
                     className='bg-base-100 shadow-md'
                     onClick={() => handleBookClick(item.hash)}
                   >
@@ -276,11 +279,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
         <div className='text-base-content bg-base-300 fixed bottom-4 left-1/2 flex -translate-x-1/2 transform space-x-4 rounded-lg p-4 shadow-lg'>
           <button onClick={openSelectedBooks} className='flex items-center space-x-2'>
             <MdOpenInNew />
-            <span>Open</span>
+            <span>{_('Open')}</span>
           </button>
           <button onClick={deleteSelectedBooks} className='flex items-center space-x-2'>
             <MdDelete className='fill-red-500' />
-            <span className='text-red-500'>Delete</span>
+            <span className='text-red-500'>{_('Delete')}</span>
           </button>
         </div>
       )}
@@ -291,16 +294,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
       )}
       {showDeleteAlert && (
         <Alert
-          title='Confirm Deletion'
+          title={_('Confirm Deletion')}
           message='Are you sure to delete the selected books?'
           onClickCancel={() => setShowDeleteAlert(false)}
           onClickConfirm={confirmDelete}
         />
       )}
-      
-      {/* Modal Component */}
+
       {selectedBook && (
-        <BookDetailModal isOpen={isModalOpen} onClose={closeModal} book={selectedBook} envConfig={envConfig} />
+        <BookDetailModal isOpen={isModalOpen} book={selectedBook} onClose={closeModal} />
       )}
     </div>
   );

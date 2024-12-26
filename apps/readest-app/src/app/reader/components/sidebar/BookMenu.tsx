@@ -4,6 +4,7 @@ import Image from 'next/image';
 import MenuItem from '@/components/MenuItem';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
@@ -13,6 +14,7 @@ interface BookMenuProps {
 }
 
 const BookMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
+  const _ = useTranslation();
   const { library } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const handleParallelView = (id: string) => {
@@ -39,7 +41,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
       tabIndex={0}
       className='book-menu dropdown-content dropdown-center border-base-100 z-20 mt-3 w-60 shadow-2xl'
     >
-      <MenuItem label='Parallel Read' noIcon>
+      <MenuItem label={_('Parallel Read')} noIcon>
         <ul className='max-h-60 overflow-y-auto'>
           {library.slice(0, 20).map((book) => (
             <MenuItem
@@ -62,10 +64,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           ))}
         </ul>
       </MenuItem>
-      <MenuItem label='Reload Page' noIcon shortcut='Shift+R' onClick={handleReloadPage} />
+      <MenuItem label={_('Reload Page')} noIcon shortcut='Shift+R' onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label='Download Readest' noIcon onClick={downloadReadest} />}
-      <MenuItem label='About Readest' noIcon onClick={showAboutReadest} />
+      <MenuItem label={_('About Readest')} noIcon onClick={showAboutReadest} />
     </div>
   );
 };

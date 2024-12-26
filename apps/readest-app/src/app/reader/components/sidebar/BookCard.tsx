@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { MdInfoOutline } from 'react-icons/md';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BookCardProps {
   cover: string;
@@ -9,11 +10,12 @@ interface BookCardProps {
 }
 
 const BookCard: React.FC<BookCardProps> = ({ cover, title, author }) => {
+  const _ = useTranslation();
   return (
     <div className='flex h-20 w-full items-center'>
       <Image
         src={cover}
-        alt='Book cover'
+        alt={_('Book Cover')}
         width={56}
         height={80}
         className='mr-4 aspect-auto max-h-20 w-[15%] max-w-14 rounded-sm object-cover shadow-md'
@@ -27,7 +29,7 @@ const BookCard: React.FC<BookCardProps> = ({ cover, title, author }) => {
       </div>
       <button
         className='btn btn-ghost hover:bg-base-300 h-6 min-h-6 w-6 rounded-full p-0 transition-colors'
-        aria-label='More info'
+        aria-label={_('More Info')}
       >
         <MdInfoOutline size={18} className='fill-base-content' />
       </button>
