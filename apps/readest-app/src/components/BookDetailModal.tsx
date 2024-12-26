@@ -89,15 +89,15 @@ const BookDetailModal = ({
             <p className='text-neutral-content'>
               <span className='font-medium'>Author:</span> {book.author || 'Unknown Author'}
             </p>
-            <p className='text-gray-700'>
+            <p className='text-neutral-content'>
               <span className='font-medium'>Publisher:</span>{' '}
               {bookMeta.publisher || 'Unknown Publisher'}
             </p>
             <p className='text-neutral-content'>
               <span className='font-medium'>Updated:</span>{' '}
-              {new Date(book.lastUpdated).toLocaleDateString()}
+              {book.lastUpdated ? new Date(book.lastUpdated).toLocaleDateString() : 'Unknown Date'}
             </p>
-            <p className='text-gray-700'>
+            <p className='text-neutral-content'>
               <span className='font-medium'>Language:</span>{' '}
               {bookMeta.language || 'Unknown Language'}
             </p>

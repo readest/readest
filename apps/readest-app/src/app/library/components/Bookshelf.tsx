@@ -184,9 +184,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                 <div
                   className='book-item cursor-pointer'
                   onContextMenu={bookContextMenuHandler.bind(null, item as Book)}
-                  onClick={() => handleBookClick(item.hash)}
                 >
-                  <div key={(item as Book).hash} className='bg-base-100 shadow-md'>
+                  <div key={(item as Book).hash} 
+                    className='bg-base-100 shadow-md'
+                    onClick={() => handleBookClick(item.hash)}
+                  >
                     <div className='relative aspect-[28/41]'>
                       <Image
                         src={item.coverImageUrl!}
