@@ -10,6 +10,8 @@ export interface ShortcutConfig {
   onGoRight: string[];
   onGoNext: string[];
   onGoPrev: string[];
+  onGoBack: string[];
+  onGoForward: string[];
 }
 
 const DEFAULT_SHORTCUTS: ShortcutConfig = {
@@ -24,6 +26,8 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onGoRight: ['ArrowRight', 'PageDown', 'l'],
   onGoNext: ['ArrowDown', 'j'],
   onGoPrev: ['ArrowUp', 'k'],
+  onGoBack: ['shift+ArrowLeft', 'shift+h'],
+  onGoForward: ['shift+ArrowRight', 'shift+l'],
 };
 
 // Load shortcuts from localStorage or fallback to defaults

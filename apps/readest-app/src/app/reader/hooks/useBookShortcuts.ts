@@ -51,6 +51,14 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     getView(sideBarBookKey)?.next(distance);
   };
 
+  const goBack = () => {
+    getView(sideBarBookKey)?.history.back();
+  };
+
+  const goForward = () => {
+    getView(sideBarBookKey)?.history.forward();
+  };
+
   const reloadPage = () => {
     window.location.reload();
   };
@@ -67,6 +75,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoRight: goRight,
       onGoPrev: goPrev,
       onGoNext: goNext,
+      onGoBack: goBack,
+      onGoForward: goForward,
     },
     [sideBarBookKey, bookKeys],
   );
