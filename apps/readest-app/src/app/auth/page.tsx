@@ -9,15 +9,17 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { VscAzure } from 'react-icons/vsc';
 import { FaGithub } from 'react-icons/fa';
+import { IoArrowBack } from 'react-icons/io5';
 
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/utils/supabase';
 import { useTheme } from '@/hooks/useTheme';
+import { useEnv } from '@/context/EnvContext';
+import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
-import { IoArrowBack } from 'react-icons/io5';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -46,7 +48,9 @@ const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Ic
 export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { envConfig } = useEnv();
   const { isDarkMode } = useTheme();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -109,6 +113,14 @@ export default function AuthPage() {
     }
   };
 
+  const handleGoBack = () => {
+    // Keep login false to avoid infinite loop to redirect to the login page
+    settings.keepLogin = false;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    router.back();
+  };
+
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
     if (isOAuthServerRunning.current) return;
@@ -147,7 +159,7 @@ export default function AuthPage() {
   return isTauriAppPlatform() ? (
     <div className='flex pt-11'>
       <button
-        onClick={() => router.back()}
+        onClick={handleGoBack}
         className='btn btn-ghost fixed left-3 top-11 h-8 min-h-8 w-8 p-0'
       >
         <IoArrowBack size={20} />
@@ -191,7 +203,7 @@ export default function AuthPage() {
   ) : (
     <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem', paddingTop: '4rem' }}>
       <button
-        onClick={() => router.back()}
+        onClick={handleGoBack}
         className='btn btn-ghost fixed left-10 top-6 h-8 min-h-8 w-8 p-0'
       >
         <IoArrowBack size={20} />
