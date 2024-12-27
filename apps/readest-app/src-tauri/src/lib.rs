@@ -73,6 +73,7 @@ async fn start_server(window: Window) -> Result<u16, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![start_server])
@@ -137,10 +138,14 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
                 .decorations(true)
-                .title_bar_style(TitleBarStyle::Overlay).title("");
+                .title_bar_style(TitleBarStyle::Overlay)
+                .title("");
 
             #[cfg(not(target_os = "macos"))]
-            let win_builder = win_builder.decorations(false).transparent(true).title("Readest");
+            let win_builder = win_builder
+                .decorations(false)
+                .transparent(true)
+                .title("Readest");
 
             win_builder.build().unwrap();
             // let win = win_builder.build().unwrap();

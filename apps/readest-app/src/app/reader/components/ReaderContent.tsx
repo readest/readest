@@ -11,7 +11,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { SystemSettings } from '@/types/settings';
 import { parseOpenWithFiles } from '@/helpers/cli';
-import { tauriHandleClose } from '@/utils/window';
+import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
+import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
 import { navigateToLibrary } from '@/utils/nav';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
@@ -61,6 +62,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }, []);
 
   useEffect(() => {
+    if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
     window.addEventListener('beforeunload', handleCloseBooks);
     return () => {
       window.removeEventListener('beforeunload', handleCloseBooks);
@@ -68,12 +70,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKeys]);
 
-  const saveBookConfig = (bookKey: string) => {
+  const saveBookConfig = async (bookKey: string) => {
     const config = getConfig(bookKey);
     const { book } = getBookData(bookKey) || {};
     const { isPrimary } = getViewState(bookKey) || {};
     if (isPrimary && book && config) {
-      saveConfig(envConfig, bookKey, config, settings);
+      await saveConfig(envConfig, bookKey, config, settings);
     }
   };
 
@@ -81,7 +83,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     console.log('Closing book', bookKey);
     getView(bookKey)?.close();
     getView(bookKey)?.remove();
-    saveBookConfig(bookKey);
+    await saveBookConfig(bookKey);
     clearViewState(bookKey);
   };
 
@@ -90,11 +92,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateToLibrary(router);
   };
 
-  const handleCloseBooks = () => {
-    bookKeys.forEach((key) => {
-      saveConfigAndCloseBook(key);
-    });
-    saveSettings(envConfig, settings);
+  const handleCloseBooks = async () => {
+    await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
+    await saveSettings(envConfig, settings);
   };
 
   const handleCloseBooksToLibrary = () => {

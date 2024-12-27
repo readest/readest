@@ -57,6 +57,7 @@
     "shell:default",
     "updater:default",
     "process:default",
+    "process:allow-exit",
     "process:allow-restart",
     "cli:default",
     "oauth:allow-start",

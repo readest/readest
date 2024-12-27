@@ -68,8 +68,8 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     library.unshift(book);
     setLibrary(library);
     config.updatedAt = Date.now();
-    appService.saveBookConfig(book, config, settings);
-    appService.saveLibraryBooks(library);
+    await appService.saveBookConfig(book, config, settings);
+    await appService.saveLibraryBooks(library);
   },
   updateBooknotes: (key: string, booknotes: BookNote[]) => {
     let updatedConfig: BookConfig | undefined;
