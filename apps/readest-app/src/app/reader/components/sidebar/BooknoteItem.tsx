@@ -13,15 +13,14 @@ import useScrollToItem from '../../hooks/useScrollToItem';
 interface BooknoteItemProps {
   bookKey: string;
   item: BookNote;
-  editable?: boolean;
 }
 
-const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = false }) => {
+const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getProgress, getView } = useReaderStore();
+  const { getProgress, getView, getViewsById } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
 
   const { text, cfi, note } = item;
@@ -44,6 +43,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
     booknotes.forEach((item) => {
       if (item.id === note.id) {
         item.deletedAt = Date.now();
+        const views = getViewsById(bookKey.split('-')[0]!);
+        views.forEach((view) => view?.addAnnotation(item, true));
       }
     });
     const updatedConfig = updateBooknotes(bookKey, booknotes);
@@ -53,6 +54,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
   };
 
   const editNote = (note: BookNote) => {
+    setNotebookVisible(true);
     setNotebookEditAnnotation(note);
   };
 
@@ -60,15 +62,15 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
     <li
       ref={viewRef}
       className={clsx(
-        'border-base-300 my-2 cursor-pointer rounded-lg p-2 text-sm',
-        editable && 'collapse-arrow collapse',
+        'border-base-300 group relative my-2 cursor-pointer rounded-lg p-2 text-sm',
         isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',
+        'transition-all duration-300 ease-in-out',
       )}
       tabIndex={0}
       onClick={handleClickItem}
     >
       <div
-        className={clsx('collapse-title min-h-4 p-0', editable && 'pr-4')}
+        className={clsx('min-h-4 p-0 transition-all duration-300 ease-in-out')}
         style={
           {
             '--top-override': '0.7rem',
@@ -98,40 +100,42 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
           </div>
         </div>
       </div>
-      {editable && (
-        <div
-          className={clsx('collapse-content invisible !p-0 text-xs')}
-          style={
-            {
-              '--bottom-override': 0,
-            } as React.CSSProperties
-          }
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className='flex justify-end space-x-3'>
-            {item.note && (
-              <button
-                className={clsx(
-                  'btn btn-ghost settings-content hover:bg-transparent',
-                  'flex h-4 min-h-4 items-end p-0',
-                )}
-                onClick={editNote.bind(null, item)}
-              >
-                <div className='align-bottom text-blue-400'>{_('Edit')}</div>
-              </button>
-            )}
+      <div
+        className={clsx(
+          'max-h-0 overflow-hidden p-0 text-xs',
+          'transition-[max-height] duration-300 ease-in-out',
+          'group-hover:max-h-8 group-hover:overflow-visible',
+        )}
+        style={
+          {
+            '--bottom-override': 0,
+          } as React.CSSProperties
+        }
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex justify-end space-x-3 p-2'>
+          {item.note && (
             <button
               className={clsx(
                 'btn btn-ghost settings-content hover:bg-transparent',
                 'flex h-4 min-h-4 items-end p-0',
               )}
-              onClick={deleteNote.bind(null, item)}
+              onClick={editNote.bind(null, item)}
             >
-              <div className='align-bottom text-red-400'>{_('Delete')}</div>
+              <div className='align-bottom text-blue-400'>{_('Edit')}</div>
             </button>
-          </div>
+          )}
+          <button
+            className={clsx(
+              'btn btn-ghost settings-content hover:bg-transparent',
+              'flex h-4 min-h-4 items-end p-0',
+            )}
+            onClick={deleteNote.bind(null, item)}
+          >
+            <div className='align-bottom text-red-400'>{_('Delete')}</div>
+          </button>
         </div>
-      )}
+      </div>
     </li>
   );
 };

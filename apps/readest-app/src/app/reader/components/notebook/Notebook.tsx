@@ -191,12 +191,7 @@ const Notebook: React.FC = ({}) => {
           )}
           <ul className=''>
             {annotationNotes.map((item, index) => (
-              <BooknoteItem
-                key={`${index}-${item.cfi}`}
-                bookKey={sideBarBookKey}
-                item={item}
-                editable={true}
-              />
+              <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
             ))}
           </ul>
         </div>
