@@ -89,3 +89,4 @@ export const READEST_WEB_BASE_URL = 'https://web.readest.com';
 
 export const SYNC_PROGRESS_INTERVAL_SEC = 60;
 export const SYNC_NOTES_INTERVAL_SEC = 60;
+export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
