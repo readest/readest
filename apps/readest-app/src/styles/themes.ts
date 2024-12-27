@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2';
+import { stubTranslation as _ } from '../utils/misc';
 
 type BaseColor = {
   bg: string;
@@ -37,7 +38,7 @@ const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
 export const themes = [
   {
     name: 'default',
-    label: 'Default',
+    label: _('Default'),
     colors: {
       light: generateLightPalette({ fg: '#171717', bg: '#ffffff', primary: '#0066cc' }),
       dark: generateDarkPalette({ fg: '#e0e0e0', bg: '#222222', primary: '#77bbee' }),
@@ -45,7 +46,7 @@ export const themes = [
   },
   {
     name: 'gray',
-    label: 'Gray',
+    label: _('Gray'),
     colors: {
       light: generateLightPalette({ fg: '#222222', bg: '#e0e0e0', primary: '#4488cc' }),
       dark: generateDarkPalette({ fg: '#c6c6c6', bg: '#444444', primary: '#88ccee' }),
@@ -53,7 +54,7 @@ export const themes = [
   },
   {
     name: 'sepia',
-    label: 'Sepia',
+    label: _('Sepia'),
     colors: {
       light: generateLightPalette({ fg: '#5b4636', bg: '#f1e8d0', primary: '#008b8b' }),
       dark: generateDarkPalette({ fg: '#ffd595', bg: '#342e25', primary: '#48d1cc' }),
@@ -61,7 +62,7 @@ export const themes = [
   },
   {
     name: 'grass',
-    label: 'Grass',
+    label: _('Grass'),
     colors: {
       light: generateLightPalette({ fg: '#232c16', bg: '#d7dbbd', primary: '#177b4d' }),
       dark: generateDarkPalette({ fg: '#d8deba', bg: '#333627', primary: '#a6d608' }),
@@ -69,7 +70,7 @@ export const themes = [
   },
   {
     name: 'cherry',
-    label: 'Cherry',
+    label: _('Cherry'),
     colors: {
       light: generateLightPalette({ fg: '#4e1609', bg: '#f0d1d5', primary: '#de3838' }),
       dark: generateDarkPalette({ fg: '#e5c4c8', bg: '#462f32', primary: '#ff646e' }),
@@ -77,7 +78,7 @@ export const themes = [
   },
   {
     name: 'sky',
-    label: 'Sky',
+    label: _('Sky'),
     colors: {
       light: generateLightPalette({ fg: '#262d48', bg: '#cedef5', primary: '#2d53e5' }),
       dark: generateDarkPalette({ fg: '#babee1', bg: '#282e47', primary: '#ff646e' }),
@@ -85,7 +86,7 @@ export const themes = [
   },
   {
     name: 'solarized',
-    label: 'Solarized',
+    label: _('Solarized'),
     colors: {
       light: generateLightPalette({ fg: '#586e75', bg: '#fdf6e3', primary: '#268bd2' }),
       dark: generateDarkPalette({ fg: '#93a1a1', bg: '#002b36', primary: '#268bd2' }),
@@ -93,7 +94,7 @@ export const themes = [
   },
   {
     name: 'gruvbox',
-    label: 'Gruvbox',
+    label: _('Gruvbox'),
     colors: {
       light: generateLightPalette({ fg: '#3c3836', bg: '#fbf1c7', primary: '#076678' }),
       dark: generateDarkPalette({ fg: '#ebdbb2', bg: '#282828', primary: '#83a598' }),
@@ -101,7 +102,7 @@ export const themes = [
   },
   {
     name: 'nord',
-    label: 'Nord',
+    label: _('Nord'),
     colors: {
       light: generateLightPalette({ fg: '#2e3440', bg: '#eceff4', primary: '#5e81ac' }),
       dark: generateDarkPalette({ fg: '#d8dee9', bg: '#2e3440', primary: '#88c0d0' }),

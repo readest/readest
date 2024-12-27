@@ -6,7 +6,3 @@ export const useTranslation = (namespace: string = 'translation') => {
 
   return (key: string, options = {}) => t(key, { defaultValue: key, ...options });
 };
-
-export const stubTranslation = (key: string) => {
-  return key;
-};

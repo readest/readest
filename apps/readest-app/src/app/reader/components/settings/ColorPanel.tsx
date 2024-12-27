@@ -84,7 +84,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               ) : (
                 <MdRadioButtonUnchecked size={24} />
               )}
-              <span>{label}</span>
+              <span>{_(label)}</span>
             </label>
           ))}
         </div>

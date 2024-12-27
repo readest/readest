@@ -119,7 +119,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label='Line Height'
+              label={_('Line Height')}
               value={lineHeight}
               onChange={setLineHeight}
               min={1.0}

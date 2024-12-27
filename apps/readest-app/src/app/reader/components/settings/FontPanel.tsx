@@ -152,7 +152,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label='Default Font Size'
+              label={_('Default Font Size')}
               value={defaultFontSize}
               onChange={setDefaultFontSize}
               min={minFontSize}
@@ -160,7 +160,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             />
             <NumberInput
               className='config-item-bottom'
-              label='Minimum Font Size'
+              label={_('Minimum Font Size')}
               value={minFontSize}
               onChange={setMinFontSize}
               min={1}

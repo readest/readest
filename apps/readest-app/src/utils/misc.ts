@@ -45,3 +45,7 @@ export const isValidURL = (url: string, allowedSchemes: string[] = ['http', 'htt
     return false;
   }
 };
+
+export const stubTranslation = (key: string) => {
+  return key;
+};

@@ -8,7 +8,7 @@ module.exports = {
       list: ['_'],
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
     },
-    lngs: ['de', 'ja', 'es', 'fr', 'it', 'ko', 'pt', 'ru', 'tr', 'vi', 'zh-CN', 'zh-TW'],
+    lngs: ['de', 'ja', 'es', 'fr', 'it', 'ko', 'pt', 'ru', 'tr', 'id', 'vi', 'zh-CN', 'zh-TW'],
     ns: ['translation'],
     defaultNs: 'translation',
     defaultValue: '__STRING_NOT_TRANSLATED__',
@@ -18,7 +18,7 @@ module.exports = {
       jsonIndent: 2,
       lineEnding: '\n',
     },
-    keySeparator: true,
+    keySeparator: false,
     nsSeparator: false,
     interpolation: {
       prefix: '{{',

@@ -1,4 +1,4 @@
-import { stubTranslation as _ } from '@/hooks/useTranslation';
+import { stubTranslation as _ } from '@/utils/misc';
 
 export const FILE_REVEAL_LABELS = {
   macos: _('Reveal in Finder'),
