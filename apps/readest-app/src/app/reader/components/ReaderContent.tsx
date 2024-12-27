@@ -23,6 +23,7 @@ import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
+import { eventDispatcher } from '@/utils/event';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const router = useRouter();
@@ -64,8 +65,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   useEffect(() => {
     if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
     window.addEventListener('beforeunload', handleCloseBooks);
+    eventDispatcher.on('quit-app', handleCloseBooks);
     return () => {
       window.removeEventListener('beforeunload', handleCloseBooks);
+      eventDispatcher.off('quit-app', handleCloseBooks);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKeys]);

@@ -23,7 +23,7 @@ class EventDispatcher {
     if (listeners) {
       const customEvent = new CustomEvent(event, { detail });
       for (const listener of listeners) {
-        listener(customEvent);
+        await listener(customEvent);
       }
     }
   }

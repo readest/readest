@@ -5,7 +5,7 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 
-import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import MenuItem from '@/components/MenuItem';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -32,8 +32,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [isInvertedColors, setInvertedColors] = useState(viewSettings!.invert);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
 
-  const zoomIn = () => setZoomLevel((prev) => Math.min(prev + 10, 200));
-  const zoomOut = () => setZoomLevel((prev) => Math.max(prev - 10, 50));
+  const zoomIn = () => setZoomLevel((prev) => Math.min(prev + 1, MAX_ZOOM_LEVEL));
+  const zoomOut = () => setZoomLevel((prev) => Math.max(prev - 1, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleInvertedColors = () => setInvertedColors(!isInvertedColors);
@@ -77,12 +77,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   useEffect(() => {
     const view = getView(bookKey);
     if (!view) return;
-    // FIXME: zoom level is not working in paginated mode
-    if (viewSettings?.scrolled) {
-      view.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
-    }
     viewSettings!.zoomLevel = zoomLevel;
     setViewSettings(bookKey, viewSettings!);
+    view.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomLevel]);
 
@@ -91,17 +88,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       tabIndex={0}
       className='view-menu dropdown-content dropdown-right no-triangle border-base-100 z-20 mt-1 w-72 border shadow-2xl'
     >
-      <div
-        className={clsx(
-          'flex items-center justify-between rounded-md',
-          !isScrolledMode && 'text-gray-400',
-        )}
-      >
+      <div className={clsx('flex items-center justify-between rounded-md')}>
         <button
           onClick={zoomOut}
           className={clsx(
             'hover:bg-base-200 text-base-content rounded-full p-2',
-            !isScrolledMode && 'btn-disabled text-gray-400',
+            zoomLevel <= MIN_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >
           <MdZoomOut size={20} />
@@ -109,17 +101,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         <button
           className={clsx(
             'hover:bg-base-200 text-base-content h-8 min-h-8 w-[50%] rounded-md p-1 text-center',
-            !isScrolledMode && 'btn-disabled text-gray-400',
           )}
           onClick={resetZoom}
         >
-          {zoomLevel}%
+          {100 - (100 - zoomLevel) * 10}%
         </button>
         <button
           onClick={zoomIn}
           className={clsx(
             'hover:bg-base-200 text-base-content rounded-full p-2',
-            !isScrolledMode && 'btn-disabled text-gray-400',
+            zoomLevel >= MAX_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >
           <MdZoomIn size={20} />

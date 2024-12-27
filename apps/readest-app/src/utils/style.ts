@@ -106,12 +106,14 @@ const getLayoutStyles = (
   }
   html, body {
     color: ${fg};
-    zoom: ${zoomLevel}%; 
   }
   body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
     border-color: currentColor !important;
     ${bg === '#ffffff' ? '' : `color: inherit;`}
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
+  }
+  body * {
+    zoom: ${zoomLevel};
   }
   svg, img {
     background-color: transparent !important;
@@ -159,8 +161,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
     viewSettings.lineHeight!,
     viewSettings.fullJustification!,
     viewSettings.hyphenation!,
-    // FIXME: zoom level is not working in paginated mode
-    viewSettings.scrolled ? viewSettings.zoomLevel! : 100,
+    viewSettings.zoomLevel! / 100.0,
     themeCode.bg,
     themeCode.fg,
     themeCode.primary,

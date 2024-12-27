@@ -6,12 +6,16 @@ export interface ShortcutConfig {
   onToggleScrollMode: string[];
   onOpenFontLayoutSettings: string[];
   onReloadPage: string[];
+  onQuitApp: string[];
   onGoLeft: string[];
   onGoRight: string[];
   onGoNext: string[];
   onGoPrev: string[];
   onGoBack: string[];
   onGoForward: string[];
+  onZoomIn: string[];
+  onZoomOut: string[];
+  onResetZoom: string[];
 }
 
 const DEFAULT_SHORTCUTS: ShortcutConfig = {
@@ -22,12 +26,16 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onToggleScrollMode: ['shift+j'],
   onOpenFontLayoutSettings: ['shift+f'],
   onReloadPage: ['shift+r'],
+  onQuitApp: ['ctrl+q', 'cmd+q'],
   onGoLeft: ['ArrowLeft', 'PageUp', 'h'],
   onGoRight: ['ArrowRight', 'PageDown', 'l'],
   onGoNext: ['ArrowDown', 'j'],
   onGoPrev: ['ArrowUp', 'k'],
   onGoBack: ['shift+ArrowLeft', 'shift+h'],
   onGoForward: ['shift+ArrowRight', 'shift+l'],
+  onZoomIn: ['ctrl+=', 'cmd+=', 'shift+='],
+  onZoomOut: ['ctrl+-', 'cmd+-', 'shift+-'],
+  onResetZoom: ['ctrl+0', 'cmd+0'],
 };
 
 // Load shortcuts from localStorage or fallback to defaults
