@@ -1,5 +1,5 @@
 import { EXTS } from '@/libs/document';
-import { Book, BookConfig } from '@/types/book';
+import { Book, BookConfig, BookProgress } from '@/types/book';
 import { getUserLang, makeSafeFilename } from './misc';
 
 export const getDir = (book: Book) => {
@@ -97,4 +97,16 @@ export const formatDate = (date: string | number | Date | undefined) => {
 export const formatSubject = (subject: string | string[] | undefined) => {
   if (!subject) return '';
   return Array.isArray(subject) ? subject.join(', ') : subject;
+};
+
+export const getCurrentPage = (book: Book, progress: BookProgress) => {
+  const bookFormat = book.format;
+  const { section, pageinfo } = progress;
+  return bookFormat === 'PDF'
+    ? section
+      ? section.current + 1
+      : 0
+    : pageinfo
+      ? pageinfo.current + 1
+      : 0;
 };

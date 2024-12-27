@@ -10,6 +10,7 @@ import { useEnv } from '@/context/EnvContext';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import Button from '@/components/Button';
+import { getCurrentPage } from '@/utils/book';
 
 interface BookmarkTogglerProps {
   bookKey: string;
@@ -19,10 +20,11 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, setBookmarkRibbonVisibility } = useReaderStore();
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey)!;
+  const bookData = getBookData(bookKey)!;
 
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -38,7 +40,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         id: uniqueId(),
         type: 'bookmark',
         cfi,
-        text: truncatedText,
+        text: truncatedText ? truncatedText : `${getCurrentPage(bookData.book!, progress)}`,
         note: '',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -49,6 +51,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
       if (existingBookmark) {
         existingBookmark.deletedAt = null;
         existingBookmark.updatedAt = Date.now();
+        existingBookmark.text = bookmark.text;
       } else {
         bookmarks.push(bookmark);
       }

@@ -26,7 +26,7 @@ const BooknoteView: React.FC<{
 
   const booknoteGroups: { [href: string]: BooknoteGroup } = {};
   for (const booknote of booknotes) {
-    const tocItem = findTocItemBS(toc, booknote.cfi);
+    const tocItem = findTocItemBS(toc ?? [], booknote.cfi);
     const href = tocItem?.href || '';
     const label = tocItem?.label || '';
     const id = tocItem?.id || 0;

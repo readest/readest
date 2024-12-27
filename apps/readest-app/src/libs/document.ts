@@ -57,8 +57,8 @@ export interface BookDoc {
     editor?: string;
     publisher?: string;
   };
-  toc: Array<TOCItem>;
-  sections: Array<SectionItem>;
+  toc?: Array<TOCItem>;
+  sections?: Array<SectionItem>;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
 }

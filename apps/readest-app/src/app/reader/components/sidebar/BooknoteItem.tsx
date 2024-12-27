@@ -62,7 +62,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, editable = f
       className={clsx(
         'border-base-300 my-2 cursor-pointer rounded-lg p-2 text-sm',
         editable && 'collapse-arrow collapse',
-        isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-200 bg-base-100',
+        isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',
       )}
       tabIndex={0}
       onClick={handleClickItem}

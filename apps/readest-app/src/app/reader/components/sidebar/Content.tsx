@@ -52,10 +52,10 @@ const SidebarContent: React.FC<{
             <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
           )}
           {activeTab === 'annotations' && (
-            <BooknoteView type='annotation' toc={bookDoc.toc} bookKey={sideBarBookKey} />
+            <BooknoteView type='annotation' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
           )}
           {activeTab === 'bookmarks' && (
-            <BooknoteView type='bookmark' toc={bookDoc.toc} bookKey={sideBarBookKey} />
+            <BooknoteView type='bookmark' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
           )}
         </div>
       </div>
