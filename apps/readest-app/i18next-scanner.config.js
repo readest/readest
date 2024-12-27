@@ -26,5 +26,6 @@ module.exports = {
     },
     metadata: {},
     allowDynamicKeys: true,
+    removeUnusedKeys: true,
   },
 };

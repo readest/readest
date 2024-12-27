@@ -5,6 +5,7 @@ import { BookConfig } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 
@@ -12,6 +13,7 @@ export const useProgressSync = (
   bookKey: string,
   setToastMessage?: React.Dispatch<React.SetStateAction<string>>,
 ) => {
+  const _ = useTranslation();
   const { getConfig, setConfig } = useBookDataStore();
   const { getView } = useReaderStore();
   const { settings } = useSettingsStore();
@@ -81,7 +83,7 @@ export const useProgressSync = (
           const configFraction = config!.progress![0] / config!.progress![1];
           if (syncedFraction > configFraction) {
             view?.goToFraction(syncedFraction);
-            setToastMessage?.('Progress synced');
+            setToastMessage?.(_('Reading progress synced'));
           }
         }
       }
