@@ -21,6 +21,7 @@ import {
   DEFAULT_BOOK_LAYOUT,
   DEFAULT_BOOK_STYLE,
   DEFAULT_BOOK_FONT,
+  DEFAULT_VIEW_CONFIG,
   DEFAULT_READSETTINGS,
   SYSTEM_SETTINGS_VERSION,
   DEFAULT_BOOK_SEARCH_CONFIG,
@@ -65,6 +66,7 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_BOOK_LAYOUT,
         ...DEFAULT_BOOK_STYLE,
         ...DEFAULT_BOOK_FONT,
+        ...DEFAULT_VIEW_CONFIG,
         ...settings.globalViewSettings,
       };
     } catch {
@@ -80,6 +82,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_BOOK_LAYOUT,
           ...DEFAULT_BOOK_STYLE,
           ...DEFAULT_BOOK_FONT,
+          ...DEFAULT_VIEW_CONFIG,
         },
       };
 
@@ -220,7 +223,7 @@ export abstract class BaseAppService implements AppService {
   }
 
   async fetchBookDetails(book: Book, settings: SystemSettings) {
-    const { file } = await this.loadBookContent(book, settings) as BookContent;
+    const { file } = (await this.loadBookContent(book, settings)) as BookContent;
     const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
     return bookDoc.metadata;
   }

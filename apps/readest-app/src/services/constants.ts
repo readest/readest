@@ -1,4 +1,4 @@
-import { BookFont, BookLayout, BookSearchConfig, BookStyle } from '@/types/book';
+import { BookFont, BookLayout, BookSearchConfig, BookStyle, ViewConfig } from '@/types/book';
 import { ReadSettings } from '@/types/settings';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
@@ -10,7 +10,6 @@ export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).j
 export const DEFAULT_READSETTINGS: ReadSettings = {
   sideBarWidth: '25%',
   isSideBarPinned: true,
-  sideBarTab: 'toc',
   notebookWidth: '25%',
   isNotebookPinned: false,
   autohideCursor: true,
@@ -55,6 +54,10 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   theme: 'light',
   overrideFont: false,
   userStylesheet: '',
+};
+
+export const DEFAULT_VIEW_CONFIG: ViewConfig = {
+  sideBarTab: 'toc',
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {

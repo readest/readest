@@ -75,7 +75,11 @@ export interface BookFont {
   fontWeight: number;
 }
 
-export interface ViewSettings extends BookLayout, BookStyle, BookFont {}
+export interface ViewConfig {
+  sideBarTab: string;
+}
+
+export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig {}
 
 export interface BookProgress {
   location: string;

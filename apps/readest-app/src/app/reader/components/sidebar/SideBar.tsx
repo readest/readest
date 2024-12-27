@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
-import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -23,15 +22,13 @@ const MAX_SIDEBAR_WIDTH = 0.45;
 const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
-  const { envConfig } = useEnv();
-  const { settings, saveSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
   const { getBookData } = useBookDataStore();
   const { getView } = useReaderStore();
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState(settings.globalReadSettings.sideBarTab);
   const {
     sideBarWidth,
     isSideBarPinned,
@@ -68,12 +65,6 @@ const SideBar: React.FC<{
 
   const handleClickOverlay = () => {
     setSideBarVisible(false);
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    settings.globalReadSettings.sideBarTab = tab;
-    saveSettings(envConfig, settings);
   };
 
   const handleToggleSearchBar = () => {
@@ -144,12 +135,7 @@ const SideBar: React.FC<{
             onSelectResult={handleSearchResultClick}
           />
         ) : (
-          <SidebarContent
-            activeTab={activeTab}
-            bookDoc={bookDoc}
-            sideBarBookKey={sideBarBookKey!}
-            onTabChange={handleTabChange}
-          />
+          <SidebarContent bookDoc={bookDoc} sideBarBookKey={sideBarBookKey!} />
         )}
         <div
           className='drag-bar absolute right-0 top-0 h-full w-0.5 cursor-col-resize'

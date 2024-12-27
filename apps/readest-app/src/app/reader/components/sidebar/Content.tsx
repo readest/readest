@@ -1,18 +1,20 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
+import { useBookDataStore } from '@/store/bookDataStore';
 import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
 
 const SidebarContent: React.FC<{
-  activeTab: string;
   bookDoc: BookDoc;
   sideBarBookKey: string;
-  onTabChange: (tab: string) => void;
-}> = ({ activeTab, bookDoc, sideBarBookKey, onTabChange }) => {
+}> = ({ bookDoc, sideBarBookKey }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { getConfig, setConfig } = useBookDataStore();
+  const config = getConfig(sideBarBookKey);
+  const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -39,6 +41,20 @@ const SidebarContent: React.FC<{
     };
   }, []);
 
+  useEffect(() => {
+    if (!sideBarBookKey) return;
+    const config = getConfig(sideBarBookKey!)!;
+    setActiveTab(config.viewSettings!.sideBarTab!);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const config = getConfig(sideBarBookKey!)!;
+    config.viewSettings!.sideBarTab = tab;
+    setConfig(sideBarBookKey!, config);
+  };
+
   return (
     <>
       <div
@@ -60,7 +76,7 @@ const SidebarContent: React.FC<{
         </div>
       </div>
       <div className='flex-shrink-0'>
-        <TabNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
     </>
   );
