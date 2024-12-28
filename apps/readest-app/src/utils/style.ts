@@ -20,10 +20,13 @@ const getFontStyles = (
       --sans-serif: ${sansSerifFonts.map((font) => `"${font}"`).join(', ')}, sans-serif;
       --monospace: ${monospaceFonts.map((font) => `"${font}"`).join(', ')}, monospace;
     }
-    body * {
-      font-size: ${fontSize}px ${overrideFont ? '!important' : ''};
-      font-family: revert ${overrideFont ? '!important' : ''};
+    body {
       font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
+      font-size: ${fontSize}px ${overrideFont ? '!important' : ''};
+    }
+    body * {
+      font-family: revert ${overrideFont ? '!important' : ''};
+      font-family: inherit;
     }
   `;
   return fontStyles;
@@ -57,6 +60,15 @@ const getAdditionalFontFaces = () => `
     url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.ttf")format("truetype"),
     url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.svg#WenQuanYi Micro Hei")format("svg");
   }
+  @font-face {
+    font-family: "XiHeiti";
+    src: url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot");
+    src: url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot?#iefix")format("embedded-opentype"),
+    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff2")format("woff2"),
+    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff")format("woff"),
+    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.ttf")format("truetype"),
+    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.svg#STHeiti J Light")format("svg");
+}
 `;
 
 const getLayoutStyles = (
@@ -74,7 +86,7 @@ const getLayoutStyles = (
     color: ${fg};
   }
   a:any-link {
-    color: ${primary};
+    color: ${primary} ${bg === '#ffffff' ? '' : '!important'};
   }
   aside[epub|type~="footnote"] {
     display: none;
@@ -87,6 +99,8 @@ const getLayoutStyles = (
   }
   
   html {
+    --theme-bg-color: ${bg};
+    --default-text-align: ${justify ? 'justify' : 'start'};
     line-height: ${spacing};
     hanging-punctuation: allow-end last;
     orphans: 2;
@@ -104,8 +118,14 @@ const getLayoutStyles = (
       white-space: pre-wrap !important;
       tab-size: 2;
   }
+  html[has-background], body[has-background] {
+    --background-set: var(--theme-bg-color);
+  }
   html, body {
     color: ${fg};
+    text-align: var(--default-text-align);
+    background-color: var(--theme-bg-color, transparent);
+    background: var(--background-set, none);
   }
   body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
     border-color: currentColor !important;
@@ -119,7 +139,7 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    text-align: ${justify ? 'justify' : 'start'};
+    text-align: inherit;
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
