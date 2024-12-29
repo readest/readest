@@ -29,11 +29,11 @@ export const INIT_BOOK_CONFIG: BookConfig = {
   updatedAt: 0,
 };
 
-interface LanguageMap {
+export interface LanguageMap {
   [key: string]: string;
 }
 
-interface Contributor {
+export interface Contributor {
   name: LanguageMap;
 }
 

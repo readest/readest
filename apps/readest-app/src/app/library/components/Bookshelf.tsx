@@ -20,10 +20,10 @@ import { navigateToReader } from '@/utils/nav';
 import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
-import { isTauriAppPlatform } from '@/services/environment';
 import BookDetailModal from '@/components/BookDetailModal';
 
 type BookshelfItem = Book | BooksGroup;
@@ -71,16 +71,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
   const [clickedImage, setClickedImage] = useState<string | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
   const isImportingBook = useRef(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
 
-  const showMoreDetails = (book: Book) => {
-    setIsModalOpen(true);
-    setSelectedBook(book);
+  const showBookDetailsModal = (book: Book) => {
+    setShowDetailsBook(book);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const dismissBookDetailsModal = () => {
+    setShowDetailsBook(null);
   };
 
   const { setLibrary } = useLibraryStore();
@@ -154,11 +152,23 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     const osPlatform = getOSPlatform();
     const fileRevealLabel =
       FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
+    const openBookMenuItem = await MenuItem.new({
+      text: isSelectMode ? _('Select Book') : _('Open Book'),
+      action: async () => {
+        handleBookClick(book.hash);
+      },
+    });
     const showBookInFinderMenuItem = await MenuItem.new({
       text: _(fileRevealLabel),
       action: async () => {
         const folder = `${settings.localBooksDir}/${getFilename(book)}`;
         revealItemInDir(folder);
+      },
+    });
+    const showBookDetailsMenuItem = await MenuItem.new({
+      text: _('Show Book Details'),
+      action: async () => {
+        showBookDetailsModal(book);
       },
     });
     const deleteBookMenuItem = await MenuItem.new({
@@ -168,6 +178,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
       },
     });
     const menu = await Menu.new();
+    menu.append(openBookMenuItem);
+    menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
     menu.append(deleteBookMenuItem);
     menu.popup();
@@ -179,7 +191,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
         {bookshelfItems.map((item, index) => (
           <div
             key={`library-item-${index}`}
-            className='hover:bg-base-300/50 flex h-full flex-col p-4'
+            className='hover:bg-base-300/50 group flex h-full flex-col p-4'
           >
             <div className='flex-grow'>
               {'format' in item ? (
@@ -230,17 +242,19 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                       )}
                     </div>
                   </div>
-                  <div className='card-body flex flex-row items-center justify-between p-0 pt-2'>
+                  <div className='flex flex-row items-center justify-between p-0 pt-2'>
                     <h4 className='card-title line-clamp-1 text-[0.6em] text-xs font-semibold'>
                       {(item as Book).title}
                     </h4>
-                    <div
-                      className='card-detail'
-                      role='button'
-                      onClick={showMoreDetails.bind(null, item as Book)}
-                    >
-                      <CiCircleMore size={15} />
-                    </div>
+                    {isWebAppPlatform() && (
+                      <div
+                        className='show-detail-button self-start opacity-0 group-hover:opacity-100'
+                        role='button'
+                        onClick={showBookDetailsModal.bind(null, item as Book)}
+                      >
+                        <CiCircleMore size={15} />
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -301,8 +315,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
         />
       )}
 
-      {selectedBook && (
-        <BookDetailModal isOpen={isModalOpen} book={selectedBook} onClose={closeModal} />
+      {showDetailsBook && (
+        <BookDetailModal
+          isOpen={!!showDetailsBook}
+          book={showDetailsBook}
+          onClose={dismissBookDetailsModal}
+        />
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatDate, formatSubject } from '@/utils/book';
 import WindowButtons from '@/components/WindowButtons';
 import Spinner from './Spinner';
+import { BookDoc } from '@/libs/document';
 
 interface BookDetailModalProps {
   book: Book;
@@ -19,18 +20,24 @@ interface BookDetailModalProps {
 const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [bookMeta, setBookMeta] = useState<null | {
-    title: string;
-    language: string | string[];
-    editor?: string;
-    publisher?: string;
-    published?: string;
-    description?: string;
-    subject?: string[];
-    identifier?: string;
-  }>(null);
+  const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
@@ -101,7 +108,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
             <div className='title-author flex h-40 flex-col justify-between pr-4'>
               <div>
                 <h2 className='text-base-content mb-2 line-clamp-2 text-2xl font-bold'>
-                  {bookMeta.title || _('Untitled')}
+                  {book.title || _('Untitled')}
                 </h2>
                 <p className='text-neutral-content line-clamp-1'>{book.author || _('Unknown')}</p>
               </div>

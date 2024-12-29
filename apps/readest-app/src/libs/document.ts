@@ -1,4 +1,5 @@
 import { BookFormat } from '@/types/book';
+import { Contributor, LanguageMap } from '@/utils/book';
 import * as epubcfi from 'foliate-js/epubcfi.js';
 
 // A groupBy polyfill for foliate-js
@@ -51,11 +52,16 @@ export interface SectionItem {
 
 export interface BookDoc {
   metadata: {
-    title: string;
-    author: string;
+    // NOTE: the title and author fields should be formated
+    title: string | LanguageMap;
+    author: string | Contributor;
     language: string | string[];
     editor?: string;
     publisher?: string;
+    published?: string;
+    description?: string;
+    subject?: string[];
+    identifier?: string;
   };
   toc?: Array<TOCItem>;
   sections?: Array<SectionItem>;
