@@ -10,9 +10,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.get-release.outputs.result }}
-      release_note: ${{ steps.get-release-notes.outputs.result }}
 
     steps:
       - uses: actions/checkout@v3
@@ -29,7 +26,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             })
-            return data.id
+            core.setOutput('release_id', data.id);
       - name: get release notes
         id: get-release-notes
         uses: actions/github-script@v6
@@ -42,7 +39,7 @@ jobs:
             const notes = releaseNotes.notes || [];
             const releaseNote = notes.map((note, index) => `${index + 1}. ${note}`).join(' ');
             console.log('Formatted release note:', releaseNote);
-            return releaseNote;
+            core.setOutput('release_note', releaseNote);
 
   build-tauri:
     needs: get-release
@@ -132,8 +129,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: apps/readest-app
-          releaseId: ${{ needs.get-release.outputs.release_id }}
-          releaseBody: ${{ needs.get-release.outputs.release_note }}
+          releaseId: ${{ needs.get-release.steps.get-release.outputs.release_id }}
+          releaseBody: ${{ needs.get-release.steps.get-release-notes.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
 
   update-release:
@@ -147,8 +144,8 @@ jobs:
         id: update-release
         uses: actions/github-script@v6
         env:
-          release_id: ${{ needs.get-release.outputs.release_id }}
-          release_note: ${{ needs.get-release.outputs.release_note }}
+          release_id: ${{ needs.get-release.steps.get-release.outputs.release_id }}
+          release_note: ${{ needs.get-release.steps.get-release-notes.outputs.release_note }}
         with:
           script: |
             github.rest.repos.updateRelease({

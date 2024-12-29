@@ -1,5 +1,12 @@
 {
   "releases": {
+    "0.8.8": {
+      "date": "2024-12-29",
+      "notes": [
+        "Use readest binary name for better CLI interface.",
+        "Some CSS tweaks to better support dark mode and embedded fonts."
+      ]
+    },
     "0.8.7": {
       "date": "2024-12-27",
       "notes": [
