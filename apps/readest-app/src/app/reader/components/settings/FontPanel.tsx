@@ -3,18 +3,27 @@ import React, { useEffect, useState } from 'react';
 
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
-import { MONOSPACE_FONTS, SANS_SERIF_FONTS, SERIF_FONTS } from '@/services/constants';
+import {
+  LINUX_FONTS,
+  MACOS_FONTS,
+  MONOSPACE_FONTS,
+  SANS_SERIF_FONTS,
+  SERIF_FONTS,
+  WINDOWS_FONTS,
+} from '@/services/constants';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
+import { getOSPlatform } from '@/utils/misc';
 
 interface FontFaceProps {
   className?: string;
   family: string;
   label: string;
   options: string[];
+  moreOptions?: string[];
   selected: string;
   onSelect: (option: string) => void;
 }
@@ -25,12 +34,21 @@ const handleFontFaceFont = (option: string, family: string) => {
   return `'${option}', ${family}`;
 };
 
-const FontFace = ({ className, family, label, options, selected, onSelect }: FontFaceProps) => (
+const FontFace = ({
+  className,
+  family,
+  label,
+  options,
+  moreOptions,
+  selected,
+  onSelect,
+}: FontFaceProps) => (
   <div className={clsx('config-item', className)}>
     <span className=''>{label}</span>
     <FontDropdown
       family={family}
       options={options}
+      moreOptions={moreOptions}
       selected={selected}
       onSelect={onSelect}
       onGetFontFamily={handleFontFaceFont}
@@ -46,6 +64,21 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const viewSettings = getViewSettings(bookKey)!;
   const { themeCode } = useTheme();
 
+  const osPlatform = getOSPlatform();
+  let moreFonts: string[] = [];
+  switch (osPlatform) {
+    case 'macos':
+      moreFonts = MACOS_FONTS;
+      break;
+    case 'windows':
+      moreFonts = WINDOWS_FONTS;
+      break;
+    case 'linux':
+      moreFonts = LINUX_FONTS;
+      break;
+    default:
+      break;
+  }
   const [defaultFontSize, setDefaultFontSize] = useState(viewSettings.defaultFontSize!);
   const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize!);
   const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont!);
@@ -206,6 +239,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='serif'
               label={_('Serif Font')}
               options={SERIF_FONTS}
+              moreOptions={moreFonts}
               selected={serifFont}
               onSelect={setSerifFont}
             />
@@ -213,6 +247,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='sans-serif'
               label={_('Sans-Serif Font')}
               options={SANS_SERIF_FONTS}
+              moreOptions={moreFonts}
               selected={sansSerifFont}
               onSelect={setSansSerifFont}
             />
@@ -221,6 +256,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='monospace'
               label={_('Monospace Font')}
               options={MONOSPACE_FONTS}
+              moreOptions={moreFonts}
               selected={monospaceFont}
               onSelect={setMonospaceFont}
             />

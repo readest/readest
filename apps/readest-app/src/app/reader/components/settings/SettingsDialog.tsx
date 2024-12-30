@@ -39,7 +39,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
 
   return (
     <dialog className='modal modal-open min-w-90 w-full !bg-[rgba(0,0,0,0.2)]'>
-      <div className='modal-box settings-content flex h-[60%] w-1/2 min-w-[480px] max-w-full flex-col p-0'>
+      <div className='modal-box settings-content flex h-[65%] w-1/2 min-w-[540px] max-w-full flex-col p-0'>
         <div className='dialog-header bg-base-100 sticky top-0 z-10 flex items-center justify-center px-4 pt-2'>
           <div className='dialog-tabs flex h-10 max-w-[80%] flex-grow items-center justify-around'>
             <button
