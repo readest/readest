@@ -10,7 +10,8 @@ import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
 
-const MINIMUM_SEARCH_TERM_LENGTH = 2;
+const MINIMUM_SEARCH_TERM_LENGTH_DEFAULT = 2;
+const MINIMUM_SEARCH_TERM_LENGTH_CJK = 1;
 
 interface SearchBarProps {
   isVisible: boolean;
@@ -97,8 +98,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
     handleSearchTermChange(searchTerm);
   };
 
+  const exceedMinSearchTermLength = (searchTerm: string) => {
+    const isCJK = /[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]/.test(searchTerm);
+    const minLength = isCJK ? MINIMUM_SEARCH_TERM_LENGTH_CJK : MINIMUM_SEARCH_TERM_LENGTH_DEFAULT;
+
+    return searchTerm.length >= minLength;
+  };
+
   const handleSearchTermChange = (term: string) => {
-    if (term.length >= MINIMUM_SEARCH_TERM_LENGTH) {
+    if (exceedMinSearchTermLength(term)) {
       handleSearch(term);
     } else {
       resetSearch();
@@ -118,7 +126,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onSearchResultChange([...results]);
           isSearchPending.current = false;
           console.log('search done');
-          if (queuedSearchTerm.current !== term && queuedSearchTerm.current.length > 2) {
+          if (
+            queuedSearchTerm.current !== term &&
+            exceedMinSearchTermLength(queuedSearchTerm.current)
+          ) {
             handleSearch(queuedSearchTerm.current);
           }
         }
