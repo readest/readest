@@ -9,21 +9,23 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { Book } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { parseOpenWithFiles } from '@/helpers/cli';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
+import { eventDispatcher } from '@/utils/event';
 import { navigateToLibrary } from '@/utils/nav';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
+import BookDetailModal from '@/components/BookDetailModal';
 import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
-import { eventDispatcher } from '@/utils/event';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const router = useRouter();
@@ -35,6 +37,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { getConfig, getBookData, saveConfig } = useBookDataStore();
   const { getView, setBookKeys } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
+  const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
 
@@ -59,6 +62,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         if (index === 0) setSideBarBookKey(key);
       }
     });
+
+    const handleShowBookDetails = (event: CustomEvent) => {
+      const book = event.detail as Book;
+      setShowDetailsBook(book);
+      return true;
+    };
+    eventDispatcher.onSync('show-book-details', handleShowBookDetails);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -139,6 +149,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
       <Notebook />
+      {showDetailsBook && (
+        <BookDetailModal
+          isOpen={!!showDetailsBook}
+          book={showDetailsBook}
+          onClose={() => setShowDetailsBook(null)}
+        />
+      )}
     </div>
   );
 };

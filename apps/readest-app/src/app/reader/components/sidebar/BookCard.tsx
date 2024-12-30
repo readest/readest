@@ -1,20 +1,22 @@
 import React from 'react';
 import Image from 'next/image';
 import { MdInfoOutline } from 'react-icons/md';
+import { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 
-interface BookCardProps {
-  cover: string;
-  title: string;
-  author: string;
-}
-
-const BookCard: React.FC<BookCardProps> = ({ cover, title, author }) => {
+const BookCard = ({ book }: { book: Book }) => {
+  const { coverImageUrl, title, author } = book;
   const _ = useTranslation();
+
+  const showBookDetails = () => {
+    eventDispatcher.dispatchSync('show-book-details', book);
+  };
+
   return (
     <div className='flex h-20 w-full items-center'>
       <Image
-        src={cover}
+        src={coverImageUrl!}
         alt={_('Book Cover')}
         width={56}
         height={80}
@@ -31,7 +33,7 @@ const BookCard: React.FC<BookCardProps> = ({ cover, title, author }) => {
         className='btn btn-ghost hover:bg-base-300 h-6 min-h-6 w-6 rounded-full p-0 transition-colors'
         aria-label={_('More Info')}
       >
-        <MdInfoOutline size={18} className='fill-base-content' />
+        <MdInfoOutline size={18} className='fill-base-content' onClick={showBookDetails} />
       </button>
     </div>
   );
