@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
+import { useEnv } from '@/context/EnvContext';
 
 import { tauriHandleMinimize, tauriHandleToggleMaximize, tauriHandleClose } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -44,6 +45,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   onClose,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const { appService } = useEnv();
 
   const handleMouseDown = async (e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -110,7 +112,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         className,
       )}
     >
-      {showMinimize && (
+      {showMinimize && appService?.hasWindowBar && (
         <WindowButton onClick={handleMinimize} ariaLabel='Minimize' id='titlebar-minimize'>
           <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
             <path fill='currentColor' d='M20 14H4v-2h16' />
@@ -118,7 +120,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         </WindowButton>
       )}
 
-      {showMaximize && (
+      {showMaximize && appService?.hasWindowBar && (
         <WindowButton onClick={handleMaximize} ariaLabel='Maximize/Restore' id='titlebar-maximize'>
           <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
             <path fill='currentColor' d='M4 4h16v16H4zm2 4v10h12V8z' />
@@ -126,7 +128,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         </WindowButton>
       )}
 
-      {showClose && (
+      {showClose && (appService?.hasWindowBar || onClose) && (
         <WindowButton onClick={handleClose} ariaLabel='Close' id='titlebar-close'>
           <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
             <path

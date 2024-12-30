@@ -119,6 +119,7 @@ export class NativeAppService extends BaseAppService {
   appPlatform = 'tauri' as AppPlatform;
   isAppDataSandbox = isMobile;
   hasTrafficLight = osType() === 'macos';
+  hasWindowBar = !(osType() === 'ios' || osType() === 'android');
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

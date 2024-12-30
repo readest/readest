@@ -8,7 +8,7 @@ import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
 import { navigateToReader } from '@/utils/nav';
 import { parseOpenWithFiles } from '@/helpers/cli';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, hasUpdater } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
 
@@ -46,7 +46,7 @@ const LibraryPage = () => {
 
   useEffect(() => {
     const doAppUpdates = async () => {
-      if (isTauriAppPlatform()) {
+      if (hasUpdater()) {
         await checkForAppUpdates();
       }
     };

@@ -23,6 +23,7 @@ export interface AppService {
   fs: FileSystem;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
+  hasWindowBar: boolean;
   isAppDataSandbox: boolean;
 
   selectFiles(name: string, extensions: string[]): Promise<string[]>;

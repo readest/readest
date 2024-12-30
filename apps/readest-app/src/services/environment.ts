@@ -1,7 +1,16 @@
 import { AppService } from '@/types/system';
 
+declare global {
+  interface Window {
+    __READEST_CLI_ACCESS?: boolean;
+    __READEST_UPDATER_ACCESS?: boolean;
+  }
+}
+
 export const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 export const isWebAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
+export const hasUpdater = () => window.__READEST_UPDATER_ACCESS === true;
+export const hasCli = () => window.__READEST_CLI_ACCESS === true;
 
 export interface EnvConfigType {
   getAppService: () => Promise<AppService>;

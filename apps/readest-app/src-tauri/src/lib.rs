@@ -74,7 +74,6 @@ async fn start_server(window: Window) -> Result<u16, String> {
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![start_server])
         .plugin(tauri_plugin_shell::init())
@@ -83,6 +82,9 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init());
+
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(tauri_traffic_light_positioner_plugin::init());
@@ -120,8 +122,19 @@ pub fn run() {
                     });
                 }
             }
+
             #[cfg(desktop)]
-            app.handle().plugin(tauri_plugin_cli::init())?;
+            {
+                app.handle().plugin(tauri_plugin_cli::init())?;
+
+                let app_handle = app.handle().clone();
+                app.listen("window-ready", move |_| {
+                    app_handle.get_webview_window("main").unwrap()
+                        .eval("window.__READEST_CLI_ACCESS = true; window.__READEST_UPDATER_ACCESS = true;")
+                        .expect("Failed to set cli access config");
+                });
+            }
+
             #[cfg(desktop)]
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -130,7 +143,11 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+
+            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
+
+            #[cfg(desktop)]
+            let win_builder = win_builder
                 .inner_size(800.0, 600.0)
                 .resizable(true)
                 .maximized(true);
@@ -141,7 +158,7 @@ pub fn run() {
                 .title_bar_style(TitleBarStyle::Overlay)
                 .title("");
 
-            #[cfg(not(target_os = "macos"))]
+            #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = win_builder
                 .decorations(false)
                 .transparent(true)
@@ -163,7 +180,7 @@ pub fn run() {
         .run(
             #[allow(unused_variables)]
             |app_handle, event| {
-                #[cfg(any(target_os = "macos", target_os = "ios"))]
+                #[cfg(target_os = "macos")]
                 if let tauri::RunEvent::Opened { urls } = event {
                     let files = urls
                         .into_iter()

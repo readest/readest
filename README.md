@@ -149,6 +149,11 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 ```bash
 pnpm tauri dev
 ```
+For ios:
+
+```bash
+pnpm tauri ios dev
+```
 
 ### 5. Build for Production
 
