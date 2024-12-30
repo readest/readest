@@ -160,21 +160,15 @@ const Notebook: React.FC = ({}) => {
                   >
                     <p className='line-clamp-1'>{item.text || `Excerpt ${index + 1}`}</p>
                   </div>
-                  <div
-                    className='collapse-content select-text px-3 pb-0 text-xs'
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <div className='collapse-content select-text px-3 pb-0 text-xs'>
                     <p className='hyphens-auto text-justify'>{item.text}</p>
                     <div className='flex justify-end'>
-                      <button
-                        className={clsx(
-                          'btn btn-ghost settings-content hover:bg-transparent',
-                          'flex h-[1em] min-h-[1em] items-end p-0',
-                        )}
+                      <div
+                        className='cursor-pointer align-bottom text-xs text-red-400'
                         onClick={handleEditNote.bind(null, item, true)}
                       >
-                        <div className='align-bottom text-xs text-red-400'>{_('Delete')}</div>
-                      </button>
+                        {_('Delete')}
+                      </div>
                     </div>
                   </div>
                 </div>

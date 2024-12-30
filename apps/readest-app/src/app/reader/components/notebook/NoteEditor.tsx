@@ -57,7 +57,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
             className={clsx(
               'note-editor textarea textarea-ghost min-h-[1em] resize-none !outline-none',
               'inset-0 w-full rounded-none border-0 bg-transparent p-0 leading-normal',
-              'text-base',
+              'text-sm',
             )}
             ref={editorRef}
             value={note}
@@ -70,7 +70,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
         <button
           className={clsx(
             'btn btn-ghost settings-content hover:bg-transparent',
-            'flex h-[1.5em] min-h-[1.5em] items-end p-0',
+            'flex h-[1.3em] min-h-[1.3em] items-end p-0',
             editorRef.current && editorRef.current.value ? '' : 'btn-disabled !bg-opacity-0',
           )}
           onClick={handleSaveNote}
