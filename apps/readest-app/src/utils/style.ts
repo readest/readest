@@ -101,7 +101,6 @@ const getLayoutStyles = (
   html {
     --theme-bg-color: ${bg};
     --default-text-align: ${justify ? 'justify' : 'start'};
-    line-height: ${spacing};
     hanging-punctuation: allow-end last;
     orphans: 2;
     widows: 2;
@@ -139,6 +138,7 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
+    line-height: ${spacing} !important;
     text-align: inherit;
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
