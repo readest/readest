@@ -25,6 +25,7 @@
   "Edit": "Chỉnh sửa",
   "Enter your custom CSS here...": "Nhập CSS tùy chỉnh của bạn vào đây...",
   "Excerpts": "Trích dẫn",
+  "Failed to import book(s): {{filenames}}": "Không thể nhập sách: {{filenames}}",
   "Font": "Phông chữ",
   "Font & Layout": "Phông chữ & Bố cục",
   "Font Face": "Kiểu chữ",

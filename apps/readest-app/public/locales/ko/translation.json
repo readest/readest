@@ -25,6 +25,7 @@
   "Edit": "편집",
   "Enter your custom CSS here...": "여기에 사용자 정의 CSS를 입력하세요...",
   "Excerpts": "발췌",
+  "Failed to import book(s): {{filenames}}": "책 가져오기 실패: {{filenames}}",
   "Font": "글꼴",
   "Font & Layout": "글꼴 및 레이아웃",
   "Font Face": "글꼴 스타일",

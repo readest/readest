@@ -94,8 +94,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const saveConfigAndCloseBook = async (bookKey: string) => {
     console.log('Closing book', bookKey);
-    getView(bookKey)?.close();
-    getView(bookKey)?.remove();
+    try {
+      getView(bookKey)?.close();
+      getView(bookKey)?.remove();
+    } catch {
+      console.info('Error closing book', bookKey);
+    }
     await saveBookConfig(bookKey);
     clearViewState(bookKey);
   };

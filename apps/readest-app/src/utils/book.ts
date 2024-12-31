@@ -46,8 +46,8 @@ const formatLanguageMap = (x: string | LanguageMap): string => {
   return x[userLang] || x[keys[0]!]!;
 };
 
-const listFormat = (lang: string) => {
-  if (lang === 'zh') {
+export const listFormater = (narrow = false, lang = userLang) => {
+  if (narrow) {
     return new Intl.ListFormat('en', { style: 'narrow', type: 'unit' });
   } else {
     return new Intl.ListFormat(lang, { style: 'long', type: 'conjunction' });
@@ -66,9 +66,10 @@ const getBookLangCode = (lang: string | string[] | undefined) => {
 export const formatAuthors = (
   bookLang: string | string[] | undefined,
   contributors: string | Contributor | [string | Contributor],
-) =>
-  Array.isArray(contributors)
-    ? listFormat(getBookLangCode(bookLang)).format(
+) => {
+  const langCode = getBookLangCode(bookLang);
+  return Array.isArray(contributors)
+    ? listFormater(langCode === 'zh', langCode).format(
         contributors.map((contributor) =>
           typeof contributor === 'string' ? contributor : formatLanguageMap(contributor?.name),
         ),
@@ -76,7 +77,7 @@ export const formatAuthors = (
     : typeof contributors === 'string'
       ? contributors
       : formatLanguageMap(contributors?.name);
-
+};
 export const formatTitle = (title: string | LanguageMap) => {
   return typeof title === 'string' ? title : formatLanguageMap(title);
 };

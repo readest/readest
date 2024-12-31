@@ -25,6 +25,7 @@
   "Edit": "編集",
   "Enter your custom CSS here...": "ここにカスタムCSSを入力...",
   "Excerpts": "抜粋",
+  "Failed to import book(s): {{filenames}}": "書籍のインポートに失敗しました：{{filenames}}",
   "Font": "フォント",
   "Font & Layout": "フォントとレイアウト",
   "Font Face": "書体",

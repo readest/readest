@@ -25,6 +25,7 @@
   "Edit": "Редактировать",
   "Enter your custom CSS here...": "Введите ваш пользовательский CSS здесь...",
   "Excerpts": "Отрывки",
+  "Failed to import book(s): {{filenames}}": "Не удалось импортировать книгу(и): {{filenames}}",
   "Font": "Шрифт",
   "Font & Layout": "Шрифт и макет",
   "Font Face": "Начертание шрифта",

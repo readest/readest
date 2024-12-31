@@ -25,6 +25,7 @@
   "Edit": "Modifier",
   "Enter your custom CSS here...": "Saisissez votre CSS personnalisé ici...",
   "Excerpts": "Extraits",
+  "Failed to import book(s): {{filenames}}": "Échec de l'importation du/des livre(s) : {{filenames}}",
   "Font": "Police",
   "Font & Layout": "Police et mise en page",
   "Font Face": "Style de police",

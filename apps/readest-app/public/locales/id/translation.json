@@ -25,6 +25,7 @@
   "Edit": "Edit",
   "Enter your custom CSS here...": "Masukkan CSS kustom Anda di sini...",
   "Excerpts": "Kutipan",
+  "Failed to import book(s): {{filenames}}": "Gagal mengimpor buku: {{filenames}}",
   "Font": "Font",
   "Font & Layout": "Font & Tata Letak",
   "Font Face": "Jenis Font",

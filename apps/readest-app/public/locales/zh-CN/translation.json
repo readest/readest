@@ -25,6 +25,7 @@
   "Edit": "编辑",
   "Enter your custom CSS here...": "在此处输入您的自定义 CSS...",
   "Excerpts": "摘录",
+  "Failed to import book(s): {{filenames}}": "导入书籍失败：{{filenames}}",
   "Font": "字体",
   "Font & Layout": "字体和布局",
   "Font Face": "字型",

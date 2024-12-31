@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
 import { navigateToReader } from '@/utils/nav';
+import { getBaseFilename, listFormater } from '@/utils/book';
 import { parseOpenWithFiles } from '@/helpers/cli';
 import { isTauriAppPlatform, hasUpdater } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
@@ -24,6 +25,7 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import { AboutWindow } from '@/components/AboutWindow';
+import Toast from '@/components/Toast';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -43,6 +45,16 @@ const LibraryPage = () => {
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const demoBooks = useDemoBooks();
+
+  const [toastMessage, setToastMessage] = useState('');
+  const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
+    toastDismissTimeout.current = setTimeout(() => setToastMessage(''), 5000);
+    return () => {
+      if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
+    };
+  }, [toastMessage]);
 
   useEffect(() => {
     const doAppUpdates = async () => {
@@ -149,9 +161,22 @@ const LibraryPage = () => {
 
   const importBooks = async (files: [string | File]) => {
     setLoading(true);
+    const failedFiles = [];
     for (const file of files) {
-      await appService?.importBook(file, libraryBooks);
-      setLibrary(libraryBooks);
+      try {
+        await appService?.importBook(file, libraryBooks);
+        setLibrary(libraryBooks);
+      } catch (error) {
+        const filename = typeof file === 'string' ? file : file.name;
+        const baseFilename = getBaseFilename(filename);
+        failedFiles.push(baseFilename);
+        setToastMessage(
+          _('Failed to import book(s): {{filenames}}', {
+            filenames: listFormater(false).format(failedFiles),
+          }),
+        );
+        console.error('Failed to import book:', filename, error);
+      }
     }
     appService?.saveLibraryBooks(libraryBooks);
     setLoading(false);
@@ -253,6 +278,13 @@ const LibraryPage = () => {
           </div>
         ))}
       <AboutWindow />
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          toastClass='toast-top toast-end pt-11'
+          alertClass='alert-error max-w-80'
+        />
+      )}
     </div>
   );
 };

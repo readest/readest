@@ -8,7 +8,7 @@ const Toast: React.FC<{ message: string; toastClass?: string; alertClass?: strin
 }) => (
   <div className={clsx('toast toast-center toast-middle', toastClass)}>
     <div className={clsx('alert flex items-center justify-center border-0', alertClass)}>
-      <span>{message}</span>
+      <span className='whitespace-normal break-words'>{message}</span>
     </div>
   </div>
 );

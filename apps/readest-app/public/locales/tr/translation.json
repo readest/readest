@@ -25,6 +25,7 @@
   "Edit": "Düzenle",
   "Enter your custom CSS here...": "Özel CSS'nizi buraya girin...",
   "Excerpts": "Alıntılar",
+  "Failed to import book(s): {{filenames}}": "Kitap(lar) içe aktarılamadı: {{filenames}}",
   "Font": "Yazı Tipi",
   "Font & Layout": "Yazı Tipi ve Düzen",
   "Font Face": "Yazı Tipi Yüzü",
