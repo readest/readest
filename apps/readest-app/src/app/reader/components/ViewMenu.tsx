@@ -86,7 +86,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   return (
     <div
       tabIndex={0}
-      className='view-menu dropdown-content dropdown-right no-triangle border-base-100 z-20 mt-1 w-72 border shadow-2xl'
+      className='view-menu dropdown-content bgcolor-base-200 dropdown-right no-triangle border-base-200 z-20 mt-1 w-72 border shadow-2xl'
     >
       <div className={clsx('flex items-center justify-between rounded-md')}>
         <button

@@ -117,6 +117,14 @@ foliate-view {
   z-index: 0;
 }
 
+.dropdown-content.bgcolor-base-200 {
+  background-color: theme('colors.base-200');
+}
+.dropdown-content.bgcolor-base-200::before {
+  border-bottom: 12px solid theme('colors.base-200');
+  z-index: 1;
+}
+
 .dropdown-left::before,
 .dropdown-left::after {
   left: 20px;

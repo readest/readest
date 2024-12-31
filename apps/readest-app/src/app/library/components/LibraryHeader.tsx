@@ -71,7 +71,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               </div>
               <ul
                 tabIndex={-1}
-                className='dropdown-content dropdown-center menu rounded-box z-[1] mt-3 w-52 p-2 shadow'
+                className='dropdown-content dropdown-center bg-base-100 menu rounded-box z-[1] mt-3 w-52 p-2 shadow'
               >
                 <li>
                   <button className='text-base-content' onClick={onImportBooks}>

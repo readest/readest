@@ -33,7 +33,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
       </button>
       <ul
         tabIndex={0}
-        className='dropdown-content menu bg-base-100 rounded-box absolute right-0 z-[1] mt-4 w-44 shadow'
+        className='dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute right-0 z-[1] mt-4 w-44 shadow'
       >
         {options.map((option) => (
           <li key={option} onClick={() => onSelect(option)}>
@@ -56,8 +56,8 @@ const FontDropdown: React.FC<DropdownProps> = ({
             <ul
               tabIndex={0}
               className={clsx(
-                'dropdown-content menu bg-base-100 rounded-box relative z-[1] overflow-y-scroll shadow',
-                'mb-[-40px] mr-4 max-h-80 w-80',
+                'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] overflow-y-scroll shadow',
+                '!mr-5 mb-[-46px] max-h-80 w-[292px]',
               )}
             >
               {moreOptions.map((option) => (
