@@ -6,7 +6,7 @@ import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 
 interface NoteEditorProps {
-  onSave: (selction: TextSelection, note: string) => void;
+  onSave: (selection: TextSelection, note: string) => void;
   onEdit: (annotation: BookNote) => void;
 }
 
