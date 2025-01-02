@@ -19,7 +19,7 @@ jobs:
           version: 9.15.1
 
       - name: setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
