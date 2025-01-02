@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.8.9": {
+      "date": "2025-01-02",
+      "notes": [
+        "Context menu on bookshelf for quick actions.",
+        "Add more system fonts as custom fonts.",
+        "Fix google and github login for native apps."
+      ]
+    },
     "0.8.8": {
       "date": "2024-12-29",
       "notes": [
