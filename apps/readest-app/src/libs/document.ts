@@ -52,7 +52,7 @@ export interface SectionItem {
 
 export interface BookDoc {
   metadata: {
-    // NOTE: the title and author fields should be formated
+    // NOTE: the title and author fields should be formatted
     title: string | LanguageMap;
     author: string | Contributor;
     language: string | string[];
