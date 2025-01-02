@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme" target="_blank">
-    <img src="https://github.com/chrox/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
+    <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
   </a>
   <h1>Readest</h1>
   <br>
@@ -118,7 +118,7 @@ To get started with Readest, follow these steps to clone and build the project.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/chrox/readest.git
+git clone https://github.com/readest/readest.git
 cd readest
 git submodule update --init --recursive
 ```
@@ -149,7 +149,8 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 ```bash
 pnpm tauri dev
 ```
-For ios:
+
+For iOS:
 
 ```bash
 pnpm tauri ios dev
@@ -161,13 +162,17 @@ pnpm tauri ios dev
 pnpm tauri build
 ```
 
+### 6. More information
+
+Please check the [wiki][link-gh-wiki] of this project for more information on development.
+
 ## Contributors
 
 Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
 
-<a href="https://github.com/chrox/readest/graphs/contributors">
+<a href="https://github.com/readest/readest/graphs/contributors">
   <p align="left">
-    <img width="100" src="https://contrib.rocks/image?repo=chrox/readest" alt="A table of avatars from the project's contributors" />
+    <img width="200" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
   </p>
 </a>
 
@@ -188,18 +193,19 @@ The following JavaScript libraries are bundled in this software:
 
 [badge-website]: https://img.shields.io/badge/website-readest.com-orange
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
-[badge-license]: https://img.shields.io/github/license/chrox/readest?color=teal
-[badge-release]: https://img.shields.io/github/release/chrox/readest?color=green
+[badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
+[badge-release]: https://img.shields.io/github/release/readest/readest?color=green
 [badge-platforms]: https://img.shields.io/badge/OS-macOS%2C%20Windows%2C%20Linux%2C%20Web-green
-[badge-last-commit]: https://img.shields.io/github/last-commit/chrox/readest?color=green
-[badge-commit-activity]: https://img.shields.io/github/commit-activity/m/chrox/readest
+[badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=green
+[badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
 [link-macos-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
 [link-web-readest]: https://web.readest.com
-[link-gh-releases]: https://github.com/chrox/readest/releases
-[link-gh-commits]: https://github.com/chrox/readest/commits/main
-[link-gh-pulse]: https://github.com/chrox/readest/pulse
+[link-gh-releases]: https://github.com/readest/readest/releases
+[link-gh-commits]: https://github.com/readest/readest/commits/main
+[link-gh-pulse]: https://github.com/readest/readest/pulse
+[link-gh-wiki]: https://github.com/readest/readest/wiki
 [link-discord]: https://discord.gg/gntyVNk3BJ
 [link-parallel-read]: https://readest.com/#parallel-read
 [link-koreader]: https://github.com/koreader/koreader
