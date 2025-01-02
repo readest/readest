@@ -19,9 +19,9 @@ interface ViewState {
   progress: BookProgress | null;
   ribbonVisible: boolean;
   /* View settings for the view: 
-    generally view settings have a hirarchy of global settings < book settings < view settings
+    generally view settings have a hierarchy of global settings < book settings < view settings
     view settings for primary view are saved to book config which is persisted to config file
-    ommitting settings that are not changed from global settings */
+    omitting settings that are not changed from global settings */
   viewSettings: ViewSettings | null;
 }
 
