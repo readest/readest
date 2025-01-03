@@ -28,6 +28,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const { getView, getViewSettings } = useReaderStore();
   const { themeCode } = useTheme();
   const view = getView(bookKey);
+  const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
 
   useEffect(() => {
@@ -73,7 +74,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(detail.a, rect, viewSettings.vertical);
-    const popupPos = getPopupPosition(triangPos, rect, popupWidth, popupHeight, popupPadding);
+    const popupPos = getPopupPosition(
+      triangPos,
+      rect,
+      viewSettings.vertical ? popupHeight : popupWidth,
+      viewSettings.vertical ? popupWidth : popupHeight,
+      popupPadding,
+    );
     setTrianglePosition(triangPos);
     setPopupPosition(popupPos);
 
@@ -107,6 +114,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     }
   }, [footnoteRef]);
 
+  const width = viewSettings.vertical ? popupHeight : popupWidth;
+  const height = viewSettings.vertical ? popupWidth : popupHeight;
+
   return (
     <div>
       {showPopup && (
@@ -117,8 +127,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         />
       )}
       <Popup
-        width={popupWidth}
-        height={popupHeight}
+        width={width}
+        height={height}
         position={showPopup ? popupPosition! : undefined}
         trianglePosition={showPopup ? trianglePosition! : undefined}
         className='select-text overflow-y-auto'
@@ -127,8 +137,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           className=''
           ref={footnoteRef}
           style={{
-            width: `${popupWidth}px`,
-            height: `${popupHeight}px`,
+            width: `${width}px`,
+            height: `${height}px`,
           }}
         ></div>
       </Popup>

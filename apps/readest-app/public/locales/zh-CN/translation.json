@@ -43,6 +43,7 @@
   "Grass": "青草",
   "Gray": "素雅",
   "Gruvbox": "暖橘",
+  "Horizontal Direction": "横排",
   "Hyphenation": "断字",
   "Identifier:": "识别码",
   "Import Books": "导入书籍",
@@ -108,6 +109,8 @@
   "Updated:": "更新日期",
   "User avatar": "用户头像",
   "Version {{version}}": "版本 {{version}}",
+  "Vertical Direction": "竖排",
   "Welcome to your library. You can import your books here and read them anytime.": "书库空空如也，您可以导入您的书籍并随时阅读。",
+  "Writing Mode": "排版模式",
   "Your Library": "书库"
 }

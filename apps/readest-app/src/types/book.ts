@@ -51,6 +51,7 @@ export interface BookLayout {
   maxInlineSize: number;
   maxBlockSize: number;
   animated: boolean;
+  writingMode: string;
   vertical: boolean;
 }
 

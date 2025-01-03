@@ -43,6 +43,7 @@
   "Grass": "Rumput",
   "Gray": "Abu-abu",
   "Gruvbox": "Gruvbox",
+  "Horizontal Direction": "Arah Horizontal",
   "Hyphenation": "Pemenggalan Kata",
   "Identifier:": "Pengenal:",
   "Import Books": "Impor Buku",
@@ -108,6 +109,8 @@
   "Updated:": "Diperbarui:",
   "User avatar": "Avatar Pengguna",
   "Version {{version}}": "Versi {{version}}",
+  "Vertical Direction": "Arah Vertikal",
   "Welcome to your library. You can import your books here and read them anytime.": "Selamat datang di perpustakaan Anda. Anda dapat mengimpor buku-buku Anda di sini dan membacanya kapan saja.",
+  "Writing Mode": "Mode Menulis",
   "Your Library": "Perpustakaan Anda"
 }

@@ -43,6 +43,7 @@
   "Grass": "Herbe",
   "Gray": "Gris",
   "Gruvbox": "Gruvbox",
+  "Horizontal Direction": "Direction horizontale",
   "Hyphenation": "Césure",
   "Identifier:": "Identifiant :",
   "Import Books": "Importer des livres",
@@ -108,6 +109,8 @@
   "Updated:": "Mis à jour :",
   "User avatar": "Avatar de l'utilisateur",
   "Version {{version}}": "Version {{version}}",
+  "Vertical Direction": "Direction verticale",
   "Welcome to your library. You can import your books here and read them anytime.": "Bienvenue dans votre bibliothèque. Vous pouvez importer vos livres ici et les lire à tout moment.",
+  "Writing Mode": "Mode écriture",
   "Your Library": "Votre bibliothèque"
 }

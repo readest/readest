@@ -76,6 +76,7 @@ const getLayoutStyles = (
   justify: boolean,
   hyphenate: boolean,
   zoomLevel: number,
+  writingMode: string,
   bg: string,
   fg: string,
   primary: string,
@@ -122,6 +123,7 @@ const getLayoutStyles = (
   }
   html, body {
     color: ${fg};
+    ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode};`}
     text-align: var(--default-text-align);
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
@@ -182,6 +184,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
     viewSettings.fullJustification!,
     viewSettings.hyphenation!,
     viewSettings.zoomLevel! / 100.0,
+    viewSettings.writingMode!,
     themeCode.bg,
     themeCode.fg,
     themeCode.primary,

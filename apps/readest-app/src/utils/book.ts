@@ -54,7 +54,7 @@ export const listFormater = (narrow = false, lang = userLang) => {
   }
 };
 
-const getBookLangCode = (lang: string | string[] | undefined) => {
+export const getBookLangCode = (lang: string | string[] | undefined) => {
   try {
     const bookLang = typeof lang === 'string' ? lang : lang?.[0];
     return bookLang ? bookLang.split('-')[0]! : 'en';

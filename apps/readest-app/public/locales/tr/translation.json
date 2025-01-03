@@ -43,6 +43,7 @@
   "Grass": "Çimen",
   "Gray": "Gri",
   "Gruvbox": "Gruvbox",
+  "Horizontal Direction": "Yatay Yön",
   "Hyphenation": "Heceleme",
   "Identifier:": "Tanımlayıcı:",
   "Import Books": "Kitapları İçe Aktar",
@@ -108,6 +109,8 @@
   "Updated:": "Güncellendi:",
   "User avatar": "Kullanıcı avatarı",
   "Version {{version}}": "Sürüm {{version}}",
+  "Vertical Direction": "Dikey Yön",
   "Welcome to your library. You can import your books here and read them anytime.": "Kütüphanenize hoş geldiniz. Buradan kitaplarınızı içe aktarabilir ve istediğiniz zaman okuyabilirsiniz.",
+  "Writing Mode": "Yazma Modu",
   "Your Library": "Kütüphaneniz"
 }

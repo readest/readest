@@ -43,6 +43,7 @@
   "Grass": "Трава",
   "Gray": "Серый",
   "Gruvbox": "Gruvbox",
+  "Horizontal Direction": "Горизонтальное направление",
   "Hyphenation": "Перенос слов",
   "Identifier:": "Идентификатор:",
   "Import Books": "Импорт книг",
@@ -108,6 +109,8 @@
   "Updated:": "Обновлено:",
   "User avatar": "Аватар пользователя",
   "Version {{version}}": "Версия {{version}}",
+  "Vertical Direction": "Вертикальное направление",
   "Welcome to your library. You can import your books here and read them anytime.": "Добро пожаловать в вашу библиотеку. Вы можете импортировать сюда книги и читать их в любое время.",
+  "Writing Mode": "Режим записи",
   "Your Library": "Ваша библиотека"
 }

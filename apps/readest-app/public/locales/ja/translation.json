@@ -43,6 +43,7 @@
   "Grass": "グリーン",
   "Gray": "グレー",
   "Gruvbox": "グルーブボックス",
+  "Horizontal Direction": "横書",
   "Hyphenation": "ハイフネーション",
   "Identifier:": "識別子：",
   "Import Books": "書籍をインポート",
@@ -108,6 +109,8 @@
   "Updated:": "更新日：",
   "User avatar": "ユーザーアバター",
   "Version {{version}}": "バージョン {{version}}",
+  "Vertical Direction": "縦書",
   "Welcome to your library. You can import your books here and read them anytime.": "ライブラリーへようこそ。ここに書籍をインポートして、いつでも読むことができます。",
+  "Writing Mode": "書き込みモード",
   "Your Library": "ライブラリー"
 }

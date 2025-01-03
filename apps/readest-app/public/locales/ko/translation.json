@@ -43,6 +43,7 @@
   "Grass": "잔디색",
   "Gray": "회색",
   "Gruvbox": "그러브박스",
+  "Horizontal Direction": "수평 방향",
   "Hyphenation": "하이픈 넣기",
   "Identifier:": "식별자:",
   "Import Books": "책 가져오기",
@@ -108,6 +109,8 @@
   "Updated:": "업데이트일:",
   "User avatar": "사용자 아바타",
   "Version {{version}}": "버전 {{version}}",
+  "Vertical Direction": "수직 방향",
   "Welcome to your library. You can import your books here and read them anytime.": "내 서재에 오신 것을 환영합니다. 여기에서 책을 가져와 언제든지 읽을 수 있습니다.",
+  "Writing Mode": "글쓰기 모드",
   "Your Library": "내 서재"
 }

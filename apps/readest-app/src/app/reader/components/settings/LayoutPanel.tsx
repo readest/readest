@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { MdOutlineAutoMode } from 'react-icons/md';
+import { MdOutlineTextRotationDown, MdOutlineTextRotationNone } from 'react-icons/md';
+
+import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getStyles } from '@/utils/style';
-import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
-import NumberInput from './NumberInput';
 import { useTheme } from '@/hooks/useTheme';
+import { getStyles } from '@/utils/style';
+import { getBookLangCode } from '@/utils/book';
+import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
+  const { getBookData } = useBookDataStore();
   const view = getView(bookKey);
+  const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
   const { themeCode } = useTheme();
 
@@ -23,6 +30,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [maxColumnCount, setMaxColumnCount] = useState(viewSettings.maxColumnCount!);
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize!);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize!);
+  const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
 
   useEffect(() => {
     viewSettings.lineHeight = lineHeight;
@@ -111,8 +119,55 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxInlineSize]);
 
+  useEffect(() => {
+    // global settings are not supported for writing mode
+    viewSettings.writingMode = writingMode;
+    setViewSettings(bookKey, viewSettings);
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [writingMode]);
+
+  const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
+  const isCJKBook = langCode === 'zh' || langCode === 'ja' || langCode === 'ko';
+
   return (
     <div className='my-4 w-full space-y-6'>
+      {isCJKBook && (
+        <div className='w-full'>
+          <div className='flex items-center justify-between'>
+            <h2 className='font-medium'>{_('Writing Mode')}</h2>
+            <div className='flex gap-2'>
+              <div className='tooltip tooltip-bottom' data-tip={_('Default')}>
+                <button
+                  className={`btn btn-ghost btn-circle ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setWritingMode('auto')}
+                >
+                  <MdOutlineAutoMode size={20} />
+                </button>
+              </div>
+
+              <div className='tooltip tooltip-bottom' data-tip={_('Horizontal Direction')}>
+                <button
+                  className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setWritingMode('horizontal-tb')}
+                >
+                  <MdOutlineTextRotationNone size={20} />
+                </button>
+              </div>
+
+              <div className='tooltip tooltip-bottom' data-tip={_('Vertical Direction')}>
+                <button
+                  className={`btn btn-ghost btn-circle ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setWritingMode('vertical-rl')}
+                >
+                  <MdOutlineTextRotationDown size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Paragraph')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>

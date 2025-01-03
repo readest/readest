@@ -42,6 +42,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   maxInlineSize: 720,
   maxBlockSize: 1440,
   animated: false,
+  writingMode: 'auto',
   vertical: false,
 };
 
