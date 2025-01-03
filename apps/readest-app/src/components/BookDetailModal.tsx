@@ -105,9 +105,9 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
               </div>
             </div>
 
-            <div className='title-author flex h-40 flex-col justify-between pr-4'>
+            <div className='title-author flex h-40 max-w-[60%] flex-col justify-between pr-4'>
               <div>
-                <h2 className='text-base-content mb-2 line-clamp-2 text-2xl font-bold'>
+                <h2 className='text-base-content mb-2 line-clamp-2 break-all text-2xl font-bold'>
                   {book.title || _('Untitled')}
                 </h2>
                 <p className='text-neutral-content line-clamp-1'>{book.author || _('Unknown')}</p>
