@@ -18,11 +18,13 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
+  const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const handleUserStylesheetChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const cssInput = e.target.value;
     setDraftStylesheet(cssInput);
+    setDraftStylesheetSaved(false);
 
     try {
       const { isValid, error } = cssValidate(cssInput);
@@ -48,6 +50,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     });
 
     setDraftStylesheet(formattedCSS);
+    setDraftStylesheetSaved(true);
     viewSettings.userStylesheet = formattedCSS;
     setViewSettings(bookKey, viewSettings);
 
@@ -93,7 +96,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <div className='my-4 w-full space-y-6'>
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
-        <div className='card bg-base-100 border shadow'>
+        <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
               <span className='text-gray-700'>{_('Paging Animation')}</span>
@@ -110,7 +113,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
-        <div className='card bg-base-100 border shadow'>
+        <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
               <span className='text-gray-700'>{_('Disable Click-to-Flip')}</span>
@@ -127,7 +130,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Custom CSS')}</h2>
-        <div className={`card bg-base-100 border shadow ${error ? 'border-red-500' : ''}`}>
+        <div
+          className={`card border-base-200 bg-base-100 border shadow ${error ? 'border-red-500' : ''}`}
+        >
           <div className='relative p-1'>
             <textarea
               className='textarea textarea-ghost h-48 w-full border-0 p-3 !outline-none'
@@ -142,7 +147,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             <button
               className={clsx(
                 'btn btn-ghost bg-base-200 absolute bottom-2 right-4 h-8 min-h-8 px-4 py-2',
-                !draftStylesheet ? 'hidden' : '',
+                draftStylesheetSaved ? 'hidden' : '',
                 error ? 'btn-disabled' : '',
               )}
               onClick={applyStyles}
