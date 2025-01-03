@@ -1,13 +1,12 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import cssbeautify from 'cssbeautify';
 import { getStyles } from '@/utils/style';
 import { useTheme } from '@/hooks/useTheme';
-
-const cssRegex =
-  /((?:\s*)([\w#.@*,:\-.:>+~$$$$\"=(),*\s]+)\s*{(?:[\s]*)((?:[^\}]+[:][^\}]+;?)*)*\s*}(?:\s*))/gim;
+import cssbeautify from 'cssbeautify';
+import cssValidate from '@/utils/css';
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -18,42 +17,46 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
-  const [userStylesheet, setUserStylesheet] = useState(viewSettings.userStylesheet!);
+  const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [error, setError] = useState<string | null>(null);
 
-  let cssInput = userStylesheet;
-
-  const validateCSS = (css: string) => {
-    return cssRegex.test(css);
-  };
-
   const handleUserStylesheetChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    cssInput = e.target.value;
+    const cssInput = e.target.value;
+    setDraftStylesheet(cssInput);
 
     try {
-      const formattedCSS = cssbeautify(cssInput, {
-        indent: '  ',
-        openbrace: 'end-of-line',
-        autosemicolon: true,
-      });
-      setUserStylesheet(formattedCSS);
-
-      if (cssInput && !validateCSS(cssInput)) {
-        throw new Error('Invalid CSS');
+      const { isValid, error } = cssValidate(cssInput);
+      if (cssInput && !isValid) {
+        throw new Error(error || 'Invalid CSS');
       }
       setError(null);
-
-      viewSettings.userStylesheet = formattedCSS;
-      setViewSettings(bookKey, viewSettings);
-      if (isFontLayoutSettingsGlobal) {
-        settings.globalViewSettings.userStylesheet = formattedCSS;
-        setSettings(settings);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Invalid CSS: Please check your input.');
       }
-      getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
-    } catch (err) {
-      setError('Invalid CSS: Please check your input.');
       console.log('CSS Error:', err);
     }
+  };
+
+  const applyStyles = () => {
+    const formattedCSS = cssbeautify(draftStylesheet, {
+      indent: '  ',
+      openbrace: 'end-of-line',
+      autosemicolon: true,
+    });
+
+    setDraftStylesheet(formattedCSS);
+    viewSettings.userStylesheet = formattedCSS;
+    setViewSettings(bookKey, viewSettings);
+
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.userStylesheet = formattedCSS;
+      setSettings(settings);
+    }
+
+    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
   };
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -125,21 +128,31 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Custom CSS')}</h2>
         <div className={`card bg-base-100 border shadow ${error ? 'border-red-500' : ''}`}>
-          <div className='divide-y'>
-            <div className='css-text-area config-item-top config-item-bottom p-1'>
-              <textarea
-                className='textarea textarea-ghost h-48 w-full border-0 p-3 !outline-none'
-                placeholder={_('Enter your custom CSS here...')}
-                spellCheck='false'
-                value={cssInput}
-                onInput={handleInput}
-                onKeyDown={handleInput}
-                onKeyUp={handleInput}
-                onChange={handleUserStylesheetChange}
-              />
-            </div>
+          <div className='relative p-1'>
+            <textarea
+              className='textarea textarea-ghost h-48 w-full border-0 p-3 !outline-none'
+              placeholder={_('Enter your custom CSS here...')}
+              spellCheck='false'
+              value={draftStylesheet}
+              onInput={handleInput}
+              onKeyDown={handleInput}
+              onKeyUp={handleInput}
+              onChange={handleUserStylesheetChange}
+            />
+            <button
+              className={clsx(
+                'btn btn-ghost bg-base-200 absolute bottom-2 right-4 h-8 min-h-8 px-4 py-2',
+                !draftStylesheet ? 'hidden' : '',
+                error ? 'btn-disabled' : '',
+              )}
+              onClick={applyStyles}
+              disabled={!!error}
+            >
+              {_('Apply')}
+            </button>
           </div>
         </div>
+        {error && <p className='mt-1 text-sm text-red-500'>{error}</p>}
       </div>
     </div>
   );
