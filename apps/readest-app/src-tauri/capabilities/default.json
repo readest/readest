@@ -60,6 +60,7 @@
     "process:allow-restart",
     "oauth:allow-start",
     "oauth:allow-cancel",
-    "opener:default"
+    "opener:default",
+    "deep-link:default"
   ]
 }

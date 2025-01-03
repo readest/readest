@@ -35,6 +35,7 @@
     "@supabase/supabase-js": "^2.47.7",
     "@tauri-apps/api": "2.1.1",
     "@tauri-apps/plugin-cli": "^2.2.0",
+    "@tauri-apps/plugin-deep-link": "^2.2.0",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-http": "^2.2.0",

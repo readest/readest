@@ -74,6 +74,7 @@ async fn start_server(window: Window) -> Result<u16, String> {
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![start_server])
         .plugin(tauri_plugin_shell::init())

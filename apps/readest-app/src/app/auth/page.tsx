@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
@@ -64,7 +65,10 @@ export default function AuthPage() {
       provider,
       options: {
         skipBrowserRedirect: true,
-        redirectTo: `http://localhost:${port}`,
+        redirectTo:
+          process.env.NODE_ENV === 'production'
+            ? 'readest://auth/callback'
+            : `http://localhost:${port}`,
       },
     });
 
@@ -75,34 +79,45 @@ export default function AuthPage() {
     openUrl(data.url);
   };
 
-  const startOAuthServer = async () => {
+  const handleOAuthUrl = async (url: string) => {
+    console.log('Received OAuth URL:', url);
+    const hashMatch = url.match(/#(.*)/);
+    if (hashMatch) {
+      const hash = hashMatch[1];
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const next = params.get('next') ?? '/';
+      if (accessToken) {
+        handleAuthCallback({ accessToken, refreshToken, next, login, navigate: router.push });
+      }
+    }
+  };
+
+  const startTauriOAuth = async () => {
     try {
-      const port = await start();
-      setPort(port);
-      console.log(`OAuth server started on port ${port}`);
+      if (process.env.NODE_ENV === 'production') {
+        await onOpenUrl((urls) => {
+          urls.forEach((url) => {
+            handleOAuthUrl(url);
+          });
+        });
+      } else {
+        const port = await start();
+        setPort(port);
+        console.log(`OAuth server started on port ${port}`);
 
-      await onUrl((url) => {
-        console.log('Received OAuth URL:', url);
-        const hashMatch = url.match(/#(.*)/);
-        if (hashMatch) {
-          const hash = hashMatch[1];
-          const params = new URLSearchParams(hash);
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          const next = params.get('next') ?? '/';
-          handleAuthCallback({ accessToken, refreshToken, next, login, navigate: router.push });
-        }
-      });
-
-      await onInvalidUrl((url) => {
-        console.log('Received invalid OAuth URL:', url);
-      });
+        await onUrl(handleOAuthUrl);
+        await onInvalidUrl((url) => {
+          console.log('Received invalid OAuth URL:', url);
+        });
+      }
     } catch (error) {
       console.error('Error starting OAuth server:', error);
     }
   };
 
-  const stopOAuthServer = async () => {
+  const stopTauriOAuth = async () => {
     try {
       if (port) {
         await cancel(port);
@@ -126,10 +141,10 @@ export default function AuthPage() {
     if (isOAuthServerRunning.current) return;
     isOAuthServerRunning.current = true;
 
-    startOAuthServer();
+    startTauriOAuth();
     return () => {
       isOAuthServerRunning.current = false;
-      stopOAuthServer();
+      stopTauriOAuth();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -156,6 +171,9 @@ export default function AuthPage() {
     return null;
   }
 
+  // For tauri app development, use a custom OAuth server to handle the OAuth callback
+  // For tauri app production, use deeplink to handle the OAuth callback
+  // For web app, use the built-in OAuth callback page /auth/callback
   return isTauriAppPlatform() ? (
     <div className='flex pt-11'>
       <button
