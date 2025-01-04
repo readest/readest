@@ -29,10 +29,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const syncSession = (session: { access_token: string; user: User } | null) => {
+      console.log('Syncing session');
       if (session) {
         const { access_token, user } = session;
         setToken(access_token);
@@ -46,10 +44,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
       }
     };
+    const fetchSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      syncSession(data.session);
+    };
 
-    console.log('Fetching session');
     fetchSession();
-  }, [token]);
+    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
+      syncSession(session);
+    });
+
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, []);
 
   const login = (newToken: string, newUser: User) => {
     console.log('Logging in');
