@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.tauri -- next dev",
