@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.0": {
+      "date": "2025-01-04",
+      "notes": [
+        "Better Custom CSS editor and OAuth process.",
+        "Add vertical/horizontal switch for CJK books.",
+        "Fix dropdown close overlay not working on Windows/Linux."
+      ]
+    },
     "0.8.9": {
       "date": "2025-01-02",
       "notes": [

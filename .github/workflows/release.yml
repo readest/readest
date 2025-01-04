@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.get-release.outputs.release_id }}
+      release_tag: ${{ steps.get-release.outputs.release_tag }}
       release_note: ${{ steps.get-release-notes.outputs.release_note }}
 
     steps:
@@ -30,6 +31,7 @@ jobs:
               repo: context.repo.repo,
             })
             core.setOutput('release_id', data.id);
+            core.setOutput('release_tag', data.tag_name);
       - name: get release notes
         id: get-release-notes
         uses: actions/github-script@v7
@@ -138,6 +140,26 @@ jobs:
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
 
+      - name: upload portable binaries (Windows only)
+        if: matrix.config.os == 'windows-latest'
+        run: |
+          echo "Uploading Portable Binaries"
+          arch=${{ matrix.config.arch }}
+          version=$PACKAGE_VERSION
+
+          if [ "$arch" = "x86_64" ]; then
+            zip_name="Readest_${version}_x64-portable.zip"
+          elif [ "$arch" = "aarch64" ]; then
+            zip_name="Readest_${version}_arm64-portable.zip"
+          else
+            echo "Unknown architecture: $arch"
+            exit 1
+          fi
+
+          zip -j $zip_name apps/readest-app/src-tauri/target/release/readest.exe
+          echo "Uploading $zip_name to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $zip_name --clobber
+
   update-release:
     permissions:
       contents: write
@@ -153,11 +175,12 @@ jobs:
           release_note: ${{ needs.get-release.outputs.release_note }}
         with:
           script: |
+            const body = `## Release Highlight\n${process.env.release_note}`;
             github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.release_id,
-              body: process.env.release_note,
+              body: body,
               draft: false,
               prerelease: false
             })
