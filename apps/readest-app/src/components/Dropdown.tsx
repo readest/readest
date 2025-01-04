@@ -34,7 +34,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     : children;
 
   return (
-    <>
+    <div className='dropdown-container'>
       {isOpen && (
         <div className='fixed inset-0 bg-transparent' onClick={() => setIsDropdownOpen(false)} />
       )}
@@ -48,7 +48,7 @@ const Dropdown: React.FC<DropdownProps> = ({
         </div>
         {isOpen && childrenWithToggle}
       </div>
-    </>
+    </div>
   );
 };
 

@@ -53,6 +53,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     if (
       target.closest('.btn') ||
       target.closest('.window-button') ||
+      target.closest('.dropdown-container') ||
       target.closest('.exclude-title-bar-mousedown')
     ) {
       return;
