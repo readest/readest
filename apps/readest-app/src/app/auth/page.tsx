@@ -24,6 +24,11 @@ import { handleAuthCallback } from '@/helpers/auth';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
+interface SingleInstancePayload {
+  args: string[];
+  cwd: string;
+}
+
 interface ProviderLoginProp {
   provider: OAuthProvider;
   handleSignIn: (provider: OAuthProvider) => void;
@@ -97,6 +102,15 @@ export default function AuthPage() {
   const startTauriOAuth = async () => {
     try {
       if (process.env.NODE_ENV === 'production') {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const currentWindow = getCurrentWindow();
+        currentWindow.listen('single-instance', ({ event, payload }) => {
+          console.log('Received deep link:', event, payload);
+          const { args } = payload as SingleInstancePayload;
+          if (args?.[1]) {
+            handleOAuthUrl(args[1]);
+          }
+        });
         await onOpenUrl((urls) => {
           urls.forEach((url) => {
             handleOAuthUrl(url);

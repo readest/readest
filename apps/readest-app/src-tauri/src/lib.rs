@@ -70,11 +70,16 @@ async fn start_server(window: Window) -> Result<u16, String> {
     .map_err(|err| err.to_string())
 }
 
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+    args: Vec<String>,
+    cwd: String,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![start_server])
         .plugin(tauri_plugin_shell::init())
@@ -83,6 +88,17 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init());
+
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+        let _ = app
+            .get_webview_window("main")
+            .expect("no main window")
+            .set_focus();
+        app.emit("single-instance", Payload { args: argv, cwd }).unwrap();
+    }));
+
+    let builder = builder.plugin(tauri_plugin_deep_link::init());
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
@@ -134,6 +150,12 @@ pub fn run() {
                         .eval("window.__READEST_CLI_ACCESS = true; window.__READEST_UPDATER_ACCESS = true;")
                         .expect("Failed to set cli access config");
                 });
+            }
+
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                app.deep_link().register_all()?;
             }
 
             #[cfg(desktop)]

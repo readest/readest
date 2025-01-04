@@ -69,9 +69,14 @@ const LibraryPage = () => {
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
       const bookIds: string[] = [];
       for (const file of openWithFiles) {
-        const book = await appService.importBook(file, libraryBooks);
-        if (book) {
-          bookIds.push(book.hash);
+        console.log('Open with book:', file);
+        try {
+          const book = await appService.importBook(file, libraryBooks);
+          if (book) {
+            bookIds.push(book.hash);
+          }
+        } catch (error) {
+          console.log('Failed to import book:', file, error);
         }
       }
       setLibrary(libraryBooks);
