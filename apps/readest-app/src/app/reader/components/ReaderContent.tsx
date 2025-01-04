@@ -88,6 +88,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     const { book } = getBookData(bookKey) || {};
     const { isPrimary } = getViewState(bookKey) || {};
     if (isPrimary && book && config) {
+      const settings = useSettingsStore.getState().settings;
       await saveConfig(envConfig, bookKey, config, settings);
     }
   };
@@ -110,6 +111,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   const handleCloseBooks = async () => {
+    const settings = useSettingsStore.getState().settings;
     await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
   };
