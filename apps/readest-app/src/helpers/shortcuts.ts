@@ -28,7 +28,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onReloadPage: ['shift+r'],
   onQuitApp: ['ctrl+q', 'cmd+q'],
   onGoLeft: ['ArrowLeft', 'PageUp', 'h'],
-  onGoRight: ['ArrowRight', 'PageDown', 'l'],
+  onGoRight: ['ArrowRight', 'PageDown', 'l', ' '],
   onGoNext: ['ArrowDown', 'j'],
   onGoPrev: ['ArrowUp', 'k'],
   onGoBack: ['shift+ArrowLeft', 'shift+h'],
