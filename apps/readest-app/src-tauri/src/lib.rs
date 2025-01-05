@@ -9,7 +9,7 @@ extern crate objc;
 #[cfg(target_os = "macos")]
 mod menu;
 #[cfg(target_os = "macos")]
-mod tauri_traffic_light_positioner_plugin;
+mod traffic_light_plugin;
 
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -95,7 +95,8 @@ pub fn run() {
             .get_webview_window("main")
             .expect("no main window")
             .set_focus();
-        app.emit("single-instance", Payload { args: argv, cwd }).unwrap();
+        app.emit("single-instance", Payload { args: argv, cwd })
+            .unwrap();
     }));
 
     let builder = builder.plugin(tauri_plugin_deep_link::init());
@@ -103,8 +104,11 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
+
     #[cfg(target_os = "macos")]
-    let builder = builder.plugin(tauri_traffic_light_positioner_plugin::init());
+    let builder = builder.plugin(traffic_light_plugin::init());
 
     builder
         .setup(|#[allow(unused_variables)] app| {
@@ -172,8 +176,7 @@ pub fn run() {
             #[cfg(desktop)]
             let win_builder = win_builder
                 .inner_size(800.0, 600.0)
-                .resizable(true)
-                .maximized(true);
+                .resizable(true);
 
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
@@ -185,6 +188,8 @@ pub fn run() {
             let win_builder = win_builder
                 .decorations(false)
                 .transparent(true)
+                .visible(false)
+                .shadow(true)
                 .title("Readest");
 
             win_builder.build().unwrap();
