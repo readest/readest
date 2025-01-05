@@ -6,6 +6,7 @@
   --background: #ffffff;
   --foreground: #171717;
   border-radius: 10px;
+  scrollbar-gutter: auto !important;
 }
 
 @media (prefers-color-scheme: dark) {
