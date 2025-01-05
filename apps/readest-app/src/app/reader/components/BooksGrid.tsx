@@ -49,7 +49,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           <div
             id={`gridcell-${bookKey}`}
             key={bookKey}
-            className='relative h-full w-full overflow-hidden'
+            className='relative h-full w-full rounded-window overflow-hidden'
           >
             {isBookmarked && <Ribbon width={marginGap} />}
             <HeaderBar

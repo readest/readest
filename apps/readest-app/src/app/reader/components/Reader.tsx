@@ -33,7 +33,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   return (
     library.length > 0 &&
     settings.globalReadSettings && (
-      <div className='reader-page bg-base-100 text-base-content min-h-screen select-none'>
+      <div className='reader-page rounded-window bg-base-100 text-base-content min-h-screen select-none'>
         <Suspense>
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />
