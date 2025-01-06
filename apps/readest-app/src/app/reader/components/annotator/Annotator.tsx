@@ -82,7 +82,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         setSelection({ key: bookKey, text: sel.toString(), range: sel.getRangeAt(0), index });
       }
     };
-    detail.doc?.addEventListener('pointerup', handlePointerup);
+    if (bookData.book?.format !== 'PDF') {
+      detail.doc?.addEventListener('pointerup', handlePointerup);
+    }
   };
 
   const onDrawAnnotation = (event: Event) => {
