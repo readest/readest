@@ -21,6 +21,8 @@ export const useProgressSync = (
   const { user } = useAuth();
   const view = getView(bookKey);
   const config = getConfig(bookKey);
+  // flag to prevent accidental sync without first pulling the config
+  const configSynced = useRef(false);
 
   const pushConfig = (bookKey: string, config: BookConfig | null) => {
     if (!config || !user) return;
@@ -31,13 +33,26 @@ export const useProgressSync = (
     );
     syncConfigs([compressedConfig], bookHash, 'push');
   };
-
-  useEffect(() => {
+  const pullConfig = (bookKey: string) => {
     if (!user) return;
     const bookHash = bookKey.split('-')[0]!;
     syncConfigs([], bookHash, 'pull');
-    return () => {
+  };
+  const syncConfig = () => {
+    if (!configSynced.current) {
+      pullConfig(bookKey);
+    } else {
       pushConfig(bookKey, config);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    pullConfig(bookKey);
+    return () => {
+      if (configSynced.current) {
+        pushConfig(bookKey, config);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -46,18 +61,19 @@ export const useProgressSync = (
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!config?.location || !user) return;
+
     const now = Date.now();
     const timeSinceLastSync = now - lastProgressSyncTime.current;
-    if (configSynced.current && timeSinceLastSync > SYNC_PROGRESS_INTERVAL_SEC * 1000) {
+    if (timeSinceLastSync > SYNC_PROGRESS_INTERVAL_SEC * 1000) {
       lastProgressSyncTime.current = now;
-      pushConfig(bookKey, config);
+      syncConfig();
     } else {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(
         () => {
           lastProgressSyncTime.current = Date.now();
-          pushConfig(bookKey, config);
           syncTimeoutRef.current = null;
+          syncConfig();
         },
         SYNC_PROGRESS_INTERVAL_SEC * 1000 - timeSinceLastSync,
       );
@@ -66,9 +82,9 @@ export const useProgressSync = (
   }, [config]);
 
   // sync progress once when the book is opened
-  const configSynced = useRef(false);
   useEffect(() => {
-    if (!configSynced.current && syncedConfigs?.length > 0) {
+    if (!configSynced.current && syncedConfigs) {
+      configSynced.current = true;
       const syncedConfig = syncedConfigs.filter((c) => c.bookHash === bookKey.split('-')[0])[0];
       if (syncedConfig) {
         const newConfig = deserializeConfig(
@@ -77,7 +93,6 @@ export const useProgressSync = (
           DEFAULT_BOOK_SEARCH_CONFIG,
         );
         setConfig(bookKey, { ...config, ...newConfig });
-        configSynced.current = true;
         if ((syncedConfig.progress?.[1] ?? 0) > 0 && (config?.progress?.[1] ?? 0) > 0) {
           const syncedFraction = syncedConfig.progress![0] / syncedConfig.progress![1];
           const configFraction = config!.progress![0] / config!.progress![1];

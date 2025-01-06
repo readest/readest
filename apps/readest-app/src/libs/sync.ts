@@ -18,9 +18,9 @@ interface BookConfigRecord extends BookDataRecord, BookConfig {}
 interface BookNoteRecord extends BookDataRecord, BookNote {}
 
 export interface SyncResult {
-  books: BookRecord[];
-  notes: BookNoteRecord[];
-  configs: BookConfigRecord[];
+  books: BookRecord[] | null;
+  notes: BookNoteRecord[] | null;
+  configs: BookConfigRecord[] | null;
 }
 
 export interface SyncData {

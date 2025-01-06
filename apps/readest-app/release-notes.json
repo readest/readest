@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.1": {
+      "date": "2025-01-06",
+      "notes": [
+        "Restore window position and size when reopening app.",
+        "Swap font when downloading online fonts.",
+        "Fix layout issues on Windows and Linux."
+      ]
+    },
     "0.9.0": {
       "date": "2025-01-04",
       "notes": [

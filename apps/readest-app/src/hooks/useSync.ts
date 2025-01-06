@@ -51,14 +51,15 @@ export function useSync(bookKey?: string) {
   );
 
   const [syncing, setSyncing] = useState(false);
+  // null means unsynced, empty array means synced no changes
   const [syncResult, setSyncResult] = useState<SyncResult>({
-    books: [],
-    configs: [],
-    notes: [],
+    books: null,
+    configs: null,
+    notes: null,
   });
-  const [syncedBooks, setSyncedBooks] = useState<Book[]>([]);
-  const [syncedConfigs, setSyncedConfigs] = useState<BookConfig[]>([]);
-  const [syncedNotes, setSyncedNotes] = useState<BookNote[]>([]);
+  const [syncedBooks, setSyncedBooks] = useState<Book[] | null>(null);
+  const [syncedConfigs, setSyncedConfigs] = useState<BookConfig[] | null>(null);
+  const [syncedNotes, setSyncedNotes] = useState<BookNote[] | null>(null);
 
   const { syncClient } = useSyncContext();
 
@@ -76,11 +77,11 @@ export function useSync(bookKey?: string) {
 
     try {
       const result = await syncClient.pullChanges(since, type, bookId);
+      setSyncResult({ ...syncResult, [type]: result[type] });
       const records = result[type];
-      if (!records.length) return;
-      const maxTime = computeMaxTimestamp(result[type]);
+      if (!records?.length) return;
+      const maxTime = computeMaxTimestamp(records);
       setLastSyncedAt(maxTime);
-      setSyncResult(result);
       switch (type) {
         case 'books':
           settings.lastSyncedAtBooks = maxTime;
@@ -169,16 +170,18 @@ export function useSync(bookKey?: string) {
   useEffect(() => {
     if (!syncing && syncResult) {
       const { books: dbBooks, configs: dbBookConfigs, notes: dbBookNotes } = syncResult;
-      const books = dbBooks.map((dbBook) => transformsFromDB['books'](dbBook as unknown as DBBook));
-      const configs = dbBookConfigs.map((dbBookConfig) =>
+      const books = dbBooks?.map((dbBook) =>
+        transformsFromDB['books'](dbBook as unknown as DBBook),
+      );
+      const configs = dbBookConfigs?.map((dbBookConfig) =>
         transformsFromDB['configs'](dbBookConfig as unknown as DBBookConfig),
       );
-      const notes = dbBookNotes.map((dbBookNote) =>
+      const notes = dbBookNotes?.map((dbBookNote) =>
         transformsFromDB['notes'](dbBookNote as unknown as DBBookNote),
       );
-      if (books.length) setSyncedBooks(books);
-      if (configs.length) setSyncedConfigs(configs);
-      if (notes.length) setSyncedNotes(notes);
+      if (books) setSyncedBooks(books);
+      if (configs) setSyncedConfigs(configs);
+      if (notes) setSyncedNotes(notes);
     }
   }, [syncResult, syncing]);
 
