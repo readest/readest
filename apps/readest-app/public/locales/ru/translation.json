@@ -1,4 +1,5 @@
 {
+  "(detected)": "(обнаружено)",
   "About Readest": "О Readest",
   "Add your notes here...": "Добавьте свои заметки здесь...",
   "Animation": "Анимация",
@@ -72,6 +73,7 @@
   "Notes": "Заметки",
   "Open": "Открыть",
   "Open Book": "Открыть книгу",
+  "Original Text": "Оригинальный текст",
   "Override Publisher Font": "Переопределить шрифт издателя",
   "Page": "Страница",
   "Paging Animation": "Анимация перелистывания",
@@ -104,6 +106,7 @@
   "System Fonts": "Системные шрифты",
   "Theme Color": "Цвет темы",
   "Theme Mode": "Режим темы",
+  "Translated Text": "Переведённый текст",
   "Unknown": "Неизвестно",
   "Untitled": "Без названия",
   "Updated:": "Обновлено:",

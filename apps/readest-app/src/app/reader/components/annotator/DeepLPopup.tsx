@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
 
 const LANGUAGES = {
@@ -37,6 +38,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   popupWidth,
   popupHeight,
 }) => {
+  const _ = useTranslation();
   const { settings, setSettings } = useSettingsStore();
   const [sourceLang, setSourceLang] = useState('AUTO');
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
@@ -124,7 +126,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
       >
         <div className='text-neutral-content relative h-[50%] overflow-y-auto border-b border-neutral-400/75 p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h1 className='text-base font-semibold'>Original Text</h1>
+            <h1 className='text-base font-semibold'>{_('Original Text')}</h1>
             <select
               value={sourceLang}
               onChange={handleSourceLangChange}
@@ -134,7 +136,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
                 return (
                   <option key={code} value={code}>
                     {detectedSourceLang && sourceLang === 'AUTO' && code === 'AUTO'
-                      ? `${LANGUAGES[detectedSourceLang] || detectedSourceLang} (detected)`
+                      ? `${LANGUAGES[detectedSourceLang] || detectedSourceLang} ` + _('(detected)')
                       : name}
                   </option>
                 );
@@ -146,7 +148,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
 
         <div className='text-neutral-content relative h-[50%] overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h2 className='text-base font-semibold'>Translated Text</h2>
+            <h2 className='text-base font-semibold'>{_('Translated Text')}</h2>
             <select
               value={targetLang}
               onChange={handleTargetLangChange}
@@ -163,7 +165,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
           </div>
 
           {loading ? (
-            <p className='text-base italic text-gray-500'>Loading...</p>
+            <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
           ) : error ? (
             <p className='text-base text-red-600'>{error}</p>
           ) : (

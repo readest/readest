@@ -1,4 +1,5 @@
 {
+  "(detected)": "(algılandı)",
   "About Readest": "Readest Hakkında",
   "Add your notes here...": "Notlarınızı buraya ekleyin...",
   "Animation": "Animasyon",
@@ -72,6 +73,7 @@
   "Notes": "Notlar",
   "Open": "Aç",
   "Open Book": "Kitabı Aç",
+  "Original Text": "Orijinal Metin",
   "Override Publisher Font": "Yayıncı Yazı Tipini Geçersiz Kıl",
   "Page": "Sayfa",
   "Paging Animation": "Sayfa Çevirme Animasyonu",
@@ -104,6 +106,7 @@
   "System Fonts": "Sistem Yazı Tipleri",
   "Theme Color": "Tema Rengi",
   "Theme Mode": "Tema Modu",
+  "Translated Text": "Çevrilen Metin",
   "Unknown": "Bilinmiyor",
   "Untitled": "Başlıksız",
   "Updated:": "Güncellendi:",

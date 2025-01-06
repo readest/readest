@@ -1,4 +1,5 @@
 {
+  "(detected)": "(terdeteksi)",
   "About Readest": "Tentang Readest",
   "Add your notes here...": "Tambahkan catatan Anda di sini...",
   "Animation": "Animasi",
@@ -72,6 +73,7 @@
   "Notes": "Catatan",
   "Open": "Buka",
   "Open Book": "Buka Buku",
+  "Original Text": "Teks Asli",
   "Override Publisher Font": "Ganti Font Penerbit",
   "Page": "Halaman",
   "Paging Animation": "Animasi Halaman",
@@ -104,6 +106,7 @@
   "System Fonts": "Font Sistem",
   "Theme Color": "Warna Tema",
   "Theme Mode": "Mode Tema",
+  "Translated Text": "Teks Terjemahan",
   "Unknown": "Tidak Diketahui",
   "Untitled": "Tanpa Judul",
   "Updated:": "Diperbarui:",

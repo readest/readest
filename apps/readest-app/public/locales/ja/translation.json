@@ -1,4 +1,5 @@
 {
+  "(detected)": "(検出)",
   "About Readest": "Readestについて",
   "Add your notes here...": "ここにメモを追加...",
   "Animation": "アニメーション",
@@ -72,6 +73,7 @@
   "Notes": "メモ",
   "Open": "開く",
   "Open Book": "書籍を開く",
+  "Original Text": "原文",
   "Override Publisher Font": "出版社フォントを上書き",
   "Page": "ページ",
   "Paging Animation": "ページめくりアニメーション",
@@ -104,6 +106,7 @@
   "System Fonts": "システムフォント",
   "Theme Color": "テーマカラー",
   "Theme Mode": "テーマモード",
+  "Translated Text": "翻訳されたテキスト",
   "Unknown": "不明",
   "Untitled": "無題",
   "Updated:": "更新日：",

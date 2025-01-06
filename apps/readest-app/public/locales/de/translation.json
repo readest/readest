@@ -1,4 +1,5 @@
 {
+  "(detected)": "(erkannt)",
   "About Readest": "Über Readest",
   "Add your notes here...": "Fügen Sie hier Ihre Notizen hinzu...",
   "Animation": "Animation",
@@ -72,6 +73,7 @@
   "Notes": "Notizen",
   "Open": "Öffnen",
   "Open Book": "Buch öffnen",
+  "Original Text": "Originaltext",
   "Override Publisher Font": "Verleger-Schriftart überschreiben",
   "Page": "Seite",
   "Paging Animation": "Blätter-Animation",
@@ -104,6 +106,7 @@
   "System Fonts": "System-Schriftarten",
   "Theme Color": "Themenfarbe",
   "Theme Mode": "Themenmodus",
+  "Translated Text": "Übersetzter Text",
   "Unknown": "Unbekannt",
   "Untitled": "Ohne Titel",
   "Updated:": "Aktualisiert:",

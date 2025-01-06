@@ -1,4 +1,5 @@
 {
+  "(detected)": "(檢測到)",
   "About Readest": "關於 Readest",
   "Add your notes here...": "在這裡添加您的筆記...",
   "Animation": "動畫",
@@ -72,6 +73,7 @@
   "Notes": "筆記",
   "Open": "打開",
   "Open Book": "打開書籍",
+  "Original Text": "原文",
   "Override Publisher Font": "覆蓋內置字體",
   "Page": "頁面",
   "Paging Animation": "翻頁動畫",
@@ -104,6 +106,7 @@
   "System Fonts": "系統字體",
   "Theme Color": "主題顏色",
   "Theme Mode": "主題模式",
+  "Translated Text": "譯文",
   "Unknown": "未知",
   "Untitled": "無標題",
   "Updated:": "更新日期",

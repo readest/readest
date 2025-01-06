@@ -1,4 +1,5 @@
 {
+  "(detected)": "(detectado)",
   "About Readest": "Acerca de Readest",
   "Add your notes here...": "Añade tus notas aquí...",
   "Animation": "Animación",
@@ -72,6 +73,7 @@
   "Notes": "Notas",
   "Open": "Abrir",
   "Open Book": "Abrir libro",
+  "Original Text": "Texto original",
   "Override Publisher Font": "Sobrescribir fuente del editor",
   "Page": "Página",
   "Paging Animation": "Animación de paginación",
@@ -104,6 +106,7 @@
   "System Fonts": "Fuentes del sistema",
   "Theme Color": "Color del tema",
   "Theme Mode": "Modo del tema",
+  "Translated Text": "Texto traducido",
   "Unknown": "Desconocido",
   "Untitled": "Sin título",
   "Updated:": "Actualizado:",

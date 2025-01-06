@@ -1,4 +1,5 @@
 {
+  "(detected)": "(đã phát hiện)",
   "About Readest": "Về Readest",
   "Add your notes here...": "Thêm ghi chú của bạn vào đây...",
   "Animation": "Hiệu ứng động",
@@ -72,6 +73,7 @@
   "Notes": "Ghi chú",
   "Open": "Mở",
   "Open Book": "Mở sách",
+  "Original Text": "Văn bản gốc",
   "Override Publisher Font": "Ghi đè phông chữ của nhà xuất bản",
   "Page": "Trang",
   "Paging Animation": "Hiệu ứng lật trang",
@@ -104,6 +106,7 @@
   "System Fonts": "Phông chữ hệ thống",
   "Theme Color": "Màu chủ đề",
   "Theme Mode": "Chế độ chủ đề",
+  "Translated Text": "Văn bản dịch",
   "Unknown": "Không xác định",
   "Untitled": "Không có tiêu đề",
   "Updated:": "Cập nhật:",
