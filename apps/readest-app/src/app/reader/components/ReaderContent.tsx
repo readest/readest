@@ -26,6 +26,7 @@ import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
+import TTSControl from './tts/TTSControl';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const router = useRouter();
@@ -154,6 +155,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     <div className='flex h-screen'>
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
+      <TTSControl />
       <Notebook />
       {showDetailsBook && (
         <BookDetailModal

@@ -1,5 +1,6 @@
 import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
+import { TTS } from 'foliate-js/tts.js';
 
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
@@ -17,6 +18,8 @@ export interface FoliateView extends HTMLElement {
   clearSearch: () => void;
   select: (target: string | number | { fraction: number }) => void;
   deselect: () => void;
+  initTTS: () => Promise<void>;
+  tts: TTS;
   history: {
     canGoBack: boolean;
     canGoForward: boolean;

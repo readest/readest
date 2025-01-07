@@ -2,6 +2,7 @@ import React from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import FoliateViewer from './FoliateViewer';
 import getGridTemplate from '@/utils/grid';
 import SectionInfo from './SectionInfo';
@@ -11,7 +12,6 @@ import PageInfoView from './PageInfo';
 import Ribbon from './Ribbon';
 import SettingsDialog from './settings/SettingsDialog';
 import Annotator from './annotator/Annotator';
-import { useBookDataStore } from '@/store/bookDataStore';
 import FootnotePopup from './FootnotePopup';
 
 interface BooksGridProps {
@@ -49,7 +49,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           <div
             id={`gridcell-${bookKey}`}
             key={bookKey}
-            className='relative h-full w-full rounded-window overflow-hidden'
+            className='rounded-window relative h-full w-full overflow-hidden'
           >
             {isBookmarked && <Ribbon width={marginGap} />}
             <HeaderBar

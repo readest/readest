@@ -6,7 +6,8 @@ import { FaWikipediaW } from 'react-icons/fa';
 import { BsPencilSquare } from 'react-icons/bs';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
-import { SiDeepl } from 'react-icons/si';
+import { TbHexagonLetterD } from 'react-icons/tb';
+import { FaHeadphones } from 'react-icons/fa6';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -17,6 +18,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
@@ -28,6 +30,7 @@ import WikipediaPopup from './WikipediaPopup';
 import DeepLPopup from './DeepLPopup';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
@@ -222,7 +225,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleCopy = () => {
     if (!selection || !selection.text) return;
-    setToastMessage('Copied to notebook');
+    setToastMessage(_('Copied to notebook'));
 
     const { booknotes: annotations = [] } = config;
     if (selection) navigator.clipboard.writeText(selection.text);
@@ -334,19 +337,29 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowDeepLPopup(true);
   };
 
+  const handleSpeakText = async () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+
+    await view!.initTTS();
+    const ssml = view!.tts.from(selection.range)!;
+    eventDispatcher.dispatch('speak', { bookKey, ssml });
+  };
+
   const selectionAnnotated = selection?.annotated;
   const buttons = [
-    { tooltipText: 'Copy', Icon: FiCopy, onClick: handleCopy },
+    { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
     {
-      tooltipText: selectionAnnotated ? 'Delete Highlight' : 'Highlight',
+      tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
       Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
       onClick: handleHighlight,
     },
-    { tooltipText: 'Annotate', Icon: BsPencilSquare, onClick: handleAnnotate },
-    { tooltipText: 'Search', Icon: FiSearch, onClick: handleSearch },
-    { tooltipText: 'Dictionary', Icon: BsTranslate, onClick: handleDictionary },
-    { tooltipText: 'Translate', Icon: SiDeepl, onClick: handleTranslation },
-    { tooltipText: 'Wikipedia', Icon: FaWikipediaW, onClick: handleWikipedia },
+    { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
+    { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
+    { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
+    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
+    { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
+    { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
   ];
 
   return (

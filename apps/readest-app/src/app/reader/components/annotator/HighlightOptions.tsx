@@ -51,7 +51,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           >
             <div
               className={clsx(
-                'h-4 w-4 p-0 text-center leading-none',
+                'w-4 p-0 text-center leading-none',
+                style === 'highlight' ? 'h-4' : 'h-5',
                 style === 'highlight' &&
                   (selectedStyle === 'highlight' ? `bg-${selectedColor}-400` : `bg-gray-300`),
                 (style === 'underline' || style === 'squiggly') &&
