@@ -228,7 +228,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               value={maxColumnCount}
               onChange={setMaxColumnCount}
               min={1}
-              max={2}
+              max={4}
             />
             <NumberInput
               label={_('Maximum Inline Size')}
