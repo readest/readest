@@ -18,7 +18,6 @@ import {
   handleClick,
   handleWheel,
 } from '../utils/iframeEventHandlers';
-import Toast from '@/components/Toast';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -39,7 +38,7 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  useProgressSync(bookKey, setToastMessage);
+  useProgressSync(bookKey);
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -164,9 +163,6 @@ const FoliateViewer: React.FC<{
         onClick={(event) => handleTurnPage(event)}
         ref={containerRef}
       />
-      {toastMessage && (
-        <Toast message={toastMessage} toastClass='toast-top toast-end' alertClass='alert-success' />
-      )}
     </>
   );
 };

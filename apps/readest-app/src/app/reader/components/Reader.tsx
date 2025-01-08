@@ -5,10 +5,10 @@ import { useEffect, Suspense, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
-
-import ReaderContent from './ReaderContent';
-import { AboutWindow } from '@/components/AboutWindow';
 import { useSettingsStore } from '@/store/settingsStore';
+import { AboutWindow } from '@/components/AboutWindow';
+import { Toast } from '@/components/Toast';
+import ReaderContent from './ReaderContent';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig } = useEnv();
@@ -37,6 +37,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <Suspense>
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />
+          <Toast />
         </Suspense>
       </div>
     )

@@ -23,7 +23,6 @@ import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
-import Toast from '@/components/Toast';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
@@ -57,7 +56,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
-  const [toastMessage, setToastMessage] = useState('');
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
@@ -197,11 +195,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [selection, bookKey]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setToastMessage(''), 2000);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
-
-  useEffect(() => {
     if (!progress) return;
     const { location } = progress;
     const start = CFI.collapse(location);
@@ -225,7 +218,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleCopy = () => {
     if (!selection || !selection.text) return;
-    setToastMessage(_('Copied to notebook'));
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Copied to notebook'),
+      className: 'whitespace-nowrap',
+      timeout: 2000,
+    });
 
     const { booknotes: annotations = [] } = config;
     if (selection) navigator.clipboard.writeText(selection.text);
@@ -414,8 +412,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onHighlight={handleHighlight}
         />
       )}
-
-      {toastMessage && <Toast message={toastMessage} alertClass='bg-neutual text-content' />}
     </div>
   );
 };
