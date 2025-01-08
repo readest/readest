@@ -355,8 +355,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
     { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
-    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
     { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
+    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
     { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
   ];
 

@@ -99,7 +99,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
-              <span className='text-gray-700'>{_('Paging Animation')}</span>
+              <span className=''>{_('Paging Animation')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -116,7 +116,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
-              <span className='text-gray-700'>{_('Disable Click-to-Flip')}</span>
+              <span className=''>{_('Disable Click-to-Flip')}</span>
               <input
                 type='checkbox'
                 className='toggle'
