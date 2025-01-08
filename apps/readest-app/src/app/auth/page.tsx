@@ -194,7 +194,7 @@ export default function AuthPage() {
         onClick={handleGoBack}
         className='btn btn-ghost fixed left-3 top-11 h-8 min-h-8 w-8 p-0'
       >
-        <IoArrowBack size={20} />
+        <IoArrowBack size={20} className='text-base-content' />
       </button>
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
         <ProviderLogin
@@ -238,7 +238,7 @@ export default function AuthPage() {
         onClick={handleGoBack}
         className='btn btn-ghost fixed left-10 top-6 h-8 min-h-8 w-8 p-0'
       >
-        <IoArrowBack size={20} />
+        <IoArrowBack size={20} className='text-base-content' />
       </button>
       <Auth
         supabaseClient={supabase}
