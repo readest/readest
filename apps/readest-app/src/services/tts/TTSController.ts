@@ -104,6 +104,10 @@ export class TTSController extends EventTarget {
     }
   }
 
+  async setRate(rate: number) {
+    this.ttsClient.setRate(rate);
+  }
+
   error(e: unknown) {
     console.error(e);
     this.state = 'stopped';

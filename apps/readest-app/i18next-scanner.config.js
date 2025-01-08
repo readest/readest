@@ -3,7 +3,7 @@ module.exports = {
   output: '.',
   options: {
     debug: false,
-    sort: true,
+    sort: false,
     func: {
       list: ['_'],
       extensions: ['.js', '.jsx', '.ts', '.tsx'],

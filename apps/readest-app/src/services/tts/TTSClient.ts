@@ -8,7 +8,7 @@ export interface TTSMessageEvent {
 
 export interface TTSClient {
   init(): Promise<void>;
-  speak(ssml: string): Promise<AsyncIterable<TTSMessageEvent>>;
+  speak(ssml: string): AsyncIterable<TTSMessageEvent>;
   pause(): Promise<void>;
   resume(): Promise<void>;
   stop(): Promise<void>;

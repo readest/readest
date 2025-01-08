@@ -12,7 +12,7 @@ interface TTSBoundaryEvent {
   error?: string;
 }
 
-async function* speakWithBoundary(ssml: string) {
+async function* speakWithBoundary(ssml: string, getRate: () => number, getPitch: () => number) {
   const lang = parseSSMLLang(ssml);
   const { plainText, marks } = parseSSMLMarks(ssml);
   // console.log('ssml', ssml, marks);
@@ -24,10 +24,14 @@ async function* speakWithBoundary(ssml: string) {
   if (lang) {
     utterance.lang = lang;
   }
+  utterance.rate = getRate();
+  utterance.pitch = getPitch();
 
   const queue = new AsyncQueue<TTSBoundaryEvent>();
 
   utterance.onboundary = (event: SpeechSynthesisEvent) => {
+    utterance.rate = getRate();
+    utterance.pitch = getPitch();
     const mark = findSSMLMark(event.charIndex, marks);
     // console.log('boundary', event.charIndex, mark);
     queue.enqueue({
@@ -62,7 +66,8 @@ async function* speakWithBoundary(ssml: string) {
 }
 
 export class WebSpeechClient implements TTSClient {
-  #utterance: SpeechSynthesisUtterance | null = null;
+  #rate = 1.0;
+  #pitch = 1.0;
   #synth = window.speechSynthesis;
 
   async init() {
@@ -71,26 +76,24 @@ export class WebSpeechClient implements TTSClient {
     }
   }
 
-  async speak(ssml: string) {
-    await this.stop();
-
-    const generator = (async function* () {
-      for await (const ev of speakWithBoundary(ssml)) {
-        if (ev.type === 'boundary') {
-          yield {
-            code: 'boundary',
-            mark: ev.mark ?? '',
-            message: `${ev.name} ${ev.charIndex}/${ev.charLength}`,
-          } as TTSMessageEvent;
-        } else if (ev.type === 'error') {
-          yield { code: 'error', message: ev.error } as TTSMessageEvent;
-        } else if (ev.type === 'end') {
-          yield { code: 'end', message: 'Speech finished' } as TTSMessageEvent;
-        }
+  async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
+    for await (const ev of speakWithBoundary(
+      ssml,
+      () => this.#rate,
+      () => this.#pitch,
+    )) {
+      if (ev.type === 'boundary') {
+        yield {
+          code: 'boundary',
+          mark: ev.mark ?? '',
+          message: `${ev.name ?? 'Unknown'} ${ev.charIndex ?? 0}/${ev.charLength ?? 0}`,
+        } as TTSMessageEvent;
+      } else if (ev.type === 'error') {
+        yield { code: 'error', message: ev.error ?? 'Unknown error' } as TTSMessageEvent;
+      } else if (ev.type === 'end') {
+        yield { code: 'end', message: 'Speech finished' } as TTSMessageEvent;
       }
-    })();
-
-    return generator;
+    }
   }
 
   async pause() {
@@ -107,11 +110,11 @@ export class WebSpeechClient implements TTSClient {
 
   async setRate(rate: number) {
     // The Web Speech API uses utterance.rate in [0.1 .. 10],
-    if (this.#utterance) this.#utterance.rate = rate / 10;
+    this.#rate = rate;
   }
 
   async setPitch(pitch: number) {
     // The Web Speech API uses pitch in [0 .. 2].
-    if (this.#utterance) this.#utterance.pitch = pitch / 50;
+    this.#pitch = pitch;
   }
 }

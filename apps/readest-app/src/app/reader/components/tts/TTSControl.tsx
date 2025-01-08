@@ -11,7 +11,7 @@ import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
 
 const POPUP_WIDTH = 260;
-const POPUP_HEIGHT = 80;
+const POPUP_HEIGHT = 160;
 const POPUP_PADDING = 10;
 
 const TTSControl = () => {
@@ -100,6 +100,14 @@ const TTSControl = () => {
     }
   };
 
+  // rate range: 0.5 - 3, 1.0 is normal speed
+  const handleSetRate = async (rate: number) => {
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      await ttsController.setRate(rate);
+    }
+  };
+
   const updatePanelPosition = () => {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect();
@@ -149,6 +157,7 @@ const TTSControl = () => {
             onBackward={handleBackward}
             onForward={handleForward}
             onStop={handleStop}
+            onSetRate={handleSetRate}
           />
         </Popup>
       )}
