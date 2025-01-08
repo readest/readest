@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { TTSController } from '@/services/tts/TTSController';
 import { WebSpeechClient } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
-import { useReaderStore } from '@/store/readerStore';
+import { parseSSMLLang } from '@/utils/ssml';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const POPUP_WIDTH = 260;
 const POPUP_HEIGHT = 80;
@@ -47,8 +48,9 @@ const TTSControl = () => {
     if (!view) return;
 
     try {
+      const lang = parseSSMLLang(ssml) || 'en';
       const ttsClient = new WebSpeechClient();
-      const ttsController = new TTSController(ttsClient, view);
+      const ttsController = new TTSController(ttsClient, view, lang);
       ttsControllerRef.current = ttsController;
       ttsControllerRef.current.speak(ssml);
       setIsPlaying(true);

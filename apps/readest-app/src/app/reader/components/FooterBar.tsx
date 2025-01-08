@@ -2,10 +2,14 @@ import React from 'react';
 import clsx from 'clsx';
 import { RiArrowLeftWideLine, RiArrowRightWideLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
+import { FaHeadphones } from 'react-icons/fa6';
 
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getBookLangCode } from '@/utils/book';
+import { eventDispatcher } from '@/utils/event';
 import Button from '@/components/Button';
 
 interface FooterBarProps {
@@ -16,9 +20,12 @@ interface FooterBarProps {
 
 const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, setHoveredBookKey, getView } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, getView, getProgress } = useReaderStore();
+  const { getBookData } = useBookDataStore();
   const { isSideBarVisible } = useSidebarStore();
   const view = getView(bookKey);
+  const bookData = getBookData(bookKey);
+  const progress = getProgress(bookKey);
 
   const handleProgressChange = (event: React.ChangeEvent) => {
     const newProgress = parseInt((event.target as HTMLInputElement).value, 10);
@@ -39,6 +46,16 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
 
   const handleGoForward = () => {
     view?.history.forward();
+  };
+
+  const handleSpeakText = async () => {
+    if (!view || !progress) return;
+    const lang = getBookLangCode(bookData?.bookDoc!.metadata.language);
+    const granularity = ['zh', 'ja', 'ko'].includes(lang) ? 'sentence' : 'word';
+    await view.initTTS(granularity);
+    const { range } = progress;
+    const ssml = view.tts.from(range);
+    eventDispatcher.dispatch('speak', { bookKey, ssml });
   };
 
   const pageinfoValid = pageinfo && pageinfo.total > 0 && pageinfo.current >= 0;
@@ -83,6 +100,7 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
         value={pageinfoValid ? progressFraction * 100 : 0}
         onChange={(e) => handleProgressChange(e)}
       />
+      <Button icon={<FaHeadphones size={20} />} onClick={handleSpeakText} tooltip={_('Speak')} />
       <Button
         icon={<RiArrowRightWideLine size={20} />}
         onClick={handleGoNext}

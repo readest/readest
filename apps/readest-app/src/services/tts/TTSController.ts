@@ -7,17 +7,20 @@ export class TTSController extends EventTarget {
   state: TTSState = 'stopped';
   ttsClient: TTSClient;
   view: FoliateView;
+  lang: string;
   #nossmlCnt: number = 0;
 
-  constructor(ttsClient: TTSClient, view: FoliateView) {
+  constructor(ttsClient: TTSClient, view: FoliateView, lang: string) {
     super();
     this.ttsClient = ttsClient;
     this.view = view;
+    this.lang = lang;
   }
 
   async #init() {
     await this.ttsClient.stop();
-    await this.view.initTTS();
+    const granularity = ['zh', 'ja', 'ko'].includes(this.lang) ? 'sentence' : 'word';
+    await this.view.initTTS(granularity);
   }
 
   async #speak(ssml: string | undefined | Promise<string>) {
