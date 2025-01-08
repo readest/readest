@@ -27,7 +27,7 @@ export class TTSController extends EventTarget {
     if (!ssml) {
       this.#nossmlCnt++;
       // FIXME: in case we are at the end of the book, need a better way to handle this
-      if (this.#nossmlCnt < 100) {
+      if (this.#nossmlCnt < 10) {
         await this.view.next(1);
         this.forward();
       }
@@ -47,8 +47,6 @@ export class TTSController extends EventTarget {
 
     if (lastCode === 'end') {
       this.forward();
-    } else {
-      this.state = 'paused';
     }
   }
 

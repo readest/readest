@@ -72,7 +72,8 @@ function findMark(charIndex: number, marks: TTSMark[]) {
 async function* speakWithBoundary(ssml: string) {
   const lang = getXmlLang(ssml);
   const { plainText, marks } = parseSSMLMarks(ssml);
-  // console.log('text', ssml, plainText, marks);
+  // console.log('ssml', ssml, marks);
+  // console.log('text', plainText);
 
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(plainText);
