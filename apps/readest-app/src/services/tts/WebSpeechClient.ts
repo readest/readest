@@ -72,7 +72,7 @@ function findMark(charIndex: number, marks: TTSMark[]) {
 async function* speakWithBoundary(ssml: string) {
   const lang = getXmlLang(ssml);
   const { plainText, marks } = parseSSMLMarks(ssml);
-  // console.log('text', plainText, marks);
+  // console.log('text', ssml, plainText, marks);
 
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(plainText);
@@ -85,7 +85,7 @@ async function* speakWithBoundary(ssml: string) {
 
   utterance.onboundary = (event: SpeechSynthesisEvent) => {
     const mark = findMark(event.charIndex, marks);
-    // console.log('boundary', mark);
+    // console.log('boundary', event.charIndex, mark);
     queue.enqueue({
       type: 'boundary',
       speaking: true,
@@ -163,7 +163,6 @@ export class WebSpeechClient implements TTSClient {
 
   async setRate(rate: number) {
     // The Web Speech API uses utterance.rate in [0.1 .. 10],
-    // you might need to scale your “rate” to match.
     if (this.#utterance) this.#utterance.rate = rate / 10;
   }
 

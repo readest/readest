@@ -7,12 +7,14 @@ import { useReaderStore } from '@/store/readerStore';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const POPUP_WIDTH = 260;
 const POPUP_HEIGHT = 80;
 const POPUP_PADDING = 10;
 
 const TTSControl = () => {
+  const _ = useTranslation();
   const { getView } = useReaderStore();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
@@ -44,11 +46,19 @@ const TTSControl = () => {
     const view = getView(bookKey);
     if (!view) return;
 
-    const ttsClient = new WebSpeechClient();
-    const ttsController = new TTSController(ttsClient, view);
-    ttsControllerRef.current = ttsController;
-    ttsControllerRef.current.speak(ssml);
-    setIsPlaying(true);
+    try {
+      const ttsClient = new WebSpeechClient();
+      const ttsController = new TTSController(ttsClient, view);
+      ttsControllerRef.current = ttsController;
+      ttsControllerRef.current.speak(ssml);
+      setIsPlaying(true);
+    } catch (error) {
+      eventDispatcher.dispatch('toast', {
+        message: _('TTS not supported in this device'),
+        type: 'error',
+      });
+      console.error(error);
+    }
   };
 
   const handleTogglePlay = async () => {
@@ -59,7 +69,7 @@ const TTSControl = () => {
       ttsController.pause();
       setIsPlaying(false);
     } else {
-      await ttsController.start();
+      ttsController.start();
       setIsPlaying(true);
     }
   };
