@@ -25,6 +25,7 @@ import {
   DEFAULT_READSETTINGS,
   SYSTEM_SETTINGS_VERSION,
   DEFAULT_BOOK_SEARCH_CONFIG,
+  DEFAULT_TTS_CONFIG,
 } from './constants';
 import { isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -68,6 +69,7 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_BOOK_STYLE,
         ...DEFAULT_BOOK_FONT,
         ...DEFAULT_VIEW_CONFIG,
+        ...DEFAULT_TTS_CONFIG,
         ...settings.globalViewSettings,
       };
     } catch {
@@ -84,6 +86,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_BOOK_STYLE,
           ...DEFAULT_BOOK_FONT,
           ...DEFAULT_VIEW_CONFIG,
+          ...DEFAULT_TTS_CONFIG,
         },
       };
 

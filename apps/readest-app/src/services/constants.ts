@@ -1,4 +1,11 @@
-import { BookFont, BookLayout, BookSearchConfig, BookStyle, ViewConfig } from '@/types/book';
+import {
+  BookFont,
+  BookLayout,
+  BookSearchConfig,
+  BookStyle,
+  TTSConfig,
+  ViewConfig,
+} from '@/types/book';
 import { ReadSettings } from '@/types/settings';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
@@ -59,6 +66,11 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
+};
+
+export const DEFAULT_TTS_CONFIG: TTSConfig = {
+  ttsRate: 1.0,
+  ttsVoice: '',
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {

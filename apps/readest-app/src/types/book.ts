@@ -80,7 +80,12 @@ export interface ViewConfig {
   sideBarTab: string;
 }
 
-export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig {}
+export interface TTSConfig {
+  ttsRate: number;
+  ttsVoice: string;
+}
+
+export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig, TTSConfig {}
 
 export interface BookProgress {
   location: string;

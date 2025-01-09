@@ -10,13 +10,15 @@ import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
 
-const POPUP_WIDTH = 260;
+const POPUP_WIDTH = 282;
 const POPUP_HEIGHT = 160;
 const POPUP_PADDING = 10;
 
 const TTSControl = () => {
   const _ = useTranslation();
-  const { getView } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
+  const [bookKey, setBookKey] = useState<string>('');
+  const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState<Position>();
@@ -45,14 +47,21 @@ const TTSControl = () => {
   const handleSpeak = async (event: CustomEvent) => {
     const { bookKey, ssml } = event.detail;
     const view = getView(bookKey);
-    if (!view) return;
+    const viewSettings = getViewSettings(bookKey);
+    if (!view || !viewSettings) return;
+
+    setBookKey(bookKey);
 
     try {
       const lang = parseSSMLLang(ssml) || 'en';
+      setTtsLang(lang);
       const ttsClient = new WebSpeechClient();
+      await ttsClient.init();
       const ttsController = new TTSController(ttsClient, view, lang);
+      ttsController.setRate(viewSettings.ttsRate);
+      ttsController.setVoice(viewSettings.ttsVoice);
+      ttsController.speak(ssml);
       ttsControllerRef.current = ttsController;
-      ttsControllerRef.current.speak(ssml);
       setIsPlaying(true);
     } catch (error) {
       eventDispatcher.dispatch('toast', {
@@ -104,7 +113,22 @@ const TTSControl = () => {
   const handleSetRate = async (rate: number) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      await ttsController.setRate(rate);
+      ttsController.setRate(rate);
+    }
+  };
+
+  const handleGetVoices = async (lang: string) => {
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      return ttsController.getVoices(lang);
+    }
+    return [];
+  };
+
+  const handleSetVoice = async (voice: string) => {
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      ttsController.setVoice(voice);
     }
   };
 
@@ -136,8 +160,19 @@ const TTSControl = () => {
     setShowPanel((prev) => !prev);
   };
 
+  const handleDismissPopup = () => {
+    setShowPanel(false);
+  };
+
   return (
     <div>
+      {showPanel && (
+        <div
+          className='fixed inset-0'
+          onClick={handleDismissPopup}
+          onContextMenu={handleDismissPopup}
+        />
+      )}
       {ttsControllerRef.current && (
         <div ref={iconRef} className='absolute bottom-12 right-6 h-12 w-12'>
           <TTSIcon isPlaying={isPlaying} onClick={togglePopup} />
@@ -152,12 +187,16 @@ const TTSControl = () => {
           className='bg-base-200 absolute flex shadow-lg'
         >
           <TTSPanel
+            bookKey={bookKey}
+            ttsLang={ttsLang}
             isPlaying={isPlaying}
             onTogglePlay={handleTogglePlay}
             onBackward={handleBackward}
             onForward={handleForward}
             onStop={handleStop}
             onSetRate={handleSetRate}
+            onGetVoices={handleGetVoices}
+            onSetVoice={handleSetVoice}
           />
         </Popup>
       )}

@@ -108,6 +108,14 @@ export class TTSController extends EventTarget {
     this.ttsClient.setRate(rate);
   }
 
+  async getVoices(lang: string) {
+    return this.ttsClient.getVoices(lang);
+  }
+
+  async setVoice(voice: string) {
+    await this.ttsClient.setVoice(voice);
+  }
+
   error(e: unknown) {
     console.error(e);
     this.state = 'stopped';

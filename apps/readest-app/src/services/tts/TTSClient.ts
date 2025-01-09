@@ -14,4 +14,6 @@ export interface TTSClient {
   stop(): Promise<void>;
   setRate(rate: number): Promise<void>;
   setPitch(pitch: number): Promise<void>;
+  getVoices(lang: string): Promise<string[]>;
+  setVoice(voice: string): Promise<void>;
 }
