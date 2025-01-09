@@ -27,7 +27,7 @@ const TabNavigation: React.FC<{
           <div
             key={tab}
             className='tooltip z-50 tooltip-top m-1.5 flex-1 rounded-md p-2 cursor-pointer'
-            data-tip={tab === 'toc' ? _('Toc') : tab === 'annotations' ? _('Annotate') : _('Bookmark')}
+            data-tip={tab === 'toc' ? _('Table of Contents') : tab === 'annotations' ? _('Annotate') : _('Bookmark')}
           >
             <div
               className={clsx(
