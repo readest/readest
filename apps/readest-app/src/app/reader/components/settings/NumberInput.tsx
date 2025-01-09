@@ -25,11 +25,17 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const numberStep = step || 1;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value === '' ? 0 : parseFloat(e.target.value);
-    setLocalValue(newValue);
-    if (!isNaN(newValue)) {
-      const roundedValue = Math.round(newValue * 10) / 10;
-      onChange(Math.max(min, Math.min(max, roundedValue)));
+    const value = e.target.value;
+
+    // Allow empty string or valid numbers without leading zeros
+    if (value === '' || /^[1-9]\d*\.?\d*$|^0?\.?\d*$/.test(value)) {
+      const newValue = value === '' ? 0 : parseFloat(value);
+      setLocalValue(newValue);
+
+      if (!isNaN(newValue)) {
+        const roundedValue = Math.round(newValue * 10) / 10;
+        onChange(Math.max(min, Math.min(max, roundedValue)));
+      }
     }
   };
 
@@ -59,6 +65,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       <div className='text-base-content flex items-center gap-2'>
         <input
           type='text'
+          inputMode='decimal'
           value={localValue}
           onChange={handleChange}
           onBlur={handleOnBlur}
