@@ -126,7 +126,7 @@ const TOCView: React.FC<{
       const rect = currentItem.getBoundingClientRect();
       const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
       if (!isVisible) {
-        (currentItem as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (currentItem as HTMLElement).scrollIntoView({ behavior: 'instant', block: 'center' });
       }
       (currentItem as HTMLElement).setAttribute('aria-current', 'page');
     }

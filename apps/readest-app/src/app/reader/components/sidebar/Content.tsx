@@ -15,6 +15,8 @@ const SidebarContent: React.FC<{
   const { getConfig, setConfig } = useBookDataStore();
   const config = getConfig(sideBarBookKey);
   const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
+  const [fade, setFade] = useState(false);
+  const [targetTab, setTargetTab] = useState(activeTab);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -49,10 +51,17 @@ const SidebarContent: React.FC<{
   }, [sideBarBookKey]);
 
   const handleTabChange = (tab: string) => {
+    setFade(true);
+    const timeout = setTimeout(() => {
+      setFade(false)
+      setTargetTab(tab);
+      setConfig(sideBarBookKey!, config);
+      clearTimeout(timeout);
+    }, 300);
+
     setActiveTab(tab);
     const config = getConfig(sideBarBookKey!)!;
     config.viewSettings!.sideBarTab = tab;
-    setConfig(sideBarBookKey!, config);
   };
 
   return (
@@ -63,14 +72,20 @@ const SidebarContent: React.FC<{
           'font-sans text-sm font-normal shadow-inner',
         )}
       >
-        <div ref={scrollContainerRef} className='scroll-container overflow-y-auto'>
-          {activeTab === 'toc' && bookDoc.toc && (
+        <div
+          ref={scrollContainerRef}
+          className={clsx(
+            'scroll-container overflow-y-auto transition-opacity duration-300 ease-in-out',
+            { 'opacity-0': fade, 'opacity-100': !fade }
+          )}
+        >
+          {targetTab === 'toc' && bookDoc.toc && (
             <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
           )}
-          {activeTab === 'annotations' && (
+          {targetTab === 'annotations' && (
             <BooknoteView type='annotation' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
           )}
-          {activeTab === 'bookmarks' && (
+          {targetTab === 'bookmarks' && (
             <BooknoteView type='bookmark' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
           )}
         </div>
