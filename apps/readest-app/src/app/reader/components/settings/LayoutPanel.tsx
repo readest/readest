@@ -120,6 +120,17 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [maxInlineSize]);
 
   useEffect(() => {
+    viewSettings.maxBlockSize = maxBlockSize;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.maxBlockSize = maxBlockSize;
+      setSettings(settings);
+    }
+    view?.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxBlockSize]);
+
+  useEffect(() => {
     // global settings are not supported for writing mode
     viewSettings.writingMode = writingMode;
     setViewSettings(bookKey, viewSettings);
