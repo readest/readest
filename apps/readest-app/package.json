@@ -55,7 +55,7 @@
     "i18next-http-backend": "^3.0.1",
     "js-md5": "^0.8.3",
     "next": "15.1.0",
-    "posthog-js": "^1.194.1",
+    "posthog-js": "^1.205.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-i18next": "^15.2.0",
@@ -73,7 +73,7 @@
     "@types/tinycolor2": "^1.4.6",
     "autoprefixer": "^10.4.20",
     "cpx2": "^8.0.0",
-    "daisyui": "^4.12.14",
+    "daisyui": "^4.12.23",
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.0.3",
@@ -84,7 +84,7 @@
     "postcss-cli": "^11.0.0",
     "postcss-nested": "^7.0.2",
     "raw-loader": "^4.0.2",
-    "tailwindcss": "^3.4.15",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2"
   }
 }
