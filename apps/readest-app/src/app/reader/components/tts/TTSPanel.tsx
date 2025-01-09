@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdStop } from 'react-icons/md';
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
+import { TTSVoice } from '@/services/tts';
 
 type TTSPanelProps = {
   bookKey: string;
@@ -15,7 +16,7 @@ type TTSPanelProps = {
   onForward: () => void;
   onStop: () => void;
   onSetRate: (rate: number) => void;
-  onGetVoices: (lang: string) => Promise<string[]>;
+  onGetVoices: (lang: string) => Promise<TTSVoice[]>;
   onSetVoice: (voice: string) => void;
 };
 
@@ -35,7 +36,7 @@ const TTSPanel = ({
   const { getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
 
-  const [voices, setVoices] = useState<string[]>([]);
+  const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState(viewSettings?.ttsVoice ?? '');
 
@@ -43,6 +44,7 @@ const TTSPanel = ({
     let newRate = parseFloat(e.target.value);
     newRate = Math.max(0.2, Math.min(3.0, newRate));
     setRate(newRate);
+    onSetRate(newRate);
     const viewSettings = getViewSettings(bookKey)!;
     viewSettings.ttsRate = newRate;
     setViewSettings(bookKey, viewSettings);
@@ -64,11 +66,6 @@ const TTSPanel = ({
     fetchVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsLang]);
-
-  useEffect(() => {
-    onSetRate(rate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rate]);
 
   return (
     <div className='flex w-full flex-col items-center justify-center gap-2 rounded-2xl p-4'>
@@ -126,16 +123,18 @@ const TTSPanel = ({
             tabIndex={0}
             className={clsx(
               'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute right-0 z-[1] shadow',
-              'mt-4 max-h-96 w-64 overflow-y-scroll',
+              'mt-4 max-h-96 w-[250px] overflow-y-scroll',
             )}
           >
-            {voices.map((voice) => (
-              <li key={voice} onClick={() => handleSelectVoice(voice)}>
+            {voices.map((voice, index) => (
+              <li key={`${index}-${voice.id}`} onClick={() => handleSelectVoice(voice.id)}>
                 <div className='flex items-center px-0'>
                   <span style={{ minWidth: '20px' }}>
-                    {selectedVoice === voice && <MdCheck size={20} className='text-base-content' />}
+                    {selectedVoice === voice.id && (
+                      <MdCheck size={20} className='text-base-content' />
+                    )}
                   </span>
-                  <span className='text-sm'> {voice} </span>
+                  <span className='text-sm'> {voice.name} </span>
                 </div>
               </li>
             ))}

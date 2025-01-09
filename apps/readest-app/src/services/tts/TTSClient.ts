@@ -6,6 +6,12 @@ export interface TTSMessageEvent {
   mark?: string;
 }
 
+export interface TTSVoice {
+  id: string;
+  name: string;
+  lang: string;
+}
+
 export interface TTSClient {
   init(): Promise<void>;
   speak(ssml: string): AsyncIterable<TTSMessageEvent>;
@@ -14,6 +20,6 @@ export interface TTSClient {
   stop(): Promise<void>;
   setRate(rate: number): Promise<void>;
   setPitch(pitch: number): Promise<void>;
-  getVoices(lang: string): Promise<string[]>;
+  getVoices(lang: string): Promise<TTSVoice[]>;
   setVoice(voice: string): Promise<void>;
 }

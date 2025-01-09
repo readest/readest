@@ -344,7 +344,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const granularity = ['zh', 'ja', 'ko'].includes(lang) ? 'sentence' : 'word';
     await view!.initTTS(granularity);
     const ssml = view!.tts.from(selection.range)!;
-    eventDispatcher.dispatch('speak', { bookKey, ssml });
+    eventDispatcher.dispatch('tts-speak', { bookKey, ssml });
   };
 
   const selectionAnnotated = selection?.annotated;

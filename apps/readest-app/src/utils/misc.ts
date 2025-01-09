@@ -25,6 +25,16 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
 
 export const getUserLang = () => navigator?.language.split('-')[0] || 'en';
 
+export const getUserLocale = (lang: string): string | undefined => {
+  const languages =
+    navigator.languages && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
+
+  const filteredLocales = languages.filter((locale) => locale.startsWith(lang));
+  return filteredLocales.length > 0 ? filteredLocales[0] : undefined;
+};
+
 export const getOSPlatform = () => {
   const userAgent = navigator.userAgent.toLowerCase();
 

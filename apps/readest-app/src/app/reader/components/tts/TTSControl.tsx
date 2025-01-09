@@ -37,14 +37,16 @@ const TTSControl = () => {
   }, []);
 
   useEffect(() => {
-    eventDispatcher.on('speak', handleSpeak);
+    eventDispatcher.on('tts-speak', handleTTSSpeak);
+    eventDispatcher.on('tts-stop', handleTTSStop);
     return () => {
-      eventDispatcher.off('speak', handleSpeak);
+      eventDispatcher.off('tts-speak', handleTTSSpeak);
+      eventDispatcher.off('tts-stop', handleTTSStop);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSpeak = async (event: CustomEvent) => {
+  const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey, ssml } = event.detail;
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
@@ -69,6 +71,13 @@ const TTSControl = () => {
         type: 'error',
       });
       console.error(error);
+    }
+  };
+
+  const handleTTSStop = async (event: CustomEvent) => {
+    const { bookKey } = event.detail;
+    if (bookKey === bookKey) {
+      handleStop();
     }
   };
 
@@ -113,7 +122,13 @@ const TTSControl = () => {
   const handleSetRate = async (rate: number) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      ttsController.setRate(rate);
+      if (ttsController.state === 'playing') {
+        ttsController.pause();
+        ttsController.setRate(rate);
+        ttsController.start();
+      } else {
+        ttsController.setRate(rate);
+      }
     }
   };
 
@@ -128,7 +143,13 @@ const TTSControl = () => {
   const handleSetVoice = async (voice: string) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      ttsController.setVoice(voice);
+      if (ttsController.state === 'playing') {
+        ttsController.pause();
+        ttsController.setVoice(voice);
+        ttsController.start();
+      } else {
+        ttsController.setVoice(voice);
+      }
     }
   };
 

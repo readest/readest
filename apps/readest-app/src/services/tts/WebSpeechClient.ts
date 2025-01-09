@@ -1,4 +1,5 @@
-import { TTSClient, TTSMessageEvent } from './TTSClient';
+import { getUserLocale } from '@/utils/misc';
+import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { AsyncQueue } from '@/utils/queue';
 import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 
@@ -153,6 +154,7 @@ export class WebSpeechClient implements TTSClient {
     await new Promise<void>((resolve) => {
       const populateVoices = () => {
         this.#voices = this.#synth.getVoices();
+        // console.log('Voices', this.#voices);
         if (this.#voices.length > 0) {
           resolve();
         }
@@ -213,11 +215,20 @@ export class WebSpeechClient implements TTSClient {
   }
 
   async getVoices(lang: string) {
-    return this.#voices.filter((voice) => voice.lang.startsWith(lang)).map((voice) => voice.name);
+    const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
+    const isValidVoice = (id: string) => {
+      return !id.includes('com.apple') || id.includes('com.apple.voice');
+    };
+    const filteredVoices = this.#voices
+      .filter((voice) => voice.lang.startsWith(locale))
+      .filter((voice) => isValidVoice(voice.voiceURI || ''));
+    return filteredVoices.map((voice) => {
+      return { id: voice.voiceURI, name: voice.name, lang: voice.lang } as TTSVoice;
+    });
   }
 
   async setVoice(voice: string) {
-    const selectedVoice = this.#voices.find((v) => v.name === voice);
+    const selectedVoice = this.#voices.find((v) => v.voiceURI === voice);
     if (selectedVoice) {
       this.#voice = selectedVoice;
     }

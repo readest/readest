@@ -55,7 +55,7 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
     await view.initTTS(granularity);
     const { range } = progress;
     const ssml = view.tts.from(range);
-    eventDispatcher.dispatch('speak', { bookKey, ssml });
+    eventDispatcher.dispatch('tts-speak', { bookKey, ssml });
   };
 
   const pageinfoValid = pageinfo && pageinfo.total > 0 && pageinfo.current >= 0;

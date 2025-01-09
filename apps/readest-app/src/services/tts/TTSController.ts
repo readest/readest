@@ -43,7 +43,7 @@ export class TTSController extends EventTarget {
     let lastCode: TTSMessageCode = 'boundary';
     for await (const { code, mark } of iter) {
       if (mark) {
-        this.view.tts.setMark(mark);
+        this.view.tts?.setMark(mark);
       }
       lastCode = code;
     }
