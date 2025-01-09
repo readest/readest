@@ -79,6 +79,12 @@ export class SyncClient {
   }
 
   private async getAccessToken(): Promise<string | null> {
+    // In browser context there might be two instances of supabase one in the app route
+    // and the other in the pages route, and they might have different sessions
+    // making the access token invalid for API calls. In that case we should use localStorage.
+    if (isWebAppPlatform()) {
+      return localStorage.getItem('token') ?? null;
+    }
     const { data } = await supabase.auth.getSession();
     return data?.session?.access_token ?? null;
   }

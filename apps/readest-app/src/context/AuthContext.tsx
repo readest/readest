@@ -29,31 +29,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    const syncSession = (session: { access_token: string; user: User } | null) => {
-      console.log('Syncing session');
+    const syncSession = (
+      session: { access_token: string; refresh_token: string; user: User } | null,
+    ) => {
       if (session) {
-        const { access_token, user } = session;
+        console.log('Syncing session');
+        const { access_token, refresh_token, user } = session;
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+        localStorage.setItem('user', JSON.stringify(user));
         setToken(access_token);
         setUser(user);
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
       } else {
+        console.log('Clearing session');
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
       }
     };
-    const fetchSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      syncSession(data.session);
+    const refreshSession = async () => {
+      try {
+        await supabase.auth.refreshSession();
+      } catch {
+        syncSession(null);
+      }
     };
 
-    fetchSession();
     const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
       syncSession(session);
     });
 
+    refreshSession();
     return () => {
       subscription?.subscription.unsubscribe();
     };
@@ -69,12 +77,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     console.log('Logging out');
-    await supabase.auth.refreshSession();
-    await supabase.auth.signOut();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
+    try {
+      await supabase.auth.refreshSession();
+    } catch {
+    } finally {
+      await supabase.auth.signOut();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (
