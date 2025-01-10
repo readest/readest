@@ -18,6 +18,7 @@ type TTSPanelProps = {
   onSetRate: (rate: number) => void;
   onGetVoices: (lang: string) => Promise<TTSVoice[]>;
   onSetVoice: (voice: string) => void;
+  onGetVoiceId: () => string;
 };
 
 const TTSPanel = ({
@@ -31,6 +32,7 @@ const TTSPanel = ({
   onSetRate,
   onGetVoices,
   onSetVoice,
+  onGetVoiceId,
 }: TTSPanelProps) => {
   const _ = useTranslation();
   const { getViewSettings, setViewSettings } = useReaderStore();
@@ -57,6 +59,12 @@ const TTSPanel = ({
     viewSettings.ttsVoice = voice;
     setViewSettings(bookKey, viewSettings);
   };
+
+  useEffect(() => {
+    const voiceId = onGetVoiceId();
+    setSelectedVoice(voiceId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchVoices = async () => {

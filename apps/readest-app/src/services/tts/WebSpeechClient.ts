@@ -4,6 +4,36 @@ import { AsyncQueue } from '@/utils/queue';
 import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
 
+const BLACKLISTED_VOICES = [
+  'Albert',
+  'Bad News',
+  'Bahh',
+  'Bells',
+  'Boing',
+  'Bubbles',
+  'Cellos',
+  'Eddy',
+  'Flo',
+  'Fred',
+  'Good News',
+  'Grandma',
+  'Grandpa',
+  'Jester',
+  'Junior',
+  'Kathy',
+  'Organ',
+  'Ralph',
+  'Reed',
+  'Rocko',
+  'Sandy',
+  'Shelley',
+  'Superstar',
+  'Trinoids',
+  'Whisper',
+  'Wobble',
+  'Zarvox',
+];
+
 interface TTSBoundaryEvent {
   type: 'boundary' | 'end' | 'error';
   speaking: boolean;
@@ -176,6 +206,12 @@ export class WebSpeechClient implements TTSClient {
   }
 
   async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
+    const lang = parseSSMLLang(ssml) || 'en';
+    if (!this.#voice) {
+      const voices = await this.getVoices(lang);
+      const voiceId = voices[0]?.id ?? '';
+      this.#voice = this.#voices.find((v) => v.voiceURI === voiceId) || null;
+    }
     for await (const ev of speakWithMarks(
       ssml,
       () => this.#rate,
@@ -240,11 +276,15 @@ export class WebSpeechClient implements TTSClient {
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const isValidVoice = (id: string) => {
-      return !id.includes('com.apple') || id.includes('com.apple.voice');
+      return !id.includes('com.apple') || id.includes('com.apple.voice.compact');
+    };
+    const isNotBlacklisted = (voice: SpeechSynthesisVoice) => {
+      return BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
     };
     const filteredVoices = this.#voices
       .filter((voice) => voice.lang.startsWith(locale))
-      .filter((voice) => isValidVoice(voice.voiceURI || ''));
+      .filter((voice) => isValidVoice(voice.voiceURI || ''))
+      .filter(isNotBlacklisted);
     const voices = filteredVoices.map((voice) => {
       return { id: voice.voiceURI, name: voice.name, lang: voice.lang } as TTSVoice;
     });
@@ -258,5 +298,9 @@ export class WebSpeechClient implements TTSClient {
     // currently only support sentence boundary and disable word boundary as changing voice
     // in the middle of speech is not possible for different granularities
     return ['sentence'];
+  }
+
+  getVoiceId(): string {
+    return this.#voice?.voiceURI ?? '';
   }
 }

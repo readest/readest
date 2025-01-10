@@ -27,4 +27,5 @@ export interface TTSClient {
   getAllVoices(): Promise<TTSVoice[]>;
   getVoices(lang: string): Promise<TTSVoice[]>;
   getGranularities(): TTSGranularity[];
+  getVoiceId(): string;
 }

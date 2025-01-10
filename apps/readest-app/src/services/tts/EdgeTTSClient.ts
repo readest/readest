@@ -44,11 +44,12 @@ export class EdgeTTSClient implements TTSClient {
     const lang = parseSSMLLang(ssml) || 'en';
 
     let voiceId = 'en-US-AriaNeural';
+    if (!this.#voice) {
+      const voices = await this.getVoices(lang);
+      this.#voice = voices[0] ? voices[0] : this.#voices.find((v) => v.id === voiceId) || null;
+    }
     if (this.#voice) {
       voiceId = this.#voice.id;
-    } else {
-      const voices = await this.getVoices(lang);
-      voiceId = voices[0]?.id || voiceId;
     }
 
     this.stopInternal();
@@ -174,5 +175,9 @@ export class EdgeTTSClient implements TTSClient {
 
   getGranularities(): TTSGranularity[] {
     return ['sentence'];
+  }
+
+  getVoiceId(): string {
+    return this.#voice?.id || '';
   }
 }

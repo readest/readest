@@ -3,7 +3,13 @@ import { TTSClient, TTSMessageCode, TTSVoice } from './TTSClient';
 import { WebSpeechClient } from './WebSpeechClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 
-type TTSState = 'stopped' | 'playing' | 'paused' | 'backward-paused' | 'forward-paused';
+type TTSState =
+  | 'stopped'
+  | 'playing'
+  | 'paused'
+  | 'backward-paused'
+  | 'forward-paused'
+  | 'setvoice-paused';
 
 export class TTSController extends EventTarget {
   state: TTSState = 'stopped';
@@ -53,7 +59,7 @@ export class TTSController extends EventTarget {
     if (!ssml) {
       this.#nossmlCnt++;
       // FIXME: in case we are at the end of the book, need a better way to handle this
-      if (this.#nossmlCnt < 10) {
+      if (this.#nossmlCnt < 10 && this.state === 'playing') {
         await this.view.next(1);
         this.forward();
       }
@@ -71,7 +77,7 @@ export class TTSController extends EventTarget {
       lastCode = code;
     }
 
-    if (lastCode === 'end') {
+    if (lastCode === 'end' && this.state === 'playing') {
       this.forward();
     }
   }
@@ -147,6 +153,7 @@ export class TTSController extends EventTarget {
   }
 
   async setVoice(voiceId: string) {
+    this.state = 'setvoice-paused';
     this.ttsClient.stop();
     if (this.ttsEdgeVoices.find((voice) => voice.id === voiceId && !voice.disabled)) {
       this.ttsClient = this.ttsEdgeClient;
@@ -154,6 +161,10 @@ export class TTSController extends EventTarget {
       this.ttsClient = this.ttsWebClient;
     }
     await this.ttsClient.setVoice(voiceId);
+  }
+
+  getVoiceId() {
+    return this.ttsClient.getVoiceId();
   }
 
   error(e: unknown) {
