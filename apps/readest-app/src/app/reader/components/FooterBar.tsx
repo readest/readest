@@ -6,9 +6,7 @@ import { FaHeadphones } from 'react-icons/fa6';
 
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getBookLangCode } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import Button from '@/components/Button';
 
@@ -21,10 +19,8 @@ interface FooterBarProps {
 const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
   const _ = useTranslation();
   const { hoveredBookKey, setHoveredBookKey, getView, getProgress } = useReaderStore();
-  const { getBookData } = useBookDataStore();
   const { isSideBarVisible } = useSidebarStore();
   const view = getView(bookKey);
-  const bookData = getBookData(bookKey);
   const progress = getProgress(bookKey);
 
   const handleProgressChange = (event: React.ChangeEvent) => {
@@ -50,12 +46,8 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
 
   const handleSpeakText = async () => {
     if (!view || !progress) return;
-    const lang = getBookLangCode(bookData?.bookDoc!.metadata.language);
-    const granularity = ['zh', 'ja', 'ko'].includes(lang) ? 'sentence' : 'word';
-    await view.initTTS(granularity);
     const { range } = progress;
-    const ssml = view.tts.from(range);
-    eventDispatcher.dispatch('tts-speak', { bookKey, ssml });
+    eventDispatcher.dispatch('tts-speak', { bookKey, range });
   };
 
   const pageinfoValid = pageinfo && pageinfo.total > 0 && pageinfo.current >= 0;

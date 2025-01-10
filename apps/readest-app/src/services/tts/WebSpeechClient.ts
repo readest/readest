@@ -2,6 +2,7 @@ import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { AsyncQueue } from '@/utils/queue';
 import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
+import { TTSGranularity } from '@/types/view';
 
 interface TTSBoundaryEvent {
   type: 'boundary' | 'end' | 'error';
@@ -89,7 +90,7 @@ async function* speakWithMarks(
   const lang = parseSSMLLang(ssml);
 
   const isCJK = (lang: string | null) => {
-    const cjkLangs = ['zh', 'ja', 'ko'];
+    const cjkLangs = ['zh', 'ja', 'kr'];
     if (lang && cjkLangs.some((cjk) => lang.startsWith(cjk))) return true;
     return /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(plainText);
   };
@@ -146,10 +147,12 @@ export class WebSpeechClient implements TTSClient {
   #voice: SpeechSynthesisVoice | null = null;
   #voices: SpeechSynthesisVoice[] = [];
   #synth = window.speechSynthesis;
+  available = true;
 
   async init() {
     if (!this.#synth) {
-      throw new Error('Web Speech API not supported in this browser');
+      this.available = false;
+      return this.available;
     }
     await new Promise<void>((resolve) => {
       const populateVoices = () => {
@@ -169,6 +172,7 @@ export class WebSpeechClient implements TTSClient {
         resolve();
       }
     });
+    return this.available;
   }
 
   async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
@@ -214,6 +218,25 @@ export class WebSpeechClient implements TTSClient {
     this.#pitch = pitch;
   }
 
+  async setVoice(voiceId: string) {
+    const selectedVoice = this.#voices.find((v) => v.voiceURI === voiceId);
+    if (selectedVoice) {
+      this.#voice = selectedVoice;
+    }
+  }
+
+  async getAllVoices(): Promise<TTSVoice[]> {
+    const voices = this.#voices.map((voice) => {
+      return {
+        id: voice.voiceURI,
+        name: voice.name,
+        lang: voice.lang,
+        disabled: !this.available,
+      } as TTSVoice;
+    });
+    return voices;
+  }
+
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const isValidVoice = (id: string) => {
@@ -222,15 +245,18 @@ export class WebSpeechClient implements TTSClient {
     const filteredVoices = this.#voices
       .filter((voice) => voice.lang.startsWith(locale))
       .filter((voice) => isValidVoice(voice.voiceURI || ''));
-    return filteredVoices.map((voice) => {
+    const voices = filteredVoices.map((voice) => {
       return { id: voice.voiceURI, name: voice.name, lang: voice.lang } as TTSVoice;
     });
+    voices.forEach((voice) => {
+      voice.disabled = !this.available;
+    });
+    return voices;
   }
 
-  async setVoice(voice: string) {
-    const selectedVoice = this.#voices.find((v) => v.voiceURI === voice);
-    if (selectedVoice) {
-      this.#voice = selectedVoice;
-    }
+  getGranularities(): TTSGranularity[] {
+    // currently only support sentence boundary and disable word boundary as changing voice
+    // in the middle of speech is not possible for different granularities
+    return ['sentence'];
   }
 }

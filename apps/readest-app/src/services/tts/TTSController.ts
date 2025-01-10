@@ -1,25 +1,48 @@
-import { FoliateView } from '@/types/view';
-import { TTSClient, TTSMessageCode } from './TTSClient';
+import { FoliateView, TTSGranularity } from '@/types/view';
+import { TTSClient, TTSMessageCode, TTSVoice } from './TTSClient';
+import { WebSpeechClient } from './WebSpeechClient';
+import { EdgeTTSClient } from './EdgeTTSClient';
 
-type TTSState = 'stopped' | 'playing' | 'paused';
+type TTSState = 'stopped' | 'playing' | 'paused' | 'backward-paused' | 'forward-paused';
 
 export class TTSController extends EventTarget {
   state: TTSState = 'stopped';
-  ttsClient: TTSClient;
   view: FoliateView;
-  lang: string;
   #nossmlCnt: number = 0;
 
-  constructor(ttsClient: TTSClient, view: FoliateView, lang: string) {
+  ttsClient: TTSClient;
+  ttsWebClient: TTSClient;
+  ttsEdgeClient: TTSClient;
+  ttsWebVoices: TTSVoice[] = [];
+  ttsEdgeVoices: TTSVoice[] = [];
+
+  constructor(view: FoliateView) {
     super();
-    this.ttsClient = ttsClient;
+    this.ttsWebClient = new WebSpeechClient();
+    this.ttsEdgeClient = new EdgeTTSClient();
+    this.ttsClient = this.ttsWebClient;
     this.view = view;
-    this.lang = lang;
   }
 
-  async #init() {
+  async init() {
+    await this.ttsWebClient.init();
+    const success = await this.ttsEdgeClient.init();
+    if (success) {
+      this.ttsClient = this.ttsEdgeClient;
+    } else {
+      this.ttsClient = this.ttsWebClient;
+    }
+    this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
+    this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
+  }
+
+  async initViewTTS() {
+    let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
+    const supportedGranularities = this.ttsClient.getGranularities();
+    if (!supportedGranularities.includes(granularity)) {
+      granularity = supportedGranularities[0]!;
+    }
     await this.ttsClient.stop();
-    const granularity = ['zh', 'ja', 'ko'].includes(this.lang) ? 'sentence' : 'word';
     await this.view.initTTS(granularity);
   }
 
@@ -42,7 +65,7 @@ export class TTSController extends EventTarget {
     const iter = await this.ttsClient.speak(ssml);
     let lastCode: TTSMessageCode = 'boundary';
     for await (const { code, mark } of iter) {
-      if (mark) {
+      if (mark && this.state === 'playing') {
         this.view.tts?.setMark(mark);
       }
       lastCode = code;
@@ -54,7 +77,7 @@ export class TTSController extends EventTarget {
   }
 
   async speak(ssml: string | Promise<string>) {
-    await this.#init();
+    await this.initViewTTS();
     this.#speak(ssml).catch((e) => this.error(e));
   }
 
@@ -67,14 +90,21 @@ export class TTSController extends EventTarget {
   }
 
   async start() {
-    await this.#init();
-    const resumeOrStart = this.state === 'paused' ? this.view.tts.resume() : this.view.tts.start();
+    await this.initViewTTS();
+    const resumeOrStart = this.state.includes('paused')
+      ? this.view.tts?.resume()
+      : this.view.tts?.start();
     return this.#speak(resumeOrStart);
   }
 
   pause() {
     this.state = 'paused';
-    this.ttsClient.stop().catch((e) => this.error(e));
+    this.ttsClient.pause().catch((e) => this.error(e));
+  }
+
+  resume() {
+    this.state = 'playing';
+    this.ttsClient.resume().catch((e) => this.error(e));
   }
 
   stop() {
@@ -84,23 +114,25 @@ export class TTSController extends EventTarget {
 
   // goto previous sentence
   async backward() {
-    this.#init();
+    this.initViewTTS();
     if (this.state === 'playing') {
-      this.#speak(this.view.tts.prev());
+      this.stop();
+      this.#speak(this.view.tts?.prev());
     } else {
-      this.state = 'paused';
-      this.view.tts.prev(true);
+      this.state = 'backward-paused';
+      this.view.tts?.prev(true);
     }
   }
 
   // goto next sentence
   async forward() {
-    await this.#init();
+    await this.initViewTTS();
     if (this.state === 'playing') {
-      this.#speak(this.view.tts.next());
+      this.stop();
+      this.#speak(this.view.tts?.next());
     } else {
-      this.state = 'paused';
-      this.view.tts.next(true);
+      this.state = 'forward-paused';
+      this.view.tts?.next(true);
     }
   }
 
@@ -109,11 +141,19 @@ export class TTSController extends EventTarget {
   }
 
   async getVoices(lang: string) {
-    return this.ttsClient.getVoices(lang);
+    const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
+    const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
+    return [...ttsEdgeVoices, ...ttsWebVoices];
   }
 
-  async setVoice(voice: string) {
-    await this.ttsClient.setVoice(voice);
+  async setVoice(voiceId: string) {
+    this.ttsClient.stop();
+    if (this.ttsEdgeVoices.find((voice) => voice.id === voiceId && !voice.disabled)) {
+      this.ttsClient = this.ttsEdgeClient;
+    } else {
+      this.ttsClient = this.ttsWebClient;
+    }
+    await this.ttsClient.setVoice(voiceId);
   }
 
   error(e: unknown) {

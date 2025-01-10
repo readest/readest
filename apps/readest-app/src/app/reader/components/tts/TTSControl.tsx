@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TTSController } from '@/services/tts/TTSController';
-import { WebSpeechClient } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
@@ -20,6 +19,7 @@ const TTSControl = () => {
   const [bookKey, setBookKey] = useState<string>('');
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -47,7 +47,7 @@ const TTSControl = () => {
   }, []);
 
   const handleTTSSpeak = async (event: CustomEvent) => {
-    const { bookKey, ssml } = event.detail;
+    const { bookKey, range } = event.detail;
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
     if (!view || !viewSettings) return;
@@ -55,16 +55,20 @@ const TTSControl = () => {
     setBookKey(bookKey);
 
     try {
-      const lang = parseSSMLLang(ssml) || 'en';
-      setTtsLang(lang);
-      const ttsClient = new WebSpeechClient();
-      await ttsClient.init();
-      const ttsController = new TTSController(ttsClient, view, lang);
-      ttsController.setRate(viewSettings.ttsRate);
-      ttsController.setVoice(viewSettings.ttsVoice);
-      ttsController.speak(ssml);
-      ttsControllerRef.current = ttsController;
-      setIsPlaying(true);
+      const ttsController = new TTSController(view);
+      await ttsController.init();
+      await ttsController.initViewTTS();
+      const ssml = view.tts?.from(range);
+      if (ssml) {
+        ttsController.setRate(viewSettings.ttsRate);
+        ttsController.setVoice(viewSettings.ttsVoice);
+        ttsController.speak(ssml);
+        ttsControllerRef.current = ttsController;
+
+        const lang = parseSSMLLang(ssml) || 'en';
+        setTtsLang(lang);
+        setIsPlaying(true);
+      }
     } catch (error) {
       eventDispatcher.dispatch('toast', {
         message: _('TTS not supported in this device'),
@@ -88,9 +92,15 @@ const TTSControl = () => {
     if (isPlaying) {
       ttsController.pause();
       setIsPlaying(false);
-    } else {
-      ttsController.start();
+      setIsPaused(true);
+    } else if (isPaused) {
+      if (ttsController.state === 'paused') {
+        ttsController.resume();
+      } else {
+        ttsController.start();
+      }
       setIsPlaying(true);
+      setIsPaused(false);
     }
   };
 
@@ -132,14 +142,6 @@ const TTSControl = () => {
     }
   };
 
-  const handleGetVoices = async (lang: string) => {
-    const ttsController = ttsControllerRef.current;
-    if (ttsController) {
-      return ttsController.getVoices(lang);
-    }
-    return [];
-  };
-
   const handleSetVoice = async (voice: string) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
@@ -151,6 +153,14 @@ const TTSControl = () => {
         ttsController.setVoice(voice);
       }
     }
+  };
+
+  const handleGetVoices = async (lang: string) => {
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      return ttsController.getVoices(lang);
+    }
+    return [];
   };
 
   const updatePanelPosition = () => {

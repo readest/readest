@@ -23,7 +23,6 @@ import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
-import { getBookLangCode } from '@/utils/book';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
@@ -339,12 +338,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSpeakText = async () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
-
-    const lang = getBookLangCode(bookData.bookDoc!.metadata.language);
-    const granularity = ['zh', 'ja', 'ko'].includes(lang) ? 'sentence' : 'word';
-    await view!.initTTS(granularity);
-    const ssml = view!.tts.from(selection.range)!;
-    eventDispatcher.dispatch('tts-speak', { bookKey, ssml });
+    eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
 
   const selectionAnnotated = selection?.annotated;

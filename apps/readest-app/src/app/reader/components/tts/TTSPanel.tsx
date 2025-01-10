@@ -127,14 +127,19 @@ const TTSPanel = ({
             )}
           >
             {voices.map((voice, index) => (
-              <li key={`${index}-${voice.id}`} onClick={() => handleSelectVoice(voice.id)}>
+              <li
+                key={`${index}-${voice.id}`}
+                onClick={() => !voice.disabled && handleSelectVoice(voice.id)}
+              >
                 <div className='flex items-center px-0'>
                   <span style={{ minWidth: '20px' }}>
                     {selectedVoice === voice.id && (
                       <MdCheck size={20} className='text-base-content' />
                     )}
                   </span>
-                  <span className='text-sm'> {voice.name} </span>
+                  <span className={clsx('text-sm', voice.disabled && 'text-gray-400')}>
+                    {voice.name}
+                  </span>
                 </div>
               </li>
             ))}
