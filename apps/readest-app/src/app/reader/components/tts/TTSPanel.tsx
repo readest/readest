@@ -139,7 +139,7 @@ const TTSPanel = ({
                 key={`${index}-${voice.id}`}
                 onClick={() => !voice.disabled && handleSelectVoice(voice.id)}
               >
-                <div className='flex items-center px-0'>
+                <div className='flex items-center px-2'>
                   <span style={{ minWidth: '20px' }}>
                     {selectedVoice === voice.id && (
                       <MdCheck size={20} className='text-base-content' />

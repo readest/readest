@@ -62,7 +62,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
             >
               {moreOptions.map((option) => (
                 <li key={option} onClick={() => onSelect(option)}>
-                  <div className='flex items-center px-0'>
+                  <div className='flex items-center px-2'>
                     <span style={{ minWidth: '20px' }}>
                       {selected === option && <MdCheck size={20} className='text-base-content' />}
                     </span>
