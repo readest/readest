@@ -1,4 +1,6 @@
+import { md5 } from 'js-md5';
 import { randomMd5 } from '@/utils/misc';
+import { LRUCache } from '@/utils/lru';
 
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
@@ -53,8 +55,14 @@ export interface EdgeTTSPayload {
   pitch: number;
 }
 
+const hashPayload = (payload: EdgeTTSPayload): string => {
+  const base = JSON.stringify(payload);
+  return md5(base);
+};
+
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
+  private static audioCache = new LRUCache<string, AudioBuffer>(200);
 
   constructor() {}
 
@@ -178,9 +186,19 @@ export class EdgeSpeechTTS {
   }
 
   async createAudio(payload: EdgeTTSPayload): Promise<AudioBuffer> {
-    const res = await this.create(payload);
-    const arrayBuffer = await res.arrayBuffer();
-    const audioContext = new AudioContext();
-    return await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const cacheKey = hashPayload(payload);
+    if (EdgeSpeechTTS.audioCache.has(cacheKey)) {
+      return EdgeSpeechTTS.audioCache.get(cacheKey)!;
+    }
+    try {
+      const res = await this.create(payload);
+      const arrayBuffer = await res.arrayBuffer();
+      const audioContext = new AudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+      EdgeSpeechTTS.audioCache.set(cacheKey, audioBuffer);
+      return audioBuffer;
+    } catch (error) {
+      throw error;
+    }
   }
 }

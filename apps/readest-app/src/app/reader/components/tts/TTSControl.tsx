@@ -54,6 +54,11 @@ const TTSControl = () => {
 
     setBookKey(bookKey);
 
+    if (ttsControllerRef.current) {
+      ttsControllerRef.current.stop();
+      ttsControllerRef.current = null;
+    }
+
     try {
       const ttsController = new TTSController(view);
       await ttsController.init();

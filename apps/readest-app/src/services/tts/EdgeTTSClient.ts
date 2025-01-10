@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
-import { EdgeSpeechTTS } from '@/libs/edgeTTS';
+import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
 
@@ -40,6 +40,10 @@ export class EdgeTTSClient implements TTSClient {
     return this.available;
   }
 
+  getPayload = (lang: string, text: string, voiceId: string) => {
+    return { lang, text, voice: voiceId, rate: this.#rate, pitch: this.#pitch } as EdgeTTSPayload;
+  };
+
   async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
     const lang = parseSSMLLang(ssml) || 'en';
@@ -55,16 +59,20 @@ export class EdgeTTSClient implements TTSClient {
 
     this.stopInternal();
 
+    // Preloading for longer ssml
+    if (marks.length > 1) {
+      for (const mark of marks.slice(1)) {
+        this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId)).catch((error) => {
+          console.warn('Error preloading mark:', mark, error);
+        });
+      }
+    }
+
     for (const mark of marks) {
       try {
-        this.#audioBuffer = await this.#edgeTTS.createAudio({
-          lang: lang,
-          text: mark.text,
-          voice: voiceId,
-          rate: this.#rate,
-          pitch: this.#pitch,
-        });
-
+        this.#audioBuffer = await this.#edgeTTS.createAudio(
+          this.getPayload(lang, mark.text, voiceId),
+        );
         this.#audioContext = new AudioContext();
         this.#sourceNode = this.#audioContext.createBufferSource();
         this.#sourceNode.buffer = this.#audioBuffer;
