@@ -52,25 +52,25 @@
 | **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.   | ✅         |
 | **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                 | ✅         |
 | **Sync across Platforms**               | Synchronize reading progress, notes, and bookmarks across all supported platforms. | ✅         |
+| **Text-to-Speech (TTS) Support**        | Enable text-to-speech functionality for a more accessible reading experience.      | ✅         |
 
 ## Planned Features
 
 <div align="left">🛠 Building</div>
 <div align="left">🔄 Planned</div>
 
-| **Feature**                      | **Description**                                                                            | **Priority** |
-| -------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
-| **Support iOS and Android**      | Expand the APP to work on iOS and Android devices.                                         | 🛠           |
-| **Text-to-Speech (TTS) Support** | Enable text-to-speech functionality for a more accessible reading experience.              | 🛠           |
-| **Sync with Koreader**           | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
-| **Keyboard Navigation**          | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
-| **Library Management**           | Organize, sort, and manage your entire ebook library.                                      | 🔄           |
-| **Support OPDS/Calibre**         | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
-| **Audiobook Support**            | Extend functionality to play and manage audiobooks.                                        | 🔄           |
-| **Handwriting Annotations**      | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
-| **Advanced Reading Stats**       | Track reading time, pages read, and more for detailed insights.                            | 🔄           |
-| **In-Library Full-Text Search**  | Search across your entire ebook library to find topics and quotes.                         | 🔄           |
-| **AI-Powered Summarization**     | Generate summaries of books or chapters using AI for quick insights.                       | 🔄           |
+| **Feature**                     | **Description**                                                                            | **Priority** |
+| ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
+| **Support iOS and Android**     | Expand the APP to work on iOS and Android devices.                                         | 🛠           |
+| **Library Management**          | Organize, sort, and manage your entire ebook library.                                      | 🛠           |
+| **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🔄           |
+| **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
+| **Keyboard Navigation**         | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
+| **Support OPDS/Calibre**        | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
+| **Audiobook Support**           | Extend functionality to play and manage audiobooks.                                        | 🔄           |
+| **Handwriting Annotations**     | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
+| **Advanced Reading Stats**      | Track reading time, pages read, and more for detailed insights.                            | 🔄           |
+| **In-Library Full-Text Search** | Search across your entire ebook library to find topics and quotes.                         | 🔄           |
 
 Stay tuned for continuous improvements and updates! Contributions and suggestions are always welcome—let's build the ultimate reading experience together. 😊
 
@@ -79,6 +79,8 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 ![Annotations](./data/screenshots/annotations.png)
 
 ![DeepL](./data/screenshots/deepl.png)
+
+![TTS](./data/screenshots/tts_control.png)
 
 ![Footnote](./data/screenshots/footnote_popover.png)
 
@@ -172,7 +174,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 <a href="https://github.com/readest/readest/graphs/contributors">
   <p align="left">
-    <img width="200" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
+    <img width="300" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
   </p>
 </a>
 

@@ -33,7 +33,7 @@ To get started with Readest, follow these steps to clone and build the project.
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/chrox/readest.git
+git clone https://github.com/readest/readest.git
 cd readest
 git submodule update --init --recursive
 ```
