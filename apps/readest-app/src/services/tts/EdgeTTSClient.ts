@@ -27,6 +27,7 @@ export class EdgeTTSClient implements TTSClient {
     this.#voices = EdgeSpeechTTS.voices;
     try {
       await this.#edgeTTS.create({
+        lang: 'en',
         text: 'test',
         voice: 'en-US-AriaNeural',
         rate: 1.0,
@@ -57,7 +58,8 @@ export class EdgeTTSClient implements TTSClient {
     for (const mark of marks) {
       try {
         this.#audioBuffer = await this.#edgeTTS.createAudio({
-          text: mark.text.replace(/\r?\n/g, ''),
+          lang: lang,
+          text: mark.text,
           voice: voiceId,
           rate: this.#rate,
           pitch: this.#pitch,
@@ -90,10 +92,16 @@ export class EdgeTTSClient implements TTSClient {
           this.#startedAt = this.#audioContext.currentTime;
         });
         yield result;
-        if (result.code === 'error') {
-          break;
-        }
       } catch (error) {
+        if (error instanceof Error && error.message === 'No audio data received.') {
+          console.warn('No audio data received for:', mark.text);
+          yield {
+            code: 'end',
+            message: `Chunk finished: ${mark.name}`,
+          };
+          continue;
+        }
+        console.log('Error:', error);
         yield {
           code: 'error',
           message: error instanceof Error ? error.message : String(error),

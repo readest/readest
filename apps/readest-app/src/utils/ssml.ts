@@ -20,7 +20,12 @@ export const parseSSMLMarks = (ssml: string) => {
       markTagEndIndex,
       nextMarkIndex !== -1 ? nextMarkIndex : ssml.length,
     );
-    const cleanedChunk = nextChunk.replace(/<[^>]+>/g, '').trimStart();
+    const cleanedChunk = nextChunk
+      .replace(/<[^>]+>/g, '')
+      .replace(/\r\n/g, '  ')
+      .replace(/\r/g, ' ')
+      .replace(/\n/g, ' ')
+      .trimStart();
     plainText += cleanedChunk;
 
     const offset = plainText.length - cleanedChunk.length;

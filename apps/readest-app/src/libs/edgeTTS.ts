@@ -46,6 +46,7 @@ const genVoiceList = (voices: Record<string, string[]>) => {
 };
 
 export interface EdgeTTSPayload {
+  lang: string;
   text: string;
   voice: string;
   rate: number;
@@ -57,7 +58,7 @@ export class EdgeSpeechTTS {
 
   constructor() {}
 
-  async #fetchEdgeSpeechWs({ text, voice, rate }: EdgeTTSPayload): Promise<Response> {
+  async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
     const connectId = randomMd5();
     const url = `${EDGE_SPEECH_URL}?ConnectionId=${connectId}&TrustedClientToken=${EDGE_API_TOKEN}`;
     const date = new Date().toString();
@@ -83,9 +84,9 @@ export class EdgeSpeechTTS {
       },
     });
 
-    const genSSML = (text: string, voice: string, rate: number) => {
+    const genSSML = (lang: string, text: string, voice: string, rate: number) => {
       return `
-        <speak version="1.0" xml:lang="en-US">
+        <speak version="1.0" xml:lang="${lang}">
           <voice name="${voice}">
             <prosody rate="${rate}">
               ${text}
@@ -126,7 +127,7 @@ export class EdgeSpeechTTS {
       return { headers, body };
     };
 
-    const ssml = genSSML(text, voice, rate);
+    const ssml = genSSML(lang, text, voice, rate);
     const content = genSendContent(contentHeaders, ssml);
     const config = genSendContent(configHeaders, configContent);
 
