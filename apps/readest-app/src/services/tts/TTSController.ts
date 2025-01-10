@@ -155,7 +155,10 @@ export class TTSController extends EventTarget {
   async setVoice(voiceId: string) {
     this.state = 'setvoice-paused';
     this.ttsClient.stop();
-    if (this.ttsEdgeVoices.find((voice) => voice.id === voiceId && !voice.disabled)) {
+    const useEdgeTTS = !!this.ttsEdgeVoices.find(
+      (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
+    );
+    if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
     } else {
       this.ttsClient = this.ttsWebClient;
