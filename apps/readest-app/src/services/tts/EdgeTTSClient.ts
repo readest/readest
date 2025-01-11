@@ -57,7 +57,7 @@ export class EdgeTTSClient implements TTSClient {
       voiceId = this.#voice.id;
     }
 
-    this.stopInternal();
+    await this.stopInternal();
 
     // Preloading for longer ssml
     if (marks.length > 1) {
@@ -117,7 +117,7 @@ export class EdgeTTSClient implements TTSClient {
         break;
       }
 
-      this.stopInternal();
+      await this.stopInternal();
     }
   }
 
@@ -136,10 +136,10 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async stop() {
-    this.stopInternal();
+    await this.stopInternal();
   }
 
-  private stopInternal() {
+  private async stopInternal() {
     this.#isPlaying = false;
     this.#pausedAt = 0;
     this.#startedAt = 0;
@@ -153,7 +153,7 @@ export class EdgeTTSClient implements TTSClient {
       this.#sourceNode = null;
     }
     if (this.#audioContext) {
-      this.#audioContext.close();
+      await this.#audioContext.close();
       this.#audioContext = null;
     }
     this.#audioBuffer = null;

@@ -97,16 +97,16 @@ const TTSControl = () => {
     if (!ttsController) return;
 
     if (isPlaying) {
-      ttsController.pause();
+      await ttsController.pause();
       setIsPlaying(false);
       setIsPaused(true);
     } else if (isPaused) {
       // start for forward/backward/setvoice-paused
       // set rate don't pause the tts
       if (ttsController.state === 'paused') {
-        ttsController.resume();
+        await ttsController.resume();
       } else {
-        ttsController.start();
+        await ttsController.start();
       }
       setIsPlaying(true);
       setIsPaused(false);
@@ -130,7 +130,7 @@ const TTSControl = () => {
   const handleStop = async () => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      ttsController.stop();
+      await ttsController.stop();
       ttsControllerRef.current = null;
       setIsPlaying(false);
       setShowPanel(false);
@@ -143,11 +143,11 @@ const TTSControl = () => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       if (ttsController.state === 'playing') {
-        ttsController.pause();
-        ttsController.setRate(rate);
-        ttsController.start();
+        await ttsController.pause();
+        await ttsController.setRate(rate);
+        await ttsController.start();
       } else {
-        ttsController.setRate(rate);
+        await ttsController.setRate(rate);
       }
     }
   };
@@ -156,11 +156,11 @@ const TTSControl = () => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       if (ttsController.state === 'playing') {
-        ttsController.pause();
-        ttsController.setVoice(voice);
-        ttsController.start();
+        await ttsController.pause();
+        await ttsController.setVoice(voice);
+        await ttsController.start();
       } else {
-        ttsController.setVoice(voice);
+        await ttsController.setVoice(voice);
       }
     }
   };
