@@ -16,6 +16,7 @@ export class TTSController extends EventTarget {
   view: FoliateView;
   #nossmlCnt: number = 0;
 
+  ttsRate: number = 1.0;
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
   ttsEdgeClient: TTSClient;
@@ -143,7 +144,8 @@ export class TTSController extends EventTarget {
   }
 
   async setRate(rate: number) {
-    await this.ttsClient.setRate(rate);
+    this.ttsRate = rate;
+    await this.ttsClient.setRate(this.ttsRate);
   }
 
   async getVoices(lang: string) {
@@ -160,8 +162,10 @@ export class TTSController extends EventTarget {
     );
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
+      await this.ttsClient.setRate(this.ttsRate);
     } else {
       this.ttsClient = this.ttsWebClient;
+      await this.ttsClient.setRate(this.ttsRate);
     }
     await this.ttsClient.setVoice(voiceId);
   }
