@@ -20,6 +20,7 @@ const TTSControl = () => {
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -58,6 +59,7 @@ const TTSControl = () => {
       ttsControllerRef.current.stop();
       ttsControllerRef.current = null;
     }
+    setShowIndicator(true);
 
     try {
       const ttsController = new TTSController(view);
@@ -132,6 +134,7 @@ const TTSControl = () => {
       ttsControllerRef.current = null;
       setIsPlaying(false);
       setShowPanel(false);
+      setShowIndicator(false);
     }
   };
 
@@ -219,7 +222,7 @@ const TTSControl = () => {
           onContextMenu={handleDismissPopup}
         />
       )}
-      {ttsControllerRef.current && (
+      {showIndicator && (
         <div ref={iconRef} className='absolute bottom-12 right-6 h-12 w-12'>
           <TTSIcon isPlaying={isPlaying} onClick={togglePopup} />
         </div>
