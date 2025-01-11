@@ -15,7 +15,7 @@ export const SUPPORTED_FILE_EXTS = ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'cbz',
 export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).join(', ');
 
 export const DEFAULT_READSETTINGS: ReadSettings = {
-  sideBarWidth: '25%',
+  sideBarWidth: '15%',
   isSideBarPinned: true,
   notebookWidth: '25%',
   isNotebookPinned: false,
