@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TTSController } from '@/services/tts/TTSController';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
+import { throttle } from '@/utils/ui';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -97,10 +98,12 @@ const TTSControl = () => {
     if (!ttsController) return;
 
     if (isPlaying) {
-      await ttsController.pause();
       setIsPlaying(false);
       setIsPaused(true);
+      await ttsController.pause();
     } else if (isPaused) {
+      setIsPlaying(true);
+      setIsPaused(false);
       // start for forward/backward/setvoice-paused
       // set rate don't pause the tts
       if (ttsController.state === 'paused') {
@@ -108,8 +111,6 @@ const TTSControl = () => {
       } else {
         await ttsController.start();
       }
-      setIsPlaying(true);
-      setIsPaused(false);
     }
   };
 
@@ -139,31 +140,39 @@ const TTSControl = () => {
   };
 
   // rate range: 0.5 - 3, 1.0 is normal speed
-  const handleSetRate = async (rate: number) => {
-    const ttsController = ttsControllerRef.current;
-    if (ttsController) {
-      if (ttsController.state === 'playing') {
-        await ttsController.pause();
-        await ttsController.setRate(rate);
-        await ttsController.start();
-      } else {
-        await ttsController.setRate(rate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSetRate = useCallback(
+    throttle(async (rate: number) => {
+      const ttsController = ttsControllerRef.current;
+      if (ttsController) {
+        if (ttsController.state === 'playing') {
+          await ttsController.stop();
+          await ttsController.setRate(rate);
+          await ttsController.start();
+        } else {
+          await ttsController.setRate(rate);
+        }
       }
-    }
-  };
+    }, 2000),
+    [],
+  );
 
-  const handleSetVoice = async (voice: string) => {
-    const ttsController = ttsControllerRef.current;
-    if (ttsController) {
-      if (ttsController.state === 'playing') {
-        await ttsController.pause();
-        await ttsController.setVoice(voice);
-        await ttsController.start();
-      } else {
-        await ttsController.setVoice(voice);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSetVoice = useCallback(
+    throttle(async (voice: string) => {
+      const ttsController = ttsControllerRef.current;
+      if (ttsController) {
+        if (ttsController.state === 'playing') {
+          await ttsController.stop();
+          await ttsController.setVoice(voice);
+          await ttsController.start();
+        } else {
+          await ttsController.setVoice(voice);
+        }
       }
-    }
-  };
+    }, 2000),
+    [],
+  );
 
   const handleGetVoices = async (lang: string) => {
     const ttsController = ttsControllerRef.current;

@@ -44,7 +44,7 @@ export class EdgeTTSClient implements TTSClient {
     return { lang, text, voice: voiceId, rate: this.#rate, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
-  async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
+  async *speak(ssml: string, signal: AbortSignal): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
     const lang = parseSSMLLang(ssml) || 'en';
 
@@ -69,6 +69,13 @@ export class EdgeTTSClient implements TTSClient {
     }
 
     for (const mark of marks) {
+      if (signal.aborted) {
+        yield {
+          code: 'error',
+          message: 'Aborted',
+        };
+        break;
+      }
       try {
         this.#audioBuffer = await this.#edgeTTS.createAudio(
           this.getPayload(lang, mark.text, voiceId),
@@ -147,7 +154,9 @@ export class EdgeTTSClient implements TTSClient {
       try {
         this.#sourceNode.stop();
       } catch (err) {
-        console.error('Error stopping source node:', err);
+        if (!(err instanceof Error) || err.name !== 'InvalidStateError') {
+          console.log('Error stopping source node:', err);
+        }
       }
       this.#sourceNode.disconnect();
       this.#sourceNode = null;

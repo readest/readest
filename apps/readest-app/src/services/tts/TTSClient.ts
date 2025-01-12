@@ -17,7 +17,7 @@ export interface TTSVoice {
 
 export interface TTSClient {
   init(): Promise<boolean>;
-  speak(ssml: string): AsyncIterable<TTSMessageEvent>;
+  speak(ssml: string, signal: AbortSignal): AsyncIterable<TTSMessageEvent>;
   pause(): Promise<void>;
   resume(): Promise<void>;
   stop(): Promise<void>;

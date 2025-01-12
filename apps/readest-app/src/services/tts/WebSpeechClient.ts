@@ -132,9 +132,9 @@ async function* speakWithMarks(
 
   const synth = window.speechSynthesis;
 
+  const utterance = new SpeechSynthesisUtterance();
   for (const mark of marks) {
-    const utterance = new SpeechSynthesisUtterance(mark.text);
-
+    utterance.text = mark.text;
     utterance.rate = getRate();
     utterance.pitch = getPitch();
     const voice = getVoice();
@@ -205,7 +205,7 @@ export class WebSpeechClient implements TTSClient {
     return this.available;
   }
 
-  async *speak(ssml: string): AsyncGenerator<TTSMessageEvent> {
+  async *speak(ssml: string, signal: AbortSignal): AsyncGenerator<TTSMessageEvent> {
     const lang = parseSSMLLang(ssml) || 'en';
     if (!this.#voice) {
       const voices = await this.getVoices(lang);
@@ -218,6 +218,11 @@ export class WebSpeechClient implements TTSClient {
       () => this.#pitch,
       () => this.#voice,
     )) {
+      if (signal.aborted) {
+        console.log('TTS aborted');
+        yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;
+        return;
+      }
       if (ev.type === 'boundary') {
         yield {
           code: 'boundary',
