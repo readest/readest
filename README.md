@@ -188,6 +188,13 @@ The following JavaScript libraries are bundled in this software:
 - [zip.js](https://github.com/gildas-lormeau/zip.js), which is licensed under the BSD-3-Clause license.
 - [fflate](https://github.com/101arrowz/fflate), which is MIT licensed.
 - [PDF.js](https://github.com/mozilla/pdf.js), which is licensed under Apache License 2.0.
+- [next.js](https://github.com/vercel/next.js), which is MIT licensed.
+- [react](https://github.com/facebook/react), which is MIT licensed.
+- [tauri](https://github.com/tauri-apps/tauri), which is MIT licensed.
+
+The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
+
+[Bitter](https://fonts.google.com/?query=Bitter), [Fira Code](https://fonts.google.com/?query=Fira+Code), [Literata](https://fonts.google.com/?query=Literata), [Merriweather](https://fonts.google.com/?query=Merriweather), [Noto Sans](https://fonts.google.com/?query=Noto+Sans), [Roboto](https://fonts.google.com/?query=Roboto), [LXGW WenKai](https://github.com/lxgw/LxgwWenKai), [MiSans](https://hyperos.mi.com/font/en/), [Source Han](https://github.com/adobe-fonts/source-han-sans/), [WenQuanYi Micro Hei](http://wenq.org/wqy2/)
 
 ---
 
