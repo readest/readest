@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "Bienvenido a tu biblioteca. Puedes importar tus libros aquí y leerlos en cualquier momento.",
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Modo de escritura",
-  "Your Library": "Tu biblioteca"
+  "Your Library": "Tu biblioteca",
+  "TTS not supported for PDF": "TTS no es compatible con PDF"
 }

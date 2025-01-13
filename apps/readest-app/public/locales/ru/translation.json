@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "Добро пожаловать в вашу библиотеку. Вы можете импортировать сюда книги и читать их в любое время.",
   "Wikipedia": "Википедия",
   "Writing Mode": "Режим записи",
-  "Your Library": "Ваша библиотека"
+  "Your Library": "Ваша библиотека",
+  "TTS not supported for PDF": "TTS не поддерживается для PDF"
 }

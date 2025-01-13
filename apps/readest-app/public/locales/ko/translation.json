@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "내 서재에 오신 것을 환영합니다. 여기에서 책을 가져와 언제든지 읽을 수 있습니다.",
   "Wikipedia": "위키피디아",
   "Writing Mode": "글쓰기 모드",
-  "Your Library": "내 서재"
+  "Your Library": "내 서재",
+  "TTS not supported for PDF": "PDF에서 TTS가 지원되지 않음"
 }

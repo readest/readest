@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "Chào mừng đến với thư viện của bạn. Bạn có thể nhập sách vào đây và đọc bất cứ lúc nào.",
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Chế độ viết",
-  "Your Library": "Thư viện của bạn"
+  "Your Library": "Thư viện của bạn",
+  "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF"
 }

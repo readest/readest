@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "ライブラリーへようこそ。ここに書籍をインポートして、いつでも読むことができます。",
   "Wikipedia": "ウィキペディア",
   "Writing Mode": "書き込みモード",
-  "Your Library": "ライブラリー"
+  "Your Library": "ライブラリー",
+  "TTS not supported for PDF": "PDFではTTSがサポートされていません"
 }

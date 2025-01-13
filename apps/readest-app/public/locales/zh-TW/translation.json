@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "書庫空空如也，您可以導入您的書籍並隨時閱讀。",
   "Wikipedia": "維基百科",
   "Writing Mode": "排版模式",
-  "Your Library": "書庫"
+  "Your Library": "書庫",
+  "TTS not supported for PDF": "PDF 文檔暫不支持 TTS"
 }

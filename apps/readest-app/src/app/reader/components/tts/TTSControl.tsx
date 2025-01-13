@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TTSController } from '@/services/tts/TTSController';
@@ -16,6 +17,7 @@ const POPUP_PADDING = 10;
 
 const TTSControl = () => {
   const _ = useTranslation();
+  const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const [bookKey, setBookKey] = useState<string>('');
   const [ttsLang, setTtsLang] = useState<string>('en');
@@ -52,7 +54,15 @@ const TTSControl = () => {
     const { bookKey, range } = event.detail;
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
-    if (!view || !viewSettings) return;
+    const bookData = getBookData(bookKey);
+    if (!view || !viewSettings || !bookData) return;
+    if (bookData.book?.format === 'PDF') {
+      eventDispatcher.dispatch('toast', {
+        message: _('TTS not supported for PDF'),
+        type: 'warning',
+      });
+      return;
+    }
 
     setBookKey(bookKey);
 

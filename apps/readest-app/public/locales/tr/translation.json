@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "Kütüphanenize hoş geldiniz. Buradan kitaplarınızı içe aktarabilir ve istediğiniz zaman okuyabilirsiniz.",
   "Wikipedia": "Vikipedi",
   "Writing Mode": "Yazma Modu",
-  "Your Library": "Kütüphaneniz"
+  "Your Library": "Kütüphaneniz",
+  "TTS not supported for PDF": "PDF için TTS desteklenmiyor"
 }

@@ -129,5 +129,6 @@
   "Welcome to your library. You can import your books here and read them anytime.": "Selamat datang di perpustakaan Anda. Anda dapat mengimpor buku-buku Anda di sini dan membacanya kapan saja.",
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Mode Menulis",
-  "Your Library": "Perpustakaan Anda"
+  "Your Library": "Perpustakaan Anda",
+  "TTS not supported for PDF": "TTS tidak didukung untuk PDF"
 }
