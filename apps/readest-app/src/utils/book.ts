@@ -82,6 +82,14 @@ export const formatTitle = (title: string | LanguageMap) => {
   return typeof title === 'string' ? title : formatLanguageMap(title);
 };
 
+export const formatPublisher = (publisher: string | LanguageMap) => {
+  return typeof publisher === 'string' ? publisher : formatLanguageMap(publisher);
+};
+
+export const formatLanguage = (lang: string | string[] | undefined) => {
+  return Array.isArray(lang) ? lang.join(', ') : lang;
+};
+
 export const formatDate = (date: string | number | Date | undefined) => {
   if (!date) return;
   try {

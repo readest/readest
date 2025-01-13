@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 import { Book } from '@/types/book';
+import { BookDoc } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDate, formatSubject } from '@/utils/book';
+import { formatDate, formatLanguage, formatPublisher, formatSubject } from '@/utils/book';
 import WindowButtons from '@/components/WindowButtons';
 import Spinner from './Spinner';
-import { BookDoc } from '@/libs/document';
 
 interface BookDetailModalProps {
   book: Book;
@@ -123,7 +123,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
               <div className='overflow-hidden'>
                 <span className='font-bold'>{_('Publisher:')}</span>
                 <p className='text-neutral-content line-clamp-1 text-sm'>
-                  {bookMeta.publisher || _('Unknown')}
+                  {formatPublisher(bookMeta.publisher || '') || _('Unknown')}
                 </p>
               </div>
               <div className='overflow-hidden'>
@@ -141,7 +141,9 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
             <div className='grid grid-cols-3 gap-4'>
               <div className='overflow-hidden'>
                 <span className='font-bold'>{_('Language:')}</span>
-                <p className='text-neutral-content text-sm'>{bookMeta.language || _('Unknown')}</p>
+                <p className='text-neutral-content text-sm'>
+                  {formatLanguage(bookMeta.language) || _('Unknown')}
+                </p>
               </div>
               <div className='overflow-hidden'>
                 <span className='font-bold'>{_('Identifier:')}</span>
