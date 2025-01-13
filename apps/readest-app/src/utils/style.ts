@@ -1,4 +1,9 @@
-import { MONOSPACE_FONTS, SANS_SERIF_FONTS, SERIF_FONTS } from '@/services/constants';
+import {
+  MONOSPACE_FONTS,
+  SANS_SERIF_FONTS,
+  SERIF_FONTS,
+  FALLBACK_FONTS,
+} from '@/services/constants';
 import { ViewSettings } from '@/types/book';
 
 import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
@@ -11,8 +16,12 @@ const getFontStyles = (
   fontSize: number,
   overrideFont: boolean,
 ) => {
-  const serifFonts = [serif, ...SERIF_FONTS.filter((font) => font !== serif)];
-  const sansSerifFonts = [sansSerif, ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif)];
+  const serifFonts = [serif, ...SERIF_FONTS.filter((font) => font !== serif), ...FALLBACK_FONTS];
+  const sansSerifFonts = [
+    sansSerif,
+    ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif),
+    ...FALLBACK_FONTS,
+  ];
   const monospaceFonts = [monospace, ...MONOSPACE_FONTS.filter((font) => font !== monospace)];
   const fontStyles = `
     html {
@@ -32,11 +41,15 @@ const getFontStyles = (
   return fontStyles;
 };
 
+const getAdditionalFontLinks = () => `
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous">
+`;
+
 const getAdditionalFontFaces = () => `
   @font-face {
     font-family: "FangSong";
     font-display: swap;
-    src: local("Fang Song"), local("FangSong"), local("Noto Serif CJK"), url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.eot");
+    src: local("Fang Song"), local("FangSong"), local("Noto Serif CJK"), local("Source Han Serif SC VF"), url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.eot");
     src: url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.eot?#iefix") format("embedded-opentype"),
     url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.woff2") format("woff2"),
     url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.woff") format("woff"),
@@ -46,7 +59,7 @@ const getAdditionalFontFaces = () => `
   @font-face {
     font-family: "Kaiti";
     font-display: swap;
-    src: local("Kai"), local("KaiTi"), local("AR PL UKai"), url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.eot");
+    src: local("Kai"), local("KaiTi"), local("AR PL UKai"), local("LXGW WenKai GB Screen"), url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.eot");
     src: url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.eot?#iefix")format("embedded-opentype"),
     url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.woff2")format("woff2"),
     url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.woff")format("woff"),
@@ -56,7 +69,7 @@ const getAdditionalFontFaces = () => `
   @font-face {
     font-family: "Heiti";
     font-display: swap;
-    src: local("Hei"), local("SimHei"), local("WenQuanYi Zen Hei"), url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.eot");
+    src: local("Hei"), local("SimHei"), local("WenQuanYi Zen Hei"), local("Source Han Sans SC VF"), url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.eot");
     src: url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.eot?#iefix")format("embedded-opentype"),
     url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.woff2")format("woff2"),
     url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.woff")format("woff"),
@@ -66,7 +79,7 @@ const getAdditionalFontFaces = () => `
   @font-face {
     font-family: "XiHeiti";
     font-display: swap;
-    src: local("PingFang SC"), local("Microsoft YaHei"), local("WenQuanYi Micro Hei"), url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot");
+    src: local("PingFang SC"), local("Microsoft YaHei"), local("WenQuanYi Micro Hei"), local("FZHei-B01"), url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot");
     src: url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot?#iefix")format("embedded-opentype"),
     url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff2")format("woff2"),
     url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff")format("woff"),
@@ -206,6 +219,22 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
 };
 
 export const mountAdditionalFonts = (document: Document) => {
+  const links = getAdditionalFontLinks();
+
+  const parser = new DOMParser();
+  const parsedDocument = parser.parseFromString(links, 'text/html');
+
+  Array.from(parsedDocument.head.children).forEach((child) => {
+    if (child.tagName === 'LINK') {
+      const link = document.createElement('link');
+      link.rel = child.getAttribute('rel') || '';
+      link.href = child.getAttribute('href') || '';
+      link.crossOrigin = child.getAttribute('crossorigin') || '';
+
+      document.head.appendChild(link);
+    }
+  });
+
   const style = document.createElement('style');
   style.textContent = getAdditionalFontFaces();
   document.head.appendChild(style);

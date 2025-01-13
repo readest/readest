@@ -95,6 +95,8 @@ export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica'
 
 export const MONOSPACE_FONTS = ['Fira Code', 'Lucida Console', 'Consolas', 'Courier New'];
 
+export const FALLBACK_FONTS = ['MiSans L3'];
+
 export const WINDOWS_FONTS = [
   'Arial',
   'Arial Black',
