@@ -57,7 +57,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
               tabIndex={0}
               className={clsx(
                 'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] overflow-y-scroll shadow',
-                '!mr-5 mb-[-46px] max-h-80 w-[292px]',
+                '!mr-5 mb-[-46px] inline max-h-80 w-[250px] overflow-y-scroll',
               )}
             >
               {moreOptions.map((option) => (

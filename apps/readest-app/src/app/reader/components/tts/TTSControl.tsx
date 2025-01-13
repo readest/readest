@@ -163,7 +163,7 @@ const TTSControl = () => {
           await ttsController.setRate(rate);
         }
       }
-    }, 2000),
+    }, 3000),
     [],
   );
 
@@ -180,7 +180,7 @@ const TTSControl = () => {
           await ttsController.setVoice(voice);
         }
       }
-    }, 2000),
+    }, 3000),
     [],
   );
 
