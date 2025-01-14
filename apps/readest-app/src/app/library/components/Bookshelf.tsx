@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { PiPlus } from 'react-icons/pi';
 import { MdDelete, MdOpenInNew } from 'react-icons/md';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
@@ -21,10 +21,12 @@ import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { useBookConfigLoader } from '@/hooks/useBookConfigLoader';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
 import BookDetailModal from '@/components/BookDetailModal';
+import ReadingProgress from './ReadingProgress';
 
 type BookshelfItem = Book | BooksGroup;
 
@@ -106,7 +108,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importBookUrl, appService]);
 
-  const bookshelfItems = generateBookshelfItems(libraryBooks);
+  useBookConfigLoader(libraryBooks, envConfig, settings);
+
+  const bookshelfItems = useMemo(() => generateBookshelfItems(libraryBooks), [libraryBooks]);
 
   const handleBookClick = (id: string) => {
     if (isSelectMode) {
@@ -242,19 +246,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                       )}
                     </div>
                   </div>
-                  <div className='flex flex-row items-center justify-between p-0 pt-2'>
+                  <div className='flex flex-col p-0 pt-2'>
                     <h4 className='card-title line-clamp-1 text-[0.6em] text-xs font-semibold'>
                       {(item as Book).title}
                     </h4>
-                    {isWebAppPlatform() && (
-                      <div
-                        className='show-detail-button self-start opacity-0 group-hover:opacity-100'
-                        role='button'
-                        onClick={showBookDetailsModal.bind(null, item as Book)}
-                      >
-                        <CiCircleMore size={15} />
-                      </div>
-                    )}
+                    <div className='flex items-center justify-between'>
+                      <ReadingProgress book={item as Book} />
+                      {isWebAppPlatform() && (
+                        <div
+                          className='show-detail-button opacity-0 group-hover:opacity-100'
+                          role='button'
+                          onClick={showBookDetailsModal.bind(null, item as Book)}
+                        >
+                          <CiCircleMore size={15} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -270,6 +277,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                           className='h-48 w-full object-cover'
                         />
                       </figure>
+                      <div className='card-body p-4'>
+                        <h3 className='card-title line-clamp-2 text-sm'>{book.title}</h3>
+                        <p className='text-neutral-content line-clamp-1 text-xs'>{book.author}</p>
+                        <ReadingProgress book={book} />
+                      </div>
                     </div>
                   ))}
                   <h2 className='mb-2 text-lg font-bold'>{(item as BooksGroup).name}</h2>
