@@ -47,7 +47,11 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
   const handleSpeakText = async () => {
     if (!view || !progress) return;
     const { range } = progress;
-    eventDispatcher.dispatch('tts-speak', { bookKey, range });
+    if (eventDispatcher.dispatchSync('tts-is-speaking')) {
+      eventDispatcher.dispatch('tts-stop', { bookKey });
+    } else {
+      eventDispatcher.dispatch('tts-speak', { bookKey, range });
+    }
   };
 
   const pageinfoValid = pageinfo && pageinfo.total > 0 && pageinfo.current >= 0;
