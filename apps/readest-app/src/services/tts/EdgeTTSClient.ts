@@ -44,7 +44,11 @@ export class EdgeTTSClient implements TTSClient {
     return { lang, text, voice: voiceId, rate: this.#rate, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
-  async *speak(ssml: string, signal: AbortSignal): AsyncGenerator<TTSMessageEvent> {
+  async *speak(
+    ssml: string,
+    signal: AbortSignal,
+    preload = false,
+  ): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
     const lang = parseSSMLLang(ssml) || 'en';
 
@@ -57,15 +61,19 @@ export class EdgeTTSClient implements TTSClient {
       voiceId = this.#voice.id;
     }
 
-    await this.stopInternal();
-
-    // Preloading for longer ssml
-    if (marks.length > 1) {
-      for (const mark of marks.slice(1)) {
-        this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId)).catch((error) => {
-          console.warn('Error preloading mark:', mark, error);
+    if (preload) {
+      for (const mark of marks) {
+        await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId)).catch((err) => {
+          console.warn('Error preloading:', err);
         });
       }
+      yield {
+        code: 'end',
+        message: 'Preload finished',
+      };
+      return;
+    } else {
+      await this.stopInternal();
     }
 
     for (const mark of marks) {
@@ -102,6 +110,13 @@ export class EdgeTTSClient implements TTSClient {
               message: `Chunk finished: ${mark.name}`,
             });
           };
+          if (signal.aborted) {
+            resolve({
+              code: 'error',
+              message: 'Aborted',
+            });
+            return;
+          }
           this.#sourceNode.start(0);
           this.#isPlaying = true;
           this.#startedAt = this.#audioContext.currentTime;

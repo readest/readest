@@ -54,6 +54,27 @@ export class TTSController extends EventTarget {
     await this.view.initTTS(granularity);
   }
 
+  async preloadSSML(ssml: string | undefined) {
+    if (!ssml) return;
+    const iter = await this.ttsClient.speak(ssml, new AbortController().signal, true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for await (const _ of iter);
+  }
+
+  async preloadNextSSML(count: number) {
+    const tts = this.view.tts;
+    if (!tts) return;
+    let preloaded = 0;
+    for (let i = 0; i < count; i++) {
+      const ssml = tts.next();
+      this.preloadSSML(ssml);
+      if (ssml) preloaded++;
+    }
+    for (let i = 0; i < preloaded; i++) {
+      tts.prev();
+    }
+  }
+
   async #speak(ssml: string | undefined | Promise<string>) {
     await this.stop();
     this.#currentSpeakAbortController = new AbortController();
@@ -63,6 +84,7 @@ export class TTSController extends EventTarget {
       console.log('TTS speak');
       this.state = 'playing';
       ssml = await ssml;
+      await this.preloadSSML(ssml);
       if (!ssml) {
         this.#nossmlCnt++;
         // FIXME: in case we are at the end of the book, need a better way to handle this
@@ -95,6 +117,7 @@ export class TTSController extends EventTarget {
   async speak(ssml: string | Promise<string>) {
     await this.initViewTTS();
     this.#speak(ssml).catch((e) => this.error(e));
+    this.preloadNextSSML(2);
   }
 
   play() {
@@ -107,10 +130,9 @@ export class TTSController extends EventTarget {
 
   async start() {
     await this.initViewTTS();
-    const resumeOrStart = this.state.includes('paused')
-      ? this.view.tts?.resume()
-      : this.view.tts?.start();
-    return this.#speak(resumeOrStart);
+    const ssml = this.state.includes('paused') ? this.view.tts?.resume() : this.view.tts?.start();
+    this.#speak(ssml);
+    this.preloadNextSSML(2);
   }
 
   async pause() {
@@ -149,6 +171,7 @@ export class TTSController extends EventTarget {
     if (this.state === 'playing') {
       await this.stop();
       this.#speak(this.view.tts?.next());
+      this.preloadNextSSML(2);
     } else {
       this.state = 'forward-paused';
       this.view.tts?.next(true);

@@ -205,7 +205,14 @@ export class WebSpeechClient implements TTSClient {
     return this.available;
   }
 
-  async *speak(ssml: string, signal: AbortSignal): AsyncGenerator<TTSMessageEvent> {
+  async *speak(
+    ssml: string,
+    signal: AbortSignal,
+    preload = false,
+  ): AsyncGenerator<TTSMessageEvent> {
+    // no need to preload for web speech
+    if (preload) return;
+
     const lang = parseSSMLLang(ssml) || 'en';
     if (!this.#voice) {
       const voices = await this.getVoices(lang);
