@@ -182,7 +182,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 Readest is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
 
-The following JavaScript libraries are bundled in this software:
+The following libraries and software are used in this software:
 
 - [foliate-js](https://github.com/johnfactotum/foliate-js), which is MIT licensed.
 - [zip.js](https://github.com/gildas-lormeau/zip.js), which is licensed under the BSD-3-Clause license.
@@ -190,6 +190,7 @@ The following JavaScript libraries are bundled in this software:
 - [PDF.js](https://github.com/mozilla/pdf.js), which is licensed under Apache License 2.0.
 - [next.js](https://github.com/vercel/next.js), which is MIT licensed.
 - [react](https://github.com/facebook/react), which is MIT licensed.
+- [react-icons](https://github.com/react-icons/react-icons), which has various open-source licenses.
 - [tauri](https://github.com/tauri-apps/tauri), which is MIT licensed.
 
 The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
