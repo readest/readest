@@ -1,22 +1,28 @@
 import type React from 'react';
 import { memo, useMemo } from 'react';
-import type { Book, BookConfig } from '@/types/book';
-import { useBookDataStore } from '@/store/bookDataStore';
+import type { Book } from '@/types/book';
 
 interface ReadingProgressProps {
   book: Book;
 }
 
-const getProgressPercentage = (config: BookConfig | null) => {
-  if (!config?.progress || !config.progress[1]) return 0;
-  return Math.round((config.progress[0] / config.progress[1]) * 100);
+const getProgressPercentage = (book: Book) => {
+  if (!book.progress || !book.progress[1]) {
+    return null;
+  }
+  if (book.progress && book.progress[1] === 1) {
+    return 100;
+  }
+  return Math.round((book.progress[0] / book.progress[1]) * 100);
 };
 
 const ReadingProgress: React.FC<ReadingProgressProps> = memo(
   ({ book }) => {
-    const config = useBookDataStore((state) => state.getConfig(book.hash));
+    const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
-    const progressPercentage = useMemo(() => getProgressPercentage(config), [config]);
+    if (!progressPercentage) {
+      return null;
+    }
 
     return (
       <div className='text-neutral-content/70 flex justify-between text-xs'>

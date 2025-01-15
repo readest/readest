@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import * as React from 'react';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
 import { MdDelete, MdOpenInNew } from 'react-icons/md';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
@@ -21,7 +21,6 @@ import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
-import { useBookConfigLoader } from '@/hooks/useBookConfigLoader';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
@@ -108,9 +107,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importBookUrl, appService]);
 
-  useBookConfigLoader(libraryBooks, envConfig, settings);
-
-  const bookshelfItems = useMemo(() => generateBookshelfItems(libraryBooks), [libraryBooks]);
+  const bookshelfItems = generateBookshelfItems(libraryBooks);
 
   const handleBookClick = (id: string) => {
     if (isSelectMode) {
@@ -246,22 +243,52 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                       )}
                     </div>
                   </div>
-                  <div className='flex flex-col p-0 pt-2'>
-                    <h4 className='card-title line-clamp-1 text-[0.6em] text-xs font-semibold'>
-                      {(item as Book).title}
-                    </h4>
-                    <div className='flex items-center justify-between'>
-                      <ReadingProgress book={item as Book} />
-                      {isWebAppPlatform() && (
-                        <div
+                  <div
+                    className={clsx(
+                      'flex w-full p-0 pt-2',
+                      isWebAppPlatform() ? 'flex-col' : 'flex-row justify-between',
+                    )}
+                  >
+                    <div className='min-w-0 flex-1'>
+                      <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-[0.6em] text-xs font-semibold'>
+                        {(item as Book).title}
+                      </h4>
+                    </div>
+                    {item.progress && (
+                      <div className={'flex items-center justify-between'}>
+                        <ReadingProgress book={item as Book} />
+                        {isWebAppPlatform() && (
+                          <button
+                            type='button'
+                            className='show-detail-button opacity-0 group-hover:opacity-100'
+                            onClick={showBookDetailsModal.bind(null, item as Book)}
+                            onKeyUp={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                showBookDetailsModal(item as Book);
+                              }
+                            }}
+                          >
+                            <CiCircleMore size={15} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {!item.progress && isWebAppPlatform() && (
+                      <div className={'flex items-center justify-end'}>
+                        <button
+                          type='button'
                           className='show-detail-button opacity-0 group-hover:opacity-100'
-                          role='button'
                           onClick={showBookDetailsModal.bind(null, item as Book)}
+                          onKeyUp={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              showBookDetailsModal(item as Book);
+                            }
+                          }}
                         >
                           <CiCircleMore size={15} />
-                        </div>
-                      )}
-                    </div>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
