@@ -233,7 +233,7 @@ const LibraryPage = () => {
   }
 
   return (
-    <div className='library-page rounded-window bg-base-200/50 text-base-content flex h-full min-h-screen select-none flex-col overflow-hidden'>
+    <div className='library-page rounded-window bg-base-200/50 text-base-content flex h-dvh select-none flex-col overflow-hidden'>
       <div className='fixed top-0 z-40 w-full'>
         <LibraryHeader
           isSelectMode={isSelectMode}
