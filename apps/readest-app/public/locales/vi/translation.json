@@ -41,7 +41,6 @@
   "Font Size": "Cỡ chữ",
   "From Local File": "Từ tệp cục bộ",
   "Full Justification": "Căn đều hai bên",
-  "Gaps (%)": "Khoảng cách (%)",
   "Global Settings": "Cài đặt chung",
   "Go Back": "Quay lại",
   "Go Forward": "Tiến tới",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Vị trí {{currentPage}} / {{totalPage}}",
   "Logged in": "Đã đăng nhập",
   "Logged in as {{userDisplayName}}": "Đăng nhập với tên {{userDisplayName}}",
-  "Margins (px)": "Lề (px)",
   "Match Case": "Phân biệt chữ hoa/thường",
   "Match Diacritics": "Phân biệt dấu",
   "Match Whole Words": "Khớp toàn bộ từ",
@@ -81,7 +79,6 @@
   "Open": "Mở",
   "Open Book": "Mở sách",
   "Original Text": "Văn bản gốc",
-  "Override Publisher Font": "Ghi đè phông chữ của nhà xuất bản",
   "Page": "Trang",
   "Paging Animation": "Hiệu ứng lật trang",
   "Paragraph": "Đoạn văn",
@@ -130,5 +127,8 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Chế độ viết",
   "Your Library": "Thư viện của bạn",
-  "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF"
+  "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF",
+  "Override Book Font": "Ghi đè phông chữ sách",
+  "Vertical Margins (px)": "Lề dọc (px)",
+  "Horizontal Margins (%)": "Lề ngang (%)"
 }

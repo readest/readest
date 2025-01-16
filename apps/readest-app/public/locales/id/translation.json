@@ -41,7 +41,6 @@
   "Font Size": "Ukuran Font",
   "From Local File": "Dari File Lokal",
   "Full Justification": "Rata Penuh",
-  "Gaps (%)": "Jarak (%)",
   "Global Settings": "Pengaturan Global",
   "Go Back": "Kembali",
   "Go Forward": "Maju",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Lok. {{currentPage}} / {{totalPage}}",
   "Logged in": "Sudah Masuk",
   "Logged in as {{userDisplayName}}": "Masuk sebagai {{userDisplayName}}",
-  "Margins (px)": "Margin (px)",
   "Match Case": "Cocokkan Huruf Besar/Kecil",
   "Match Diacritics": "Cocokkan Diakritik",
   "Match Whole Words": "Cocokkan Kata Utuh",
@@ -81,7 +79,6 @@
   "Open": "Buka",
   "Open Book": "Buka Buku",
   "Original Text": "Teks Asli",
-  "Override Publisher Font": "Ganti Font Penerbit",
   "Page": "Halaman",
   "Paging Animation": "Animasi Halaman",
   "Paragraph": "Paragraf",
@@ -130,5 +127,8 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Mode Menulis",
   "Your Library": "Perpustakaan Anda",
-  "TTS not supported for PDF": "TTS tidak didukung untuk PDF"
+  "TTS not supported for PDF": "TTS tidak didukung untuk PDF",
+  "Override Book Font": "Ganti Font Buku",
+  "Vertical Margins (px)": "Margin Vertikal (px)",
+  "Horizontal Margins (%)": "Margin Horizontal (%)"
 }

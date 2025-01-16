@@ -41,7 +41,6 @@
   "Font Size": "Yazı Boyutu",
   "From Local File": "Yerel Dosyadan",
   "Full Justification": "Tam Hizalama",
-  "Gaps (%)": "Boşluklar (%)",
   "Global Settings": "Genel Ayarlar",
   "Go Back": "Geri Git",
   "Go Forward": "İleri Git",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Konum {{currentPage}} / {{totalPage}}",
   "Logged in": "Giriş Yapıldı",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} olarak giriş yapıldı",
-  "Margins (px)": "Kenar Boşlukları (px)",
   "Match Case": "Büyük/Küçük Harf Eşleştir",
   "Match Diacritics": "Aksan İşaretlerini Eşleştir",
   "Match Whole Words": "Tam Kelimeleri Eşleştir",
@@ -81,7 +79,6 @@
   "Open": "Aç",
   "Open Book": "Kitabı Aç",
   "Original Text": "Orijinal Metin",
-  "Override Publisher Font": "Yayıncı Yazı Tipini Geçersiz Kıl",
   "Page": "Sayfa",
   "Paging Animation": "Sayfa Çevirme Animasyonu",
   "Paragraph": "Paragraf",
@@ -130,5 +127,8 @@
   "Wikipedia": "Vikipedi",
   "Writing Mode": "Yazma Modu",
   "Your Library": "Kütüphaneniz",
-  "TTS not supported for PDF": "PDF için TTS desteklenmiyor"
+  "TTS not supported for PDF": "PDF için TTS desteklenmiyor",
+  "Override Book Font": "Kitap Yazı Tipini Geçersiz Kıl",
+  "Vertical Margins (px)": "Dikey Kenar Boşlukları (px)",
+  "Horizontal Margins (%)": "Yatay Kenar Boşlukları (%)"
 }

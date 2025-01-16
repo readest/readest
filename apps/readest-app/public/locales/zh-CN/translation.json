@@ -41,7 +41,6 @@
   "Font Size": "字号",
   "From Local File": "从本地文件导入",
   "Full Justification": "两端对齐",
-  "Gaps (%)": "间距 (%)",
   "Global Settings": "全局设置",
   "Go Back": "返回",
   "Go Forward": "前进",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "已登录",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} 已登录",
-  "Margins (px)": "页边距 (px)",
   "Match Case": "匹配大小写",
   "Match Diacritics": "匹配重音符号",
   "Match Whole Words": "匹配整个单词",
@@ -81,7 +79,6 @@
   "Open": "打开",
   "Open Book": "打开书籍",
   "Original Text": "原文",
-  "Override Publisher Font": "覆盖内置字体",
   "Page": "页面",
   "Paging Animation": "翻页动画",
   "Paragraph": "段落",
@@ -130,5 +127,8 @@
   "Wikipedia": "维基百科",
   "Writing Mode": "排版模式",
   "Your Library": "书库",
-  "TTS not supported for PDF": "PDF 文档暂不支持 TTS"
+  "TTS not supported for PDF": "PDF 文档暂不支持 TTS",
+  "Override Book Font": "覆盖书籍字体",
+  "Vertical Margins (px)": "垂直边距（px）",
+  "Horizontal Margins (%)": "水平边距（%）"
 }

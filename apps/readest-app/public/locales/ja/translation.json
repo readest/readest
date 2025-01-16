@@ -41,7 +41,6 @@
   "Font Size": "フォントサイズ",
   "From Local File": "ローカルファイルから",
   "Full Justification": "両端揃え",
-  "Gaps (%)": "間隔 (%)",
   "Global Settings": "全体設定",
   "Go Back": "戻る",
   "Go Forward": "進む",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "ログイン済み",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}}としてログイン中",
-  "Margins (px)": "余白 (px)",
   "Match Case": "大文字・小文字を区別",
   "Match Diacritics": "アクセント記号を区別",
   "Match Whole Words": "単語全体を一致",
@@ -81,7 +79,6 @@
   "Open": "開く",
   "Open Book": "書籍を開く",
   "Original Text": "原文",
-  "Override Publisher Font": "出版社フォントを上書き",
   "Page": "ページ",
   "Paging Animation": "ページめくりアニメーション",
   "Paragraph": "段落",
@@ -130,5 +127,8 @@
   "Wikipedia": "ウィキペディア",
   "Writing Mode": "書き込みモード",
   "Your Library": "ライブラリー",
-  "TTS not supported for PDF": "PDFではTTSがサポートされていません"
+  "TTS not supported for PDF": "PDFではTTSがサポートされていません",
+  "Override Book Font": "書籍フォントを上書き",
+  "Vertical Margins (px)": "縦マージン（px）",
+  "Horizontal Margins (%)": "横マージン（%）"
 }

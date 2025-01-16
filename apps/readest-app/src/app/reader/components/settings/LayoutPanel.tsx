@@ -220,7 +220,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label={_('Margins (px)')}
+              label={_('Vertical Margins (px)')}
               value={marginPx}
               onChange={setMarginPx}
               min={0}
@@ -228,7 +228,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={4}
             />
             <NumberInput
-              label={_('Gaps (%)')}
+              label={_('Horizontal Margins (%)')}
               value={gapPercent}
               onChange={setGapPercent}
               min={0}

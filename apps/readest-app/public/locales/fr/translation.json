@@ -41,7 +41,6 @@
   "Font Size": "Taille de police",
   "From Local File": "Depuis un fichier local",
   "Full Justification": "Justification complète",
-  "Gaps (%)": "Espaces (%)",
   "Global Settings": "Paramètres globaux",
   "Go Back": "Retour",
   "Go Forward": "Avancer",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Connecté",
   "Logged in as {{userDisplayName}}": "Connecté en tant que {{userDisplayName}}",
-  "Margins (px)": "Marges (px)",
   "Match Case": "Respecter la casse",
   "Match Diacritics": "Respecter les accents",
   "Match Whole Words": "Mots entiers",
@@ -81,7 +79,6 @@
   "Open": "Ouvrir",
   "Open Book": "Ouvrir le livre",
   "Original Text": "Texte original",
-  "Override Publisher Font": "Remplacer la police de l'éditeur",
   "Page": "Page",
   "Paging Animation": "Animation de page",
   "Paragraph": "Paragraphe",
@@ -130,5 +127,8 @@
   "Wikipedia": "Wikipédia",
   "Writing Mode": "Mode écriture",
   "Your Library": "Votre bibliothèque",
-  "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF"
+  "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
+  "Override Book Font": "Remplacer la police du livre",
+  "Vertical Margins (px)": "Marges verticales (px)",
+  "Horizontal Margins (%)": "Marges horizontales (%)"
 }

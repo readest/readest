@@ -41,7 +41,6 @@
   "Font Size": "Размер шрифта",
   "From Local File": "Из локального файла",
   "Full Justification": "Полное выравнивание",
-  "Gaps (%)": "Промежутки (%)",
   "Global Settings": "Общие настройки",
   "Go Back": "Назад",
   "Go Forward": "Вперёд",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Поз. {{currentPage}} / {{totalPage}}",
   "Logged in": "Выполнен вход",
   "Logged in as {{userDisplayName}}": "Вход выполнен как {{userDisplayName}}",
-  "Margins (px)": "Отступы (px)",
   "Match Case": "Учитывать регистр",
   "Match Diacritics": "Учитывать диакритические знаки",
   "Match Whole Words": "Только целые слова",
@@ -81,7 +79,6 @@
   "Open": "Открыть",
   "Open Book": "Открыть книгу",
   "Original Text": "Оригинальный текст",
-  "Override Publisher Font": "Переопределить шрифт издателя",
   "Page": "Страница",
   "Paging Animation": "Анимация перелистывания",
   "Paragraph": "Абзац",
@@ -130,5 +127,8 @@
   "Wikipedia": "Википедия",
   "Writing Mode": "Режим записи",
   "Your Library": "Ваша библиотека",
-  "TTS not supported for PDF": "TTS не поддерживается для PDF"
+  "TTS not supported for PDF": "TTS не поддерживается для PDF",
+  "Override Book Font": "Переопределить шрифт книги",
+  "Vertical Margins (px)": "Вертикальные поля (px)",
+  "Horizontal Margins (%)": "Горизонтальные поля (%)"
 }

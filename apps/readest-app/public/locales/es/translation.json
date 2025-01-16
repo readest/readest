@@ -41,7 +41,6 @@
   "Font Size": "Tamaño de fuente",
   "From Local File": "Desde archivo local",
   "Full Justification": "Justificación completa",
-  "Gaps (%)": "Espacios (%)",
   "Global Settings": "Configuración global",
   "Go Back": "Volver",
   "Go Forward": "Avanzar",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Sesión iniciada",
   "Logged in as {{userDisplayName}}": "Sesión iniciada como {{userDisplayName}}",
-  "Margins (px)": "Márgenes (px)",
   "Match Case": "Coincidir mayúsculas y minúsculas",
   "Match Diacritics": "Coincidir diacríticos",
   "Match Whole Words": "Coincidir palabras completas",
@@ -81,7 +79,6 @@
   "Open": "Abrir",
   "Open Book": "Abrir libro",
   "Original Text": "Texto original",
-  "Override Publisher Font": "Sobrescribir fuente del editor",
   "Page": "Página",
   "Paging Animation": "Animación de paginación",
   "Paragraph": "Párrafo",
@@ -130,5 +127,8 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Modo de escritura",
   "Your Library": "Tu biblioteca",
-  "TTS not supported for PDF": "TTS no es compatible con PDF"
+  "TTS not supported for PDF": "TTS no es compatible con PDF",
+  "Override Book Font": "Sobrescribir fuente del libro",
+  "Vertical Margins (px)": "Márgenes verticales (px)",
+  "Horizontal Margins (%)": "Márgenes horizontales (%)"
 }

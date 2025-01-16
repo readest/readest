@@ -41,7 +41,6 @@
   "Font Size": "글꼴 크기",
   "From Local File": "로컬 파일에서",
   "Full Justification": "양쪽 정렬",
-  "Gaps (%)": "간격 (%)",
   "Global Settings": "전역 설정",
   "Go Back": "뒤로",
   "Go Forward": "앞으로",
@@ -64,7 +63,6 @@
   "Loc. {{currentPage}} / {{totalPage}}": "위치 {{currentPage}} / {{totalPage}}",
   "Logged in": "로그인됨",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}}(으)로 로그인됨",
-  "Margins (px)": "여백 (px)",
   "Match Case": "대소문자 구분",
   "Match Diacritics": "발음 구별 부호 구분",
   "Match Whole Words": "전체 단어 일치",
@@ -81,7 +79,6 @@
   "Open": "열기",
   "Open Book": "책 열기",
   "Original Text": "원본 텍스트",
-  "Override Publisher Font": "출판사 글꼴 재정의",
   "Page": "페이지",
   "Paging Animation": "페이지 넘김 애니메이션",
   "Paragraph": "단락",
@@ -130,5 +127,8 @@
   "Wikipedia": "위키피디아",
   "Writing Mode": "글쓰기 모드",
   "Your Library": "내 서재",
-  "TTS not supported for PDF": "PDF에서 TTS가 지원되지 않음"
+  "TTS not supported for PDF": "PDF에서 TTS가 지원되지 않음",
+  "Override Book Font": "책 글꼴 덮어쓰기",
+  "Vertical Margins (px)": "수직 여백 (px)",
+  "Horizontal Margins (%)": "수평 여백 (%)"
 }
