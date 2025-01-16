@@ -11,7 +11,7 @@ const generateLightPalette = ({ bg, fg, primary }: BaseColor) => {
   return {
     'base-100': bg, // Main background
     'base-200': tinycolor(bg).darken(5).toHexString(), // Slightly darker
-    'base-300': tinycolor(bg).darken(15).toHexString(), // More darker
+    'base-300': tinycolor(bg).darken(12).toHexString(), // More darker
     'base-content': fg, // Main text color
     neutral: tinycolor(bg).darken(15).desaturate(20).toHexString(), // Muted neutral
     'neutral-content': tinycolor(fg).lighten(20).desaturate(20).toHexString(), // Slightly lighter text
@@ -25,7 +25,7 @@ const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
   return {
     'base-100': bg, // Main background
     'base-200': tinycolor(bg).lighten(5).toHexString(), // Slightly lighter
-    'base-300': tinycolor(bg).lighten(15).toHexString(), // More lighter
+    'base-300': tinycolor(bg).lighten(12).toHexString(), // More lighter
     'base-content': fg, // Main text color
     neutral: tinycolor(bg).lighten(15).desaturate(20).toHexString(), // Muted neutral
     'neutral-content': tinycolor(fg).darken(20).desaturate(20).toHexString(), // Darkened text

@@ -13,42 +13,41 @@ const TabNavigation: React.FC<{
   const tabs = ['toc', 'annotations', 'bookmarks'];
 
   return (
-    <div className="bottom-tab border-base-300/50 flex w-full border-t relative">
+    <div className='bottom-tab border-base-300/50 relative flex w-full border-t'>
       <div
         className={clsx(
-          'absolute bottom-0 left-0 h-full w-1/3 bg-base-300 -z-10',
-          'transition-transform duration-300 transform',
+          'bg-base-300 absolute bottom-1.5 left-1 -z-10 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',
+          'transform transition-transform duration-300',
           activeTab === 'toc' && 'translate-x-0',
-          activeTab === 'annotations' && 'translate-x-full',
-          activeTab === 'bookmarks' && 'translate-x-[200%]',
+          activeTab === 'annotations' && 'translate-x-[calc(100%+8px)]',
+          activeTab === 'bookmarks' && 'translate-x-[calc(200%+16px)]',
         )}
       />
       {tabs.map((tab) => (
-          <div
-            key={tab}
-            className='tooltip z-50 tooltip-top m-1.5 flex-1 rounded-md p-2 cursor-pointer'
-            data-tip={tab === 'toc' ? _('Table of Contents') : tab === 'annotations' ? _('Annotate') : _('Bookmark')}
-          >
-            <div
-              className={clsx(
-                '',
-              )}
-              onClick={() => onTabChange(tab)}
-            >
-              {
-                tab === 'toc' ? (
-                  <MdToc size={20} className='mx-auto' />
-                ) : tab === 'annotations' ? (
-                  <MdEditNote size={20} className='mx-auto' />
-                ) : (
-                  <MdBookmarkBorder size={20} className='mx-auto' />
-                )
-              }
-            </div>
+        <div
+          key={tab}
+          className='tooltip tooltip-top z-50 m-1.5 flex-1 cursor-pointer rounded-md p-2'
+          data-tip={
+            tab === 'toc'
+              ? _('Table of Contents')
+              : tab === 'annotations'
+                ? _('Annotate')
+                : _('Bookmark')
+          }
+        >
+          <div className={clsx('')} onClick={() => onTabChange(tab)}>
+            {tab === 'toc' ? (
+              <MdToc size={20} className='mx-auto' />
+            ) : tab === 'annotations' ? (
+              <MdEditNote size={20} className='mx-auto' />
+            ) : (
+              <MdBookmarkBorder size={20} className='mx-auto' />
+            )}
           </div>
+        </div>
       ))}
     </div>
-  )
+  );
 };
 
 export default TabNavigation;
