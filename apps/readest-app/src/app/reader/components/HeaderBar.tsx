@@ -63,7 +63,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         <BookmarkToggler bookKey={bookKey} />
       </div>
 
-      <div className='header-title pointer-events-none absolute inset-0 flex items-center justify-center'>
+      <div className='header-title pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
         <h2 className='line-clamp-1 max-w-[80%] text-center text-xs font-semibold'>{bookTitle}</h2>
       </div>
 
