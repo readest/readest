@@ -20,14 +20,14 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   return (
     <div
-      className={clsx('tooltip z-50', tooltip && `tooltip-${tooltipDirection}`, {
+      className={clsx('tooltip z-50 h-8 min-h-8 w-8', tooltip && `tooltip-${tooltipDirection}`, {
         'tooltip-hidden': !tooltip,
       })}
       data-tip={tooltip}
     >
       <button
         className={clsx(
-          'btn btn-ghost mx-2 h-8 min-h-8 w-8 p-0',
+          'btn btn-ghost h-8 min-h-8 w-8 p-0',
           disabled && 'btn-disabled !bg-transparent',
           className,
         )}

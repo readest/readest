@@ -8,13 +8,14 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
-import useDragBar from '../../hooks/useDragBar';
-import NotebookHeader from './Header';
-import NoteEditor from './NoteEditor';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
+import { eventDispatcher } from '@/utils/event';
+import useDragBar from '../../hooks/useDragBar';
 import BooknoteItem from '../sidebar/BooknoteItem';
+import NotebookHeader from './Header';
+import NoteEditor from './NoteEditor';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -31,10 +32,23 @@ const Notebook: React.FC = ({}) => {
   const { setNotebookWidth, setNotebookVisible, toggleNotebookPin } = useNotebookStore();
   const { setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
 
+  const onNavigateEvent = async () => {
+    const pinButton = document.querySelector('.sidebar-pin-btn');
+    const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
+    if (isPinButtonHidden) {
+      setNotebookVisible(false);
+    }
+  };
+
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
     setNotebookPin(settings.globalReadSettings.isNotebookPinned);
     setNotebookVisible(settings.globalReadSettings.isNotebookPinned);
+
+    eventDispatcher.on('navigate', onNavigateEvent);
+    return () => {
+      eventDispatcher.off('navigate', onNavigateEvent);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -135,11 +149,23 @@ const Notebook: React.FC = ({}) => {
           position: isNotebookPinned ? 'relative' : 'absolute',
         }}
       >
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .notebook-container {
+              width: 100%;
+              min-width: 100%;
+            }
+          }
+        `}</style>
         <div
           className='drag-bar absolute left-0 top-0 h-full w-0.5 cursor-col-resize'
           onMouseDown={handleMouseDown}
         />
-        <NotebookHeader isPinned={isNotebookPinned} handleTogglePin={handleTogglePin} />
+        <NotebookHeader
+          isPinned={isNotebookPinned}
+          handleClose={() => setNotebookVisible(false)}
+          handleTogglePin={handleTogglePin}
+        />
         <div className='max-h-[calc(100vh-44px)] overflow-y-auto px-3'>
           <div>{excerptNotes.length > 0 && <p className='pt-1 text-sm'>{_('Excerpts')}</p>}</div>
           <ul className=''>

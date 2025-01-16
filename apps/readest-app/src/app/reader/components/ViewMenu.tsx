@@ -92,7 +92,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         <button
           onClick={zoomOut}
           className={clsx(
-            'hover:bg-base-200 text-base-content rounded-full p-2',
+            'hover:bg-base-300 text-base-content rounded-full p-2',
             zoomLevel <= MIN_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >
@@ -100,7 +100,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         </button>
         <button
           className={clsx(
-            'hover:bg-base-200 text-base-content h-8 min-h-8 w-[50%] rounded-md p-1 text-center',
+            'hover:bg-base-300 text-base-content h-8 min-h-8 w-[50%] rounded-md p-1 text-center',
           )}
           onClick={resetZoom}
         >
@@ -109,7 +109,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         <button
           onClick={zoomIn}
           className={clsx(
-            'hover:bg-base-200 text-base-content rounded-full p-2',
+            'hover:bg-base-300 text-base-content rounded-full p-2',
             zoomLevel >= MAX_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >

@@ -38,7 +38,7 @@ const SideBar: React.FC<{
     handleSideBarTogglePin,
   } = useSidebar(
     settings.globalReadSettings.sideBarWidth,
-    settings.globalReadSettings.isSideBarPinned,
+    window.innerWidth >= 640 ? settings.globalReadSettings.isSideBarPinned : false,
   );
 
   const onSearchEvent = async (event: CustomEvent) => {
@@ -48,10 +48,20 @@ const SideBar: React.FC<{
     setSearchTerm(term);
   };
 
+  const onNavigateEvent = async () => {
+    const pinButton = document.querySelector('.sidebar-pin-btn');
+    const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
+    if (isPinButtonHidden) {
+      setSideBarVisible(false);
+    }
+  };
+
   useEffect(() => {
     eventDispatcher.on('search', onSearchEvent);
+    eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
       eventDispatcher.off('search', onSearchEvent);
+      eventDispatcher.off('navigate', onNavigateEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -79,6 +89,7 @@ const SideBar: React.FC<{
   useShortcuts({ onToggleSearchBar: handleToggleSearchBar }, [sideBarBookKey]);
 
   const handleSearchResultClick = (cfi: string) => {
+    onNavigateEvent();
     getView(sideBarBookKey)?.goTo(cfi);
   };
 
@@ -104,11 +115,20 @@ const SideBar: React.FC<{
           position: isSideBarPinned ? 'relative' : 'absolute',
         }}
       >
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .sidebar-container {
+              width: 100%;
+              min-width: 100%;
+            }
+          }
+        `}</style>
         <div className='flex-shrink-0'>
           <SidebarHeader
             isPinned={isSideBarPinned}
             isSearchBarVisible={isSearchBarVisible}
             onGoToLibrary={onGoToLibrary}
+            onClose={() => setSideBarVisible(false)}
             onTogglePin={handleSideBarTogglePin}
             onToggleSearchBar={handleToggleSearchBar}
           />

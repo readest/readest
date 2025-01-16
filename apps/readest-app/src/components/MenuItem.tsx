@@ -25,7 +25,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   const menuButton = (
     <button
       className={clsx(
-        'hover:bg-neutral text-base-content flex h-10 w-full items-center justify-between rounded-md p-2',
+        'hover:bg-base-300 text-base-content flex h-10 w-full items-center justify-between rounded-md p-2',
         disabled && 'btn-disabled text-gray-400',
       )}
       onClick={onClick}
@@ -44,7 +44,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       <ul className='menu rounded-box m-0 p-0'>
         <li>
           <details>
-            <summary className='hover:bg-neutral p-0 pr-3'>{menuButton}</summary>
+            <summary className='hover:bg-base-300 p-0 pr-3'>{menuButton}</summary>
             {children}
           </details>
         </li>

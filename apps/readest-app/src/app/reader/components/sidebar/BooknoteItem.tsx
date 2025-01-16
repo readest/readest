@@ -9,6 +9,7 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import useScrollToItem from '../../hooks/useScrollToItem';
+import { eventDispatcher } from '@/utils/event';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -29,6 +30,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
 
   const handleClickItem = (event: React.MouseEvent) => {
     event.preventDefault();
+    eventDispatcher.dispatch('navigate', { bookKey, cfi });
+
     getView(bookKey)?.goTo(cfi);
     if (note) {
       setNotebookVisible(true);

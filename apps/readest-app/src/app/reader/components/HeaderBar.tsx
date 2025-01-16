@@ -11,6 +11,7 @@ import Dropdown from '@/components/Dropdown';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
+import SettingsToggler from './SettingsToggler';
 import ViewMenu from './ViewMenu';
 
 interface HeaderBarProps {
@@ -57,16 +58,17 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <div className='sidebar-bookmark-toggler flex h-full items-center'>
+      <div className='sidebar-bookmark-toggler flex h-full items-center space-x-2 sm:space-x-4'>
         <SidebarToggler bookKey={bookKey} />
         <BookmarkToggler bookKey={bookKey} />
       </div>
 
-      <div className='header-title flex flex-1 items-center justify-center'>
+      <div className='header-title pointer-events-none absolute inset-0 flex items-center justify-center'>
         <h2 className='line-clamp-1 max-w-[80%] text-center text-xs font-semibold'>{bookTitle}</h2>
       </div>
 
-      <div className='flex h-full items-center space-x-2'>
+      <div className='ml-auto flex h-full items-center space-x-2 sm:space-x-4'>
+        <SettingsToggler />
         <NotebookToggler bookKey={bookKey} />
         <Dropdown
           className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
