@@ -29,6 +29,7 @@ export const useProgressSync = (bookKey: string) => {
     const compressedConfig = JSON.parse(
       serializeConfig(newConfig, settings.globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG),
     );
+    delete compressedConfig.booknotes;
     syncConfigs([compressedConfig], bookHash, 'push');
   };
   const pullConfig = (bookKey: string) => {
@@ -47,11 +48,11 @@ export const useProgressSync = (bookKey: string) => {
   useEffect(() => {
     if (!user) return;
     pullConfig(bookKey);
-    return () => {
-      if (configSynced.current) {
-        pushConfig(bookKey, config);
-      }
-    };
+    // return () => {
+    //   if (configSynced.current) {
+    //     pushConfig(bookKey, config);
+    //   }
+    // };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

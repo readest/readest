@@ -30,6 +30,8 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   return maxTime;
 };
 
+const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+
 export function useSync(bookKey?: string) {
   const { settings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
@@ -40,14 +42,19 @@ export function useSync(bookKey?: string) {
   const [syncingNotes, setSyncingNotes] = useState(false);
 
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  const lastSyncedBooksAt = settings.lastSyncedAtBooks ?? 0;
+  const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
+  const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
+
   const [lastSyncedAtBooks, setLastSyncedAtBooks] = useState<number>(
-    settings.lastSyncedAtBooks ?? 0,
+    lastSyncedBooksAt > 0 ? lastSyncedBooksAt - SEVEN_DAYS_IN_MS : 0,
   );
   const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(
-    config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0,
+    lastSyncedConfigsAt > 0 ? lastSyncedConfigsAt - SEVEN_DAYS_IN_MS : 0,
   );
   const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(
-    config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0,
+    lastSyncedNotesAt > 0 ? lastSyncedNotesAt - SEVEN_DAYS_IN_MS : 0,
   );
 
   const [syncing, setSyncing] = useState(false);
