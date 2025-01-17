@@ -26,7 +26,7 @@ const TabNavigation: React.FC<{
       {tabs.map((tab) => (
         <div
           key={tab}
-          className='tooltip tooltip-top z-50 m-1.5 flex-1 cursor-pointer rounded-md p-2'
+          className='lg:tooltip lg:tooltip-top z-50 m-1.5 flex-1 cursor-pointer rounded-md p-2'
           data-tip={
             tab === 'toc'
               ? _('Table of Contents')

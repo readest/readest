@@ -29,7 +29,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
           <span style={{ minWidth: '20px' }}>
             {isFontLayoutSettingsGlobal && <MdCheck size={20} className='text-base-content' />}
           </span>
-          <div className='tooltip' data-tip='Uncheck for current book settings'>
+          <div className='lg:tooltip' data-tip={_('Uncheck for current book settings')}>
             <span className='ml-2'>{_('Global Settings')}</span>
           </div>
         </div>

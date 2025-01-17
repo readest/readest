@@ -28,7 +28,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <div className='flex items-center justify-between'>
         <h2 className='font-medium'>{_('Theme Mode')}</h2>
         <div className='flex gap-2'>
-          <div className='tooltip tooltip-bottom' data-tip={_('Auto Mode')}>
+          <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('auto')}
@@ -37,7 +37,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </button>
           </div>
 
-          <div className='tooltip tooltip-bottom' data-tip={_('Light Mode')}>
+          <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Light Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'light' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('light')}
@@ -46,7 +46,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </button>
           </div>
 
-          <div className='tooltip tooltip-bottom' data-tip={_('Dark Mode')}>
+          <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Dark Mode')}>
             <button
               className={`btn btn-ghost btn-circle ${themeMode === 'dark' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('dark')}
