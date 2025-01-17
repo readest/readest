@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
+import { isTauriAppPlatform } from '@/services/environment';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
@@ -105,8 +106,8 @@ const SideBar: React.FC<{
     <>
       <div
         className={clsx(
-          'sidebar-container bg-base-200 z-20 flex h-full min-w-60 flex-col',
-          'rounded-window-top-left rounded-window-bottom-left select-none',
+          'sidebar-container bg-base-200 z-20 flex h-full min-w-60 select-none flex-col',
+          isTauriAppPlatform() && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
         )}
         style={{

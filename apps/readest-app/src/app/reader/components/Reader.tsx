@@ -1,11 +1,13 @@
 'use client';
 
+import clsx from 'clsx';
 import * as React from 'react';
 import { useEffect, Suspense, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { isTauriAppPlatform } from '@/services/environment';
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
@@ -33,7 +35,12 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   return (
     library.length > 0 &&
     settings.globalReadSettings && (
-      <div className='reader-page rounded-window bg-base-100 text-base-content select-none'>
+      <div
+        className={clsx(
+          `reader-page bg-base-100 text-base-content select-none`,
+          isTauriAppPlatform() && 'rounded-window',
+        )}
+      >
         <Suspense>
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />

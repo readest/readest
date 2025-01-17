@@ -12,6 +12,7 @@ import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
+import { isTauriAppPlatform } from '@/services/environment';
 import useDragBar from '../../hooks/useDragBar';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
@@ -140,7 +141,7 @@ const Notebook: React.FC = ({}) => {
       <div
         className={clsx(
           'notebook-container bg-base-200 right-0 z-20 h-full min-w-60 select-none',
-          'rounded-window-top-right rounded-window-bottom-right',
+          isTauriAppPlatform() && 'rounded-window-top-right rounded-window-bottom-right',
           !isNotebookPinned && 'shadow-2xl',
         )}
         style={{

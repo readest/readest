@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import * as React from 'react';
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
@@ -233,7 +234,12 @@ const LibraryPage = () => {
   }
 
   return (
-    <div className='library-page rounded-window bg-base-200/50 text-base-content flex h-dvh select-none flex-col overflow-hidden'>
+    <div
+      className={clsx(
+        'library-page bg-base-200/50 text-base-content flex h-dvh select-none flex-col overflow-hidden',
+        isTauriAppPlatform() && 'rounded-window',
+      )}
+    >
       <div className='fixed top-0 z-40 w-full'>
         <LibraryHeader
           isSelectMode={isSelectMode}

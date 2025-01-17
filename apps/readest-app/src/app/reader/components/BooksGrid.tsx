@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { isTauriAppPlatform } from '@/services/environment';
 import FoliateViewer from './FoliateViewer';
 import getGridTemplate from '@/utils/grid';
 import SectionInfo from './SectionInfo';
@@ -59,7 +60,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           <div
             id={`gridcell-${bookKey}`}
             key={bookKey}
-            className='rounded-window relative h-full w-full overflow-hidden'
+            className={`${isTauriAppPlatform() ? 'rounded-window' : ''} relative h-full w-full overflow-hidden`}
           >
             {isBookmarked && <Ribbon width={marginGap} />}
             <HeaderBar
