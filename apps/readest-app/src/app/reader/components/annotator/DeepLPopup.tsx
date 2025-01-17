@@ -3,7 +3,7 @@ import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isWebAppPlatform } from '@/services/environment';
+import { useAuth } from '@/context/AuthContext';
 
 const LANGUAGES = {
   AUTO: 'Auto Detect',
@@ -39,6 +39,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   popupHeight,
 }) => {
   const _ = useTranslation();
+  const { token } = useAuth();
   const { settings, setSettings } = useSettingsStore();
   const [sourceLang, setSourceLang] = useState('AUTO');
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
@@ -63,23 +64,14 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
       setError(null);
       setTranslation(null);
 
-      if (!process.env['NEXT_PUBLIC_DEEPL_API_KEY']) {
-        console.error('DeepL API key not found. Set NEXT_PUBLIC_DEEPL_API_KEY in .env.local');
-      }
-
-      const { fetch, url } = isWebAppPlatform()
-        ? { fetch: window.fetch, url: '/api/deepl/translate' }
-        : {
-            fetch: (await import('@tauri-apps/plugin-http')).fetch,
-            url: 'https://api-free.deepl.com/v2/translate',
-          };
+      const { fetch, url } = { fetch: window.fetch, url: '/api/deepl/translate' };
 
       try {
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `DeepL-Auth-Key ${process.env['NEXT_PUBLIC_DEEPL_API_KEY']}`,
+            Authorization: `Bearer ${token ?? ''}`,
           },
           body: JSON.stringify({
             text: [text],

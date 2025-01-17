@@ -41,7 +41,9 @@ export const useProgressSync = (bookKey: string) => {
     if (!configSynced.current) {
       pullConfig(bookKey);
     } else {
-      pushConfig(bookKey, config);
+      if (config && config.progress && config.progress[0] > 0) {
+        pushConfig(bookKey, config);
+      }
     }
   };
 
