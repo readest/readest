@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
   "Override Book Font": "Remplacer la police du livre",
   "Vertical Margins (px)": "Marges verticales (px)",
-  "Horizontal Margins (%)": "Marges horizontales (%)"
+  "Horizontal Margins (%)": "Marges horizontales (%)",
+  "Apply to all books": "Appliquer à tous les livres",
+  "Apply to this book": "Appliquer à ce livre",
+  "Unable to fetch the translation. Try again later.": "Impossible de récupérer la traduction. Réessayez plus tard."
 }

@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται για αρχεία PDF",
   "Override Book Font": "Παράκαμψη γραμματοσειράς βιβλίου",
   "Vertical Margins (px)": "Κάθετα περιθώρια (px)",
-  "Horizontal Margins (%)": "Οριζόντια περιθώρια (%)"
+  "Horizontal Margins (%)": "Οριζόντια περιθώρια (%)",
+  "Apply to all books": "Εφαρμογή σε όλα τα βιβλία",
+  "Apply to this book": "Εφαρμογή σε αυτό το βιβλίο",
+  "Unable to fetch the translation. Try again later.": "Αδυναμία λήψης της μετάφρασης. Δοκιμάστε ξανά αργότερα."
 }

@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "PDF 文档暂不支持 TTS",
   "Override Book Font": "覆盖书籍字体",
   "Vertical Margins (px)": "垂直边距（px）",
-  "Horizontal Margins (%)": "水平边距（%）"
+  "Horizontal Margins (%)": "水平边距（%）",
+  "Apply to all books": "应用于所有书籍",
+  "Apply to this book": "应用于此书籍",
+  "Unable to fetch the translation. Try again later.": "无法获取翻译，请稍后重试。"
 }

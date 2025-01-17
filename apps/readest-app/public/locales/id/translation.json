@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "TTS tidak didukung untuk PDF",
   "Override Book Font": "Ganti Font Buku",
   "Vertical Margins (px)": "Margin Vertikal (px)",
-  "Horizontal Margins (%)": "Margin Horizontal (%)"
+  "Horizontal Margins (%)": "Margin Horizontal (%)",
+  "Apply to all books": "Terapkan ke semua buku",
+  "Apply to this book": "Terapkan ke buku ini",
+  "Unable to fetch the translation. Try again later.": "Tidak dapat mengambil terjemahan. Coba lagi nanti."
 }

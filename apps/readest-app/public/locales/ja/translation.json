@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "PDFではTTSがサポートされていません",
   "Override Book Font": "書籍フォントを上書き",
   "Vertical Margins (px)": "縦マージン（px）",
-  "Horizontal Margins (%)": "横マージン（%）"
+  "Horizontal Margins (%)": "横マージン（%）",
+  "Apply to all books": "すべての書籍に適用",
+  "Apply to this book": "この書籍に適用",
+  "Unable to fetch the translation. Try again later.": "翻訳を取得できません。後で再試行してください。"
 }

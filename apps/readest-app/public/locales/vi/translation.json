@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF",
   "Override Book Font": "Ghi đè phông chữ sách",
   "Vertical Margins (px)": "Lề dọc (px)",
-  "Horizontal Margins (%)": "Lề ngang (%)"
+  "Horizontal Margins (%)": "Lề ngang (%)",
+  "Apply to all books": "Áp dụng cho tất cả sách",
+  "Apply to this book": "Áp dụng cho sách này",
+  "Unable to fetch the translation. Try again later.": "Không thể tải dịch vụ. Vui lòng thử lại sau."
 }

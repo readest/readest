@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "TTS не поддерживается для PDF",
   "Override Book Font": "Переопределить шрифт книги",
   "Vertical Margins (px)": "Вертикальные поля (px)",
-  "Horizontal Margins (%)": "Горизонтальные поля (%)"
+  "Horizontal Margins (%)": "Горизонтальные поля (%)",
+  "Apply to all books": "Применить ко всем книгам",
+  "Apply to this book": "Применить к этой книге",
+  "Unable to fetch the translation. Try again later.": "Не удалось получить перевод. Попробуйте позже."
 }

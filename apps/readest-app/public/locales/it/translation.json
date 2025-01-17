@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "TTS non supportato per PDF",
   "Override Book Font": "Sovrascrivi font libro",
   "Vertical Margins (px)": "Margini verticali (px)",
-  "Horizontal Margins (%)": "Margini orizzontali (%)"
+  "Horizontal Margins (%)": "Margini orizzontali (%)",
+  "Apply to all books": "Applica a tutti i libri",
+  "Apply to this book": "Applica a questo libro",
+  "Unable to fetch the translation. Try again later.": "Impossibile recuperare la traduzione. Riprova più tardi."
 }

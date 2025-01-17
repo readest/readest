@@ -130,5 +130,8 @@
   "TTS not supported for PDF": "PDF için TTS desteklenmiyor",
   "Override Book Font": "Kitap Yazı Tipini Geçersiz Kıl",
   "Vertical Margins (px)": "Dikey Kenar Boşlukları (px)",
-  "Horizontal Margins (%)": "Yatay Kenar Boşlukları (%)"
+  "Horizontal Margins (%)": "Yatay Kenar Boşlukları (%)",
+  "Apply to all books": "Tüm kitaplara uygula",
+  "Apply to this book": "Bu kitaba uygula",
+  "Unable to fetch the translation. Try again later.": "Çeviri alınamıyor. Daha sonra tekrar deneyin."
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
+import { getAPIBaseUrl } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
@@ -22,6 +23,8 @@ const LANGUAGES = {
   'ZH-HANS': 'Chinese (Simplified)',
   'ZH-HANT': 'Chinese (Traditional)',
 };
+
+const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
 interface DeepLPopupProps {
   text: string;
@@ -64,10 +67,8 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
       setError(null);
       setTranslation(null);
 
-      const { fetch, url } = { fetch: window.fetch, url: '/api/deepl/translate' };
-
       try {
-        const response = await fetch(url, {
+        const response = await fetch(DEEPL_API_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -98,14 +99,15 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
         setTranslation(translatedText);
       } catch (err) {
         console.error(err);
-        setError('Unable to fetch the translation. Try again later.');
+        setError(_('Unable to fetch the translation. Try again later.'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchTranslation();
-  }, [text, sourceLang, targetLang]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, token, sourceLang, targetLang]);
 
   return (
     <div>
