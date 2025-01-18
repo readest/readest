@@ -1,4 +1,3 @@
-import Cors from 'cors';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextRequest, NextResponse } from 'next/server';
 import { PostgrestError } from '@supabase/supabase-js';
@@ -7,6 +6,7 @@ import { BookDataRecord } from '@/types/book';
 import { transformBookConfigToDB } from '@/utils/transform';
 import { transformBookNoteToDB } from '@/utils/transform';
 import { transformBookToDB } from '@/utils/transform';
+import { runMiddleware, corsAllMethods } from '@/utils/cors';
 import { SyncData, SyncResult, SyncType } from '@/libs/sync';
 
 const transformsToDB = {
@@ -219,25 +219,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Helper method to wait for a middleware to execute before continuing
-// And to throw an error when an error happens in a middleware
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: Function) {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result: unknown) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-
-      return resolve(result);
-    });
-  });
-}
-
-const cors = Cors({
-  methods: ['POST', 'GET', 'HEAD'],
-});
-
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!req.url) {
     return res.status(400).json({ error: 'Invalid request URL' });
@@ -247,7 +228,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const host = process.env['HOST'] || 'localhost:3000';
   const url = new URL(req.url, `${protocol}://${host}`);
 
-  await runMiddleware(req, res, cors);
+  await runMiddleware(req, res, corsAllMethods);
 
   try {
     let response: Response;

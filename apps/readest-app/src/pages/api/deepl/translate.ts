@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { supabase } from '@/utils/supabase';
 
 const DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
@@ -23,8 +24,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const deeplAuthKey =
     user && token ? process.env['DEEPL_PRO_API_KEY'] : process.env['DEEPL_FREE_API_KEY'];
 
+  await runMiddleware(req, res, corsAllMethods);
+
   try {
-    console.log('Proxying DeepL request:', deeplApiUrl, deeplAuthKey);
     const response = await fetch(deeplApiUrl, {
       method: 'POST',
       headers: {
