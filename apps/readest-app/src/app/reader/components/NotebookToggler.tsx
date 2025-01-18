@@ -1,5 +1,5 @@
 import React from 'react';
-import { TbLayoutSidebarRight, TbLayoutSidebarRightFilled } from 'react-icons/tb';
+import { LuNotebookPen } from 'react-icons/lu';
 
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
@@ -26,9 +26,9 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
     <Button
       icon={
         sideBarBookKey == bookKey && isNotebookVisible ? (
-          <TbLayoutSidebarRightFilled size={20} className='text-base-content' />
+          <LuNotebookPen size={16} className='text-base-content' />
         ) : (
-          <TbLayoutSidebarRight size={20} className='text-base-content' />
+          <LuNotebookPen size={16} className='text-base-content' />
         )
       }
       onClick={handleToggleSidebar}

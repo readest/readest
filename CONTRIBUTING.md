@@ -77,10 +77,11 @@ Now you're all setup and can start implementing your changes.
 
 This project is a monorepo. The code for the `readest-app` is in the `app/readest-app` directory. Here are some useful scripts for developing the frontend only without compiling Tauri:
 
-| Command          | Description                                        |
-| ---------------- | -------------------------------------------------- |
-| `pnpm dev-web`   | Starts the development server for the web app only |
-| `pnpm build-web` | Builds the web app                                 |
+| Command                                    | Description                                        |
+| ------------------------------------------ | -------------------------------------------------- |
+| `pnpm dev-web`                             | Starts the development server for the web app only |
+| `TAURI_DEV_HOST=192.168.1.22 pnpm dev-web` | Start the dev server on a LAN address              |
+| `pnpm build-web`                           | Builds the web app                                 |
 
 Recommended Visual Studio Code plugins for development:
 

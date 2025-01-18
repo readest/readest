@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSidebarStore } from '@/store/sidebarStore';
+import { isTauriAppPlatform } from '@/services/environment';
 import FoliateViewer from './FoliateViewer';
 import getGridTemplate from '@/utils/grid';
 import SectionInfo from './SectionInfo';
@@ -22,8 +24,17 @@ interface BooksGridProps {
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { getConfig, getBookData } = useBookDataStore();
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
+  const { sideBarBookKey } = useSidebarStore();
   const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
   const gridTemplate = getGridTemplate(bookKeys.length, window.innerWidth / window.innerHeight);
+
+  useEffect(() => {
+    if (!sideBarBookKey) return;
+    const bookData = getBookData(sideBarBookKey);
+    if (!bookData || !bookData.book) return;
+    document.title = bookData.book.title;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
 
   return (
     <div
@@ -49,7 +60,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           <div
             id={`gridcell-${bookKey}`}
             key={bookKey}
-            className='rounded-window relative h-full w-full overflow-hidden'
+            className={`${isTauriAppPlatform() ? 'rounded-window' : ''} relative h-full w-full overflow-hidden`}
           >
             {isBookmarked && <Ribbon width={marginGap} />}
             <HeaderBar

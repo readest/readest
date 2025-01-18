@@ -3,14 +3,16 @@ import React, { useState, isValidElement, ReactElement } from 'react';
 
 interface DropdownProps {
   className?: string;
+  menuClassName?: string;
   buttonClassName?: string;
   toggleButton: React.ReactNode;
-  children: ReactElement<{ setIsDropdownOpen: (isOpen: boolean) => void }>;
+  children: ReactElement<{ setIsDropdownOpen: (isOpen: boolean) => void; menuClassName?: string }>;
   onToggle?: (isOpen: boolean) => void;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
   className,
+  menuClassName,
   buttonClassName,
   toggleButton,
   children,
@@ -30,7 +32,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const childrenWithToggle = isValidElement(children)
-    ? React.cloneElement(children, { setIsDropdownOpen })
+    ? React.cloneElement(children, { setIsDropdownOpen, menuClassName })
     : children;
 
   return (
@@ -42,7 +44,7 @@ const Dropdown: React.FC<DropdownProps> = ({
         <div
           tabIndex={-1}
           onClick={toggleDropdown}
-          className={clsx('dropdown-toggle', buttonClassName, isOpen && 'bg-base-200')}
+          className={clsx('dropdown-toggle', buttonClassName, isOpen && 'bg-base-300/50')}
         >
           {toggleButton}
         </div>

@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import Image from 'next/image';
 
@@ -10,10 +11,11 @@ import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
 
 interface BookMenuProps {
+  menuClassName?: string;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
-const BookMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
+const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
   const { library } = useLibraryStore();
   const { openParallelView } = useBooksManager();
@@ -39,7 +41,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <div
       tabIndex={0}
-      className='book-menu dropdown-content dropdown-center border-base-100 z-20 mt-3 w-60 shadow-2xl'
+      className={clsx(
+        'book-menu dropdown-content border-base-100 z-20 w-60 shadow-2xl',
+        menuClassName,
+      )}
     >
       <MenuItem label={_('Parallel Read')} noIcon>
         <ul className='max-h-60 overflow-y-auto'>

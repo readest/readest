@@ -29,14 +29,7 @@ export const useClickEvent = (
             if (!consumed) {
               const centerStartX = rect.left + rect.width * 0.375;
               const centerEndX = rect.left + rect.width * 0.625;
-              const centerStartY = rect.top + rect.height * 0.375;
-              const centerEndY = rect.top + rect.height * 0.625;
-              if (
-                screenX >= centerStartX &&
-                screenX <= centerEndX &&
-                screenY >= centerStartY &&
-                screenY <= centerEndY
-              ) {
+              if (screenX >= centerStartX && screenX <= centerEndX) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? '' : bookKey);
               } else if (screenX >= rect.left + rect.width / 2) {

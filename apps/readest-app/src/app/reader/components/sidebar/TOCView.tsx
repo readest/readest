@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { TOCItem } from '@/libs/document';
@@ -5,7 +6,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { findParentPath } from '@/utils/toc';
 import { getContentMd5 } from '@/utils/misc';
-import clsx from 'clsx';
+import { eventDispatcher } from '@/utils/event';
 
 const createExpanderIcon = (isExpanded: boolean) => {
   return (
@@ -43,6 +44,7 @@ const TOCItemView: React.FC<{
 
   const handleClickItem = (event: React.MouseEvent) => {
     event.preventDefault();
+    eventDispatcher.dispatch('navigate', { bookKey, href: item.href });
     if (item.href) {
       getView(bookKey)?.goTo(item.href);
     }

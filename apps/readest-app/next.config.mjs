@@ -19,14 +19,6 @@ const nextConfig = {
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: isProd ? '' : `http://${internalHost}:3000`,
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/deepl/:path*',
-        destination: 'https://api-free.deepl.com/v2/:path*',
-      },
-    ];
-  },
 };
 
 export default nextConfig;

@@ -148,7 +148,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='flex items-center justify-between'>
             <h2 className='font-medium'>{_('Writing Mode')}</h2>
             <div className='flex gap-2'>
-              <div className='tooltip tooltip-bottom' data-tip={_('Default')}>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Default')}>
                 <button
                   className={`btn btn-ghost btn-circle ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('auto')}
@@ -157,7 +157,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 </button>
               </div>
 
-              <div className='tooltip tooltip-bottom' data-tip={_('Horizontal Direction')}>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Horizontal Direction')}>
                 <button
                   className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('horizontal-tb')}
@@ -166,7 +166,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 </button>
               </div>
 
-              <div className='tooltip tooltip-bottom' data-tip={_('Vertical Direction')}>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Vertical Direction')}>
                 <button
                   className={`btn btn-ghost btn-circle ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('vertical-rl')}
@@ -220,7 +220,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label={_('Margins (px)')}
+              label={_('Vertical Margins (px)')}
               value={marginPx}
               onChange={setMarginPx}
               min={0}
@@ -228,7 +228,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={4}
             />
             <NumberInput
-              label={_('Gaps (%)')}
+              label={_('Horizontal Margins (%)')}
               value={gapPercent}
               onChange={setGapPercent}
               min={0}

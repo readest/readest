@@ -218,7 +218,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </div>
 
             <div className='config-item config-item-bottom'>
-              <span className=''>{_('Override Publisher Font')}</span>
+              <span className=''>{_('Override Book Font')}</span>
               <input
                 type='checkbox'
                 className='toggle'

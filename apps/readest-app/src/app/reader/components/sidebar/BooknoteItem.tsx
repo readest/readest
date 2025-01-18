@@ -9,6 +9,7 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import useScrollToItem from '../../hooks/useScrollToItem';
+import { eventDispatcher } from '@/utils/event';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -29,6 +30,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
 
   const handleClickItem = (event: React.MouseEvent) => {
     event.preventDefault();
+    eventDispatcher.dispatch('navigate', { bookKey, cfi });
+
     getView(bookKey)?.goTo(cfi);
     if (note) {
       setNotebookVisible(true);
@@ -122,12 +125,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
               )}
               onClick={editNote.bind(null, item)}
             >
-              <div className={clsx(
-                'align-bottom text-blue-400',
-                'transition duration-300 ease-in-out',
-                'group-hover:opacity-100 opacity-0',
-                'hover:text-blue-600',
-              )}>{_('Edit')}</div>
+              <div
+                className={clsx(
+                  'align-bottom text-blue-400',
+                  'transition duration-300 ease-in-out',
+                  'opacity-0 group-hover:opacity-100',
+                  'hover:text-blue-600',
+                )}
+              >
+                {_('Edit')}
+              </div>
             </button>
           )}
           <button
@@ -137,12 +144,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
             )}
             onClick={deleteNote.bind(null, item)}
           >
-            <div className={clsx(
-              'align-bottom text-red-400',
-              'transition duration-300 ease-in-out',
-              'group-hover:opacity-100 opacity-0',
-              'hover:text-red-600',
-            )}>{_('Delete')}</div>
+            <div
+              className={clsx(
+                'align-bottom text-red-400',
+                'transition duration-300 ease-in-out',
+                'opacity-0 group-hover:opacity-100',
+                'hover:text-red-600',
+              )}
+            >
+              {_('Delete')}
+            </div>
           </button>
         </div>
       </div>

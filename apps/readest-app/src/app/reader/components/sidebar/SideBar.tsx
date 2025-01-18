@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
+import { isTauriAppPlatform } from '@/services/environment';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
@@ -38,7 +39,7 @@ const SideBar: React.FC<{
     handleSideBarTogglePin,
   } = useSidebar(
     settings.globalReadSettings.sideBarWidth,
-    settings.globalReadSettings.isSideBarPinned,
+    window.innerWidth >= 640 ? settings.globalReadSettings.isSideBarPinned : false,
   );
 
   const onSearchEvent = async (event: CustomEvent) => {
@@ -48,10 +49,20 @@ const SideBar: React.FC<{
     setSearchTerm(term);
   };
 
+  const onNavigateEvent = async () => {
+    const pinButton = document.querySelector('.sidebar-pin-btn');
+    const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
+    if (isPinButtonHidden) {
+      setSideBarVisible(false);
+    }
+  };
+
   useEffect(() => {
     eventDispatcher.on('search', onSearchEvent);
+    eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
       eventDispatcher.off('search', onSearchEvent);
+      eventDispatcher.off('navigate', onNavigateEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -79,6 +90,7 @@ const SideBar: React.FC<{
   useShortcuts({ onToggleSearchBar: handleToggleSearchBar }, [sideBarBookKey]);
 
   const handleSearchResultClick = (cfi: string) => {
+    onNavigateEvent();
     getView(sideBarBookKey)?.goTo(cfi);
   };
 
@@ -94,8 +106,8 @@ const SideBar: React.FC<{
     <>
       <div
         className={clsx(
-          'sidebar-container bg-base-200 z-20 flex h-full min-w-60 flex-col',
-          'rounded-window-top-left rounded-window-bottom-left select-none',
+          'sidebar-container bg-base-200 z-20 flex h-full min-w-60 select-none flex-col',
+          isTauriAppPlatform() && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
         )}
         style={{
@@ -104,11 +116,20 @@ const SideBar: React.FC<{
           position: isSideBarPinned ? 'relative' : 'absolute',
         }}
       >
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .sidebar-container {
+              width: 100%;
+              min-width: 100%;
+            }
+          }
+        `}</style>
         <div className='flex-shrink-0'>
           <SidebarHeader
             isPinned={isSideBarPinned}
             isSearchBarVisible={isSearchBarVisible}
             onGoToLibrary={onGoToLibrary}
+            onClose={() => setSideBarVisible(false)}
             onTogglePin={handleSideBarTogglePin}
             onToggleSearchBar={handleToggleSearchBar}
           />

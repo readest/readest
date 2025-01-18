@@ -1,14 +1,8 @@
 import { supabase } from '@/utils/supabase';
 import { Book, BookConfig, BookNote, BookDataRecord } from '@/types/book';
-import { READEST_WEB_BASE_URL } from '@/services/constants';
-import { isWebAppPlatform } from '@/services/environment';
+import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
 
-// Develop Sync API only in development mode and web platform
-// with command `pnpm dev-web`
-const SYNC_API_ENDPOINT =
-  process.env['NODE_ENV'] === 'development' && isWebAppPlatform()
-    ? '/api/sync'
-    : `${READEST_WEB_BASE_URL}/api/sync`;
+const SYNC_API_ENDPOINT = getAPIBaseUrl() + '/sync';
 
 export type SyncType = 'books' | 'configs' | 'notes';
 export type SyncOp = 'push' | 'pull' | 'both';

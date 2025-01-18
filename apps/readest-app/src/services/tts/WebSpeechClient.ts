@@ -297,9 +297,23 @@ export class WebSpeechClient implements TTSClient {
       .filter((voice) => voice.lang.startsWith(locale))
       .filter((voice) => isValidVoice(voice.voiceURI || ''))
       .filter(isNotBlacklisted);
-    const voices = filteredVoices.map((voice) => {
-      return { id: voice.voiceURI, name: voice.name, lang: voice.lang } as TTSVoice;
-    });
+    const seenIds = new Set<string>();
+    const voices = filteredVoices
+      .map(
+        (voice) =>
+          ({
+            id: voice.voiceURI,
+            name: voice.name,
+            lang: voice.lang,
+          }) as TTSVoice,
+      )
+      .filter((voice) => {
+        if (seenIds.has(voice.id)) {
+          return false;
+        }
+        seenIds.add(voice.id);
+        return true;
+      });
     voices.forEach((voice) => {
       voice.disabled = !this.available;
     });
