@@ -1,5 +1,9 @@
 {
   "releases": {
+    "0.9.6": {
+      "date": "2025-01-18",
+      "notes": ["Various enhancements for mobile platforms", "Fix DeepL translation API"]
+    },
     "0.9.5": {
       "date": "2025-01-15",
       "notes": [
