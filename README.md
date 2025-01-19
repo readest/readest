@@ -164,7 +164,18 @@ pnpm tauri ios dev
 pnpm tauri build
 ```
 
-### 6. More information
+### 6. Setup dev environment with Nix
+
+If you have Nix installed, you can leverage flake to enter a development shell
+with all the necessary dependencies:
+
+```bash
+nix develop ./ops  # enter a dev shell for the web app
+nix develop ./ops#ios # enter a dev shell for the ios app
+nix develop ./ops#android # enter a dev shell for the android app
+```
+
+### 7. More information
 
 Please check the [wiki][link-gh-wiki] of this project for more information on development.
 
