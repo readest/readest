@@ -24,6 +24,11 @@
       "deny": []
     },
     {
+      "identifier": "fs:allow-read",
+      "allow": ["**/*"]
+    },
+
+    {
       "identifier": "fs:allow-appdata-read",
       "allow": [
         {
@@ -39,6 +44,18 @@
         }
       ]
     },
+
+    "fs:read-all",
+
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "/**"
+        }
+      ]
+    },
+
     {
       "identifier": "http:default",
       "allow": [

@@ -25,6 +25,25 @@ use tauri_plugin_oauth::start;
 #[cfg(desktop)]
 use tauri::Listener;
 
+use std::path::Path;
+use serde::{Serialize, Deserialize};
+use walkdir::WalkDir;
+use std::fs;
+
+#[derive(Debug, Serialize, Clone)]
+struct ImportProgress {
+    total_files: usize,
+    processed_files: usize,
+    current_file: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ImportValidation {
+    path: String,
+    success: bool,
+    error: Option<String>,
+}
+
 #[cfg(desktop)]
 fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     let fs_scope = app.fs_scope();
@@ -81,7 +100,11 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_oauth::init())
-        .invoke_handler(tauri::generate_handler![start_server])
+        .invoke_handler(tauri::generate_handler![
+            start_server,
+            find_book_files,
+            validate_book_files,
+        ])
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
@@ -224,4 +247,84 @@ pub fn run() {
                 }
             },
         );
+}
+
+fn validate_book_file(path: &str) -> Result<(), String> {
+    // Basic file validation
+    if !Path::new(path).exists() {
+        return Err("File does not exist".to_string());
+    }
+
+    // Check if file is readable
+    match fs::metadata(path) {
+        Ok(metadata) => {
+            if metadata.len() == 0 {
+                return Err("File is empty".to_string());
+            }
+        }
+        Err(e) => return Err(format!("Failed to read file metadata: {}", e)),
+    }
+
+    Ok(())
+}
+
+#[command]
+async fn find_book_files(path: String) -> Result<Vec<String>, String> {
+    let book_extensions: Vec<&str> = vec!["epub", "pdf", "mobi", "azw3", "txt"];
+    
+    let files = WalkDir::new(path)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            if let Some(ext) = entry.path().extension() {
+                if let Some(ext_str) = ext.to_str() {
+                    return book_extensions.contains(&ext_str.to_lowercase().as_str());
+                }
+            }
+            false
+        })
+        .map(|entry| entry.path().to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+
+    Ok(files)
+}
+
+#[command]
+async fn validate_book_files(
+    window: tauri::Window,
+    paths: Vec<String>,
+    chunk_size: usize,
+) -> Result<Vec<ImportValidation>, String> {
+    let total_files = paths.len();
+    let mut results = Vec::with_capacity(total_files);
+    
+    for (i, path) in paths.iter().enumerate() {
+        if i % chunk_size == 0 || i == total_files - 1 {
+            window.emit("import-progress", ImportProgress {
+                total_files,
+                processed_files: i + 1,
+                current_file: Path::new(path)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned(),
+            }).map_err(|e| e.to_string())?;
+        }
+
+        let result = match validate_book_file(path) {
+            Ok(_) => ImportValidation {
+                path: path.clone(),
+                success: true,
+                error: None,
+            },
+            Err(e) => ImportValidation {
+                path: path.clone(),
+                success: false,
+                error: Some(e.to_string()),
+            },
+        };
+        results.push(result);
+    }
+
+    Ok(results)
 }

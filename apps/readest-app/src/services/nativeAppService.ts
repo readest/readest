@@ -7,13 +7,13 @@ import {
   writeFile,
   readDir,
   remove,
-  copyFile,
   BaseDirectory,
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { open, message } from '@tauri-apps/plugin-dialog';
 import { join, appDataDir } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { listen } from '@tauri-apps/api/event';
 
 import { Book } from '@/types/book';
 import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
@@ -59,8 +59,9 @@ export const nativeFileSystem: FileSystem = {
     return URL.createObjectURL(new Blob([content]));
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    const { fp, baseDir } = resolvePath(dstPath, base);
-    await copyFile(srcPath, fp, base && { toPathBaseDir: baseDir });
+    const { fp: dstFp, baseDir } = resolvePath(dstPath, base);
+    const content = await readFile(srcPath);
+    return writeFile(dstFp, content, base && { baseDir });
   },
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
     const { fp, baseDir } = resolvePath(path, base);
@@ -94,13 +95,15 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = resolvePath(path, base);
 
-    const list = await readDir(fp, base && { baseDir });
-    return list.map((entity) => {
-      return {
-        path: entity.name,
-        isDir: entity.isDirectory,
-      };
-    });
+    const entries = await readDir(fp, { baseDir });
+    const results = await Promise.all(
+      entries.map(async (entry) => ({
+        path: await join(fp, entry.name),
+        name: entry.name,
+        isDir: entry.isDirectory,
+      })),
+    );
+    return results;
   },
   async exists(path: string, base: BaseDir) {
     const { fp, baseDir } = resolvePath(path, base);
@@ -153,4 +156,20 @@ export class NativeAppService extends BaseAppService {
   getCoverImageBlobUrl = async (book: Book): Promise<string> => {
     return this.fs.getBlobURL(`${this.localBooksDir}/${getCoverFilename(book)}`, 'None');
   };
+
+  async selectDirectory(name: string): Promise<string | null> {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: name,
+    });
+    return selected as string | null;
+  }
+
+  async listen(
+    event: string,
+    callback: (event: { payload: Record<string, string | number> }) => void,
+  ): Promise<() => void> {
+    return listen(event, callback);
+  }
 }

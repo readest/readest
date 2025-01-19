@@ -11,16 +11,19 @@ import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
+import { isWebAppPlatform } from '@/services/environment';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
   onImportBooks: () => void;
+  onImportDirectory: () => void;
   onToggleSelectMode: () => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   isSelectMode,
   onImportBooks,
+  onImportDirectory,
   onToggleSelectMode,
 }) => {
   const _ = useTranslation();
@@ -65,21 +68,36 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           />
           <div className='absolute right-4 flex items-center space-x-4 text-gray-500'>
             <span className='mx-2 h-5 w-[1px] bg-gray-400'></span>
-            <div className='dropdown dropdown-bottom flex h-5 cursor-pointer justify-center'>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip='Add books'>
-                <PiPlus tabIndex={-1} className='h-5 w-5' />
-              </div>
-              <ul
-                tabIndex={-1}
-                className='dropdown-content dropdown-center bg-base-100 menu rounded-box z-[1] mt-3 w-52 p-2 shadow'
+            {isWebAppPlatform() ? (
+              <button
+                onClick={onImportBooks}
+                className='lg:tooltip lg:tooltip-bottom flex h-5 cursor-pointer justify-center'
+                data-tip={_('Add books')}
               >
-                <li>
-                  <button className='text-base-content' onClick={onImportBooks}>
-                    {_('From Local File')}
-                  </button>
-                </li>
-              </ul>
-            </div>
+                <PiPlus tabIndex={-1} className='h-5 w-5' />
+              </button>
+            ) : (
+              <div className='dropdown dropdown-bottom flex h-5 cursor-pointer justify-center'>
+                <div className='lg:tooltip lg:tooltip-bottom' data-tip='Add books'>
+                  <PiPlus tabIndex={-1} className='h-5 w-5' />
+                </div>
+                <ul
+                  tabIndex={-1}
+                  className='dropdown-content dropdown-center bg-base-100 menu rounded-box z-[1] mt-3 w-52 p-2 shadow'
+                >
+                  <li>
+                    <button className='text-base-content' onClick={onImportBooks}>
+                      {_('From Local Files')}
+                    </button>
+                  </li>
+                  <li>
+                    <button className='text-base-content' onClick={onImportDirectory}>
+                      {_('From Directory')}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            )}
             <button
               onClick={onToggleSelectMode}
               aria-label={_('Select multiple books')}

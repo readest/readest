@@ -28,6 +28,7 @@ import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
+import { invoke } from '@tauri-apps/api/core';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -219,6 +220,134 @@ const LibraryPage = () => {
     setIsSelectMode(!isSelectMode);
   };
 
+  const importDirectory = async (dirPath: string) => {
+    if (!appService) return;
+
+    setLoading(true);
+    try {
+      // list files
+      const bookPaths = await invoke<string[]>('find_book_files', { path: dirPath });
+
+      if (bookPaths.length === 0) {
+        eventDispatcher.dispatch('toast', {
+          message: _('No books found in directory'),
+          type: 'warning',
+        });
+        return;
+      }
+
+      const unlisten = await appService.listen!('import-progress', (event) => {
+        const { total_files, processed_files, current_file } = event.payload;
+        requestAnimationFrame(() => {
+          eventDispatcher.dispatch('toast', {
+            message: _('Validating {{processed}} / {{total}} - {{file}}', {
+              processed: processed_files,
+              total: total_files,
+              file: current_file,
+            }),
+            type: 'info',
+            duration: 1000,
+          });
+        });
+      });
+
+      const validations = await invoke<Array<{ path: string; success: boolean; error?: string }>>(
+        'validate_book_files',
+        {
+          paths: bookPaths,
+          chunkSize: 3,
+        },
+      );
+
+      const failedFiles: string[] = [];
+      const batchSize = 1;
+      let processedFiles = 0;
+
+      for (let i = 0; i < validations.length; i += batchSize) {
+        const batch = validations.slice(i, i + batchSize);
+
+        await Promise.all(
+          batch.map(async (validation) => {
+            if (validation.success) {
+              try {
+                await appService.importBook(validation.path, libraryBooks);
+                processedFiles++;
+
+                // Update UI using requestAnimationFrame
+                requestAnimationFrame(() => {
+                  setLibrary([...libraryBooks]);
+                  eventDispatcher.dispatch('toast', {
+                    message: _('Processing books: {{processed}}/{{total}}', {
+                      processed: processedFiles,
+                      total: validations.length,
+                    }),
+                    type: 'info',
+                    duration: 1000,
+                  });
+                });
+              } catch (error) {
+                const baseFilename = getBaseFilename(validation.path);
+                failedFiles.push(baseFilename);
+                console.error('Failed to import book:', validation.path, error);
+              }
+            } else {
+              failedFiles.push(getBaseFilename(validation.path));
+            }
+          }),
+        );
+      }
+
+      setLibrary([...libraryBooks]);
+      appService.saveLibraryBooks(libraryBooks);
+
+      if (failedFiles.length > 0) {
+        eventDispatcher.dispatch('toast', {
+          message: _('Failed to import book(s): {{filenames}}', {
+            filenames: listFormater(false).format(failedFiles),
+          }),
+          type: 'error',
+        });
+      } else {
+        eventDispatcher.dispatch('toast', {
+          message: _('Successfully imported {{count}} books', {
+            count: processedFiles,
+          }),
+          type: 'success',
+        });
+      }
+
+      unlisten();
+    } catch (error) {
+      console.error('Failed to import directory:', error);
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to import directory'),
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportDirectory = async () => {
+    if (!appService) return;
+
+    console.log('Importing directory...');
+    if (isTauriAppPlatform()) {
+      try {
+        const dirPath = await appService.selectDirectory!(_('Select Books Directory'));
+        if (dirPath) {
+          await importDirectory(dirPath);
+        }
+      } catch (error) {
+        console.error('Failed to select directory:', error);
+        eventDispatcher.dispatch('toast', {
+          message: _('Failed to select directory'),
+          type: 'error',
+        });
+      }
+    }
+  };
+
   if (!appService) {
     return null;
   }
@@ -244,6 +373,7 @@ const LibraryPage = () => {
         <LibraryHeader
           isSelectMode={isSelectMode}
           onImportBooks={handleImportBooks}
+          onImportDirectory={handleImportDirectory}
           onToggleSelectMode={handleToggleSelectMode}
         />
       </div>

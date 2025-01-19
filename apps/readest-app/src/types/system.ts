@@ -13,9 +13,9 @@ export interface FileSystem {
   readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
   writeFile(path: string, base: BaseDir, content: string | ArrayBuffer): Promise<void>;
   removeFile(path: string, base: BaseDir): Promise<void>;
-  readDir(path: string, base: BaseDir): Promise<{ path: string; isDir: boolean }[]>;
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   removeDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
+  readDir?(path: string, base: BaseDir): Promise<{ path: string; name: string; isDir: boolean }[]>;
   exists(path: string, base: BaseDir): Promise<boolean>;
 }
 
@@ -25,6 +25,11 @@ export interface AppService {
   hasTrafficLight: boolean;
   hasWindowBar: boolean;
   isAppDataSandbox: boolean;
+
+  listen?(
+    event: string,
+    callback: (event: { payload: Record<string, string | number> }) => void,
+  ): Promise<() => void>;
 
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
   showMessage(msg: string, kind?: ToastType, title?: string, okLabel?: string): Promise<void>;
@@ -47,4 +52,5 @@ export interface AppService {
   saveLibraryBooks(books: Book[]): Promise<void>;
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;
+  selectDirectory?(name: string): Promise<string | null>;
 }
