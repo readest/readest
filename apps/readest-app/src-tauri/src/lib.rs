@@ -18,7 +18,6 @@ use std::path::PathBuf;
 use tauri::{command, Window};
 use tauri::{AppHandle, Emitter, Manager, Url};
 use tauri::{WebviewUrl, WebviewWindowBuilder};
-use tauri_plugin_dialog;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_oauth::start;
 
@@ -30,12 +29,12 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
-        if let Err(e) = fs_scope.allow_file(&file) {
+        if let Err(e) = fs_scope.allow_file(file) {
             eprintln!("Failed to allow file in fs_scope: {}", e);
         } else {
             println!("Allowed file in fs_scope: {:?}", file);
         }
-        if let Err(e) = asset_protocol_scope.allow_file(&file) {
+        if let Err(e) = asset_protocol_scope.allow_file(file) {
             eprintln!("Failed to allow file in asset_protocol_scope: {}", e);
         } else {
             println!("Allowed file in asset_protocol_scope: {:?}", file);
@@ -197,9 +196,9 @@ pub fn run() {
             // win.open_devtools();
 
             #[cfg(target_os = "macos")]
-            menu::setup_macos_menu(&app.handle())?;
+            menu::setup_macos_menu(app.handle())?;
 
-            app.handle().emit("window-ready", {}).unwrap();
+            app.handle().emit("window-ready", ()).unwrap();
 
             Ok(())
         })
@@ -216,7 +215,7 @@ pub fn run() {
                         .collect::<Vec<_>>();
 
                     let app_handler_clone = app_handle.clone();
-                    allow_file_in_scopes(&app_handle, files.clone());
+                    allow_file_in_scopes(app_handle, files.clone());
                     app_handle.listen("window-ready", move |_| {
                         println!("Window is ready, proceeding to handle files.");
                         set_window_open_with_files(&app_handler_clone, files.clone());

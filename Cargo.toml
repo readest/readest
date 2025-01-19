@@ -1,0 +1,3 @@
+[workspace]
+members = ["apps/readest-app/src-tauri"]
+resolver = "2"
