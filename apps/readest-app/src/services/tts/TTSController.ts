@@ -91,6 +91,7 @@ export class TTSController extends EventTarget {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
           if (this.#nossmlCnt < 10 && this.state === 'playing') {
+            resolve();
             await this.view.next(1);
             await this.forward();
           }

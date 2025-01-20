@@ -60,16 +60,16 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <div className='sidebar-bookmark-toggler flex h-full items-center space-x-2 sm:space-x-4'>
+      <div className='sidebar-bookmark-toggler bg-base-100 z-20 flex h-full items-center space-x-2 sm:space-x-4'>
         <SidebarToggler bookKey={bookKey} />
         <BookmarkToggler bookKey={bookKey} />
       </div>
 
-      <div className='header-title pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
-        <h2 className='line-clamp-1 max-w-[80%] text-center text-xs font-semibold'>{bookTitle}</h2>
+      <div className='header-title z-15 pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
+        <h2 className='line-clamp-1 max-w-[50%] text-center text-xs font-semibold'>{bookTitle}</h2>
       </div>
 
-      <div className='ml-auto flex h-full items-center space-x-2 sm:space-x-4'>
+      <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-2 sm:space-x-4'>
         <SettingsToggler />
         <NotebookToggler bookKey={bookKey} />
         <Dropdown
