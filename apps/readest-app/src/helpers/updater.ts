@@ -7,8 +7,6 @@ import { TranslationFunc } from '@/hooks/useTranslation';
 const LAST_CHECK_KEY = 'lastAppUpdateCheck';
 
 export const checkForAppUpdates = async (_: TranslationFunc) => {
-  if (process.env['NEXT_PUBLIC_DISABLE_UPDATER']) return;
-
   const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
   const now = Date.now();
   if (lastCheck && now - parseInt(lastCheck, 10) < CHECK_UPDATE_INTERVAL_SEC * 1000) return;
@@ -57,4 +55,5 @@ export const checkForAppUpdates = async (_: TranslationFunc) => {
       await relaunch();
     }
   }
+  return update;
 };

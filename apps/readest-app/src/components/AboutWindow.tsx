@@ -3,6 +3,8 @@ import Image from 'next/image';
 import packageJson from '../../package.json';
 import WindowButtons from './WindowButtons';
 import { useTranslation } from '@/hooks/useTranslation';
+import { hasUpdater } from '@/services/environment';
+import { checkForAppUpdates } from '@/helpers/updater';
 
 export const setAboutDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('about_window');
@@ -15,6 +17,15 @@ export const setAboutDialogVisible = (visible: boolean) => {
 
 export const AboutWindow = () => {
   const _ = useTranslation();
+  const [isUpdated, setIsUpdated] = React.useState(false);
+
+  const handleCheckUpdate = async () => {
+    const update = await checkForAppUpdates(_);
+    if (!update) {
+      setIsUpdated(true);
+    }
+  };
+
   return (
     <dialog id='about_window' className='modal'>
       <form method='dialog' className='modal-box w-96 max-w-lg p-4'>
@@ -31,10 +42,17 @@ export const AboutWindow = () => {
             <Image src='/icon.png' alt='App Logo' className='h-24 w-24' width={64} height={64} />
           </div>
           <h2 className='text-2xl font-bold'>Readest</h2>
-          <p className='text-neutral-content text-sm'>Bilingify LLC</p>
-          <span className='badge badge-primary mt-2'>
+          <p className='text-neutral-content text-sm'>
             {_('Version {{version}}', { version: packageJson.version })}
-          </span>
+          </p>
+          {hasUpdater() && !isUpdated && (
+            <span className='badge badge-primary mt-2' onClick={handleCheckUpdate}>
+              {_('Check update')}
+            </span>
+          )}
+          {isUpdated && (
+            <p className='text-neutral-content mt-2 text-xs'>{_('Already the latest version')}</p>
+          )}
         </div>
 
         <div className='divider'></div>
