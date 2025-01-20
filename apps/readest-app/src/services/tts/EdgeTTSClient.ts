@@ -11,7 +11,7 @@ export class EdgeTTSClient implements TTSClient {
   #voices: TTSVoice[] = [];
   #edgeTTS: EdgeSpeechTTS;
 
-  #audioContext: AudioContext | null = null;
+  static #audioContext: AudioContext | null;
   #sourceNode: AudioBufferSourceNode | null = null;
   #isPlaying = false;
   #pausedAt = 0;
@@ -23,9 +23,19 @@ export class EdgeTTSClient implements TTSClient {
     this.#edgeTTS = new EdgeSpeechTTS();
   }
 
+  async initializeAudioContext() {
+    if (!EdgeTTSClient.#audioContext) {
+      EdgeTTSClient.#audioContext = new AudioContext();
+    }
+    if (EdgeTTSClient.#audioContext.state === 'suspended') {
+      await EdgeTTSClient.#audioContext.resume();
+    }
+  }
+
   async init() {
     this.#voices = EdgeSpeechTTS.voices;
     try {
+      await this.initializeAudioContext();
       await this.#edgeTTS.create({
         lang: 'en',
         text: 'test',
@@ -88,10 +98,12 @@ export class EdgeTTSClient implements TTSClient {
         this.#audioBuffer = await this.#edgeTTS.createAudio(
           this.getPayload(lang, mark.text, voiceId),
         );
-        this.#audioContext = new AudioContext();
-        this.#sourceNode = this.#audioContext.createBufferSource();
+        if (!EdgeTTSClient.#audioContext) {
+          EdgeTTSClient.#audioContext = new AudioContext();
+        }
+        this.#sourceNode = EdgeTTSClient.#audioContext.createBufferSource();
         this.#sourceNode.buffer = this.#audioBuffer;
-        this.#sourceNode.connect(this.#audioContext.destination);
+        this.#sourceNode.connect(EdgeTTSClient.#audioContext.destination);
 
         yield {
           code: 'boundary',
@@ -100,11 +112,18 @@ export class EdgeTTSClient implements TTSClient {
         };
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
-          if (this.#audioContext === null || this.#sourceNode === null) {
+          if (EdgeTTSClient.#audioContext === null || this.#sourceNode === null) {
             throw new Error('Audio context or source node is null');
           }
-          this.#sourceNode.onended = () => {
-            this.#isPlaying = false;
+          this.#sourceNode.onended = (event: Event) => {
+            // chunk finished speaking or aborted speaking
+            if (signal.aborted || event.type === 'stopped') {
+              resolve({
+                code: 'error',
+                message: 'Aborted',
+              });
+              return;
+            }
             resolve({
               code: 'end',
               message: `Chunk finished: ${mark.name}`,
@@ -117,9 +136,12 @@ export class EdgeTTSClient implements TTSClient {
             });
             return;
           }
+          if (EdgeTTSClient.#audioContext.state === 'suspended') {
+            EdgeTTSClient.#audioContext.resume();
+          }
           this.#sourceNode.start(0);
           this.#isPlaying = true;
-          this.#startedAt = this.#audioContext.currentTime;
+          this.#startedAt = EdgeTTSClient.#audioContext.currentTime;
         });
         yield result;
       } catch (error) {
@@ -144,17 +166,17 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async pause() {
-    if (!this.#isPlaying || !this.#audioContext || !this.#sourceNode) return;
-    this.#pausedAt = this.#audioContext.currentTime - this.#startedAt;
-    await this.#audioContext.suspend();
+    if (!this.#isPlaying || !EdgeTTSClient.#audioContext) return;
+    this.#pausedAt = EdgeTTSClient.#audioContext.currentTime - this.#startedAt;
+    await EdgeTTSClient.#audioContext.suspend();
     this.#isPlaying = false;
   }
 
   async resume() {
-    if (this.#isPlaying || !this.#audioContext || !this.#sourceNode) return;
-    await this.#audioContext.resume();
+    if (this.#isPlaying || !EdgeTTSClient.#audioContext) return;
+    await EdgeTTSClient.#audioContext.resume();
     this.#isPlaying = true;
-    this.#startedAt = this.#audioContext.currentTime - this.#pausedAt;
+    this.#startedAt = EdgeTTSClient.#audioContext.currentTime - this.#pausedAt;
   }
 
   async stop() {
@@ -168,6 +190,9 @@ export class EdgeTTSClient implements TTSClient {
     if (this.#sourceNode) {
       try {
         this.#sourceNode.stop();
+        if (this.#sourceNode?.onended) {
+          this.#sourceNode.onended(new Event('stopped'));
+        }
       } catch (err) {
         if (!(err instanceof Error) || err.name !== 'InvalidStateError') {
           console.log('Error stopping source node:', err);
@@ -175,10 +200,6 @@ export class EdgeTTSClient implements TTSClient {
       }
       this.#sourceNode.disconnect();
       this.#sourceNode = null;
-    }
-    if (this.#audioContext) {
-      await this.#audioContext.close();
-      this.#audioContext = null;
     }
     this.#audioBuffer = null;
   }

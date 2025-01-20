@@ -17,6 +17,7 @@ export class TTSController extends EventTarget {
   view: FoliateView;
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
+  #currentSpeakPromise: Promise<void> | null = null;
 
   ttsRate: number = 1.0;
   ttsClient: TTSClient;
@@ -61,7 +62,7 @@ export class TTSController extends EventTarget {
     for await (const _ of iter);
   }
 
-  async preloadNextSSML(count: number) {
+  async preloadNextSSML(count: number = 2) {
     const tts = this.view.tts;
     if (!tts) return;
     let preloaded = 0;
@@ -80,44 +81,60 @@ export class TTSController extends EventTarget {
     this.#currentSpeakAbortController = new AbortController();
     const { signal } = this.#currentSpeakAbortController;
 
-    try {
-      console.log('TTS speak');
-      this.state = 'playing';
-      ssml = await ssml;
-      await this.preloadSSML(ssml);
-      if (!ssml) {
-        this.#nossmlCnt++;
-        // FIXME: in case we are at the end of the book, need a better way to handle this
-        if (this.#nossmlCnt < 10 && this.state === 'playing') {
-          await this.view.next(1);
+    this.#currentSpeakPromise = new Promise(async (resolve, reject) => {
+      try {
+        console.log('TTS speak');
+        this.state = 'playing';
+        ssml = await ssml;
+        await this.preloadSSML(ssml);
+        if (!ssml) {
+          this.#nossmlCnt++;
+          // FIXME: in case we are at the end of the book, need a better way to handle this
+          if (this.#nossmlCnt < 10 && this.state === 'playing') {
+            await this.view.next(1);
+            await this.forward();
+          }
+          return;
+        } else {
+          this.#nossmlCnt = 0;
+        }
+
+        const iter = await this.ttsClient.speak(ssml, signal);
+        let lastCode: TTSMessageCode = 'boundary';
+        for await (const { code, mark } of iter) {
+          if (signal.aborted) {
+            resolve();
+            return;
+          }
+          if (mark && this.state === 'playing') {
+            this.view.tts?.setMark(mark);
+          }
+          lastCode = code;
+        }
+
+        if (lastCode === 'end' && this.state === 'playing') {
+          resolve();
           await this.forward();
         }
-        return;
-      } else {
-        this.#nossmlCnt = 0;
-      }
-
-      const iter = await this.ttsClient.speak(ssml, signal);
-      let lastCode: TTSMessageCode = 'boundary';
-      for await (const { code, mark } of iter) {
-        if (mark && this.state === 'playing') {
-          this.view.tts?.setMark(mark);
+        resolve();
+      } catch (e) {
+        if (signal.aborted) {
+          resolve();
+        } else {
+          reject(e);
         }
-        lastCode = code;
+      } finally {
+        this.#currentSpeakAbortController = null;
+        this.#currentSpeakPromise = null;
       }
-
-      if (lastCode === 'end' && this.state === 'playing') {
-        await this.forward();
-      }
-    } finally {
-      this.#currentSpeakAbortController = null;
-    }
+    });
+    await this.#currentSpeakPromise.catch((e) => this.error(e));
   }
 
   async speak(ssml: string | Promise<string>) {
     await this.initViewTTS();
     this.#speak(ssml).catch((e) => this.error(e));
-    this.preloadNextSSML(2);
+    this.preloadNextSSML();
   }
 
   play() {
@@ -131,8 +148,11 @@ export class TTSController extends EventTarget {
   async start() {
     await this.initViewTTS();
     const ssml = this.state.includes('paused') ? this.view.tts?.resume() : this.view.tts?.start();
+    if (this.state.includes('paused')) {
+      this.resume();
+    }
     this.#speak(ssml);
-    this.preloadNextSSML(2);
+    this.preloadNextSSML();
   }
 
   async pause() {
@@ -146,11 +166,15 @@ export class TTSController extends EventTarget {
   }
 
   async stop() {
-    this.state = 'stopped';
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }
     await this.ttsClient.stop().catch((e) => this.error(e));
+
+    if (this.#currentSpeakPromise) {
+      await this.#currentSpeakPromise.catch((e) => this.error(e));
+    }
+    this.state = 'stopped';
   }
 
   // goto previous sentence
@@ -160,6 +184,7 @@ export class TTSController extends EventTarget {
       await this.stop();
       this.#speak(this.view.tts?.prev());
     } else {
+      await this.stop();
       this.state = 'backward-paused';
       this.view.tts?.prev(true);
     }
@@ -171,8 +196,9 @@ export class TTSController extends EventTarget {
     if (this.state === 'playing') {
       await this.stop();
       this.#speak(this.view.tts?.next());
-      this.preloadNextSSML(2);
+      this.preloadNextSSML();
     } else {
+      await this.stop();
       this.state = 'forward-paused';
       this.view.tts?.next(true);
     }

@@ -144,6 +144,7 @@ const hashPayload = (payload: EdgeTTSPayload): string => {
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
   private static audioCache = new LRUCache<string, AudioBuffer>(200);
+  private audioContext = new AudioContext();
 
   constructor() {}
 
@@ -274,8 +275,7 @@ export class EdgeSpeechTTS {
     try {
       const res = await this.create(payload);
       const arrayBuffer = await res.arrayBuffer();
-      const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
       EdgeSpeechTTS.audioCache.set(cacheKey, audioBuffer);
       return audioBuffer;
     } catch (error) {
