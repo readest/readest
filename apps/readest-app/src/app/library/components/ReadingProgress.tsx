@@ -20,7 +20,7 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
   ({ book }) => {
     const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
-    if (!progressPercentage) {
+    if (progressPercentage === null) {
       return null;
     }
 
