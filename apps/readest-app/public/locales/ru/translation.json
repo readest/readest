@@ -133,5 +133,7 @@
   "Horizontal Margins (%)": "Горизонтальные поля (%)",
   "Apply to all books": "Применить ко всем книгам",
   "Apply to this book": "Применить к этой книге",
-  "Unable to fetch the translation. Try again later.": "Не удалось получить перевод. Попробуйте позже."
+  "Unable to fetch the translation. Try again later.": "Не удалось получить перевод. Попробуйте позже.",
+  "Update Now!": "Обновить сейчас!",
+  "Update": "Обновить"
 }

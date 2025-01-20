@@ -133,5 +133,7 @@
   "Horizontal Margins (%)": "横マージン（%）",
   "Apply to all books": "すべての書籍に適用",
   "Apply to this book": "この書籍に適用",
-  "Unable to fetch the translation. Try again later.": "翻訳を取得できません。後で再試行してください。"
+  "Unable to fetch the translation. Try again later.": "翻訳を取得できません。後で再試行してください。",
+  "Update Now!": "今すぐ更新！",
+  "Update": "更新"
 }
