@@ -51,10 +51,11 @@ const LibraryPage = () => {
   useEffect(() => {
     const doAppUpdates = async () => {
       if (hasUpdater()) {
-        await checkForAppUpdates();
+        await checkForAppUpdates(_);
       }
     };
     doAppUpdates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const processOpenWithFiles = React.useCallback(

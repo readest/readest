@@ -2,10 +2,13 @@ import { check } from '@tauri-apps/plugin-updater';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { CHECK_UPDATE_INTERVAL_SEC } from '@/services/constants';
+import { TranslationFunc } from '@/hooks/useTranslation';
 
 const LAST_CHECK_KEY = 'lastAppUpdateCheck';
 
-export const checkForAppUpdates = async () => {
+export const checkForAppUpdates = async (_: TranslationFunc) => {
+  if (process.env['NEXT_PUBLIC_DISABLE_UPDATER']) return;
+
   const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
   const now = Date.now();
   if (lastCheck && now - parseInt(lastCheck, 10) < CHECK_UPDATE_INTERVAL_SEC * 1000) return;
@@ -20,10 +23,10 @@ export const checkForAppUpdates = async () => {
       Release notes: ${update.body}
       `,
       {
-        title: 'Update Now!',
+        title: _('Update Now!'),
         kind: 'info',
-        okLabel: 'Update',
-        cancelLabel: 'Cancel',
+        okLabel: _('Update'),
+        cancelLabel: _('Cancel'),
       },
     );
 
@@ -31,6 +34,7 @@ export const checkForAppUpdates = async () => {
       console.log(`found update ${update.version} from ${update.date} with notes ${update.body}`);
       let downloaded = 0;
       let contentLength = 0;
+      let lastLogged = 0;
       await update.downloadAndInstall((event) => {
         switch (event.event) {
           case 'Started':
@@ -39,7 +43,10 @@ export const checkForAppUpdates = async () => {
             break;
           case 'Progress':
             downloaded += event.data.chunkLength;
-            console.log(`downloaded ${downloaded} from ${contentLength}`);
+            if (downloaded - lastLogged >= 1 * 1024 * 1024) {
+              console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
+              lastLogged = downloaded;
+            }
             break;
           case 'Finished':
             console.log('download finished');
