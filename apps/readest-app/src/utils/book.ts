@@ -1,6 +1,7 @@
 import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress } from '@/types/book';
 import { getUserLang, makeSafeFilename } from './misc';
+import { SUPPORTED_FILE_EXTS } from '@/services/constants';
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;
@@ -17,8 +18,9 @@ export const getCoverFilename = (book: Book) => {
 export const getConfigFilename = (book: Book) => {
   return `${book.hash}/config.json`;
 };
-export const isBookFile = (filename: string) => {
-  return Object.values(EXTS).includes(filename.split('.').pop()!);
+export const isBookFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  return ext ? SUPPORTED_FILE_EXTS.includes(ext) : false;
 };
 export const getBaseFilename = (filename: string) => {
   const normalizedPath = filename.replace(/\\/g, '/');

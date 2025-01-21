@@ -48,3 +48,5 @@ tauri-plugin-cli = "2"
 tauri-plugin-single-instance = "2.2.0"
 tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2.2.0"
+
+walkdir = "2.4"

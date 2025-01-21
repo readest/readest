@@ -141,25 +141,6 @@ const indexedDBFileSystem: FileSystem = {
   async removeDir() {
     // Directories are virtual in IndexedDB; no-op
   },
-  async readDir(path: string) {
-    const db = await openIndexedDB();
-    return new Promise<{ path: string; isDir: boolean }[]>((resolve, reject) => {
-      const transaction = db.transaction('files', 'readonly');
-      const store = transaction.objectStore('files');
-      const request = store.getAll();
-
-      request.onsuccess = () => {
-        const files = request.result as { path: string }[];
-        resolve(
-          files
-            .filter((file) => file.path.startsWith(path))
-            .map((file) => ({ path: file.path, isDir: false })),
-        );
-      };
-
-      request.onerror = () => reject(request.error);
-    });
-  },
   async exists(path: string, base: BaseDir) {
     const { fp } = resolvePath(path, base);
     const db = await openIndexedDB();
@@ -188,10 +169,6 @@ export class WebAppService extends BaseAppService {
 
   async getInitBooksDir(): Promise<string> {
     return LOCAL_BOOKS_SUBDIR;
-  }
-
-  async selectDirectory(): Promise<string> {
-    throw new Error('selectDirectory is not supported in browser');
   }
 
   async selectFiles(): Promise<string[]> {
