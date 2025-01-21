@@ -2,11 +2,13 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 
+import Alert from '@/components/Alert';
 import { Book } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLibraryStore } from '@/store/libraryStore';
 import { formatDate, formatLanguage, formatPublisher, formatSubject } from '@/utils/book';
 import WindowButtons from '@/components/WindowButtons';
 import Spinner from './Spinner';
@@ -20,9 +22,11 @@ interface BookDetailModalProps {
 const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
+  const { deleteBook } = useLibraryStore();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -55,6 +59,16 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const handleClose = () => {
     setBookMeta(null);
     onClose();
+  };
+
+  const handleDelete = () => {
+    setShowDeleteAlert(true);
+  }
+
+  const confirmDelete = () => {
+    deleteBook(envConfig, book);
+    handleClose();
+    setShowDeleteAlert(false);
   };
 
   if (!isOpen) return null;
@@ -112,6 +126,12 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                 </h2>
                 <p className='text-neutral-content line-clamp-1'>{book.author || _('Unknown')}</p>
               </div>
+              <button
+                className='w-36 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700'
+                onClick={handleDelete}
+              >
+                {_('Delete Book')}
+              </button>
               <button className='btn-disabled bg-primary/25 hover:bg-primary/85 w-36 rounded px-4 py-2 text-white'>
                 {_('More Info')}
               </button>
@@ -161,6 +181,14 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
           </div>
         </div>
       </div>
+      {showDeleteAlert && (
+        <Alert
+          title={_('Confirm Deletion')}
+          message={_('Are you sure to delete the selected books?')}
+          onClickCancel={() => { setShowDeleteAlert(false); handleClose(); }}
+          onClickConfirm={confirmDelete}
+        />
+      )}
     </div>
   );
 };
