@@ -13,6 +13,35 @@ const description =
   'Perfect for deep reading, analysis, and understanding. Explore now!';
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
+export const metadata = {
+  title,
+  description,
+  generator: 'Next.js',
+  manifest: '/manifest.json',
+  keywords: ['epub', 'pdf', 'ebook', 'reader', 'readest', 'pwa'],
+  authors: [
+    {
+      name: 'readest',
+      url: 'https://github.com/readest/readest',
+    },
+  ],
+  icons: [
+    { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
+    { rel: 'icon', url: '/icon.png' },
+  ],
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
@@ -23,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1' />
         <link rel='apple-touch-icon' sizes='180x180' href='/apple-touch-icon.png' />
         <link rel='icon' href='/favicon.ico' />
+        <link rel='manifest' href='/manifest.json' />
         <meta name='description' content={description} />
         <meta property='og:url' content={url} />
         <meta property='og:type' content='website' />

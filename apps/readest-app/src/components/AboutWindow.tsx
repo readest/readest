@@ -45,7 +45,7 @@ export const AboutWindow = () => {
               {_('Version {{version}}', { version: packageJson.version })}
             </p>
             {hasUpdater() && !isUpdated && (
-              <span className='badge badge-primary mt-2' onClick={handleCheckUpdate}>
+              <span className='badge badge-primary mt-2 cursor-pointer' onClick={handleCheckUpdate}>
                 {_('Check update')}
               </span>
             )}

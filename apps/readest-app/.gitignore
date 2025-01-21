@@ -49,3 +49,7 @@ src-tauri/gen
 
 # vendor
 /public/vendor
+
+# Auto Generated PWA files
+/public/sw.js
+/public/workbox-*.js
