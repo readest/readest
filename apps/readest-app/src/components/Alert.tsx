@@ -13,7 +13,7 @@ const Alert: React.FC<{
     <div
       role='alert'
       className={clsx(
-        'alert fixed bottom-4 left-1/2 flex -translate-x-1/2 transform items-center justify-between',
+        'alert fixed bottom-4 left-1/2 z-[100] flex -translate-x-1/2 transform items-center justify-between',
         'rounded-lg bg-gray-100 p-4 shadow-2xl',
         'w-full max-w-[90vw] sm:max-w-[70vw] md:max-w-[50vw] lg:max-w-[40vw] xl:max-w-[40vw]',
       )}
