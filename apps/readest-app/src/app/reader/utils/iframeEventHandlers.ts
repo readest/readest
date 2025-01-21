@@ -130,3 +130,36 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
     }
   }, doubleClickThreshold);
 };
+
+const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
+  const touch = event.targetTouches[0];
+  const touches = [];
+  if (touch) {
+    touches.push({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      screenX: touch.screenX,
+      screenY: touch.screenY,
+    });
+  }
+  window.postMessage(
+    {
+      type: type,
+      bookKey,
+      targetTouches: touches,
+    },
+    '*',
+  );
+}
+
+export const handleTouchStart = (bookKey: string, event: TouchEvent) => {
+  handleTouchEv(bookKey, event, 'iframe-touchstart');
+};
+
+export const handleTouchMove = (bookKey: string, event: TouchEvent) => {
+  handleTouchEv(bookKey, event, 'iframe-touchmove');
+};
+
+export const handleTouchEnd = (bookKey: string, event: TouchEvent) => {
+  handleTouchEv(bookKey, event, 'iframe-touchend');
+};

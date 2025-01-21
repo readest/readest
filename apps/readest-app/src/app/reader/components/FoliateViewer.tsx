@@ -4,7 +4,7 @@ import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useClickEvent } from '../hooks/useClickEvent';
+import { useClickEvent, useTouchEvent } from '../hooks/useClickEvent';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
@@ -17,6 +17,9 @@ import {
   handleMouseup,
   handleClick,
   handleWheel,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
 } from '../utils/iframeEventHandlers';
 
 const FoliateViewer: React.FC<{
@@ -42,7 +45,6 @@ const FoliateViewer: React.FC<{
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    // console.log('relocate:', detail);
     setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
   };
 
@@ -68,6 +70,9 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('click', handleClick.bind(null, bookKey));
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
+        detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
+        detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
+        detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
       }
     }
   };
@@ -88,6 +93,7 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  useTouchEvent(bookKey, viewRef);
   const { handleTurnPage } = useClickEvent(bookKey, viewRef, containerRef);
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
