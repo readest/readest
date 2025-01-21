@@ -35,7 +35,7 @@ export const AboutWindow = () => {
         onClose={() => setAboutDialogVisible(false)}
         boxClassName='sm:!w-96'
       >
-        <div className='about-content flex h-full flex-col items-center justify-center pt-4'>
+        <div className='about-content flex h-full flex-col items-center justify-center'>
           <div className='flex flex-col items-center px-8'>
             <div className='mb-4'>
               <Image src='/icon.png' alt='App Logo' className='h-24 w-24' width={64} height={64} />

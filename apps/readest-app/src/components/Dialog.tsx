@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { MdArrowBackIosNew } from 'react-icons/md';
 
 interface DialogProps {
@@ -25,6 +25,20 @@ const Dialog: React.FC<DialogProps> = ({
   contentClassName,
   onClose,
 }) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <dialog
       id={id ?? 'dialog'}
@@ -37,19 +51,20 @@ const Dialog: React.FC<DialogProps> = ({
       <div
         className={clsx(
           'modal-box settings-content flex h-full max-h-full w-full max-w-full flex-col rounded-none p-0 sm:rounded-2xl',
-          'sm:h-[65%] sm:w-[65%] sm:max-w-[600px]',
+          'sm:h-[60%] sm:w-[65%] sm:max-w-[600px]',
           boxClassName,
         )}
       >
-        <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-4'>
+        <div className='dialog-header bg-base-100 sticky top-2 z-10 flex items-center justify-between px-4'>
           {header ? (
             header
           ) : (
             <div className='flex h-11 w-full items-center justify-between'>
               <button
+                tabIndex={-1}
                 onClick={onClose}
                 className={
-                  'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'
+                  'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
                 }
               >
                 <MdArrowBackIosNew size={20} />
@@ -58,9 +73,10 @@ const Dialog: React.FC<DialogProps> = ({
                 <span className='line-clamp-1 text-center font-bold'>{title ?? ''}</span>
               </div>
               <button
+                tabIndex={-1}
                 onClick={onClose}
                 className={
-                  'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 sm:flex'
+                  'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 focus:outline-none sm:flex'
                 }
               >
                 <svg
@@ -80,7 +96,10 @@ const Dialog: React.FC<DialogProps> = ({
         </div>
 
         <div
-          className={clsx('text-base-content flex-grow overflow-y-auto px-[10%]', contentClassName)}
+          className={clsx(
+            'text-base-content my-2 flex-grow overflow-y-auto px-[10%]',
+            contentClassName,
+          )}
         >
           {children}
         </div>

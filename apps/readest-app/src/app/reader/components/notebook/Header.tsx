@@ -3,7 +3,7 @@ import React from 'react';
 
 import { FiSearch } from 'react-icons/fi';
 import { LuNotebookPen } from 'react-icons/lu';
-import { MdOutlinePushPin, MdPushPin } from 'react-icons/md';
+import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const NotebookHeader: React.FC<{
@@ -18,7 +18,7 @@ const NotebookHeader: React.FC<{
         <LuNotebookPen size={14} />
         <div className='notebook-title text-sm font-medium'>{_('Notebook')}</div>
       </div>
-      <div className='z-10 flex items-center gap-x-3'>
+      <div className='z-10 flex items-center gap-x-4'>
         <button
           onClick={handleTogglePin}
           className={clsx(
@@ -30,14 +30,9 @@ const NotebookHeader: React.FC<{
         </button>
         <button
           onClick={handleClose}
-          className={'bg-base-300/65 btn btn-ghost btn-circle h-6 min-h-6 w-6 sm:hidden'}
+          className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
-          <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
-            <path
-              fill='currentColor'
-              d='M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z'
-            />
-          </svg>
+          <MdArrowBackIosNew size={20} />
         </button>
         <button className='btn btn-ghost left-0 h-8 min-h-8 w-8 p-0'>
           <FiSearch size={18} />

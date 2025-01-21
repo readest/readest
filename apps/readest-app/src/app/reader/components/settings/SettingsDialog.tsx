@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BookConfig } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -8,6 +8,7 @@ import { RiDashboardLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { IoAccessibilityOutline } from 'react-icons/io5';
+import { MdArrowBackIosNew } from 'react-icons/md';
 
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
@@ -29,20 +30,6 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
   const _ = useTranslation();
   const [activePanel, setActivePanel] = useState<SettingsPanelType>('Font');
   const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      setFontLayoutSettingsDialogOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const tabConfig = [
     {
@@ -67,15 +54,28 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     },
   ] as TabConfig[];
 
+  const handleClose = () => {
+    setFontLayoutSettingsDialogOpen(false);
+  };
+
   return (
     <>
       <Dialog
         isOpen={true}
-        onClose={() => setFontLayoutSettingsDialogOpen(false)}
+        onClose={handleClose}
         className='modal-open'
         boxClassName='sm:w-1/2 sm:min-w-[480px]'
         header={
           <div className='flex w-full items-center justify-between'>
+            <button
+              tabIndex={-1}
+              onClick={handleClose}
+              className={
+                'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
+              }
+            >
+              <MdArrowBackIosNew size={20} />
+            </button>
             <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center justify-around pl-4'>
               {tabConfig.map(({ tab, icon: Icon, label }) => (
                 <button
@@ -100,7 +100,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                 <DialogMenu />
               </Dropdown>
               <button
-                onClick={() => setFontLayoutSettingsDialogOpen(false)}
+                onClick={handleClose}
                 className={'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 sm:flex'}
               >
                 <svg

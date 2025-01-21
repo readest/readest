@@ -48,8 +48,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         isTrafficLightVisible ? 'pl-16' : 'pl-2',
       )}
     >
-      <div className='flex items-center justify-between space-x-6'>
-        <div className='exclude-title-bar-mousedown sm:w relative flex w-full items-center pl-4'>
+      <div className='flex items-center justify-between space-x-12'>
+        <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <span className='absolute left-8 text-gray-500'>
             <FaSearch className='h-4 w-4' />
           </span>
@@ -97,20 +97,22 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </button>
           </div>
         </div>
-        <div className='flex h-full items-center'>
+        <div className='flex h-full items-center gap-x-4'>
           <Dropdown
-            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end mr-2'
+            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
             toggleButton={<MdOutlineMenu size={16} />}
           >
             <SettingsMenu />
           </Dropdown>
-          <WindowButtons
-            headerRef={headerRef}
-            showMinimize={!isTrafficLightVisible && appService?.appPlatform !== 'web'}
-            showMaximize={!isTrafficLightVisible && appService?.appPlatform !== 'web'}
-            showClose={!isTrafficLightVisible && appService?.appPlatform !== 'web'}
-          />
+          {!isTrafficLightVisible && appService?.appPlatform !== 'web' && (
+            <WindowButtons
+              headerRef={headerRef}
+              showMinimize={true}
+              showMaximize={true}
+              showClose={true}
+            />
+          )}
         </div>
       </div>
     </div>

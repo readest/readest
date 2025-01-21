@@ -3,6 +3,7 @@ import React from 'react';
 import { GiBookshelf } from 'react-icons/gi';
 import { FiSearch } from 'react-icons/fi';
 import { MdOutlineMenu, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
+import { MdArrowBackIosNew } from 'react-icons/md';
 
 import useTrafficLight from '@/hooks/useTrafficLight';
 import Dropdown from '@/components/Dropdown';
@@ -24,12 +25,18 @@ const SidebarHeader: React.FC<{
         isTrafficLightVisible ? 'pl-20' : 'pl-1.5',
       )}
     >
-      <div className='flex items-center'>
+      <div className='flex items-center gap-x-4'>
+        <button
+          onClick={onClose}
+          className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
+        >
+          <MdArrowBackIosNew size={20} />
+        </button>
         <button className='btn btn-ghost h-8 min-h-8 w-8 p-0' onClick={onGoToLibrary}>
           <GiBookshelf size={20} className='fill-base-content' />
         </button>
       </div>
-      <div className='flex size-[70%] min-w-24 max-w-32 items-center justify-between'>
+      <div className='flex min-w-24 max-w-32 items-center justify-between sm:size-[70%]'>
         <button
           onClick={onToggleSearchBar}
           className={clsx(
@@ -50,7 +57,7 @@ const SidebarHeader: React.FC<{
         >
           <BookMenu />
         </Dropdown>
-        <div className='right-0 flex h-8 w-8 items-center justify-center'>
+        <div className='right-0 hidden h-8 w-8 items-center justify-center sm:flex'>
           <button
             onClick={onTogglePin}
             className={clsx(
@@ -59,17 +66,6 @@ const SidebarHeader: React.FC<{
             )}
           >
             {isPinned ? <MdPushPin size={14} /> : <MdOutlinePushPin size={14} />}
-          </button>
-          <button
-            onClick={onClose}
-            className={'bg-base-300/65 btn btn-ghost btn-circle h-6 min-h-6 w-6 sm:hidden'}
-          >
-            <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
-              <path
-                fill='currentColor'
-                d='M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z'
-              />
-            </svg>
           </button>
         </div>
       </div>

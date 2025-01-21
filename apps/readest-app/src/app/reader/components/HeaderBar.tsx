@@ -84,8 +84,12 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         <WindowButtons
           className='window-buttons flex h-full items-center'
           headerRef={headerRef}
-          showMinimize={bookKeys.length == 1 && appService?.appPlatform !== 'web'}
-          showMaximize={bookKeys.length == 1 && appService?.appPlatform !== 'web'}
+          showMinimize={
+            bookKeys.length == 1 && !isTrafficLightVisible && appService?.appPlatform !== 'web'
+          }
+          showMaximize={
+            bookKeys.length == 1 && !isTrafficLightVisible && appService?.appPlatform !== 'web'
+          }
           onClose={() => onCloseBook(bookKey)}
         />
       </div>
