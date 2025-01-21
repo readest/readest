@@ -135,5 +135,8 @@
   "Apply to this book": "Εφαρμογή σε αυτό το βιβλίο",
   "Unable to fetch the translation. Try again later.": "Αδυναμία λήψης της μετάφρασης. Δοκιμάστε ξανά αργότερα.",
   "Update Now!": "Ενημέρωση τώρα!",
-  "Update": "Ενημέρωση"
+  "Update": "Ενημέρωση",
+  "Check update": "Έλεγχος ενημέρωσης",
+  "Already the latest version": "Ήδη η τελευταία έκδοση",
+  "Book Details": "Λεπτομέρειες βιβλίου"
 }

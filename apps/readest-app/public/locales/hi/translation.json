@@ -135,5 +135,8 @@
   "Apply to this book": "इस पुस्तक पर लागू करें",
   "Unable to fetch the translation. Try again later.": "अनुवाद प्राप्त करने में असमर्थ। बाद में पुनः प्रयास करें।",
   "Update Now!": "अभी अपडेट करें!",
-  "Update": "अपडेट करें"
+  "Update": "अपडेट करें",
+  "Check update": "अपडेट जांचें",
+  "Already the latest version": "पहले से ही नवीनतम संस्करण",
+  "Book Details": "पुस्तक विवरण"
 }

@@ -135,5 +135,8 @@
   "Apply to this book": "應用於此書籍",
   "Unable to fetch the translation. Try again later.": "無法獲取翻譯，請稍後再試。",
   "Update Now!": "立即更新！",
-  "Update": "更新"
+  "Update": "更新",
+  "Check update": "檢查更新",
+  "Already the latest version": "已經是最新版本",
+  "Book Details": "書籍詳情"
 }

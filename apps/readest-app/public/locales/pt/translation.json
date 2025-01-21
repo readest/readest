@@ -135,5 +135,8 @@
   "Apply to this book": "Aplicar a este livro",
   "Unable to fetch the translation. Try again later.": "Não foi possível buscar a tradução. Tente novamente mais tarde.",
   "Update Now!": "Atualizar Agora!",
-  "Update": "Atualizar"
+  "Update": "Atualizar",
+  "Check update": "Verificar atualização",
+  "Already the latest version": "Já é a versão mais recente",
+  "Book Details": "Detalhes do Livro"
 }

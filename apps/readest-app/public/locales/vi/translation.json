@@ -135,5 +135,8 @@
   "Apply to this book": "Áp dụng cho sách này",
   "Unable to fetch the translation. Try again later.": "Không thể tải dịch vụ. Vui lòng thử lại sau.",
   "Update Now!": "Cập nhật ngay!",
-  "Update": "Cập nhật"
+  "Update": "Cập nhật",
+  "Check update": "Kiểm tra cập nhật",
+  "Already the latest version": "Đã là phiên bản mới nhất",
+  "Book Details": "Chi tiết sách"
 }

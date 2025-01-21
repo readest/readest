@@ -135,5 +135,8 @@
   "Apply to this book": "Terapkan ke buku ini",
   "Unable to fetch the translation. Try again later.": "Tidak dapat mengambil terjemahan. Coba lagi nanti.",
   "Update Now!": "Perbarui Sekarang!",
-  "Update": "Perbarui"
+  "Update": "Perbarui",
+  "Check update": "Periksa pembaruan",
+  "Already the latest version": "Sudah versi terbaru",
+  "Book Details": "Detail Buku"
 }

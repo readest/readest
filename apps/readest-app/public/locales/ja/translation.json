@@ -135,5 +135,8 @@
   "Apply to this book": "この書籍に適用",
   "Unable to fetch the translation. Try again later.": "翻訳を取得できません。後で再試行してください。",
   "Update Now!": "今すぐ更新！",
-  "Update": "更新"
+  "Update": "更新",
+  "Check update": "更新を確認",
+  "Already the latest version": "すでに最新バージョン",
+  "Book Details": "書籍の詳細"
 }

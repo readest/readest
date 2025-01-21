@@ -135,5 +135,8 @@
   "Apply to this book": "Применить к этой книге",
   "Unable to fetch the translation. Try again later.": "Не удалось получить перевод. Попробуйте позже.",
   "Update Now!": "Обновить сейчас!",
-  "Update": "Обновить"
+  "Update": "Обновить",
+  "Check update": "Проверить обновление",
+  "Already the latest version": "Уже последняя версия",
+  "Book Details": "Детали книги"
 }

@@ -135,5 +135,8 @@
   "Apply to this book": "应用于此书籍",
   "Unable to fetch the translation. Try again later.": "无法获取翻译，请稍后重试。",
   "Update Now!": "立即更新！",
-  "Update": "更新"
+  "Update": "更新",
+  "Check update": "检查更新",
+  "Already the latest version": "已经是最新版本",
+  "Book Details": "书籍详情"
 }

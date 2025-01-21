@@ -135,5 +135,8 @@
   "Apply to this book": "Bu kitaba uygula",
   "Unable to fetch the translation. Try again later.": "Çeviri alınamıyor. Daha sonra tekrar deneyin.",
   "Update Now!": "Şimdi Güncelle!",
-  "Update": "Güncelle"
+  "Update": "Güncelle",
+  "Check update": "Güncellemeyi kontrol et",
+  "Already the latest version": "Zaten en son sürüm",
+  "Book Details": "Kitap Detayları"
 }
