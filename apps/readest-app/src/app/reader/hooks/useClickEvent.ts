@@ -46,6 +46,12 @@ export const useClickEvent = (
           } else if (deltaY < 0) {
             viewRef.current?.prev(1);
           }
+        } else if (msg.data.type === 'iframe-mouseup') {
+          if (msg.data.button === 3) {
+            viewRef.current?.history.back();
+          } else if (msg.data.button === 4) {
+            viewRef.current?.history.forward();
+          }
         }
       }
     } else {
@@ -115,14 +121,18 @@ export const useTouchEvent = (
     const touch = e.targetTouches[0];
     if (touch) {
       touchEnd = touch;
-    };
+    }
 
     const windowWidth = window.innerWidth;
     if (touchEnd) {
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
       // also check for deltaX to prevent swipe page turn from triggering the toggle
-      if (deltaY < -10 && Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaX) < windowWidth * 0.3) {
+      if (
+        deltaY < -10 &&
+        Math.abs(deltaY) > Math.abs(deltaX) &&
+        Math.abs(deltaX) < windowWidth * 0.3
+      ) {
         // swipe up to toggle the header bar and the footer bar
         setHoveredBookKey(hoveredBookKey ? null : bookKey);
       }
@@ -151,4 +161,4 @@ export const useTouchEvent = (
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey, viewRef]);
-}
+};

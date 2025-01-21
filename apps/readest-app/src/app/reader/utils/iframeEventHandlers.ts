@@ -30,6 +30,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
     {
       type: 'iframe-mousedown',
       bookKey,
+      button: event.button,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,
@@ -46,6 +47,7 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
     {
       type: 'iframe-mouseup',
       bookKey,
+      button: event.button,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,
@@ -150,7 +152,7 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     },
     '*',
   );
-}
+};
 
 export const handleTouchStart = (bookKey: string, event: TouchEvent) => {
   handleTouchEv(bookKey, event, 'iframe-touchstart');
