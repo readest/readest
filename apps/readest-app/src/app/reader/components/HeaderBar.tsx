@@ -6,6 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { isTauriAppPlatform } from '@/services/environment';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -38,6 +39,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { hoveredBookKey, setHoveredBookKey, bookKeys } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
+  const iconSize16 = useResponsiveSize(16);
 
   const handleToggleDropdown = (isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
@@ -60,7 +62,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <div className='sidebar-bookmark-toggler bg-base-100 z-20 flex h-full items-center space-x-2 sm:space-x-4'>
+      <div className='sidebar-bookmark-toggler bg-base-100 z-20 flex h-full items-center space-x-4'>
         <SidebarToggler bookKey={bookKey} />
         <BookmarkToggler bookKey={bookKey} />
       </div>
@@ -69,13 +71,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         <h2 className='line-clamp-1 max-w-[50%] text-center text-xs font-semibold'>{bookTitle}</h2>
       </div>
 
-      <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-2 sm:space-x-4'>
+      <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4'>
         <SettingsToggler />
         <NotebookToggler bookKey={bookKey} />
         <Dropdown
           className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-          toggleButton={<PiDotsThreeVerticalBold />}
+          toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
           onToggle={handleToggleDropdown}
         >
           <ViewMenu bookKey={bookKey} onSetSettingsDialogOpen={onSetSettingsDialogOpen} />

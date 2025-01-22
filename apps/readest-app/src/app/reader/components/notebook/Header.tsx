@@ -5,6 +5,7 @@ import { FiSearch } from 'react-icons/fi';
 import { LuNotebookPen } from 'react-icons/lu';
 import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const NotebookHeader: React.FC<{
   isPinned: boolean;
@@ -12,6 +13,7 @@ const NotebookHeader: React.FC<{
   handleTogglePin: () => void;
 }> = ({ isPinned, handleClose, handleTogglePin }) => {
   const _ = useTranslation();
+  const iconSize14 = useResponsiveSize(14);
   return (
     <div className='notebook-header relative flex h-11 items-center px-3'>
       <div className='absolute inset-0 flex items-center justify-center space-x-2'>
@@ -26,7 +28,7 @@ const NotebookHeader: React.FC<{
             isPinned ? 'bg-base-300' : 'bg-base-300/65',
           )}
         >
-          {isPinned ? <MdPushPin /> : <MdOutlinePushPin />}
+          {isPinned ? <MdPushPin size={iconSize14} /> : <MdOutlinePushPin size={iconSize14} />}
         </button>
         <button
           onClick={handleClose}

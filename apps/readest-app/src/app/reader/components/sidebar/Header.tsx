@@ -21,6 +21,7 @@ const SidebarHeader: React.FC<{
   const { isTrafficLightVisible } = useTrafficLight();
   const iconSize14 = useResponsiveSize(14);
   const iconSize18 = useResponsiveSize(18);
+  const iconSize22 = useResponsiveSize(22);
   return (
     <div
       className={clsx(
@@ -33,7 +34,7 @@ const SidebarHeader: React.FC<{
           onClick={onClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
-          <MdArrowBackIosNew />
+          <MdArrowBackIosNew size={iconSize22} />
         </button>
         <button className='btn btn-ghost h-8 min-h-8 w-8 p-0' onClick={onGoToLibrary}>
           <GiBookshelf className='fill-base-content' />

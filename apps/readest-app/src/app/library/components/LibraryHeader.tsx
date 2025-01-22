@@ -7,6 +7,7 @@ import { MdOutlineMenu } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -27,6 +28,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const { appService } = useEnv();
   const { isTrafficLightVisible } = useTrafficLight();
   const headerRef = useRef<HTMLDivElement>(null);
+  const iconSize16 = useResponsiveSize(16);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -101,7 +103,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<MdOutlineMenu />}
+            toggleButton={<MdOutlineMenu size={iconSize16} />}
           >
             <SettingsMenu />
           </Dropdown>

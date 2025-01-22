@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { ReactNode, useEffect } from 'react';
 import { MdArrowBackIosNew } from 'react-icons/md';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface DialogProps {
   id?: string;
@@ -25,6 +26,7 @@ const Dialog: React.FC<DialogProps> = ({
   contentClassName,
   onClose,
 }) => {
+  const iconSize22 = useResponsiveSize(22);
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       onClose();
@@ -67,7 +69,7 @@ const Dialog: React.FC<DialogProps> = ({
                   'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
                 }
               >
-                <MdArrowBackIosNew />
+                <MdArrowBackIosNew size={iconSize22} />
               </button>
               <div className='z-15 pointer-events-none absolute inset-0 flex h-11 items-center justify-center'>
                 <span className='line-clamp-1 text-center font-bold'>{title ?? ''}</span>

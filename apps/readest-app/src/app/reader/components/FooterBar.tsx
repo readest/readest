@@ -60,7 +60,7 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
   return (
     <div
       className={clsx(
-        'footer-bar absolute bottom-0 z-10 flex h-12 w-full items-center px-4',
+        'footer-bar absolute bottom-0 z-10 flex h-12 w-full items-center gap-x-4 px-4',
         'shadow-xs bg-base-100 transition-opacity duration-300',
         isTauriAppPlatform() && 'rounded-window-bottom-right',
         !isSideBarVisible && isTauriAppPlatform() && 'rounded-window-bottom-left',
@@ -70,7 +70,9 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <Button icon={<RiArrowLeftWideLine />} onClick={handleGoPrev} tooltip={_('Go Left')} />
+      <div className='hidden sm:flex'>
+        <Button icon={<RiArrowLeftWideLine />} onClick={handleGoPrev} tooltip={_('Go Left')} />
+      </div>
       <Button
         icon={<RiArrowGoBackLine />}
         onClick={handleGoBack}
@@ -95,7 +97,9 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
         onChange={(e) => handleProgressChange(e)}
       />
       <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />
-      <Button icon={<RiArrowRightWideLine />} onClick={handleGoNext} tooltip={_('Go Right')} />
+      <div className='hidden sm:flex'>
+        <Button icon={<RiArrowRightWideLine />} onClick={handleGoNext} tooltip={_('Go Right')} />
+      </div>
     </div>
   );
 };
