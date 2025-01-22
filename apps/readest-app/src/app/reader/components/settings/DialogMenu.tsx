@@ -27,7 +27,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
       >
         <div className='flex items-center'>
           <span style={{ minWidth: '20px' }}>
-            {isFontLayoutSettingsGlobal && <MdCheck size={20} className='text-base-content' />}
+            {isFontLayoutSettingsGlobal && <MdCheck className='text-base-content' />}
           </span>
           <div
             className='lg:tooltip'

@@ -45,7 +45,7 @@ const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Ic
         'bg-base-100 border-gray-300 shadow-sm transition hover:bg-gray-50',
       )}
     >
-      <Icon size={20} />
+      <Icon />
       <span className='text-neutral-content/70 px-2 text-sm'>{label}</span>
     </button>
   );
@@ -194,7 +194,7 @@ export default function AuthPage() {
         onClick={handleGoBack}
         className='btn btn-ghost fixed left-3 top-11 h-8 min-h-8 w-8 p-0'
       >
-        <IoArrowBack size={20} className='text-base-content' />
+        <IoArrowBack className='text-base-content' />
       </button>
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
         <ProviderLogin
@@ -238,7 +238,7 @@ export default function AuthPage() {
         onClick={handleGoBack}
         className='btn btn-ghost fixed left-10 top-6 h-8 min-h-8 w-8 p-0'
       >
-        <IoArrowBack size={20} className='text-base-content' />
+        <IoArrowBack className='text-base-content' />
       </button>
       <Auth
         supabaseClient={supabase}

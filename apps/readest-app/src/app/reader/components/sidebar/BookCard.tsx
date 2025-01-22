@@ -4,10 +4,12 @@ import { MdInfoOutline } from 'react-icons/md';
 import { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const BookCard = ({ book }: { book: Book }) => {
   const { coverImageUrl, title, author } = book;
   const _ = useTranslation();
+  const iconSize18 = useResponsiveSize(18);
 
   const showBookDetails = () => {
     eventDispatcher.dispatchSync('show-book-details', book);
@@ -33,7 +35,7 @@ const BookCard = ({ book }: { book: Book }) => {
         className='btn btn-ghost hover:bg-base-300 h-6 min-h-6 w-6 rounded-full p-0 transition-colors'
         aria-label={_('More Info')}
       >
-        <MdInfoOutline size={18} className='fill-base-content' onClick={showBookDetails} />
+        <MdInfoOutline size={iconSize18} className='fill-base-content' onClick={showBookDetails} />
       </button>
     </div>
   );

@@ -6,6 +6,7 @@ import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdStop } from
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
 import { TTSVoice } from '@/services/tts';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 type TTSPanelProps = {
   bookKey: string;
@@ -41,6 +42,9 @@ const TTSPanel = ({
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState(viewSettings?.ttsVoice ?? '');
+
+  const iconSize32 = useResponsiveSize(32);
+  const iconSize48 = useResponsiveSize(48);
 
   const handleSetRate = (e: ChangeEvent<HTMLInputElement>) => {
     let newRate = parseFloat(e.target.value);
@@ -108,24 +112,24 @@ const TTSPanel = ({
       </div>
       <div className='flex items-center justify-between space-x-2'>
         <button onClick={onBackward} className='hover:bg-base-200/75 rounded-full p-1'>
-          <MdFastRewind size={32} />
+          <MdFastRewind size={iconSize32} />
         </button>
         <button onClick={onTogglePlay} className='hover:bg-base-200/75 rounded-full p-1'>
           {isPlaying ? (
-            <MdPauseCircle size={48} className='fill-primary' />
+            <MdPauseCircle size={iconSize48} className='fill-primary' />
           ) : (
-            <MdPlayCircle size={48} className='fill-primary' />
+            <MdPlayCircle size={iconSize48} className='fill-primary' />
           )}
         </button>
         <button onClick={onForward} className='hover:bg-base-200/75 rounded-full p-1'>
-          <MdFastForward size={32} />
+          <MdFastForward size={iconSize32} />
         </button>
         <button onClick={onStop} className='hover:bg-base-200/75 rounded-full p-1'>
-          <MdStop size={32} />
+          <MdStop size={iconSize32} />
         </button>
         <div className='dropdown dropdown-top'>
           <button tabIndex={0} className='hover:bg-base-200/75 rounded-full p-1'>
-            <RiVoiceAiFill size={32} />
+            <RiVoiceAiFill size={iconSize32} />
           </button>
           <ul
             tabIndex={0}
@@ -141,9 +145,7 @@ const TTSPanel = ({
               >
                 <div className='flex items-center px-2'>
                   <span style={{ minWidth: '20px' }}>
-                    {selectedVoice === voice.id && (
-                      <MdCheck size={20} className='text-base-content' />
-                    )}
+                    {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
                   </span>
                   <span className={clsx('text-sm', voice.disabled && 'text-gray-400')}>
                     {voice.name}

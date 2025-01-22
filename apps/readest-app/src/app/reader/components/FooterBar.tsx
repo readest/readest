@@ -70,19 +70,15 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
+      <Button icon={<RiArrowLeftWideLine />} onClick={handleGoPrev} tooltip={_('Go Left')} />
       <Button
-        icon={<RiArrowLeftWideLine size={20} />}
-        onClick={handleGoPrev}
-        tooltip={_('Go Left')}
-      />
-      <Button
-        icon={<RiArrowGoBackLine size={20} />}
+        icon={<RiArrowGoBackLine />}
         onClick={handleGoBack}
         tooltip={_('Go Back')}
         disabled={!view?.history.canGoBack}
       />
       <Button
-        icon={<RiArrowGoForwardLine size={20} />}
+        icon={<RiArrowGoForwardLine />}
         onClick={handleGoForward}
         tooltip={_('Go Forward')}
         disabled={!view?.history.canGoForward}
@@ -98,12 +94,8 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
         value={pageinfoValid ? progressFraction * 100 : 0}
         onChange={(e) => handleProgressChange(e)}
       />
-      <Button icon={<FaHeadphones size={20} />} onClick={handleSpeakText} tooltip={_('Speak')} />
-      <Button
-        icon={<RiArrowRightWideLine size={20} />}
-        onClick={handleGoNext}
-        tooltip={_('Go Right')}
-      />
+      <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />
+      <Button icon={<RiArrowRightWideLine />} onClick={handleGoNext} tooltip={_('Go Right')} />
     </div>
   );
 };

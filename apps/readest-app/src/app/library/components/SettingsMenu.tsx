@@ -75,7 +75,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
                 height={20}
               />
             ) : (
-              <PiUserCircleCheck size={20} />
+              <PiUserCircleCheck />
             )
           }
         >
@@ -84,11 +84,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           </ul>
         </MenuItem>
       ) : (
-        <MenuItem
-          label={_('Sign In')}
-          icon={<PiUserCircle size={20} />}
-          onClick={handleUserLogin}
-        ></MenuItem>
+        <MenuItem label={_('Sign In')} icon={<PiUserCircle />} onClick={handleUserLogin}></MenuItem>
       )}
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

@@ -6,6 +6,7 @@ import { MdOutlineMenu, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { MdArrowBackIosNew } from 'react-icons/md';
 
 import useTrafficLight from '@/hooks/useTrafficLight';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Dropdown from '@/components/Dropdown';
 import BookMenu from './BookMenu';
 
@@ -18,6 +19,8 @@ const SidebarHeader: React.FC<{
   onToggleSearchBar: () => void;
 }> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
   const { isTrafficLightVisible } = useTrafficLight();
+  const iconSize14 = useResponsiveSize(14);
+  const iconSize18 = useResponsiveSize(18);
   return (
     <div
       className={clsx(
@@ -30,10 +33,10 @@ const SidebarHeader: React.FC<{
           onClick={onClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
-          <MdArrowBackIosNew size={20} />
+          <MdArrowBackIosNew />
         </button>
         <button className='btn btn-ghost h-8 min-h-8 w-8 p-0' onClick={onGoToLibrary}>
-          <GiBookshelf size={20} className='fill-base-content' />
+          <GiBookshelf className='fill-base-content' />
         </button>
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:size-[70%]'>
@@ -44,7 +47,7 @@ const SidebarHeader: React.FC<{
             isSearchBarVisible ? 'bg-base-300' : '',
           )}
         >
-          <FiSearch size={18} className='text-base-content' />
+          <FiSearch size={iconSize18} className='text-base-content' />
         </button>
         <Dropdown
           className={clsx(
@@ -53,7 +56,7 @@ const SidebarHeader: React.FC<{
           )}
           menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-          toggleButton={<MdOutlineMenu size={20} className='fill-base-content' />}
+          toggleButton={<MdOutlineMenu className='fill-base-content' />}
         >
           <BookMenu />
         </Dropdown>
@@ -65,7 +68,7 @@ const SidebarHeader: React.FC<{
               isPinned ? 'bg-base-300' : 'bg-base-300/65',
             )}
           >
-            {isPinned ? <MdPushPin size={14} /> : <MdOutlinePushPin size={14} />}
+            {isPinned ? <MdPushPin size={iconSize14} /> : <MdOutlinePushPin size={iconSize14} />}
           </button>
         </div>
       </div>

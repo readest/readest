@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import React from 'react';
-
-import { useSettingsStore } from '@/store/settingsStore';
-import { HighlightColor, HighlightStyle } from '@/types/book';
 import { FaCheckCircle } from 'react-icons/fa';
+import { HighlightColor, HighlightStyle } from '@/types/book';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
@@ -25,6 +25,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const globalReadSettings = settings.globalReadSettings;
   const [selectedStyle, setSelectedStyle] = React.useState<HighlightStyle>(_selectedStyle);
   const [selectedColor, setSelectedColor] = React.useState<HighlightColor>(_selectedColor);
+  const iconSize16 = useResponsiveSize(16);
 
   const handleSelectStyle = (style: HighlightStyle) => {
     globalReadSettings.highlightStyle = style;
@@ -84,7 +85,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             )}
           >
             {selectedColor === color && (
-              <FaCheckCircle size={16} className={clsx(`fill-${color}-400`)} />
+              <FaCheckCircle size={iconSize16} className={clsx(`fill-${color}-400`)} />
             )}
           </button>
         ))}

@@ -22,7 +22,7 @@ const Option: React.FC<OptionProps> = ({ label, isActive, onClick }) => (
   >
     <div className='flex items-center'>
       <span style={{ minWidth: '20px' }}>
-        {isActive && <MdCheck size={20} className='text-base-content' />}
+        {isActive && <MdCheck className='text-base-content' />}
       </span>
       <span className='ml-2'>{label}</span>
     </div>

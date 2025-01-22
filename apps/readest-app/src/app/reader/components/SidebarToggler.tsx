@@ -24,9 +24,9 @@ const SidebarToggler: React.FC<SidebarTogglerProps> = ({ bookKey }) => {
     <Button
       icon={
         sideBarBookKey === bookKey && isSideBarVisible ? (
-          <TbLayoutSidebarFilled size={20} className='text-base-content' />
+          <TbLayoutSidebarFilled className='text-base-content' />
         ) : (
-          <TbLayoutSidebar size={20} className='text-base-content' />
+          <TbLayoutSidebar className='text-base-content' />
         )
       }
       onClick={handleToggleSidebar}

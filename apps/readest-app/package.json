@@ -60,6 +60,7 @@
     "react-dom": "19.0.0",
     "react-i18next": "^15.2.0",
     "react-icons": "^5.4.0",
+    "react-responsive": "^10.0.0",
     "tinycolor2": "^1.6.0",
     "zustand": "5.0.1"
   },

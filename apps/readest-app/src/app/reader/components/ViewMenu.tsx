@@ -96,7 +96,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             zoomLevel <= MIN_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >
-          <MdZoomOut size={20} />
+          <MdZoomOut />
         </button>
         <button
           className={clsx(
@@ -113,7 +113,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             zoomLevel >= MAX_ZOOM_LEVEL && 'btn-disabled text-gray-400',
           )}
         >
-          <MdZoomIn size={20} />
+          <MdZoomIn />
         </button>
       </div>
 
@@ -124,7 +124,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       <MenuItem
         label={_('Scrolled Mode')}
         shortcut='Shift+J'
-        icon={isScrolledMode ? <MdCheck size={20} /> : undefined}
+        icon={isScrolledMode ? <MdCheck /> : undefined}
         onClick={toggleScrolledMode}
       />
 
@@ -138,20 +138,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               ? _('Light Mode')
               : _('Auto Mode')
         }
-        icon={
-          themeMode === 'dark' ? (
-            <BiMoon size={20} />
-          ) : themeMode === 'light' ? (
-            <BiSun size={20} />
-          ) : (
-            <TbSunMoon size={20} />
-          )
-        }
+        icon={themeMode === 'dark' ? <BiMoon /> : themeMode === 'light' ? <BiSun /> : <TbSunMoon />}
         onClick={cycleThemeMode}
       />
       <MenuItem
         label={_('Invert Colors in Dark Mode')}
-        icon={isInvertedColors ? <MdCheck size={20} className='text-base-content' /> : undefined}
+        icon={isInvertedColors ? <MdCheck className='text-base-content' /> : undefined}
         onClick={toggleInvertedColors}
         disabled={!isDarkMode}
       />

@@ -75,7 +75,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         <Dropdown
           className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-          toggleButton={<PiDotsThreeVerticalBold size={16} />}
+          toggleButton={<PiDotsThreeVerticalBold />}
           onToggle={handleToggleDropdown}
         >
           <ViewMenu bookKey={bookKey} onSetSettingsDialogOpen={onSetSettingsDialogOpen} />

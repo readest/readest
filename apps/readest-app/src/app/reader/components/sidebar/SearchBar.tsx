@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const MINIMUM_SEARCH_TERM_LENGTH_DEFAULT = 2;
 const MINIMUM_SEARCH_TERM_LENGTH_CJK = 1;
@@ -42,6 +43,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const queuedSearchTerm = useRef('');
   const isSearchPending = useRef(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const iconSize12 = useResponsiveSize(12);
+  const iconSize16 = useResponsiveSize(16);
 
   useEffect(() => {
     handleSearchTermChange(searchTerm);
@@ -153,7 +157,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     <div className='relative p-2'>
       <div className='bg-base-100 flex h-8 items-center rounded-lg'>
         <div className='pl-3'>
-          <FaSearch className='text-gray-500' />
+          <FaSearch size={iconSize16} className='text-gray-500' />
         </div>
 
         <input
@@ -170,7 +174,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           <Dropdown
             className='dropdown-bottom flex justify-center'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg'
-            toggleButton={<FaChevronDown size={12} className='text-gray-500' />}
+            toggleButton={<FaChevronDown size={iconSize12} className='text-gray-500' />}
           >
             <SearchOptions
               searchConfig={searchConfig}

@@ -43,6 +43,10 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleMouseup = (bookKey: string, event: MouseEvent) => {
+  // we will handle mouse back and forward buttons ourselves
+  if ([3, 4].includes(event.button)) {
+    event.preventDefault();
+  }
   window.postMessage(
     {
       type: 'iframe-mouseup',

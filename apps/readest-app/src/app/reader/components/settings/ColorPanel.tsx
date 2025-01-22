@@ -5,9 +5,10 @@ import { TbSunMoon } from 'react-icons/tb';
 
 import { useTheme } from '@/hooks/useTheme';
 import { themes } from '@/styles/themes';
+import { getStyles } from '@/utils/style';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getStyles } from '@/utils/style';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -15,6 +16,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     useTheme();
   const { getViews, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
+  const iconSize24 = useResponsiveSize(24);
 
   useEffect(() => {
     getViews().forEach((view) => {
@@ -33,7 +35,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               className={`btn btn-ghost btn-circle ${themeMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('auto')}
             >
-              <TbSunMoon size={20} />
+              <TbSunMoon />
             </button>
           </div>
 
@@ -42,7 +44,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               className={`btn btn-ghost btn-circle ${themeMode === 'light' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('light')}
             >
-              <MdOutlineLightMode size={20} />
+              <MdOutlineLightMode />
             </button>
           </div>
 
@@ -51,7 +53,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               className={`btn btn-ghost btn-circle ${themeMode === 'dark' ? 'btn-active bg-base-300' : ''}`}
               onClick={() => updateThemeMode('dark')}
             >
-              <MdOutlineDarkMode size={20} />
+              <MdOutlineDarkMode />
             </button>
           </div>
         </div>
@@ -80,9 +82,9 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='hidden'
               />
               {themeColor === name ? (
-                <MdRadioButtonChecked size={24} />
+                <MdRadioButtonChecked size={iconSize24} />
               ) : (
-                <MdRadioButtonUnchecked size={24} />
+                <MdRadioButtonUnchecked size={iconSize24} />
               )}
               <span>{_(label)}</span>
             </label>

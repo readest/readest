@@ -67,7 +67,7 @@ const Dialog: React.FC<DialogProps> = ({
                   'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
                 }
               >
-                <MdArrowBackIosNew size={20} />
+                <MdArrowBackIosNew />
               </button>
               <div className='z-15 pointer-events-none absolute inset-0 flex h-11 items-center justify-center'>
                 <span className='line-clamp-1 text-center font-bold'>{title ?? ''}</span>

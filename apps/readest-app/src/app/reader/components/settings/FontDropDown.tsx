@@ -3,6 +3,7 @@ import React from 'react';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface DropdownProps {
   family?: string;
@@ -22,6 +23,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
   onGetFontFamily,
 }) => {
   const _ = useTranslation();
+  const iconSize16 = useResponsiveSize(16);
   return (
     <div className='dropdown dropdown-top'>
       <button
@@ -29,7 +31,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
         className='btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case'
       >
         <span style={{ fontFamily: onGetFontFamily(selected, family ?? '') }}>{selected}</span>
-        <FiChevronUp className='h-4 w-4' />
+        <FiChevronUp size={iconSize16} />
       </button>
       <ul
         tabIndex={0}
@@ -39,7 +41,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
           <li key={option} onClick={() => onSelect(option)}>
             <div className='flex items-center px-0'>
               <span style={{ minWidth: '20px' }}>
-                {selected === option && <MdCheck size={20} className='text-base-content' />}
+                {selected === option && <MdCheck className='text-base-content' />}
               </span>
               <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>{option}</span>
             </div>
@@ -49,7 +51,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
           <li className='dropdown dropdown-left dropdown-top'>
             <div className='flex items-center px-0'>
               <span style={{ minWidth: '20px' }}>
-                <FiChevronLeft className='h-4 w-4' />
+                <FiChevronLeft size={iconSize16} />
               </span>
               <span>{_('System Fonts')}</span>
             </div>
@@ -64,7 +66,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
                 <li key={option} onClick={() => onSelect(option)}>
                   <div className='flex items-center px-2'>
                     <span style={{ minWidth: '20px' }}>
-                      {selected === option && <MdCheck size={20} className='text-base-content' />}
+                      {selected === option && <MdCheck className='text-base-content' />}
                     </span>
                     <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
                       {option}

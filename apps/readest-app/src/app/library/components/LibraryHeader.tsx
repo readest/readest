@@ -101,7 +101,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<MdOutlineMenu size={16} />}
+            toggleButton={<MdOutlineMenu />}
           >
             <SettingsMenu />
           </Dropdown>

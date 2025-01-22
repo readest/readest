@@ -37,11 +37,11 @@ const TabNavigation: React.FC<{
         >
           <div className={clsx('')} onClick={() => onTabChange(tab)}>
             {tab === 'toc' ? (
-              <MdToc size={20} className='mx-auto' />
+              <MdToc className='mx-auto' />
             ) : tab === 'annotations' ? (
-              <MdEditNote size={20} className='mx-auto' />
+              <MdEditNote className='mx-auto' />
             ) : (
-              <MdBookmarkBorder size={20} className='mx-auto' />
+              <MdBookmarkBorder className='mx-auto' />
             )}
           </div>
         </div>

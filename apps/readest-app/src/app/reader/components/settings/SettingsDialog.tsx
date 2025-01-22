@@ -74,7 +74,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                 'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
               }
             >
-              <MdArrowBackIosNew size={20} />
+              <MdArrowBackIosNew />
             </button>
             <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center justify-around pl-4'>
               {tabConfig.map(({ tab, icon: Icon, label }) => (
@@ -86,7 +86,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                   )}
                   onClick={() => setActivePanel(tab)}
                 >
-                  <Icon size={20} className='mr-0' />
+                  <Icon className='mr-0' />
                   {window.innerWidth >= 500 ? label : ''}
                 </button>
               ))}
@@ -95,7 +95,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
               <Dropdown
                 className='dropdown-bottom dropdown-end'
                 buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-                toggleButton={<PiDotsThreeVerticalBold size={16} />}
+                toggleButton={<PiDotsThreeVerticalBold />}
               >
                 <DialogMenu />
               </Dropdown>

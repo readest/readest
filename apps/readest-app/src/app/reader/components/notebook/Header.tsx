@@ -15,7 +15,7 @@ const NotebookHeader: React.FC<{
   return (
     <div className='notebook-header relative flex h-11 items-center px-3'>
       <div className='absolute inset-0 flex items-center justify-center space-x-2'>
-        <LuNotebookPen size={14} />
+        <LuNotebookPen />
         <div className='notebook-title text-sm font-medium'>{_('Notebook')}</div>
       </div>
       <div className='z-10 flex items-center gap-x-4'>
@@ -26,16 +26,16 @@ const NotebookHeader: React.FC<{
             isPinned ? 'bg-base-300' : 'bg-base-300/65',
           )}
         >
-          {isPinned ? <MdPushPin size={14} /> : <MdOutlinePushPin size={14} />}
+          {isPinned ? <MdPushPin /> : <MdOutlinePushPin />}
         </button>
         <button
           onClick={handleClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
-          <MdArrowBackIosNew size={20} />
+          <MdArrowBackIosNew />
         </button>
         <button className='btn btn-ghost left-0 h-8 min-h-8 w-8 p-0'>
-          <FiSearch size={18} />
+          <FiSearch />
         </button>
       </div>
     </div>

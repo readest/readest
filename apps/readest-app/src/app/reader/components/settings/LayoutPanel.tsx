@@ -153,7 +153,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   className={`btn btn-ghost btn-circle ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('auto')}
                 >
-                  <MdOutlineAutoMode size={20} />
+                  <MdOutlineAutoMode />
                 </button>
               </div>
 
@@ -162,7 +162,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('horizontal-tb')}
                 >
-                  <MdOutlineTextRotationNone size={20} />
+                  <MdOutlineTextRotationNone />
                 </button>
               </div>
 
@@ -171,7 +171,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   className={`btn btn-ghost btn-circle ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('vertical-rl')}
                 >
-                  <MdOutlineTextRotationDown size={20} />
+                  <MdOutlineTextRotationDown />
                 </button>
               </div>
             </div>

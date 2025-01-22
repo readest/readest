@@ -16,6 +16,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToReader } from '@/utils/nav';
 import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
@@ -73,6 +74,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
   const [importBookUrl] = useState(searchParams?.get('url') || '');
   const isImportingBook = useRef(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const iconSize15 = useResponsiveSize(15);
 
   const showBookDetailsModal = (book: Book) => {
     setShowDetailsBook(book);
@@ -232,12 +234,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                       {isSelectMode && (
                         <div className='absolute bottom-1 right-1'>
                           {selectedBooks.includes(item.hash) ? (
-                            <MdCheckCircle size={20} className='fill-blue-500' />
+                            <MdCheckCircle className='fill-blue-500' />
                           ) : (
-                            <MdCheckCircleOutline
-                              size={20}
-                              className='fill-gray-300 drop-shadow-sm'
-                            />
+                            <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
                           )}
                         </div>
                       )}
@@ -268,7 +267,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                               }
                             }}
                           >
-                            <CiCircleMore size={15} />
+                            <CiCircleMore size={iconSize15} />
                           </button>
                         )}
                       </div>
@@ -285,7 +284,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
                             }
                           }}
                         >
-                          <CiCircleMore size={15} />
+                          <CiCircleMore size={iconSize15} />
                         </button>
                       </div>
                     )}
