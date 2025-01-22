@@ -11,8 +11,20 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Head>
         <meta
           name='viewport'
-          content='width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no'
+          content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'
         />
+        <meta name='application-name' content='Readest' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
+        <meta name='apple-mobile-web-app-title' content='Readest' />
+        <meta
+          name='description'
+          content='Readest is an open-source eBook reader supporting EPUB, PDF, and sync across devices.'
+        />
+        <meta name='format-detection' content='telephone=no' />
+        <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='theme-color' content='#000000' />
+        <link rel='manifest' href='/manifest.json' />
       </Head>
       <Providers>
         <Component {...pageProps} />

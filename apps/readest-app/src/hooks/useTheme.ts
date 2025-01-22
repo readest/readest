@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ThemeCode } from '@/utils/style';
 import { themes } from '@/styles/themes';
+import { isWebAppPlatform } from '@/services/environment';
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
 
@@ -76,11 +77,13 @@ export const useTheme = () => {
     const isDarkMode = themeMode === 'dark' || (themeMode === 'auto' && systemIsDarkMode);
     const theme = themes.find((t) => t.name === themeColor);
     const palette = isDarkMode ? theme!.colors.dark : theme!.colors.light;
-    setThemeCode({
-      bg: palette['base-100'],
-      fg: palette['base-content'],
-      primary: palette.primary,
-    });
+    const bg = palette['base-100'];
+    const fg = palette['base-content'];
+    const primary = palette.primary;
+    if (isWebAppPlatform()) {
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+    }
+    setThemeCode({ bg, fg, primary });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeMode, themeColor, isDarkMode]);
 

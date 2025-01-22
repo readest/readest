@@ -27,7 +27,7 @@ const nextConfig = {
 
 export default withPWA({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development' || appPlatform !== 'web',
+  disable: appPlatform !== 'web',
   register: true,
   skipWaiting: true,
 })(nextConfig);
