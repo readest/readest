@@ -39,8 +39,8 @@ const LibraryPage = () => {
     checkOpenWithBooks,
     clearOpenWithBooks,
   } = useLibraryStore();
-  useTheme();
   const _ = useTranslation();
+  const { updateAppTheme } = useTheme();
   const { setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
@@ -49,6 +49,7 @@ const LibraryPage = () => {
   const demoBooks = useDemoBooks();
 
   useEffect(() => {
+    updateAppTheme('base-200');
     const doAppUpdates = async () => {
       if (hasUpdater()) {
         await checkForAppUpdates(_);
@@ -237,7 +238,7 @@ const LibraryPage = () => {
   return (
     <div
       className={clsx(
-        'library-page bg-base-200/50 text-base-content flex h-dvh select-none flex-col overflow-hidden',
+        'library-page bg-base-200 text-base-content flex h-dvh select-none flex-col overflow-hidden',
         isTauriAppPlatform() && 'rounded-window',
       )}
     >

@@ -3,6 +3,7 @@ import React from 'react';
 import { MdToc, MdEditNote, MdBookmarkBorder } from 'react-icons/md';
 
 import { useTranslation } from '@/hooks/useTranslation';
+import { isPWA } from '@/services/environment';
 
 const TabNavigation: React.FC<{
   activeTab: string;
@@ -13,7 +14,12 @@ const TabNavigation: React.FC<{
   const tabs = ['toc', 'annotations', 'bookmarks'];
 
   return (
-    <div className='bottom-tab border-base-300/50 relative flex w-full border-t'>
+    <div
+      className={clsx(
+        'bottom-tab border-base-300/50 relative flex w-full border-t',
+        isPWA() ? 'bottom-[calc(env(safe-area-inset-bottom)_/_2)]' : '',
+      )}
+    >
       <div
         className={clsx(
           'bg-base-300 absolute bottom-1.5 left-1 -z-10 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',

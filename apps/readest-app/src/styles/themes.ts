@@ -7,6 +7,18 @@ type BaseColor = {
   primary: string;
 };
 
+export type Palette = {
+  'base-100': string;
+  'base-200': string;
+  'base-300': string;
+  'base-content': string;
+  neutral: string;
+  'neutral-content': string;
+  primary: string;
+  secondary: string;
+  accent: string;
+};
+
 const generateLightPalette = ({ bg, fg, primary }: BaseColor) => {
   return {
     'base-100': bg, // Main background
@@ -18,7 +30,7 @@ const generateLightPalette = ({ bg, fg, primary }: BaseColor) => {
     primary: primary,
     secondary: tinycolor(primary).lighten(20).toHexString(), // Lighter secondary
     accent: tinycolor(primary).analogous()[1]!.toHexString(), // Analogous accent
-  };
+  } as Palette;
 };
 
 const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
@@ -32,7 +44,7 @@ const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
     primary: primary,
     secondary: tinycolor(primary).darken(20).toHexString(), // Darker secondary
     accent: tinycolor(primary).triad()[1]!.toHexString(), // Triad accent
-  };
+  } as Palette;
 };
 
 export const themes = [

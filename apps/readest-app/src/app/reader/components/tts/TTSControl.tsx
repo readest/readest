@@ -1,12 +1,15 @@
+import clsx from 'clsx';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { TTSController } from '@/services/tts/TTSController';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/ui';
+import { isPWA } from '@/services/environment';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -27,6 +30,10 @@ const TTSControl = () => {
   const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
+
+  const popupWidth = useResponsiveSize(POPUP_WIDTH);
+  const popupHeight = useResponsiveSize(POPUP_HEIGHT);
+  const popupPadding = useResponsiveSize(POPUP_PADDING);
 
   const iconRef = useRef<HTMLDivElement>(null);
   const ttsControllerRef = useRef<TTSController | null>(null);
@@ -212,9 +219,9 @@ const TTSControl = () => {
       const popupPos = getPopupPosition(
         trianglePos,
         windowRect,
-        POPUP_WIDTH,
-        POPUP_HEIGHT,
-        POPUP_PADDING,
+        popupWidth,
+        popupHeight,
+        popupPadding,
       );
 
       setPanelPosition(popupPos);
@@ -241,14 +248,20 @@ const TTSControl = () => {
         />
       )}
       {showIndicator && (
-        <div ref={iconRef} className='absolute bottom-12 right-6 h-12 w-12'>
+        <div
+          ref={iconRef}
+          className={clsx(
+            'absolute right-6 h-12 w-12',
+            isPWA() ? 'bottom-[calc(env(safe-area-inset-bottom)+48px)]' : 'bottom-12',
+          )}
+        >
           <TTSIcon isPlaying={isPlaying} onClick={togglePopup} />
         </div>
       )}
       {showPanel && panelPosition && trianglePosition && (
         <Popup
-          width={POPUP_WIDTH}
-          height={POPUP_HEIGHT}
+          width={popupWidth}
+          height={popupHeight}
           position={panelPosition}
           trianglePosition={trianglePosition}
           className='bg-base-200 absolute flex shadow-lg'

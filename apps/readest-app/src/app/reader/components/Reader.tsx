@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useEffect, Suspense, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
+import { useTheme } from '@/hooks/useTheme';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -18,7 +19,10 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { library, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
 
+  const { updateAppTheme } = useTheme();
+
   useEffect(() => {
+    updateAppTheme('base-100');
     if (isInitiating.current) return;
     isInitiating.current = true;
     const initLibrary = async () => {

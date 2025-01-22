@@ -22,7 +22,7 @@ const BookCard = ({ book }: { book: Book }) => {
         alt={_('Book Cover')}
         width={56}
         height={80}
-        className='mr-4 aspect-auto max-h-20 w-[15%] max-w-14 rounded-sm object-cover shadow-md'
+        className='mr-4 aspect-auto max-h-16 w-[15%] max-w-12 rounded-sm object-cover shadow-md'
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
         }}

@@ -53,7 +53,7 @@ const SidebarContent: React.FC<{
   const handleTabChange = (tab: string) => {
     setFade(true);
     const timeout = setTimeout(() => {
-      setFade(false)
+      setFade(false);
       setTargetTab(tab);
       setConfig(sideBarBookKey!, config);
       clearTimeout(timeout);
@@ -76,7 +76,7 @@ const SidebarContent: React.FC<{
           ref={scrollContainerRef}
           className={clsx(
             'scroll-container overflow-y-auto transition-opacity duration-300 ease-in-out',
-            { 'opacity-0': fade, 'opacity-100': !fade }
+            { 'opacity-0': fade, 'opacity-100': !fade },
           )}
         >
           {targetTab === 'toc' && bookDoc.toc && (

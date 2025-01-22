@@ -8,6 +8,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
+import { useTheme } from '@/hooks/useTheme';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
@@ -23,6 +24,7 @@ const MAX_SIDEBAR_WIDTH = 0.45;
 const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
+  const { updateAppTheme } = useTheme();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
   const { getBookData } = useBookDataStore();
@@ -56,6 +58,15 @@ const SideBar: React.FC<{
       setSideBarVisible(false);
     }
   };
+
+  useEffect(() => {
+    if (isSideBarVisible) {
+      updateAppTheme('base-200');
+    } else {
+      updateAppTheme('base-100');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSideBarVisible]);
 
   useEffect(() => {
     eventDispatcher.on('search', onSearchEvent);

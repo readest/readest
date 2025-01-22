@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
@@ -23,6 +24,7 @@ const MAX_NOTEBOOK_WIDTH = 0.45;
 
 const Notebook: React.FC = ({}) => {
   const _ = useTranslation();
+  const { updateAppTheme } = useTheme();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
@@ -40,6 +42,15 @@ const Notebook: React.FC = ({}) => {
       setNotebookVisible(false);
     }
   };
+
+  useEffect(() => {
+    if (isNotebookVisible) {
+      updateAppTheme('base-200');
+    } else {
+      updateAppTheme('base-100');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNotebookVisible]);
 
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);

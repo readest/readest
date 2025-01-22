@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ThemeCode } from '@/utils/style';
-import { themes } from '@/styles/themes';
+import { themes, Palette } from '@/styles/themes';
 import { isWebAppPlatform } from '@/services/environment';
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
@@ -46,6 +46,7 @@ export const useTheme = () => {
       bg: defaultPalette['base-100'],
       fg: defaultPalette['base-content'],
       primary: defaultPalette.primary,
+      palette: defaultPalette,
     };
   });
 
@@ -83,12 +84,18 @@ export const useTheme = () => {
     if (isWebAppPlatform()) {
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
     }
-    setThemeCode({ bg, fg, primary });
+    setThemeCode({ bg, fg, primary, palette });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeMode, themeColor, isDarkMode]);
 
   const updateThemeMode = (mode: ThemeMode) => setThemeMode(mode);
   const updateThemeColor = (color: string) => setThemeColor(color);
+  const updateAppTheme = (color: keyof Palette) => {
+    if (isWebAppPlatform()) {
+      const { palette } = themeCode;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', palette[color]);
+    }
+  };
 
   return {
     themeMode,
@@ -97,5 +104,6 @@ export const useTheme = () => {
     isDarkMode,
     updateThemeMode,
     updateThemeColor,
+    updateAppTheme,
   };
 };

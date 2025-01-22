@@ -5,6 +5,7 @@ import {
   FALLBACK_FONTS,
 } from '@/services/constants';
 import { ViewSettings } from '@/types/book';
+import { Palette } from '@/styles/themes';
 
 import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
 
@@ -193,6 +194,7 @@ export interface ThemeCode {
   bg: string;
   fg: string;
   primary: string;
+  palette: Palette;
 }
 
 export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {

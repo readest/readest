@@ -8,7 +8,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isPWA, isTauriAppPlatform } from '@/services/environment';
 import Button from '@/components/Button';
 
 interface FooterBarProps {
@@ -62,6 +62,7 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       className={clsx(
         'footer-bar absolute bottom-0 z-10 flex h-12 w-full items-center gap-x-4 px-4',
         'shadow-xs bg-base-100 transition-opacity duration-300',
+        isPWA() ? 'pb-[env(safe-area-inset-bottom)]' : '',
         isTauriAppPlatform() && 'rounded-window-bottom-right',
         !isSideBarVisible && isTauriAppPlatform() && 'rounded-window-bottom-left',
         isHoveredAnim && 'hover-bar-anim',

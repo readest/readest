@@ -13,6 +13,7 @@ export const isWebAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] ==
 export const hasUpdater = () =>
   window.__READEST_UPDATER_ACCESS === true && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'];
 export const hasCli = () => window.__READEST_CLI_ACCESS === true;
+export const isPWA = () => window.matchMedia('(display-mode: standalone)').matches;
 
 // Dev API only in development mode and web platform
 // with command `pnpm dev-web`
