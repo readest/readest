@@ -39,7 +39,6 @@
   "Font Face": "Yazı Tipi Yüzü",
   "Font Family": "Yazı Tipi Ailesi",
   "Font Size": "Yazı Boyutu",
-  "From Local File": "Yerel Dosyadan",
   "Full Justification": "Tam Hizalama",
   "Global Settings": "Genel Ayarlar",
   "Go Back": "Geri Git",
@@ -138,5 +137,7 @@
   "Update": "Güncelle",
   "Check update": "Güncellemeyi kontrol et",
   "Already the latest version": "Zaten en son sürüm",
-  "Book Details": "Kitap Detayları"
+  "Book Details": "Kitap Detayları",
+  "Import books": "Kitapları içe aktar",
+  "From local file": "Yerel dosyadan"
 }

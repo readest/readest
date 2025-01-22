@@ -39,7 +39,6 @@
   "Font Face": "Estilo da Fonte",
   "Font Family": "Família da Fonte",
   "Font Size": "Tamanho da Fonte",
-  "From Local File": "Do Arquivo Local",
   "Full Justification": "Justificação Completa",
   "Global Settings": "Configurações Globais",
   "Go Back": "Voltar",
@@ -138,5 +137,7 @@
   "Update": "Atualizar",
   "Check update": "Verificar atualização",
   "Already the latest version": "Já é a versão mais recente",
-  "Book Details": "Detalhes do Livro"
+  "Book Details": "Detalhes do Livro",
+  "Import books": "Importar livros",
+  "From local file": "Do arquivo local"
 }

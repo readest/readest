@@ -39,7 +39,6 @@
   "Font Face": "फ़ॉन्ट फेस",
   "Font Family": "फ़ॉन्ट परिवार",
   "Font Size": "फ़ॉन्ट साइज़",
-  "From Local File": "स्थानीय फ़ाइल से",
   "Full Justification": "पूर्ण जस्टिफिकेशन",
   "Global Settings": "वैश्विक सेटिंग्स",
   "Go Back": "वापस जाएं",
@@ -138,5 +137,7 @@
   "Update": "अपडेट करें",
   "Check update": "अपडेट जांचें",
   "Already the latest version": "पहले से ही नवीनतम संस्करण",
-  "Book Details": "पुस्तक विवरण"
+  "Book Details": "पुस्तक विवरण",
+  "Import books": "पुस्तकें आयात करें",
+  "From local file": "स्थानीय फ़ाइल से"
 }

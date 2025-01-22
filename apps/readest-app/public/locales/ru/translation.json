@@ -39,7 +39,6 @@
   "Font Face": "Начертание шрифта",
   "Font Family": "Семейство шрифтов",
   "Font Size": "Размер шрифта",
-  "From Local File": "Из локального файла",
   "Full Justification": "Полное выравнивание",
   "Global Settings": "Общие настройки",
   "Go Back": "Назад",
@@ -138,5 +137,7 @@
   "Update": "Обновить",
   "Check update": "Проверить обновление",
   "Already the latest version": "Уже последняя версия",
-  "Book Details": "Детали книги"
+  "Book Details": "Детали книги",
+  "Import books": "Импортировать книги",
+  "From local file": "Из локального файла"
 }

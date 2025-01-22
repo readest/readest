@@ -39,7 +39,6 @@
   "Font Face": "書体",
   "Font Family": "フォントファミリー",
   "Font Size": "フォントサイズ",
-  "From Local File": "ローカルファイルから",
   "Full Justification": "両端揃え",
   "Global Settings": "全体設定",
   "Go Back": "戻る",
@@ -138,5 +137,7 @@
   "Update": "更新",
   "Check update": "更新を確認",
   "Already the latest version": "すでに最新バージョン",
-  "Book Details": "書籍の詳細"
+  "Book Details": "書籍の詳細",
+  "Import books": "書籍をインポート",
+  "From local file": "ローカルファイルから"
 }

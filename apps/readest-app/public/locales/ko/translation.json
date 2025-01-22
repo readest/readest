@@ -39,7 +39,6 @@
   "Font Face": "글꼴 스타일",
   "Font Family": "글꼴 패밀리",
   "Font Size": "글꼴 크기",
-  "From Local File": "로컬 파일에서",
   "Full Justification": "양쪽 정렬",
   "Global Settings": "전역 설정",
   "Go Back": "뒤로",
@@ -138,5 +137,7 @@
   "Update": "업데이트",
   "Check update": "업데이트 확인",
   "Already the latest version": "이미 최신 버전",
-  "Book Details": "책 세부 정보"
+  "Book Details": "책 세부 정보",
+  "Import books": "책 가져오기",
+  "From local file": "로컬 파일에서"
 }

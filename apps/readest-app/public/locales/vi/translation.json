@@ -39,7 +39,6 @@
   "Font Face": "Kiểu chữ",
   "Font Family": "Họ phông chữ",
   "Font Size": "Cỡ chữ",
-  "From Local File": "Từ tệp cục bộ",
   "Full Justification": "Căn đều hai bên",
   "Global Settings": "Cài đặt chung",
   "Go Back": "Quay lại",
@@ -138,5 +137,7 @@
   "Update": "Cập nhật",
   "Check update": "Kiểm tra cập nhật",
   "Already the latest version": "Đã là phiên bản mới nhất",
-  "Book Details": "Chi tiết sách"
+  "Book Details": "Chi tiết sách",
+  "Import books": "Nhập sách",
+  "From local file": "Từ tệp địa phương"
 }

@@ -39,7 +39,6 @@
   "Font Face": "字型",
   "Font Family": "字族",
   "Font Size": "字号",
-  "From Local File": "从本地文件导入",
   "Full Justification": "两端对齐",
   "Global Settings": "全局设置",
   "Go Back": "返回",
@@ -138,5 +137,7 @@
   "Update": "更新",
   "Check update": "检查更新",
   "Already the latest version": "已经是最新版本",
-  "Book Details": "书籍详情"
+  "Book Details": "书籍详情",
+  "Import books": "导入书籍",
+  "From local file": "从本地文件导入"
 }

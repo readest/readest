@@ -39,7 +39,6 @@
   "Font Face": "Schriftschnitt",
   "Font Family": "Schriftfamilie",
   "Font Size": "Schriftgröße",
-  "From Local File": "Aus lokaler Datei",
   "Full Justification": "Blocksatz",
   "Global Settings": "Globale Einstellungen",
   "Go Back": "Zurück",
@@ -138,5 +137,7 @@
   "Update": "Aktualisieren",
   "Check update": "Aktualisierung prüfen",
   "Already the latest version": "Bereits die neueste Version",
-  "Book Details": "Buchdetails"
+  "Book Details": "Buchdetails",
+  "Import books": "Bücher importieren",
+  "From local file": "Aus lokaler Datei"
 }

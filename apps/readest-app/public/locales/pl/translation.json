@@ -39,7 +39,6 @@
   "Font Face": "Krój czcionki",
   "Font Family": "Rodzina czcionek",
   "Font Size": "Rozmiar czcionki",
-  "From Local File": "Z pliku lokalnego",
   "Full Justification": "Pełne justowanie",
   "Global Settings": "Ustawienia globalne",
   "Go Back": "Wstecz",
@@ -138,5 +137,7 @@
   "Update": "Zaktualizuj",
   "Check update": "Sprawdź aktualizację",
   "Already the latest version": "Już najnowsza wersja",
-  "Book Details": "Szczegóły książki"
+  "Book Details": "Szczegóły książki",
+  "Import books": "Importuj książki",
+  "From local file": "Z pliku lokalnego"
 }

@@ -39,7 +39,6 @@
   "Font Face": "Τύπος γραμματοσειράς",
   "Font Family": "Οικογένεια γραμματοσειράς",
   "Font Size": "Μέγεθος γραμματοσειράς",
-  "From Local File": "Από τοπικό αρχείο",
   "Full Justification": "Πλήρης στοίχιση",
   "Global Settings": "Γενικές ρυθμίσεις",
   "Go Back": "Πίσω",
@@ -138,5 +137,7 @@
   "Update": "Ενημέρωση",
   "Check update": "Έλεγχος ενημέρωσης",
   "Already the latest version": "Ήδη η τελευταία έκδοση",
-  "Book Details": "Λεπτομέρειες βιβλίου"
+  "Book Details": "Λεπτομέρειες βιβλίου",
+  "Import books": "Εισαγωγή βιβλίων",
+  "From local file": "Από τοπικό αρχείο"
 }

@@ -39,7 +39,6 @@
   "Font Face": "Jenis Font",
   "Font Family": "Keluarga Font",
   "Font Size": "Ukuran Font",
-  "From Local File": "Dari File Lokal",
   "Full Justification": "Rata Penuh",
   "Global Settings": "Pengaturan Global",
   "Go Back": "Kembali",
@@ -138,5 +137,7 @@
   "Update": "Perbarui",
   "Check update": "Periksa pembaruan",
   "Already the latest version": "Sudah versi terbaru",
-  "Book Details": "Detail Buku"
+  "Book Details": "Detail Buku",
+  "Import books": "Impor buku",
+  "From local file": "Dari file lokal"
 }
