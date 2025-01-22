@@ -4,7 +4,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { TTSController } from '@/services/tts/TTSController';
+import { TTSController, SILENCE_DATA } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
@@ -37,6 +37,16 @@ const TTSControl = () => {
 
   const iconRef = useRef<HTMLDivElement>(null);
   const ttsControllerRef = useRef<TTSController | null>(null);
+
+  // this enables WebAudio to play even when the mute toggle switch is ON
+  const unblockAudio = () => {
+    const audio = document.createElement('audio');
+    audio.setAttribute('x-webkit-airplay', 'deny');
+    audio.preload = 'auto';
+    audio.loop = false;
+    audio.src = SILENCE_DATA;
+    audio.play();
+  };
 
   useEffect(() => {
     return () => {
@@ -82,6 +92,7 @@ const TTSControl = () => {
     setShowIndicator(true);
 
     try {
+      unblockAudio();
       const ttsController = new TTSController(view);
       await ttsController.init();
       await ttsController.initViewTTS();
