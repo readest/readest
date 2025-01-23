@@ -2,6 +2,7 @@ import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { BookSearchConfig } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 
 interface SearchOptionsProps {
   searchConfig: BookSearchConfig;
@@ -21,7 +22,7 @@ const Option: React.FC<OptionProps> = ({ label, isActive, onClick }) => (
     onClick={onClick}
   >
     <div className='flex items-center'>
-      <span style={{ minWidth: '20px' }}>
+      <span style={{ minWidth: `${useDefaultIconSize()}px` }}>
         {isActive && <MdCheck className='text-base-content' />}
       </span>
       <span className='ml-2'>{label}</span>

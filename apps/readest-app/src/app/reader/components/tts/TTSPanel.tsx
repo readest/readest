@@ -6,7 +6,7 @@ import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdStop } from
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
 import { TTSVoice } from '@/services/tts';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 type TTSPanelProps = {
   bookKey: string;
@@ -43,6 +43,7 @@ const TTSPanel = ({
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState(viewSettings?.ttsVoice ?? '');
 
+  const defaultIconSize = useDefaultIconSize();
   const iconSize32 = useResponsiveSize(32);
   const iconSize48 = useResponsiveSize(48);
 
@@ -144,10 +145,10 @@ const TTSPanel = ({
                 onClick={() => !voice.disabled && handleSelectVoice(voice.id)}
               >
                 <div className='flex items-center px-2'>
-                  <span style={{ minWidth: '20px' }}>
+                  <span style={{ minWidth: `${defaultIconSize}px` }}>
                     {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
                   </span>
-                  <span className={clsx('text-sm', voice.disabled && 'text-gray-400')}>
+                  <span className={clsx('text-base sm:text-sm', voice.disabled && 'text-gray-400')}>
                     {voice.name}
                   </span>
                 </div>

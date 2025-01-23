@@ -29,7 +29,7 @@ const SidebarHeader: React.FC<{
         isTrafficLightVisible ? 'pl-20' : 'pl-1.5',
       )}
     >
-      <div className='flex items-center gap-x-4'>
+      <div className='flex items-center gap-x-8'>
         <button
           onClick={onClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}

@@ -2,6 +2,7 @@ import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 
 interface DialogMenuProps {
   toggleDropdown?: () => void;
@@ -9,6 +10,7 @@ interface DialogMenuProps {
 
 const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
   const _ = useTranslation();
+  const iconSize = useDefaultIconSize();
   const { isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } = useSettingsStore();
 
   const handleToggleGlobal = () => {
@@ -26,7 +28,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
         onClick={handleToggleGlobal}
       >
         <div className='flex items-center'>
-          <span style={{ minWidth: '20px' }}>
+          <span style={{ minWidth: `${iconSize}px` }}>
             {isFontLayoutSettingsGlobal && <MdCheck className='text-base-content' />}
           </span>
           <div

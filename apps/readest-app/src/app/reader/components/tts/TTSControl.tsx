@@ -183,9 +183,13 @@ const TTSControl = () => {
     throttle(async (rate: number) => {
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
-        await ttsController.stop();
-        await ttsController.setRate(rate);
-        await ttsController.start();
+        if (ttsController.state === 'playing') {
+          await ttsController.stop();
+          await ttsController.setRate(rate);
+          await ttsController.start();
+        } else {
+          await ttsController.setRate(rate);
+        }
       }
     }, 3000),
     [],
@@ -196,9 +200,13 @@ const TTSControl = () => {
     throttle(async (voice: string) => {
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
-        await ttsController.stop();
-        await ttsController.setVoice(voice);
-        await ttsController.start();
+        if (ttsController.state === 'playing') {
+          await ttsController.stop();
+          await ttsController.setVoice(voice);
+          await ttsController.start();
+        } else {
+          await ttsController.setVoice(voice);
+        }
       }
     }, 3000),
     [],

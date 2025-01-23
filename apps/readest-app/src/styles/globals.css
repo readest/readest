@@ -164,6 +164,13 @@ foliate-view {
   font-weight: 400;
 }
 
+@media (max-width: 768px) {
+  .dropdown-content,
+  .settings-content {
+    font-size: 16px;
+  }
+}
+
 .config-item {
   @apply flex h-14 items-center justify-between p-4;
   @apply hover:bg-base-100/50;

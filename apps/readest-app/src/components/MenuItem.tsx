@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 
 interface MenuItemProps {
   label: string;
@@ -22,6 +23,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   children,
   onClick,
 }) => {
+  const iconSize = useDefaultIconSize();
   const menuButton = (
     <button
       className={clsx(
@@ -32,10 +34,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
       disabled={disabled}
     >
       <div className='flex items-center'>
-        {!noIcon && <span style={{ minWidth: '20px' }}>{icon}</span>}
+        {!noIcon && <span style={{ minWidth: `${iconSize}px` }}>{icon}</span>}
         <span className={clsx('ml-2 max-w-32 truncate', labelClass)}>{label}</span>
       </div>
-      {shortcut && <span className='text-neutral-content text-sm'>{shortcut}</span>}
+      {shortcut && <span className='text-neutral-content hidden text-sm sm:flex'>{shortcut}</span>}
     </button>
   );
 

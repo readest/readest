@@ -3,7 +3,7 @@ import React from 'react';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface DropdownProps {
   family?: string;
@@ -24,6 +24,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
 }) => {
   const _ = useTranslation();
   const iconSize16 = useResponsiveSize(16);
+  const defaultIconSize = useDefaultIconSize();
   return (
     <div className='dropdown dropdown-top'>
       <button
@@ -40,7 +41,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
         {options.map((option) => (
           <li key={option} onClick={() => onSelect(option)}>
             <div className='flex items-center px-0'>
-              <span style={{ minWidth: '20px' }}>
+              <span style={{ minWidth: `${defaultIconSize}px` }}>
                 {selected === option && <MdCheck className='text-base-content' />}
               </span>
               <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>{option}</span>
@@ -50,7 +51,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
         {moreOptions && moreOptions.length > 0 && (
           <li className='dropdown dropdown-left dropdown-top'>
             <div className='flex items-center px-0'>
-              <span style={{ minWidth: '20px' }}>
+              <span style={{ minWidth: `${iconSize16}px` }}>
                 <FiChevronLeft size={iconSize16} />
               </span>
               <span>{_('System Fonts')}</span>
@@ -65,7 +66,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
               {moreOptions.map((option) => (
                 <li key={option} onClick={() => onSelect(option)}>
                   <div className='flex items-center px-2'>
-                    <span style={{ minWidth: '20px' }}>
+                    <span style={{ minWidth: `${defaultIconSize}px` }}>
                       {selected === option && <MdCheck className='text-base-content' />}
                     </span>
                     <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
