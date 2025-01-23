@@ -8,6 +8,7 @@ import { TTSController, SILENCE_DATA } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
+import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/ui';
 import { isPWA } from '@/services/environment';
 import Popup from '@/components/Popup';
@@ -43,7 +44,7 @@ const TTSControl = () => {
     const audio = document.createElement('audio');
     audio.setAttribute('x-webkit-airplay', 'deny');
     audio.preload = 'auto';
-    audio.loop = false;
+    audio.loop = true;
     audio.src = SILENCE_DATA;
     audio.play();
   };
@@ -92,7 +93,9 @@ const TTSControl = () => {
     setShowIndicator(true);
 
     try {
-      unblockAudio();
+      if (getOSPlatform() === 'ios') {
+        unblockAudio();
+      }
       const ttsController = new TTSController(view);
       await ttsController.init();
       await ttsController.initViewTTS();
