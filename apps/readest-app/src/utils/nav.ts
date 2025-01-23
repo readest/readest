@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import { isWebAppPlatform } from '@/services/environment';
+import { isPWA, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 
 export const navigateToReader = (
@@ -9,7 +9,7 @@ export const navigateToReader = (
   navOptions?: { scroll?: boolean },
 ) => {
   const ids = bookIds.join(BOOK_IDS_SEPARATOR);
-  if (isWebAppPlatform()) {
+  if (isWebAppPlatform() && !isPWA()) {
     router.push(`/reader/${ids}${queryParams ? `?${queryParams}` : ''}`, navOptions);
   } else {
     const params = new URLSearchParams(queryParams || '');
