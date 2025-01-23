@@ -216,7 +216,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
 [badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
 [badge-release]: https://img.shields.io/github/release/readest/readest?color=green
-[badge-platforms]: https://img.shields.io/badge/OS-macOS%2C%20Windows%2C%20Linux%2C%20Web-green
+[badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Web%2C%20PWA-green
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=green
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
