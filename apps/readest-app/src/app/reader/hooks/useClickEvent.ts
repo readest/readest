@@ -95,7 +95,8 @@ export const useTouchEvent = (
   bookKey: string,
   viewRef: React.MutableRefObject<FoliateView | null>,
 ) => {
-  const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey)!;
 
   let touchStart: IframeTouch | null = null;
   let touchEnd: IframeTouch | null = null;
@@ -155,10 +156,15 @@ export const useTouchEvent = (
   };
 
   useEffect(() => {
-    window.addEventListener('message', handleTouch);
-    return () => {
-      window.removeEventListener('message', handleTouch);
-    };
+    // swipe touch is not compatible with scrolled mode, so only enable it in page mode
+    if (!viewSettings!.scrolled) {
+      window.addEventListener('message', handleTouch);
+      return () => {
+        window.removeEventListener('message', handleTouch);
+      };
+    } else {
+      return () => {};
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey, viewRef]);
 };
