@@ -19,6 +19,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
@@ -65,13 +66,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
 
-  const dictPopupWidth = 480;
-  const dictPopupHeight = 300;
-  const transPopupWidth = 480;
-  const transPopupHeight = 360;
-  const annotPopupWidth = 280;
-  const annotPopupHeight = 44;
-  const popupPadding = 10;
+  const popupPadding = useResponsiveSize(10);
+  const maxWidth = window.innerWidth - 2 * popupPadding;
+  const maxHeight = window.innerHeight - 2 * popupPadding;
+  const dictPopupWidth = Math.min(480, maxWidth);
+  const dictPopupHeight = Math.min(300, maxHeight);
+  const transPopupWidth = Math.min(480, maxWidth);
+  const transPopupHeight = Math.min(360, maxHeight);
+  const annotPopupWidth = useResponsiveSize(280);
+  const annotPopupHeight = useResponsiveSize(44);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;

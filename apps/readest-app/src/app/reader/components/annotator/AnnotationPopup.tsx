@@ -41,7 +41,12 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         className='selection-popup bg-gray-600 px-4 text-white'
         triangleClassName='text-gray-600'
       >
-        <div className='selection-buttons flex h-11 items-center justify-between'>
+        <div
+          className='selection-buttons flex items-center justify-between'
+          style={{
+            height: popupHeight,
+          }}
+        >
           {buttons.map((button, index) => (
             <PopupButton
               key={index}
