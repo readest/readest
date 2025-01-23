@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 import {
+  ANDROID_FONTS,
+  IOS_FONTS,
   LINUX_FONTS,
   MACOS_FONTS,
   MONOSPACE_FONTS,
@@ -75,6 +77,12 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       break;
     case 'linux':
       moreFonts = LINUX_FONTS;
+      break;
+    case 'ios':
+      moreFonts = IOS_FONTS;
+      break;
+    case 'android':
+      moreFonts = ANDROID_FONTS;
       break;
     default:
       break;

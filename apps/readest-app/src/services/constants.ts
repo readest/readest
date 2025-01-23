@@ -295,6 +295,51 @@ export const LINUX_FONTS = [
   'WenQuanYi Zen Hei',
 ];
 
+export const IOS_FONTS = [
+  'Avenir',
+  'Avenir Next',
+  'Courier',
+  'Courier New',
+  'Georgia',
+  'Helvetica',
+  'Helvetica Neue',
+  'Hiragino Mincho',
+  'Hiragino Sans',
+  'Kaiti',
+  'Palatino',
+  'PingFang SC',
+  'PingFang TC',
+  'San Francisco',
+  'SF Pro Display',
+  'SF Pro Rounded',
+  'SF Pro Text',
+  'Songti',
+  'Times New Roman',
+  'Verdana',
+];
+
+export const ANDROID_FONTS = [
+  'Arial',
+  'Droid Sans',
+  'Droid Serif',
+  'FZLanTingHei',
+  'Georgia',
+  'Noto Sans',
+  'Noto Sans CJK',
+  'Noto Sans JP',
+  'Noto Serif',
+  'Noto Serif CJK',
+  'Noto Serif JP',
+  'PingFang SC',
+  'Roboto',
+  'Source Han Sans',
+  'Source Han Serif',
+  'STHeiti',
+  'STSong',
+  'Tahoma',
+  'Verdana',
+];
+
 export const ONE_COLUMN_MAX_INLINE_SIZE = 9999;
 
 export const BOOK_IDS_SEPARATOR = '+';

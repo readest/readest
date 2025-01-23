@@ -99,7 +99,7 @@ const Dialog: React.FC<DialogProps> = ({
 
         <div
           className={clsx(
-            'text-base-content my-2 flex-grow overflow-y-auto px-[10%]',
+            'text-base-content my-2 flex-grow overflow-y-auto px-6 sm:px-[10%]',
             contentClassName,
           )}
         >

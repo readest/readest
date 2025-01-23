@@ -117,7 +117,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         </button>
       </div>
 
-      <hr className='border-base-200 my-1' />
+      <hr className='border-base-300 my-1' />
 
       <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
 
@@ -128,7 +128,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={toggleScrolledMode}
       />
 
-      <hr className='border-base-200 my-1' />
+      <hr className='border-base-300 my-1' />
 
       <MenuItem
         label={

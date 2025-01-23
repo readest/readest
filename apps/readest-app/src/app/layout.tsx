@@ -36,6 +36,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
   themeColor: 'white',
 };
 
@@ -44,9 +45,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html>
       <head>
         <title>{title}</title>
+        <meta
+          name='viewport'
+          content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'
+        />
         <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
-        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1' />
+        <meta name='apple-mobile-web-app-title' content='Readest' />
         <link rel='apple-touch-icon' sizes='180x180' href='/apple-touch-icon.png' />
         <link rel='icon' href='/favicon.ico' />
         <link rel='manifest' href='/manifest.json' />
