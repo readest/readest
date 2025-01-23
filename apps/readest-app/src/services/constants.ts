@@ -95,7 +95,7 @@ export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica'
 
 export const MONOSPACE_FONTS = ['Fira Code', 'Lucida Console', 'Consolas', 'Courier New'];
 
-export const FALLBACK_FONTS = ['MiSans L3'];
+export const FALLBACK_FONTS = ['Noto Serif JP', 'MiSans L3'];
 
 export const WINDOWS_FONTS = [
   'Arial',
@@ -138,9 +138,11 @@ export const WINDOWS_FONTS = [
   'MingLiU-ExtB',
   'Mongolian Baiti',
   'MS Gothic',
+  'MS Mincho',
   'MV Boli',
   'Myanmar Text',
   'Nirmala UI',
+  'Noto Serif JP',
   'NSimSun',
   'Palatino Linotype',
   'PMingLiU',
@@ -153,6 +155,7 @@ export const WINDOWS_FONTS = [
   'Segoe UI Symbol',
   'SimHei',
   'SimSun',
+  'SimSun-ExtB',
   'Sitka',
   'Sylfaen',
   'Symbol',
@@ -163,6 +166,7 @@ export const WINDOWS_FONTS = [
   'Webdings',
   'Wingdings',
   'Yu Gothic',
+  'Yu Mincho',
 ];
 
 export const MACOS_FONTS = [
@@ -205,10 +209,14 @@ export const MACOS_FONTS = [
   'Helvetica',
   'Helvetica Neue',
   'Herculanum',
+  'Hiragino Sans',
+  'Hiragino Mincho',
   'Hoefler Text',
   'Impact',
   'Kaiti SC',
   'Kaiti TC',
+  'Kozuka Gothic Pro',
+  'Kozuka Mincho Pro',
   'Lucida Grande',
   'Luminari',
   'Marker Felt',
@@ -216,6 +224,7 @@ export const MACOS_FONTS = [
   'Microsoft Sans Serif',
   'Monaco',
   'Noteworthy',
+  'Noto Serif JP',
   'Optima',
   'Palatino',
   'Papyrus',
@@ -240,6 +249,7 @@ export const MACOS_FONTS = [
   'Trattatello',
   'Trebuchet MS',
   'Verdana',
+  'Yu Mincho',
   'Zapfino',
 ];
 
@@ -263,13 +273,17 @@ export const LINUX_FONTS = [
   'Liberation Serif',
   'Noto Mono',
   'Noto Sans',
+  'Noto Sans JP',
   'Noto Sans CJK SC',
   'Noto Sans CJK TC',
   'Noto Serif',
+  'Noto Serif JP',
   'Noto Serif CJK SC',
   'Noto Serif CJK TC',
   'Open Sans',
   'Poppins',
+  'Sazanami Gothic',
+  'Sazanami Mincho',
   'Source Han Sans',
   'Source Han Serif',
   'Symbola',
