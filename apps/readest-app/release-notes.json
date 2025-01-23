@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.7": {
+      "date": "2025-01-23",
+      "notes": [
+        "Support PWA for the web version",
+        "Swipe up to toggle header/footer",
+        "Various fixes and enhancements on updater, header bar and tts"
+      ]
+    },
     "0.9.6": {
       "date": "2025-01-18",
       "notes": ["Various enhancements for mobile platforms", "Fix DeepL translation API"]

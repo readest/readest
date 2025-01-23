@@ -104,14 +104,12 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.config.os }}-cargo-${{ hashFiles('apps/readest-app/src-tauri/Cargo.lock') }}
-          workspaces: apps/readest-app/src-tauri -> target
+          key: ${{ matrix.config.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
       - name: create .env.local file for Next.js
         run: |
           echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> .env.local
-          echo "NEXT_PUBLIC_DEEPL_API_KEY=${{ secrets.NEXT_PUBLIC_DEEPL_API_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
@@ -161,7 +159,7 @@ jobs:
             exit 1
           fi
 
-          exe_file="apps/readest-app/src-tauri/target/${{ matrix.config.rust_target }}/release/readest.exe"
+          exe_file="target/${{ matrix.config.rust_target }}/release/readest.exe"
           # Browsers on Windows won't download zip files that contain exe files
           # so upload the exe files instead. This is totally stupid.
           # powershell.exe -Command "Compress-Archive -Path $exe_file -DestinationPath $bin_file -Force"
@@ -182,10 +180,18 @@ jobs:
         uses: actions/github-script@v7
         env:
           release_id: ${{ needs.get-release.outputs.release_id }}
+          release_tag: ${{ needs.get-release.outputs.release_tag }}
           release_note: ${{ needs.get-release.outputs.release_note }}
         with:
           script: |
-            const body = `## Release Highlight\n${process.env.release_note}`;
+            const { data } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: process.env.release_tag,
+            })
+            const notes = process.env.release_note.split(/(?:\d\.\s)/).filter(Boolean);
+            const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
+            const body = `## Release Highlight\n${formattedNotes}\n\n${data.body}`;
             github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
