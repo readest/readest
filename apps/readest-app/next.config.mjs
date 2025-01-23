@@ -1,10 +1,5 @@
 import withPWA from 'next-pwa';
 
-/** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production';
-
-const internalHost = process.env.TAURI_DEV_HOST || 'localhost';
-
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
 
 /** @type {import('next').NextConfig} */
@@ -21,7 +16,7 @@ const nextConfig = {
     appIsrStatus: false,
   },
   // Configure assetPrefix or else the server won't properly resolve your assets.
-  assetPrefix: isProd ? '' : `http://${internalHost}:3000`,
+  assetPrefix: '',
   reactStrictMode: true,
 };
 
