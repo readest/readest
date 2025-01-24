@@ -68,7 +68,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <div className='absolute right-4 flex items-center space-x-4 text-gray-500'>
             <span className='mx-2 h-5 w-[1px] bg-gray-400'></span>
             <div className='dropdown dropdown-bottom flex h-5 cursor-pointer justify-center'>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import books')}>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import Books')}>
                 <PiPlus tabIndex={-1} className='h-5 w-5' />
               </div>
               <ul
@@ -77,7 +77,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               >
                 <li>
                   <button className='text-base-content' onClick={onImportBooks}>
-                    {_('From local file')}
+                    {_('From Local File')}
                   </button>
                 </li>
               </ul>

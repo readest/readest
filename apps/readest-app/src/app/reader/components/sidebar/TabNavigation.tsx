@@ -16,13 +16,13 @@ const TabNavigation: React.FC<{
   return (
     <div
       className={clsx(
-        'bottom-tab border-base-300/50 relative flex w-full border-t',
+        'bottom-tab border-base-300/50 bg-base-200 relative flex w-full border-t',
         isPWA() ? 'bottom-[calc(env(safe-area-inset-bottom)_/_2)]' : '',
       )}
     >
       <div
         className={clsx(
-          'bg-base-300 absolute bottom-1.5 left-1 -z-10 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',
+          'bg-base-300 absolute bottom-1.5 left-1 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',
           'transform transition-transform duration-300',
           activeTab === 'toc' && 'translate-x-0',
           activeTab === 'annotations' && 'translate-x-[calc(100%+8px)]',
@@ -34,11 +34,7 @@ const TabNavigation: React.FC<{
           key={tab}
           className='lg:tooltip lg:tooltip-top z-50 m-1.5 flex-1 cursor-pointer rounded-md p-2'
           data-tip={
-            tab === 'toc'
-              ? _('Table of Contents')
-              : tab === 'annotations'
-                ? _('Annotate')
-                : _('Bookmark')
+            tab === 'toc' ? _('TOC') : tab === 'annotations' ? _('Annotate') : _('Bookmark')
           }
         >
           <div className={clsx('')} onClick={() => onTabChange(tab)}>

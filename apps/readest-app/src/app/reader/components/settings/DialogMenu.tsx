@@ -34,7 +34,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
           <div
             className='lg:tooltip'
             data-tip={
-              isFontLayoutSettingsGlobal ? _('Apply to all books') : _('Apply to this book')
+              isFontLayoutSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')
             }
           >
             <span className='ml-2'>{_('Global Settings')}</span>

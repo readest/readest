@@ -101,7 +101,7 @@ export const useProgressSync = (bookKey: string) => {
             view?.goToFraction(syncedFraction);
             eventDispatcher.dispatch('toast', {
               type: 'success',
-              message: _('Reading progress synced'),
+              message: _('Reading Progress Synced'),
             });
           }
         }

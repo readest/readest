@@ -46,7 +46,7 @@ export const AboutWindow = () => {
             </p>
             {hasUpdater() && !isUpdated && (
               <span className='badge badge-primary mt-2 cursor-pointer' onClick={handleCheckUpdate}>
-                {_('Check update')}
+                {_('Check Update')}
               </span>
             )}
             {isUpdated && (
