@@ -4,6 +4,7 @@ import PopupButton from './PopupButton';
 import HighlightOptions from './HighlightOptions';
 import { Position } from '@/utils/sel';
 import { HighlightColor, HighlightStyle } from '@/types/book';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface AnnotationPopupProps {
   buttons: Array<{ tooltipText: string; Icon: React.ElementType; onClick: () => void }>;
@@ -17,8 +18,8 @@ interface AnnotationPopupProps {
   onHighlight: (update?: boolean) => void;
 }
 
-const highlightOptionsHeightPx = 28;
-const highlightOptionsPaddingPx = 16;
+const OPTIONS_HEIGHT_PIX = 28;
+const OPTIONS_PADDING_PIX = 16;
 
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   buttons,
@@ -31,6 +32,8 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   popupHeight,
   onHighlight,
 }) => {
+  const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
+  const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
   return (
     <div>
       <Popup

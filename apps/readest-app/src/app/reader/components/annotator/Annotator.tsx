@@ -35,7 +35,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
-  const { isNotebookPinned, isNotebookVisible } = useNotebookStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
 
   useNotesSync(bookKey);
@@ -48,6 +47,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const isShowingPopup = useRef(false);
   const isTextSelected = useRef(false);
+  const isClickToShowPopup = useRef(false);
   const [selection, setSelection] = useState<TextSelection | null>();
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
@@ -86,8 +86,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         setSelection({ key: bookKey, text: sel.toString(), range: sel.getRangeAt(0), index });
       }
     };
+    const handleTouchmove = () => {
+      setShowAnnotPopup(false);
+    };
     if (bookData.book?.format !== 'PDF') {
       detail.doc?.addEventListener('pointerup', handlePointerup);
+      detail.doc?.addEventListener('touchmove', handleTouchmove);
     }
   };
 
@@ -116,6 +120,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const annotation = annotations.find((annotation) => annotation.cfi === cfi);
     if (!annotation) return;
     const selection = { key: bookKey, annotated: true, text: annotation.text ?? '', range, index };
+    isClickToShowPopup.current = true;
     setSelectedStyle(annotation.style!);
     setSelectedColor(annotation.color!);
     setSelection(selection);
@@ -140,12 +145,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
+      if (isClickToShowPopup.current) {
+        isClickToShowPopup.current = false;
+        return true;
+      }
       if (isTextSelected.current) {
-        view?.deselect();
-        isTextSelected.current = false;
+        handleDismissPopupAndSelection();
         return true;
       }
       if (showAnnotPopup || isShowingPopup.current) {
+        handleDismissPopup();
         return true;
       }
       return false;
@@ -229,7 +238,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     });
 
     const { booknotes: annotations = [] } = config;
-    if (selection) navigator.clipboard.writeText(selection.text);
+    if (selection) navigator.clipboard?.writeText(selection.text);
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
     const annotation: BookNote = {
@@ -363,14 +372,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div>
-      {(showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup) &&
-        (!isNotebookVisible || isNotebookPinned) && (
-          <div
-            className='fixed inset-0'
-            onClick={handleDismissPopupAndSelection}
-            onContextMenu={handleDismissPopup}
-          />
-        )}
       {showWiktionaryPopup && trianglePosition && dictPopupPosition && (
         <WiktionaryPopup
           word={selection?.text as string}
