@@ -1,5 +1,6 @@
 import withPWA from 'next-pwa';
 
+const isDev = process.env['NODE_ENV'] === 'development';
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
 
 /** @type {import('next').NextConfig} */
@@ -22,7 +23,7 @@ const nextConfig = {
 
 export default withPWA({
   dest: 'public',
-  disable: appPlatform !== 'web',
+  disable: isDev || appPlatform !== 'web',
   register: true,
   skipWaiting: true,
 })(nextConfig);
