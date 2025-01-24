@@ -128,11 +128,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       detail.doc?.addEventListener('pointerup', handlePointerup);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
       detail.doc?.addEventListener('selectionchange', handleSelectionchange);
-      detail.doc?.addEventListener('contextmenu', (event: Event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      });
+
+      // Disable the default context menu on mobile devices,
+      // although it should but doesn't work on iOS
+      if (osPlatform === 'android' || osPlatform === 'ios') {
+        detail.doc?.addEventListener('contextmenu', (event: Event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        });
+      }
     }
   };
 
