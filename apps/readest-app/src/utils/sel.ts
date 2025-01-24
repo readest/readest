@@ -119,12 +119,12 @@ export const getPopupPosition = (
     popupPoint.y = position.point.y - popupHeightPx;
   } else if (position.dir === 'down') {
     popupPoint.x = position.point.x - popupWidthPx / 2;
-    popupPoint.y = position.point.y + 6;
+    popupPoint.y = position.point.y + 5;
   } else if (position.dir === 'left') {
     popupPoint.x = position.point.x - popupWidthPx;
     popupPoint.y = position.point.y - popupHeightPx / 2;
   } else if (position.dir === 'right') {
-    popupPoint.x = position.point.x + 6;
+    popupPoint.x = position.point.x + 5;
     popupPoint.y = position.point.y - popupHeightPx / 2;
   }
 

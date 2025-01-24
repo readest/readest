@@ -13,7 +13,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, HighlightColor, HighlightStyle } from '@/types/book';
-import { uniqueId } from '@/utils/misc';
+import { getOSPlatform, uniqueId } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -39,6 +39,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useNotesSync(bookKey);
 
+  const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -47,7 +48,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const isShowingPopup = useRef(false);
   const isTextSelected = useRef(false);
-  const isClickToShowPopup = useRef(false);
+  const isUpToShowPopup = useRef(false);
   const [selection, setSelection] = useState<TextSelection | null>();
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
@@ -75,23 +76,63 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(360, maxHeight);
   const annotPopupWidth = useResponsiveSize(280);
   const annotPopupHeight = useResponsiveSize(44);
+  const androidSelectionHandlerHeight = 16;
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { doc, index } = detail;
+
+    const isValidSelection = (sel: Selection) => {
+      return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
+    };
+    const makeSelection = (sel: Selection, rebuildRange = false) => {
+      isTextSelected.current = true;
+      isUpToShowPopup.current = true;
+
+      const range = sel.getRangeAt(0);
+      if (rebuildRange) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      setSelection({ key: bookKey, text: sel.toString(), range, index });
+    };
     const handlePointerup = () => {
+      // Available on iOS and Desktop, fired when release the long press
+      // Note that on Android, pointerup event is fired for any tap but not for long press
       const sel = doc.getSelection();
-      if (sel && sel.toString().trim().length > 0 && sel.rangeCount > 0) {
-        isTextSelected.current = true;
-        setSelection({ key: bookKey, text: sel.toString(), range: sel.getRangeAt(0), index });
+      if (isValidSelection(sel)) {
+        makeSelection(sel, true);
+      }
+    };
+    const handleSelectionchange = () => {
+      // Available on iOS, Android and Desktop, fired when the selection is changed
+      // Ideally the popup only shows when the selection is done,
+      // but on Android no proper events are fired to notify selection done or I didn't find it,
+      // we make the popup show when the selection is changed
+      const sel = doc.getSelection();
+      if (isValidSelection(sel)) {
+        if (osPlatform === 'android') {
+          makeSelection(sel, false);
+        }
+      } else {
+        isTextSelected.current = false;
+        setShowAnnotPopup(false);
       }
     };
     const handleTouchmove = () => {
+      // Available on iOS
+      // To make the popup not to follow the selection
       setShowAnnotPopup(false);
     };
     if (bookData.book?.format !== 'PDF') {
       detail.doc?.addEventListener('pointerup', handlePointerup);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
+      detail.doc?.addEventListener('selectionchange', handleSelectionchange);
+      detail.doc?.addEventListener('contextmenu', (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      });
     }
   };
 
@@ -120,7 +161,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const annotation = annotations.find((annotation) => annotation.cfi === cfi);
     if (!annotation) return;
     const selection = { key: bookKey, annotated: true, text: annotation.text ?? '', range, index };
-    isClickToShowPopup.current = true;
+    isUpToShowPopup.current = true;
     setSelectedStyle(annotation.style!);
     setSelectedColor(annotation.color!);
     setSelection(selection);
@@ -145,8 +186,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
-      if (isClickToShowPopup.current) {
-        isClickToShowPopup.current = false;
+      if (isUpToShowPopup.current) {
+        isUpToShowPopup.current = false;
         return true;
       }
       if (isTextSelected.current) {
@@ -181,6 +222,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         annotPopupHeight,
         popupPadding,
       );
+      if (isTextSelected.current && annotPopupPos.dir === 'down' && osPlatform === 'android') {
+        triangPos.point.y += androidSelectionHandlerHeight;
+        annotPopupPos.point.y += androidSelectionHandlerHeight;
+      }
       const dictPopupPos = getPopupPosition(
         triangPos,
         rect,
