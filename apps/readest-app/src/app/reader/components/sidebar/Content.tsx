@@ -6,6 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
+import { isPWA } from '@/services/environment';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
@@ -90,7 +91,9 @@ const SidebarContent: React.FC<{
           )}
         </div>
       </div>
-      <div className='flex-shrink-0'>
+      <div
+        className={clsx('flex-shrink-0', isPWA() ? 'pb-[calc(env(safe-area-inset-bottom)/2)]' : '')}
+      >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
     </>
