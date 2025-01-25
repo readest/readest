@@ -76,7 +76,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(360, maxHeight);
   const annotPopupWidth = useResponsiveSize(280);
   const annotPopupHeight = useResponsiveSize(44);
-  const androidSelectionHandlerHeight = 16;
+  const androidSelectionHandlerHeight = 8;
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -87,8 +87,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     };
     const makeSelection = (sel: Selection, rebuildRange = false) => {
       isTextSelected.current = true;
-      isUpToShowPopup.current = true;
-
       const range = sel.getRangeAt(0);
       if (rebuildRange) {
         sel.removeAllRanges();
@@ -117,6 +115,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       } else if (!isUpToShowPopup.current) {
         isTextSelected.current = false;
         setShowAnnotPopup(false);
+        setShowWiktionaryPopup(false);
+        setShowWikipediaPopup(false);
+        setShowDeepLPopup(false);
       }
     };
     const handleTouchmove = () => {

@@ -95,7 +95,7 @@ export const getPosition = (target: Range | Element, rect: Rect, isVertical: boo
     dir: 'up',
   } as Position;
   const end = {
-    point: { x: (last.left + last.right) / 2 - rect.left, y: last.bottom - rect.top },
+    point: { x: (last.left + last.right) / 2 - rect.left, y: last.bottom - rect.top + 6 },
     dir: 'down',
   } as Position;
   const startInView = pointIsInView(start.point);
