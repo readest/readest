@@ -114,7 +114,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         if (osPlatform === 'android') {
           makeSelection(sel, false);
         }
-      } else {
+      } else if (!isUpToShowPopup.current) {
         isTextSelected.current = false;
         setShowAnnotPopup(false);
       }
@@ -159,7 +159,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const onShowAnnotation = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { value: cfi, index, range } = detail;
-    const { booknotes = [] } = config;
+    const { booknotes = [] } = getConfig(bookKey)!;
     const annotations = booknotes.filter(
       (booknote) => booknote.type === 'annotation' && !booknote.deletedAt,
     );
