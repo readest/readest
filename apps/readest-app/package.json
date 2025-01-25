@@ -29,6 +29,7 @@
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@fabianlars/tauri-plugin-oauth": "2",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
@@ -80,7 +81,6 @@
     "eslint-config-next": "15.0.3",
     "i18next-scanner": "^4.6.0",
     "mkdirp": "^3.0.1",
-    "next-pwa": "^5.6.0",
     "node-env-run": "^4.0.2",
     "postcss": "^8.4.49",
     "postcss-cli": "^11.0.0",

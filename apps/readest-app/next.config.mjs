@@ -1,4 +1,4 @@
-import withPWA from 'next-pwa';
+import withPWAInit from '@ducanh2912/next-pwa';
 
 const isDev = process.env['NODE_ENV'] === 'development';
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
@@ -21,9 +21,19 @@ const nextConfig = {
   reactStrictMode: true,
 };
 
-export default withPWA({
+const withPWA = withPWAInit({
   dest: 'public',
   disable: isDev || appPlatform !== 'web',
-  register: true,
-  skipWaiting: true,
-})(nextConfig);
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  swcMinify: true,
+  fallbacks: {
+    document: '/offline',
+  },
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
+
+export default withPWA(nextConfig);

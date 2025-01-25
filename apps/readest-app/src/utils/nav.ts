@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation';
+import { useRouter, redirect } from 'next/navigation';
 import { isPWA, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 
@@ -20,4 +20,8 @@ export const navigateToReader = (
 
 export const navigateToLibrary = (router: ReturnType<typeof useRouter>) => {
   router.push('/library');
+};
+
+export const redirectToLibrary = () => {
+  redirect('/library');
 };
