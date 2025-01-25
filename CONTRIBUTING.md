@@ -75,7 +75,7 @@ Now you're all setup and can start implementing your changes.
 
 ### Implement your changes
 
-This project is a monorepo. The code for the `readest-app` is in the `app/readest-app` directory. Here are some useful scripts for developing the frontend only without compiling Tauri:
+This project is a monorepo. The code for the `readest-app` is in the `apps/readest-app` directory. Here are some useful scripts for developing the frontend only without compiling Tauri:
 
 | Command          | Description                                        |
 | ---------------- | -------------------------------------------------- |
