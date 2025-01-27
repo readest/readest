@@ -93,11 +93,11 @@
   "Save": "Lưu",
   "Scrolled Mode": "Chế độ cuộn",
   "Search": "Tìm kiếm",
-  "Search books...": "Tìm kiếm sách...",
+  "Search Books...": "Tìm kiếm sách...",
   "Search...": "Tìm kiếm...",
   "Select Book": "Chọn sách",
-  "Select books": "Chọn sách",
-  "Select multiple books": "Chọn nhiều sách",
+  "Select Books": "Chọn sách",
+  "Select Multiple Books": "Chọn nhiều sách",
   "Sepia": "Nâu cổ",
   "Serif Font": "Phông chữ có chân",
   "Show Book Details": "Hiển thị chi tiết sách",
@@ -138,5 +138,11 @@
   "Already the latest version": "Đã là phiên bản mới nhất",
   "Book Details": "Chi tiết sách",
   "From Local File": "Từ tệp địa phương",
-  "TOC": "Mục lục"
+  "TOC": "Mục lục",
+  "Book uploaded: {{title}}": "Sách đã tải lên: {{title}}",
+  "Failed to upload book: {{title}}": "Không thể tải lên sách: {{title}}",
+  "Book downloaded: {{title}}": "Sách đã tải về: {{title}}",
+  "Failed to download book: {{title}}": "Không thể tải về sách: {{title}}",
+  "Upload Book": "Tải lên sách",
+  "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây"
 }

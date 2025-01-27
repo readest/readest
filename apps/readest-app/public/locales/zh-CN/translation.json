@@ -93,11 +93,11 @@
   "Save": "保存",
   "Scrolled Mode": "滚动模式",
   "Search": "搜索",
-  "Search books...": "搜索书籍...",
+  "Search Books...": "搜索书籍...",
   "Search...": "搜索...",
   "Select Book": "选择书籍",
-  "Select books": "选择书籍",
-  "Select multiple books": "选择多本书籍",
+  "Select Books": "选择书籍",
+  "Select Multiple Books": "选择多本书籍",
   "Sepia": "旧韵",
   "Serif Font": "衬线字体",
   "Show Book Details": "显示书籍详情",
@@ -138,5 +138,11 @@
   "Already the latest version": "已经是最新版本",
   "Book Details": "书籍详情",
   "From Local File": "从本地文件导入",
-  "TOC": "目录"
+  "TOC": "目录",
+  "Book uploaded: {{title}}": "书籍已上传：{{title}}",
+  "Failed to upload book: {{title}}": "上传书籍失败：{{title}}",
+  "Book downloaded: {{title}}": "书籍已下载：{{title}}",
+  "Failed to download book: {{title}}": "下载书籍失败：{{title}}",
+  "Upload Book": "上传书籍",
+  "Auto Upload Books to Cloud": "自动上传书籍到云端"
 }

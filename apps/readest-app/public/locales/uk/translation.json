@@ -93,11 +93,11 @@
   "Save": "Зберегти",
   "Scrolled Mode": "Режим прокрутки",
   "Search": "Пошук",
-  "Search books...": "Шукати книги...",
+  "Search Books...": "Шукати книги...",
   "Search...": "Пошук...",
   "Select Book": "Вибрати книгу",
-  "Select books": "Вибрати книги",
-  "Select multiple books": "Вибрати кілька книг",
+  "Select Books": "Вибрати книги",
+  "Select Multiple Books": "Вибрати кілька книг",
   "Sepia": "Сепія",
   "Serif Font": "Шрифт із засічками",
   "Show Book Details": "Показати деталі книги",
@@ -138,5 +138,11 @@
   "Already the latest version": "Вже остання версія",
   "Book Details": "Деталі книги",
   "From Local File": "З локального файлу",
-  "TOC": "Зміст"
+  "TOC": "Зміст",
+  "Book uploaded: {{title}}": "Книгу завантажено: {{title}}",
+  "Failed to upload book: {{title}}": "Не вдалося завантажити книгу: {{title}}",
+  "Book downloaded: {{title}}": "Книгу завантажено: {{title}}",
+  "Failed to download book: {{title}}": "Не вдалося завантажити книгу: {{title}}",
+  "Upload Book": "Завантажити книгу",
+  "Auto Upload Books to Cloud": "Автоматично завантажувати книги в хмару"
 }

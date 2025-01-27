@@ -93,11 +93,11 @@
   "Save": "Αποθήκευση",
   "Scrolled Mode": "Λειτουργία κύλισης",
   "Search": "Αναζήτηση",
-  "Search books...": "Αναζήτηση βιβλίων...",
+  "Search Books...": "Αναζήτηση βιβλίων...",
   "Search...": "Αναζήτηση...",
   "Select Book": "Επιλογή βιβλίου",
-  "Select books": "Επιλογή βιβλίων",
-  "Select multiple books": "Επιλογή πολλαπλών βιβλίων",
+  "Select Books": "Επιλογή βιβλίων",
+  "Select Multiple Books": "Επιλογή πολλαπλών βιβλίων",
   "Sepia": "Σέπια",
   "Serif Font": "Γραμματοσειρά Serif",
   "Show Book Details": "Εμφάνιση λεπτομερειών βιβλίου",
@@ -138,5 +138,11 @@
   "Already the latest version": "Ήδη η τελευταία έκδοση",
   "Book Details": "Λεπτομέρειες βιβλίου",
   "From Local File": "Από τοπικό αρχείο",
-  "TOC": "Πίνακας περιεχομένων"
+  "TOC": "Πίνακας περιεχομένων",
+  "Book uploaded: {{title}}": "Το βιβλίο με τίτλο {{title}} ανέβηκε",
+  "Failed to upload book: {{title}}": "Αποτυχία ανέβασμα βιβλίου: {{title}}",
+  "Book downloaded: {{title}}": "Το βιβλίο με τίτλο {{title}} κατέβηκε",
+  "Failed to download book: {{title}}": "Αποτυχία λήψης βιβλίου: {{title}}",
+  "Upload Book": "Ανέβασμα βιβλίου",
+  "Auto Upload Books to Cloud": "Αυτόματο ανέβασμα βιβλίων στο cloud"
 }

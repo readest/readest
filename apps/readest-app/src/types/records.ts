@@ -5,11 +5,13 @@ export interface DBBook {
   title: string;
   author: string;
   group?: string;
-  tags?: string;
+  tags?: string[];
+  progress?: [number, number];
 
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
+  uploaded_at?: string | null;
 }
 
 export interface DBBookConfig {

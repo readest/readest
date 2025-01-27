@@ -1,14 +1,9 @@
 import clsx from 'clsx';
 import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { PiPlus } from 'react-icons/pi';
-import { MdDelete, MdOpenInNew } from 'react-icons/md';
-import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
-import { CiCircleMore } from 'react-icons/ci';
-
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-
+import { useEffect, useRef, useState } from 'react';
+import { MdDelete, MdOpenInNew } from 'react-icons/md';
+import { PiPlus } from 'react-icons/pi';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { Book, BooksGroup } from '@/types/book';
@@ -16,17 +11,17 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToReader } from '@/utils/nav';
 import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
-import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform } from '@/services/environment';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
 import BookDetailModal from '@/components/BookDetailModal';
-import ReadingProgress from './ReadingProgress';
+import BookItem from './BookItem';
+import GroupItem from './GroupItem';
 
 type BookshelfItem = Book | BooksGroup;
 
@@ -57,16 +52,24 @@ const generateBookshelfItems = (books: Book[]): BookshelfItem[] => {
 interface BookshelfProps {
   libraryBooks: Book[];
   isSelectMode: boolean;
-  onImportBooks: () => void;
+  handleImportBooks: () => void;
+  handleBookUpload: (book: Book) => void;
+  handleBookDownload: (book: Book) => void;
 }
 
-const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImportBooks }) => {
+const Bookshelf: React.FC<BookshelfProps> = ({
+  libraryBooks,
+  isSelectMode,
+  handleImportBooks,
+  handleBookUpload,
+  handleBookDownload,
+}) => {
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { deleteBook } = useLibraryStore();
+  const { updateBook } = useLibraryStore();
   const [loading, setLoading] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -74,7 +77,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
   const [importBookUrl] = useState(searchParams?.get('url') || '');
   const isImportingBook = useRef(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
-  const iconSize15 = useResponsiveSize(15);
 
   const showBookDetailsModal = (book: Book) => {
     setShowDetailsBook(book);
@@ -111,14 +113,23 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
 
   const bookshelfItems = generateBookshelfItems(libraryBooks);
 
-  const handleBookClick = (id: string) => {
+  const handleBookClick = async (book: Book) => {
+    if (book.uploadedAt && !book.downloadedAt) {
+      setLoading(true);
+      try {
+        await appService?.downloadBook(book);
+        updateBook(envConfig, book);
+      } finally {
+        setLoading(false);
+      }
+    }
     if (isSelectMode) {
-      toggleSelection(id);
+      toggleSelection(book.hash);
     } else {
-      setClickedImage(id);
+      setClickedImage(book.hash);
       setTimeout(() => setClickedImage(null), 300);
       setTimeout(() => setLoading(true), 200);
-      navigateToReader(router, [id]);
+      navigateToReader(router, [book.hash]);
     }
   };
 
@@ -137,7 +148,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     for (const selectedBook of selectedBooks) {
       const book = libraryBooks.find((b) => b.hash === selectedBook);
       if (book) {
-        deleteBook(envConfig, book);
+        updateBook(envConfig, book, true);
       }
     }
     setSelectedBooks([]);
@@ -158,7 +169,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
     const openBookMenuItem = await MenuItem.new({
       text: isSelectMode ? _('Select Book') : _('Open Book'),
       action: async () => {
-        handleBookClick(book.hash);
+        handleBookClick(book);
       },
     });
     const showBookInFinderMenuItem = await MenuItem.new({
@@ -174,16 +185,23 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
         showBookDetailsModal(book);
       },
     });
+    const uploadBookMenuItem = await MenuItem.new({
+      text: _('Upload Book'),
+      action: async () => {
+        handleBookUpload(book);
+      },
+    });
     const deleteBookMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        deleteBook(envConfig, book);
+        updateBook(envConfig, book, true);
       },
     });
     const menu = await Menu.new();
     menu.append(openBookMenuItem);
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
+    menu.append(uploadBookMenuItem);
     menu.append(deleteBookMenuItem);
     menu.popup();
   };
@@ -198,137 +216,40 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
           >
             <div className='flex-grow'>
               {'format' in item ? (
-                <div
-                  className='book-item cursor-pointer'
-                  onContextMenu={bookContextMenuHandler.bind(null, item as Book)}
-                >
-                  <div
-                    key={(item as Book).hash}
-                    className='bg-base-100 shadow-md'
-                    onClick={() => handleBookClick(item.hash)}
-                  >
-                    <div className='relative aspect-[28/41]'>
-                      <Image
-                        src={item.coverImageUrl!}
-                        alt={item.title}
-                        fill={true}
-                        className='object-cover'
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove(
-                            'invisible',
-                          );
-                        }}
-                      />
-                      <div
-                        className={clsx(
-                          'invisible absolute inset-0 flex items-center justify-center p-1',
-                          'text-neutral-content rounded-none text-center font-serif text-base font-medium',
-                        )}
-                      >
-                        {item.title}
-                      </div>
-                      {(selectedBooks.includes(item.hash) || clickedImage === item.hash) && (
-                        <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
-                      )}
-                      {isSelectMode && (
-                        <div className='absolute bottom-1 right-1'>
-                          {selectedBooks.includes(item.hash) ? (
-                            <MdCheckCircle className='fill-blue-500' />
-                          ) : (
-                            <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    className={clsx(
-                      'flex w-full p-0 pt-2',
-                      isWebAppPlatform() ? 'flex-col' : 'flex-row justify-between',
-                    )}
-                  >
-                    <div className='min-w-0 flex-1'>
-                      <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-[0.6em] text-xs font-semibold'>
-                        {(item as Book).title}
-                      </h4>
-                    </div>
-                    {item.progress && (
-                      <div className={'flex items-center justify-between'}>
-                        <ReadingProgress book={item as Book} />
-                        {isWebAppPlatform() && (
-                          <button
-                            type='button'
-                            className='show-detail-button opacity-0 group-hover:opacity-100'
-                            onClick={showBookDetailsModal.bind(null, item as Book)}
-                            onKeyUp={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                showBookDetailsModal(item as Book);
-                              }
-                            }}
-                          >
-                            <CiCircleMore size={iconSize15} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {!item.progress && isWebAppPlatform() && (
-                      <div className={'flex items-center justify-end'}>
-                        <button
-                          type='button'
-                          className='show-detail-button opacity-0 group-hover:opacity-100'
-                          onClick={showBookDetailsModal.bind(null, item as Book)}
-                          onKeyUp={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              showBookDetailsModal(item as Book);
-                            }
-                          }}
-                        >
-                          <CiCircleMore size={iconSize15} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <BookItem
+                  book={item}
+                  isSelectMode={isSelectMode}
+                  selectedBooks={selectedBooks}
+                  clickedBookHash={clickedImage}
+                  handleBookClick={handleBookClick}
+                  handleBookUpload={handleBookUpload}
+                  handleBookDownload={handleBookDownload}
+                  showBookDetailsModal={showBookDetailsModal}
+                  bookContextMenuHandler={bookContextMenuHandler}
+                />
               ) : (
-                <div>
-                  {(item as BooksGroup).books.map((book) => (
-                    <div key={book.hash} className='card bg-base-100 w-full shadow-md'>
-                      <figure>
-                        <Image
-                          width={10}
-                          height={10}
-                          src={book.coverImageUrl!}
-                          alt={book.title || ''}
-                          className='h-48 w-full object-cover'
-                        />
-                      </figure>
-                      <div className='card-body p-4'>
-                        <h3 className='card-title line-clamp-2 text-sm'>{book.title}</h3>
-                        <p className='text-neutral-content line-clamp-1 text-xs'>{book.author}</p>
-                        <ReadingProgress book={book} />
-                      </div>
-                    </div>
-                  ))}
-                  <h2 className='mb-2 text-lg font-bold'>{(item as BooksGroup).name}</h2>
-                </div>
+                <GroupItem group={item} />
               )}
             </div>
           </div>
         ))}
-
         {bookshelfItems.length > 0 && (
           <div
             className='border-1 bg-base-100 hover:bg-base-300/50 m-4 flex aspect-[28/41] items-center justify-center'
             role='button'
-            onClick={onImportBooks}
+            onClick={handleImportBooks}
           >
             <PiPlus className='size-10' color='gray' />
           </div>
         )}
       </div>
       {selectedBooks.length > 0 && (
-        <div className='text-base-content bg-base-300 fixed bottom-4 left-1/2 flex -translate-x-1/2 transform space-x-4 rounded-lg p-4 shadow-lg'>
+        <div
+          className={clsx(
+            'text-base-content bg-base-300 fixed bottom-4 left-1/2 flex',
+            '-translate-x-1/2 transform space-x-4 rounded-lg p-4 shadow-lg',
+          )}
+        >
           <button onClick={openSelectedBooks} className='flex items-center space-x-2'>
             <MdOpenInNew />
             <span>{_('Open')}</span>
@@ -352,7 +273,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({ libraryBooks, isSelectMode, onImp
           onClickConfirm={confirmDelete}
         />
       )}
-
       {showDetailsBook && (
         <BookDetailModal
           isOpen={!!showDetailsBook}

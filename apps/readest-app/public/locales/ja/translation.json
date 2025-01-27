@@ -93,11 +93,11 @@
   "Save": "保存",
   "Scrolled Mode": "スクロールモード",
   "Search": "検索",
-  "Search books...": "書籍を検索...",
+  "Search Books...": "書籍を検索...",
   "Search...": "検索...",
   "Select Book": "書籍を選択",
-  "Select books": "書籍を選択",
-  "Select multiple books": "複数の書籍を選択",
+  "Select Books": "書籍を選択",
+  "Select Multiple Books": "複数の書籍を選択",
   "Sepia": "セピア",
   "Serif Font": "明朝体",
   "Show Book Details": "書籍の詳細を表示",
@@ -138,5 +138,11 @@
   "Already the latest version": "すでに最新バージョン",
   "Book Details": "書籍の詳細",
   "From Local File": "ローカルファイルから",
-  "TOC": "目次"
+  "TOC": "目次",
+  "Book uploaded: {{title}}": "書籍がアップロードされました：{{title}}",
+  "Failed to upload book: {{title}}": "書籍のアップロードに失敗しました：{{title}}",
+  "Book downloaded: {{title}}": "書籍がダウンロードされました：{{title}}",
+  "Failed to download book: {{title}}": "書籍のダウンロードに失敗しました：{{title}}",
+  "Upload Book": "書籍をアップロード",
+  "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード"
 }

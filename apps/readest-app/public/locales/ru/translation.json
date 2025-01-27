@@ -93,11 +93,11 @@
   "Save": "Сохранить",
   "Scrolled Mode": "Режим прокрутки",
   "Search": "Поиск",
-  "Search books...": "Поиск книг...",
+  "Search Books...": "Поиск книг...",
   "Search...": "Поиск...",
   "Select Book": "Выбрать книгу",
-  "Select books": "Выбрать книги",
-  "Select multiple books": "Выбрать несколько книг",
+  "Select Books": "Выбрать книги",
+  "Select Multiple Books": "Выбрать несколько книг",
   "Sepia": "Сепия",
   "Serif Font": "Шрифт с засечками",
   "Show Book Details": "Показать детали книги",
@@ -138,5 +138,11 @@
   "Already the latest version": "Уже последняя версия",
   "Book Details": "Детали книги",
   "From Local File": "Из локального файла",
-  "TOC": "Содержание"
+  "TOC": "Содержание",
+  "Book uploaded: {{title}}": "Книга загружена: {{title}}",
+  "Failed to upload book: {{title}}": "Не удалось загрузить книгу: {{title}}",
+  "Book downloaded: {{title}}": "Книга скачана: {{title}}",
+  "Failed to download book: {{title}}": "Не удалось скачать книгу: {{title}}",
+  "Upload Book": "Загрузить книгу",
+  "Auto Upload Books to Cloud": "Автоматическая загрузка книг в облако"
 }

@@ -7,7 +7,7 @@ interface LibraryState {
   checkOpenWithBooks: boolean;
   clearOpenWithBooks: () => void;
   setLibrary: (books: Book[]) => void;
-  deleteBook: (envConfig: EnvConfigType, book: Book) => void;
+  updateBook: (envConfig: EnvConfigType, book: Book, isDelete?: boolean) => void;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -15,13 +15,17 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   checkOpenWithBooks: true,
   clearOpenWithBooks: () => set({ checkOpenWithBooks: false }),
   setLibrary: (books) => set({ library: books }),
-  deleteBook: async (envConfig: EnvConfigType, book: Book) => {
+  updateBook: async (envConfig: EnvConfigType, book: Book, isDelete = false) => {
     const appService = await envConfig.getAppService();
     const { library } = get();
     const bookIndex = library.findIndex((b) => b.hash === book.hash);
     if (bookIndex !== -1) {
-      library.splice(bookIndex, 1);
-      appService.deleteBook(book);
+      if (isDelete) {
+        library.splice(bookIndex, 1);
+        appService.deleteBook(book);
+      } else {
+        library[bookIndex] = book;
+      }
     }
     set({ library });
     appService.saveLibraryBooks(library);

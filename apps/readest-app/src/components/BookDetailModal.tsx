@@ -26,7 +26,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { deleteBook } = useLibraryStore();
+  const { updateBook } = useLibraryStore();
 
   useEffect(() => {
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
@@ -51,7 +51,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   };
 
   const confirmDelete = () => {
-    deleteBook(envConfig, book);
+    updateBook(envConfig, book, true);
     handleClose();
     setShowDeleteAlert(false);
   };
@@ -71,8 +71,9 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         title={_('Book Details')}
         isOpen={isOpen}
         onClose={handleClose}
+        className='!bg-[rgba(0,0,0,0.5)]'
         boxClassName='sm:min-w-[480px]'
-        contentClassName='!p-6'
+        contentClassName='!px-6 !py-2'
       >
         <div className='z-50 flex w-full select-text items-center justify-center'>
           <div className='relative w-full rounded-lg'>

@@ -13,14 +13,16 @@ import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/servic
 export const useProgressSync = (bookKey: string) => {
   const _ = useTranslation();
   const { getConfig, setConfig } = useBookDataStore();
-  const { getView } = useReaderStore();
+  const { getView, getProgress } = useReaderStore();
   const { settings } = useSettingsStore();
   const { syncedConfigs, syncConfigs } = useSync(bookKey);
   const { user } = useAuth();
   const view = getView(bookKey);
   const config = getConfig(bookKey);
+  const progress = getProgress(bookKey);
   // flag to prevent accidental sync without first pulling the config
   const configSynced = useRef(false);
+  const firstPulled = useRef(false);
 
   const pushConfig = (bookKey: string, config: BookConfig | null) => {
     if (!config || !user) return;
@@ -48,15 +50,16 @@ export const useProgressSync = (bookKey: string) => {
   };
 
   useEffect(() => {
-    if (!user) return;
-    pullConfig(bookKey);
-    // return () => {
-    //   if (configSynced.current) {
-    //     pushConfig(bookKey, config);
-    //   }
-    // };
+    if (!progress) return;
+    if (!firstPulled.current) {
+      firstPulled.current = true;
+      pullConfig(bookKey);
+    }
+    return () => {
+      syncConfig();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [progress]);
 
   const lastProgressSyncTime = useRef<number>(0);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,11 +101,13 @@ export const useProgressSync = (bookKey: string) => {
           const syncedFraction = syncedConfig.progress![0] / syncedConfig.progress![1];
           const configFraction = config!.progress![0] / config!.progress![1];
           if (syncedFraction > configFraction) {
-            view?.goToFraction(syncedFraction);
-            eventDispatcher.dispatch('toast', {
-              type: 'success',
-              message: _('Reading Progress Synced'),
-            });
+            if (view) {
+              view.goToFraction(syncedFraction);
+              eventDispatcher.dispatch('toast', {
+                type: 'success',
+                message: _('Reading Progress Synced'),
+              });
+            }
           }
         }
       }

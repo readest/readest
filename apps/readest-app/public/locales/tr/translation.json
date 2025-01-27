@@ -93,11 +93,11 @@
   "Save": "Kaydet",
   "Scrolled Mode": "Kaydırma Modu",
   "Search": "Ara",
-  "Search books...": "Kitap ara...",
+  "Search Books...": "Kitap ara...",
   "Search...": "Ara...",
   "Select Book": "Kitap Seç",
-  "Select books": "Kitapları seç",
-  "Select multiple books": "Birden fazla kitap seç",
+  "Select Books": "Kitapları seç",
+  "Select Multiple Books": "Birden fazla kitap seç",
   "Sepia": "Sepya",
   "Serif Font": "Serif Yazı Tipi",
   "Show Book Details": "Kitap Detaylarını Göster",
@@ -138,5 +138,11 @@
   "Already the latest version": "Zaten en son sürüm",
   "Book Details": "Kitap Detayları",
   "From Local File": "Yerel dosyadan",
-  "TOC": "İçindekiler"
+  "TOC": "İçindekiler",
+  "Book uploaded: {{title}}": "Kitap yüklendi: {{title}}",
+  "Failed to upload book: {{title}}": "Kitap yüklenemedi: {{title}}",
+  "Book downloaded: {{title}}": "Kitap indirildi: {{title}}",
+  "Failed to download book: {{title}}": "Kitap indirilemedi: {{title}}",
+  "Upload Book": "Kitap Yükle",
+  "Auto Upload Books to Cloud": "Kitapları Otomatik Olarak Buluta Yükle"
 }

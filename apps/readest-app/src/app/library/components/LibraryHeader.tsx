@@ -12,6 +12,7 @@ import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
+import ImportMenu from './ImportMenu';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -57,7 +58,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </span>
           <input
             type='text'
-            placeholder={_('Search books...')}
+            placeholder={_('Search Books...')}
             spellCheck='false'
             className={clsx(
               'input rounded-badge bg-base-300/50 h-7 w-full pl-10 pr-10',
@@ -66,30 +67,26 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             )}
           />
           <div className='absolute right-4 flex items-center space-x-4 text-gray-500'>
-            <span className='mx-2 h-5 w-[1px] bg-gray-400'></span>
-            <div className='dropdown dropdown-bottom flex h-5 cursor-pointer justify-center'>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import Books')}>
-                <PiPlus tabIndex={-1} className='h-5 w-5' />
-              </div>
-              <ul
-                tabIndex={-1}
-                className='dropdown-content dropdown-center bg-base-100 menu rounded-box z-[1] mt-3 w-52 p-2 shadow'
-              >
-                <li>
-                  <button className='text-base-content' onClick={onImportBooks}>
-                    {_('From Local File')}
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <span className='mx-2 h-6 w-[1px] bg-gray-400'></span>
+            <Dropdown
+              className='exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center'
+              buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
+              toggleButton={
+                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import Books')}>
+                  <PiPlus className='m-0.5 h-5 w-5' />
+                </div>
+              }
+            >
+              <ImportMenu onImportBooks={onImportBooks} />
+            </Dropdown>
             <button
               onClick={onToggleSelectMode}
-              aria-label={_('Select multiple books')}
+              aria-label={_('Select Multiple Books')}
               className='h-6'
             >
               <div
                 className='lg:tooltip lg:tooltip-bottom cursor-pointer'
-                data-tip={_('Select books')}
+                data-tip={_('Select Books')}
               >
                 <PiSelectionAllDuotone
                   role='button'

@@ -18,6 +18,10 @@ export const navigateToReader = (
   }
 };
 
+export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
+  router.push('/auth');
+};
+
 export const navigateToLibrary = (router: ReturnType<typeof useRouter>) => {
   router.push('/library');
 };

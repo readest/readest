@@ -18,6 +18,9 @@ export interface Book {
   updatedAt: number;
   deletedAt?: number | null;
 
+  uploadedAt?: number | null;
+  downloadedAt?: number | null;
+
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total]
 }

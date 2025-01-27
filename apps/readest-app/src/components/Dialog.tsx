@@ -57,7 +57,7 @@ const Dialog: React.FC<DialogProps> = ({
           boxClassName,
         )}
       >
-        <div className='dialog-header bg-base-100 sticky top-2 z-10 flex items-center justify-between px-4'>
+        <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-4'>
           {header ? (
             header
           ) : (

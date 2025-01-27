@@ -26,9 +26,11 @@ import {
   SYSTEM_SETTINGS_VERSION,
   DEFAULT_BOOK_SEARCH_CONFIG,
   DEFAULT_TTS_CONFIG,
+  CLOUD_BOOKS_SUBDIR,
 } from './constants';
 import { isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
+import { downloadFile, uploadFile } from '@/libs/storage';
 
 export abstract class BaseAppService implements AppService {
   localBooksDir: string = '';
@@ -80,6 +82,7 @@ export abstract class BaseAppService implements AppService {
         lastSyncedAtConfigs: 0,
         lastSyncedAtNotes: 0,
         keepLogin: false,
+        autoUpload: false,
         globalReadSettings: DEFAULT_READSETTINGS,
         globalViewSettings: {
           ...DEFAULT_BOOK_LAYOUT,
@@ -150,6 +153,8 @@ export abstract class BaseAppService implements AppService {
         title: formatTitle(loadedBook.metadata.title),
         author: formatAuthors(loadedBook.metadata.language, loadedBook.metadata.author),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
+        uploadedAt: existingBook ? existingBook.uploadedAt : null,
+        downloadedAt: Date.now(),
         updatedAt: Date.now(),
       };
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
@@ -177,17 +182,12 @@ export abstract class BaseAppService implements AppService {
       if (typeof file === 'string' && isValidURL(file)) {
         book.url = file;
       }
-      if (this.appPlatform === 'web') {
-        book.coverImageUrl = await this.getCoverImageBlobUrl(book);
-      } else {
-        book.coverImageUrl = this.getCoverImageUrl(book);
-      }
+      book.coverImageUrl = await this.generateCoverImageUrl(book);
 
       return book;
     } catch (error) {
       throw error;
     }
-    return null;
   }
 
   async deleteBook(book: Book): Promise<void> {
@@ -195,6 +195,54 @@ export abstract class BaseAppService implements AppService {
       if (await this.fs.exists(fp, 'Books')) {
         await this.fs.removeFile(fp, 'Books');
       }
+    }
+  }
+
+  async uploadBook(book: Book): Promise<void> {
+    console.log('Uploading book:', book.title);
+    let file: File;
+    let uploaded = false;
+    for (const fp of [getFilename(book), getCoverFilename(book)]) {
+      if (await this.fs.exists(fp, 'Books')) {
+        const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
+        if (this.appPlatform === 'web') {
+          const content = await this.fs.readFile(fp, 'Books', 'binary');
+          file = new File([content], cfp);
+        } else {
+          file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), cfp).open();
+        }
+        await uploadFile(file, book.hash);
+        uploaded = true;
+      }
+    }
+    if (uploaded) {
+      book.updatedAt = Date.now();
+      book.uploadedAt = Date.now();
+      book.downloadedAt = Date.now();
+    }
+  }
+
+  async downloadBook(book: Book, onlyCover = false): Promise<void> {
+    console.log('Downloading book:', book.title);
+    const fps = [getCoverFilename(book)];
+    if (!onlyCover) {
+      fps.push(getFilename(book));
+    }
+
+    let downloaded = false;
+    for (const fp of fps) {
+      const existed = await this.fs.exists(fp, 'Books');
+      if (existed) {
+        downloaded = true;
+      } else {
+        const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
+        const fileobj = (await downloadFile(cfp)) as Blob;
+        await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
+        downloaded = true;
+      }
+    }
+    if (!onlyCover && downloaded) {
+      book.downloadedAt = Date.now();
     }
   }
 
@@ -217,12 +265,15 @@ export abstract class BaseAppService implements AppService {
   }
 
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
+    const { globalViewSettings } = settings;
     try {
-      const str = await this.fs.readFile(getConfigFilename(book), 'Books', 'text');
-      const { globalViewSettings } = settings;
-      return deserializeConfig(str as string, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+      let str = '{}';
+      if (await this.fs.exists(getConfigFilename(book), 'Books')) {
+        str = (await this.fs.readFile(getConfigFilename(book), 'Books', 'text')) as string;
+      }
+      return deserializeConfig(str, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
     } catch {
-      return INIT_BOOK_CONFIG;
+      return deserializeConfig('{}', globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
     }
   }
 
@@ -243,6 +294,12 @@ export abstract class BaseAppService implements AppService {
     await this.fs.writeFile(getConfigFilename(book), 'Books', serializedConfig);
   }
 
+  async generateCoverImageUrl(book: Book): Promise<string> {
+    return this.appPlatform === 'web'
+      ? await this.getCoverImageBlobUrl(book)
+      : this.getCoverImageUrl(book);
+  }
+
   async loadLibraryBooks(): Promise<Book[]> {
     console.log('Loading library books...');
     let books: Book[] = [];
@@ -258,11 +315,7 @@ export abstract class BaseAppService implements AppService {
 
     await Promise.all(
       books.map(async (book) => {
-        if (this.appPlatform === 'web') {
-          book.coverImageUrl = await this.getCoverImageBlobUrl(book);
-        } else {
-          book.coverImageUrl = this.getCoverImageUrl(book);
-        }
+        book.coverImageUrl = await this.generateCoverImageUrl(book);
         book.updatedAt ??= book.lastUpdated || Date.now();
         return book;
       }),

@@ -37,8 +37,19 @@ export const transformBookConfigFromDB = (dbBookConfig: DBBookConfig): BookConfi
 };
 
 export const transformBookToDB = (book: unknown, userId: string): DBBook => {
-  const { hash, format, title, author, group, tags, createdAt, updatedAt, deletedAt } =
-    book as Book;
+  const {
+    hash,
+    format,
+    title,
+    author,
+    group,
+    tags,
+    progress,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    uploadedAt,
+  } = book as Book;
 
   return {
     user_id: userId,
@@ -47,16 +58,29 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     title,
     author,
     group,
-    tags: tags && JSON.stringify(tags),
+    tags: tags,
+    progress: progress,
     created_at: new Date(createdAt).toISOString(),
     updated_at: new Date(updatedAt).toISOString(),
     deleted_at: deletedAt ? new Date(deletedAt).toISOString() : null,
+    uploaded_at: uploadedAt ? new Date(uploadedAt).toISOString() : null,
   };
 };
 
 export const transformBookFromDB = (dbBook: DBBook): Book => {
-  const { book_hash, format, title, author, group, tags, created_at, updated_at, deleted_at } =
-    dbBook;
+  const {
+    book_hash,
+    format,
+    title,
+    author,
+    group,
+    tags,
+    progress,
+    created_at,
+    updated_at,
+    deleted_at,
+    uploaded_at,
+  } = dbBook;
 
   return {
     hash: book_hash,
@@ -64,10 +88,12 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     title,
     author,
     group,
-    tags: tags && JSON.parse(tags),
+    tags: tags,
+    progress: progress,
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),
     deletedAt: deleted_at ? new Date(deleted_at!).getTime() : null,
+    uploadedAt: uploaded_at ? new Date(uploaded_at!).getTime() : null,
   };
 };
 

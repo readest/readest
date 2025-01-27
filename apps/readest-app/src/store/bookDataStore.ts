@@ -25,13 +25,13 @@ interface BookDataState {
     settings: SystemSettings,
   ) => void;
   updateBooknotes: (key: string, booknotes: BookNote[]) => BookConfig | undefined;
-  getBookData: (key: string) => BookData | null;
+  getBookData: (keyOrId: string) => BookData | null;
 }
 
 export const useBookDataStore = create<BookDataState>((set, get) => ({
   booksData: {},
-  getBookData: (key: string) => {
-    const id = key.split('-')[0]!;
+  getBookData: (keyOrId: string) => {
+    const id = keyOrId.split('-')[0]!;
     return get().booksData[id] || null;
   },
   getConfig: (key: string | null) => {

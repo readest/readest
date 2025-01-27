@@ -39,6 +39,8 @@ export interface AppService {
     overwrite?: boolean,
   ): Promise<Book | null>;
   deleteBook(book: Book): Promise<void>;
+  uploadBook(book: Book): Promise<void>;
+  downloadBook(book: Book, onlyCover?: boolean): Promise<void>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
   fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookDoc['metadata']>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
@@ -47,4 +49,5 @@ export interface AppService {
   saveLibraryBooks(books: Book[]): Promise<void>;
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;
+  generateCoverImageUrl(book: Book): Promise<string>;
 }

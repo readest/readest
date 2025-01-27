@@ -93,11 +93,11 @@
   "Save": "Simpan",
   "Scrolled Mode": "Mode Gulir",
   "Search": "Cari",
-  "Search books...": "Cari buku...",
+  "Search Books...": "Cari buku...",
   "Search...": "Cari...",
   "Select Book": "Pilih Buku",
-  "Select books": "Pilih buku",
-  "Select multiple books": "Pilih beberapa buku",
+  "Select Books": "Pilih buku",
+  "Select Multiple Books": "Pilih beberapa buku",
   "Sepia": "Sepia",
   "Serif Font": "Font Serif",
   "Show Book Details": "Tampilkan Detail Buku",
@@ -138,5 +138,11 @@
   "Already the latest version": "Sudah versi terbaru",
   "Book Details": "Detail Buku",
   "From Local File": "Dari file lokal",
-  "TOC": "Daftar Isi"
+  "TOC": "Daftar Isi",
+  "Book uploaded: {{title}}": "Buku diunggah: {{title}}",
+  "Failed to upload book: {{title}}": "Gagal mengunggah buku: {{title}}",
+  "Book downloaded: {{title}}": "Buku diunduh: {{title}}",
+  "Failed to download book: {{title}}": "Gagal mengunduh buku: {{title}}",
+  "Upload Book": "Unggah Buku",
+  "Auto Upload Books to Cloud": "Unggah Buku Otomatis ke Cloud"
 }

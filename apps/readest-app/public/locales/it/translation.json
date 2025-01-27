@@ -93,11 +93,11 @@
   "Save": "Salva",
   "Scrolled Mode": "Modalità scorrimento",
   "Search": "Cerca",
-  "Search books...": "Cerca libri...",
+  "Search Books...": "Cerca libri...",
   "Search...": "Cerca...",
   "Select Book": "Seleziona libro",
-  "Select books": "Seleziona libri",
-  "Select multiple books": "Seleziona più libri",
+  "Select Books": "Seleziona libri",
+  "Select Multiple Books": "Seleziona più libri",
   "Sepia": "Seppia",
   "Serif Font": "Font serif",
   "Show Book Details": "Mostra dettagli libro",
@@ -138,5 +138,11 @@
   "Already the latest version": "Già l'ultima versione",
   "Book Details": "Dettagli libro",
   "From Local File": "Da file locale",
-  "TOC": "Sommario"
+  "TOC": "Sommario",
+  "Book uploaded: {{title}}": "Libro caricato: {{title}}",
+  "Failed to upload book: {{title}}": "Caricamento libro non riuscito: {{title}}",
+  "Book downloaded: {{title}}": "Libro scaricato: {{title}}",
+  "Failed to download book: {{title}}": "Download libro non riuscito: {{title}}",
+  "Upload Book": "Carica libro",
+  "Auto Upload Books to Cloud": "Carica libri automaticamente su cloud"
 }

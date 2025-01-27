@@ -1,6 +1,6 @@
-import { supabase } from '@/utils/supabase';
 import { Book, BookConfig, BookNote, BookDataRecord } from '@/types/book';
-import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
+import { getAPIBaseUrl } from '@/services/environment';
+import { getAccessToken } from '@/utils/access';
 
 const SYNC_API_ENDPOINT = getAPIBaseUrl() + '/sync';
 
@@ -29,7 +29,7 @@ export class SyncClient {
    * Returns updated or deleted records since that time.
    */
   async pullChanges(since: number, type?: SyncType, book?: string): Promise<SyncResult> {
-    const token = await this.getAccessToken();
+    const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
     const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}`;
@@ -52,7 +52,7 @@ export class SyncClient {
    * Uses last-writer-wins logic as implemented on the server side.
    */
   async pushChanges(payload: SyncData): Promise<SyncResult> {
-    const token = await this.getAccessToken();
+    const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
     const res = await fetch(SYNC_API_ENDPOINT, {
@@ -70,16 +70,5 @@ export class SyncClient {
     }
 
     return res.json();
-  }
-
-  private async getAccessToken(): Promise<string | null> {
-    // In browser context there might be two instances of supabase one in the app route
-    // and the other in the pages route, and they might have different sessions
-    // making the access token invalid for API calls. In that case we should use localStorage.
-    if (isWebAppPlatform()) {
-      return localStorage.getItem('token') ?? null;
-    }
-    const { data } = await supabase.auth.getSession();
-    return data?.session?.access_token ?? null;
   }
 }

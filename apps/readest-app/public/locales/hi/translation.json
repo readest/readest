@@ -93,11 +93,11 @@
   "Save": "सहेजें",
   "Scrolled Mode": "स्क्रॉल मोड",
   "Search": "खोजें",
-  "Search books...": "पुस्तकें खोजें...",
+  "Search Books...": "पुस्तकें खोजें...",
   "Search...": "खोजें...",
   "Select Book": "पुस्तक चुनें",
-  "Select books": "पुस्तकें चुनें",
-  "Select multiple books": "कई पुस्तकें चुनें",
+  "Select Books": "पुस्तकें चुनें",
+  "Select Multiple Books": "कई पुस्तकें चुनें",
   "Sepia": "सेपिया",
   "Serif Font": "सेरिफ फ़ॉन्ट",
   "Show Book Details": "पुस्तक विवरण दिखाएं",
@@ -138,5 +138,11 @@
   "Already the latest version": "पहले से ही नवीनतम संस्करण",
   "Book Details": "पुस्तक विवरण",
   "From Local File": "स्थानीय फ़ाइल से",
-  "TOC": "सामग्री"
+  "TOC": "सामग्री",
+  "Book uploaded: {{title}}": "पुस्तक अपलोड की गई: {{title}}",
+  "Failed to upload book: {{title}}": "पुस्तक अपलोड करने में विफल: {{title}}",
+  "Book downloaded: {{title}}": "पुस्तक डाउनलोड की गई: {{title}}",
+  "Failed to download book: {{title}}": "पुस्तक डाउनलोड करने में विफल: {{title}}",
+  "Upload Book": "पुस्तक अपलोड करें",
+  "Auto Upload Books to Cloud": "पुस्तकें बादल में स्वचालित रूप से अपलोड करें"
 }

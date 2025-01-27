@@ -93,11 +93,11 @@
   "Save": "Speichern",
   "Scrolled Mode": "Scroll-Modus",
   "Search": "Suchen",
-  "Search books...": "Bücher suchen...",
+  "Search Books...": "Bücher suchen...",
   "Search...": "Suchen...",
   "Select Book": "Buch auswählen",
-  "Select books": "Bücher auswählen",
-  "Select multiple books": "Mehrere Bücher auswählen",
+  "Select Books": "Bücher auswählen",
+  "Select Multiple Books": "Mehrere Bücher auswählen",
   "Sepia": "Sepia",
   "Serif Font": "Serifenschrift",
   "Show Book Details": "Buchdetails anzeigen",
@@ -138,5 +138,11 @@
   "Already the latest version": "Bereits die neueste Version",
   "Book Details": "Buchdetails",
   "From Local File": "Aus lokaler Datei",
-  "TOC": "Inhaltsverzeichnis"
+  "TOC": "Inhaltsverzeichnis",
+  "Book uploaded: {{title}}": "Buch hochgeladen: {{title}}",
+  "Failed to upload book: {{title}}": "Fehler beim Hochladen des Buches: {{title}}",
+  "Book downloaded: {{title}}": "Buch heruntergeladen: {{title}}",
+  "Failed to download book: {{title}}": "Fehler beim Herunterladen des Buches: {{title}}",
+  "Upload Book": "Buch hochladen",
+  "Auto Upload Books to Cloud": "Bücher automatisch in die Cloud hochladen"
 }

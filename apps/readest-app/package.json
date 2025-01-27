@@ -29,6 +29,8 @@
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.735.0",
+    "@aws-sdk/s3-request-presigner": "^3.735.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@fabianlars/tauri-plugin-oauth": "2",
     "@supabase/auth-ui-react": "^0.4.7",
@@ -55,6 +57,7 @@
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.1",
     "js-md5": "^0.8.3",
+    "jwt-decode": "^4.0.0",
     "next": "15.1.0",
     "posthog-js": "^1.205.0",
     "react": "19.0.0",

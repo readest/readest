@@ -28,6 +28,7 @@ import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
+import { useBooksSync } from './hooks/useBooksSync';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -35,18 +36,21 @@ const LibraryPage = () => {
   const { token, user } = useAuth();
   const {
     library: libraryBooks,
+    updateBook,
     setLibrary,
     checkOpenWithBooks,
     clearOpenWithBooks,
   } = useLibraryStore();
   const _ = useTranslation();
   const { updateAppTheme } = useTheme();
-  const { setSettings, saveSettings } = useSettingsStore();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const demoBooks = useDemoBooks();
+
+  useBooksSync();
 
   useEffect(() => {
     updateAppTheme('base-200');
@@ -163,8 +167,12 @@ const LibraryPage = () => {
     const failedFiles = [];
     for (const file of files) {
       try {
-        await appService?.importBook(file, libraryBooks);
+        const book = await appService?.importBook(file, libraryBooks);
         setLibrary(libraryBooks);
+        if (user && book && !book.uploadedAt && settings.autoUpload) {
+          console.log('Uploading book:', book.title);
+          handleBookUpload(book);
+        }
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
         const baseFilename = getBaseFilename(filename);
@@ -198,6 +206,52 @@ const LibraryPage = () => {
         resolve(fileInput.files);
       };
     });
+  };
+
+  const handleBookUpload = async (book: Book) => {
+    setLoading(true);
+    try {
+      await appService?.uploadBook(book);
+      updateBook(envConfig, book);
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Book uploaded: {{title}}', {
+          title: book.title,
+        }),
+      });
+    } catch {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to upload book: {{title}}', {
+          title: book.title,
+        }),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBookDownload = async (book: Book) => {
+    setLoading(true);
+    try {
+      await appService?.downloadBook(book);
+      updateBook(envConfig, book);
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Book downloaded: {{title}}', {
+          title: book.title,
+        }),
+      });
+    } catch {
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to download book: {{title}}', {
+          title: book.title,
+        }),
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImportBooks = async () => {
@@ -261,7 +315,9 @@ const LibraryPage = () => {
               <Bookshelf
                 libraryBooks={libraryBooks}
                 isSelectMode={isSelectMode}
-                onImportBooks={handleImportBooks}
+                handleImportBooks={handleImportBooks}
+                handleBookUpload={handleBookUpload}
+                handleBookDownload={handleBookDownload}
               />
             </Suspense>
           </div>

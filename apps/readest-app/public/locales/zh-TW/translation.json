@@ -93,11 +93,11 @@
   "Save": "保存",
   "Scrolled Mode": "滾動模式",
   "Search": "搜索",
-  "Search books...": "搜索書籍...",
+  "Search Books...": "搜索書籍...",
   "Search...": "搜索...",
   "Select Book": "選擇書籍",
-  "Select books": "選擇書籍",
-  "Select multiple books": "選擇多本書籍",
+  "Select Books": "選擇書籍",
+  "Select Multiple Books": "選擇多本書籍",
   "Sepia": "舊韻",
   "Serif Font": "襯線字體",
   "Show Book Details": "顯示書籍詳情",
@@ -138,5 +138,11 @@
   "Already the latest version": "已經是最新版本",
   "Book Details": "書籍詳情",
   "From Local File": "從本地文件導入",
-  "TOC": "目錄"
+  "TOC": "目錄",
+  "Book uploaded: {{title}}": "書籍已上傳：{{title}}",
+  "Failed to upload book: {{title}}": "書籍上傳失敗：{{title}}",
+  "Book downloaded: {{title}}": "書籍已下載：{{title}}",
+  "Failed to download book: {{title}}": "書籍下載失敗：{{title}}",
+  "Upload Book": "上傳書籍",
+  "Auto Upload Books to Cloud": "自動上傳書籍到雲端"
 }

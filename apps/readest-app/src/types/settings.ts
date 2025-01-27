@@ -18,6 +18,7 @@ export interface SystemSettings {
   version: number;
   localBooksDir: string;
   keepLogin: boolean;
+  autoUpload: boolean;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

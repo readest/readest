@@ -93,11 +93,11 @@
   "Save": "저장",
   "Scrolled Mode": "스크롤 모드",
   "Search": "검색",
-  "Search books...": "책 검색...",
+  "Search Books...": "책 검색...",
   "Search...": "검색...",
   "Select Book": "책 선택",
-  "Select books": "책 선택",
-  "Select multiple books": "여러 책 선택",
+  "Select Books": "책 선택",
+  "Select Multiple Books": "여러 책 선택",
   "Sepia": "세피아",
   "Serif Font": "세리프체",
   "Show Book Details": "책 세부 정보 표시",
@@ -138,5 +138,11 @@
   "Already the latest version": "이미 최신 버전",
   "Book Details": "책 세부 정보",
   "From Local File": "로컬 파일에서",
-  "TOC": "목차"
+  "TOC": "목차",
+  "Book uploaded: {{title}}": "책 업로드됨: {{title}}",
+  "Failed to upload book: {{title}}": "책 업로드 실패: {{title}}",
+  "Book downloaded: {{title}}": "책 다운로드됨: {{title}}",
+  "Failed to download book: {{title}}": "책 다운로드 실패: {{title}}",
+  "Upload Book": "책 업로드",
+  "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드"
 }
