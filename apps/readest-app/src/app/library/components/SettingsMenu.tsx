@@ -50,6 +50,11 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
+  const handleReloadPage = () => {
+    window.location.reload();
+    setIsDropdownOpen?.(false);
+  };
+
   useEffect(() => {
     if (!user || !token) return;
     const storagPlan = getStoragePlanData(token);
@@ -107,6 +112,8 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
       ) : (
         <MenuItem label={_('Sign In')} icon={<PiUserCircle />} onClick={handleUserLogin}></MenuItem>
       )}
+      <hr className='border-base-200 my-1' />
+      <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />

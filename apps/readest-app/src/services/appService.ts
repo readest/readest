@@ -247,6 +247,9 @@ export abstract class BaseAppService implements AppService {
         console.log('Downloading file:', fp);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
         const fileobj = (await downloadFile(cfp)) as Blob;
+        if (!(await this.fs.exists(getDir(book), 'Books'))) {
+          await this.fs.createDir(getDir(book), 'Books');
+        }
         await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
         downloaded = true;
       }

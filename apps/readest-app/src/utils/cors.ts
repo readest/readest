@@ -17,5 +17,5 @@ export const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: Fun
 };
 
 export const corsAllMethods = Cors({
-  methods: ['POST', 'GET', 'HEAD'],
+  methods: ['POST', 'GET', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
 });

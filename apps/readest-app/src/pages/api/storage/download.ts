@@ -19,11 +19,11 @@ const getUserAndToken = async (authHeader: string | undefined) => {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await runMiddleware(req, res, corsAllMethods);
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  await runMiddleware(req, res, corsAllMethods);
 
   try {
     const { user, token } = await getUserAndToken(req.headers['authorization']);

@@ -21,7 +21,7 @@ export const isPWA = () => window.matchMedia('(display-mode: standalone)').match
 export const getAPIBaseUrl = () =>
   process.env['NODE_ENV'] === 'development' && isWebAppPlatform()
     ? '/api'
-    : `${READEST_WEB_BASE_URL}/api`;
+    : `${process.env['NEXT_PUBLIC_API_BASE_URL'] ?? READEST_WEB_BASE_URL}/api`;
 
 export interface EnvConfigType {
   getAppService: () => Promise<AppService>;

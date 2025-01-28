@@ -6,11 +6,11 @@ import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@/utils/s3';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await runMiddleware(req, res, corsAllMethods);
+
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  await runMiddleware(req, res, corsAllMethods);
 
   try {
     const { user, token } = await validateUserAndToken(req.headers['authorization']);
