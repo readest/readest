@@ -30,7 +30,7 @@ import {
 } from './constants';
 import { isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
-import { downloadFile, uploadFile } from '@/libs/storage';
+import { downloadFile, uploadFile, deleteFile } from '@/libs/storage';
 
 export abstract class BaseAppService implements AppService {
   localBooksDir: string = '';
@@ -190,16 +190,20 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async deleteBook(book: Book): Promise<void> {
+  async deleteBook(book: Book, includingUploaded = false): Promise<void> {
     for (const fp of [getFilename(book), getCoverFilename(book)]) {
       if (await this.fs.exists(fp, 'Books')) {
         await this.fs.removeFile(fp, 'Books');
+      }
+      if (includingUploaded) {
+        console.log('Deleting uploaded file:', fp);
+        const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
+        await deleteFile(cfp);
       }
     }
   }
 
   async uploadBook(book: Book): Promise<void> {
-    console.log('Uploading book:', book.title);
     let file: File;
     let uploaded = false;
     for (const fp of [getFilename(book), getCoverFilename(book)]) {
@@ -211,6 +215,7 @@ export abstract class BaseAppService implements AppService {
         } else {
           file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), cfp).open();
         }
+        console.log('Uploading file:', fp);
         await uploadFile(file, book.hash);
         uploaded = true;
       }
@@ -223,7 +228,6 @@ export abstract class BaseAppService implements AppService {
   }
 
   async downloadBook(book: Book, onlyCover = false): Promise<void> {
-    console.log('Downloading book:', book.title);
     const fps = [getCoverFilename(book)];
     if (!onlyCover) {
       fps.push(getFilename(book));
@@ -235,6 +239,7 @@ export abstract class BaseAppService implements AppService {
       if (existed) {
         downloaded = true;
       } else {
+        console.log('Downloading file:', fp);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
         const fileobj = (await downloadFile(cfp)) as Blob;
         await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());

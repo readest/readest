@@ -3,7 +3,7 @@ import { supabase, createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { getPlanData } from '@/utils/access';
+import { getStoragePlanData } from '@/utils/access';
 import { s3Client } from '@/utils/s3';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
@@ -37,35 +37,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing file info' });
     }
 
-    const { usage, quota } = getPlanData(token);
+    const { usage, quota } = getStoragePlanData(token);
     if (usage + fileSize > quota) {
       return res.status(403).json({ error: 'Insufficient storage quota', usage });
     }
 
     const objectKey = `${user.id}/${fileName}`;
+    const supabase = createSupabaseClient(token);
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('files')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('file_key', objectKey)
+      .limit(1)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      return res.status(500).json({ error: fetchError.message });
+    }
+    let objSize = fileSize;
+    if (existingRecord) {
+      objSize = existingRecord.file_size;
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from('files')
+        .insert([
+          {
+            user_id: user.id,
+            book_hash: bookHash,
+            file_key: objectKey,
+            file_size: fileSize,
+          },
+        ])
+        .select()
+        .single();
+      console.log('Inserted record:', inserted);
+      if (insertError) return res.status(500).json({ error: insertError.message });
+    }
+
     const signableHeaders = new Set<string>();
     signableHeaders.add('content-length');
     const putCommand = new PutObjectCommand({
       Bucket: process.env['R2_BUCKET_NAME'] || '',
       Key: objectKey,
-      ContentLength: fileSize,
+      ContentLength: objSize,
     });
-
-    const supabase = createSupabaseClient(token);
-    const { data: inserted, error: insertError } = await supabase
-      .from('files')
-      .insert([
-        {
-          user_id: user.id,
-          book_hash: bookHash,
-          file_key: objectKey,
-          file_size: fileSize,
-        },
-      ])
-      .select()
-      .single();
-    console.log('Inserted record:', inserted);
-    if (insertError) return res.status(500).json({ error: insertError.message });
 
     try {
       const uploadUrl = await getSignedUrl(s3Client, putCommand, {

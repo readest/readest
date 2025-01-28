@@ -20,7 +20,7 @@ export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DB
     progress: progress && JSON.stringify(progress),
     search_config: searchConfig && JSON.stringify(searchConfig),
     view_settings: viewSettings && JSON.stringify(viewSettings),
-    updated_at: new Date(updatedAt).toISOString(),
+    updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
   };
 };
 
@@ -60,8 +60,8 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     group,
     tags: tags,
     progress: progress,
-    created_at: new Date(createdAt).toISOString(),
-    updated_at: new Date(updatedAt).toISOString(),
+    created_at: new Date(createdAt ?? Date.now()).toISOString(),
+    updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
     deleted_at: deletedAt ? new Date(deletedAt).toISOString() : null,
     uploaded_at: uploadedAt ? new Date(uploadedAt).toISOString() : null,
   };
@@ -92,8 +92,8 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     progress: progress,
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),
-    deletedAt: deleted_at ? new Date(deleted_at!).getTime() : null,
-    uploadedAt: uploaded_at ? new Date(uploaded_at!).getTime() : null,
+    deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,
+    uploadedAt: uploaded_at ? new Date(uploaded_at).getTime() : null,
   };
 };
 
@@ -111,8 +111,8 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     style,
     color,
     note,
-    created_at: new Date(createdAt).toISOString(),
-    updated_at: new Date(updatedAt).toISOString(),
+    created_at: new Date(createdAt ?? Date.now()).toISOString(),
+    updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
     // note that only null deleted_at is updated to the database, undefined is not
     deleted_at: deletedAt ? new Date(deletedAt).toISOString() : null,
   };
@@ -133,6 +133,6 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     note,
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),
-    deletedAt: deleted_at ? new Date(deleted_at!).getTime() : null,
+    deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,
   };
 };

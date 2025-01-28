@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Libro scaricato: {{title}}",
   "Failed to download book: {{title}}": "Download libro non riuscito: {{title}}",
   "Upload Book": "Carica libro",
-  "Auto Upload Books to Cloud": "Carica libri automaticamente su cloud"
+  "Auto Upload Books to Cloud": "Carica libri automaticamente su cloud",
+  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% dello spazio di archiviazione cloud utilizzato.",
+  "Storage": "Archiviazione"
 }

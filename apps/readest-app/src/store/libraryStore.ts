@@ -21,8 +21,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const bookIndex = library.findIndex((b) => b.hash === book.hash);
     if (bookIndex !== -1) {
       if (isDelete) {
-        library.splice(bookIndex, 1);
-        appService.deleteBook(book);
+        appService.deleteBook(book, !!book.uploadedAt);
+        book.deletedAt = Date.now();
+        book.uploadedAt = null;
+        book.downloadedAt = null;
       } else {
         library[bookIndex] = book;
       }

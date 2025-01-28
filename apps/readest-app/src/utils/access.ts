@@ -10,7 +10,7 @@ interface Token {
   [key: string]: string | number;
 }
 
-export const getPlanData = (token: string) => {
+export const getStoragePlanData = (token: string) => {
   const data = jwtDecode<Token>(token) || {};
   const plan = data['plan'] || 'free';
   const usage = data['storage_usage_bytes'] || 0;
@@ -41,4 +41,17 @@ export const getUserID = async (): Promise<string | null> => {
   }
   const { data } = await supabase.auth.getSession();
   return data?.session?.user?.id ?? null;
+};
+
+export const validateUserAndToken = async (authHeader: string | undefined) => {
+  if (!authHeader) return {};
+
+  const token = authHeader.replace('Bearer ', '');
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
+  if (error || !user) return {};
+  return { user, token };
 };

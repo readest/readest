@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Kitap indirildi: {{title}}",
   "Failed to download book: {{title}}": "Kitap indirilemedi: {{title}}",
   "Upload Book": "Kitap Yükle",
-  "Auto Upload Books to Cloud": "Kitapları Otomatik Olarak Buluta Yükle"
+  "Auto Upload Books to Cloud": "Kitapları Otomatik Olarak Buluta Yükle",
+  "{{percentage}}% of Cloud Storage Used.": "Bulut Depolamanın %{{percentage}}'si kullanıldı.",
+  "Storage": "Depolama"
 }

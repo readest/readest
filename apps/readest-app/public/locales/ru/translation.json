@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Книга скачана: {{title}}",
   "Failed to download book: {{title}}": "Не удалось скачать книгу: {{title}}",
   "Upload Book": "Загрузить книгу",
-  "Auto Upload Books to Cloud": "Автоматическая загрузка книг в облако"
+  "Auto Upload Books to Cloud": "Автоматическая загрузка книг в облако",
+  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% использовано облачного хранилища.",
+  "Storage": "Хранилище"
 }

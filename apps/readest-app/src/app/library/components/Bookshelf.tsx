@@ -29,6 +29,7 @@ const UNGROUPED_NAME = 'ungrouped';
 
 const generateBookshelfItems = (books: Book[]): BookshelfItem[] => {
   const groups: BooksGroup[] = books.reduce((acc: BooksGroup[], book: Book) => {
+    if (book.deletedAt) return acc;
     book.group = book.group || UNGROUPED_NAME;
     const groupIndex = acc.findIndex((group) => group.name === book.group);
     const booksGroup = acc[acc.findIndex((group) => group.name === book.group)];

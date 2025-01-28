@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "書籍がダウンロードされました：{{title}}",
   "Failed to download book: {{title}}": "書籍のダウンロードに失敗しました：{{title}}",
   "Upload Book": "書籍をアップロード",
-  "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード"
+  "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード",
+  "{{percentage}}% of Cloud Storage Used.": "クラウドストレージの{{percentage}}%が使用されています。",
+  "Storage": "ストレージ"
 }

@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "書籍已下載：{{title}}",
   "Failed to download book: {{title}}": "書籍下載失敗：{{title}}",
   "Upload Book": "上傳書籍",
-  "Auto Upload Books to Cloud": "自動上傳書籍到雲端"
+  "Auto Upload Books to Cloud": "自動上傳書籍到雲端",
+  "{{percentage}}% of Cloud Storage Used.": "已使用 {{percentage}}% 雲存儲空間",
+  "Storage": "存儲空間"
 }

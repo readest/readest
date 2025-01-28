@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Buku diunduh: {{title}}",
   "Failed to download book: {{title}}": "Gagal mengunduh buku: {{title}}",
   "Upload Book": "Unggah Buku",
-  "Auto Upload Books to Cloud": "Unggah Buku Otomatis ke Cloud"
+  "Auto Upload Books to Cloud": "Unggah Buku Otomatis ke Cloud",
+  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% dari Penyimpanan Cloud Digunakan.",
+  "Storage": "Penyimpanan"
 }

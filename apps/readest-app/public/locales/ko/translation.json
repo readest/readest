@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "책 다운로드됨: {{title}}",
   "Failed to download book: {{title}}": "책 다운로드 실패: {{title}}",
   "Upload Book": "책 업로드",
-  "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드"
+  "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드",
+  "{{percentage}}% of Cloud Storage Used.": "클라우드 저장소 사용량 {{percentage}}%.",
+  "Storage": "저장소"
 }

@@ -38,7 +38,7 @@ export interface AppService {
     saveCover?: boolean,
     overwrite?: boolean,
   ): Promise<Book | null>;
-  deleteBook(book: Book): Promise<void>;
+  deleteBook(book: Book, includingUploaded?: boolean): Promise<void>;
   uploadBook(book: Book): Promise<void>;
   downloadBook(book: Book, onlyCover?: boolean): Promise<void>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;

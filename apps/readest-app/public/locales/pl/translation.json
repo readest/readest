@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Książka pobrana: {{title}}",
   "Failed to download book: {{title}}": "Nie udało się pobrać książki: {{title}}",
   "Upload Book": "Prześlij książkę",
-  "Auto Upload Books to Cloud": "Automatycznie przesyłaj książki do chmury"
+  "Auto Upload Books to Cloud": "Automatycznie przesyłaj książki do chmury",
+  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% przestrzeni dyskowej w chmurze użytej.",
+  "Storage": "Przechowywanie"
 }

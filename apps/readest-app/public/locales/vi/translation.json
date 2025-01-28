@@ -144,5 +144,7 @@
   "Book downloaded: {{title}}": "Sách đã tải về: {{title}}",
   "Failed to download book: {{title}}": "Không thể tải về sách: {{title}}",
   "Upload Book": "Tải lên sách",
-  "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây"
+  "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây",
+  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% dung lượng lưu trữ đám mây đã sử dụng.",
+  "Storage": "Lưu trữ"
 }
