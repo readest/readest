@@ -224,17 +224,22 @@ export abstract class BaseAppService implements AppService {
       book.updatedAt = Date.now();
       book.uploadedAt = Date.now();
       book.downloadedAt = Date.now();
+    } else {
+      throw new Error('Book file not uploaded');
     }
   }
 
   async downloadBook(book: Book, onlyCover = false): Promise<void> {
-    const fps = [getCoverFilename(book)];
+    const bookFp = getFilename(book);
+    const coverFp = getCoverFilename(book);
+    const fps = [coverFp];
     if (!onlyCover) {
-      fps.push(getFilename(book));
+      fps.push(bookFp);
     }
 
-    let downloaded = false;
+    let bookDownloaded = false;
     for (const fp of fps) {
+      let downloaded = false;
       const existed = await this.fs.exists(fp, 'Books');
       if (existed) {
         downloaded = true;
@@ -245,8 +250,12 @@ export abstract class BaseAppService implements AppService {
         await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
         downloaded = true;
       }
+      if (fp === bookFp) {
+        bookDownloaded = downloaded;
+      }
     }
-    if (!onlyCover && downloaded) {
+    // some books may not have cover image, so we need to check if the book is downloaded
+    if (bookDownloaded) {
       book.downloadedAt = Date.now();
     }
   }

@@ -49,7 +49,12 @@ interface ReaderStore {
   setViewSettings: (key: string, viewSettings: ViewSettings) => void;
   getViewSettings: (key: string) => ViewSettings | null;
 
-  initViewState: (envConfig: EnvConfigType, id: string, key: string, isPrimary?: boolean) => void;
+  initViewState: (
+    envConfig: EnvConfigType,
+    id: string,
+    key: string,
+    isPrimary?: boolean,
+  ) => Promise<void>;
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
 }

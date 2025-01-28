@@ -59,7 +59,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       const isPrimary = !uniqueIds.has(id);
       uniqueIds.add(id);
       if (!getViewState(key)) {
-        initViewState(envConfig, id, key, isPrimary);
+        initViewState(envConfig, id, key, isPrimary).catch((error) => {
+          console.log('Error initializing book', key, error);
+        });
         if (index === 0) setSideBarBookKey(key);
       }
     });

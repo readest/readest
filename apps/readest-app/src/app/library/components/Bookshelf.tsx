@@ -79,8 +79,27 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const isImportingBook = useRef(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
 
-  const showBookDetailsModal = (book: Book) => {
-    setShowDetailsBook(book);
+  const makeBookAvailable = async (book: Book) => {
+    console.log('Make book available:', book);
+    if (book.uploadedAt && !book.downloadedAt) {
+      setLoading(true);
+      let available = false;
+      try {
+        await appService?.downloadBook(book);
+        updateBook(envConfig, book);
+        available = true;
+      } finally {
+        setLoading(false);
+        return available;
+      }
+    }
+    return true;
+  };
+
+  const showBookDetailsModal = async (book: Book) => {
+    if (await makeBookAvailable(book)) {
+      setShowDetailsBook(book);
+    }
   };
 
   const dismissBookDetailsModal = () => {
@@ -115,15 +134,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const bookshelfItems = generateBookshelfItems(libraryBooks);
 
   const handleBookClick = async (book: Book) => {
-    if (book.uploadedAt && !book.downloadedAt) {
-      setLoading(true);
-      try {
-        await appService?.downloadBook(book);
-        updateBook(envConfig, book);
-      } finally {
-        setLoading(false);
-      }
-    }
+    if (!(await makeBookAvailable(book))) return;
+
     if (isSelectMode) {
       toggleSelection(book.hash);
     } else {

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
 import { useLibraryStore } from '@/store/libraryStore';
 import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
-import { useEnv } from '@/context/EnvContext';
+import { Book } from '@/types/book';
 
 export const useBooksSync = () => {
   const { user } = useAuth();
@@ -51,41 +52,45 @@ export const useBooksSync = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library]);
 
-  useEffect(() => {
-    const updateLibrary = async () => {
-      if (syncedBooks?.length) {
-        const updatedLibrary = library.map((oldBook) => {
-          const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
-          if (matchingBook) {
-            return {
-              ...oldBook,
-              ...matchingBook,
-              updatedAt: oldBook.updatedAt,
-              deletedAt: oldBook.deletedAt,
-              progress: oldBook.progress,
-            };
+  const updateLibrary = async () => {
+    if (!syncedBooks?.length) return;
+
+    const processOldBook = async (oldBook: Book) => {
+      const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
+      if (matchingBook) {
+        if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.downloadedAt) {
+          await appService?.downloadBook(oldBook, true);
+        }
+        return {
+          ...oldBook,
+          ...matchingBook,
+          updatedAt: oldBook.updatedAt,
+          progress: matchingBook.progress ?? oldBook.progress,
+        };
+      }
+      return oldBook;
+    };
+
+    const updatedLibrary = await Promise.all(library.map(processOldBook));
+    const processNewBook = async (newBook: Book) => {
+      if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
+        if (newBook.uploadedAt && !newBook.deletedAt) {
+          try {
+            updatedLibrary.push(newBook);
+            await appService?.downloadBook(newBook, true);
+            newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+          } catch {
+            console.error('Failed to download book:', newBook);
           }
-          return oldBook;
-        });
-        await Promise.all(
-          syncedBooks.map(async (newBook) => {
-            if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
-              if (newBook.uploadedAt) {
-                try {
-                  await appService?.downloadBook(newBook, true);
-                  newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
-                  updatedLibrary.push(newBook);
-                } catch {
-                  console.error('Failed to download book:', newBook);
-                }
-              }
-            }
-          }),
-        );
-        setLibrary(updatedLibrary);
-        appService?.saveLibraryBooks(updatedLibrary);
+        }
       }
     };
+    await Promise.all(syncedBooks.map(processNewBook));
+    setLibrary(updatedLibrary);
+    appService?.saveLibraryBooks(updatedLibrary);
+  };
+
+  useEffect(() => {
     updateLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks]);
