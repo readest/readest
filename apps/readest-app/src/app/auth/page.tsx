@@ -167,7 +167,8 @@ export default function AuthPage() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.access_token && session.user) {
         login(session.access_token, session.user);
-        router.push('/library');
+        const redirectTo = new URLSearchParams(window.location.search).get('redirect');
+        router.push(redirectTo ?? '/library');
       }
     });
 

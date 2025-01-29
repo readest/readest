@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -8,6 +9,7 @@ import { transformBookNoteFromDB } from '@/utils/transform';
 import { transformBookFromDB } from '@/utils/transform';
 import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
+import { navigateToLogin } from '@/utils/nav';
 
 const transformsFromDB = {
   books: transformBookFromDB,
@@ -33,6 +35,7 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function useSync(bookKey?: string) {
+  const router = useRouter();
   const { settings, setSettings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
   const config = bookKey ? getConfig(bookKey) : null;
@@ -118,6 +121,9 @@ export function useSync(bookKey?: string) {
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
+        if (err.message.includes('Not authenticated')) {
+          navigateToLogin(router);
+        }
         setSyncError(err.message || `Error pulling ${type}`);
       } else {
         setSyncError(`Error pulling ${type}`);

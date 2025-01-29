@@ -19,7 +19,10 @@ export const navigateToReader = (
 };
 
 export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
-  router.push('/auth');
+  const pathname = window.location.pathname;
+  const search = window.location.search;
+  const currentPath = pathname !== '/auth' ? pathname + search : '/';
+  router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
 };
 
 export const navigateToLibrary = (router: ReturnType<typeof useRouter>) => {
