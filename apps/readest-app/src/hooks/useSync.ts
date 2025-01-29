@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -34,8 +33,7 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function useSync(bookKey?: string) {
-  const { envConfig } = useEnv();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { settings, setSettings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
   const config = bookKey ? getConfig(bookKey) : null;
 
@@ -95,13 +93,11 @@ export function useSync(bookKey?: string) {
         case 'books':
           settings.lastSyncedAtBooks = maxTime;
           setSettings(settings);
-          saveSettings(envConfig, settings);
           break;
         case 'configs':
           if (!bookId) {
             settings.lastSyncedAtConfigs = maxTime;
             setSettings(settings);
-            saveSettings(envConfig, settings);
           } else if (bookKey && config) {
             config.lastSyncedAtConfig = maxTime;
             setConfig(bookKey, config);
@@ -111,7 +107,6 @@ export function useSync(bookKey?: string) {
           if (!bookId) {
             settings.lastSyncedAtNotes = maxTime;
             setSettings(settings);
-            saveSettings(envConfig, settings);
           } else if (bookKey && config) {
             config.lastSyncedAtNotes = maxTime;
             setConfig(bookKey, config);

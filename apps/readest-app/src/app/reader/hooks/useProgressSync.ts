@@ -50,11 +50,10 @@ export const useProgressSync = (bookKey: string) => {
   };
 
   useEffect(() => {
-    if (!progress) return;
-    if (!firstPulled.current) {
-      firstPulled.current = true;
-      pullConfig(bookKey);
-    }
+    if (!progress || firstPulled.current) return;
+    firstPulled.current = true;
+    pullConfig(bookKey);
+
     return () => {
       syncConfig();
     };
