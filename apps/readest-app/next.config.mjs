@@ -7,7 +7,7 @@ const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
 const nextConfig = {
   // Ensure Next.js uses SSG instead of SSR
   // https://nextjs.org/docs/pages/building-your-application/deploying/static-exports
-  output: appPlatform === 'web' ? undefined : 'export',
+  output: appPlatform === 'web' || isDev ? undefined : 'export',
   // Note: This feature is required to use the Next.js Image component in SSG mode.
   // See https://nextjs.org/docs/messages/export-image-api for different workarounds.
   images: {

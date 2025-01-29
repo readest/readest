@@ -117,6 +117,7 @@ export const WINDOWS_FONTS = [
   'Gabriola',
   'Gadugi',
   'Georgia',
+  'Heiti',
   'HoloLens MDL2 Assets',
   'Impact',
   'Ink Free',
@@ -166,6 +167,7 @@ export const WINDOWS_FONTS = [
   'Verdana',
   'Webdings',
   'Wingdings',
+  'XiHeiti',
   'Yu Gothic',
   'Yu Mincho',
 ];
@@ -201,6 +203,7 @@ export const MACOS_FONTS = [
   'Didot',
   'DIN Alternate',
   'DIN Condensed',
+  'FangSong',
   'Futura',
   'Geneva',
   'Georgia',
@@ -250,6 +253,7 @@ export const MACOS_FONTS = [
   'Trattatello',
   'Trebuchet MS',
   'Verdana',
+  'XiHeiti',
   'Yu Mincho',
   'Zapfino',
 ];
@@ -264,11 +268,14 @@ export const LINUX_FONTS = [
   'DejaVu Serif',
   'Droid Sans',
   'Droid Sans Mono',
+  'FangSong',
   'FreeMono',
   'FreeSans',
   'FreeSerif',
   'Georgia',
+  'Heiti',
   'Impact',
+  'Kaiti',
   'Liberation Mono',
   'Liberation Sans',
   'Liberation Serif',
@@ -294,6 +301,7 @@ export const LINUX_FONTS = [
   'Wingdings',
   'WenQuanYi Micro Hei',
   'WenQuanYi Zen Hei',
+  'XiHeiti',
 ];
 
 export const IOS_FONTS = [
@@ -301,7 +309,9 @@ export const IOS_FONTS = [
   'Avenir Next',
   'Courier',
   'Courier New',
+  'FangSong',
   'Georgia',
+  'Heiti',
   'Helvetica',
   'Helvetica Neue',
   'Hiragino Mincho',
@@ -317,14 +327,18 @@ export const IOS_FONTS = [
   'Songti',
   'Times New Roman',
   'Verdana',
+  'XiHeiti',
 ];
 
 export const ANDROID_FONTS = [
   'Arial',
   'Droid Sans',
   'Droid Serif',
+  'FangSong',
   'FZLanTingHei',
   'Georgia',
+  'Heiti',
+  'Kaiti',
   'Noto Sans',
   'Noto Sans CJK',
   'Noto Sans JP',
@@ -339,6 +353,7 @@ export const ANDROID_FONTS = [
   'STSong',
   'Tahoma',
   'Verdana',
+  'XiHeiti',
 ];
 
 export const ONE_COLUMN_MAX_INLINE_SIZE = 9999;

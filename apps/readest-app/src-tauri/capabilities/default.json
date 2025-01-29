@@ -44,6 +44,9 @@
       "allow": [
         {
           "url": "https://*.deepl.com"
+        },
+        {
+          "url": "https://*.cloudflarestorage.com"
         }
       ]
     },

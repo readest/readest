@@ -80,7 +80,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
 
   const makeBookAvailable = async (book: Book) => {
-    console.log('Make book available:', book);
     if (book.uploadedAt && !book.downloadedAt) {
       setLoading(true);
       let available = false;

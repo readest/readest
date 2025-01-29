@@ -52,12 +52,17 @@ const BookItem: React.FC<BookItemProps> = ({
           />
           <div
             className={clsx(
-              'invisible absolute inset-0 flex items-center justify-center p-1',
-              'text-neutral-content rounded-none text-center font-serif text-base font-medium',
-              'line-clamp-3',
+              'invisible absolute inset-0 rounded-none p-2',
+              'text-neutral-content text-center font-serif font-medium',
             )}
           >
-            {book.title}
+            <div className='flex h-1/2 items-center justify-center'>
+              <span className='line-clamp-3 text-lg'>{book.title}</span>
+            </div>
+            <div className='h-1/6'></div>
+            <div className='flex h-1/3 items-center justify-center'>
+              <span className='text-neutral-content/50 line-clamp-1 text-base'>{book.author}</span>
+            </div>
           </div>
           {(selectedBooks.includes(book.hash) || clickedBookHash === book.hash) && (
             <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
@@ -73,12 +78,7 @@ const BookItem: React.FC<BookItemProps> = ({
           )}
         </div>
       </div>
-      <div
-        className={clsx(
-          'flex w-full p-0 pt-2',
-          isWebAppPlatform() ? 'flex-col' : 'flex-row justify-between',
-        )}
-      >
+      <div className={clsx('flex w-full p-0 pt-2', isWebAppPlatform() ? 'flex-col' : 'flex-col')}>
         <div className='min-w-0 flex-1'>
           <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-[0.6em] text-xs font-semibold'>
             {book.title}
@@ -88,31 +88,29 @@ const BookItem: React.FC<BookItemProps> = ({
           className={clsx('flex items-center', book.progress ? 'justify-between' : 'justify-end')}
         >
           {book.progress && <ReadingProgress book={book} />}
-          {isWebAppPlatform() && (
-            <div className='flex items-center gap-x-1'>
-              <button
-                className='show-detail-button opacity-0 group-hover:opacity-100'
-                onClick={() => {
-                  if (!book.uploadedAt) {
-                    handleBookUpload(book);
-                  } else if (!book.downloadedAt) {
-                    handleBookDownload(book);
-                  }
-                }}
-              >
-                {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
-                {book.uploadedAt && !book.downloadedAt && (
-                  <LiaCloudDownloadAltSolid size={iconSize15} />
-                )}
-              </button>
-              <button
-                className='show-detail-button opacity-0 group-hover:opacity-100'
-                onClick={() => showBookDetailsModal(book)}
-              >
-                <CiCircleMore size={iconSize15} />
-              </button>
-            </div>
-          )}
+          <div className='flex items-center gap-x-1'>
+            <button
+              className='show-detail-button opacity-0 group-hover:opacity-100'
+              onClick={() => {
+                if (!book.uploadedAt) {
+                  handleBookUpload(book);
+                } else if (!book.downloadedAt) {
+                  handleBookDownload(book);
+                }
+              }}
+            >
+              {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
+              {book.uploadedAt && !book.downloadedAt && (
+                <LiaCloudDownloadAltSolid size={iconSize15} />
+              )}
+            </button>
+            <button
+              className='show-detail-button opacity-0 group-hover:opacity-100'
+              onClick={() => showBookDetailsModal(book)}
+            >
+              <CiCircleMore size={iconSize15} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

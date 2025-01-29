@@ -1,4 +1,4 @@
-import { getAPIBaseUrl } from '@/services/environment';
+import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
 import { getAccessToken, getUserID } from '@/utils/access';
 
 const API_ENDPOINTS = {
@@ -43,10 +43,12 @@ export const uploadFile = async (file: File, bookHash?: string) => {
     });
 
     const { uploadUrl } = await response.json();
-
+    const fetch = isWebAppPlatform()
+      ? window.fetch
+      : (await import('@tauri-apps/plugin-http')).fetch;
     const uploadResponse = await fetch(uploadUrl, {
       method: 'PUT',
-      body: file,
+      body: isWebAppPlatform() ? file : await file.arrayBuffer(),
     });
 
     if (!uploadResponse.ok) {
