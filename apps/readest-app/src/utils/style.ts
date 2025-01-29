@@ -30,9 +30,9 @@ const getFontStyles = (
       --sans-serif: ${sansSerifFonts.map((font) => `"${font}"`).join(', ')}, sans-serif;
       --monospace: ${monospaceFonts.map((font) => `"${font}"`).join(', ')}, monospace;
     }
-    body {
+    html, body {
       font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
-      font-size: ${fontSize}px ${overrideFont ? '!important' : ''};
+      font-size: ${fontSize}px !important;
     }
     body * {
       font-family: revert ${overrideFont ? '!important' : ''};
