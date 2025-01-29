@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -40,22 +40,11 @@ export function useSync(bookKey?: string) {
   const [syncingBooks, setSyncingBooks] = useState(false);
   const [syncingConfigs, setSyncingConfigs] = useState(false);
   const [syncingNotes, setSyncingNotes] = useState(false);
-
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  const lastSyncedBooksAt = settings.lastSyncedAtBooks ?? 0;
-  const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
-  const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
-
-  const [lastSyncedAtBooks, setLastSyncedAtBooks] = useState<number>(
-    lastSyncedBooksAt > 0 ? lastSyncedBooksAt - SEVEN_DAYS_IN_MS : 0,
-  );
-  const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(
-    lastSyncedConfigsAt > 0 ? lastSyncedConfigsAt - SEVEN_DAYS_IN_MS : 0,
-  );
-  const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(
-    lastSyncedNotesAt > 0 ? lastSyncedNotesAt - SEVEN_DAYS_IN_MS : 0,
-  );
+  const [lastSyncedAtBooks, setLastSyncedAtBooks] = useState<number>(0);
+  const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(0);
+  const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(0);
+  const lastSyncedAtInited = useRef(false);
 
   const [syncing, setSyncing] = useState(false);
   // null means unsynced, empty array means synced no changes
@@ -69,6 +58,19 @@ export function useSync(bookKey?: string) {
   const [syncedNotes, setSyncedNotes] = useState<BookNote[] | null>(null);
 
   const { syncClient } = useSyncContext();
+
+  useEffect(() => {
+    if (!settings || !config) return;
+    if (lastSyncedAtInited.current) return;
+    lastSyncedAtInited.current = true;
+
+    const lastSyncedBooksAt = settings.lastSyncedAtBooks ?? 0;
+    const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
+    const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
+    setLastSyncedAtBooks(lastSyncedBooksAt > 0 ? lastSyncedBooksAt - SEVEN_DAYS_IN_MS : 0);
+    setLastSyncedAtConfigs(lastSyncedConfigsAt > 0 ? lastSyncedConfigsAt - SEVEN_DAYS_IN_MS : 0);
+    setLastSyncedAtNotes(lastSyncedNotesAt > 0 ? lastSyncedNotesAt - SEVEN_DAYS_IN_MS : 0);
+  }, [settings, config]);
 
   // bookId is for configs and notes only, if bookId is provided, only pull changes for that book
   // and update the lastSyncedAt for that book in the book config

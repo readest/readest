@@ -1,20 +1,20 @@
 class EventDispatcher {
   private syncListeners: Map<string, Set<(event: CustomEvent) => boolean>>;
-  private asyncListeners: Map<string, Set<(event: CustomEvent) => Promise<void>>>;
+  private asyncListeners: Map<string, Set<(event: CustomEvent) => Promise<void> | void>>;
 
   constructor() {
     this.syncListeners = new Map();
     this.asyncListeners = new Map();
   }
 
-  on(event: string, callback: (event: CustomEvent) => Promise<void>): void {
+  on(event: string, callback: (event: CustomEvent) => Promise<void> | void): void {
     if (!this.asyncListeners.has(event)) {
       this.asyncListeners.set(event, new Set());
     }
     this.asyncListeners.get(event)!.add(callback);
   }
 
-  off(event: string, callback: (event: CustomEvent) => Promise<void>): void {
+  off(event: string, callback: (event: CustomEvent) => Promise<void> | void): void {
     this.asyncListeners.get(event)?.delete(callback);
   }
 

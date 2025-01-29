@@ -11,9 +11,13 @@ export const useBooksSync = () => {
   const { appService } = useEnv();
   const { library, setLibrary } = useLibraryStore();
   const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
+  const syncBooksPullingRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
+    if (syncBooksPullingRef.current) return;
+    syncBooksPullingRef.current = true;
+
     syncBooks([], 'pull');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -61,12 +65,12 @@ export const useBooksSync = () => {
         if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.downloadedAt) {
           await appService?.downloadBook(oldBook, true);
         }
-        return {
-          ...oldBook,
-          ...matchingBook,
-          updatedAt: oldBook.updatedAt,
-          progress: matchingBook.progress ?? oldBook.progress,
-        };
+        const mergedBook =
+          matchingBook.updatedAt > oldBook.updatedAt
+            ? { ...oldBook, ...matchingBook, updatedAt: oldBook.updatedAt }
+            : { ...matchingBook, ...oldBook, updatedAt: oldBook.updatedAt };
+        mergedBook.progress = matchingBook.progress ?? oldBook.progress;
+        return mergedBook;
       }
       return oldBook;
     };

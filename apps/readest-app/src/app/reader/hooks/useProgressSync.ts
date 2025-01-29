@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
+import { CFI } from '@/libs/document';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 
@@ -48,6 +49,21 @@ export const useProgressSync = (bookKey: string) => {
       }
     }
   };
+
+  const handleSyncBookProgress = (event: CustomEvent) => {
+    const { bookKey: syncBookKey } = event.detail;
+    if (syncBookKey === bookKey) {
+      syncConfig();
+    }
+  };
+
+  useEffect(() => {
+    eventDispatcher.on('sync-book-progress', handleSyncBookProgress);
+    return () => {
+      eventDispatcher.off('sync-book-progress', handleSyncBookProgress);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
 
   useEffect(() => {
     if (!progress || firstPulled.current) return;
@@ -96,12 +112,12 @@ export const useProgressSync = (bookKey: string) => {
           DEFAULT_BOOK_SEARCH_CONFIG,
         );
         setConfig(bookKey, { ...config, ...newConfig });
-        if ((syncedConfig.progress?.[1] ?? 0) > 0 && (config?.progress?.[1] ?? 0) > 0) {
-          const syncedFraction = syncedConfig.progress![0] / syncedConfig.progress![1];
-          const configFraction = config!.progress![0] / config!.progress![1];
-          if (syncedFraction > configFraction) {
+        const syncedCFI = syncedConfig.location;
+        const configCFI = config?.location;
+        if (syncedCFI && configCFI) {
+          if (CFI.compare(configCFI, syncedCFI) < 0) {
             if (view) {
-              view.goToFraction(syncedFraction);
+              view.goTo(syncedCFI);
               eventDispatcher.dispatch('toast', {
                 type: 'success',
                 message: _('Reading Progress Synced'),
