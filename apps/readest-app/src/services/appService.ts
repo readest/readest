@@ -27,12 +27,14 @@ import {
   DEFAULT_BOOK_SEARCH_CONFIG,
   DEFAULT_TTS_CONFIG,
   CLOUD_BOOKS_SUBDIR,
+  DEFAULT_MOBILE_VIEW_SETTINGS,
 } from './constants';
-import { isValidURL } from '@/utils/misc';
+import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile } from '@/libs/storage';
 
 export abstract class BaseAppService implements AppService {
+  isMobile: boolean = ['android', 'ios'].includes(getOSPlatform());
   localBooksDir: string = '';
   abstract fs: FileSystem;
   abstract appPlatform: AppPlatform;
@@ -70,6 +72,7 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_BOOK_LAYOUT,
         ...DEFAULT_BOOK_STYLE,
         ...DEFAULT_BOOK_FONT,
+        ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
         ...DEFAULT_VIEW_CONFIG,
         ...DEFAULT_TTS_CONFIG,
         ...settings.globalViewSettings,
@@ -88,6 +91,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_BOOK_LAYOUT,
           ...DEFAULT_BOOK_STYLE,
           ...DEFAULT_BOOK_FONT,
+          ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
           ...DEFAULT_VIEW_CONFIG,
           ...DEFAULT_TTS_CONFIG,
         },

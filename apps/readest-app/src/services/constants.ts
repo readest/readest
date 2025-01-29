@@ -5,6 +5,7 @@ import {
   BookStyle,
   TTSConfig,
   ViewConfig,
+  ViewSettings,
 } from '@/types/book';
 import { ReadSettings } from '@/types/settings';
 import { UserStorageQuota } from '@/types/user';
@@ -63,6 +64,11 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   theme: 'light',
   overrideFont: false,
   userStylesheet: '',
+};
+
+export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
+  defaultFontSize: 19,
+  fullJustification: false,
 };
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
