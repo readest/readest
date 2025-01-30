@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
 import { PiUserCircleCheck } from 'react-icons/pi';
+import { MdCheck } from 'react-icons/md';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { isWebAppPlatform } from '@/services/environment';
@@ -12,6 +13,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStoragePlanData } from '@/utils/access';
+import { navigateToLogin } from '@/utils/nav';
 import { QuotaType } from '@/types/user';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -27,6 +29,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const { token, user, logout } = useAuth();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
+  const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -38,7 +41,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleUserLogin = () => {
-    router.push('/auth');
+    navigateToLogin(router);
     setIsDropdownOpen?.(false);
   };
 
@@ -53,6 +56,17 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const handleReloadPage = () => {
     window.location.reload();
     setIsDropdownOpen?.(false);
+  };
+
+  const toggleAutoUploadBooks = () => {
+    settings.autoUpload = !settings.autoUpload;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAutoUpload(settings.autoUpload);
+
+    if (settings.autoUpload && !user) {
+      navigateToLogin(router);
+    }
   };
 
   useEffect(() => {
@@ -112,6 +126,11 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
       ) : (
         <MenuItem label={_('Sign In')} icon={<PiUserCircle />} onClick={handleUserLogin}></MenuItem>
       )}
+      <MenuItem
+        label={_('Auto Upload Books to Cloud')}
+        icon={isAutoUpload ? <MdCheck className='text-base-content' /> : undefined}
+        onClick={toggleAutoUploadBooks}
+      />
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />

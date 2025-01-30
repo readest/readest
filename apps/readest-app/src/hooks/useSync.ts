@@ -94,6 +94,10 @@ export function useSync(bookKey?: string) {
       if (!records?.length) return;
       const maxTime = computeMaxTimestamp(records);
       setLastSyncedAt(maxTime);
+
+      // due to closures in React hooks the settings might be stale
+      // we need to fetch the latest settings from store
+      const settings = useSettingsStore.getState().settings;
       switch (type) {
         case 'books':
           settings.lastSyncedAtBooks = maxTime;
