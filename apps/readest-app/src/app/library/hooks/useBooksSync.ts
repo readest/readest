@@ -13,12 +13,17 @@ export const useBooksSync = () => {
   const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
   const syncBooksPullingRef = useRef(false);
 
+  const pullLibrary = async () => {
+    if (!user) return;
+    syncBooks([], 'pull');
+  };
+
   useEffect(() => {
     if (!user) return;
     if (syncBooksPullingRef.current) return;
     syncBooksPullingRef.current = true;
 
-    syncBooks([], 'pull');
+    pullLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,4 +103,6 @@ export const useBooksSync = () => {
     updateLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks]);
+
+  return { pullLibrary };
 };

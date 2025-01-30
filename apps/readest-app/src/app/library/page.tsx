@@ -21,14 +21,15 @@ import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useDemoBooks } from './hooks/useDemoBooks';
+import { useBooksSync } from './hooks/useBooksSync';
 
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
-import { useBooksSync } from './hooks/useBooksSync';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -49,8 +50,11 @@ const LibraryPage = () => {
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const demoBooks = useDemoBooks();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useBooksSync();
+  const { pullLibrary } = useBooksSync();
+
+  usePullToRefresh(containerRef, pullLibrary);
 
   useEffect(() => {
     updateAppTheme('base-200');
@@ -310,7 +314,7 @@ const LibraryPage = () => {
       )}
       {libraryLoaded &&
         (libraryBooks.length > 0 ? (
-          <div className='mt-12 flex-grow overflow-auto px-2'>
+          <div ref={containerRef} className='mt-12 flex-grow overflow-auto px-2'>
             <Suspense>
               <Bookshelf
                 libraryBooks={libraryBooks}

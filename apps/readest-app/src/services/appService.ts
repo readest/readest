@@ -225,6 +225,7 @@ export abstract class BaseAppService implements AppService {
       }
     }
     if (uploaded) {
+      book.deletedAt = null;
       book.updatedAt = Date.now();
       book.uploadedAt = Date.now();
       book.downloadedAt = Date.now();
