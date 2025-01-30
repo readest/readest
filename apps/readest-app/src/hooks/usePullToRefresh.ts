@@ -14,7 +14,7 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
     const el = ref.current;
     if (!el) return;
 
-    el.addEventListener('touchstart', handleTouchStart);
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
 
     function handleTouchStart(startEvent: TouchEvent) {
       const el = ref.current;
@@ -22,7 +22,7 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
 
       const initialY = startEvent.touches[0]!.clientY;
 
-      el.addEventListener('touchmove', handleTouchMove);
+      el.addEventListener('touchmove', handleTouchMove, { passive: false });
       el.addEventListener('touchend', handleTouchEnd);
 
       function handleTouchMove(moveEvent: TouchEvent) {
