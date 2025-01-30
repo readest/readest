@@ -15,12 +15,12 @@ const SectionInfo: React.FC<SectionInfoProps> = ({ section, gapLeft }) => {
   return (
     <div
       className={clsx(
-        'pageinfo absolute right-0 top-0 flex items-end',
+        'pageinfo absolute right-0 top-0 flex max-w-[50%] items-end',
         isTrafficLightVisible && !isSideBarVisible ? 'h-[44px]' : 'h-[30px]',
       )}
       style={{ left: gapLeft }}
     >
-      <h2 className='text-neutral-content text-center font-sans text-xs font-light'>
+      <h2 className='text-neutral-content line-clamp-1 text-center font-sans text-xs font-light'>
         {section || ''}
       </h2>
     </div>

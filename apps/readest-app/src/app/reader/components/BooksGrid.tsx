@@ -15,6 +15,7 @@ import Ribbon from './Ribbon';
 import SettingsDialog from './settings/SettingsDialog';
 import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
+import HintInfo from './HintInfo';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -76,6 +77,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             {viewSettings.scrolled ? null : (
               <>
                 <SectionInfo section={sectionLabel} gapLeft={marginGap} />
+                <HintInfo bookKey={bookKey} gapRight={marginGap} />
                 <PageInfoView
                   bookFormat={book.format}
                   section={section ?? null}

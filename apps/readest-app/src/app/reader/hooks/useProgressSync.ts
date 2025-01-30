@@ -118,8 +118,8 @@ export const useProgressSync = (bookKey: string) => {
           if (CFI.compare(configCFI, syncedCFI) < 0) {
             if (view) {
               view.goTo(syncedCFI);
-              eventDispatcher.dispatch('toast', {
-                type: 'success',
+              eventDispatcher.dispatch('hint', {
+                bookKey,
                 message: _('Reading Progress Synced'),
               });
             }

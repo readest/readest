@@ -52,7 +52,7 @@ const LibraryPage = () => {
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { pullLibrary } = useBooksSync();
+  const { pullLibrary, pushLibrary } = useBooksSync();
 
   usePullToRefresh(containerRef, pullLibrary);
 
@@ -216,9 +216,11 @@ const LibraryPage = () => {
     setLoading(true);
     try {
       await appService?.uploadBook(book);
-      updateBook(envConfig, book);
+      await updateBook(envConfig, book);
+      pushLibrary();
       eventDispatcher.dispatch('toast', {
-        type: 'success',
+        type: 'info',
+        timeout: 2000,
         message: _('Book uploaded: {{title}}', {
           title: book.title,
         }),
@@ -241,7 +243,8 @@ const LibraryPage = () => {
       await appService?.downloadBook(book);
       updateBook(envConfig, book);
       eventDispatcher.dispatch('toast', {
-        type: 'success',
+        type: 'info',
+        timeout: 2000,
         message: _('Book downloaded: {{title}}', {
           title: book.title,
         }),

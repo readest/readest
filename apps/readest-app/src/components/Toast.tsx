@@ -48,14 +48,24 @@ export const Toast = () => {
 
   return (
     toastMessage && (
-      <div className={clsx('toast toast-center toast-middle', toastClassMap[toastType.current])}>
+      <div
+        className={clsx(
+          'toast toast-center toast-middle w-auto max-w-screen-sm',
+          toastClassMap[toastType.current],
+        )}
+      >
         <div
           className={clsx(
             'alert flex max-w-80 items-center justify-center border-0',
             alertClassMap[toastType.current],
           )}
         >
-          <span className={clsx('whitespace-normal break-words', messageClass.current)}>
+          <span
+            className={clsx(
+              'max-h-[50vh] min-w-[30vw] overflow-scroll whitespace-normal break-words text-center',
+              messageClass.current,
+            )}
+          >
             {toastMessage}
           </span>
         </div>

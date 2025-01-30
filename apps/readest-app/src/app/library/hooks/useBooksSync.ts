@@ -18,6 +18,12 @@ export const useBooksSync = () => {
     syncBooks([], 'pull');
   };
 
+  const pushLibrary = async () => {
+    if (!user) return;
+    const newBooks = getNewBooks();
+    syncBooks(newBooks, 'push');
+  };
+
   useEffect(() => {
     if (!user) return;
     if (syncBooksPullingRef.current) return;
@@ -104,5 +110,5 @@ export const useBooksSync = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks]);
 
-  return { pullLibrary };
+  return { pullLibrary, pushLibrary };
 };
