@@ -18,7 +18,7 @@ export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).j
 
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
-  autoUpload: false,
+  autoUpload: true,
   autoCheckUpdates: true,
 
   lastSyncedAtBooks: 0,

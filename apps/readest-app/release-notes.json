@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.8": {
+      "date": "2025-02-01",
+      "notes": [
+        "Support cloud sync for book files",
+        "Use larger font size on mobile devices for better reading experience",
+        "Various fixes and enhancements on sync, rendering and settings"
+      ]
+    },
     "0.9.7": {
       "date": "2025-01-23",
       "notes": [
