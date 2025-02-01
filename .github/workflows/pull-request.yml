@@ -9,7 +9,7 @@ jobs:
   rust_lint:
     runs-on: ubuntu-latest
     env:
-      RUSTFLAGS: "-C target-cpu=skylake"
+      RUSTFLAGS: '-C target-cpu=skylake'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,7 +20,9 @@ jobs:
           toolchain: stable
           override: true
       - name: Install system dependencies
-        run: sudo apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
       - name: Format
         working-directory: apps/readest-app/src-tauri
         run: cargo fmt --check
