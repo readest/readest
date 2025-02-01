@@ -4,7 +4,7 @@ import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useClickEvent, useTouchEvent } from '../hooks/useClickEvent';
+import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
@@ -80,6 +80,17 @@ const FoliateViewer: React.FC<{
   const docRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     if (detail.reason !== 'scroll' && detail.reason !== 'page') return;
+
+    if (detail.reason === 'scroll') {
+      const renderer = viewRef.current?.renderer;
+      if (renderer) {
+        if (renderer.start <= 0) {
+          viewRef.current?.prev(1);
+        } else if (renderer.end >= renderer.viewSize) {
+          viewRef.current?.next(1);
+        }
+      }
+    }
     const parallelViews = getParallels(bookKey);
     if (parallelViews && parallelViews.size > 0) {
       parallelViews.forEach((key) => {
@@ -95,6 +106,7 @@ const FoliateViewer: React.FC<{
 
   useTouchEvent(bookKey, viewRef);
   const { handleTurnPage } = useClickEvent(bookKey, viewRef, containerRef);
+
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
     onRelocate: progressRelocateHandler,
