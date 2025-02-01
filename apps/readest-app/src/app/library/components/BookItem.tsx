@@ -3,16 +3,17 @@ import Image from 'next/image';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { CiCircleMore } from 'react-icons/ci';
 import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/lia';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { isWebAppPlatform } from '@/services/environment';
-import ReadingProgress from './ReadingProgress';
+
 import { Book } from '@/types/book';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import ReadingProgress from './ReadingProgress';
 
 interface BookItemProps {
   book: Book;
   isSelectMode: boolean;
   selectedBooks: string[];
   clickedBookHash: string | null;
+  transferProgress: number | null;
   handleBookClick: (book: Book) => void;
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
@@ -25,6 +26,7 @@ const BookItem: React.FC<BookItemProps> = ({
   isSelectMode,
   selectedBooks,
   clickedBookHash,
+  transferProgress,
   handleBookClick,
   handleBookUpload,
   handleBookDownload,
@@ -78,7 +80,7 @@ const BookItem: React.FC<BookItemProps> = ({
           )}
         </div>
       </div>
-      <div className={clsx('flex w-full p-0 pt-2', isWebAppPlatform() ? 'flex-col' : 'flex-col')}>
+      <div className={clsx('flex w-full flex-col p-0 pt-2')}>
         <div className='min-w-0 flex-1'>
           <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-[0.6em] text-xs font-semibold'>
             {book.title}
@@ -89,21 +91,37 @@ const BookItem: React.FC<BookItemProps> = ({
         >
           {book.progress && <ReadingProgress book={book} />}
           <div className='flex items-center gap-x-1'>
-            <button
-              className='show-detail-button opacity-0 group-hover:opacity-100'
-              onClick={() => {
-                if (!book.uploadedAt) {
-                  handleBookUpload(book);
-                } else if (!book.downloadedAt) {
-                  handleBookDownload(book);
-                }
-              }}
-            >
-              {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
-              {book.uploadedAt && !book.downloadedAt && (
-                <LiaCloudDownloadAltSolid size={iconSize15} />
-              )}
-            </button>
+            {transferProgress !== null ? (
+              transferProgress === 100 ? null : (
+                <div
+                  className='radial-progress opacity-0 group-hover:opacity-100'
+                  style={
+                    {
+                      '--value': transferProgress,
+                      '--size': `${iconSize15}px`,
+                      '--thickness': '2px',
+                    } as React.CSSProperties
+                  }
+                  role='progressbar'
+                ></div>
+              )
+            ) : (
+              <button
+                className='show-detail-button opacity-0 group-hover:opacity-100'
+                onClick={() => {
+                  if (!book.uploadedAt) {
+                    handleBookUpload(book);
+                  } else if (!book.downloadedAt) {
+                    handleBookDownload(book);
+                  }
+                }}
+              >
+                {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
+                {book.uploadedAt && !book.downloadedAt && (
+                  <LiaCloudDownloadAltSolid size={iconSize15} />
+                )}
+              </button>
+            )}
             <button
               className='show-detail-button opacity-0 group-hover:opacity-100'
               onClick={() => showBookDetailsModal(book)}

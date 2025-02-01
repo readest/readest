@@ -56,6 +56,8 @@ interface BookshelfProps {
   handleImportBooks: () => void;
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
+  handleBookDelete: (book: Book) => void;
+  booksTransferProgress: { [key: string]: number | null };
 }
 
 const Bookshelf: React.FC<BookshelfProps> = ({
@@ -64,6 +66,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleImportBooks,
   handleBookUpload,
   handleBookDownload,
+  handleBookDelete,
+  booksTransferProgress,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -81,14 +85,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const makeBookAvailable = async (book: Book) => {
     if (book.uploadedAt && !book.downloadedAt) {
-      setLoading(true);
       let available = false;
       try {
-        await appService?.downloadBook(book);
+        await handleBookDownload(book);
         updateBook(envConfig, book);
         available = true;
       } finally {
-        setLoading(false);
         return available;
       }
     }
@@ -156,11 +158,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     navigateToReader(router, selectedBooks);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     for (const selectedBook of selectedBooks) {
       const book = libraryBooks.find((b) => b.hash === selectedBook);
       if (book) {
-        updateBook(envConfig, book, true);
+        await handleBookDelete(book);
       }
     }
     setSelectedBooks([]);
@@ -206,7 +208,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const deleteBookMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        updateBook(envConfig, book, true);
+        await handleBookDelete(book);
       },
     });
     const menu = await Menu.new();
@@ -238,6 +240,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                   handleBookDownload={handleBookDownload}
                   showBookDetailsModal={showBookDetailsModal}
                   bookContextMenuHandler={bookContextMenuHandler}
+                  transferProgress={booksTransferProgress[item.hash] || null}
                 />
               ) : (
                 <GroupItem group={item} />

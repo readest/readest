@@ -11,6 +11,9 @@ mod menu;
 #[cfg(target_os = "macos")]
 mod traffic_light_plugin;
 
+mod transfer_file;
+use transfer_file::{download_file, upload_file};
+
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
@@ -80,7 +83,11 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_oauth::init())
-        .invoke_handler(tauri::generate_handler![start_server])
+        .invoke_handler(tauri::generate_handler![
+            start_server,
+            download_file,
+            upload_file
+        ])
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())

@@ -24,7 +24,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
 
@@ -50,8 +50,9 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
     setShowDeleteAlert(true);
   };
 
-  const confirmDelete = () => {
-    updateBook(envConfig, book, true);
+  const confirmDelete = async () => {
+    await appService?.deleteBook(book, !!book.uploadedAt);
+    await updateBook(envConfig, book);
     handleClose();
     setShowDeleteAlert(false);
   };

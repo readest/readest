@@ -21,6 +21,15 @@ tauri-build = { version = "2.0.3", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
+thiserror = "2"
+tokio = { version = "1", features = ["fs"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+futures-util = "0.3"
+read-progress-stream = "1.0.0"
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "stream",
+] }
 # FIXME: remove the devtools feature in production
 tauri = { version = "2.1.1", features = [ "protocol-asset", "devtools"] }
 tauri-build = "2.0.3"

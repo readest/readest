@@ -7,9 +7,12 @@ name = "Readest"
 version = "0.2.1"
 dependencies = [
  "cocoa 0.25.0",
+ "futures-util",
  "log",
  "objc",
  "rand 0.8.5",
+ "read-progress-stream",
+ "reqwest",
  "serde",
  "serde_json",
  "tauri",
@@ -29,6 +32,9 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
+ "thiserror 2.0.11",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -3940,6 +3946,17 @@ name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
+
+[[package]]
+name = "read-progress-stream"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6435842fc2fea44b528719eb8c32203bbc1bb2f5b619fbe0c0a3d8350fd8d2a8"
+dependencies = [
+ "bytes",
+ "futures",
+ "pin-project-lite",
+]
 
 [[package]]
 name = "redox_syscall"

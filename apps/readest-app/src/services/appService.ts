@@ -29,9 +29,11 @@ import {
   CLOUD_BOOKS_SUBDIR,
   DEFAULT_MOBILE_VIEW_SETTINGS,
 } from './constants';
+import { isWebAppPlatform } from './environment';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
-import { downloadFile, uploadFile, deleteFile } from '@/libs/storage';
+import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
+import { ProgressHandler } from '@/utils/transfer';
 
 export abstract class BaseAppService implements AppService {
   isMobile: boolean = ['android', 'ios'].includes(getOSPlatform());
@@ -195,34 +197,62 @@ export abstract class BaseAppService implements AppService {
   }
 
   async deleteBook(book: Book, includingUploaded = false): Promise<void> {
-    for (const fp of [getFilename(book), getCoverFilename(book)]) {
-      if (await this.fs.exists(fp, 'Books')) {
-        await this.fs.removeFile(fp, 'Books');
-      }
+    const fps = [getFilename(book), getCoverFilename(book)];
+    const localDeleteFps = (
+      await Promise.all(fps.map(async (fp) => ((await this.fs.exists(fp, 'Books')) ? fp : null)))
+    ).filter(Boolean) as string[];
+    for (const fp of localDeleteFps) {
+      await this.fs.removeFile(fp, 'Books');
+    }
+    for (const fp of fps) {
       if (includingUploaded) {
         console.log('Deleting uploaded file:', fp);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-        await deleteFile(cfp);
+        try {
+          deleteFile(cfp);
+        } catch (error) {
+          console.log('Failed to delete uploaded file:', error);
+        }
       }
+    }
+    book.deletedAt = Date.now();
+    book.downloadedAt = null;
+    if (includingUploaded) {
+      book.uploadedAt = null;
     }
   }
 
-  async uploadBook(book: Book): Promise<void> {
+  async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
     let file: File;
     let uploaded = false;
-    for (const fp of [getFilename(book), getCoverFilename(book)]) {
-      if (await this.fs.exists(fp, 'Books')) {
-        const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-        if (this.appPlatform === 'web') {
-          const content = await this.fs.readFile(fp, 'Books', 'binary');
-          file = new File([content], cfp);
-        } else {
-          file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), cfp).open();
-        }
-        console.log('Uploading file:', fp);
-        await uploadFile(file, book.hash);
-        uploaded = true;
+    const completedFiles = { count: 0 };
+    const fps = (
+      await Promise.all(
+        [getCoverFilename(book), getFilename(book)].map(async (fp) =>
+          (await this.fs.exists(fp, 'Books')) ? fp : null,
+        ),
+      )
+    ).filter(Boolean) as string[];
+    if (!fps.includes(getFilename(book)) && book.url) {
+      // download the book from the URL
+      const fileobj = await new RemoteFile(book.url).open();
+      await this.fs.writeFile(getFilename(book), 'Books', await fileobj.arrayBuffer());
+      fps.push(getFilename(book));
+    }
+    const handleProgress = createProgressHandler(fps.length, completedFiles, onProgress);
+    for (const fp of fps) {
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
+      const fullpath = `${this.localBooksDir}/${fp}`;
+      if (this.appPlatform === 'web') {
+        const content = await this.fs.readFile(fp, 'Books', 'binary');
+        file = new File([content], cfp);
+      } else {
+        file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), cfp).open();
       }
+      console.log('Uploading file:', fp);
+      await uploadFile(file, fullpath, handleProgress, book.hash);
+      uploaded = true;
+      completedFiles.count++;
     }
     if (uploaded) {
       book.deletedAt = null;
@@ -234,31 +264,50 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async downloadBook(book: Book, onlyCover = false): Promise<void> {
-    const bookFp = getFilename(book);
-    const coverFp = getCoverFilename(book);
-    const fps = [coverFp];
-    if (!onlyCover) {
-      fps.push(bookFp);
-    }
+  async downloadBook(book: Book, onlyCover = false, onProgress?: ProgressHandler): Promise<void> {
+    const fps = onlyCover ? [getCoverFilename(book)] : [getCoverFilename(book), getFilename(book)];
 
     let bookDownloaded = false;
+    const completedFiles = { count: 0 };
+    const toDownloadFps = (
+      await Promise.all(
+        [getFilename(book), getCoverFilename(book)].map(async (fp) =>
+          (await this.fs.exists(fp, 'Books')) ? null : fp,
+        ),
+      )
+    ).filter(Boolean) as string[];
+    const handleProgress = createProgressHandler(toDownloadFps.length, completedFiles, onProgress);
     for (const fp of fps) {
       let downloaded = false;
-      const existed = await this.fs.exists(fp, 'Books');
+      const existed = !toDownloadFps.includes(fp);
       if (existed) {
         downloaded = true;
       } else {
         console.log('Downloading file:', fp);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-        const fileobj = (await downloadFile(cfp)) as Blob;
+        const fullpath = `${this.localBooksDir}/${fp}`;
         if (!(await this.fs.exists(getDir(book), 'Books'))) {
           await this.fs.createDir(getDir(book), 'Books');
         }
-        await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
-        downloaded = true;
+        try {
+          const result = await downloadFile(cfp, fullpath, handleProgress);
+          if (isWebAppPlatform()) {
+            const fileobj = result as Blob;
+            await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
+            downloaded = true;
+          } else {
+            downloaded = await this.fs.exists(fp, 'Books');
+          }
+        } catch {
+          if (fp === getCoverFilename(book)) {
+            console.log('Failed to download cover image:', fp);
+          } else {
+            throw new Error('Failed to download book file');
+          }
+        }
+        completedFiles.count++;
       }
-      if (fp === bookFp) {
+      if (fp === getFilename(book)) {
         bookDownloaded = downloaded;
       }
     }

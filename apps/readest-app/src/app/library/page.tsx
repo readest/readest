@@ -30,6 +30,8 @@ import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
+import { ProgressPayload } from '@/utils/transfer';
+import { throttle } from '@/utils/throttle';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -49,6 +51,9 @@ const LibraryPage = () => {
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [booksTransferProgress, setBooksTransferProgress] = useState<{
+    [key: string]: number | null;
+  }>({});
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -212,10 +217,20 @@ const LibraryPage = () => {
     });
   };
 
+  const updateBookTransferProgress = throttle((bookHash: string, progress: ProgressPayload) => {
+    if (progress.total === 0) return;
+    const progressPct = (progress.progress / progress.total) * 100;
+    setBooksTransferProgress((prev) => ({
+      ...prev,
+      [bookHash]: progressPct,
+    }));
+  }, 500);
+
   const handleBookUpload = async (book: Book) => {
-    setLoading(true);
     try {
-      await appService?.uploadBook(book);
+      await appService?.uploadBook(book, (progress) => {
+        updateBookTransferProgress(book.hash, progress);
+      });
       await updateBook(envConfig, book);
       pushLibrary();
       eventDispatcher.dispatch('toast', {
@@ -232,16 +247,15 @@ const LibraryPage = () => {
           title: book.title,
         }),
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleBookDownload = async (book: Book) => {
-    setLoading(true);
     try {
-      await appService?.downloadBook(book);
-      updateBook(envConfig, book);
+      await appService?.downloadBook(book, false, (progress) => {
+        updateBookTransferProgress(book.hash, progress);
+      });
+      await updateBook(envConfig, book);
       eventDispatcher.dispatch('toast', {
         type: 'info',
         timeout: 2000,
@@ -256,8 +270,28 @@ const LibraryPage = () => {
         }),
         type: 'error',
       });
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleBookDelete = async (book: Book) => {
+    try {
+      await appService?.deleteBook(book, !!book.uploadedAt);
+      await updateBook(envConfig, book);
+      pushLibrary();
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 2000,
+        message: _('Book deleted: {{title}}', {
+          title: book.title,
+        }),
+      });
+    } catch {
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to delete book: {{title}}', {
+          title: book.title,
+        }),
+        type: 'error',
+      });
     }
   };
 
@@ -325,6 +359,8 @@ const LibraryPage = () => {
                 handleImportBooks={handleImportBooks}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
+                handleBookDelete={handleBookDelete}
+                booksTransferProgress={booksTransferProgress}
               />
             </Suspense>
           </div>

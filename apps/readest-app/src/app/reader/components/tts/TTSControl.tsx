@@ -9,7 +9,7 @@ import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
 import { getOSPlatform } from '@/utils/misc';
-import { throttle } from '@/utils/ui';
+import { throttle } from '@/utils/throttle';
 import { isPWA } from '@/services/environment';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';

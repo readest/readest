@@ -1,5 +1,13 @@
 import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
 import { getAccessToken, getUserID } from '@/utils/access';
+import {
+  tauriUpload,
+  tauriDownload,
+  webUpload,
+  webDownload,
+  ProgressHandler,
+  ProgressPayload,
+} from '@/utils/transfer';
 
 const API_ENDPOINTS = {
   upload: getAPIBaseUrl() + '/storage/upload',
@@ -28,7 +36,31 @@ const fetchWithAuth = async (url: string, options: RequestInit) => {
   return response;
 };
 
-export const uploadFile = async (file: File, bookHash?: string) => {
+export const createProgressHandler = (
+  totalFiles: number,
+  completedFilesRef: { count: number },
+  onProgress?: ProgressHandler,
+) => {
+  return (progress: ProgressPayload) => {
+    const fileProgress = progress.progress / progress.total;
+    const overallProgress = ((completedFilesRef.count + fileProgress) / totalFiles) * 100;
+
+    if (onProgress) {
+      onProgress({
+        progress: overallProgress,
+        total: 100,
+        transferSpeed: progress.transferSpeed,
+      });
+    }
+  };
+};
+
+export const uploadFile = async (
+  file: File,
+  fileFullPath: string,
+  onProgress?: ProgressHandler,
+  bookHash?: string,
+) => {
   try {
     const response = await fetchWithAuth(API_ENDPOINTS.upload, {
       method: 'POST',
@@ -43,17 +75,10 @@ export const uploadFile = async (file: File, bookHash?: string) => {
     });
 
     const { uploadUrl } = await response.json();
-    const fetch = isWebAppPlatform()
-      ? window.fetch
-      : (await import('@tauri-apps/plugin-http')).fetch;
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: isWebAppPlatform() ? file : await file.arrayBuffer(),
-    });
-
-    if (!uploadResponse.ok) {
-      console.error('File upload failed:', await uploadResponse.text());
-      throw new Error('File upload failed');
+    if (isWebAppPlatform()) {
+      await webUpload(file, uploadUrl, onProgress);
+    } else {
+      await tauriUpload(uploadUrl, fileFullPath, 'PUT', onProgress);
     }
   } catch (error) {
     console.error('File upload failed:', error);
@@ -61,7 +86,11 @@ export const uploadFile = async (file: File, bookHash?: string) => {
   }
 };
 
-export const downloadFile = async (filePath: string) => {
+export const downloadFile = async (
+  filePath: string,
+  fileFullPath: string,
+  onProgress?: ProgressHandler,
+) => {
   try {
     const userId = await getUserID();
     if (!userId) {
@@ -78,13 +107,12 @@ export const downloadFile = async (filePath: string) => {
 
     const { downloadUrl } = await response.json();
 
-    const downloadResponse = await fetch(downloadUrl);
-    if (!downloadResponse.ok) {
-      console.error('Error downloading file:', await downloadResponse.text());
-      throw new Error('File download failed');
+    if (isWebAppPlatform()) {
+      return await webDownload(downloadUrl, onProgress);
+    } else {
+      await tauriDownload(downloadUrl, fileFullPath, onProgress);
+      return;
     }
-
-    return await downloadResponse.blob();
   } catch (error) {
     console.error('File download failed:', error);
     throw new Error('File download failed');

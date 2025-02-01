@@ -4,6 +4,7 @@ export const throttle = <T extends (...args: Parameters<T>) => void | Promise<vo
 ): ((...args: Parameters<T>) => void) => {
   let lastCall = 0;
   let timeout: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<T> | null = null;
 
   return (...args: Parameters<T>): void => {
     const now = Date.now();
@@ -21,8 +22,17 @@ export const throttle = <T extends (...args: Parameters<T>) => void | Promise<vo
         timeout = null;
       }
       callFunc();
-    } else if (!timeout) {
-      timeout = setTimeout(callFunc, remaining);
+    } else {
+      lastArgs = args;
+      if (!timeout) {
+        timeout = setTimeout(() => {
+          timeout = null;
+          if (lastArgs) {
+            func(...(lastArgs as Parameters<T>));
+            lastArgs = null;
+          }
+        }, remaining);
+      }
     }
   };
 };
