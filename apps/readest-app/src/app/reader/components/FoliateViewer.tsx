@@ -86,7 +86,8 @@ const FoliateViewer: React.FC<{
       if (renderer) {
         if (renderer.start <= 0) {
           viewRef.current?.prev(1);
-        } else if (renderer.end >= renderer.viewSize) {
+          // sometimes viewSize has subpixel value that the end never reaches
+        } else if (renderer.end + 1 >= renderer.viewSize) {
           viewRef.current?.next(1);
         }
       }
