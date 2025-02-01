@@ -33,19 +33,18 @@ const MenuItem: React.FC<MenuItemProps> = ({
       onClick={onClick}
       disabled={disabled}
     >
-      <div className='flex items-center'>
+      <div className='flex min-w-0 items-center'>
         {!noIcon && <span style={{ minWidth: `${iconSize}px` }}>{icon}</span>}
         <span
-          className={clsx(
-            'ml-2 truncate text-base sm:text-sm',
-            shortcut ? 'max-w-[60%]' : 'max-w-[90%]',
-            labelClass,
-          )}
+          className={clsx('mx-2 flex-1 truncate text-base sm:text-sm', labelClass)}
+          style={{ minWidth: 0 }}
         >
           {label}
         </span>
       </div>
-      {shortcut && <span className='text-neutral-content hidden text-sm sm:flex'>{shortcut}</span>}
+      {shortcut && (
+        <span className='text-neutral-content hidden shrink-0 text-sm sm:flex'>{shortcut}</span>
+      )}
     </button>
   );
 
