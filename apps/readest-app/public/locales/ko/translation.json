@@ -146,5 +146,8 @@
   "Upload Book": "책 업로드",
   "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드",
   "{{percentage}}% of Cloud Storage Used.": "클라우드 저장소 사용량 {{percentage}}%.",
-  "Storage": "저장소"
+  "Storage": "저장소",
+  "Book deleted: {{title}}": "책 삭제됨: {{title}}",
+  "Failed to delete book: {{title}}": "책 삭제 실패: {{title}}",
+  "Check Updates on Start": "시작 시 업데이트 확인"
 }

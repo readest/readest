@@ -35,7 +35,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
     >
       <div className='flex items-center'>
         {!noIcon && <span style={{ minWidth: `${iconSize}px` }}>{icon}</span>}
-        <span className={clsx('ml-2 truncate text-base sm:max-w-32 sm:text-sm', labelClass)}>
+        <span
+          className={clsx(
+            'ml-2 truncate text-base sm:text-sm',
+            shortcut ? 'max-w-[60%]' : 'max-w-[90%]',
+            labelClass,
+          )}
+        >
           {label}
         </span>
       </div>

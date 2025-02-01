@@ -146,5 +146,8 @@
   "Upload Book": "पुस्तक अपलोड करें",
   "Auto Upload Books to Cloud": "पुस्तकें बादल में स्वचालित रूप से अपलोड करें",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% क्लाउड स्टोरेज का उपयोग किया गया है।",
-  "Storage": "स्टोरेज"
+  "Storage": "स्टोरेज",
+  "Book deleted: {{title}}": "पुस्तक हटाई गई: {{title}}",
+  "Failed to delete book: {{title}}": "पुस्तक हटाने में विफल: {{title}}",
+  "Check Updates on Start": "शुरू में अपडेट जांचें"
 }

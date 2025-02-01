@@ -146,5 +146,8 @@
   "Upload Book": "書籍をアップロード",
   "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード",
   "{{percentage}}% of Cloud Storage Used.": "クラウドストレージの{{percentage}}%が使用されています。",
-  "Storage": "ストレージ"
+  "Storage": "ストレージ",
+  "Book deleted: {{title}}": "書籍が削除されました：{{title}}",
+  "Failed to delete book: {{title}}": "書籍の削除に失敗しました：{{title}}",
+  "Check Updates on Start": "開始時に更新を確認"
 }

@@ -146,5 +146,8 @@
   "Upload Book": "Tải lên sách",
   "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% dung lượng lưu trữ đám mây đã sử dụng.",
-  "Storage": "Lưu trữ"
+  "Storage": "Lưu trữ",
+  "Book deleted: {{title}}": "Sách đã xóa: {{title}}",
+  "Failed to delete book: {{title}}": "Không thể xóa sách: {{title}}",
+  "Check Updates on Start": "Kiểm tra cập nhật khi khởi động"
 }

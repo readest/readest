@@ -17,8 +17,10 @@ export interface ReadSettings {
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
+
   keepLogin: boolean;
   autoUpload: boolean;
+  autoCheckUpdates: boolean;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

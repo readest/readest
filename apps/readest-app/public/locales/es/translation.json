@@ -146,5 +146,8 @@
   "Upload Book": "Subir libro",
   "Auto Upload Books to Cloud": "Subir libros automáticamente a la nube",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% del almacenamiento en la nube utilizado.",
-  "Storage": "Almacenamiento"
+  "Storage": "Almacenamiento",
+  "Book deleted: {{title}}": "Libro eliminado: {{title}}",
+  "Failed to delete book: {{title}}": "Error al eliminar libro: {{title}}",
+  "Check Updates on Start": "Comprobar actualizaciones al iniciar"
 }

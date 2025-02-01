@@ -28,6 +28,7 @@ import {
   DEFAULT_TTS_CONFIG,
   CLOUD_BOOKS_SUBDIR,
   DEFAULT_MOBILE_VIEW_SETTINGS,
+  DEFAULT_SYSTEM_SETTINGS,
 } from './constants';
 import { isWebAppPlatform } from './environment';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
@@ -69,6 +70,7 @@ export abstract class BaseAppService implements AppService {
         settings.localBooksDir = await this.getInitBooksDir();
         settings.version = SYSTEM_SETTINGS_VERSION;
       }
+      settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
       settings.globalReadSettings = { ...DEFAULT_READSETTINGS, ...settings.globalReadSettings };
       settings.globalViewSettings = {
         ...DEFAULT_BOOK_LAYOUT,
@@ -81,13 +83,9 @@ export abstract class BaseAppService implements AppService {
       };
     } catch {
       settings = {
+        ...DEFAULT_SYSTEM_SETTINGS,
         version: SYSTEM_SETTINGS_VERSION,
         localBooksDir: await this.getInitBooksDir(),
-        lastSyncedAtBooks: 0,
-        lastSyncedAtConfigs: 0,
-        lastSyncedAtNotes: 0,
-        keepLogin: false,
-        autoUpload: false,
         globalReadSettings: DEFAULT_READSETTINGS,
         globalViewSettings: {
           ...DEFAULT_BOOK_LAYOUT,
@@ -97,7 +95,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_VIEW_CONFIG,
           ...DEFAULT_TTS_CONFIG,
         },
-      };
+      } as SystemSettings;
 
       await this.fs.createDir('', 'Books', true);
       await this.fs.createDir('', base, true);

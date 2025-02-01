@@ -63,14 +63,18 @@ const LibraryPage = () => {
 
   useEffect(() => {
     updateAppTheme('base-200');
-    const doAppUpdates = async () => {
-      if (hasUpdater()) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const doCheckAppUpdates = async () => {
+      if (hasUpdater() && settings.autoCheckUpdates) {
         await checkForAppUpdates(_);
       }
     };
-    doAppUpdates();
+    doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [settings]);
 
   const processOpenWithFiles = React.useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {

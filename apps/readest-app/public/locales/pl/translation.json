@@ -146,5 +146,8 @@
   "Upload Book": "Prześlij książkę",
   "Auto Upload Books to Cloud": "Automatycznie przesyłaj książki do chmury",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% przestrzeni dyskowej w chmurze użytej.",
-  "Storage": "Przechowywanie"
+  "Storage": "Przechowywanie",
+  "Book deleted: {{title}}": "Książka usunięta: {{title}}",
+  "Failed to delete book: {{title}}": "Nie udało się usunąć książki: {{title}}",
+  "Check Updates on Start": "Sprawdź aktualizacje przy starcie"
 }

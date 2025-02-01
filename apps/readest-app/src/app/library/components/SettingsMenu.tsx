@@ -6,7 +6,7 @@ import { PiUserCircleCheck } from 'react-icons/pi';
 import { MdCheck } from 'react-icons/md';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { isWebAppPlatform } from '@/services/environment';
+import { hasUpdater, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -30,6 +30,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
+  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -67,6 +68,13 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     if (settings.autoUpload && !user) {
       navigateToLogin(router);
     }
+  };
+
+  const toggleAutoCheckUpdates = () => {
+    settings.autoCheckUpdates = !settings.autoCheckUpdates;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAutoCheckUpdates(settings.autoCheckUpdates);
   };
 
   useEffect(() => {
@@ -131,6 +139,13 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
         icon={isAutoUpload ? <MdCheck className='text-base-content' /> : undefined}
         onClick={toggleAutoUploadBooks}
       />
+      {hasUpdater() && (
+        <MenuItem
+          label={_('Check Updates on Start')}
+          icon={isAutoCheckUpdates ? <MdCheck className='text-base-content' /> : undefined}
+          onClick={toggleAutoCheckUpdates}
+        />
+      )}
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />

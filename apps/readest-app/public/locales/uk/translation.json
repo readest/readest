@@ -146,5 +146,8 @@
   "Upload Book": "Завантажити книгу",
   "Auto Upload Books to Cloud": "Автоматично завантажувати книги в хмару",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% використано хмарного сховища.",
-  "Storage": "Сховище"
+  "Storage": "Сховище",
+  "Book deleted: {{title}}": "Книгу видалено: {{title}}",
+  "Failed to delete book: {{title}}": "Не вдалося видалити книгу: {{title}}",
+  "Check Updates on Start": "Перевіряти оновлення при запуску"
 }

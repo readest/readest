@@ -146,5 +146,8 @@
   "Upload Book": "Ανέβασμα βιβλίου",
   "Auto Upload Books to Cloud": "Αυτόματο ανέβασμα βιβλίων στο cloud",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% της αποθήκευσης στο cloud χρησιμοποιήθηκε.",
-  "Storage": "Αποθήκευση"
+  "Storage": "Αποθήκευση",
+  "Book deleted: {{title}}": "Το βιβλίο με τίτλο {{title}} διαγράφηκε",
+  "Failed to delete book: {{title}}": "Αποτυχία διαγραφής βιβλίου: {{title}}",
+  "Check Updates on Start": "Έλεγχος ενημερώσεων κατά την εκκίνηση"
 }

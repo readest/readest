@@ -8,6 +8,7 @@ import { ViewSettings } from '@/types/book';
 import { Palette } from '@/styles/themes';
 
 import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
+import { getOSPlatform } from './misc';
 
 const getFontStyles = (
   serif: string,
@@ -209,12 +210,15 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
     themeCode.fg,
     themeCode.primary,
   );
+  // scale the font size on-the-fly so that we can sync the same font size on different devices
+  const isMobile = ['ios', 'android'].includes(getOSPlatform());
+  const fontScale = isMobile ? 1.25 : 1;
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
     viewSettings.sansSerifFont!,
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
-    viewSettings.defaultFontSize!,
+    viewSettings.defaultFontSize! * fontScale,
     viewSettings.overrideFont!,
   );
   const userStylesheet = viewSettings.userStylesheet!;

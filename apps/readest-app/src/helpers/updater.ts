@@ -12,8 +12,9 @@ export const checkForAppUpdates = async (_: TranslationFunc) => {
   if (lastCheck && now - parseInt(lastCheck, 10) < CHECK_UPDATE_INTERVAL_SEC * 1000) return;
   localStorage.setItem(LAST_CHECK_KEY, now.toString());
 
+  console.log('Checking for updates');
   const update = await check();
-  console.log('update found', update);
+  console.log('Update found', update);
   if (update) {
     const yes = await ask(
       `

@@ -7,7 +7,7 @@ import {
   ViewConfig,
   ViewSettings,
 } from '@/types/book';
-import { ReadSettings } from '@/types/settings';
+import { ReadSettings, SystemSettings } from '@/types/settings';
 import { UserStorageQuota } from '@/types/user';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
@@ -15,6 +15,16 @@ export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
 
 export const SUPPORTED_FILE_EXTS = ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'cbz', 'pdf'];
 export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).join(', ');
+
+export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
+  keepLogin: false,
+  autoUpload: false,
+  autoCheckUpdates: true,
+
+  lastSyncedAtBooks: 0,
+  lastSyncedAtConfigs: 0,
+  lastSyncedAtNotes: 0,
+};
 
 export const DEFAULT_READSETTINGS: ReadSettings = {
   sideBarWidth: '15%',
@@ -67,7 +77,6 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
-  defaultFontSize: 19,
   fullJustification: false,
 };
 

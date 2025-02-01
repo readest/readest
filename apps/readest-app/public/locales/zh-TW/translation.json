@@ -146,5 +146,8 @@
   "Upload Book": "上傳書籍",
   "Auto Upload Books to Cloud": "自動上傳書籍到雲端",
   "{{percentage}}% of Cloud Storage Used.": "已使用 {{percentage}}% 雲存儲空間",
-  "Storage": "存儲空間"
+  "Storage": "存儲空間",
+  "Book deleted: {{title}}": "書籍已刪除：{{title}}",
+  "Failed to delete book: {{title}}": "書籍刪除失敗：{{title}}",
+  "Check Updates on Start": "啟動時檢查更新"
 }
