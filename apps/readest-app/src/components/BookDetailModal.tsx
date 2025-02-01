@@ -8,7 +8,14 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
-import { formatDate, formatLanguage, formatPublisher, formatSubject } from '@/utils/book';
+import {
+  formatAuthors,
+  formatDate,
+  formatLanguage,
+  formatPublisher,
+  formatSubject,
+  formatTitle,
+} from '@/utils/book';
 import Alert from '@/components/Alert';
 import Spinner from './Spinner';
 import Dialog from './Dialog';
@@ -82,7 +89,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
               <div className='book-cover relative mr-10 aspect-[28/41] h-40 items-end shadow-lg'>
                 <Image
                   src={book.coverImageUrl!}
-                  alt={book.title}
+                  alt={formatTitle(book.title)}
                   fill={true}
                   className='w-10 object-cover'
                   onError={(e) => {
@@ -98,16 +105,18 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                     'text-neutral-content rounded-none text-center font-serif text-base font-medium',
                   )}
                 >
-                  {book.title}
+                  {formatTitle(book.title)}
                 </div>
               </div>
 
               <div className='title-author flex h-40 flex-col justify-between'>
                 <div>
                   <p className='text-base-content mb-2 line-clamp-2 break-all text-2xl font-bold'>
-                    {book.title || _('Untitled')}
+                    {formatTitle(book.title) || _('Untitled')}
                   </p>
-                  <p className='text-neutral-content line-clamp-1'>{book.author || _('Unknown')}</p>
+                  <p className='text-neutral-content line-clamp-1'>
+                    {formatAuthors(bookMeta.language, book.author) || _('Unknown')}
+                  </p>
                 </div>
                 {window.innerWidth >= 400 && (
                   <div className='flex flex-wrap items-center gap-x-4 gap-y-2 py-2'>
