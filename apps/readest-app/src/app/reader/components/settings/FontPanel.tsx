@@ -19,6 +19,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
+import { FONT_ENUM_SUPPORTED_OS_PLATFORMS, getSysFontsList } from '@/utils/font';
 
 interface FontFaceProps {
   className?: string;
@@ -67,26 +68,27 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { themeCode } = useTheme();
 
   const osPlatform = getOSPlatform();
-  let moreFonts: string[] = [];
+  let defaultSysFonts: string[] = [];
   switch (osPlatform) {
     case 'macos':
-      moreFonts = MACOS_FONTS;
+      defaultSysFonts = MACOS_FONTS;
       break;
     case 'windows':
-      moreFonts = WINDOWS_FONTS;
+      defaultSysFonts = WINDOWS_FONTS;
       break;
     case 'linux':
-      moreFonts = LINUX_FONTS;
+      defaultSysFonts = LINUX_FONTS;
       break;
     case 'ios':
-      moreFonts = IOS_FONTS;
+      defaultSysFonts = IOS_FONTS;
       break;
     case 'android':
-      moreFonts = ANDROID_FONTS;
+      defaultSysFonts = ANDROID_FONTS;
       break;
     default:
       break;
   }
+  const [sysFonts, setSysFonts] = useState<string[]>(defaultSysFonts);
   const [defaultFontSize, setDefaultFontSize] = useState(viewSettings.defaultFontSize!);
   const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize!);
   const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont!);
@@ -94,6 +96,15 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [serifFont, setSerifFont] = useState(viewSettings.serifFont!);
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
+
+  useEffect(() => {
+    if (FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
+      getSysFontsList().then((fonts) => {
+        setSysFonts(fonts);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     viewSettings.defaultFont = defaultFont;
@@ -247,7 +258,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='serif'
               label={_('Serif Font')}
               options={SERIF_FONTS}
-              moreOptions={moreFonts}
+              moreOptions={sysFonts}
               selected={serifFont}
               onSelect={setSerifFont}
             />
@@ -255,7 +266,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='sans-serif'
               label={_('Sans-Serif Font')}
               options={SANS_SERIF_FONTS}
-              moreOptions={moreFonts}
+              moreOptions={sysFonts}
               selected={sansSerifFont}
               onSelect={setSansSerifFont}
             />
@@ -264,7 +275,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               family='monospace'
               label={_('Monospace Font')}
               options={MONOSPACE_FONTS}
-              moreOptions={moreFonts}
+              moreOptions={sysFonts}
               selected={monospaceFont}
               onSelect={setMonospaceFont}
             />

@@ -72,6 +72,17 @@ async fn start_server(window: Window) -> Result<u16, String> {
     .map_err(|err| err.to_string())
 }
 
+#[cfg(desktop)]
+#[command]
+async fn list_fonts() -> Result<Vec<String>, String> {
+    let font_collection = font_enumeration::Collection::new().unwrap();
+    let mut fonts = Vec::new();
+    for font in font_collection.all() {
+        fonts.push(font.font_name.clone());
+    }
+    Ok(fonts)
+}
+
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     args: Vec<String>,
@@ -86,7 +97,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_server,
             download_file,
-            upload_file
+            upload_file,
+            #[cfg(desktop)]
+            list_fonts
         ])
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
