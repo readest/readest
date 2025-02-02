@@ -58,7 +58,7 @@
     "i18next-http-backend": "^3.0.1",
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
-    "next": "15.1.0",
+    "next": "15.1.6",
     "posthog-js": "^1.205.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
