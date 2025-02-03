@@ -1,3 +1,5 @@
+import { getOSPlatform } from './misc';
+
 class RemoteBlobSlice extends Blob {
   #dataPromise: Promise<ArrayBuffer>;
   #type: string;
@@ -83,7 +85,7 @@ export class RemoteFile extends File {
     return this.#lastModified;
   }
 
-  async open() {
+  async _open_with_head() {
     const response = await fetch(this.url, { method: 'HEAD' });
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
@@ -91,6 +93,25 @@ export class RemoteFile extends File {
     this.#size = Number(response.headers.get('content-length'));
     this.#type = response.headers.get('content-type') || '';
     return this;
+  }
+
+  async _open_with_range() {
+    const response = await fetch(this.url, { headers: { Range: `bytes=${0}-${1023}` } });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file size: ${response.status}`);
+    }
+    this.#size = Number(response.headers.get('content-range')?.split('/')[1]);
+    this.#type = response.headers.get('content-type') || '';
+    return this;
+  }
+
+  async open() {
+    // FIXME: currently HEAD request in asset protocol is not supported on Android
+    if (getOSPlatform() === 'android') {
+      return this._open_with_range();
+    } else {
+      return this._open_with_head();
+    }
   }
 
   async fetchRangePart(start: number, end: number) {

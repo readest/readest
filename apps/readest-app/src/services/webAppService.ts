@@ -181,6 +181,7 @@ export class WebAppService extends BaseAppService {
   isAppDataSandbox = false;
   hasTrafficLight = false;
   hasWindowBar = false;
+  hasContextMenu = false;
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

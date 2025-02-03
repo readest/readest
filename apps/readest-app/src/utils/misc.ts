@@ -10,7 +10,8 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   // Windows restricted characters + control characters and reserved names
   const unsafeCharacters = /[<>:"\/\\|?*\x00-\x1F]/g;
   const reservedFilenames = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
-  const maxFilenameLength = 255;
+  // Unsafe to use filename including file extensions over 255 bytes on Android
+  const maxFilenameBytes = 250;
 
   let safeName = filename.replace(unsafeCharacters, replacement);
 
@@ -18,8 +19,12 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
     safeName = `${safeName}${replacement}`;
   }
 
-  if (safeName.length > maxFilenameLength) {
-    safeName = safeName.substring(0, maxFilenameLength);
+  const encoder = new TextEncoder();
+  let utf8Bytes = encoder.encode(safeName);
+
+  while (utf8Bytes.length > maxFilenameBytes) {
+    safeName = safeName.slice(0, -1);
+    utf8Bytes = encoder.encode(safeName);
   }
 
   return safeName.trim();

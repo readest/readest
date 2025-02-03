@@ -5,6 +5,7 @@ import { CiCircleMore } from 'react-icons/ci';
 import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/lia';
 
 import { Book } from '@/types/book';
+import { useEnv } from '@/context/EnvContext';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import ReadingProgress from './ReadingProgress';
 
@@ -34,10 +35,11 @@ const BookItem: React.FC<BookItemProps> = ({
   bookContextMenuHandler,
 }) => {
   const iconSize15 = useResponsiveSize(15);
+  const { appService } = useEnv();
 
   return (
     <div
-      className='book-item cursor-pointer'
+      className={clsx('book-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}
       onContextMenu={bookContextMenuHandler.bind(null, book)}
     >
       <div className='bg-base-100 shadow-md' onClick={() => handleBookClick(book)}>

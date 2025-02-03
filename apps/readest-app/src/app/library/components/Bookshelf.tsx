@@ -15,7 +15,6 @@ import { navigateToReader } from '@/utils/nav';
 import { getOSPlatform } from '@/utils/misc';
 import { getFilename } from '@/utils/book';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
-import { isTauriAppPlatform } from '@/services/environment';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
@@ -174,7 +173,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const bookContextMenuHandler = async (book: Book, e: React.MouseEvent) => {
-    if (!isTauriAppPlatform()) return;
+    if (!appService?.hasContextMenu) return;
     e.preventDefault();
     e.stopPropagation();
     const osPlatform = getOSPlatform();

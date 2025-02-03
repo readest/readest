@@ -120,6 +120,7 @@ export class NativeAppService extends BaseAppService {
   isAppDataSandbox = isMobile;
   hasTrafficLight = osType() === 'macos';
   hasWindowBar = !(osType() === 'ios' || osType() === 'android');
+  hasContextMenu = !(osType() === 'ios' || osType() === 'android');
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

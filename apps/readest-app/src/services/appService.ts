@@ -44,6 +44,7 @@ export abstract class BaseAppService implements AppService {
   abstract isAppDataSandbox: boolean;
   abstract hasTrafficLight: boolean;
   abstract hasWindowBar: boolean;
+  abstract hasContextMenu: boolean;
 
   abstract resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string };
   abstract getCoverImageUrl(book: Book): string;
@@ -319,7 +320,8 @@ export abstract class BaseAppService implements AppService {
     let file: File;
     const fp = getFilename(book);
     if (await this.fs.exists(fp, 'Books')) {
-      if (this.appPlatform === 'web') {
+      // TODO: fix random access for android
+      if (this.appPlatform === 'web' || getOSPlatform() === 'android') {
         const content = await this.fs.readFile(fp, 'Books', 'binary');
         file = new File([content], fp);
       } else {

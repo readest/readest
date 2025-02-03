@@ -25,6 +25,7 @@ export interface AppService {
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
   hasWindowBar: boolean;
+  hasContextMenu: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
 
