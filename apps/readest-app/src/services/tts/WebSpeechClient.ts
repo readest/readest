@@ -175,6 +175,7 @@ export class WebSpeechClient implements TTSClient {
   #rate = 1.0;
   #pitch = 1.0;
   #voice: SpeechSynthesisVoice | null = null;
+  #currentVoiceLang = '';
   #voices: SpeechSynthesisVoice[] = [];
   #synth = window.speechSynthesis;
   available = true;
@@ -213,11 +214,16 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
-    const lang = parseSSMLLang(ssml) || 'en';
-    if (!this.#voice) {
+    const ssmlLang = parseSSMLLang(ssml) || 'en';
+    let lang = ssmlLang;
+    if (lang === 'en' && /[\p{Script=Han}]/u.test(ssml)) {
+      lang = 'zh';
+    }
+    if (!this.#voice || ssmlLang !== lang) {
       const voices = await this.getVoices(lang);
       const voiceId = voices[0]?.id ?? '';
       this.#voice = this.#voices.find((v) => v.voiceURI === voiceId) || null;
+      this.#currentVoiceLang = lang;
     }
     for await (const ev of speakWithMarks(
       ssml,
@@ -286,6 +292,9 @@ export class WebSpeechClient implements TTSClient {
   }
 
   async getVoices(lang: string) {
+    if (this.#currentVoiceLang) {
+      lang = this.#currentVoiceLang;
+    }
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const isValidVoice = (id: string) => {
       return !id.includes('com.apple') || id.includes('com.apple.voice.compact');

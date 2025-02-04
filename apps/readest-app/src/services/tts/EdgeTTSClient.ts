@@ -8,6 +8,7 @@ export class EdgeTTSClient implements TTSClient {
   #rate = 1.0;
   #pitch = 1.0;
   #voice: TTSVoice | null = null;
+  #currentVoiceLang = '';
   #voices: TTSVoice[] = [];
   #edgeTTS: EdgeSpeechTTS;
 
@@ -60,12 +61,17 @@ export class EdgeTTSClient implements TTSClient {
     preload = false,
   ): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
-    const lang = parseSSMLLang(ssml) || 'en';
+    const ssmlLang = parseSSMLLang(ssml) || 'en';
+    let lang = ssmlLang;
+    if (lang === 'en' && /[\p{Script=Han}]/u.test(ssml)) {
+      lang = 'zh';
+    }
 
     let voiceId = 'en-US-AriaNeural';
-    if (!this.#voice) {
+    if (!this.#voice || ssmlLang !== lang) {
       const voices = await this.getVoices(lang);
       this.#voice = voices[0] ? voices[0] : this.#voices.find((v) => v.id === voiceId) || null;
+      this.#currentVoiceLang = lang;
     }
     if (this.#voice) {
       voiceId = this.#voice.id;
@@ -229,6 +235,9 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async getVoices(lang: string): Promise<TTSVoice[]> {
+    if (this.#currentVoiceLang) {
+      lang = this.#currentVoiceLang;
+    }
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
     return voices.filter((v) => v.lang.startsWith(locale));
