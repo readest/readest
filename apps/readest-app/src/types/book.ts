@@ -46,6 +46,8 @@ export interface BookNote {
   deletedAt?: number | null;
 }
 
+export type WritingMode = 'auto' | 'horizontal-tb' | 'horizontal-rl' | 'vertical-rl';
+
 export interface BookLayout {
   marginPx: number;
   gapPercent: number;
@@ -55,7 +57,7 @@ export interface BookLayout {
   maxInlineSize: number;
   maxBlockSize: number;
   animated: boolean;
-  writingMode: string;
+  writingMode: WritingMode;
   vertical: boolean;
 }
 

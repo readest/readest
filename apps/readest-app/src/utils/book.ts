@@ -1,5 +1,5 @@
 import { EXTS } from '@/libs/document';
-import { Book, BookConfig, BookProgress } from '@/types/book';
+import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
 import { getUserLang, makeSafeFilename } from './misc';
 
 export const getDir = (book: Book) => {
@@ -118,4 +118,16 @@ export const getCurrentPage = (book: Book, progress: BookProgress) => {
     : pageinfo
       ? pageinfo.current + 1
       : 0;
+};
+
+export const getBookDirFromWritingMode = (writingMode: WritingMode) => {
+  switch (writingMode) {
+    case 'horizontal-tb':
+      return 'ltr';
+    case 'horizontal-rl':
+    case 'vertical-rl':
+      return 'rtl';
+    default:
+      return 'auto';
+  }
 };

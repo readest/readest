@@ -9,7 +9,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
-import { getBookLangCode } from '@/utils/book';
+import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -134,7 +134,10 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // global settings are not supported for writing mode
     viewSettings.writingMode = writingMode;
     setViewSettings(bookKey, viewSettings);
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    if (view) {
+      view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+      view.book.dir = getBookDirFromWritingMode(writingMode);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [writingMode]);
 

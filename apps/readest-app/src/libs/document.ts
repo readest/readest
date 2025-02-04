@@ -63,6 +63,7 @@ export interface BookDoc {
     subject?: string[];
     identifier?: string;
   };
+  dir: string;
   toc?: Array<TOCItem>;
   sections?: Array<SectionItem>;
   splitTOCHref(href: string): Array<string | number>;

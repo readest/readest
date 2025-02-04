@@ -21,6 +21,7 @@ export interface FoliateView extends HTMLElement {
   select: (target: string | number | { fraction: number }) => void;
   deselect: () => void;
   initTTS: (granularity?: TTSGranularity) => Promise<void>;
+  book: BookDoc;
   tts: TTS | null;
   language: {
     locale?: string;

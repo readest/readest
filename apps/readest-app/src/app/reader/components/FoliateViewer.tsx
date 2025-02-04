@@ -9,6 +9,7 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
+import { getBookDirFromWritingMode } from '@/utils/book';
 import { useTheme } from '@/hooks/useTheme';
 import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import {
@@ -140,6 +141,11 @@ const FoliateViewer: React.FC<{
 
       const viewSettings = getViewSettings(bookKey)!;
       view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+
+      const writingMode = viewSettings.writingMode;
+      if (writingMode) {
+        view.book.dir = getBookDirFromWritingMode(writingMode);
+      }
 
       const isScrolled = viewSettings.scrolled!;
       const marginPx = viewSettings.marginPx!;

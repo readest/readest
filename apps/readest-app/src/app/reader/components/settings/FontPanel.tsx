@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
 import { FONT_ENUM_SUPPORTED_OS_PLATFORMS, getSysFontsList } from '@/utils/font';
+import { isTauriAppPlatform } from '@/services/environment';
 
 interface FontFaceProps {
   className?: string;
@@ -98,7 +99,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
 
   useEffect(() => {
-    if (FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
+    if (isTauriAppPlatform() && FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
       getSysFontsList().then((fonts) => {
         setSysFonts(fonts);
       });
