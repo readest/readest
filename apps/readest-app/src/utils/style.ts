@@ -153,7 +153,7 @@ const getLayoutStyles = (
     ${bg === '#ffffff' ? '' : `color: inherit;`}
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
   }
-  body * {
+  body {
     zoom: ${zoomLevel};
   }
   svg, img {

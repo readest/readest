@@ -5,7 +5,12 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
+import {
+  MAX_ZOOM_LEVEL,
+  MIN_ZOOM_LEVEL,
+  ONE_COLUMN_MAX_INLINE_SIZE,
+  ZOOM_STEP,
+} from '@/services/constants';
 import MenuItem from '@/components/MenuItem';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -32,8 +37,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [isInvertedColors, setInvertedColors] = useState(viewSettings!.invert);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
 
-  const zoomIn = () => setZoomLevel((prev) => Math.min(prev + 1, MAX_ZOOM_LEVEL));
-  const zoomOut = () => setZoomLevel((prev) => Math.max(prev - 1, MIN_ZOOM_LEVEL));
+  const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
+  const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleInvertedColors = () => setInvertedColors(!isInvertedColors);
@@ -104,7 +109,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           )}
           onClick={resetZoom}
         >
-          {100 - (100 - zoomLevel) * 10}%
+          {zoomLevel}%
         </button>
         <button
           onClick={zoomIn}
