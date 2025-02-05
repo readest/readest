@@ -10,6 +10,7 @@
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
 [![OS][badge-platforms]][link-website]
+[![][badge-hellogithub]][link-hellogithub]
 [![][badge-discord]][link-discord]
 <br>
 [![AGPL Licence][badge-license]](LICENSE)
@@ -193,7 +194,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 Readest is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
 
-The following libraries and software are used in this software:
+The following libraries and frameworks are used in this software:
 
 - [foliate-js](https://github.com/johnfactotum/foliate-js), which is MIT licensed.
 - [zip.js](https://github.com/gildas-lormeau/zip.js), which is licensed under the BSD-3-Clause license.
@@ -220,6 +221,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=green
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
+[badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
 [link-macos-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
 [link-web-readest]: https://web.readest.com
@@ -230,3 +232,4 @@ The following fonts are utilized in this software, either bundled within the app
 [link-discord]: https://discord.gg/gntyVNk3BJ
 [link-parallel-read]: https://readest.com/#parallel-read
 [link-koreader]: https://github.com/koreader/koreader
+[link-hellogithub]: https://hellogithub.com/repository/8a5b6ade2aee461a8bd94e59200682a7
