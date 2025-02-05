@@ -149,5 +149,6 @@
   "Storage": "Penyimpanan",
   "Book deleted: {{title}}": "Buku dihapus: {{title}}",
   "Failed to delete book: {{title}}": "Gagal menghapus buku: {{title}}",
-  "Check Updates on Start": "Periksa Pembaruan saat Memulai"
+  "Check Updates on Start": "Periksa Pembaruan saat Memulai",
+  "Insufficient storage quota": "Kuota penyimpanan tidak mencukupi"
 }

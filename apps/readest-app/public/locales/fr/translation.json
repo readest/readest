@@ -149,5 +149,6 @@
   "Storage": "Stockage",
   "Book deleted: {{title}}": "Livre supprimé : {{title}}",
   "Failed to delete book: {{title}}": "Échec de la suppression du livre : {{title}}",
-  "Check Updates on Start": "Vérifier les mises à jour au démarrage"
+  "Check Updates on Start": "Vérifier les mises à jour au démarrage",
+  "Insufficient storage quota": "Quota de stockage insuffisant"
 }

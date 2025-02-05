@@ -82,6 +82,9 @@ export const uploadFile = async (
     }
   } catch (error) {
     console.error('File upload failed:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error('File upload failed');
   }
 };

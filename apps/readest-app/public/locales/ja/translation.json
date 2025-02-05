@@ -149,5 +149,6 @@
   "Storage": "ストレージ",
   "Book deleted: {{title}}": "書籍が削除されました：{{title}}",
   "Failed to delete book: {{title}}": "書籍の削除に失敗しました：{{title}}",
-  "Check Updates on Start": "開始時に更新を確認"
+  "Check Updates on Start": "開始時に更新を確認",
+  "Insufficient storage quota": "ストレージクォータが不足しています"
 }

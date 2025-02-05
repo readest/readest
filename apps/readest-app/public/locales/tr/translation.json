@@ -149,5 +149,6 @@
   "Storage": "Depolama",
   "Book deleted: {{title}}": "Kitap silindi: {{title}}",
   "Failed to delete book: {{title}}": "Kitap silinemedi: {{title}}",
-  "Check Updates on Start": "Başlangıçta Güncellemeleri Kontrol Et"
+  "Check Updates on Start": "Başlangıçta Güncellemeleri Kontrol Et",
+  "Insufficient storage quota": "Yetersiz depolama kotası"
 }

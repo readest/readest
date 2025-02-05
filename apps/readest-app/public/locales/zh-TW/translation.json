@@ -149,5 +149,6 @@
   "Storage": "存儲空間",
   "Book deleted: {{title}}": "書籍已刪除：{{title}}",
   "Failed to delete book: {{title}}": "書籍刪除失敗：{{title}}",
-  "Check Updates on Start": "啟動時檢查更新"
+  "Check Updates on Start": "啟動時檢查更新",
+  "Insufficient storage quota": "雲存儲空間不足"
 }

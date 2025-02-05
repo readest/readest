@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
-import { navigateToReader } from '@/utils/nav';
+import { navigateToLogin, navigateToReader } from '@/utils/nav';
 import { getBaseFilename, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { parseOpenWithFiles } from '@/helpers/cli';
@@ -244,7 +244,19 @@ const LibraryPage = () => {
           title: book.title,
         }),
       });
-    } catch {
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('Not authenticated')) {
+          navigateToLogin(router);
+          return;
+        } else if (err.message.includes('Insufficient storage quota')) {
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: _('Insufficient storage quota'),
+          });
+          return;
+        }
+      }
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message: _('Failed to upload book: {{title}}', {

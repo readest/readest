@@ -149,5 +149,6 @@
   "Storage": "存储空间",
   "Book deleted: {{title}}": "书籍已删除：{{title}}",
   "Failed to delete book: {{title}}": "删除书籍失败：{{title}}",
-  "Check Updates on Start": "启动时检查更新"
+  "Check Updates on Start": "启动时检查更新",
+  "Insufficient storage quota": "云存储空间不足"
 }

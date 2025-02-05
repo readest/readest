@@ -149,5 +149,6 @@
   "Storage": "Przechowywanie",
   "Book deleted: {{title}}": "Książka usunięta: {{title}}",
   "Failed to delete book: {{title}}": "Nie udało się usunąć książki: {{title}}",
-  "Check Updates on Start": "Sprawdź aktualizacje przy starcie"
+  "Check Updates on Start": "Sprawdź aktualizacje przy starcie",
+  "Insufficient storage quota": "Niewystarczająca kwota przechowywania"
 }

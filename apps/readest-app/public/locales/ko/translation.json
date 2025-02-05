@@ -149,5 +149,6 @@
   "Storage": "저장소",
   "Book deleted: {{title}}": "책 삭제됨: {{title}}",
   "Failed to delete book: {{title}}": "책 삭제 실패: {{title}}",
-  "Check Updates on Start": "시작 시 업데이트 확인"
+  "Check Updates on Start": "시작 시 업데이트 확인",
+  "Insufficient storage quota": "저장소 할당량 부족"
 }

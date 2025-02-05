@@ -149,5 +149,6 @@
   "Storage": "Αποθήκευση",
   "Book deleted: {{title}}": "Το βιβλίο με τίτλο {{title}} διαγράφηκε",
   "Failed to delete book: {{title}}": "Αποτυχία διαγραφής βιβλίου: {{title}}",
-  "Check Updates on Start": "Έλεγχος ενημερώσεων κατά την εκκίνηση"
+  "Check Updates on Start": "Έλεγχος ενημερώσεων κατά την εκκίνηση",
+  "Insufficient storage quota": "Ανεπαρκές όριο αποθήκευσης"
 }

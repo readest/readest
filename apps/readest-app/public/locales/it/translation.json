@@ -149,5 +149,6 @@
   "Storage": "Archiviazione",
   "Book deleted: {{title}}": "Libro eliminato: {{title}}",
   "Failed to delete book: {{title}}": "Eliminazione libro non riuscita: {{title}}",
-  "Check Updates on Start": "Controlla aggiornamenti all'avvio"
+  "Check Updates on Start": "Controlla aggiornamenti all'avvio",
+  "Insufficient storage quota": "Quota di archiviazione insufficiente"
 }

@@ -149,5 +149,6 @@
   "Storage": "Speicher",
   "Book deleted: {{title}}": "Buch gelöscht: {{title}}",
   "Failed to delete book: {{title}}": "Fehler beim Löschen des Buches: {{title}}",
-  "Check Updates on Start": "Aktualisierungen beim Start prüfen"
+  "Check Updates on Start": "Aktualisierungen beim Start prüfen",
+  "Insufficient storage quota": "Unzureichendes Speicherkontingent"
 }

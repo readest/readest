@@ -149,5 +149,6 @@
   "Storage": "स्टोरेज",
   "Book deleted: {{title}}": "पुस्तक हटाई गई: {{title}}",
   "Failed to delete book: {{title}}": "पुस्तक हटाने में विफल: {{title}}",
-  "Check Updates on Start": "शुरू में अपडेट जांचें"
+  "Check Updates on Start": "शुरू में अपडेट जांचें",
+  "Insufficient storage quota": "अपर्याप्त स्टोरेज कोटा"
 }
