@@ -8,7 +8,7 @@ import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize
 interface DropdownProps {
   family?: string;
   selected: string;
-  options: string[];
+  options: { option: string; label: string }[];
   moreOptions?: string[];
   onSelect: (option: string) => void;
   onGetFontFamily: (option: string, family: string) => string;
@@ -25,26 +25,31 @@ const FontDropdown: React.FC<DropdownProps> = ({
   const _ = useTranslation();
   const iconSize16 = useResponsiveSize(16);
   const defaultIconSize = useDefaultIconSize();
+  const selectedOption = options.find((option) => option.option === selected)!;
   return (
     <div className='dropdown dropdown-top'>
       <button
         tabIndex={0}
         className='btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case'
       >
-        <span style={{ fontFamily: onGetFontFamily(selected, family ?? '') }}>{selected}</span>
+        <span style={{ fontFamily: onGetFontFamily(selectedOption.option, family ?? '') }}>
+          {selectedOption.label}
+        </span>
         <FiChevronUp size={iconSize16} />
       </button>
       <ul
         tabIndex={0}
         className='dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute right-[-32px] z-[1] mt-4 w-44 shadow sm:right-0'
       >
-        {options.map((option) => (
+        {options.map(({ option, label }) => (
           <li key={option} onClick={() => onSelect(option)}>
             <div className='flex items-center px-0'>
               <span style={{ minWidth: `${defaultIconSize}px` }}>
                 {selected === option && <MdCheck className='text-base-content' />}
               </span>
-              <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>{option}</span>
+              <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
+                {label || option}
+              </span>
             </div>
           </li>
         ))}

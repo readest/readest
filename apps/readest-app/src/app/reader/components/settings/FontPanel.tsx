@@ -32,8 +32,6 @@ interface FontFaceProps {
   onSelect: (option: string) => void;
 }
 
-const fontFamilyOptions = ['Serif', 'Sans-serif'];
-
 const handleFontFaceFont = (option: string, family: string) => {
   return `'${option}', ${family}`;
 };
@@ -51,7 +49,7 @@ const FontFace = ({
     <span className=''>{label}</span>
     <FontDropdown
       family={family}
-      options={options}
+      options={options.map((option) => ({ option, label: option }))}
       moreOptions={moreOptions}
       selected={selected}
       onSelect={onSelect}
@@ -67,6 +65,17 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const { themeCode } = useTheme();
+
+  const fontFamilyOptions = [
+    {
+      option: 'Serif',
+      label: _('Serif Font'),
+    },
+    {
+      option: 'Sans-serif',
+      label: _('Sans-Serif Font'),
+    },
+  ];
 
   const osPlatform = getOSPlatform();
   let defaultSysFonts: string[] = [];
