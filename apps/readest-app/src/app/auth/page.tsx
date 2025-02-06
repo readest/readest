@@ -62,6 +62,14 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
   const osPlatform = getOSPlatform();
 
+  const getTauriRedirectTo = () => {
+    return process.env.NODE_ENV === 'production'
+      ? ['android', 'ios'].includes(osPlatform)
+        ? 'https://web.readest.com/auth/callback'
+        : 'readest://auth/callback'
+      : `http://localhost:${port}`;
+  };
+
   const tauriSignIn = async (provider: OAuthProvider) => {
     if (!supabase) {
       throw new Error('No backend connected');
@@ -71,12 +79,7 @@ export default function AuthPage() {
       provider,
       options: {
         skipBrowserRedirect: true,
-        redirectTo:
-          process.env.NODE_ENV === 'production'
-            ? ['android', 'ios'].includes(osPlatform)
-              ? 'https://web.readest.com/auth/callback'
-              : 'readest://auth/callback'
-            : `http://localhost:${port}`,
+        redirectTo: getTauriRedirectTo(),
       },
     });
 
@@ -85,6 +88,13 @@ export default function AuthPage() {
       return;
     }
     openUrl(data.url);
+
+    // FIXME: For Android we need a better way to trigger the deeplink redirect
+    if (getOSPlatform() === 'android') {
+      setTimeout(() => {
+        router.back();
+      }, 5000);
+    }
   };
 
   const handleOAuthUrl = async (url: string) => {
@@ -226,7 +236,7 @@ export default function AuthPage() {
           theme={isDarkMode ? 'dark' : 'light'}
           magicLink={true}
           providers={[]}
-          redirectTo={`http://localhost:${port}`}
+          redirectTo={getTauriRedirectTo()}
         />
       </div>
     </div>
