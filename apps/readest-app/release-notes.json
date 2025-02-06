@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.9": {
+      "date": "2025-02-06",
+      "notes": [
+        "Load system fonts list at runtime on desktop",
+        "Incrementally load new books in synchronization",
+        "Change voice language dynamically by detecting text language",
+        "Various fixes and enhancements on sync, fonts and highlighting"
+      ]
+    },
     "0.9.8": {
       "date": "2025-02-01",
       "notes": [
