@@ -6,7 +6,12 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { Book } from '@/types/book';
 
-export const useBooksSync = () => {
+export interface UseBooksSyncProps {
+  onSyncStart?: () => void;
+  onSyncEnd?: () => void;
+}
+
+export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   const { user } = useAuth();
   const { appService } = useEnv();
   const { library, setLibrary } = useLibraryStore();
@@ -91,16 +96,23 @@ export const useBooksSync = () => {
       if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
         if (newBook.uploadedAt && !newBook.deletedAt) {
           try {
-            updatedLibrary.push(newBook);
             await appService?.downloadBook(newBook, true);
             newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+            updatedLibrary.push(newBook);
+            setLibrary(updatedLibrary);
           } catch {
             console.error('Failed to download book:', newBook);
           }
         }
       }
     };
-    await Promise.all(syncedBooks.map(processNewBook));
+    onSyncStart?.();
+    const batchSize = 3;
+    for (let i = 0; i < syncedBooks.length; i += batchSize) {
+      const batch = syncedBooks.slice(i, i + batchSize);
+      await Promise.all(batch.map(processNewBook));
+    }
+    onSyncEnd?.();
     setLibrary(updatedLibrary);
     appService?.saveLibraryBooks(updatedLibrary);
   };

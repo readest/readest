@@ -57,7 +57,10 @@ const LibraryPage = () => {
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { pullLibrary, pushLibrary } = useBooksSync();
+  const { pullLibrary, pushLibrary } = useBooksSync({
+    onSyncStart: () => setLoading(true),
+    onSyncEnd: () => setLoading(false),
+  });
 
   usePullToRefresh(containerRef, pullLibrary);
 
