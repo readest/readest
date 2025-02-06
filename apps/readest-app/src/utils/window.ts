@@ -24,3 +24,12 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
     await exit(0);
   });
 };
+
+export const tauriHandleOnWindowFocus = async (callback: () => void) => {
+  const { TauriEvent } = await import('@tauri-apps/api/event');
+  const { getCurrentWindow } = await import('@tauri-apps/api/window');
+  const currentWindow = getCurrentWindow();
+  return currentWindow.listen(TauriEvent.WINDOW_FOCUS, async () => {
+    await callback();
+  });
+};
