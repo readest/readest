@@ -49,6 +49,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const isShowingPopup = useRef(false);
   const isTextSelected = useRef(false);
   const isUpToShowPopup = useRef(false);
+  const isTouchstarted = useRef(false);
   const [selection, setSelection] = useState<TextSelection | null>();
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
@@ -94,14 +95,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       }
       setSelection({ key: bookKey, text: sel.toString(), range, index });
     };
-    const handlePointerup = () => {
-      // Available on iOS and Desktop, fired when release the long press
-      // Note that on Android, pointerup event is fired for any tap but not for long press
-      const sel = doc.getSelection();
-      if (isValidSelection(sel)) {
-        makeSelection(sel, true);
-      }
-    };
     const handleSelectionchange = () => {
       // Available on iOS, Android and Desktop, fired when the selection is changed
       // Ideally the popup only shows when the selection is done,
@@ -109,7 +102,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // we make the popup show when the selection is changed
       const sel = doc.getSelection();
       if (isValidSelection(sel)) {
-        if (osPlatform === 'android') {
+        if (osPlatform === 'android' && isTouchstarted.current) {
           makeSelection(sel, false);
         }
       } else if (!isUpToShowPopup.current) {
@@ -120,14 +113,32 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         setShowDeepLPopup(false);
       }
     };
+    const handlePointerup = () => {
+      // Available on iOS and Desktop, fired when release the long press
+      // Note that on Android, pointerup event is fired after an additional touch event
+      const sel = doc.getSelection();
+      if (isValidSelection(sel)) {
+        makeSelection(sel, true);
+      }
+    };
+    const handleTouchstart = () => {
+      // Available on iOS and Android for the initial touch event
+      isTouchstarted.current = true;
+    };
     const handleTouchmove = () => {
-      // Available on iOS
+      // Available on iOS, on Android not fired
       // To make the popup not to follow the selection
       setShowAnnotPopup(false);
     };
+    const handleTouchend = () => {
+      // Available on iOS, on Android fired after an additional touch event
+      isTouchstarted.current = false;
+    };
     if (bookData.book?.format !== 'PDF') {
       detail.doc?.addEventListener('pointerup', handlePointerup);
+      detail.doc?.addEventListener('touchstart', handleTouchstart);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
+      detail.doc?.addEventListener('touchend', handleTouchend);
       detail.doc?.addEventListener('selectionchange', handleSelectionchange);
 
       // Disable the default context menu on mobile devices,
