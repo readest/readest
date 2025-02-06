@@ -7,7 +7,6 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
-import { VscAzure } from 'react-icons/vsc';
 import { FaGithub } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
 
@@ -21,6 +20,7 @@ import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
+import { getOSPlatform } from '@/utils/misc';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -60,8 +60,9 @@ export default function AuthPage() {
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
+  const osPlatform = getOSPlatform();
 
-  const signIn = async (provider: OAuthProvider) => {
+  const tauriSignIn = async (provider: OAuthProvider) => {
     if (!supabase) {
       throw new Error('No backend connected');
     }
@@ -72,7 +73,9 @@ export default function AuthPage() {
         skipBrowserRedirect: true,
         redirectTo:
           process.env.NODE_ENV === 'production'
-            ? 'readest://auth/callback'
+            ? ['android', 'ios'].includes(osPlatform)
+              ? 'https://web.readest.com/auth/callback'
+              : 'readest://auth/callback'
             : `http://localhost:${port}`,
       },
     });
@@ -200,25 +203,19 @@ export default function AuthPage() {
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
         <ProviderLogin
           provider='google'
-          handleSignIn={signIn}
+          handleSignIn={tauriSignIn}
           Icon={FcGoogle}
           label='Sign in with Google'
         />
         <ProviderLogin
           provider='apple'
-          handleSignIn={signIn}
+          handleSignIn={tauriSignIn}
           Icon={FaApple}
           label='Sign in with Apple'
         />
         <ProviderLogin
-          provider='azure'
-          handleSignIn={signIn}
-          Icon={VscAzure}
-          label='Sign in with Azure'
-        />
-        <ProviderLogin
           provider='github'
-          handleSignIn={signIn}
+          handleSignIn={tauriSignIn}
           Icon={FaGithub}
           label='Sign in with GitHub'
         />
@@ -246,7 +243,7 @@ export default function AuthPage() {
         appearance={{ theme: ThemeSupa }}
         theme={isDarkMode ? 'dark' : 'light'}
         magicLink={true}
-        providers={['google', 'apple', 'azure', 'github']}
+        providers={['google', 'apple', 'github']}
         redirectTo='/auth/callback'
       />
     </div>

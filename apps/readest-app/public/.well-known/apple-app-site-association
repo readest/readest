@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "J5W48D69VR.com.bilingify.readest"
+        ],
+        "components": [
+          {
+            "/": "/auth/*",
+            "comment": "Matches any URL whose path starts with /auth/"
+          }
+        ]
+      }
+    ]
+  }
+}

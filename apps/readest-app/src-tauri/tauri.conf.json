@@ -56,6 +56,9 @@
         "section": "text"
       }
     },
+    "android": {
+      "minSdkVersion": 26
+    },
     "fileAssociations": [
       {
         "name": "epub",

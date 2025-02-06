@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bilingify.readest",
+      "sha256_cert_fingerprints": [
+        "65:2D:11:67:76:12:29:14:18:42:CB:3D:18:50:B6:E4:7E:46:E1:2F:4B:E4:7F:5A:6C:14:B6:D7:12:74:1E:82"
+      ]
+    }
+  }
+]
