@@ -1,6 +1,6 @@
 pnpm run build-macos-universial-appstore
 
-BUNDLE_DIR=src-tauri/target/universal-apple-darwin/release/bundle/macos
+BUNDLE_DIR=../../target/universal-apple-darwin/release/bundle/macos
 APP_BUNDLE=$BUNDLE_DIR/Readest.app
 INSTALLER_BUNDLE=$BUNDLE_DIR/Readest.pkg
 
