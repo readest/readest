@@ -57,7 +57,6 @@
   "Language:": "Язык:",
   "Layout": "Макет",
   "Light Mode": "Светлая тема",
-  "Line Height": "Межстрочный интервал",
   "Loading...": "Загрузка...",
   "Loc. {{currentPage}} / {{totalPage}}": "Поз. {{currentPage}} / {{totalPage}}",
   "Logged in": "Выполнен вход",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Книга удалена: {{title}}",
   "Failed to delete book: {{title}}": "Не удалось удалить книгу: {{title}}",
   "Check Updates on Start": "Проверять обновления при запуске",
-  "Insufficient storage quota": "Недостаточно квоты хранилища"
+  "Insufficient storage quota": "Недостаточно квоты хранилища",
+  "Font Weight": "Насыщенность шрифта",
+  "Line Spacing": "Межстрочный интервал",
+  "Word Spacing": "Межсловный интервал",
+  "Letter Spacing": "Межбуквенный интервал",
+  "Text Indent": "Отступ текста",
+  "Paragraph Margin": "Отступ абзаца"
 }

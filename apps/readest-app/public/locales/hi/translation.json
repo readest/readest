@@ -57,7 +57,6 @@
   "Language:": "भाषा:",
   "Layout": "लेआउट",
   "Light Mode": "लाइट मोड",
-  "Line Height": "लाइन हाइट",
   "Loading...": "लोड हो रहा है...",
   "Loc. {{currentPage}} / {{totalPage}}": "स्थान {{currentPage}} / {{totalPage}}",
   "Logged in": "लॉग इन किया",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "पुस्तक हटाई गई: {{title}}",
   "Failed to delete book: {{title}}": "पुस्तक हटाने में विफल: {{title}}",
   "Check Updates on Start": "शुरू में अपडेट जांचें",
-  "Insufficient storage quota": "अपर्याप्त स्टोरेज कोटा"
+  "Insufficient storage quota": "अपर्याप्त स्टोरेज कोटा",
+  "Font Weight": "फ़ॉन्ट वजन",
+  "Line Spacing": "लाइन स्पेसिंग",
+  "Word Spacing": "शब्द स्पेसिंग",
+  "Letter Spacing": "अक्षर स्पेसिंग",
+  "Text Indent": "टेक्स्ट इंडेंट",
+  "Paragraph Margin": "पैराग्राफ मार्जिन"
 }

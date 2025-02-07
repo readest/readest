@@ -53,7 +53,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         isTrafficLightVisible ? 'pl-16' : 'pl-2',
       )}
     >
-      <div className='flex items-center justify-between space-x-12'>
+      <div className='flex items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <span className='absolute left-8 text-gray-500'>
             <FaSearch className='h-4 w-4' />
@@ -68,7 +68,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               'border-none focus:outline-none focus:ring-0',
             )}
           />
-          <div className='absolute right-4 flex items-center space-x-4 text-gray-500'>
+          <div className='absolute right-4 flex items-center space-x-2 text-gray-500 sm:space-x-4'>
             <span className='mx-2 h-6 w-[1px] bg-gray-400'></span>
             <Dropdown
               className='exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center'
@@ -98,7 +98,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </button>
           </div>
         </div>
-        <div className='flex h-full items-center gap-x-4'>
+        <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'

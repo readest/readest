@@ -57,7 +57,6 @@
   "Language:": "Γλώσσα:",
   "Layout": "Διάταξη",
   "Light Mode": "Φωτεινή λειτουργία",
-  "Line Height": "Ύψος γραμμής",
   "Loading...": "Φόρτωση...",
   "Loc. {{currentPage}} / {{totalPage}}": "Θέση {{currentPage}} / {{totalPage}}",
   "Logged in": "Συνδεδεμένος",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Το βιβλίο με τίτλο {{title}} διαγράφηκε",
   "Failed to delete book: {{title}}": "Αποτυχία διαγραφής βιβλίου: {{title}}",
   "Check Updates on Start": "Έλεγχος ενημερώσεων κατά την εκκίνηση",
-  "Insufficient storage quota": "Ανεπαρκές όριο αποθήκευσης"
+  "Insufficient storage quota": "Ανεπαρκές όριο αποθήκευσης",
+  "Font Weight": "Βάρος γραμματοσειράς",
+  "Line Spacing": "Διάκενο γραμμών",
+  "Word Spacing": "Διάκενο λέξεων",
+  "Letter Spacing": "Διάκενο γραμμάτων",
+  "Text Indent": "Εσοχή κειμένου",
+  "Paragraph Margin": "Περιθώριο παραγράφου"
 }

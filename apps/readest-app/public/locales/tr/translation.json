@@ -57,7 +57,6 @@
   "Language:": "Dil:",
   "Layout": "Düzen",
   "Light Mode": "Aydınlık Mod",
-  "Line Height": "Satır Yüksekliği",
   "Loading...": "Yükleniyor...",
   "Loc. {{currentPage}} / {{totalPage}}": "Konum {{currentPage}} / {{totalPage}}",
   "Logged in": "Giriş Yapıldı",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Kitap silindi: {{title}}",
   "Failed to delete book: {{title}}": "Kitap silinemedi: {{title}}",
   "Check Updates on Start": "Başlangıçta Güncellemeleri Kontrol Et",
-  "Insufficient storage quota": "Yetersiz depolama kotası"
+  "Insufficient storage quota": "Yetersiz depolama kotası",
+  "Font Weight": "Yazı Tipi Ağırlığı",
+  "Line Spacing": "Satır Aralığı",
+  "Word Spacing": "Kelime Aralığı",
+  "Letter Spacing": "Harf Aralığı",
+  "Text Indent": "Metin Girintisi",
+  "Paragraph Margin": "Paragraf Kenarı"
 }

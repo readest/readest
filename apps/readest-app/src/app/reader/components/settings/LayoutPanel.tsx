@@ -22,7 +22,11 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const viewSettings = getViewSettings(bookKey)!;
   const { themeCode } = useTheme();
 
+  const [paragraphMargin, setParagraphMargin] = useState(viewSettings.paragraphMargin!);
   const [lineHeight, setLineHeight] = useState(viewSettings.lineHeight!);
+  const [wordSpacing, setWordSpacing] = useState(viewSettings.wordSpacing!);
+  const [letterSpacing, setLetterSpacing] = useState(viewSettings.letterSpacing!);
+  const [textIndent, setTextIndent] = useState(viewSettings.textIndent!);
   const [fullJustification, setFullJustification] = useState(viewSettings.fullJustification!);
   const [hyphenation, setHyphenation] = useState(viewSettings.hyphenation!);
   const [marginPx, setMarginPx] = useState(viewSettings.marginPx!);
@@ -31,6 +35,17 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize!);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize!);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
+
+  useEffect(() => {
+    viewSettings.paragraphMargin = paragraphMargin;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.paragraphMargin = paragraphMargin;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paragraphMargin]);
 
   useEffect(() => {
     viewSettings.lineHeight = lineHeight;
@@ -42,6 +57,39 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineHeight]);
+
+  useEffect(() => {
+    viewSettings.wordSpacing = wordSpacing;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.wordSpacing = wordSpacing;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wordSpacing]);
+
+  useEffect(() => {
+    viewSettings.letterSpacing = letterSpacing;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.letterSpacing = letterSpacing;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [letterSpacing]);
+
+  useEffect(() => {
+    viewSettings.textIndent = textIndent;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.textIndent = textIndent;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textIndent]);
 
   useEffect(() => {
     viewSettings.fullJustification = fullJustification;
@@ -188,12 +236,48 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <NumberInput
               className='config-item-top'
-              label={_('Line Height')}
+              label={_('Paragraph Margin')}
+              value={paragraphMargin}
+              onChange={setParagraphMargin}
+              min={0}
+              max={4}
+              step={0.5}
+            />
+            <NumberInput
+              className='config-item-top'
+              label={_('Line Spacing')}
               value={lineHeight}
               onChange={setLineHeight}
               min={1.0}
               max={3.0}
               step={0.1}
+            />
+            <NumberInput
+              className='config-item-top'
+              label={_('Word Spacing')}
+              value={wordSpacing}
+              onChange={setWordSpacing}
+              min={-4}
+              max={8}
+              step={0.5}
+            />
+            <NumberInput
+              className='config-item-top'
+              label={_('Letter Spacing')}
+              value={letterSpacing}
+              onChange={setLetterSpacing}
+              min={-2}
+              max={4}
+              step={0.1}
+            />
+            <NumberInput
+              className='config-item-top'
+              label={_('Text Indent')}
+              value={textIndent}
+              onChange={setTextIndent}
+              min={-2}
+              max={4}
+              step={1}
             />
             <div className='config-item config-item-bottom'>
               <span className=''>{_('Full Justification')}</span>

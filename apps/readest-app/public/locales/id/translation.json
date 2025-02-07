@@ -57,7 +57,6 @@
   "Language:": "Bahasa:",
   "Layout": "Tata Letak",
   "Light Mode": "Mode Terang",
-  "Line Height": "Tinggi Baris",
   "Loading...": "Memuat...",
   "Loc. {{currentPage}} / {{totalPage}}": "Lok. {{currentPage}} / {{totalPage}}",
   "Logged in": "Sudah Masuk",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Buku dihapus: {{title}}",
   "Failed to delete book: {{title}}": "Gagal menghapus buku: {{title}}",
   "Check Updates on Start": "Periksa Pembaruan saat Memulai",
-  "Insufficient storage quota": "Kuota penyimpanan tidak mencukupi"
+  "Insufficient storage quota": "Kuota penyimpanan tidak mencukupi",
+  "Font Weight": "Berat Font",
+  "Line Spacing": "Spasi Baris",
+  "Word Spacing": "Spasi Kata",
+  "Letter Spacing": "Spasi Huruf",
+  "Text Indent": "Indentasi Teks",
+  "Paragraph Margin": "Margin Paragraf"
 }

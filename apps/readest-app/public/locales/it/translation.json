@@ -57,7 +57,6 @@
   "Language:": "Lingua:",
   "Layout": "Layout",
   "Light Mode": "Modalità chiara",
-  "Line Height": "Altezza riga",
   "Loading...": "Caricamento...",
   "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Accesso effettuato",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Libro eliminato: {{title}}",
   "Failed to delete book: {{title}}": "Eliminazione libro non riuscita: {{title}}",
   "Check Updates on Start": "Controlla aggiornamenti all'avvio",
-  "Insufficient storage quota": "Quota di archiviazione insufficiente"
+  "Insufficient storage quota": "Quota di archiviazione insufficiente",
+  "Font Weight": "Peso font",
+  "Line Spacing": "Interlinea",
+  "Word Spacing": "Spaziatura parole",
+  "Letter Spacing": "Spaziatura lettere",
+  "Text Indent": "Rientro testo",
+  "Paragraph Margin": "Margine paragrafo"
 }

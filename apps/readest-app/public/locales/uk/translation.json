@@ -57,7 +57,6 @@
   "Language:": "Мова:",
   "Layout": "Макет",
   "Light Mode": "Світлий режим",
-  "Line Height": "Висота рядка",
   "Loading...": "Завантаження...",
   "Loc. {{currentPage}} / {{totalPage}}": "Поз. {{currentPage}} / {{totalPage}}",
   "Logged in": "Увійшли",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Книгу видалено: {{title}}",
   "Failed to delete book: {{title}}": "Не вдалося видалити книгу: {{title}}",
   "Check Updates on Start": "Перевіряти оновлення при запуску",
-  "Insufficient storage quota": "Недостатньо квоти сховища"
+  "Insufficient storage quota": "Недостатньо квоти сховища",
+  "Font Weight": "Насиченість шрифту",
+  "Line Spacing": "Міжрядковий інтервал",
+  "Word Spacing": "Міжслівний інтервал",
+  "Letter Spacing": "Міжбуквений інтервал",
+  "Text Indent": "Відступ тексту",
+  "Paragraph Margin": "Відступ абзацу"
 }

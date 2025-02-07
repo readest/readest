@@ -67,7 +67,11 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {
   zoomLevel: 100,
+  paragraphMargin: 1,
   lineHeight: 1.6,
+  wordSpacing: 0,
+  letterSpacing: 0,
+  textIndent: 0,
   fullJustification: true,
   hyphenation: true,
   invert: false,

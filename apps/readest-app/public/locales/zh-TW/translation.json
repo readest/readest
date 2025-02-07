@@ -57,7 +57,6 @@
   "Language:": "語言",
   "Layout": "版面",
   "Light Mode": "淺色主題",
-  "Line Height": "行高",
   "Loading...": "載入中...",
   "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "已登入",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "書籍已刪除：{{title}}",
   "Failed to delete book: {{title}}": "書籍刪除失敗：{{title}}",
   "Check Updates on Start": "啟動時檢查更新",
-  "Insufficient storage quota": "雲存儲空間不足"
+  "Insufficient storage quota": "雲存儲空間不足",
+  "Font Weight": "字重",
+  "Line Spacing": "行間距",
+  "Word Spacing": "字間距",
+  "Letter Spacing": "字間距",
+  "Text Indent": "首行縮進",
+  "Paragraph Margin": "段間距"
 }

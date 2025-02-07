@@ -57,7 +57,6 @@
   "Language:": "Sprache:",
   "Layout": "Layout",
   "Light Mode": "Hellmodus",
-  "Line Height": "Zeilenhöhe",
   "Loading...": "Wird geladen...",
   "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Angemeldet",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Buch gelöscht: {{title}}",
   "Failed to delete book: {{title}}": "Fehler beim Löschen des Buches: {{title}}",
   "Check Updates on Start": "Aktualisierungen beim Start prüfen",
-  "Insufficient storage quota": "Unzureichendes Speicherkontingent"
+  "Insufficient storage quota": "Unzureichendes Speicherkontingent",
+  "Font Weight": "Schriftgewicht",
+  "Line Spacing": "Zeilenabstand",
+  "Word Spacing": "Wortabstand",
+  "Letter Spacing": "Buchstabenabstand",
+  "Text Indent": "Texteinzug",
+  "Paragraph Margin": "Absatzrand"
 }

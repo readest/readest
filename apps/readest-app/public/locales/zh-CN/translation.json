@@ -57,7 +57,6 @@
   "Language:": "语言",
   "Layout": "布局",
   "Light Mode": "浅色主题",
-  "Line Height": "行高",
   "Loading...": "加载中...",
   "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "已登录",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "书籍已删除：{{title}}",
   "Failed to delete book: {{title}}": "删除书籍失败：{{title}}",
   "Check Updates on Start": "启动时检查更新",
-  "Insufficient storage quota": "云存储空间不足"
+  "Insufficient storage quota": "云存储空间不足",
+  "Font Weight": "字重",
+  "Line Spacing": "行间距",
+  "Word Spacing": "词间距",
+  "Letter Spacing": "字间距",
+  "Text Indent": "首行缩进",
+  "Paragraph Margin": "段间距"
 }

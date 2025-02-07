@@ -57,7 +57,6 @@
   "Language:": "Ngôn ngữ:",
   "Layout": "Bố cục",
   "Light Mode": "Chế độ sáng",
-  "Line Height": "Độ cao dòng",
   "Loading...": "Đang tải...",
   "Loc. {{currentPage}} / {{totalPage}}": "Vị trí {{currentPage}} / {{totalPage}}",
   "Logged in": "Đã đăng nhập",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "Sách đã xóa: {{title}}",
   "Failed to delete book: {{title}}": "Không thể xóa sách: {{title}}",
   "Check Updates on Start": "Kiểm tra cập nhật khi khởi động",
-  "Insufficient storage quota": "Không đủ lượng lưu trữ"
+  "Insufficient storage quota": "Không đủ lượng lưu trữ",
+  "Font Weight": "Độ đậm của phông chữ",
+  "Line Spacing": "Khoảng cách dòng",
+  "Word Spacing": "Khoảng cách từ",
+  "Letter Spacing": "Khoảng cách chữ",
+  "Text Indent": "Thụt lề",
+  "Paragraph Margin": "Lề đoạn"
 }

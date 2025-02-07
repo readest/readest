@@ -16,6 +16,7 @@ const getFontStyles = (
   monospace: string,
   defaultFont: string,
   fontSize: number,
+  fontWeight: number,
   overrideFont: boolean,
 ) => {
   const serifFonts = [serif, ...SERIF_FONTS.filter((font) => font !== serif), ...FALLBACK_FONTS];
@@ -34,6 +35,7 @@ const getFontStyles = (
     html, body {
       font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
       font-size: ${fontSize}px !important;
+      font-weight: ${fontWeight};
     }
     body * {
       font-family: revert ${overrideFont ? '!important' : ''};
@@ -92,7 +94,11 @@ const getAdditionalFontFaces = () => `
 `;
 
 const getLayoutStyles = (
-  spacing: number,
+  paragraphMargin: number,
+  lineSpacing: number,
+  wordSpacing: number,
+  letterSpacing: number,
+  textIndent: number,
   justify: boolean,
   hyphenate: boolean,
   zoomLevel: number,
@@ -144,6 +150,7 @@ const getLayoutStyles = (
   html, body {
     color: ${fg};
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode};`}
+    text-indent: ${textIndent}em;
     text-align: var(--default-text-align);
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
@@ -160,7 +167,10 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    line-height: ${spacing} !important;
+    margin: ${paragraphMargin}em 0 !important;
+    line-height: ${lineSpacing} !important;
+    word-spacing: ${wordSpacing}px !important;
+    letter-spacing: ${letterSpacing}px !important;
     text-align: inherit;
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
@@ -201,7 +211,11 @@ export interface ThemeCode {
 
 export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
   const layoutStyles = getLayoutStyles(
+    viewSettings.paragraphMargin!,
     viewSettings.lineHeight!,
+    viewSettings.wordSpacing!,
+    viewSettings.letterSpacing!,
+    viewSettings.textIndent!,
     viewSettings.fullJustification!,
     viewSettings.hyphenation!,
     viewSettings.zoomLevel! / 100.0,
@@ -219,6 +233,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
     viewSettings.defaultFontSize! * fontScale,
+    viewSettings.fontWeight!,
     viewSettings.overrideFont!,
   );
   const userStylesheet = viewSettings.userStylesheet!;

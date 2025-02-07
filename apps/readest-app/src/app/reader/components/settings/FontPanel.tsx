@@ -50,7 +50,7 @@ const FontFace = ({
     <FontDropdown
       family={family}
       options={options.map((option) => ({ option, label: option }))}
-      moreOptions={moreOptions}
+      moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
       selected={selected}
       onSelect={onSelect}
       onGetFontFamily={handleFontFaceFont}
@@ -106,6 +106,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [serifFont, setSerifFont] = useState(viewSettings.serifFont!);
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
+  const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight!);
 
   useEffect(() => {
     if (isTauriAppPlatform() && FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
@@ -148,6 +149,17 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minFontSize]);
+
+  useEffect(() => {
+    viewSettings.fontWeight = fontWeight;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.fontWeight = fontWeight;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontWeight]);
 
   useEffect(() => {
     viewSettings.serifFont = serifFont;
@@ -227,6 +239,23 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               onChange={setMinFontSize}
               min={1}
               max={120}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Font Weight')}</h2>
+        <div className='card border-base-200 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <NumberInput
+              className='config-item-top'
+              label={_('Font Weight')}
+              value={fontWeight}
+              onChange={setFontWeight}
+              min={100}
+              max={900}
+              step={100}
             />
           </div>
         </div>

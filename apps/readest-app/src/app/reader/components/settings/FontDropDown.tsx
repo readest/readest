@@ -8,8 +8,8 @@ import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize
 interface DropdownProps {
   family?: string;
   selected: string;
-  options: { option: string; label: string }[];
-  moreOptions?: string[];
+  options: { option: string; label?: string }[];
+  moreOptions?: { option: string; label?: string }[];
   onSelect: (option: string) => void;
   onGetFontFamily: (option: string, family: string) => string;
 }
@@ -25,7 +25,8 @@ const FontDropdown: React.FC<DropdownProps> = ({
   const _ = useTranslation();
   const iconSize16 = useResponsiveSize(16);
   const defaultIconSize = useDefaultIconSize();
-  const selectedOption = options.find((option) => option.option === selected) || options[0]!;
+  const allOptions = [...options, ...(moreOptions ?? [])];
+  const selectedOption = allOptions.find((option) => option.option === selected) ?? allOptions[0]!;
   return (
     <div className='dropdown dropdown-top'>
       <button
@@ -68,14 +69,14 @@ const FontDropdown: React.FC<DropdownProps> = ({
                 '!mr-5 mb-[-46px] inline max-h-80 w-[200px] overflow-y-scroll',
               )}
             >
-              {moreOptions.map((option) => (
-                <li key={option} onClick={() => onSelect(option)}>
+              {moreOptions.map((option, index) => (
+                <li key={`${index}-${option.option}`} onClick={() => onSelect(option.option)}>
                   <div className='flex items-center px-2'>
                     <span style={{ minWidth: `${defaultIconSize}px` }}>
-                      {selected === option && <MdCheck className='text-base-content' />}
+                      {selected === option.option && <MdCheck className='text-base-content' />}
                     </span>
-                    <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
-                      {option}
+                    <span style={{ fontFamily: onGetFontFamily(option.option, family ?? '') }}>
+                      {option.label || option.option}
                     </span>
                   </div>
                 </li>

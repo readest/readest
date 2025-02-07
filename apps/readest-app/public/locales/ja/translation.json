@@ -57,7 +57,6 @@
   "Language:": "言語：",
   "Layout": "レイアウト",
   "Light Mode": "ライトモード",
-  "Line Height": "行間",
   "Loading...": "読み込み中...",
   "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "ログイン済み",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "書籍が削除されました：{{title}}",
   "Failed to delete book: {{title}}": "書籍の削除に失敗しました：{{title}}",
   "Check Updates on Start": "開始時に更新を確認",
-  "Insufficient storage quota": "ストレージクォータが不足しています"
+  "Insufficient storage quota": "ストレージクォータが不足しています",
+  "Font Weight": "フォントウェイト",
+  "Line Spacing": "行間",
+  "Word Spacing": "単語間隔",
+  "Letter Spacing": "文字間隔",
+  "Text Indent": "テキストインデント",
+  "Paragraph Margin": "段落マージン"
 }

@@ -63,7 +63,11 @@ export interface BookLayout {
 
 export interface BookStyle {
   zoomLevel: number;
+  paragraphMargin: number;
   lineHeight: number;
+  wordSpacing: number;
+  letterSpacing: number;
+  textIndent: number;
   fullJustification: boolean;
   hyphenation: boolean;
   invert: boolean;

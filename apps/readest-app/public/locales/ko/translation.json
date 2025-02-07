@@ -57,7 +57,6 @@
   "Language:": "언어:",
   "Layout": "레이아웃",
   "Light Mode": "라이트 모드",
-  "Line Height": "줄 간격",
   "Loading...": "로딩 중...",
   "Loc. {{currentPage}} / {{totalPage}}": "위치 {{currentPage}} / {{totalPage}}",
   "Logged in": "로그인됨",
@@ -150,5 +149,11 @@
   "Book deleted: {{title}}": "책 삭제됨: {{title}}",
   "Failed to delete book: {{title}}": "책 삭제 실패: {{title}}",
   "Check Updates on Start": "시작 시 업데이트 확인",
-  "Insufficient storage quota": "저장소 할당량 부족"
+  "Insufficient storage quota": "저장소 할당량 부족",
+  "Font Weight": "글꼴 두께",
+  "Line Spacing": "줄 간격",
+  "Word Spacing": "단어 간격",
+  "Letter Spacing": "글자 간격",
+  "Text Indent": "들여쓰기",
+  "Paragraph Margin": "단락 여백"
 }
