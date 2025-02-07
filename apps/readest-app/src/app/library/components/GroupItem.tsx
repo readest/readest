@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { BooksGroup } from '@/types/book';
+import { formatAuthors, formatTitle } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 
 interface GroupItemProps {
@@ -21,8 +22,10 @@ const GroupItem: React.FC<GroupItemProps> = ({ group }) => {
             />
           </figure>
           <div className='card-body p-4'>
-            <h3 className='card-title line-clamp-2 text-sm'>{book.title}</h3>
-            <p className='text-neutral-content line-clamp-1 text-xs'>{book.author}</p>
+            <h3 className='card-title line-clamp-2 text-sm'>{formatTitle(book.title)}</h3>
+            <p className='text-neutral-content line-clamp-1 text-xs'>
+              {formatAuthors(book.author)}
+            </p>
             <ReadingProgress book={book} />
           </div>
         </div>

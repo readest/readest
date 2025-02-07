@@ -156,7 +156,7 @@ export abstract class BaseAppService implements AppService {
         hash,
         format,
         title: formatTitle(loadedBook.metadata.title),
-        author: formatAuthors(loadedBook.metadata.language, loadedBook.metadata.author),
+        author: formatAuthors(loadedBook.metadata.author, loadedBook.metadata.language),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
         uploadedAt: existingBook ? existingBook.uploadedAt : null,
         downloadedAt: Date.now(),

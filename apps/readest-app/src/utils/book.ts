@@ -64,8 +64,8 @@ export const getBookLangCode = (lang: string | string[] | undefined) => {
 };
 
 export const formatAuthors = (
-  bookLang: string | string[] | undefined,
   contributors: string | Contributor | [string | Contributor],
+  bookLang?: string | string[],
 ) => {
   const langCode = getBookLangCode(bookLang);
   return Array.isArray(contributors)

@@ -115,7 +115,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                     {formatTitle(book.title) || _('Untitled')}
                   </p>
                   <p className='text-neutral-content line-clamp-1'>
-                    {formatAuthors(bookMeta.language, book.author) || _('Unknown')}
+                    {formatAuthors(book.author, bookMeta.language) || _('Unknown')}
                   </p>
                 </div>
                 {window.innerWidth >= 400 && (

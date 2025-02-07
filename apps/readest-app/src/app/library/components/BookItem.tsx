@@ -7,6 +7,7 @@ import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/li
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { formatAuthors, formatTitle } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 
 interface BookItemProps {
@@ -61,11 +62,13 @@ const BookItem: React.FC<BookItemProps> = ({
             )}
           >
             <div className='flex h-1/2 items-center justify-center'>
-              <span className='line-clamp-3 text-lg'>{book.title}</span>
+              <span className='line-clamp-3 text-lg'>{formatTitle(book.title)}</span>
             </div>
             <div className='h-1/6'></div>
             <div className='flex h-1/3 items-center justify-center'>
-              <span className='text-neutral-content/50 line-clamp-1 text-base'>{book.author}</span>
+              <span className='text-neutral-content/50 line-clamp-1 text-base'>
+                {formatAuthors(book.author)}
+              </span>
             </div>
           </div>
           {(selectedBooks.includes(book.hash) || clickedBookHash === book.hash) && (
