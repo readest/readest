@@ -11,21 +11,20 @@ mod menu;
 #[cfg(target_os = "macos")]
 mod traffic_light_plugin;
 
-mod transfer_file;
-use transfer_file::{download_file, upload_file};
-
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
-use std::path::PathBuf;
-use tauri::{command, Window};
-use tauri::{AppHandle, Emitter, Manager, Url};
-use tauri::{WebviewUrl, WebviewWindowBuilder};
-use tauri_plugin_fs::FsExt;
-use tauri_plugin_oauth::start;
-
 #[cfg(desktop)]
-use tauri::Listener;
+use std::path::PathBuf;
+#[cfg(desktop)]
+use tauri::{AppHandle, Listener, Manager, Url};
+#[cfg(desktop)]
+use tauri_plugin_fs::FsExt;
+
+mod transfer_file;
+use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
+use tauri_plugin_oauth::start;
+use transfer_file::{download_file, upload_file};
 
 #[cfg(desktop)]
 fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
@@ -84,6 +83,7 @@ async fn list_fonts() -> Result<Vec<String>, String> {
 }
 
 #[derive(Clone, serde::Serialize)]
+#[allow(dead_code)]
 struct Payload {
     args: Vec<String>,
     cwd: String,
