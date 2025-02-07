@@ -4,11 +4,11 @@ import { RiArrowLeftWideLine, RiArrowRightWideLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { FaHeadphones } from 'react-icons/fa6';
 
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { isPWA, isTauriAppPlatform } from '@/services/environment';
 import Button from '@/components/Button';
 
 interface FooterBarProps {
@@ -19,6 +19,7 @@ interface FooterBarProps {
 
 const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { hoveredBookKey, setHoveredBookKey, getView, getProgress } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const view = getView(bookKey);
@@ -62,9 +63,9 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       className={clsx(
         'footer-bar absolute bottom-0 z-10 flex h-12 w-full items-center gap-x-4 px-4',
         'shadow-xs bg-base-100 transition-opacity duration-300',
-        isPWA() ? 'pb-[env(safe-area-inset-bottom)]' : '',
-        isTauriAppPlatform() && 'rounded-window-bottom-right',
-        !isSideBarVisible && isTauriAppPlatform() && 'rounded-window-bottom-left',
+        appService?.hasSafeAreaInset && 'pb-[env(safe-area-inset-bottom)]',
+        appService?.hasRoundedWindow && 'rounded-window-bottom-right',
+        !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
         isHoveredAnim && 'hover-bar-anim',
         hoveredBookKey === bookKey ? `opacity-100` : `opacity-0`,
       )}

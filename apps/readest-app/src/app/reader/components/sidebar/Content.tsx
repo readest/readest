@@ -2,16 +2,17 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
+import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
-import { isPWA } from '@/services/environment';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
   sideBarBookKey: string;
 }> = ({ bookDoc, sideBarBookKey }) => {
+  const { appService } = useEnv();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { getConfig, setConfig } = useBookDataStore();
   const config = getConfig(sideBarBookKey);
@@ -92,7 +93,10 @@ const SidebarContent: React.FC<{
         </div>
       </div>
       <div
-        className={clsx('flex-shrink-0', isPWA() ? 'pb-[calc(env(safe-area-inset-bottom)/2)]' : '')}
+        className={clsx(
+          'flex-shrink-0',
+          appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom)/2)]',
+        )}
       >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>

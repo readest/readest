@@ -22,12 +22,17 @@ export interface FileSystem {
 
 export interface AppService {
   fs: FileSystem;
+  osPlatform: string;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
   hasWindowBar: boolean;
   hasContextMenu: boolean;
+  hasRoundedWindow: boolean;
+  hasSafeAreaInset: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
+  isAndroidApp: boolean;
+  isIOSApp: boolean;
 
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
   showMessage(msg: string, kind?: ToastType, title?: string, okLabel?: string): Promise<void>;

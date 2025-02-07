@@ -22,8 +22,9 @@ import { isValidURL } from '@/utils/misc';
 
 import { BaseAppService } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
+import { isPWA } from './environment';
 
-export const isMobile = ['android', 'ios'].includes(osType());
+const OS_TYPE = osType();
 
 const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } => {
   switch (base) {
@@ -117,10 +118,14 @@ export const nativeFileSystem: FileSystem = {
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   appPlatform = 'tauri' as AppPlatform;
-  isAppDataSandbox = isMobile;
-  hasTrafficLight = osType() === 'macos';
-  hasWindowBar = !(osType() === 'ios' || osType() === 'android');
-  hasContextMenu = !(osType() === 'ios' || osType() === 'android');
+  isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
+  isAndroidApp = OS_TYPE === 'android';
+  isIOSApp = OS_TYPE === 'ios';
+  hasTrafficLight = OS_TYPE === 'macos';
+  hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android' || isPWA();
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

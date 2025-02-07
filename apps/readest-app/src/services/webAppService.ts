@@ -179,9 +179,13 @@ export class WebAppService extends BaseAppService {
   fs = indexedDBFileSystem;
   appPlatform = 'web' as AppPlatform;
   isAppDataSandbox = false;
+  isAndroidApp = false;
+  isIOSApp = false;
   hasTrafficLight = false;
   hasWindowBar = false;
   hasContextMenu = false;
+  hasRoundedWindow = false;
+  hasSafeAreaInset = false;
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

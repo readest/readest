@@ -13,7 +13,6 @@ import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
-import { isTauriAppPlatform } from '@/services/environment';
 import useDragBar from '../../hooks/useDragBar';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
@@ -25,7 +24,7 @@ const MAX_NOTEBOOK_WIDTH = 0.45;
 const Notebook: React.FC = ({}) => {
   const _ = useTranslation();
   const { updateAppTheme } = useTheme();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
   const { notebookWidth, isNotebookVisible, isNotebookPinned } = useNotebookStore();
@@ -152,7 +151,7 @@ const Notebook: React.FC = ({}) => {
       <div
         className={clsx(
           'notebook-container bg-base-200 right-0 z-20 h-full min-w-60 select-none',
-          isTauriAppPlatform() && 'rounded-window-top-right rounded-window-bottom-right',
+          appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           !isNotebookPinned && 'shadow-2xl',
         )}
         style={{

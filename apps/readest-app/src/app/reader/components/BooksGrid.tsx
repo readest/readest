@@ -1,10 +1,11 @@
+import clsx from 'clsx';
 import React, { useEffect } from 'react';
 
+import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { isTauriAppPlatform } from '@/services/environment';
 import FoliateViewer from './FoliateViewer';
 import getGridTemplate from '@/utils/grid';
 import SectionInfo from './SectionInfo';
@@ -23,6 +24,7 @@ interface BooksGridProps {
 }
 
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
+  const { appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
@@ -39,7 +41,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
 
   return (
     <div
-      className='grid h-full flex-grow'
+      className={clsx(
+        'grid h-full flex-grow',
+        appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
+      )}
       style={{
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,
@@ -61,7 +66,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           <div
             id={`gridcell-${bookKey}`}
             key={bookKey}
-            className={`${isTauriAppPlatform() ? 'rounded-window' : ''} relative h-full w-full overflow-hidden`}
+            className={`${appService?.hasRoundedWindow ? 'rounded-window' : ''} relative h-full w-full overflow-hidden`}
           >
             {isBookmarked && <Ribbon width={marginGap} />}
             <HeaderBar

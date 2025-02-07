@@ -37,14 +37,19 @@ import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/l
 import { ProgressHandler } from '@/utils/transfer';
 
 export abstract class BaseAppService implements AppService {
+  osPlatform: string = getOSPlatform();
   isMobile: boolean = ['android', 'ios'].includes(getOSPlatform());
   localBooksDir: string = '';
   abstract fs: FileSystem;
   abstract appPlatform: AppPlatform;
   abstract isAppDataSandbox: boolean;
+  abstract isAndroidApp: boolean;
+  abstract isIOSApp: boolean;
   abstract hasTrafficLight: boolean;
   abstract hasWindowBar: boolean;
   abstract hasContextMenu: boolean;
+  abstract hasRoundedWindow: boolean;
+  abstract hasSafeAreaInset: boolean;
 
   abstract resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string };
   abstract getCoverImageUrl(book: Book): string;

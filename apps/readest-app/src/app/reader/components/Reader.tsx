@@ -8,13 +8,12 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { isTauriAppPlatform } from '@/services/environment';
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
   const { library, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
@@ -42,7 +41,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       <div
         className={clsx(
           `reader-page bg-base-100 text-base-content select-none`,
-          isTauriAppPlatform() && 'rounded-window',
+          appService?.hasRoundedWindow && 'rounded-window',
         )}
       >
         <Suspense>

@@ -7,7 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
-import { isTauriAppPlatform } from '@/services/environment';
+import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
@@ -24,6 +24,7 @@ const MAX_SIDEBAR_WIDTH = 0.45;
 const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
+  const { appService } = useEnv();
   const { updateAppTheme } = useTheme();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
@@ -118,7 +119,8 @@ const SideBar: React.FC<{
       <div
         className={clsx(
           'sidebar-container bg-base-200 z-20 flex h-full min-w-60 select-none flex-col',
-          isTauriAppPlatform() && 'rounded-window-top-left rounded-window-bottom-left',
+          appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
+          appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
         )}
         style={{

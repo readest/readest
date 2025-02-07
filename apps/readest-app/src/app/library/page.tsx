@@ -353,7 +353,7 @@ const LibraryPage = () => {
     <div
       className={clsx(
         'library-page bg-base-200 text-base-content flex h-dvh select-none flex-col overflow-hidden',
-        isTauriAppPlatform() && 'rounded-window',
+        appService?.hasRoundedWindow && 'rounded-window',
       )}
     >
       <div className='fixed top-0 z-40 w-full'>
@@ -370,7 +370,13 @@ const LibraryPage = () => {
       )}
       {libraryLoaded &&
         (libraryBooks.length > 0 ? (
-          <div ref={containerRef} className='mt-12 flex-grow overflow-auto px-2'>
+          <div
+            ref={containerRef}
+            className={clsx(
+              'mt-12 flex-grow overflow-auto px-2',
+              appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
+            )}
+          >
             <Suspense>
               <Bookshelf
                 libraryBooks={libraryBooks}

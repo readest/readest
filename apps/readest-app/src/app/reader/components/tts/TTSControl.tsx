@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,7 +11,6 @@ import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
-import { isPWA } from '@/services/environment';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -21,6 +21,7 @@ const POPUP_PADDING = 10;
 
 const TTSControl = () => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const [bookKey, setBookKey] = useState<string>('');
@@ -274,7 +275,9 @@ const TTSControl = () => {
           ref={iconRef}
           className={clsx(
             'absolute right-6 h-12 w-12',
-            isPWA() ? 'bottom-[calc(env(safe-area-inset-bottom)+48px)]' : 'bottom-12',
+            appService?.hasSafeAreaInset
+              ? 'bottom-[calc(env(safe-area-inset-bottom)+48px)]'
+              : 'bottom-12',
           )}
         >
           <TTSIcon isPlaying={isPlaying} onClick={togglePopup} />

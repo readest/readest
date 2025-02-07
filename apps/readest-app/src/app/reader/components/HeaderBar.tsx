@@ -5,7 +5,6 @@ import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { isTauriAppPlatform } from '@/services/environment';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
@@ -53,8 +52,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         `header-bar absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
         isTrafficLightVisible && isTopLeft && !isSideBarVisible ? 'pl-16' : 'pl-4',
         `shadow-xs bg-base-100 transition-opacity duration-300`,
-        isTauriAppPlatform() && 'rounded-window-top-right',
-        !isSideBarVisible && isTauriAppPlatform() && 'rounded-window-top-left',
+        appService?.hasRoundedWindow && 'rounded-window-top-right',
+        !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
         isHoveredAnim && 'hover-bar-anim',
         hoveredBookKey === bookKey || isDropdownOpen ? `visible` : `opacity-0`,
         isDropdownOpen && 'header-bar-pinned',
