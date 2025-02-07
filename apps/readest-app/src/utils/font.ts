@@ -17,7 +17,7 @@ export const getSysFontsList = async (): Promise<string[]> => {
     const osPlatform = getOSPlatform();
     if (FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
       const fonts = await invoke<string[]>('list_fonts');
-      cachedSysFonts = fonts.filter((font) => !isSymbolicFontName(font)).sort();
+      cachedSysFonts = [...new Set(fonts.filter((font) => !isSymbolicFontName(font)))].sort();
       console.log('Fetched font list:', cachedSysFonts);
       return cachedSysFonts;
     } else {

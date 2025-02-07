@@ -77,7 +77,7 @@ async fn list_fonts() -> Result<Vec<String>, String> {
     let font_collection = font_enumeration::Collection::new().unwrap();
     let mut fonts = Vec::new();
     for font in font_collection.all() {
-        fonts.push(font.font_name.clone());
+        fonts.push(font.family_name.clone());
     }
     Ok(fonts)
 }

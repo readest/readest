@@ -25,7 +25,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
   const _ = useTranslation();
   const iconSize16 = useResponsiveSize(16);
   const defaultIconSize = useDefaultIconSize();
-  const selectedOption = options.find((option) => option.option === selected)!;
+  const selectedOption = options.find((option) => option.option === selected) || options[0]!;
   return (
     <div className='dropdown dropdown-top'>
       <button
