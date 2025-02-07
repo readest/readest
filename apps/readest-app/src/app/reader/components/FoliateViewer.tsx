@@ -7,6 +7,7 @@ import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
+import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromWritingMode } from '@/utils/book';
@@ -43,6 +44,7 @@ const FoliateViewer: React.FC<{
   }, [toastMessage]);
 
   useProgressSync(bookKey);
+  useProgressAutoSave(bookKey);
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
