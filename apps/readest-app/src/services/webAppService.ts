@@ -3,6 +3,7 @@ import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getCoverFilename } from '@/utils/book';
 import { isValidURL } from '@/utils/misc';
 
+import { isPWA } from './environment';
 import { BaseAppService } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
 
@@ -185,7 +186,7 @@ export class WebAppService extends BaseAppService {
   hasWindowBar = false;
   hasContextMenu = false;
   hasRoundedWindow = false;
-  hasSafeAreaInset = false;
+  hasSafeAreaInset = isPWA();
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

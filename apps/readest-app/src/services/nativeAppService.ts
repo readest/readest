@@ -22,7 +22,6 @@ import { isValidURL } from '@/utils/misc';
 
 import { BaseAppService } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
-import { isPWA } from './environment';
 
 const OS_TYPE = osType();
 
@@ -125,7 +124,7 @@ export class NativeAppService extends BaseAppService {
   hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android' || isPWA();
+  hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);
