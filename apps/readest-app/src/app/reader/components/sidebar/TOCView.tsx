@@ -120,7 +120,7 @@ const TOCView: React.FC<{
   };
 
   useEffect(() => {
-    if (!progress) return;
+    if (!progress || eventDispatcher.dispatchSync('tts-is-speaking')) return;
     const { sectionHref: currentHref } = progress;
     const hrefMd5 = currentHref ? getContentMd5(currentHref) : '';
     const currentItem = viewRef.current?.querySelector(`[data-href="${hrefMd5}"]`);
