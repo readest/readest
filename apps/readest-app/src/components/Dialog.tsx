@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { ReactNode, useEffect } from 'react';
 import { MdArrowBackIosNew } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface DialogProps {
@@ -26,6 +27,7 @@ const Dialog: React.FC<DialogProps> = ({
   contentClassName,
   onClose,
 }) => {
+  const { appService } = useEnv();
   const iconSize22 = useResponsiveSize(22);
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -54,6 +56,7 @@ const Dialog: React.FC<DialogProps> = ({
         className={clsx(
           'modal-box settings-content flex h-full max-h-full w-full max-w-full flex-col rounded-none p-0 sm:rounded-2xl',
           'sm:h-[60%] sm:w-[65%] sm:max-w-[600px]',
+          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           boxClassName,
         )}
       >

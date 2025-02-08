@@ -352,7 +352,8 @@ const LibraryPage = () => {
   return (
     <div
       className={clsx(
-        'library-page bg-base-200 text-base-content flex h-dvh select-none flex-col overflow-hidden',
+        'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',
+        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
         appService?.hasRoundedWindow && 'rounded-window',
       )}
     >

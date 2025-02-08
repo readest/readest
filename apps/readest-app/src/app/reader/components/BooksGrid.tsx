@@ -43,7 +43,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
     <div
       className={clsx(
         'grid h-full flex-grow',
-        appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
+        appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
       style={{
         gridTemplateColumns: gridTemplate.columns,

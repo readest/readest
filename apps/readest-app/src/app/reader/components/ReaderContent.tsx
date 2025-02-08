@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,7 +32,7 @@ import TTSControl from './tts/TTSControl';
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
@@ -148,7 +149,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     setTimeout(() => setLoading(true), 300);
     return (
       loading && (
-        <div className={'hero hero-content h-dvh'}>
+        <div className={clsx('hero hero-content', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
           <Spinner loading={true} />
         </div>
       )
@@ -156,7 +157,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }
 
   return (
-    <div className='flex h-dvh'>
+    <div className={clsx('flex', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
       <TTSControl />
