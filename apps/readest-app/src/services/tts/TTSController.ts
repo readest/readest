@@ -242,7 +242,6 @@ export class TTSController extends EventTarget {
   }
 
   async kill() {
-    this.state = 'stopped';
-    await this.ttsClient.stop();
+    await this.stop();
   }
 }
