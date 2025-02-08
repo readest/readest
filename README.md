@@ -5,7 +5,7 @@
   <h1>Readest</h1>
   <br>
 
-[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to offer a seamless cross-platform experience on macOS, Windows, Linux and Web, with support for mobile platforms coming soon.
+[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
 
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
@@ -62,7 +62,6 @@
 
 | **Feature**                     | **Description**                                                                            | **Priority** |
 | ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
-| **Support iOS and Android**     | Expand the APP to work on iOS and Android devices.                                         | 🛠           |
 | **Library Management**          | Organize, sort, and manage your entire ebook library.                                      | 🛠           |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🔄           |
 | **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
@@ -153,9 +152,21 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 pnpm tauri dev
 ```
 
+For Android:
+
+```bash
+# Initialize the Android environment (run once)
+pnpm tauri android init
+
+pnpm tauri android dev
+```
+
 For iOS:
 
 ```bash
+# Set up the iOS environment (run once)
+pnpm tauri ios init
+
 pnpm tauri ios dev
 ```
 

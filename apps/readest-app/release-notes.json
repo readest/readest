@@ -1,5 +1,12 @@
 {
   "releases": {
+    "0.9.10": {
+      "date": "2025-02-08",
+      "notes": [
+        "Add options to adjust paragraph margin, word spacing, letter spacing, text indent and font weight",
+        "Alpha release for Android and iOS platforms"
+      ]
+    },
     "0.9.9": {
       "date": "2025-02-06",
       "notes": [
