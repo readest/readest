@@ -167,7 +167,7 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    margin: ${paragraphMargin}em 0 !important;
+    margin: ${paragraphMargin}em 0;
     line-height: ${lineSpacing} !important;
     word-spacing: ${wordSpacing}px !important;
     letter-spacing: ${letterSpacing}px !important;

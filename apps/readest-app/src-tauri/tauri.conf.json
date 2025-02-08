@@ -18,7 +18,7 @@
         "connect-src": "'self' blob: data: asset: http://asset.localhost ipc: http://ipc.localhost https://*.sentry.io https://*.posthog.com https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.supabase.co https://*.readest.com wss://speech.platform.bing.com https://*.cloudflarestorage.com",
         "img-src": "'self' blob: data: asset: http://asset.localhost https://*",
         "style-src": "'self' 'unsafe-inline' blob: asset: http://asset.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com",
-        "font-src": "'self' data: asset: http://asset.localhost tauri: https://fonts.gstatic.com https://db.onlinewebfonts.com https://cdn.jsdelivr.net",
+        "font-src": "'self' blob: data: asset: http://asset.localhost tauri: https://fonts.gstatic.com https://db.onlinewebfonts.com https://cdn.jsdelivr.net",
         "frame-src": "'self' blob: asset: http://asset.localhost",
         "script-src": "'self' 'unsafe-inline' 'unsafe-eval' blob: asset: http://asset.localhost https://*.sentry.io https://*.posthog.com"
       },
