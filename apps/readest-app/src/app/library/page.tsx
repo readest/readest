@@ -10,6 +10,8 @@ import { AppService } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
 import { getBaseFilename, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
+import { ProgressPayload } from '@/utils/transfer';
+import { throttle } from '@/utils/throttle';
 import { parseOpenWithFiles } from '@/helpers/cli';
 import { isTauriAppPlatform, hasUpdater } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
@@ -30,8 +32,7 @@ import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
-import { ProgressPayload } from '@/utils/transfer';
-import { throttle } from '@/utils/throttle';
+import BookDetailModal from '@/components/BookDetailModal';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -51,6 +52,7 @@ const LibraryPage = () => {
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
     [key: string]: number | null;
   }>({});
@@ -335,6 +337,10 @@ const LibraryPage = () => {
     setIsSelectMode(!isSelectMode);
   };
 
+  const handleShowDetailsBook = (book: Book) => {
+    setShowDetailsBook(book);
+  };
+
   if (!appService) {
     return null;
   }
@@ -386,6 +392,7 @@ const LibraryPage = () => {
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 handleBookDelete={handleBookDelete}
+                handleShowDetailsBook={handleShowDetailsBook}
                 booksTransferProgress={booksTransferProgress}
               />
             </Suspense>
@@ -407,6 +414,13 @@ const LibraryPage = () => {
             </div>
           </div>
         ))}
+      {showDetailsBook && (
+        <BookDetailModal
+          isOpen={!!showDetailsBook}
+          book={showDetailsBook}
+          onClose={() => setShowDetailsBook(null)}
+        />
+      )}
       <AboutWindow />
       <Toast />
     </div>

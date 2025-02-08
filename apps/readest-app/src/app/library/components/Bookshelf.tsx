@@ -18,7 +18,6 @@ import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
-import BookDetailModal from '@/components/BookDetailModal';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 
@@ -56,6 +55,7 @@ interface BookshelfProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
   handleBookDelete: (book: Book) => void;
+  handleShowDetailsBook: (book: Book) => void;
   booksTransferProgress: { [key: string]: number | null };
 }
 
@@ -66,6 +66,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookUpload,
   handleBookDownload,
   handleBookDelete,
+  handleShowDetailsBook,
   booksTransferProgress,
 }) => {
   const _ = useTranslation();
@@ -80,7 +81,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [clickedImage, setClickedImage] = useState<string | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
   const isImportingBook = useRef(false);
-  const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
 
   const makeBookAvailable = async (book: Book) => {
     if (book.uploadedAt && !book.downloadedAt) {
@@ -98,12 +98,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const showBookDetailsModal = async (book: Book) => {
     if (await makeBookAvailable(book)) {
-      setShowDetailsBook(book);
+      handleShowDetailsBook(book);
     }
-  };
-
-  const dismissBookDetailsModal = () => {
-    setShowDetailsBook(null);
   };
 
   const { setLibrary } = useLibraryStore();
@@ -285,13 +281,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           message={_('Are you sure to delete the selected books?')}
           onClickCancel={() => setShowDeleteAlert(false)}
           onClickConfirm={confirmDelete}
-        />
-      )}
-      {showDetailsBook && (
-        <BookDetailModal
-          isOpen={!!showDetailsBook}
-          book={showDetailsBook}
-          onClose={dismissBookDetailsModal}
         />
       )}
     </div>

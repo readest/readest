@@ -212,7 +212,7 @@ foliate-view {
 
 .pull-indicator {
   position: fixed;
-  top: 64px;
+  top: calc(64px + env(safe-area-inset-top));
   width: 100%;
   background-color: transparent;
   display: flex;

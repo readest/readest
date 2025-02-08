@@ -74,7 +74,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
     );
 
   return (
-    <>
+    <div className='fixed inset-0 z-50 flex items-center justify-center'>
       <Dialog
         title={_('Book Details')}
         isOpen={isOpen}
@@ -83,7 +83,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         boxClassName='sm:min-w-[480px]'
         contentClassName='!px-6 !py-2'
       >
-        <div className='z-50 flex w-full select-text items-center justify-center'>
+        <div className='flex w-full select-text items-center justify-center'>
           <div className='relative w-full rounded-lg'>
             <div className='mb-10 flex h-40 items-start'>
               <div className='book-cover relative mr-10 aspect-[28/41] h-40 items-end shadow-lg'>
@@ -202,7 +202,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
           onClickConfirm={confirmDelete}
         />
       )}
-    </>
+    </div>
   );
 };
 
