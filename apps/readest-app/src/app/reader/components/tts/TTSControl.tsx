@@ -274,7 +274,7 @@ const TTSControl = () => {
         <div
           ref={iconRef}
           className={clsx(
-            'absolute right-6 h-12 w-12',
+            'fixed right-6 h-12 w-12',
             appService?.hasSafeAreaInset
               ? 'bottom-[calc(env(safe-area-inset-bottom)+48px)]'
               : 'bottom-12',
