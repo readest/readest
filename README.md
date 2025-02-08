@@ -10,9 +10,9 @@
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
 [![OS][badge-platforms]][link-website]
+<br>
 [![][badge-hellogithub]][link-hellogithub]
 [![][badge-discord]][link-discord]
-<br>
 [![AGPL Licence][badge-license]](LICENSE)
 [![Latest release][badge-release]][link-gh-releases]
 [![Last commit][badge-last-commit]][link-gh-commits]
@@ -63,7 +63,7 @@
 | **Feature**                     | **Description**                                                                            | **Priority** |
 | ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
 | **Library Management**          | Organize, sort, and manage your entire ebook library.                                      | 🛠           |
-| **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🔄           |
+| **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
 | **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
 | **Keyboard Navigation**         | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
 | **Support OPDS/Calibre**        | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
@@ -228,7 +228,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
 [badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
 [badge-release]: https://img.shields.io/github/release/readest/readest?color=green
-[badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Web%2C%20PWA-green
+[badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=green
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
