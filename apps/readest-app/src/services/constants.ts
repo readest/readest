@@ -13,7 +13,7 @@ import { UserStorageQuota } from '@/types/user';
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
 export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
 
-export const SUPPORTED_FILE_EXTS = ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'cbz', 'pdf'];
+export const SUPPORTED_FILE_EXTS = ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'zip', 'cbz', 'pdf'];
 export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).join(', ');
 
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
