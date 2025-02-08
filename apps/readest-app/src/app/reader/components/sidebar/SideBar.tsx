@@ -118,7 +118,8 @@ const SideBar: React.FC<{
     <>
       <div
         className={clsx(
-          'sidebar-container bg-base-200 z-20 flex h-full min-w-60 select-none flex-col',
+          'sidebar-container bg-base-200 z-20 flex min-w-60 select-none flex-col',
+          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
