@@ -29,9 +29,10 @@ import {
   CLOUD_BOOKS_SUBDIR,
   DEFAULT_MOBILE_VIEW_SETTINGS,
   DEFAULT_SYSTEM_SETTINGS,
+  DEFAULT_CJK_VIEW_SETTINGS,
 } from './constants';
 import { isWebAppPlatform } from './environment';
-import { getOSPlatform, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isCJKEnv, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
 import { ProgressHandler } from '@/utils/transfer';
@@ -83,6 +84,7 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_BOOK_STYLE,
         ...DEFAULT_BOOK_FONT,
         ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+        ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
         ...DEFAULT_VIEW_CONFIG,
         ...DEFAULT_TTS_CONFIG,
         ...settings.globalViewSettings,
@@ -98,6 +100,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_BOOK_STYLE,
           ...DEFAULT_BOOK_FONT,
           ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+          ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
           ...DEFAULT_VIEW_CONFIG,
           ...DEFAULT_TTS_CONFIG,
         },

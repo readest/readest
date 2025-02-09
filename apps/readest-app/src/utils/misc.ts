@@ -32,6 +32,8 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
 
 export const getUserLang = () => navigator?.language.split('-')[0] || 'en';
 
+export const isCJKEnv = () => ['zh', 'ja', 'ko'].includes(getUserLang());
+
 export const getUserLocale = (lang: string): string | undefined => {
   const languages =
     navigator.languages && navigator.languages.length > 0

@@ -85,6 +85,10 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
 };
 
+export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
+  fullJustification: true,
+};
+
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
 };
