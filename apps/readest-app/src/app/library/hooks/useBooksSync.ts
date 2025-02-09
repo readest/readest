@@ -74,6 +74,8 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
 
   const updateLibrary = async () => {
     if (!syncedBooks?.length) return;
+    // Process old books first so that when we update the library the order is preserved
+    syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
 
     const processOldBook = async (oldBook: Book) => {
       const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
