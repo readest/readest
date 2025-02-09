@@ -155,5 +155,6 @@
   "Word Spacing": "Spaziatura parole",
   "Letter Spacing": "Spaziatura lettere",
   "Text Indent": "Rientro testo",
-  "Paragraph Margin": "Margine paragrafo"
+  "Paragraph Margin": "Margine paragrafo",
+  "Override Book Layout": "Sovrascrivi layout libro"
 }

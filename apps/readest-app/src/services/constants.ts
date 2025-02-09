@@ -77,6 +77,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   invert: false,
   theme: 'light',
   overrideFont: false,
+  overrideLayout: false,
   userStylesheet: '',
 };
 

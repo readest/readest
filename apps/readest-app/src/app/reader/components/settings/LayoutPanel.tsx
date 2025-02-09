@@ -35,6 +35,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize!);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize!);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
+  const [overrideLayout, setOverrideLayout] = useState(viewSettings.overrideLayout!);
 
   useEffect(() => {
     viewSettings.paragraphMargin = paragraphMargin;
@@ -189,6 +190,17 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [writingMode]);
 
+  useEffect(() => {
+    viewSettings.overrideLayout = overrideLayout;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.overrideLayout = overrideLayout;
+      setSettings(settings);
+    }
+    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overrideLayout]);
+
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
   const isCJKBook = langCode === 'zh' || langCode === 'ja' || langCode === 'ko';
 
@@ -295,6 +307,15 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='toggle'
                 checked={hyphenation}
                 onChange={() => setHyphenation(!hyphenation)}
+              />
+            </div>
+            <div className='config-item config-item-bottom'>
+              <span className=''>{_('Override Book Layout')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={overrideLayout}
+                onChange={() => setOverrideLayout(!overrideLayout)}
               />
             </div>
           </div>

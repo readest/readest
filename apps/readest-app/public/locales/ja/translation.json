@@ -155,5 +155,6 @@
   "Word Spacing": "単語間隔",
   "Letter Spacing": "文字間隔",
   "Text Indent": "テキストインデント",
-  "Paragraph Margin": "段落マージン"
+  "Paragraph Margin": "段落マージン",
+  "Override Book Layout": "書籍のレイアウトを上書き"
 }

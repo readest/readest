@@ -73,6 +73,7 @@ export interface BookStyle {
   invert: boolean;
   theme: string;
   overrideFont: boolean;
+  overrideLayout: boolean;
   userStylesheet: string;
 }
 

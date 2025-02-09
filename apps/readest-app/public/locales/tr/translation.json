@@ -155,5 +155,6 @@
   "Word Spacing": "Kelime Aralığı",
   "Letter Spacing": "Harf Aralığı",
   "Text Indent": "Metin Girintisi",
-  "Paragraph Margin": "Paragraf Kenarı"
+  "Paragraph Margin": "Paragraf Kenarı",
+  "Override Book Layout": "Kitap Düzenini Geçersiz Kıl"
 }

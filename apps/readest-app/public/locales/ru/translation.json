@@ -155,5 +155,6 @@
   "Word Spacing": "Межсловный интервал",
   "Letter Spacing": "Межбуквенный интервал",
   "Text Indent": "Отступ текста",
-  "Paragraph Margin": "Отступ абзаца"
+  "Paragraph Margin": "Отступ абзаца",
+  "Override Book Layout": "Переопределить макет книги"
 }

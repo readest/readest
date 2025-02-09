@@ -155,5 +155,6 @@
   "Word Spacing": "字間距",
   "Letter Spacing": "字間距",
   "Text Indent": "首行縮進",
-  "Paragraph Margin": "段間距"
+  "Paragraph Margin": "段間距",
+  "Override Book Layout": "覆蓋版面佈局"
 }

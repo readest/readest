@@ -155,5 +155,6 @@
   "Word Spacing": "Διάκενο λέξεων",
   "Letter Spacing": "Διάκενο γραμμάτων",
   "Text Indent": "Εσοχή κειμένου",
-  "Paragraph Margin": "Περιθώριο παραγράφου"
+  "Paragraph Margin": "Περιθώριο παραγράφου",
+  "Override Book Layout": "Παράκαμψη διάταξης βιβλίου"
 }

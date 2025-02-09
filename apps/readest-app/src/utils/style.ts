@@ -94,6 +94,7 @@ const getAdditionalFontFaces = () => `
 `;
 
 const getLayoutStyles = (
+  overrideLayout: boolean,
   paragraphMargin: number,
   lineSpacing: number,
   wordSpacing: number,
@@ -150,7 +151,6 @@ const getLayoutStyles = (
   html, body {
     color: ${fg};
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode};`}
-    text-indent: ${textIndent}em;
     text-align: var(--default-text-align);
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
@@ -168,9 +168,10 @@ const getLayoutStyles = (
   }
   p, li, blockquote, dd {
     margin: ${paragraphMargin}em 0;
-    line-height: ${lineSpacing} !important;
-    word-spacing: ${wordSpacing}px !important;
-    letter-spacing: ${letterSpacing}px !important;
+    line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
+    word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
+    letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
+    text-indent: ${textIndent}em ${overrideLayout ? '!important' : ''};
     text-align: inherit;
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
@@ -211,6 +212,7 @@ export interface ThemeCode {
 
 export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
   const layoutStyles = getLayoutStyles(
+    viewSettings.overrideLayout!,
     viewSettings.paragraphMargin!,
     viewSettings.lineHeight!,
     viewSettings.wordSpacing!,

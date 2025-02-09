@@ -155,5 +155,6 @@
   "Word Spacing": "Wortabstand",
   "Letter Spacing": "Buchstabenabstand",
   "Text Indent": "Texteinzug",
-  "Paragraph Margin": "Absatzrand"
+  "Paragraph Margin": "Absatzrand",
+  "Override Book Layout": "Buch-Layout überschreiben"
 }

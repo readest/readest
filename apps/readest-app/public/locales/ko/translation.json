@@ -155,5 +155,6 @@
   "Word Spacing": "단어 간격",
   "Letter Spacing": "글자 간격",
   "Text Indent": "들여쓰기",
-  "Paragraph Margin": "단락 여백"
+  "Paragraph Margin": "단락 여백",
+  "Override Book Layout": "책 레이아웃 덮어쓰기"
 }
