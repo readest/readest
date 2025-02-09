@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Book } from '@/types/book';
@@ -384,18 +384,16 @@ const LibraryPage = () => {
               appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
             )}
           >
-            <Suspense>
-              <Bookshelf
-                libraryBooks={libraryBooks}
-                isSelectMode={isSelectMode}
-                handleImportBooks={handleImportBooks}
-                handleBookUpload={handleBookUpload}
-                handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete}
-                handleShowDetailsBook={handleShowDetailsBook}
-                booksTransferProgress={booksTransferProgress}
-              />
-            </Suspense>
+            <Bookshelf
+              libraryBooks={libraryBooks}
+              isSelectMode={isSelectMode}
+              handleImportBooks={handleImportBooks}
+              handleBookUpload={handleBookUpload}
+              handleBookDownload={handleBookDownload}
+              handleBookDelete={handleBookDelete}
+              handleShowDetailsBook={handleShowDetailsBook}
+              booksTransferProgress={booksTransferProgress}
+            />
           </div>
         ) : (
           <div className='hero h-screen items-center justify-center'>

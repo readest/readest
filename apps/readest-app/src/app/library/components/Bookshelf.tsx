@@ -253,35 +253,49 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           </div>
         )}
       </div>
-      {selectedBooks.length > 0 && (
-        <div
-          className={clsx(
-            'text-base-content bg-base-300 fixed bottom-4 left-1/2 flex',
-            '-translate-x-1/2 transform space-x-4 rounded-lg p-4 shadow-lg',
-          )}
-        >
-          <button onClick={openSelectedBooks} className='flex items-center space-x-2'>
-            <MdOpenInNew />
-            <span>{_('Open')}</span>
-          </button>
-          <button onClick={deleteSelectedBooks} className='flex items-center space-x-2'>
-            <MdDelete className='fill-red-500' />
-            <span className='text-red-500'>{_('Delete')}</span>
-          </button>
-        </div>
-      )}
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
         </div>
       )}
+      <div
+        className={clsx(
+          'action-bar sticky bottom-0 left-0 right-0 z-40',
+          'pb-[calc(env(safe-area-inset-bottom)+16px)]',
+        )}
+      >
+        {selectedBooks.length > 0 && (
+          <div
+            className={clsx(
+              'text-base-content bg-base-300 mx-auto flex w-fit',
+              'space-x-4 rounded-lg p-4 shadow-lg',
+            )}
+          >
+            <button onClick={openSelectedBooks} className='flex items-center space-x-2'>
+              <MdOpenInNew />
+              <span>{_('Open')}</span>
+            </button>
+            <button onClick={deleteSelectedBooks} className='flex items-center space-x-2'>
+              <MdDelete className='fill-red-500' />
+              <span className='text-red-500'>{_('Delete')}</span>
+            </button>
+          </div>
+        )}
+      </div>
       {showDeleteAlert && (
-        <Alert
-          title={_('Confirm Deletion')}
-          message={_('Are you sure to delete the selected books?')}
-          onClickCancel={() => setShowDeleteAlert(false)}
-          onClickConfirm={confirmDelete}
-        />
+        <div
+          className={clsx(
+            'sticky bottom-0 left-0 right-0 z-50 flex justify-center',
+            'pb-[calc(env(safe-area-inset-bottom)+16px)]',
+          )}
+        >
+          <Alert
+            title={_('Confirm Deletion')}
+            message={_('Are you sure to delete the selected books?')}
+            onClickCancel={() => setShowDeleteAlert(false)}
+            onClickConfirm={confirmDelete}
+          />
+        </div>
       )}
     </div>
   );

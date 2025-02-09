@@ -159,6 +159,8 @@ For Android:
 pnpm tauri android init
 
 pnpm tauri android dev
+# or if you want to dev on a real device
+pnpm tauri android dev --host
 ```
 
 For iOS:
@@ -168,12 +170,16 @@ For iOS:
 pnpm tauri ios init
 
 pnpm tauri ios dev
+# or if you want to dev on a real device
+pnpm tauri ios dev --host
 ```
 
 ### 5. Build for Production
 
 ```bash
 pnpm tauri build
+pnpm tauri android build
+pnpm tauri ios build
 ```
 
 ### 6. Setup dev environment with Nix

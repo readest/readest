@@ -20,6 +20,8 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
       const el = ref.current;
       if (!el) return;
 
+      if (el.scrollTop > 0) return;
+
       const initialY = startEvent.touches[0]!.clientY;
 
       el.addEventListener('touchmove', handleTouchMove, { passive: false });
