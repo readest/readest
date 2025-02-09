@@ -397,3 +397,6 @@ export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   plus: 2 * 1024 * 1024 * 1024,
   pro: 10 * 1024 * 1024 * 1024,
 };
+
+export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
+export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;

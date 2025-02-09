@@ -15,9 +15,6 @@ export const useClickEvent = (
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
         if (msg.data.type === 'iframe-single-click') {
-          if (viewSettings.disableClick!) {
-            return;
-          }
           const viewElement = containerRef.current;
           if (viewElement) {
             const rect = viewElement.getBoundingClientRect();
@@ -32,9 +29,9 @@ export const useClickEvent = (
               if (screenX >= centerStartX && screenX <= centerEndX) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
-              } else if (screenX >= rect.left + rect.width / 2) {
+              } else if (!viewSettings.disableClick! && screenX >= rect.left + rect.width / 2) {
                 viewRef.current?.goRight();
-              } else if (screenX < rect.left + rect.width / 2) {
+              } else if (!viewSettings.disableClick! && screenX < rect.left + rect.width / 2) {
                 viewRef.current?.goLeft();
               }
             }

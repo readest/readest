@@ -1,7 +1,12 @@
-const doubleClickThreshold = 250;
-const longHoldThreshold = 500;
+import {
+  DISABLE_DOUBLE_CLICK_ON_MOBILE,
+  DOUBLE_CLICK_INTERVAL_THRESHOLD_MS,
+} from '@/services/constants';
+import { getOSPlatform } from '@/utils/misc';
+
 let lastClickTime = 0;
-let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
+const doubleClickEnabled =
+  !DISABLE_DOUBLE_CLICK_ON_MOBILE || !['android', 'ios'].includes(getOSPlatform());
 
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   if (['Backspace', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
@@ -23,9 +28,6 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
-  longHoldTimeout = setTimeout(() => {
-    longHoldTimeout = null;
-  }, longHoldThreshold);
   window.postMessage(
     {
       type: 'iframe-mousedown',
@@ -86,7 +88,7 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
 export const handleClick = (bookKey: string, event: MouseEvent) => {
   const now = Date.now();
 
-  if (now - lastClickTime < doubleClickThreshold) {
+  if (doubleClickEnabled && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
     window.postMessage(
       {
@@ -106,35 +108,38 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
 
   lastClickTime = now;
 
-  setTimeout(() => {
-    if (Date.now() - lastClickTime >= doubleClickThreshold) {
-      let element: HTMLElement | null = event.target as HTMLElement;
-      while (element) {
-        if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
-          return;
-        }
-        element = element.parentElement;
-      }
-
-      if (!longHoldTimeout) {
+  const postSingleClick = () => {
+    let element: HTMLElement | null = event.target as HTMLElement;
+    while (element) {
+      if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
         return;
       }
-
-      window.postMessage(
-        {
-          type: 'iframe-single-click',
-          bookKey,
-          screenX: event.screenX,
-          screenY: event.screenY,
-          clientX: event.clientX,
-          clientY: event.clientY,
-          offsetX: event.offsetX,
-          offsetY: event.offsetY,
-        },
-        '*',
-      );
+      element = element.parentElement;
     }
-  }, doubleClickThreshold);
+
+    window.postMessage(
+      {
+        type: 'iframe-single-click',
+        bookKey,
+        screenX: event.screenX,
+        screenY: event.screenY,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        offsetX: event.offsetX,
+        offsetY: event.offsetY,
+      },
+      '*',
+    );
+  };
+  if (doubleClickEnabled) {
+    setTimeout(() => {
+      if (Date.now() - lastClickTime >= DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
+        postSingleClick();
+      }
+    }, DOUBLE_CLICK_INTERVAL_THRESHOLD_MS);
+  } else {
+    postSingleClick();
+  }
 };
 
 const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
