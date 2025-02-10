@@ -40,6 +40,10 @@ tauri.*.conf.json
 # vercel
 .vercel
 
+# open-next
+.open-next
+.wrangler
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

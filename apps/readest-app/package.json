@@ -26,7 +26,10 @@
     "build-macos-universial": "dotenv -e .env.tauri.local -e .env.apple-nonstore.local -- tauri build -t universal-apple-darwin --bundles dmg",
     "build-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- tauri build -t universal-apple-darwin --bundles app --config src-tauri/tauri.appstore.conf.json",
     "build-macos-universial-appstore-dev": "dotenv -e .env.tauri.local -e .env.apple-appstore-dev.local -- tauri build -t universal-apple-darwin --bundles app --config src-tauri/tauri.appstore-dev.conf.json",
-    "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh"
+    "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh",
+    "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler dev",
+    "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.735.0",
@@ -69,6 +72,8 @@
     "zustand": "5.0.1"
   },
   "devDependencies": {
+    "@ast-grep/napi": "0.34.4",
+    "@opennextjs/cloudflare": "^0.4.7",
     "@tauri-apps/cli": "2.2.7",
     "@types/cors": "^2.8.17",
     "@types/cssbeautify": "^0.3.5",
@@ -90,6 +95,7 @@
     "postcss-nested": "^7.0.2",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^3.107.3"
   }
 }

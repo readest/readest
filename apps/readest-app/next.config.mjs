@@ -1,7 +1,10 @@
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 import withPWAInit from '@ducanh2912/next-pwa';
 
 const isDev = process.env['NODE_ENV'] === 'development';
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
+
+initOpenNextCloudflareForDev();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
