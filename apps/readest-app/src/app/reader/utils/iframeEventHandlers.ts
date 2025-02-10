@@ -1,12 +1,15 @@
 import {
   DISABLE_DOUBLE_CLICK_ON_MOBILE,
   DOUBLE_CLICK_INTERVAL_THRESHOLD_MS,
+  LONG_HOLD_THRESHOLD,
 } from '@/services/constants';
 import { getOSPlatform } from '@/utils/misc';
 
-let lastClickTime = 0;
 const doubleClickEnabled =
   !DISABLE_DOUBLE_CLICK_ON_MOBILE || !['android', 'ios'].includes(getOSPlatform());
+
+let lastClickTime = 0;
+let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   if (['Backspace', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
@@ -28,6 +31,10 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
+  longHoldTimeout = setTimeout(() => {
+    longHoldTimeout = null;
+  }, LONG_HOLD_THRESHOLD);
+
   window.postMessage(
     {
       type: 'iframe-mousedown',
@@ -115,6 +122,11 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
         return;
       }
       element = element.parentElement;
+    }
+
+    // if long hold is detected, we don't want to send single click event
+    if (!longHoldTimeout) {
+      return;
     }
 
     window.postMessage(
