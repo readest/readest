@@ -1,6 +1,6 @@
-import { eventDispatcher } from '@/utils/event';
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
+import { eventDispatcher } from '@/utils/event';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
@@ -12,9 +12,9 @@ export const Toast = () => {
   const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastClassMap = {
     info: 'toast-info toast-center toast-middle',
-    success: 'toast-success toast-top toast-end pt-11',
-    warning: 'toast-warning toast-top toast-end pt-11',
-    error: 'toast-error toast-top toast-end pt-11',
+    success: 'toast-success toast-top toast-end',
+    warning: 'toast-warning toast-top toast-end',
+    error: 'toast-error toast-top toast-end',
   };
   const alertClassMap = {
     info: 'alert-primary',
@@ -32,10 +32,10 @@ export const Toast = () => {
   }, [toastMessage]);
 
   const handleShowToast = async (event: CustomEvent) => {
-    const { message, type = 'info', timeout = 5000, className = '' } = event.detail;
+    const { message, type = 'info', timeout, className = '' } = event.detail;
     setToastMessage(message);
     toastType.current = type;
-    toastTimeout.current = timeout;
+    if (timeout) toastTimeout.current = timeout;
     messageClass.current = className;
   };
 
@@ -52,6 +52,8 @@ export const Toast = () => {
         className={clsx(
           'toast toast-center toast-middle w-auto max-w-screen-sm',
           toastClassMap[toastType.current],
+          toastClassMap[toastType.current].includes('toast-top') &&
+            'pt-[calc(44px+env(safe-area-inset-top))]',
         )}
       >
         <div
