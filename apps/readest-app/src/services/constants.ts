@@ -87,6 +87,7 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: true,
+  textIndent: 2,
 };
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
