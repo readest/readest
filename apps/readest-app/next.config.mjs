@@ -46,6 +46,17 @@ const withPWA = withPWAInit({
   },
   workboxOptions: {
     disableDevLogs: true,
+    maximumFileSizeToCacheInBytes: 5 * 1024 ** 2,
+    exclude: [
+      ({ asset }) => {
+        const excludeList = [
+          /^server\//,
+          /^manifest.*\.js$/,
+          /((app-)?build-manifest|react-loadable-manifest|dynamic-css-manifest)\.json$/,
+        ];
+        return excludeList.some((r) => r.test(asset.name));
+      },
+    ],
   },
 });
 
