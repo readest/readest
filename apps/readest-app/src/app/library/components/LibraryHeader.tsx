@@ -35,7 +35,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const { isTrafficLightVisible } = useTrafficLight();
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize16 = useResponsiveSize(16);
-  const iconSize22 = useResponsiveSize(22);
+  const iconSize20 = useResponsiveSize(20);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,10 +68,10 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onClick={() => {
                 navigateToLibrary(router);
               }}
-              className='btn btn-ghost mr-4 h-7 min-h-7 w-7 p-0'
+              className='ml-[-6px] mr-4 flex h-7 min-h-7 w-7 items-center p-0'
             >
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Go Back')}>
-                <MdArrowBackIosNew size={iconSize22} />
+                <MdArrowBackIosNew size={iconSize20} />
               </div>
             </button>
           )}

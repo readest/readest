@@ -138,7 +138,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   return (
     <div className='bookshelf'>
-      <div className='grid flex-1 grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
+      <div className='transform-wrapper grid flex-1 grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
         {currentBookshelfItems.map((item, index) => (
           <BookshelfItem
             key={`library-item-${index}`}
@@ -172,7 +172,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      <div className={clsx('action-bar-bottom z-[99] pb-[calc(env(safe-area-inset-bottom)+16px)]')}>
+      <div className='fixed bottom-0 left-0 right-0 z-40 pb-[calc(env(safe-area-inset-bottom)+16px)]'>
         {isSelectMode && showSelectModeActions && (
           <div
             className={clsx(
@@ -241,7 +241,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       {showDeleteAlert && (
         <div
           className={clsx(
-            'action-bar-bottom z-[100] flex justify-center',
+            'fixed bottom-0 z-50 flex justify-center',
             'pb-[calc(env(safe-area-inset-bottom)+16px)]',
           )}
         >

@@ -44,7 +44,10 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
           removePullIndicator(parentEl);
         }
 
-        el.style.transform = `translateY(${appr(dy)}px)`;
+        const wrapper = el.querySelector('.transform-wrapper') as HTMLElement;
+        if (wrapper) {
+          wrapper.style.transform = `translate3d(0, ${appr(dy)}px, 0)`;
+        }
       }
 
       function addPullIndicator(el: HTMLDivElement) {
@@ -84,7 +87,10 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
         const el = ref.current;
         if (!el) return;
 
-        el.style.transform = 'translateY(0)';
+        const wrapper = el.querySelector('.transform-wrapper') as HTMLElement;
+        if (wrapper) {
+          wrapper.style.transform = 'translateY(0)';
+        }
         removePullIndicator(el.parentNode as HTMLDivElement);
 
         el.style.transition = 'transform 0.2s';

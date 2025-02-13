@@ -133,7 +133,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     if (isSelectMode) {
       toggleSelection(group.id);
     } else {
-      navigateToLibrary(router, `group=${group.id}`, { scroll: false });
+      navigateToLibrary(router, `group=${group.id}`);
     }
   };
 
@@ -219,7 +219,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       )}
       style={{
         transition: 'transform 0.2s',
-        touchAction: 'none',
       }}
       {...handlers}
       onContextMenu={(event) => handleItemContextMenu(item, event)}

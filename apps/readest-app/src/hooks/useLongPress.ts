@@ -43,27 +43,21 @@ export const useLongPress = ({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (e.pointerType === 'touch') {
-        const target = e.target as HTMLElement;
-        if (target instanceof Element) {
-          target.setPointerCapture(e.pointerId);
-        }
-      }
-
       if (e.pointerType === 'mouse' && e.button !== 0) {
         return;
       }
 
-      e.preventDefault();
       pointerId.current = e.pointerId;
       startPosRef.current = { x: e.clientX, y: e.clientY };
       isLongPressTriggered.current = false;
       setPressing(true);
 
       timerRef.current = setTimeout(() => {
-        isLongPressTriggered.current = true;
-        onLongPress?.();
-        setPressing(false);
+        if (startPosRef.current) {
+          isLongPressTriggered.current = true;
+          onLongPress?.();
+          setPressing(false);
+        }
       }, threshold);
     },
     [onLongPress, threshold],
@@ -71,17 +65,14 @@ export const useLongPress = ({
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      // Only handle moves for the same pointer that started the press
-      if (e.pointerId !== pointerId.current) return;
+      if (e.pointerId !== pointerId.current || !startPosRef.current) return;
 
-      if (startPosRef.current) {
-        const deltaX = Math.abs(e.clientX - startPosRef.current.x);
-        const deltaY = Math.abs(e.clientY - startPosRef.current.y);
+      const deltaX = Math.abs(e.clientX - startPosRef.current.x);
+      const deltaY = Math.abs(e.clientY - startPosRef.current.y);
 
-        if (deltaX > moveThreshold || deltaY > moveThreshold) {
-          onCancel?.();
-          reset();
-        }
+      if (deltaX > moveThreshold || deltaY > moveThreshold) {
+        onCancel?.();
+        reset();
       }
     },
     [moveThreshold, onCancel, reset],
@@ -92,18 +83,22 @@ export const useLongPress = ({
       if (e.pointerId !== pointerId.current) return;
 
       if (!isLongPressTriggered.current && startPosRef.current) {
-        onTap?.();
+        const deltaX = Math.abs(e.clientX - startPosRef.current.x);
+        const deltaY = Math.abs(e.clientY - startPosRef.current.y);
+
+        if (deltaX <= moveThreshold && deltaY <= moveThreshold) {
+          onTap?.();
+        }
       }
 
       reset();
     },
-    [onTap, reset],
+    [onTap, moveThreshold, reset],
   );
 
   const handleCancel = useCallback(
     (e: React.PointerEvent) => {
       if (e.pointerId !== pointerId.current) return;
-
       onCancel?.();
       reset();
     },
@@ -111,7 +106,9 @@ export const useLongPress = ({
   );
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+    if (isLongPressTriggered.current) {
+      e.preventDefault();
+    }
   }, []);
 
   useEffect(() => {
