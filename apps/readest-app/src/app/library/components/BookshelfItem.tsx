@@ -1,10 +1,11 @@
-import { useRef } from 'react';
+import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { getOSPlatform } from '@/utils/misc';
@@ -97,10 +98,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
 
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressStartRef = useRef<number | null>(null);
-  const longPressThreshold = 500;
-
   const showBookDetailsModal = async (book: Book) => {
     if (await makeBookAvailable(book)) {
       handleShowDetailsBook(book);
@@ -140,59 +137,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
   };
 
-  const handleItemLongPress = (item: BookshelfItem) => {
-    if (!isSelectMode) {
-      handleSetSelectMode(true);
-    }
-    setTimeout(() => {
-      if ('format' in item) {
-        toggleSelection((item as Book).hash);
-      } else {
-        toggleSelection((item as BooksGroup).id);
-      }
-    }, 0);
-  };
-
-  const handleItemTouchStart = (
-    _item: BookshelfItem,
-    event: React.TouchEvent | React.MouseEvent,
-  ) => {
-    longPressStartRef.current = event.timeStamp;
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-    longPressTimerRef.current = setTimeout(() => {
-      longPressStartRef.current = null;
-    }, longPressThreshold);
-  };
-
-  const handleItemTouchEnd = (item: BookshelfItem, event: React.TouchEvent | React.MouseEvent) => {
-    if (
-      longPressStartRef.current &&
-      event.timeStamp - longPressStartRef.current < longPressThreshold
-    ) {
-      if ('format' in item) {
-        handleBookClick(item as Book);
-      } else {
-        handleGroupClick(item as BooksGroup);
-      }
-    } else {
-      handleItemLongPress(item);
-    }
-    longPressStartRef.current = null;
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-  };
-
   const handleItemContextMenu = (item: BookshelfItem, event: React.MouseEvent) => {
-    if (longPressStartRef.current) {
-      event.preventDefault();
-      if ('format' in item) {
-        bookContextMenuHandler(item as Book, event);
-      }
+    event.preventDefault();
+    if ('format' in item) {
+      bookContextMenuHandler(item as Book, event);
     }
-    longPressStartRef.current = null;
   };
 
   const bookContextMenuHandler = async (book: Book, e: React.MouseEvent) => {
@@ -242,13 +191,37 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     menu.popup();
   };
 
+  const { pressing, handlers } = useLongPress({
+    onLongPress: () => {
+      if (!isSelectMode) {
+        handleSetSelectMode(true);
+      }
+      if ('format' in item) {
+        toggleSelection((item as Book).hash);
+      } else {
+        toggleSelection((item as BooksGroup).id);
+      }
+    },
+    onTap: () => {
+      if ('format' in item) {
+        handleBookClick(item as Book);
+      } else {
+        handleGroupClick(item as BooksGroup);
+      }
+    },
+  });
+
   return (
     <div
-      className='hover:bg-base-300/50 group flex h-full flex-col p-4'
-      onTouchStart={(event) => handleItemTouchStart(item, event)}
-      onTouchEnd={(event) => handleItemTouchEnd(item, event)}
-      onMouseDown={(event) => handleItemTouchStart(item, event)}
-      onMouseUp={(event) => handleItemTouchEnd(item, event)}
+      className={clsx(
+        'hover:bg-base-300/50 group flex h-full flex-col p-4',
+        pressing ? 'scale-95' : 'scale-100',
+      )}
+      style={{
+        transition: 'transform 0.2s',
+        touchAction: 'none',
+      }}
+      {...handlers}
       onContextMenu={(event) => handleItemContextMenu(item, event)}
     >
       <div className='flex-grow'>

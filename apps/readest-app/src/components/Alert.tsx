@@ -5,9 +5,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 const Alert: React.FC<{
   title: string;
   message: string;
-  onClickCancel: () => void;
-  onClickConfirm: () => void;
-}> = ({ title, message, onClickCancel, onClickConfirm }) => {
+  onCancel: () => void;
+  onConfirm: () => void;
+}> = ({ title, message, onCancel, onConfirm }) => {
   const _ = useTranslation();
   return (
     <div className={clsx('z-[100] flex justify-center px-4')}>
@@ -34,15 +34,15 @@ const Alert: React.FC<{
             ></path>
           </svg>
           <div className=''>
-            <h3 className='font-bold'>{title}</h3>
+            <h3 className='font-sm text-base'>{title}</h3>
             <div className='text-xs'>{message}</div>
           </div>
         </div>
-        <div className='flex space-x-2'>
-          <button className='btn btn-sm' onClick={onClickCancel}>
+        <div className='flex flex-wrap items-center justify-center gap-2'>
+          <button className='btn btn-sm' onClick={onCancel}>
             {_('Cancel')}
           </button>
-          <button className='btn btn-sm btn-warning' onClick={onClickConfirm}>
+          <button className='btn btn-sm btn-warning' onClick={onConfirm}>
             {_('Confirm')}
           </button>
         </div>

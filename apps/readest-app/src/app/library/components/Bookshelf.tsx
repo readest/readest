@@ -10,11 +10,11 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
+import { isMd5 } from '@/utils/md5';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
-import { isMd5 } from '@/utils/md5';
 import GroupingModal from './GroupingModal';
 
 interface BookshelfProps {
@@ -125,6 +125,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const deleteSelectedBooks = () => {
+    setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };
 
@@ -175,8 +176,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         {isSelectMode && showSelectModeActions && (
           <div
             className={clsx(
-              'text-base-content bg-base-300 mx-auto flex w-fit items-center justify-center',
-              'space-x-6 rounded-lg p-4 shadow-lg',
+              'flex items-center justify-center shadow-lg',
+              'text-base-content bg-base-300 text-sm',
+              'mx-auto w-fit space-x-6 rounded-lg p-4',
             )}
           >
             <button
@@ -225,13 +227,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <GroupingModal
             libraryBooks={libraryBooks}
             selectedBooks={selectedBooks}
-            onConfirm={() => {
-              setShowGroupingModal(false);
-              handleSetSelectMode(false);
-            }}
             onCancel={() => {
               setShowGroupingModal(false);
               setShowSelectModeActions(true);
+            }}
+            onConfirm={() => {
+              setShowGroupingModal(false);
+              handleSetSelectMode(false);
             }}
           />
         </div>
@@ -246,8 +248,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Alert
             title={_('Confirm Deletion')}
             message={_('Are you sure to delete the selected books?')}
-            onClickCancel={() => setShowDeleteAlert(false)}
-            onClickConfirm={confirmDelete}
+            onCancel={() => {
+              setShowDeleteAlert(false);
+              setShowSelectModeActions(true);
+            }}
+            onConfirm={confirmDelete}
           />
         </div>
       )}

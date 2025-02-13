@@ -15,15 +15,15 @@ import { generateGroupsList } from './BookshelfItem';
 interface GroupingModalProps {
   libraryBooks: Book[];
   selectedBooks: string[];
-  onConfirm: () => void;
   onCancel: () => void;
+  onConfirm: () => void;
 }
 
 const GroupingModal: React.FC<GroupingModalProps> = ({
   libraryBooks,
   selectedBooks,
-  onConfirm,
   onCancel,
+  onConfirm,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -226,6 +226,9 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
           ))}
         </ul>
         <div className='mt-6 flex justify-end gap-x-8 p-2'>
+          <button onClick={onCancel} className='flex items-center'>
+            {_('Cancel')}
+          </button>
           <button
             onClick={handleConfirmGrouping}
             className={clsx(
@@ -234,9 +237,6 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             )}
           >
             {_('Confirm')}
-          </button>
-          <button onClick={onCancel} className='flex items-center'>
-            {_('Cancel')}
           </button>
         </div>
       </div>
