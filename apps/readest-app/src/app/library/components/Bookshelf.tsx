@@ -2,7 +2,8 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { MdDelete, MdOpenInNew, MdOutlineCreateNewFolder, MdOutlineCancel } from 'react-icons/md';
+import { MdDelete, MdOpenInNew, MdOutlineCancel } from 'react-icons/md';
+import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -25,7 +26,6 @@ interface BookshelfProps {
   handleBookDelete: (book: Book) => void;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
-  handleToggleSelectMode: () => void;
   booksTransferProgress: { [key: string]: number | null };
 }
 
@@ -38,7 +38,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookDelete,
   handleSetSelectMode,
   handleShowDetailsBook,
-  handleToggleSelectMode,
   booksTransferProgress,
 }) => {
   const _ = useTranslation();
@@ -47,6 +46,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { appService } = useEnv();
   const [loading, setLoading] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
+  const [showSelectModeActions, setShowSelectModeActions] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
   const [navBooksGroup, setNavBooksGroup] = useState<BooksGroup | null>(null);
@@ -57,7 +57,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const allBookshelfItems = generateBookshelfItems(libraryBooks);
 
   useEffect(() => {
-    setSelectedBooks([]);
+    if (isSelectMode) {
+      setShowSelectModeActions(true);
+    } else {
+      setSelectedBooks([]);
+      setShowSelectModeActions(false);
+    }
   }, [isSelectMode]);
 
   useEffect(() => {
@@ -124,6 +129,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const groupSelectedBooks = () => {
+    setShowSelectModeActions(false);
     setShowGroupingModal(true);
   };
 
@@ -166,7 +172,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         </div>
       )}
       <div className={clsx('action-bar-bottom z-[99] pb-[calc(env(safe-area-inset-bottom)+16px)]')}>
-        {isSelectMode && (
+        {isSelectMode && showSelectModeActions && (
           <div
             className={clsx(
               'text-base-content bg-base-300 mx-auto flex w-fit items-center justify-center',
@@ -191,7 +197,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                 !selectedBooks.length && 'btn-disabled opacity-50',
               )}
             >
-              <MdOutlineCreateNewFolder />
+              <LuFolderPlus />
               <div>{_('Add to Group')}</div>
             </button>
             <button
@@ -205,7 +211,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               <div className='text-red-500'>{_('Delete')}</div>
             </button>
             <button
-              onClick={() => handleToggleSelectMode()}
+              onClick={() => handleSetSelectMode(false)}
               className={clsx('flex flex-col items-center justify-center')}
             >
               <MdOutlineCancel />
@@ -220,10 +226,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             libraryBooks={libraryBooks}
             selectedBooks={selectedBooks}
             onConfirm={() => {
-              setSelectedBooks([]);
               setShowGroupingModal(false);
+              handleSetSelectMode(false);
             }}
-            onCancel={() => setShowGroupingModal(false)}
+            onCancel={() => {
+              setShowGroupingModal(false);
+              setShowSelectModeActions(true);
+            }}
           />
         </div>
       )}

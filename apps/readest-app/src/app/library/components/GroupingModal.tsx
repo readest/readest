@@ -133,7 +133,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     const groupIds = selectedBooks
       .map((id) => libraryBooks.find((book) => book.hash === id || book.groupId === id)?.groupId)
       .filter((groupId) => groupId);
-    if (groupIds.length === 1) {
+    if (Array.from(new Set(groupIds)).length === 1) {
       setSelectedGroup(groupsList.find((group) => group.id === groupIds[0]) || null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,25 +141,32 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
-      <div className='modal-box bg-base-100 max-h-[85%] w-[50%] min-w-64 max-w-[440px] overflow-y-auto rounded-2xl p-6 shadow-xl'>
+      <div
+        className={clsx(
+          'modal-box bg-base-100 overflow-y-auto rounded-2xl shadow-xl',
+          'max-h-[85%] w-[95%] min-w-64 max-w-[440px] p-6 sm:w-[70%]',
+        )}
+      >
         <h2 className='text-center text-lg font-bold'>{_('Group Books')}</h2>
-        <div className='mt-4 flex w-full flex-wrap justify-between gap-2 text-base'>
+        <div className={clsx('mt-4 grid grid-cols-1 gap-2 text-base md:grid-cols-2')}>
           {isSelectedBooksHasGroup && (
-            <button
+            <div
               onClick={handleRemoveFromGroup}
-              className='btn btn-ghost flex items-center p-2 text-blue-500'
+              role='button'
+              className='flex items-center space-x-2 p-2 text-blue-500'
             >
               <HiOutlineFolderRemove size={iconSize} />
               <span>{_('Remove From Group')}</span>
-            </button>
+            </div>
           )}
-          <button
+          <div
             onClick={handleCreateGroup}
-            className='btn btn-ghost flex items-center p-2 text-blue-500'
+            role='button'
+            className='flex items-center space-x-2 p-2 text-blue-500'
           >
             <HiOutlineFolderAdd size={iconSize} />
             <span>{_('Create New Group')}</span>
-          </button>
+          </div>
         </div>
         {showInput && (
           <div className='mt-4 flex items-center gap-2'>
@@ -183,7 +190,9 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
               )}
               onClick={() => handleConfirmCreateGroup()}
             >
-              <div className='pr-1 align-bottom text-xs text-blue-400'>{_('Save')}</div>
+              <div className='pr-1 align-bottom text-base text-blue-500 sm:text-sm'>
+                {_('Save')}
+              </div>
             </button>
           </div>
         )}
@@ -208,7 +217,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
                   {group.name}
                 </span>
               </div>
-              <span className='text-neutral-content hidden shrink-0 text-sm sm:flex'>
+              <span className='text-neutral-content flex shrink-0 text-sm'>
                 {selectedGroup && selectedGroup.id == group.id && (
                   <MdCheck className='fill-blue-500' size={iconSize} />
                 )}
@@ -216,7 +225,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             </button>
           ))}
         </ul>
-        <div className='mt-6 flex justify-end gap-x-4 p-2'>
+        <div className='mt-6 flex justify-end gap-x-8 p-2'>
           <button
             onClick={handleConfirmGrouping}
             className={clsx(

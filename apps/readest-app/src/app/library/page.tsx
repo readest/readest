@@ -384,7 +384,7 @@ const LibraryPage = () => {
           <div
             ref={containerRef}
             className={clsx(
-              'scroll-container mt-12 flex-grow overflow-auto px-2',
+              'mt-12 flex-grow overflow-auto px-2',
               appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
             )}
           >
@@ -397,7 +397,6 @@ const LibraryPage = () => {
               handleBookDelete={handleBookDelete}
               handleSetSelectMode={handleSetSelectMode}
               handleShowDetailsBook={handleShowDetailsBook}
-              handleToggleSelectMode={handleToggleSelectMode}
               booksTransferProgress={booksTransferProgress}
             />
           </div>

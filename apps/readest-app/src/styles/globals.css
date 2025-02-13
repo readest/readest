@@ -231,11 +231,6 @@ foliate-view {
   transform: rotate(180deg);
 }
 
-.scroll-container {
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
-}
-
 .action-bar-bottom {
   position: fixed;
   bottom: 0;
