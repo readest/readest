@@ -156,5 +156,10 @@
   "Letter Spacing": "Espacement des lettres",
   "Text Indent": "Retrait du texte",
   "Paragraph Margin": "Marge de paragraphe",
-  "Override Book Layout": "Remplacer la mise en page du livre"
+  "Override Book Layout": "Remplacer la mise en page du livre",
+  "Add to Group": "Ajouter au groupe",
+  "Untitled Group": "Groupe sans titre",
+  "Group Books": "Regrouper les livres",
+  "Remove From Group": "Retirer du groupe",
+  "Create New Group": "Créer un nouveau groupe"
 }

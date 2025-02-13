@@ -156,5 +156,10 @@
   "Letter Spacing": "文字間隔",
   "Text Indent": "テキストインデント",
   "Paragraph Margin": "段落マージン",
-  "Override Book Layout": "書籍のレイアウトを上書き"
+  "Override Book Layout": "書籍のレイアウトを上書き",
+  "Add to Group": "グループに追加",
+  "Untitled Group": "無題のグループ",
+  "Group Books": "書籍をグループ化",
+  "Remove From Group": "グループから削除",
+  "Create New Group": "新しいグループを作成"
 }

@@ -156,5 +156,10 @@
   "Letter Spacing": "Harf Aralığı",
   "Text Indent": "Metin Girintisi",
   "Paragraph Margin": "Paragraf Kenarı",
-  "Override Book Layout": "Kitap Düzenini Geçersiz Kıl"
+  "Override Book Layout": "Kitap Düzenini Geçersiz Kıl",
+  "Add to Group": "Gruba Ekle",
+  "Untitled Group": "Başlıksız Grup",
+  "Group Books": "Kitapları Grupla",
+  "Remove From Group": "Grubu Kaldır",
+  "Create New Group": "Yeni Grup Oluştur"
 }

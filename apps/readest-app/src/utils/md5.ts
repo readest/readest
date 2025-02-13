@@ -1,5 +1,13 @@
 import { md5 } from 'js-md5';
 
+export function isMd5(value: string): boolean {
+  return /^[0-9a-f]{32}$/.test(value);
+}
+
+export function md5Fingerprint(value: string): string {
+  return md5(value).slice(0, 7);
+}
+
 export async function partialMD5(file: File): Promise<string> {
   const step = 1024;
   const size = 1024;

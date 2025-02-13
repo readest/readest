@@ -156,5 +156,10 @@
   "Letter Spacing": "Міжбуквений інтервал",
   "Text Indent": "Відступ тексту",
   "Paragraph Margin": "Відступ абзацу",
-  "Override Book Layout": "Перевизначити макет книги"
+  "Override Book Layout": "Перевизначити макет книги",
+  "Add to Group": "Додати до групи",
+  "Untitled Group": "Група без назви",
+  "Group Books": "Групувати книги",
+  "Remove From Group": "Видалити з групи",
+  "Create New Group": "Створити нову групу"
 }

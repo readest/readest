@@ -1,36 +1,42 @@
-import Image from 'next/image';
+import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { BooksGroup } from '@/types/book';
-import { formatAuthors, formatTitle } from '@/utils/book';
-import ReadingProgress from './ReadingProgress';
+import BookCover from './BookCover';
 
 interface GroupItemProps {
   group: BooksGroup;
+  isSelectMode: boolean;
+  selectedBooks: string[];
 }
 
-const GroupItem: React.FC<GroupItemProps> = ({ group }) => {
+const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBooks }) => {
   return (
-    <div>
-      {group.books.map((book) => (
-        <div key={book.hash} className='card bg-base-100 w-full shadow-md'>
-          <figure>
-            <Image
-              width={10}
-              height={10}
-              src={book.coverImageUrl!}
-              alt={book.title || ''}
-              className='h-48 w-full object-cover'
-            />
-          </figure>
-          <div className='card-body p-4'>
-            <h3 className='card-title line-clamp-2 text-sm'>{formatTitle(book.title)}</h3>
-            <p className='text-neutral-content line-clamp-1 text-xs'>
-              {formatAuthors(book.author)}
-            </p>
-            <ReadingProgress book={book} />
-          </div>
+    <div className='group-item flex h-full flex-col'>
+      <div className='bg-base-100 relative flex aspect-[28/41] items-center justify-center p-2 shadow-md'>
+        <div className='grid w-full grid-cols-2 grid-rows-2 gap-1 overflow-hidden'>
+          {group.books.slice(0, 4).map((book) => (
+            <div key={book.hash} className='relative aspect-[28/41] h-full w-full'>
+              <BookCover book={book} isPreview />
+            </div>
+          ))}
         </div>
-      ))}
-      <h2 className='mb-2 text-lg font-bold'>{group.name}</h2>
+        {selectedBooks.includes(group.id) && (
+          <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
+        )}
+        {isSelectMode && (
+          <div className='absolute bottom-1 right-1'>
+            {selectedBooks.includes(group.id) ? (
+              <MdCheckCircle className='fill-blue-500' />
+            ) : (
+              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
+            )}
+          </div>
+        )}
+      </div>
+      <div className='min-w-0 flex-1 pt-2'>
+        <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold'>
+          {group.name}
+        </h4>
+      </div>
     </div>
   );
 };

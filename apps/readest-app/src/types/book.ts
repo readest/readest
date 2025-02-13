@@ -10,7 +10,9 @@ export interface Book {
   format: BookFormat;
   title: string;
   author: string;
-  group?: string;
+  group?: string; // deprecated in favor of groupId and groupName
+  groupId?: string;
+  groupName?: string;
   tags?: string[];
   coverImageUrl?: string | null;
 
@@ -23,6 +25,11 @@ export interface Book {
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total]
+}
+
+export interface BookGroupType {
+  id: string;
+  name: string;
 }
 
 export interface PageInfo {
@@ -157,6 +164,7 @@ export interface BookDataRecord {
 }
 
 export interface BooksGroup {
+  id: string;
   name: string;
   books: Book[];
 

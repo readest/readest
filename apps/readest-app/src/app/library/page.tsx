@@ -337,6 +337,10 @@ const LibraryPage = () => {
     setIsSelectMode(!isSelectMode);
   };
 
+  const handleSetSelectMode = (selectMode: boolean) => {
+    setIsSelectMode(selectMode);
+  };
+
   const handleShowDetailsBook = (book: Book) => {
     setShowDetailsBook(book);
   };
@@ -380,7 +384,7 @@ const LibraryPage = () => {
           <div
             ref={containerRef}
             className={clsx(
-              'mt-12 flex-grow overflow-auto px-2',
+              'scroll-container mt-12 flex-grow overflow-auto px-2',
               appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
             )}
           >
@@ -391,7 +395,9 @@ const LibraryPage = () => {
               handleBookUpload={handleBookUpload}
               handleBookDownload={handleBookDownload}
               handleBookDelete={handleBookDelete}
+              handleSetSelectMode={handleSetSelectMode}
               handleShowDetailsBook={handleShowDetailsBook}
+              handleToggleSelectMode={handleToggleSelectMode}
               booksTransferProgress={booksTransferProgress}
             />
           </div>

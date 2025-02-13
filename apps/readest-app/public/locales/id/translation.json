@@ -156,5 +156,10 @@
   "Letter Spacing": "Spasi Huruf",
   "Text Indent": "Indentasi Teks",
   "Paragraph Margin": "Margin Paragraf",
-  "Override Book Layout": "Ganti Tata Letak Buku"
+  "Override Book Layout": "Ganti Tata Letak Buku",
+  "Add to Group": "Tambahkan ke Grup",
+  "Untitled Group": "Grup Tanpa Judul",
+  "Group Books": "Grupkan Buku",
+  "Remove From Group": "Hapus dari Grup",
+  "Create New Group": "Buat Grup Baru"
 }

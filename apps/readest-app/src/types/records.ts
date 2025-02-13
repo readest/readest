@@ -4,7 +4,8 @@ export interface DBBook {
   format: string;
   title: string;
   author: string;
-  group?: string;
+  group_id?: string;
+  group_name?: string;
   tags?: string[];
   progress?: [number, number];
 

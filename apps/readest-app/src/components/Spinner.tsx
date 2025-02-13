@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -9,7 +10,10 @@ const Spinner: React.FC<{
 
   return (
     <div
-      className='absolute left-1/2 top-4 -translate-x-1/2 transform pt-16 text-center'
+      className={clsx(
+        'absolute left-1/2 -translate-x-1/2 transform text-center',
+        'top-4 pt-[calc(env(safe-area-inset-top)+64px)]',
+      )}
       role='status'
     >
       <span className='loading loading-dots loading-lg'></span>

@@ -230,3 +230,15 @@ foliate-view {
 .pull-indicator.flip svg {
   transform: rotate(180deg);
 }
+
+.scroll-container {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+.action-bar-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}

@@ -156,5 +156,10 @@
   "Letter Spacing": "字間距",
   "Text Indent": "首行縮進",
   "Paragraph Margin": "段間距",
-  "Override Book Layout": "覆蓋版面佈局"
+  "Override Book Layout": "覆蓋版面佈局",
+  "Add to Group": "添加到組",
+  "Untitled Group": "無標題組",
+  "Group Books": "分組書籍",
+  "Remove From Group": "從組中移除",
+  "Create New Group": "創建新組"
 }

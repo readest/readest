@@ -25,8 +25,12 @@ export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
   router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
 };
 
-export const navigateToLibrary = (router: ReturnType<typeof useRouter>) => {
-  router.push('/library');
+export const navigateToLibrary = (
+  router: ReturnType<typeof useRouter>,
+  queryParams?: string,
+  navOptions?: { scroll?: boolean },
+) => {
+  router.push(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
 };
 
 export const redirectToLibrary = () => {

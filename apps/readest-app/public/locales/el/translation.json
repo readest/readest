@@ -156,5 +156,10 @@
   "Letter Spacing": "Διάκενο γραμμάτων",
   "Text Indent": "Εσοχή κειμένου",
   "Paragraph Margin": "Περιθώριο παραγράφου",
-  "Override Book Layout": "Παράκαμψη διάταξης βιβλίου"
+  "Override Book Layout": "Παράκαμψη διάταξης βιβλίου",
+  "Add to Group": "Προσθήκη στην ομάδα",
+  "Untitled Group": "Ομάδα χωρίς τίτλο",
+  "Group Books": "Ομαδοποίηση βιβλίων",
+  "Remove From Group": "Αφαίρεση από την ομάδα",
+  "Create New Group": "Δημιουργία νέας ομάδας"
 }

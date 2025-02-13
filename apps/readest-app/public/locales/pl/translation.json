@@ -156,5 +156,10 @@
   "Letter Spacing": "Odstęp między literami",
   "Text Indent": "Wcięcie tekstu",
   "Paragraph Margin": "Margines akapitu",
-  "Override Book Layout": "Nadpisz układ książki"
+  "Override Book Layout": "Nadpisz układ książki",
+  "Add to Group": "Dodaj do grupy",
+  "Untitled Group": "Grupa bez tytułu",
+  "Group Books": "Grupuj książki",
+  "Remove From Group": "Usuń z grupy",
+  "Create New Group": "Utwórz nową grupę"
 }

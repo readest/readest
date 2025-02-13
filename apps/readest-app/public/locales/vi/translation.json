@@ -156,5 +156,10 @@
   "Letter Spacing": "Khoảng cách chữ",
   "Text Indent": "Thụt lề",
   "Paragraph Margin": "Lề đoạn",
-  "Override Book Layout": "Ghi đè bố cục sách"
+  "Override Book Layout": "Ghi đè bố cục sách",
+  "Add to Group": "Thêm vào nhóm",
+  "Untitled Group": "Nhóm không có tiêu đề",
+  "Group Books": "Nhóm sách",
+  "Remove From Group": "Xóa khỏi nhóm",
+  "Create New Group": "Tạo nhóm mới"
 }

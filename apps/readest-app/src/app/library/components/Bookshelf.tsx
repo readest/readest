@@ -2,51 +2,19 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { MdDelete, MdOpenInNew } from 'react-icons/md';
+import { MdDelete, MdOpenInNew, MdOutlineCreateNewFolder, MdOutlineCancel } from 'react-icons/md';
 import { PiPlus } from 'react-icons/pi';
-import { Menu, MenuItem } from '@tauri-apps/api/menu';
-import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { Book, BooksGroup } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { navigateToReader } from '@/utils/nav';
-import { getOSPlatform } from '@/utils/misc';
-import { getFilename } from '@/utils/book';
-import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
-import BookItem from './BookItem';
-import GroupItem from './GroupItem';
-
-type BookshelfItem = Book | BooksGroup;
-
-const UNGROUPED_NAME = 'ungrouped';
-
-const generateBookshelfItems = (books: Book[]): BookshelfItem[] => {
-  const groups: BooksGroup[] = books.reduce((acc: BooksGroup[], book: Book) => {
-    if (book.deletedAt) return acc;
-    book.group = book.group || UNGROUPED_NAME;
-    const groupIndex = acc.findIndex((group) => group.name === book.group);
-    const booksGroup = acc[acc.findIndex((group) => group.name === book.group)];
-    if (booksGroup) {
-      booksGroup.books.push(book);
-      booksGroup.updatedAt = Math.max(acc[groupIndex]!.updatedAt, book.updatedAt);
-    } else {
-      acc.push({
-        name: book.group,
-        books: [book],
-        updatedAt: book.updatedAt,
-      });
-    }
-    return acc;
-  }, []);
-  const ungroupedBooks: Book[] = groups.find((group) => group.name === UNGROUPED_NAME)?.books || [];
-  const groupedBooks: BooksGroup[] = groups.filter((group) => group.name !== UNGROUPED_NAME);
-  return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
-};
+import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
+import { isMd5 } from '@/utils/md5';
+import GroupingModal from './GroupingModal';
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -55,7 +23,9 @@ interface BookshelfProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
   handleBookDelete: (book: Book) => void;
+  handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handleToggleSelectMode: () => void;
   booksTransferProgress: { [key: string]: number | null };
 }
 
@@ -66,43 +36,25 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookUpload,
   handleBookDownload,
   handleBookDelete,
+  handleSetSelectMode,
   handleShowDetailsBook,
+  handleToggleSelectMode,
   booksTransferProgress,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { envConfig, appService } = useEnv();
-  const { settings } = useSettingsStore();
-  const { updateBook } = useLibraryStore();
+  const { appService } = useEnv();
   const [loading, setLoading] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [clickedImage, setClickedImage] = useState<string | null>(null);
+  const [showGroupingModal, setShowGroupingModal] = useState(false);
+  const [navBooksGroup, setNavBooksGroup] = useState<BooksGroup | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
   const isImportingBook = useRef(false);
 
-  const makeBookAvailable = async (book: Book) => {
-    if (book.uploadedAt && !book.downloadedAt) {
-      let available = false;
-      try {
-        await handleBookDownload(book);
-        updateBook(envConfig, book);
-        available = true;
-      } finally {
-        return available;
-      }
-    }
-    return true;
-  };
-
-  const showBookDetailsModal = async (book: Book) => {
-    if (await makeBookAvailable(book)) {
-      handleShowDetailsBook(book);
-    }
-  };
-
   const { setLibrary } = useLibraryStore();
+  const allBookshelfItems = generateBookshelfItems(libraryBooks);
 
   useEffect(() => {
     setSelectedBooks([]);
@@ -127,24 +79,27 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importBookUrl, appService]);
 
-  const bookshelfItems = generateBookshelfItems(libraryBooks);
-
-  const handleBookClick = async (book: Book) => {
-    if (!(await makeBookAvailable(book))) return;
-
-    if (isSelectMode) {
-      toggleSelection(book.hash);
+  useEffect(() => {
+    const group = searchParams?.get('group') || '';
+    if (group) {
+      const booksGroup = allBookshelfItems.find(
+        (item) => 'name' in item && item.id === group,
+      ) as BooksGroup;
+      if (booksGroup) {
+        setNavBooksGroup(booksGroup);
+      } else {
+        navigateToLibrary(router);
+      }
     } else {
-      setClickedImage(book.hash);
-      setTimeout(() => setClickedImage(null), 300);
-      setTimeout(() => setLoading(true), 200);
-      navigateToReader(router, [book.hash]);
+      setNavBooksGroup(null);
+      navigateToLibrary(router);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, showGroupingModal]);
 
   const toggleSelection = (id: string) => {
     setSelectedBooks((prev) =>
-      prev.includes(id) ? prev.filter((bookId) => bookId !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id],
     );
   };
 
@@ -154,8 +109,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const confirmDelete = async () => {
-    for (const selectedBook of selectedBooks) {
-      const book = libraryBooks.find((b) => b.hash === selectedBook);
+    for (const id of selectedBooks) {
+      const book = libraryBooks.find((b) => b.hash === id || b.groupId === id);
       if (book) {
         await handleBookDelete(book);
       }
@@ -168,82 +123,34 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowDeleteAlert(true);
   };
 
-  const bookContextMenuHandler = async (book: Book, e: React.MouseEvent) => {
-    if (!appService?.hasContextMenu) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const osPlatform = getOSPlatform();
-    const fileRevealLabel =
-      FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
-    const openBookMenuItem = await MenuItem.new({
-      text: isSelectMode ? _('Select Book') : _('Open Book'),
-      action: async () => {
-        handleBookClick(book);
-      },
-    });
-    const showBookInFinderMenuItem = await MenuItem.new({
-      text: _(fileRevealLabel),
-      action: async () => {
-        const folder = `${settings.localBooksDir}/${getFilename(book)}`;
-        revealItemInDir(folder);
-      },
-    });
-    const showBookDetailsMenuItem = await MenuItem.new({
-      text: _('Show Book Details'),
-      action: async () => {
-        showBookDetailsModal(book);
-      },
-    });
-    const uploadBookMenuItem = await MenuItem.new({
-      text: _('Upload Book'),
-      action: async () => {
-        handleBookUpload(book);
-      },
-    });
-    const deleteBookMenuItem = await MenuItem.new({
-      text: _('Delete'),
-      action: async () => {
-        await handleBookDelete(book);
-      },
-    });
-    const menu = await Menu.new();
-    menu.append(openBookMenuItem);
-    menu.append(showBookDetailsMenuItem);
-    menu.append(showBookInFinderMenuItem);
-    menu.append(uploadBookMenuItem);
-    menu.append(deleteBookMenuItem);
-    menu.popup();
+  const groupSelectedBooks = () => {
+    setShowGroupingModal(true);
   };
+
+  const currentBookshelfItems = navBooksGroup ? navBooksGroup.books : allBookshelfItems;
 
   return (
     <div className='bookshelf'>
-      <div className='grid grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
-        {bookshelfItems.map((item, index) => (
-          <div
+      <div className='grid flex-1 grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
+        {currentBookshelfItems.map((item, index) => (
+          <BookshelfItem
             key={`library-item-${index}`}
-            className='hover:bg-base-300/50 group flex h-full flex-col p-4'
-          >
-            <div className='flex-grow'>
-              {'format' in item ? (
-                <BookItem
-                  book={item}
-                  isSelectMode={isSelectMode}
-                  selectedBooks={selectedBooks}
-                  clickedBookHash={clickedImage}
-                  handleBookClick={handleBookClick}
-                  handleBookUpload={handleBookUpload}
-                  handleBookDownload={handleBookDownload}
-                  showBookDetailsModal={showBookDetailsModal}
-                  bookContextMenuHandler={bookContextMenuHandler}
-                  transferProgress={booksTransferProgress[item.hash] || null}
-                />
-              ) : (
-                <GroupItem group={item} />
-              )}
-            </div>
-          </div>
+            item={item}
+            isSelectMode={isSelectMode}
+            selectedBooks={selectedBooks}
+            setLoading={setLoading}
+            toggleSelection={toggleSelection}
+            handleBookUpload={handleBookUpload}
+            handleBookDownload={handleBookDownload}
+            handleBookDelete={handleBookDelete}
+            handleSetSelectMode={handleSetSelectMode}
+            handleShowDetailsBook={handleShowDetailsBook}
+            transferProgress={
+              'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
+            }
+          />
         ))}
-        {bookshelfItems.length > 0 && (
+        {!navBooksGroup && allBookshelfItems.length > 0 && (
           <div
             className='border-1 bg-base-100 hover:bg-base-300/50 m-4 flex aspect-[28/41] items-center justify-center'
             role='button'
@@ -258,34 +165,72 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      <div
-        className={clsx(
-          'action-bar sticky bottom-0 left-0 right-0 z-40',
-          'pb-[calc(env(safe-area-inset-bottom)+16px)]',
-        )}
-      >
-        {selectedBooks.length > 0 && (
+      <div className={clsx('action-bar-bottom z-[99] pb-[calc(env(safe-area-inset-bottom)+16px)]')}>
+        {isSelectMode && (
           <div
             className={clsx(
-              'text-base-content bg-base-300 mx-auto flex w-fit',
-              'space-x-4 rounded-lg p-4 shadow-lg',
+              'text-base-content bg-base-300 mx-auto flex w-fit items-center justify-center',
+              'space-x-6 rounded-lg p-4 shadow-lg',
             )}
           >
-            <button onClick={openSelectedBooks} className='flex items-center space-x-2'>
+            <button
+              onClick={openSelectedBooks}
+              className={clsx(
+                'flex flex-col items-center justify-center',
+                (!selectedBooks.length || !selectedBooks.every((id) => isMd5(id))) &&
+                  'btn-disabled opacity-50',
+              )}
+            >
               <MdOpenInNew />
-              <span>{_('Open')}</span>
+              <div>{_('Open')}</div>
             </button>
-            <button onClick={deleteSelectedBooks} className='flex items-center space-x-2'>
+            <button
+              onClick={groupSelectedBooks}
+              className={clsx(
+                'flex flex-col items-center justify-center',
+                !selectedBooks.length && 'btn-disabled opacity-50',
+              )}
+            >
+              <MdOutlineCreateNewFolder />
+              <div>{_('Add to Group')}</div>
+            </button>
+            <button
+              onClick={deleteSelectedBooks}
+              className={clsx(
+                'flex flex-col items-center justify-center',
+                !selectedBooks.length && 'btn-disabled opacity-50',
+              )}
+            >
               <MdDelete className='fill-red-500' />
-              <span className='text-red-500'>{_('Delete')}</span>
+              <div className='text-red-500'>{_('Delete')}</div>
+            </button>
+            <button
+              onClick={() => handleToggleSelectMode()}
+              className={clsx('flex flex-col items-center justify-center')}
+            >
+              <MdOutlineCancel />
+              <div>{_('Cancel')}</div>
             </button>
           </div>
         )}
       </div>
+      {showGroupingModal && (
+        <div>
+          <GroupingModal
+            libraryBooks={libraryBooks}
+            selectedBooks={selectedBooks}
+            onConfirm={() => {
+              setSelectedBooks([]);
+              setShowGroupingModal(false);
+            }}
+            onCancel={() => setShowGroupingModal(false)}
+          />
+        </div>
+      )}
       {showDeleteAlert && (
         <div
           className={clsx(
-            'sticky bottom-0 left-0 right-0 z-50 flex justify-center',
+            'action-bar-bottom z-[100] flex justify-center',
             'pb-[calc(env(safe-area-inset-bottom)+16px)]',
           )}
         >

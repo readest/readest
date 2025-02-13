@@ -156,5 +156,10 @@
   "Letter Spacing": "अक्षर स्पेसिंग",
   "Text Indent": "टेक्स्ट इंडेंट",
   "Paragraph Margin": "पैराग्राफ मार्जिन",
-  "Override Book Layout": "पुस्तक लेआउट ओवरराइड करें"
+  "Override Book Layout": "पुस्तक लेआउट ओवरराइड करें",
+  "Add to Group": "समूह में जोड़ें",
+  "Untitled Group": "अभिनामित समूह",
+  "Group Books": "समूह पुस्तकें",
+  "Remove From Group": "समूह से हटाएं",
+  "Create New Group": "नया समूह बनाएं"
 }

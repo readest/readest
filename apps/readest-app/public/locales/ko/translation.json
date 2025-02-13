@@ -156,5 +156,10 @@
   "Letter Spacing": "글자 간격",
   "Text Indent": "들여쓰기",
   "Paragraph Margin": "단락 여백",
-  "Override Book Layout": "책 레이아웃 덮어쓰기"
+  "Override Book Layout": "책 레이아웃 덮어쓰기",
+  "Add to Group": "그룹에 추가",
+  "Untitled Group": "제목 없는 그룹",
+  "Group Books": "책 그룹화",
+  "Remove From Group": "그룹에서 제거",
+  "Create New Group": "새 그룹 만들기"
 }

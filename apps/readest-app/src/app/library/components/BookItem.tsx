@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import Image from 'next/image';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { CiCircleMore } from 'react-icons/ci';
 import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/lia';
@@ -7,16 +6,14 @@ import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/li
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { formatAuthors, formatTitle } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
+import BookCover from './BookCover';
 
 interface BookItemProps {
   book: Book;
   isSelectMode: boolean;
   selectedBooks: string[];
-  clickedBookHash: string | null;
   transferProgress: number | null;
-  handleBookClick: (book: Book) => void;
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
   showBookDetailsModal: (book: Book) => void;
@@ -27,9 +24,7 @@ const BookItem: React.FC<BookItemProps> = ({
   book,
   isSelectMode,
   selectedBooks,
-  clickedBookHash,
   transferProgress,
-  handleBookClick,
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
@@ -38,52 +33,33 @@ const BookItem: React.FC<BookItemProps> = ({
   const iconSize15 = useResponsiveSize(15);
   const { appService } = useEnv();
 
+  const stopEvent = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div
-      className={clsx('book-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}
+      className={clsx(
+        'book-item flex h-full flex-col',
+        appService?.hasContextMenu ? 'cursor-pointer' : '',
+      )}
       onContextMenu={bookContextMenuHandler.bind(null, book)}
     >
-      <div className='bg-base-100 shadow-md' onClick={() => handleBookClick(book)}>
-        <div className='relative aspect-[28/41]'>
-          <Image
-            src={book.coverImageUrl!}
-            alt={book.title}
-            fill={true}
-            className='object-cover'
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
-            }}
-          />
-          <div
-            className={clsx(
-              'invisible absolute inset-0 rounded-none p-2',
-              'text-neutral-content text-center font-serif font-medium',
+      <div className='bg-base-100 relative aspect-[28/41] shadow-md'>
+        <BookCover book={book} />
+        {selectedBooks.includes(book.hash) && (
+          <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
+        )}
+        {isSelectMode && (
+          <div className='absolute bottom-1 right-1'>
+            {selectedBooks.includes(book.hash) ? (
+              <MdCheckCircle className='fill-blue-500' />
+            ) : (
+              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
             )}
-          >
-            <div className='flex h-1/2 items-center justify-center'>
-              <span className='line-clamp-3 text-lg'>{formatTitle(book.title)}</span>
-            </div>
-            <div className='h-1/6'></div>
-            <div className='flex h-1/3 items-center justify-center'>
-              <span className='text-neutral-content/50 line-clamp-1 text-base'>
-                {formatAuthors(book.author)}
-              </span>
-            </div>
           </div>
-          {(selectedBooks.includes(book.hash) || clickedBookHash === book.hash) && (
-            <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
-          )}
-          {isSelectMode && (
-            <div className='absolute bottom-1 right-1'>
-              {selectedBooks.includes(book.hash) ? (
-                <MdCheckCircle className='fill-blue-500' />
-              ) : (
-                <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
       <div className={clsx('flex w-full flex-col p-0 pt-2')}>
         <div className='min-w-0 flex-1'>
@@ -113,6 +89,10 @@ const BookItem: React.FC<BookItemProps> = ({
             ) : (
               <button
                 className='show-detail-button opacity-0 group-hover:opacity-100'
+                onTouchStart={(e) => stopEvent(e)}
+                onMouseDown={(e) => stopEvent(e)}
+                onTouchEnd={(e) => stopEvent(e)}
+                onMouseUp={(e) => stopEvent(e)}
                 onClick={() => {
                   if (!book.uploadedAt) {
                     handleBookUpload(book);
@@ -129,6 +109,10 @@ const BookItem: React.FC<BookItemProps> = ({
             )}
             <button
               className='show-detail-button opacity-0 group-hover:opacity-100'
+              onTouchStart={(e) => stopEvent(e)}
+              onMouseDown={(e) => stopEvent(e)}
+              onTouchEnd={(e) => stopEvent(e)}
+              onMouseUp={(e) => stopEvent(e)}
               onClick={() => showBookDetailsModal(book)}
             >
               <CiCircleMore size={iconSize15} />

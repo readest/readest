@@ -156,5 +156,10 @@
   "Letter Spacing": "Buchstabenabstand",
   "Text Indent": "Texteinzug",
   "Paragraph Margin": "Absatzrand",
-  "Override Book Layout": "Buch-Layout überschreiben"
+  "Override Book Layout": "Buch-Layout überschreiben",
+  "Add to Group": "Zur Gruppe hinzufügen",
+  "Untitled Group": "Unbenannte Gruppe",
+  "Group Books": "Bücher gruppieren",
+  "Remove From Group": "Aus Gruppe entfernen",
+  "Create New Group": "Neue Gruppe erstellen"
 }

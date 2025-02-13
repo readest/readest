@@ -1,13 +1,16 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAllDuotone } from 'react-icons/pi';
 import { MdOutlineMenu } from 'react-icons/md';
+import { MdArrowBackIosNew } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { navigateToLibrary } from '@/utils/nav';
 import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -26,10 +29,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onToggleSelectMode,
 }) => {
   const _ = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { isTrafficLightVisible } = useTrafficLight();
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize16 = useResponsiveSize(16);
+  const iconSize22 = useResponsiveSize(22);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,6 +50,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   }, [onToggleSelectMode]);
 
   const windowButtonVisible = appService?.appPlatform !== 'web' && !isTrafficLightVisible;
+  const isInGroupView = !!searchParams?.get('group');
 
   return (
     <div
@@ -56,19 +63,33 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     >
       <div className='flex items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
-          <span className='absolute left-8 text-gray-500'>
-            <FaSearch className='h-4 w-4' />
-          </span>
-          <input
-            type='text'
-            placeholder={_('Search Books...')}
-            spellCheck='false'
-            className={clsx(
-              'input rounded-badge bg-base-300/50 h-7 w-full pl-10 pr-10',
-              'font-sans text-sm font-light',
-              'border-none focus:outline-none focus:ring-0',
-            )}
-          />
+          {isInGroupView && (
+            <button
+              onClick={() => {
+                navigateToLibrary(router);
+              }}
+              className='btn btn-ghost mr-4 h-7 min-h-7 w-7 p-0'
+            >
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Go Back')}>
+                <MdArrowBackIosNew size={iconSize22} />
+              </div>
+            </button>
+          )}
+          <div className='relative flex h-7 w-full items-center'>
+            <span className='absolute left-3 text-gray-500'>
+              <FaSearch className='h-4 w-4' />
+            </span>
+            <input
+              type='text'
+              placeholder={_('Search Books...')}
+              spellCheck='false'
+              className={clsx(
+                'input rounded-badge bg-base-300/50 h-7 w-full pl-10 pr-10',
+                'font-sans text-sm font-light',
+                'border-none focus:outline-none focus:ring-0',
+              )}
+            />
+          </div>
           <div className='absolute right-4 flex items-center space-x-2 text-gray-500 sm:space-x-4'>
             <span className='mx-2 h-6 w-[1px] bg-gray-400'></span>
             <Dropdown
