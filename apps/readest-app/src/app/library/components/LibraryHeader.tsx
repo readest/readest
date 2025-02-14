@@ -56,12 +56,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 h-11 w-full py-2 pr-6',
+        'titlebar z-10 flex h-11 w-full items-center py-2 pr-6',
         appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
         isTrafficLightVisible ? 'pl-16' : 'pl-2',
       )}
     >
-      <div className='flex items-center justify-between space-x-6 sm:space-x-12'>
+      <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           {isInGroupView && (
             <button
