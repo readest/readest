@@ -49,6 +49,7 @@ jobs:
             core.setOutput('release_note', releaseNote);
 
   build-tauri:
+    if: false
     needs: get-release
     permissions:
       contents: write
@@ -73,7 +74,7 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -168,7 +169,96 @@ jobs:
           echo "Uploading $bin_file to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
 
+  build-tauri-linux-arm:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    needs: [get-release]
+
+    strategy:
+      matrix:
+        arch: [aarch64, armv7l]
+        include:
+          - arch: aarch64
+            cpu: cortex-a72
+            base_image: https://dietpi.com/downloads/images/DietPi_RPi-ARMv8-Bookworm.img.xz
+            deb: arm64
+            appimage: aarch64
+          - arch: armv7l
+            cpu: cortex-a53
+            deb: armhfp
+            appimage: armhf
+            base_image: https://dietpi.com/downloads/images/DietPi_RPi-ARMv7-Bookworm.img.xz
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: initialize git submodules
+        run: git submodule update --init --recursive
+
+      - name: create .env.local file for Next.js
+        run: |
+          echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+
+      - name: copy .env.local to apps/readest-app
+        run: cp .env.local apps/readest-app/.env.local
+
+      - name: cache rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: build app
+        uses: pguyot/arm-runner-action@v2.6.5
+        with:
+          base_image: ${{ matrix.base_image }}
+          cpu: ${{ matrix.cpu }}
+          bind_mount_repository: true
+          image_additional_mb: 10240
+          optimize_image: no
+          #exit_on_fail: no
+          commands: |
+            # Prevent Rust from complaining about $HOME not matching eid home
+            export HOME=/root
+
+            # Workaround to CI worker being stuck on Updating crates.io index
+            export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+
+            # Install setup prerequisites
+            apt-get update -y --allow-releaseinfo-change
+            apt-get autoremove -y
+            apt-get install -y --no-install-recommends --no-install-suggests pkg-config libfontconfig-dev curl libwebkit2gtk-4.1-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2 file
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            . "$HOME/.cargo/env"
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | bash
+            apt-get install -y nodejs
+
+            npm install -g pnpm@latest-10
+
+            # Install frontend dependencies
+            pnpm install
+
+            # Copy pdfjs-dist to public directory
+            pnpm --filter @readest/readest-app setup-pdfjs
+
+            # Build the application
+            pnpm tauri build
+
+      - name: upload arm bundles
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          version=${{ needs.get-release.outputs.release_version }}
+          gh release upload ${{ needs.get-release.outputs.release_tag }} target/release/bundle/deb/Readest_${version}_${{ matrix.deb }}.deb  --clobber
+          gh release upload ${{ needs.get-release.outputs.release_tag }} target/release/bundle/appimage/Readest_${version}_${{ matrix.appimage }}.AppImage  --clobber
+
   update-release:
+    if: false
     permissions:
       contents: write
     runs-on: ubuntu-latest
