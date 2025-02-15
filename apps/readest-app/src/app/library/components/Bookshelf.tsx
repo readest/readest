@@ -138,7 +138,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   return (
     <div className='bookshelf'>
-      <div className='transform-wrapper grid flex-1 grid-cols-3 gap-0 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
+      <div
+        className={clsx(
+          'transform-wrapper grid flex-1 gap-x-4 sm:gap-x-0',
+          'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8',
+        )}
+      >
         {currentBookshelfItems.map((item, index) => (
           <BookshelfItem
             key={`library-item-${index}`}
@@ -159,7 +164,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         ))}
         {!navBooksGroup && allBookshelfItems.length > 0 && (
           <div
-            className='border-1 bg-base-100 hover:bg-base-300/50 m-4 flex aspect-[28/41] items-center justify-center'
+            className={clsx(
+              'border-1 bg-base-100 hover:bg-base-300/50 flex items-center justify-center',
+              'mx-0 my-4 aspect-[28/41] sm:mx-4',
+            )}
             role='button'
             onClick={handleImportBooks}
           >

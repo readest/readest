@@ -248,7 +248,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   return (
     <div
       className={clsx(
-        'hover:bg-base-300/50 group flex h-full flex-col p-4',
+        'sm:hover:bg-base-300/50 group flex h-full flex-col px-0 py-4 sm:px-4',
         pressing ? 'scale-95' : 'scale-100',
       )}
       style={{

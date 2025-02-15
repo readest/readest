@@ -1,4 +1,6 @@
+import clsx from 'clsx';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { BooksGroup } from '@/types/book';
 import BookCover from './BookCover';
 
@@ -9,9 +11,15 @@ interface GroupItemProps {
 }
 
 const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBooks }) => {
+  const { appService } = useEnv();
   return (
-    <div className='group-item flex h-full flex-col'>
-      <div className='bg-base-100 relative flex aspect-[28/41] items-center justify-center p-2 shadow-md'>
+    <div
+      className={clsx(
+        'group-item flex h-full flex-col',
+        appService?.hasContextMenu ? 'cursor-pointer' : '',
+      )}
+    >
+      <div className='bg-base-100 relative flex aspect-[28/41] items-center justify-center overflow-hidden p-2 shadow-md'>
         <div className='grid w-full grid-cols-2 grid-rows-2 gap-1 overflow-hidden'>
           {group.books.slice(0, 4).map((book) => (
             <div key={book.hash} className='relative aspect-[28/41] h-full w-full'>

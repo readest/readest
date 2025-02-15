@@ -384,7 +384,7 @@ const LibraryPage = () => {
           <div
             ref={containerRef}
             className={clsx(
-              'mt-12 flex-grow overflow-auto px-2',
+              'mt-12 flex-grow overflow-auto px-4 sm:px-2',
               appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
             )}
           >

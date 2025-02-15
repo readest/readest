@@ -4,6 +4,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
+import { getOSPlatform } from '@/utils/misc';
 
 export const useClickEvent = (
   bookKey: string,
@@ -24,10 +25,14 @@ export const useClickEvent = (
             const { screenX } = msg.data;
             const viewRect = viewElement.getBoundingClientRect();
             let windowStartX;
+            // Currently for tauri APP the window.screenX is always 0
             if (isTauriAppPlatform()) {
-              // Currently for tauri APP the window.screenX is always 0
-              const windowPosition = await tauriGetWindowLogicalPosition();
-              windowStartX = windowPosition.x;
+              if (['android', 'ios'].includes(getOSPlatform())) {
+                windowStartX = 0;
+              } else {
+                const windowPosition = await tauriGetWindowLogicalPosition();
+                windowStartX = windowPosition.x;
+              }
             } else {
               windowStartX = window.screenX;
             }

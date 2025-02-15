@@ -43,7 +43,7 @@ const BookItem: React.FC<BookItemProps> = ({
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
     >
-      <div className='bg-base-100 relative aspect-[28/41] shadow-md'>
+      <div className='bg-base-100 relative flex aspect-[28/41] items-center justify-center overflow-hidden shadow-md'>
         <BookCover book={book} />
         {selectedBooks.includes(book.hash) && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
