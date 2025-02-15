@@ -63,8 +63,8 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
         handler &&
         shortcutList?.some((shortcut) =>
           isShortcutMatch(shortcut, key, ctrlKey, altKey, metaKey, shiftKey),
-        )
-      ) {
+      )
+    ) {
         handler();
         return true;
       }
@@ -76,16 +76,23 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
     // Check if the focus is on an input, textarea, or contenteditable element
     const activeElement = document.activeElement as HTMLElement;
     const isInteractiveElement =
-      activeElement.tagName === 'INPUT' ||
+      (activeElement.tagName === 'INPUT' ||
       activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable;
+      activeElement.isContentEditable);
 
-    if (isInteractiveElement) {
+    const isNoteEditor = (activeElement.tagName === 'TEXTAREA' && activeElement.classList.contains('note-editor'))
+
+    if (isInteractiveElement && !isNoteEditor) {
       return; // Skip handling if the user is typing in an input, textarea, or contenteditable
     }
 
     if (event instanceof KeyboardEvent) {
       const { key, ctrlKey, altKey, metaKey, shiftKey } = event;
+
+      if (isNoteEditor && !((key === "Enter" && ctrlKey) || (key == "Escape"))) {
+        return;
+      }
+
       const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey);
       if (handled) event.preventDefault();
     } else if (

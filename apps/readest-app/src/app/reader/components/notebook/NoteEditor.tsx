@@ -4,6 +4,7 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
+import useShortcuts from '@/hooks/useShortcuts';
 
 interface NoteEditorProps {
   onSave: (selection: TextSelection, note: string) => void;
@@ -12,7 +13,7 @@ interface NoteEditorProps {
 
 const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
   const _ = useTranslation();
-  const { notebookNewAnnotation, notebookEditAnnotation } = useNotebookStore();
+  const { notebookNewAnnotation, notebookEditAnnotation, setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [note, setNote] = React.useState('');
 
@@ -48,6 +49,21 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
       onEdit(notebookEditAnnotation);
     }
   };
+
+  useShortcuts({
+    onSaveNote: () => {
+      if (editorRef.current && editorRef.current.value) {
+        handleSaveNote();
+      }
+    },
+    onCloseNote: () => {
+      if (notebookNewAnnotation) {
+        setNotebookNewAnnotation(null)
+      } else if (notebookEditAnnotation) {
+        setNotebookEditAnnotation(null)
+      }
+    }
+  })
 
   return (
     <div className='note-editor-container bg-base-100 mt-2 rounded-md p-2'>

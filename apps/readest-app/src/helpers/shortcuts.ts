@@ -16,6 +16,8 @@ export interface ShortcutConfig {
   onZoomIn: string[];
   onZoomOut: string[];
   onResetZoom: string[];
+  onSaveNote: string[];
+  onCloseNote: string[];
 }
 
 const DEFAULT_SHORTCUTS: ShortcutConfig = {
@@ -36,6 +38,8 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onZoomIn: ['ctrl+=', 'cmd+=', 'shift+='],
   onZoomOut: ['ctrl+-', 'cmd+-', 'shift+-'],
   onResetZoom: ['ctrl+0', 'cmd+0'],
+  onSaveNote: ['ctrl+Enter'],
+  onCloseNote: ['Escape']
 };
 
 // Load shortcuts from localStorage or fallback to defaults
