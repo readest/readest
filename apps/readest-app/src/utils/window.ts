@@ -1,3 +1,11 @@
+export const tauriGetWindowLogicalPosition = async () => {
+  const { getCurrentWindow } = await import('@tauri-apps/api/window');
+  const currentWindow = getCurrentWindow();
+  const factor = await currentWindow.scaleFactor();
+  const physicalPos = await currentWindow.outerPosition();
+  return { x: physicalPos.x / factor, y: physicalPos.y / factor };
+};
+
 export const tauriHandleMinimize = async () => {
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   getCurrentWindow().minimize();

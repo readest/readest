@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { FoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
 import { eventDispatcher } from '@/utils/event';
+import { isTauriAppPlatform } from '@/services/environment';
+import { tauriGetWindowLogicalPosition } from '@/utils/window';
 
 export const useClickEvent = (
   bookKey: string,
@@ -10,28 +12,37 @@ export const useClickEvent = (
 ) => {
   const { getViewSettings } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
-  const handleTurnPage = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const handleTurnPage = async (
+    msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
         if (msg.data.type === 'iframe-single-click') {
           const viewElement = containerRef.current;
           if (viewElement) {
-            const rect = viewElement.getBoundingClientRect();
-            const { screenX, screenY } = msg.data;
-            const consumed = eventDispatcher.dispatchSync('iframe-single-click', {
-              screenX,
-              screenY,
-            });
+            const { screenX } = msg.data;
+            const viewRect = viewElement.getBoundingClientRect();
+            let windowStartX;
+            if (isTauriAppPlatform()) {
+              // Currently for tauri APP the window.screenX is always 0
+              const windowPosition = await tauriGetWindowLogicalPosition();
+              windowStartX = windowPosition.x;
+            } else {
+              windowStartX = window.screenX;
+            }
+            const viewStartX = windowStartX + viewRect.left;
+            const viewCenterX = viewStartX + viewRect.width / 2;
+            const consumed = eventDispatcher.dispatchSync('iframe-single-click');
             if (!consumed) {
-              const centerStartX = rect.left + rect.width * 0.375;
-              const centerEndX = rect.left + rect.width * 0.625;
+              const centerStartX = viewStartX + viewRect.width * 0.375;
+              const centerEndX = viewStartX + viewRect.width * 0.625;
               if (screenX >= centerStartX && screenX <= centerEndX) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
-              } else if (!viewSettings.disableClick! && screenX >= rect.left + rect.width / 2) {
+              } else if (!viewSettings.disableClick! && screenX >= viewCenterX) {
                 viewRef.current?.goRight();
-              } else if (!viewSettings.disableClick! && screenX < rect.left + rect.width / 2) {
+              } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
                 viewRef.current?.goLeft();
               }
             }
