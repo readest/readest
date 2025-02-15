@@ -39,10 +39,13 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
     const fetchBookDetails = async () => {
       const appService = await envConfig.getAppService();
-      const details = await appService.fetchBookDetails(book, settings);
-      setBookMeta(details);
-      setLoading(false);
-      if (loadingTimeout) clearTimeout(loadingTimeout);
+      try {
+        const details = await appService.fetchBookDetails(book, settings);
+        setBookMeta(details);
+      } finally {
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        setLoading(false);
+      }
     };
     fetchBookDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps

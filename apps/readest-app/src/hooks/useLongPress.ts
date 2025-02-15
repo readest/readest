@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseLongPressOptions {
-  onLongPress?: () => void;
   onTap?: () => void;
+  onLongPress?: () => void;
+  onContextMenu?: () => void;
   onCancel?: () => void;
   threshold?: number;
   moveThreshold?: number;
@@ -21,8 +22,9 @@ interface UseLongPressResult {
 }
 
 export const useLongPress = ({
-  onLongPress,
   onTap,
+  onLongPress,
+  onContextMenu,
   onCancel,
   threshold = 500,
   moveThreshold = 10,
@@ -80,6 +82,14 @@ export const useLongPress = ({
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
+      // Special case: if we don't have a pointerId or startPos,
+      // this might be a post-context-menu tap
+      if (pointerId.current === null && startPosRef.current === null) {
+        onTap?.();
+        reset();
+        return;
+      }
+
       if (e.pointerId !== pointerId.current) return;
 
       if (!isLongPressTriggered.current && startPosRef.current) {
@@ -105,11 +115,16 @@ export const useLongPress = ({
     [onCancel, reset],
   );
 
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (isLongPressTriggered.current) {
-      e.preventDefault();
-    }
-  }, []);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (onContextMenu) {
+        e.preventDefault();
+        e.stopPropagation();
+        onContextMenu();
+      }
+    },
+    [onContextMenu],
+  );
 
   useEffect(() => {
     return () => {

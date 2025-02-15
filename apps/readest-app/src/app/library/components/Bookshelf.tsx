@@ -100,7 +100,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       navigateToLibrary(router);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, showGroupingModal]);
+  }, [searchParams, libraryBooks, showGroupingModal]);
 
   const toggleSelection = (id: string) => {
     setSelectedBooks((prev) =>

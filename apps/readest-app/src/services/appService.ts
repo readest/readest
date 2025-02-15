@@ -36,6 +36,7 @@ import { getOSPlatform, isCJKEnv, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
 import { ProgressHandler } from '@/utils/transfer';
+import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
 export abstract class BaseAppService implements AppService {
   osPlatform: string = getOSPlatform();
@@ -338,7 +339,7 @@ export abstract class BaseAppService implements AppService {
     } else if (book.url) {
       file = await new RemoteFile(book.url).open();
     } else {
-      throw new Error('Book file not found');
+      throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
     }
     return { book, file, config: await this.loadBookConfig(book, settings) };
   }
@@ -357,6 +358,10 @@ export abstract class BaseAppService implements AppService {
   }
 
   async fetchBookDetails(book: Book, settings: SystemSettings) {
+    const fp = getFilename(book);
+    if (!(await this.fs.exists(fp, 'Books')) && book.uploadedAt) {
+      await this.downloadBook(book);
+    }
     const { file } = (await this.loadBookContent(book, settings)) as BookContent;
     const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
     return bookDoc.metadata;

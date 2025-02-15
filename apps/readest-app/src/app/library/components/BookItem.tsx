@@ -17,7 +17,6 @@ interface BookItemProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book) => void;
   showBookDetailsModal: (book: Book) => void;
-  bookContextMenuHandler: (book: Book, e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -28,7 +27,6 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
-  bookContextMenuHandler,
 }) => {
   const iconSize15 = useResponsiveSize(15);
   const { appService } = useEnv();
@@ -44,7 +42,6 @@ const BookItem: React.FC<BookItemProps> = ({
         'book-item flex h-full flex-col',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
-      onContextMenu={bookContextMenuHandler.bind(null, book)}
     >
       <div className='bg-base-100 relative aspect-[28/41] shadow-md'>
         <BookCover book={book} />
@@ -89,10 +86,11 @@ const BookItem: React.FC<BookItemProps> = ({
             ) : (
               <button
                 className='show-detail-button opacity-0 group-hover:opacity-100'
-                onTouchStart={(e) => stopEvent(e)}
-                onMouseDown={(e) => stopEvent(e)}
-                onTouchEnd={(e) => stopEvent(e)}
-                onMouseUp={(e) => stopEvent(e)}
+                onPointerDown={(e) => stopEvent(e)}
+                onPointerUp={(e) => stopEvent(e)}
+                onPointerMove={(e) => stopEvent(e)}
+                onPointerCancel={(e) => stopEvent(e)}
+                onPointerLeave={(e) => stopEvent(e)}
                 onClick={() => {
                   if (!book.uploadedAt) {
                     handleBookUpload(book);
@@ -109,10 +107,11 @@ const BookItem: React.FC<BookItemProps> = ({
             )}
             <button
               className='show-detail-button opacity-0 group-hover:opacity-100'
-              onTouchStart={(e) => stopEvent(e)}
-              onMouseDown={(e) => stopEvent(e)}
-              onTouchEnd={(e) => stopEvent(e)}
-              onMouseUp={(e) => stopEvent(e)}
+              onPointerDown={(e) => stopEvent(e)}
+              onPointerUp={(e) => stopEvent(e)}
+              onPointerMove={(e) => stopEvent(e)}
+              onPointerCancel={(e) => stopEvent(e)}
+              onPointerLeave={(e) => stopEvent(e)}
               onClick={() => showBookDetailsModal(book)}
             >
               <CiCircleMore size={iconSize15} />

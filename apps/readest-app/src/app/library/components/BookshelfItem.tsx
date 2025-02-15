@@ -107,11 +107,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const makeBookAvailable = async (book: Book) => {
     if (book.uploadedAt && !book.downloadedAt) {
       let available = false;
+      const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
         await handleBookDownload(book);
         updateBook(envConfig, book);
         available = true;
       } finally {
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        setLoading(false);
         return available;
       }
     }
@@ -119,12 +122,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   };
 
   const handleBookClick = async (book: Book) => {
-    if (!(await makeBookAvailable(book))) return;
-
     if (isSelectMode) {
       toggleSelection(book.hash);
     } else {
-      setTimeout(() => setLoading(true), 200);
+      if (!(await makeBookAvailable(book))) return;
       navigateToReader(router, [book.hash]);
     }
   };
@@ -137,24 +138,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
   };
 
-  const handleItemContextMenu = (item: BookshelfItem, event: React.MouseEvent) => {
-    event.preventDefault();
-    if ('format' in item) {
-      bookContextMenuHandler(item as Book, event);
-    }
-  };
-
-  const bookContextMenuHandler = async (book: Book, e: React.MouseEvent) => {
+  const bookContextMenuHandler = async (book: Book) => {
     if (!appService?.hasContextMenu) return;
-    e.preventDefault();
-    e.stopPropagation();
     const osPlatform = getOSPlatform();
     const fileRevealLabel =
       FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
-    const openBookMenuItem = await MenuItem.new({
-      text: isSelectMode ? _('Select Book') : _('Open Book'),
+    const selectBookMenuItem = await MenuItem.new({
+      text: selectedBooks.includes(book.hash) ? _('Deselect Book') : _('Select Book'),
       action: async () => {
-        handleBookClick(book);
+        if (!isSelectMode) handleSetSelectMode(true);
+        toggleSelection(book.hash);
       },
     });
     const showBookInFinderMenuItem = await MenuItem.new({
@@ -170,6 +163,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         showBookDetailsModal(book);
       },
     });
+    const downloadBookMenuItem = await MenuItem.new({
+      text: _('Download Book'),
+      action: async () => {
+        handleBookDownload(book);
+      },
+    });
     const uploadBookMenuItem = await MenuItem.new({
       text: _('Upload Book'),
       action: async () => {
@@ -183,11 +182,39 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       },
     });
     const menu = await Menu.new();
-    menu.append(openBookMenuItem);
+    menu.append(selectBookMenuItem);
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
-    menu.append(uploadBookMenuItem);
+    if (book.uploadedAt && !book.downloadedAt) {
+      menu.append(downloadBookMenuItem);
+    }
+    if (!book.uploadedAt && book.downloadedAt) {
+      menu.append(uploadBookMenuItem);
+    }
     menu.append(deleteBookMenuItem);
+    menu.popup();
+  };
+
+  const groupContextMenuHandler = async (group: BooksGroup) => {
+    if (!appService?.hasContextMenu) return;
+    const selectGroupMenuItem = await MenuItem.new({
+      text: selectedBooks.includes(group.id) ? _('Deselect Group') : _('Select Group'),
+      action: async () => {
+        if (!isSelectMode) handleSetSelectMode(true);
+        toggleSelection(group.id);
+      },
+    });
+    const deleteGroupMenuItem = await MenuItem.new({
+      text: _('Delete'),
+      action: async () => {
+        for (const book of group.books) {
+          await handleBookDelete(book);
+        }
+      },
+    });
+    const menu = await Menu.new();
+    menu.append(selectGroupMenuItem);
+    menu.append(deleteGroupMenuItem);
     menu.popup();
   };
 
@@ -209,6 +236,13 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         handleGroupClick(item as BooksGroup);
       }
     },
+    onContextMenu: () => {
+      if ('format' in item) {
+        bookContextMenuHandler(item as Book);
+      } else {
+        groupContextMenuHandler(item as BooksGroup);
+      }
+    },
   });
 
   return (
@@ -221,7 +255,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         transition: 'transform 0.2s',
       }}
       {...handlers}
-      onContextMenu={(event) => handleItemContextMenu(item, event)}
     >
       <div className='flex-grow'>
         {'format' in item ? (
@@ -229,11 +262,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
             book={item}
             isSelectMode={isSelectMode}
             selectedBooks={selectedBooks}
+            transferProgress={transferProgress}
             handleBookUpload={handleBookUpload}
             handleBookDownload={handleBookDownload}
             showBookDetailsModal={showBookDetailsModal}
-            bookContextMenuHandler={bookContextMenuHandler}
-            transferProgress={transferProgress}
           />
         ) : (
           <GroupItem group={item} isSelectMode={isSelectMode} selectedBooks={selectedBooks} />
