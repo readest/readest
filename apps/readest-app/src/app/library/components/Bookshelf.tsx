@@ -141,7 +141,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       <div
         className={clsx(
           'transform-wrapper grid flex-1 gap-x-4 sm:gap-x-0',
-          'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8',
+          'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8',
         )}
       >
         {currentBookshelfItems.map((item, index) => (

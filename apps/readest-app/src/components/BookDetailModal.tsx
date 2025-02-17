@@ -196,14 +196,21 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         </div>
       </Dialog>
       {showDeleteAlert && (
-        <Alert
-          title={_('Confirm Deletion')}
-          message={_('Are you sure to delete the selected books?')}
-          onCancel={() => {
-            setShowDeleteAlert(false);
-          }}
-          onConfirm={confirmDelete}
-        />
+        <div
+          className={clsx(
+            'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
+            'pb-[calc(env(safe-area-inset-bottom)+16px)]',
+          )}
+        >
+          <Alert
+            title={_('Confirm Deletion')}
+            message={_('Are you sure to delete the selected books?')}
+            onCancel={() => {
+              setShowDeleteAlert(false);
+            }}
+            onConfirm={confirmDelete}
+          />
+        </div>
       )}
     </div>
   );
