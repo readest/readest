@@ -150,7 +150,9 @@ const Notebook: React.FC = ({}) => {
       )}
       <div
         className={clsx(
-          'notebook-container bg-base-200 right-0 z-20 h-full min-w-60 select-none',
+          'notebook-container bg-base-200 right-0 z-20 min-w-60 select-none',
+          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
+          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           !isNotebookPinned && 'shadow-2xl',
         )}
