@@ -45,10 +45,15 @@ export const useClickEvent = (
               if (screenX >= centerStartX && screenX <= centerEndX) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
-              } else if (!viewSettings.disableClick! && screenX >= viewCenterX) {
-                viewRef.current?.goRight();
-              } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
-                viewRef.current?.goLeft();
+              } else {
+                if (hoveredBookKey) {
+                  setHoveredBookKey(null);
+                }
+                if (!viewSettings.disableClick! && screenX >= viewCenterX) {
+                  viewRef.current?.goRight();
+                } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
+                  viewRef.current?.goLeft();
+                }
               }
             }
           }
@@ -127,6 +132,13 @@ export const useTouchEvent = (
     if (touch) {
       touchEnd = touch;
     }
+    if (hoveredBookKey && touchEnd) {
+      const deltaY = touchEnd.screenY - touchStart.screenY;
+      const deltaX = touchEnd.screenX - touchStart.screenX;
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        setHoveredBookKey(null);
+      }
+    }
   };
 
   const onTouchEnd = (e: IframeTouchEvent) => {
@@ -149,6 +161,10 @@ export const useTouchEvent = (
       ) {
         // swipe up to toggle the header bar and the footer bar
         setHoveredBookKey(hoveredBookKey ? null : bookKey);
+      } else {
+        if (hoveredBookKey) {
+          setHoveredBookKey(null);
+        }
       }
     }
 
