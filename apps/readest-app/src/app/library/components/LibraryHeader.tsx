@@ -49,7 +49,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     };
   }, [onToggleSelectMode]);
 
-  const windowButtonVisible = appService?.appPlatform !== 'web' && !isTrafficLightVisible;
+  const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const isInGroupView = !!searchParams?.get('group');
 
   return (
@@ -128,12 +128,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           >
             <SettingsMenu />
           </Dropdown>
-          <WindowButtons
-            headerRef={headerRef}
-            showMinimize={windowButtonVisible}
-            showMaximize={windowButtonVisible}
-            showClose={windowButtonVisible}
-          />
+          {appService?.hasWindowBar && (
+            <WindowButtons
+              headerRef={headerRef}
+              showMinimize={windowButtonVisible}
+              showMaximize={windowButtonVisible}
+              showClose={windowButtonVisible}
+            />
+          )}
         </div>
       </div>
     </div>
