@@ -203,6 +203,22 @@ const getLayoutStyles = (
   }
 `;
 
+export const getFootnoteStyles = () => `
+  .duokan-footnote-content,
+  .duokan-footnote-item {
+    display: block !important;
+  }
+
+  ol {
+    margin: 0;
+    padding: 0;
+  }
+
+  p, li, blockquote, dd {
+    text-indent: 0;
+  }
+`;
+
 export interface ThemeCode {
   bg: string;
   fg: string;

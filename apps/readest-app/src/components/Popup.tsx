@@ -21,7 +21,7 @@ const Popup = ({
 }) => (
   <div>
     <div
-      className={`triangle text-base-200 absolute z-40 ${triangleClassName}`}
+      className={`triangle text-base-300 absolute z-40 ${triangleClassName}`}
       style={{
         left:
           trianglePosition?.dir === 'left'
@@ -67,7 +67,7 @@ const Popup = ({
     />
     <div
       id='popup-container'
-      className={`bg-base-200 absolute z-30 rounded-lg font-sans shadow-xl ${className}`}
+      className={`bg-base-300 absolute z-30 rounded-lg font-sans shadow-xl ${className}`}
       style={{
         width: `${width}px`,
         height: `${height}px`,

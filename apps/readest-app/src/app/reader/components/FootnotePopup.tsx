@@ -4,7 +4,7 @@ import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useTheme } from '@/hooks/useTheme';
-import { getStyles } from '@/utils/style';
+import { getFootnoteStyles, getStyles } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { FoliateView } from '@/types/view';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
@@ -48,7 +48,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const backgroundColor = getComputedStyle(popupContainer).backgroundColor;
         popupTheme.bg = backgroundColor;
       }
-      renderer.setStyles?.(getStyles(viewSettings, popupTheme));
+      const mainStyles = getStyles(viewSettings, popupTheme);
+      const footnoteStyles = getFootnoteStyles();
+      renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };
 
     const handleRender = (e: Event) => {
