@@ -82,14 +82,6 @@ export const useLongPress = ({
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
-      // Special case: if we don't have a pointerId or startPos,
-      // this might be a post-context-menu tap
-      if (pointerId.current === null && startPosRef.current === null) {
-        onTap?.();
-        reset();
-        return;
-      }
-
       if (e.pointerId !== pointerId.current) return;
 
       if (!isLongPressTriggered.current && startPosRef.current) {
