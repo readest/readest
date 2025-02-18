@@ -16,10 +16,9 @@ import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
-import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { tauriHandleOnWindowFocus } from '@/utils/window';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getOSPlatform } from '@/utils/misc';
 
@@ -36,6 +35,9 @@ interface ProviderLoginProp {
   Icon: React.ElementType;
   label: string;
 }
+
+const WEB_AUTH_CALLBACK = 'https://web.readest.com/auth/callback';
+const DEEPLINK_CALLBACK = 'readest://auth/callback';
 
 const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Icon, label }) => {
   return (
@@ -66,8 +68,8 @@ export default function AuthPage() {
   const getTauriRedirectTo = () => {
     return process.env.NODE_ENV === 'production'
       ? ['android', 'ios'].includes(osPlatform)
-        ? 'https://web.readest.com/auth/callback'
-        : 'readest://auth/callback'
+        ? WEB_AUTH_CALLBACK
+        : DEEPLINK_CALLBACK
       : `http://localhost:${port}`;
   };
 
@@ -88,22 +90,7 @@ export default function AuthPage() {
       console.error('Authentication error:', error);
       return;
     }
-    openUrl(data.url);
-
-    // FIXME: For Android we need a better way to trigger the deeplink redirect
-    if (isTauriAppPlatform() && osPlatform === 'android') {
-      tauriHandleOnWindowFocus(async () => {
-        const urls = await getCurrent();
-        if (urls && urls.length > 0) {
-          urls.forEach((url) => {
-            handleOAuthUrl(url);
-          });
-        }
-      });
-      setTimeout(() => {
-        router.back();
-      }, 5000);
-    }
+    await openUrl(data.url);
   };
 
   const handleOAuthUrl = async (url: string) => {

@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.tauri -- next dev",
@@ -26,6 +26,7 @@
     "build-macos-universial": "dotenv -e .env.tauri.local -e .env.apple-nonstore.local -- tauri build -t universal-apple-darwin --bundles dmg",
     "build-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- tauri build -t universal-apple-darwin --bundles app --config src-tauri/tauri.appstore.conf.json",
     "build-macos-universial-appstore-dev": "dotenv -e .env.tauri.local -e .env.apple-appstore-dev.local -- tauri build -t universal-apple-darwin --bundles app --config src-tauri/tauri.appstore-dev.conf.json",
+    "build-ios": "dotenv -e .env.ios-appstore-dev.local -- tauri ios build",
     "build-ios-appstore": "dotenv -e .env.ios-appstore.local -- tauri ios build --export-method app-store-connect",
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh",
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
