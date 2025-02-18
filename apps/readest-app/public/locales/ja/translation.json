@@ -75,7 +75,6 @@
   "Notebook": "ノート",
   "Notes": "メモ",
   "Open": "開く",
-  "Open Book": "書籍を開く",
   "Original Text": "原文",
   "Page": "ページ",
   "Paging Animation": "ページめくりアニメーション",
@@ -161,5 +160,10 @@
   "Untitled Group": "無題のグループ",
   "Group Books": "書籍をグループ化",
   "Remove From Group": "グループから削除",
-  "Create New Group": "新しいグループを作成"
+  "Create New Group": "新しいグループを作成",
+  "Deselect Book": "書籍の選択を解除",
+  "Download Book": "書籍をダウンロード",
+  "Deselect Group": "グループの選択を解除",
+  "Select Group": "グループを選択",
+  "Keep Screen Awake": "画面をオンのままにする"
 }

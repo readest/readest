@@ -75,7 +75,6 @@
   "Notebook": "笔记本",
   "Notes": "笔记",
   "Open": "打开",
-  "Open Book": "打开书籍",
   "Original Text": "原文",
   "Page": "页面",
   "Paging Animation": "翻页动画",
@@ -161,5 +160,10 @@
   "Untitled Group": "无标题分组",
   "Group Books": "分组书籍",
   "Remove From Group": "从分组中移除",
-  "Create New Group": "创建新分组"
+  "Create New Group": "创建新分组",
+  "Deselect Book": "取消选择书籍",
+  "Download Book": "下载书籍",
+  "Deselect Group": "取消选择分组",
+  "Select Group": "选择分组",
+  "Keep Screen Awake": "保持屏幕常亮"
 }

@@ -75,7 +75,6 @@
   "Notebook": "筆記本",
   "Notes": "筆記",
   "Open": "打開",
-  "Open Book": "打開書籍",
   "Original Text": "原文",
   "Page": "頁面",
   "Paging Animation": "翻頁動畫",
@@ -161,5 +160,10 @@
   "Untitled Group": "無標題組",
   "Group Books": "分組書籍",
   "Remove From Group": "從組中移除",
-  "Create New Group": "創建新組"
+  "Create New Group": "創建新組",
+  "Deselect Book": "取消選擇書籍",
+  "Download Book": "下載書籍",
+  "Deselect Group": "取消選擇組",
+  "Select Group": "選擇組",
+  "Keep Screen Awake": "保持屏幕常亮"
 }

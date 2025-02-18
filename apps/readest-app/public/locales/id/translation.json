@@ -75,7 +75,6 @@
   "Notebook": "Buku Catatan",
   "Notes": "Catatan",
   "Open": "Buka",
-  "Open Book": "Buka Buku",
   "Original Text": "Teks Asli",
   "Page": "Halaman",
   "Paging Animation": "Animasi Halaman",
@@ -161,5 +160,10 @@
   "Untitled Group": "Grup Tanpa Judul",
   "Group Books": "Grupkan Buku",
   "Remove From Group": "Hapus dari Grup",
-  "Create New Group": "Buat Grup Baru"
+  "Create New Group": "Buat Grup Baru",
+  "Deselect Book": "Batalkan Pilihan Buku",
+  "Download Book": "Unduh Buku",
+  "Deselect Group": "Batalkan Pilihan Grup",
+  "Select Group": "Pilih Grup",
+  "Keep Screen Awake": "Biarkan Layar Tetap Hidup"
 }

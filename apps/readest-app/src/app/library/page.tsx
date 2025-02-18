@@ -33,6 +33,7 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import BookDetailModal from '@/components/BookDetailModal';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -65,6 +66,7 @@ const LibraryPage = () => {
   });
 
   usePullToRefresh(containerRef, pullLibrary);
+  useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {
     updateAppTheme('base-200');

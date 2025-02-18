@@ -31,6 +31,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
+  const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -75,6 +76,13 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     setSettings(settings);
     saveSettings(envConfig, settings);
     setIsAutoCheckUpdates(settings.autoCheckUpdates);
+  };
+
+  const toggleScreenWakeLock = () => {
+    settings.screenWakeLock = !settings.screenWakeLock;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsScreenWakeLock(settings.screenWakeLock);
   };
 
   useEffect(() => {
@@ -146,6 +154,11 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={toggleAutoCheckUpdates}
         />
       )}
+      <MenuItem
+        label={_('Keep Screen Awake')}
+        icon={isScreenWakeLock ? <MdCheck className='text-base-content' /> : undefined}
+        onClick={toggleScreenWakeLock}
+      />
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />

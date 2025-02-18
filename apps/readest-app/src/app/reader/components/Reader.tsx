@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
@@ -19,6 +20,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const isInitiating = useRef(false);
 
   const { updateAppTheme } = useTheme();
+  useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {
     updateAppTheme('base-100');

@@ -75,7 +75,6 @@
   "Notebook": "Блокнот",
   "Notes": "Заметки",
   "Open": "Открыть",
-  "Open Book": "Открыть книгу",
   "Original Text": "Оригинальный текст",
   "Page": "Страница",
   "Paging Animation": "Анимация перелистывания",
@@ -161,5 +160,10 @@
   "Untitled Group": "Группа без названия",
   "Group Books": "Группировать книги",
   "Remove From Group": "Удалить из группы",
-  "Create New Group": "Создать новую группу"
+  "Create New Group": "Создать новую группу",
+  "Deselect Book": "Отменить выбор книги",
+  "Download Book": "Скачать книгу",
+  "Deselect Group": "Отменить выбор группы",
+  "Select Group": "Выбрать группу",
+  "Keep Screen Awake": "Не выключать экран"
 }

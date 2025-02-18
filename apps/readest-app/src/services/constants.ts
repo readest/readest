@@ -22,6 +22,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
   autoCheckUpdates: true,
+  screenWakeLock: true,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,

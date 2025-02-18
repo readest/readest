@@ -75,7 +75,6 @@
   "Notebook": "Sổ ghi chép",
   "Notes": "Ghi chú",
   "Open": "Mở",
-  "Open Book": "Mở sách",
   "Original Text": "Văn bản gốc",
   "Page": "Trang",
   "Paging Animation": "Hiệu ứng lật trang",
@@ -161,5 +160,10 @@
   "Untitled Group": "Nhóm không có tiêu đề",
   "Group Books": "Nhóm sách",
   "Remove From Group": "Xóa khỏi nhóm",
-  "Create New Group": "Tạo nhóm mới"
+  "Create New Group": "Tạo nhóm mới",
+  "Deselect Book": "Bỏ chọn sách",
+  "Download Book": "Tải sách",
+  "Deselect Group": "Bỏ chọn nhóm",
+  "Select Group": "Chọn nhóm",
+  "Keep Screen Awake": "Giữ màn hình luôn bật"
 }

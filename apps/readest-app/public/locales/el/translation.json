@@ -75,7 +75,6 @@
   "Notebook": "Σημειωματάριο",
   "Notes": "Σημειώσεις",
   "Open": "Άνοιγμα",
-  "Open Book": "Άνοιγμα βιβλίου",
   "Original Text": "Αρχικό κείμενο",
   "Page": "Σελίδα",
   "Paging Animation": "Κινούμενα σχέδια σελιδοποίησης",
@@ -161,5 +160,10 @@
   "Untitled Group": "Ομάδα χωρίς τίτλο",
   "Group Books": "Ομαδοποίηση βιβλίων",
   "Remove From Group": "Αφαίρεση από την ομάδα",
-  "Create New Group": "Δημιουργία νέας ομάδας"
+  "Create New Group": "Δημιουργία νέας ομάδας",
+  "Deselect Book": "Αποεπιλογή βιβλίου",
+  "Download Book": "Λήψη βιβλίου",
+  "Deselect Group": "Αποεπιλογή ομάδας",
+  "Select Group": "Επιλογή ομάδας",
+  "Keep Screen Awake": "Διατήρηση ενεργού οθόνης"
 }

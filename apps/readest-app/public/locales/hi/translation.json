@@ -75,7 +75,6 @@
   "Notebook": "नोटबुक",
   "Notes": "नोट्स",
   "Open": "खोलें",
-  "Open Book": "पुस्तक खोलें",
   "Original Text": "मूल पाठ",
   "Page": "पृष्ठ",
   "Paging Animation": "पेजिंग एनीमेशन",
@@ -161,5 +160,10 @@
   "Untitled Group": "अभिनामित समूह",
   "Group Books": "समूह पुस्तकें",
   "Remove From Group": "समूह से हटाएं",
-  "Create New Group": "नया समूह बनाएं"
+  "Create New Group": "नया समूह बनाएं",
+  "Deselect Book": "पुस्तक का चयन रद्द करें",
+  "Download Book": "पुस्तक डाउनलोड करें",
+  "Deselect Group": "समूह का चयन रद्द करें",
+  "Select Group": "समूह चुनें",
+  "Keep Screen Awake": "स्क्रीन जागरूक रखें"
 }

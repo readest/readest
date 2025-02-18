@@ -75,7 +75,6 @@
   "Notebook": "노트북",
   "Notes": "메모",
   "Open": "열기",
-  "Open Book": "책 열기",
   "Original Text": "원본 텍스트",
   "Page": "페이지",
   "Paging Animation": "페이지 넘김 애니메이션",
@@ -161,5 +160,10 @@
   "Untitled Group": "제목 없는 그룹",
   "Group Books": "책 그룹화",
   "Remove From Group": "그룹에서 제거",
-  "Create New Group": "새 그룹 만들기"
+  "Create New Group": "새 그룹 만들기",
+  "Deselect Book": "책 선택 해제",
+  "Download Book": "책 다운로드",
+  "Deselect Group": "그룹 선택 해제",
+  "Select Group": "그룹 선택",
+  "Keep Screen Awake": "화면 켜짐 유지"
 }

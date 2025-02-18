@@ -75,7 +75,6 @@
   "Notebook": "Notizbuch",
   "Notes": "Notizen",
   "Open": "Öffnen",
-  "Open Book": "Buch öffnen",
   "Original Text": "Originaltext",
   "Page": "Seite",
   "Paging Animation": "Blätter-Animation",
@@ -161,5 +160,10 @@
   "Untitled Group": "Unbenannte Gruppe",
   "Group Books": "Bücher gruppieren",
   "Remove From Group": "Aus Gruppe entfernen",
-  "Create New Group": "Neue Gruppe erstellen"
+  "Create New Group": "Neue Gruppe erstellen",
+  "Deselect Book": "Buch abwählen",
+  "Download Book": "Buch herunterladen",
+  "Deselect Group": "Gruppe abwählen",
+  "Select Group": "Gruppe auswählen",
+  "Keep Screen Awake": "Bildschirm aktiv halten"
 }

@@ -75,7 +75,6 @@
   "Notebook": "Not Defteri",
   "Notes": "Notlar",
   "Open": "Aç",
-  "Open Book": "Kitabı Aç",
   "Original Text": "Orijinal Metin",
   "Page": "Sayfa",
   "Paging Animation": "Sayfa Çevirme Animasyonu",
@@ -161,5 +160,10 @@
   "Untitled Group": "Başlıksız Grup",
   "Group Books": "Kitapları Grupla",
   "Remove From Group": "Grubu Kaldır",
-  "Create New Group": "Yeni Grup Oluştur"
+  "Create New Group": "Yeni Grup Oluştur",
+  "Deselect Book": "Kitabı Seçme",
+  "Download Book": "Kitabı İndir",
+  "Deselect Group": "Grubu Seçme",
+  "Select Group": "Grup Seç",
+  "Keep Screen Awake": "Ekranı Açık Tut"
 }

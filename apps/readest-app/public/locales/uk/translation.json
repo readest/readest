@@ -75,7 +75,6 @@
   "Notebook": "Нотатник",
   "Notes": "Нотатки",
   "Open": "Відкрити",
-  "Open Book": "Відкрити книгу",
   "Original Text": "Оригінальний текст",
   "Page": "Сторінка",
   "Paging Animation": "Анімація гортання",
@@ -161,5 +160,10 @@
   "Untitled Group": "Група без назви",
   "Group Books": "Групувати книги",
   "Remove From Group": "Видалити з групи",
-  "Create New Group": "Створити нову групу"
+  "Create New Group": "Створити нову групу",
+  "Deselect Book": "Скасувати вибір книги",
+  "Download Book": "Завантажити книгу",
+  "Deselect Group": "Скасувати вибір групи",
+  "Select Group": "Вибрати групу",
+  "Keep Screen Awake": "Не вимикати екран"
 }
