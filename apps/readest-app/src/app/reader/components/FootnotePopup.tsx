@@ -6,6 +6,7 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useTheme } from '@/hooks/useTheme';
 import { getFootnoteStyles, getStyles } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
+import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import Popup from '@/components/Popup';
@@ -106,9 +107,42 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setShowPopup(false);
   };
 
+  const handleFootnotePopupEvent = (event: CustomEvent) => {
+    const { element, footnote } = event.detail;
+    const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
+    if (!gridFrame) return;
+    const rect = gridFrame.getBoundingClientRect();
+    const viewSettings = getViewSettings(bookKey)!;
+    const triangPos = getPosition(element, rect, viewSettings.vertical);
+    const popupPos = getPopupPosition(
+      triangPos,
+      rect,
+      viewSettings.vertical ? popupHeight : popupWidth,
+      viewSettings.vertical ? popupWidth : popupHeight,
+      popupPadding,
+    );
+    if (footnoteRef.current) {
+      const elem = document.createElement('p');
+      elem.textContent = footnote;
+      elem.setAttribute('style', `padding: 16px; hanging-punctuation: allow-end last;`);
+      footnoteRef.current.replaceChildren(elem);
+      setShowPopup(true);
+      setTrianglePosition(triangPos);
+      setPopupPosition(popupPos);
+    }
+  };
+
   useFoliateEvents(view, {
     onLinkClick: docLinkHandler,
   });
+
+  useEffect(() => {
+    eventDispatcher.on('footnote-popup', handleFootnotePopupEvent);
+    return () => {
+      eventDispatcher.off('footnote-popup', handleFootnotePopupEvent);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (footnoteViewRef.current) {

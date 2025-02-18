@@ -3,6 +3,7 @@ import {
   DOUBLE_CLICK_INTERVAL_THRESHOLD_MS,
   LONG_HOLD_THRESHOLD,
 } from '@/services/constants';
+import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 
 const doubleClickEnabled =
@@ -119,6 +120,14 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
     let element: HTMLElement | null = event.target as HTMLElement;
     while (element) {
       if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
+        return;
+      }
+      if (element.classList.contains('js_readerFooterNote')) {
+        eventDispatcher.dispatch('footnote-popup', {
+          bookKey,
+          element,
+          footnote: element.getAttribute('data-wr-footernote') || '',
+        });
         return;
       }
       element = element.parentElement;
