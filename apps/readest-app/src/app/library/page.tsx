@@ -253,7 +253,7 @@ const LibraryPage = () => {
       });
     } catch (err) {
       if (err instanceof Error) {
-        if (err.message.includes('Not authenticated')) {
+        if (err.message.includes('Not authenticated') && settings.keepLogin) {
           navigateToLogin(router);
           return;
         } else if (err.message.includes('Insufficient storage quota')) {

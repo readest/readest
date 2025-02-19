@@ -125,7 +125,7 @@ export function useSync(bookKey?: string) {
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
-        if (err.message.includes('Not authenticated')) {
+        if (err.message.includes('Not authenticated') && settings.keepLogin) {
           navigateToLogin(router);
         }
         setSyncError(err.message || `Error pulling ${type}`);
