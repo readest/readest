@@ -86,6 +86,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
+  animated: true,
 };
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
