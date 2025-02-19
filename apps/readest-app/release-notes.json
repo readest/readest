@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.13": {
+      "date": "2025-02-19",
+      "notes": [
+        "Add option to keep screen awake when reading",
+        "Add shortcuts to notetaking UI",
+        "UX enhancements of grid view in mobile platforms"
+      ]
+    },
     "0.9.11": {
       "date": "2025-02-14",
       "notes": [
