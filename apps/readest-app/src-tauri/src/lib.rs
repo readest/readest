@@ -129,6 +129,9 @@ pub fn run() {
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(traffic_light_plugin::init());
 
+    #[cfg(target_os = "ios")]
+    let builder = builder.plugin(tauri_plugin_sign_in_with_apple::init());
+
     builder
         .setup(|#[allow(unused_variables)] app| {
             #[cfg(desktop)]

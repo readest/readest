@@ -68,6 +68,7 @@
     "process:allow-restart",
     "oauth:allow-start",
     "oauth:allow-cancel",
+    "sign-in-with-apple:default",
     "opener:default",
     "deep-link:default"
   ]

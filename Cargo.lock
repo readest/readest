@@ -30,6 +30,7 @@ dependencies = [
  "tauri-plugin-os",
  "tauri-plugin-process",
  "tauri-plugin-shell",
+ "tauri-plugin-sign-in-with-apple",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
@@ -5334,6 +5335,18 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.11",
  "tokio",
+]
+
+[[package]]
+name = "tauri-plugin-sign-in-with-apple"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9402eb8a70fdff5127fccc1f1666ebb06b5efc10e0eb656d8a70c798e26142e"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.11",
 ]
 
 [[package]]

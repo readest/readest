@@ -15,12 +15,14 @@ import { supabase } from '@/utils/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getOSPlatform } from '@/utils/misc';
+import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -55,9 +57,10 @@ const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Ic
 };
 
 export default function AuthPage() {
+  const _ = useTranslation();
   const router = useRouter();
   const { login } = useAuth();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { isDarkMode } = useTheme();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -71,6 +74,26 @@ export default function AuthPage() {
         ? WEB_AUTH_CALLBACK
         : DEEPLINK_CALLBACK
       : `http://localhost:${port}`;
+  };
+
+  const tauriSignInApple = async () => {
+    if (!supabase) {
+      throw new Error('No backend connected');
+    }
+    supabase.auth.signOut();
+    const request = {
+      scope: ['fullName', 'email'] as Scope[],
+    };
+    const appleAuthResponse = await getAppleIdAuth(request);
+    if (appleAuthResponse.identityToken) {
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: appleAuthResponse.identityToken,
+      });
+      if (error) {
+        console.error('Authentication error:', error);
+      }
+    }
   };
 
   const tauriSignIn = async (provider: OAuthProvider) => {
@@ -159,6 +182,68 @@ export default function AuthPage() {
     router.back();
   };
 
+  const getAuthLocalization = () => {
+    return {
+      variables: {
+        sign_in: {
+          email_label: _('Email address'),
+          password_label: _('Your Password'),
+          email_input_placeholder: _('Your email address'),
+          password_input_placeholder: _('Your password'),
+          button_label: _('Sign in'),
+          loading_button_label: _('Signing in...'),
+          social_provider_text: _('Sign in with {{provider}}'),
+          link_text: _('Already have an account? Sign in'),
+        },
+        sign_up: {
+          email_label: _('Email address'),
+          password_label: _('Create a Password'),
+          email_input_placeholder: _('Your email address'),
+          password_input_placeholder: _('Your password'),
+          button_label: _('Sign up'),
+          loading_button_label: _('Signing up...'),
+          social_provider_text: _('Sign in with {{provider}}'),
+          link_text: _('Don’t have an account? Sign up'),
+          confirmation_text: _('Check your email for the confirmation link'),
+        },
+        magic_link: {
+          email_input_label: _('Email address'),
+          email_input_placeholder: _('Your email address'),
+          button_label: _('Sign in'),
+          loading_button_label: _('Signing in ...'),
+          link_text: _('Send a magic link email'),
+          confirmation_text: _('Check your email for the magic link'),
+        },
+        forgotten_password: {
+          email_label: _('Email address'),
+          password_label: _('Your Password'),
+          email_input_placeholder: _('Your email address'),
+          button_label: _('Send reset password instructions'),
+          loading_button_label: _('Sending reset instructions ...'),
+          link_text: _('Forgot your password?'),
+          confirmation_text: _('Check your email for the password reset link'),
+        },
+        update_password: {
+          password_label: _('New Password'),
+          password_input_placeholder: _('Your new password'),
+          button_label: _('Update password'),
+          loading_button_label: _('Updating password ...'),
+          confirmation_text: _('Your password has been updated'),
+        },
+        verify_otp: {
+          email_input_label: _('Email address'),
+          email_input_placeholder: _('Your email address'),
+          phone_input_label: _('Phone number'),
+          phone_input_placeholder: _('Your phone number'),
+          token_input_label: _('Token'),
+          token_input_placeholder: _('Your OTP token'),
+          button_label: _('Verify token'),
+          loading_button_label: _('Signing in ...'),
+        },
+      },
+    };
+  };
+
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
     if (isOAuthServerRunning.current) return;
@@ -199,10 +284,20 @@ export default function AuthPage() {
   // For tauri app production, use deeplink to handle the OAuth callback
   // For web app, use the built-in OAuth callback page /auth/callback
   return isTauriAppPlatform() ? (
-    <div className='flex pt-11'>
+    <div
+      className={clsx(
+        'mt-6 flex',
+        appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
+        appService?.hasTrafficLight && 'pt-11',
+      )}
+    >
       <button
         onClick={handleGoBack}
-        className='btn btn-ghost fixed left-3 top-11 h-8 min-h-8 w-8 p-0'
+        className={clsx(
+          'btn btn-ghost fixed left-4 h-8 min-h-8 w-8 p-0',
+          appService?.hasSafeAreaInset && 'top-[calc(env(safe-area-inset-top)+16px)]',
+          appService?.hasTrafficLight && 'top-11',
+        )}
       >
         <IoArrowBack className='text-base-content' />
       </button>
@@ -211,19 +306,19 @@ export default function AuthPage() {
           provider='google'
           handleSignIn={tauriSignIn}
           Icon={FcGoogle}
-          label='Sign in with Google'
+          label={_('Sign in with Google')}
         />
         <ProviderLogin
           provider='apple'
-          handleSignIn={tauriSignIn}
+          handleSignIn={getOSPlatform() === 'ios' ? tauriSignInApple : tauriSignIn}
           Icon={FaApple}
-          label='Sign in with Apple'
+          label={_('Sign in with Apple')}
         />
         <ProviderLogin
           provider='github'
           handleSignIn={tauriSignIn}
           Icon={FaGithub}
-          label='Sign in with GitHub'
+          label={_('Sign in with GitHub')}
         />
         <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
         <Auth
@@ -233,6 +328,7 @@ export default function AuthPage() {
           magicLink={true}
           providers={[]}
           redirectTo={getTauriRedirectTo()}
+          localization={getAuthLocalization()}
         />
       </div>
     </div>
@@ -240,7 +336,7 @@ export default function AuthPage() {
     <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem', paddingTop: '4rem' }}>
       <button
         onClick={handleGoBack}
-        className='btn btn-ghost fixed left-10 top-6 h-8 min-h-8 w-8 p-0'
+        className='btn btn-ghost fixed left-6 top-6 h-8 min-h-8 w-8 p-0'
       >
         <IoArrowBack className='text-base-content' />
       </button>
@@ -251,6 +347,7 @@ export default function AuthPage() {
         magicLink={true}
         providers={['google', 'apple', 'github']}
         redirectTo='/auth/callback'
+        localization={getAuthLocalization()}
       />
     </div>
   );
