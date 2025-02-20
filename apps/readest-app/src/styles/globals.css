@@ -28,22 +28,6 @@ html[data-page='reader'] {
   background: theme('colors.base-100');
 }
 
-html {
-  font-size: 16px;
-}
-
-@media (max-width: 480px) {
-  html {
-    font-size: 20px;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 1024px) {
-  html {
-    font-size: 18.4px;
-  }
-}
-
 body {
   color: var(--foreground);
   background: var(--background);
@@ -245,4 +229,35 @@ foliate-view {
 
 .pull-indicator.flip svg {
   transform: rotate(180deg);
+}
+
+.content {
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  .content {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 1024px) {
+  .content {
+    font-size: 18.4px;
+  }
+}
+
+.content.font-size-base {
+  font-size: 1em !important;
+  line-height: 1.5em !important;
+}
+
+.content.font-size-sm {
+  font-size: 0.875em !important;
+  line-height: 1.25em !important;
+}
+
+.content.font-size-xs {
+  font-size: 0.75em !important;
+  line-height: 1em !important;
 }

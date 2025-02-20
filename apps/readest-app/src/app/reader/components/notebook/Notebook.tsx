@@ -153,6 +153,7 @@ const Notebook: React.FC = ({}) => {
       <div
         className={clsx(
           'notebook-container bg-base-200 right-0 z-20 min-w-60 select-none',
+          'font-sans text-base font-normal sm:text-sm',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
@@ -182,7 +183,11 @@ const Notebook: React.FC = ({}) => {
           handleTogglePin={handleTogglePin}
         />
         <div className='max-h-[calc(100vh-44px)] overflow-y-auto px-3'>
-          <div>{excerptNotes.length > 0 && <p className='pt-1 text-sm'>{_('Excerpts')}</p>}</div>
+          <div>
+            {excerptNotes.length > 0 && (
+              <p className='content font-size-base pt-1'>{_('Excerpts')}</p>
+            )}
+          </div>
           <ul className=''>
             {excerptNotes.map((item, index) => (
               <li key={`${index}-${item.id}`} className='my-2'>
@@ -191,7 +196,7 @@ const Notebook: React.FC = ({}) => {
                   className='collapse-arrow border-base-300 bg-base-100 collapse border'
                 >
                   <div
-                    className='collapse-title h-9 min-h-9 p-2 pr-8 text-sm font-medium'
+                    className='collapse-title font-size-sm h-9 min-h-9 p-2 pr-8 font-medium'
                     style={
                       {
                         '--top-override': '1.2rem',
@@ -201,11 +206,11 @@ const Notebook: React.FC = ({}) => {
                   >
                     <p className='line-clamp-1'>{item.text || `Excerpt ${index + 1}`}</p>
                   </div>
-                  <div className='collapse-content select-text px-3 pb-0 text-xs'>
+                  <div className='collapse-content font-size-xs select-text px-3 pb-0'>
                     <p className='hyphens-auto text-justify'>{item.text}</p>
                     <div className='flex justify-end'>
                       <div
-                        className='cursor-pointer align-bottom text-xs text-red-400'
+                        className='font-size-xs cursor-pointer align-bottom text-red-500 hover:text-red-600'
                         onClick={handleEditNote.bind(null, item, true)}
                       >
                         {_('Delete')}
@@ -218,13 +223,13 @@ const Notebook: React.FC = ({}) => {
           </ul>
           <div>
             {(notebookNewAnnotation || annotationNotes.length > 0) && (
-              <p className='pt-1 text-sm'>{_('Notes')}</p>
+              <p className='content font-size-base pt-1'>{_('Notes')}</p>
             )}
           </div>
           {(notebookNewAnnotation || notebookEditAnnotation) && (
             <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
           )}
-          <ul className=''>
+          <ul>
             {annotationNotes.map((item, index) => (
               <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
             ))}

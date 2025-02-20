@@ -65,7 +65,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
     <li
       ref={viewRef}
       className={clsx(
-        'border-base-300 group relative my-2 cursor-pointer rounded-lg p-2 text-sm',
+        'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
         isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',
         'transition-all duration-300 ease-in-out',
       )}
@@ -81,16 +81,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           } as React.CSSProperties
         }
       >
-        {item.note && <span className='font-normal'>{item.note}</span>}
+        {item.note && <span className='content font-size-sm font-normal'>{item.note}</span>}
         <div className='flex items-start'>
           {item.note && (
             <div className='my-1 mr-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
           )}
-          <div className='line-clamp-3'>
+          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'py-2')}>
             <span
               className={clsx(
                 'inline',
-                item.note && 'text-xs text-gray-500',
+                item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
                 item.style === 'highlight' && `bg-${item.color}-500 bg-opacity-40`,
@@ -120,15 +120,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           {item.note && (
             <button
               className={clsx(
-                'btn btn-ghost settings-content hover:bg-transparent',
+                'btn btn-ghost content settings-content hover:bg-transparent',
                 'flex h-4 min-h-4 items-end p-0',
               )}
               onClick={editNote.bind(null, item)}
             >
               <div
                 className={clsx(
-                  'align-bottom text-blue-400',
+                  'align-bottom text-blue-500',
                   'transition duration-300 ease-in-out',
+                  'content font-size-sm',
                   'opacity-0 group-hover:opacity-100',
                   'hover:text-blue-600',
                 )}
@@ -139,15 +140,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           )}
           <button
             className={clsx(
-              'btn btn-ghost settings-content hover:bg-transparent',
+              'btn btn-ghost content settings-content hover:bg-transparent',
               'flex h-4 min-h-4 items-end p-0',
             )}
             onClick={deleteNote.bind(null, item)}
           >
             <div
               className={clsx(
-                'align-bottom text-red-400',
+                'align-bottom text-red-500',
                 'transition duration-300 ease-in-out',
+                'content font-size-sm',
                 'opacity-0 group-hover:opacity-100',
                 'hover:text-red-600',
               )}

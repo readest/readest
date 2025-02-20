@@ -51,7 +51,7 @@ const BooknoteView: React.FC<{
       <ul role='tree' className='px-2'>
         {sortedGroups.map((group) => (
           <li key={group.href} className='p-2'>
-            <h3 className='line-clamp-1 font-normal'>{group.label}</h3>
+            <h3 className='content font-size-base line-clamp-1 font-normal'>{group.label}</h3>
             <ul>
               {group.booknotes.map((item, index) => (
                 <BooknoteItem key={`${index}-${item.cfi}`} bookKey={bookKey} item={item} />
