@@ -28,6 +28,22 @@ html[data-page='reader'] {
   background: theme('colors.base-100');
 }
 
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 1024px) {
+  html {
+    font-size: 18.4px;
+  }
+}
+
 body {
   color: var(--foreground);
   background: var(--background);

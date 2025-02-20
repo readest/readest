@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TextSelection } from '@/utils/sel';
+import { md5Fingerprint } from '@/utils/md5';
 import { BookNote } from '@/types/book';
 import useShortcuts from '@/hooks/useShortcuts';
 
@@ -13,7 +14,14 @@ interface NoteEditorProps {
 
 const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
   const _ = useTranslation();
-  const { notebookNewAnnotation, notebookEditAnnotation, setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
+  const {
+    notebookNewAnnotation,
+    notebookEditAnnotation,
+    setNotebookNewAnnotation,
+    setNotebookEditAnnotation,
+    saveNotebookAnnotationDraft,
+    getNotebookAnnotationDraft,
+  } = useNotebookStore();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [note, setNote] = React.useState('');
 
@@ -21,13 +29,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
     if (editorRef.current) {
       editorRef.current.focus();
     }
-  }, []);
+  }, [editorRef]);
 
   useEffect(() => {
     if (notebookEditAnnotation) {
       setNote(notebookEditAnnotation.note);
+      if (editorRef.current) {
+        editorRef.current.value = notebookEditAnnotation.note;
+        editorRef.current.focus();
+        adjustHeight();
+      }
+    } else if (notebookNewAnnotation) {
+      const noteText = getAnnotationText();
+      if (noteText) {
+        const draftNote = getNotebookAnnotationDraft(md5Fingerprint(noteText)) || '';
+        setNote(draftNote);
+        if (editorRef.current) {
+          editorRef.current.value = draftNote;
+          editorRef.current.focus();
+          adjustHeight();
+        }
+      }
     }
-  }, [notebookEditAnnotation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notebookNewAnnotation, notebookEditAnnotation]);
 
   const adjustHeight = () => {
     if (editorRef.current) {
@@ -36,9 +61,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const getAnnotationText = () => {
+    return notebookEditAnnotation?.text || notebookNewAnnotation?.text || '';
+  };
+
+  const handleOnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustHeight();
     setNote(e.currentTarget.value);
+  };
+
+  const handleOnBlur = () => {
+    if (editorRef.current && editorRef.current.value) {
+      const noteText = getAnnotationText();
+      if (noteText) {
+        saveNotebookAnnotationDraft(md5Fingerprint(noteText), editorRef.current.value);
+      }
+    }
   };
 
   const handleSaveNote = () => {
@@ -58,12 +96,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
     },
     onCloseNote: () => {
       if (notebookNewAnnotation) {
-        setNotebookNewAnnotation(null)
-      } else if (notebookEditAnnotation) {
-        setNotebookEditAnnotation(null)
+        setNotebookNewAnnotation(null);
       }
-    }
-  })
+      if (notebookEditAnnotation) {
+        setNotebookEditAnnotation(null);
+      }
+    },
+  });
 
   return (
     <div className='note-editor-container bg-base-100 mt-2 rounded-md p-2'>
@@ -79,7 +118,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
             value={note}
             rows={1}
             spellCheck={false}
-            onChange={handleChange}
+            onChange={handleOnChange}
+            onBlur={handleOnBlur}
             placeholder={_('Add your notes here...')}
           ></textarea>
         </div>
@@ -97,7 +137,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
       <div className='flex items-start pt-2'>
         <div className='mr-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
         <div className='note-citation settings-content line-clamp-3 text-sm'>
-          {notebookNewAnnotation?.text || notebookEditAnnotation?.text}
+          {getAnnotationText()}
         </div>
       </div>
     </div>

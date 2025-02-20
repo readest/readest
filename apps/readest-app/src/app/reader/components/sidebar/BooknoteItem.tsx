@@ -81,7 +81,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           } as React.CSSProperties
         }
       >
-        {item.note && <span className='line-clamp-3 font-normal'>{item.note}</span>}
+        {item.note && <span className='font-normal'>{item.note}</span>}
         <div className='flex items-start'>
           {item.note && (
             <div className='my-1 mr-2 min-h-full self-stretch border-l-2 border-gray-300'></div>

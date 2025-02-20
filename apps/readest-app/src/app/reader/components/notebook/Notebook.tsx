@@ -77,6 +77,8 @@ const Notebook: React.FC = ({}) => {
     event.preventDefault();
     event.stopPropagation();
     setNotebookVisible(false);
+    setNotebookNewAnnotation(null);
+    setNotebookEditAnnotation(null);
   };
 
   const handleDragMove = (e: MouseEvent) => {
