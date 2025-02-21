@@ -7,6 +7,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { findParentPath } from '@/utils/toc';
 import { getContentMd5 } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
+import { BookProgress } from '@/types/book';
 
 const createExpanderIcon = (isExpanded: boolean) => {
   return (
@@ -119,8 +120,7 @@ const TOCView: React.FC<{
     setExpandedItems(parentPath.filter(Boolean) as string[]);
   };
 
-  useEffect(() => {
-    if (!progress || eventDispatcher.dispatchSync('tts-is-speaking')) return;
+  const scrollToProgress = (progress: BookProgress) => {
     const { sectionHref: currentHref } = progress;
     const hrefMd5 = currentHref ? getContentMd5(currentHref) : '';
     const currentItem = viewRef.current?.querySelector(`[data-href="${hrefMd5}"]`);
@@ -135,6 +135,28 @@ const TOCView: React.FC<{
     if (currentHref) {
       expandParents(toc, currentHref);
     }
+  };
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const progress = getProgress(bookKey);
+      if (progress && viewRef.current) {
+        scrollToProgress(progress);
+        observer.disconnect();
+      }
+    });
+
+    if (viewRef.current) {
+      observer.observe(viewRef.current, { childList: true, subtree: true });
+    }
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewRef]);
+
+  useEffect(() => {
+    if (!progress || eventDispatcher.dispatchSync('tts-is-speaking')) return;
+    scrollToProgress(progress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toc, progress, sideBarBookKey]);
 
   return (
