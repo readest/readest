@@ -1,7 +1,7 @@
 import { Book } from '@/types/book';
 import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getCoverFilename } from '@/utils/book';
-import { isValidURL } from '@/utils/misc';
+import { getOSPlatform, isValidURL } from '@/utils/misc';
 
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
@@ -180,6 +180,7 @@ export class WebAppService extends BaseAppService {
   fs = indexedDBFileSystem;
   appPlatform = 'web' as AppPlatform;
   isAppDataSandbox = false;
+  isMobile = ['android', 'ios'].includes(getOSPlatform());
   isAndroidApp = false;
   isIOSApp = false;
   hasTrafficLight = false;

@@ -118,6 +118,7 @@ export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   appPlatform = 'tauri' as AppPlatform;
   isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
+  isMobile = ['android', 'ios'].includes(OS_TYPE);
   isAndroidApp = OS_TYPE === 'android';
   isIOSApp = OS_TYPE === 'ios';
   hasTrafficLight = OS_TYPE === 'macos';

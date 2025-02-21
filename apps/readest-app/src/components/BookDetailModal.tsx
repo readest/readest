@@ -83,7 +83,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         isOpen={isOpen}
         onClose={handleClose}
         className='!bg-[rgba(0,0,0,0.5)]'
-        boxClassName='sm:min-w-[480px]'
+        boxClassName='sm:min-w-[480px] sm:h-auto'
         contentClassName='!px-6 !py-2'
       >
         <div className='flex w-full select-text items-center justify-center'>

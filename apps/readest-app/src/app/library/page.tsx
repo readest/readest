@@ -323,8 +323,7 @@ const LibraryPage = () => {
     let files;
 
     if (isTauriAppPlatform()) {
-      const { type } = await import('@tauri-apps/plugin-os');
-      if (['android', 'ios'].includes(type())) {
+      if (appService?.isMobile) {
         files = (await selectFilesWeb()) as [File];
       } else {
         files = (await selectFilesTauri()) as [string];
@@ -382,7 +381,7 @@ const LibraryPage = () => {
         </div>
       )}
       {libraryLoaded &&
-        (libraryBooks.length > 0 ? (
+        (libraryBooks.some((book) => !book.deletedAt) ? (
           <div
             ref={containerRef}
             className={clsx(

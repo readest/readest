@@ -135,7 +135,10 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         >
           <div className='relative p-1'>
             <textarea
-              className='textarea textarea-ghost h-48 w-full border-0 p-3 text-base !outline-none sm:text-sm'
+              className={clsx(
+                'textarea textarea-ghost h-48 w-full border-0 p-3 text-base !outline-none sm:text-sm',
+                'placeholder:text-base-content/70',
+              )}
               placeholder={_('Enter your custom CSS here...')}
               spellCheck='false'
               value={draftStylesheet}

@@ -31,7 +31,7 @@ import DeepLPopup from './DeepLPopup';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
@@ -143,7 +143,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
       // Disable the default context menu on mobile devices,
       // although it should but doesn't work on iOS
-      if (osPlatform === 'android' || osPlatform === 'ios') {
+      if (appService?.isMobile) {
         detail.doc?.addEventListener('contextmenu', (event: Event) => {
           event.preventDefault();
           event.stopPropagation();

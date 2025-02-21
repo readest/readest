@@ -21,7 +21,6 @@ import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
-import { getOSPlatform } from '@/utils/misc';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
@@ -66,14 +65,13 @@ export default function AuthPage() {
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
-  const osPlatform = getOSPlatform();
 
   const getTauriRedirectTo = () => {
-    return process.env.NODE_ENV === 'production'
-      ? ['android', 'ios'].includes(osPlatform)
+    return process.env.NODE_ENV === 'production' || appService?.isMobile
+      ? appService?.isMobile
         ? WEB_AUTH_CALLBACK
         : DEEPLINK_CALLBACK
-      : `http://localhost:${port}`;
+      : `http://localhost:${port}`; // only for development env on Desktop
   };
 
   const tauriSignInApple = async () => {
@@ -133,7 +131,7 @@ export default function AuthPage() {
 
   const startTauriOAuth = async () => {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const currentWindow = getCurrentWindow();
         currentWindow.listen('single-instance', ({ event, payload }) => {
@@ -310,7 +308,7 @@ export default function AuthPage() {
         />
         <ProviderLogin
           provider='apple'
-          handleSignIn={getOSPlatform() === 'ios' ? tauriSignInApple : tauriSignIn}
+          handleSignIn={appService?.isIOSApp ? tauriSignInApple : tauriSignIn}
           Icon={FaApple}
           label={_('Sign in with Apple')}
         />

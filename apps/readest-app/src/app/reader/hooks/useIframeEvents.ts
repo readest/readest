@@ -1,16 +1,17 @@
 import { useEffect } from 'react';
 import { FoliateView } from '@/types/view';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
-import { getOSPlatform } from '@/utils/misc';
 
 export const useClickEvent = (
   bookKey: string,
   viewRef: React.MutableRefObject<FoliateView | null>,
   containerRef: React.RefObject<HTMLDivElement>,
 ) => {
+  const { appService } = useEnv();
   const { getViewSettings } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const handleTurnPage = async (
@@ -27,7 +28,7 @@ export const useClickEvent = (
             let windowStartX;
             // Currently for tauri APP the window.screenX is always 0
             if (isTauriAppPlatform()) {
-              if (['android', 'ios'].includes(getOSPlatform())) {
+              if (appService?.isMobile) {
                 windowStartX = 0;
               } else {
                 const windowPosition = await tauriGetWindowLogicalPosition();

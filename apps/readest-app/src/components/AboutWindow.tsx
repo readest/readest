@@ -33,7 +33,7 @@ export const AboutWindow = () => {
         isOpen={false}
         title={_('About Readest')}
         onClose={() => setAboutDialogVisible(false)}
-        boxClassName='sm:!w-96'
+        boxClassName='sm:!w-96 sm:h-auto'
       >
         <div className='about-content flex h-full flex-col items-center justify-center'>
           <div className='flex flex-col items-center px-8'>
@@ -73,7 +73,7 @@ export const AboutWindow = () => {
               . You are free to use, modify, and distribute this software under the terms of the
               AGPL v3 license. Please see the license for more details.
             </p>
-            <p className='text-neutral-content mt-2 text-xs'>
+            <p className='text-neutral-content my-2 text-xs'>
               Source code is available at{' '}
               <a
                 href='https://github.com/readest/readest'

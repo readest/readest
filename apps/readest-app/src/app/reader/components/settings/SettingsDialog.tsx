@@ -64,7 +64,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
         isOpen={true}
         onClose={handleClose}
         className='modal-open'
-        boxClassName='sm:w-1/2 sm:min-w-[480px]'
+        boxClassName='sm:w-1/2 sm:min-w-[480px] sm:h-[65%]'
         header={
           <div className='flex w-full items-center justify-between'>
             <button

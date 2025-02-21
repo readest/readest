@@ -114,14 +114,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const confirmDelete = async () => {
-    for (const id of selectedBooks) {
-      const book = libraryBooks.find((b) => b.hash === id || b.groupId === id);
-      if (book) {
-        await handleBookDelete(book);
+    selectedBooks.forEach((id) => {
+      for (const book of libraryBooks.filter((book) => book.hash === id || book.groupId === id)) {
+        if (book && !book.deletedAt) {
+          handleBookDelete(book);
+        }
       }
-    }
+    });
     setSelectedBooks([]);
     setShowDeleteAlert(false);
+    setShowSelectModeActions(true);
   };
 
   const deleteSelectedBooks = () => {

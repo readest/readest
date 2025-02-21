@@ -40,11 +40,11 @@ import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
 export abstract class BaseAppService implements AppService {
   osPlatform: string = getOSPlatform();
-  isMobile: boolean = ['android', 'ios'].includes(getOSPlatform());
   localBooksDir: string = '';
   abstract fs: FileSystem;
   abstract appPlatform: AppPlatform;
   abstract isAppDataSandbox: boolean;
+  abstract isMobile: boolean;
   abstract isAndroidApp: boolean;
   abstract isIOSApp: boolean;
   abstract hasTrafficLight: boolean;

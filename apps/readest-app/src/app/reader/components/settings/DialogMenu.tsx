@@ -21,7 +21,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
   return (
     <div
       tabIndex={0}
-      className='dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 w-44 border shadow-2xl'
+      className='dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl'
     >
       <button
         className='hover:bg-base-200 text-base-content flex w-full items-center justify-between rounded-md p-2'
@@ -37,7 +37,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
               isFontLayoutSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')
             }
           >
-            <span className='ml-2'>{_('Global Settings')}</span>
+            <span className='ml-2 whitespace-nowrap'>{_('Global Settings')}</span>
           </div>
         </div>
       </button>

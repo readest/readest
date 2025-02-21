@@ -94,7 +94,7 @@ const TTSControl = () => {
     setShowIndicator(true);
 
     try {
-      if (getOSPlatform() === 'ios') {
+      if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
         unblockAudio();
       }
       const ttsController = new TTSController(view);

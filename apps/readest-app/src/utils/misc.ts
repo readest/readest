@@ -44,6 +44,9 @@ export const getUserLocale = (lang: string): string | undefined => {
   return filteredLocales.length > 0 ? filteredLocales[0] : undefined;
 };
 
+// Note that iPad may have a user agent string like a desktop browser
+// when possible please use appService.isIOSApp || getOSPlatform() === 'ios'
+// to check if the app is running on iOS
 export const getOSPlatform = () => {
   const userAgent = navigator.userAgent.toLowerCase();
 

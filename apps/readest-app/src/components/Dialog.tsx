@@ -54,9 +54,9 @@ const Dialog: React.FC<DialogProps> = ({
     >
       <div
         className={clsx(
-          'modal-box settings-content flex h-full max-h-full w-full max-w-full flex-col rounded-none p-0 sm:rounded-2xl',
-          'sm:h-[60%] sm:w-[65%] sm:max-w-[600px]',
-          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
+          'modal-box settings-content flex flex-col rounded-none p-0 sm:rounded-2xl',
+          'h-full max-h-full w-full max-w-full sm:w-[65%] sm:max-w-[600px]',
+          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)] sm:pt-0',
           boxClassName,
         )}
       >
