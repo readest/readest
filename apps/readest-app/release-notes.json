@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.15": {
+      "date": "2025-02-21",
+      "notes": [
+        "Fix hardcoded font color from calibre",
+        "Fix scroll to current TOC item when toggling sidebar",
+        "Various fixes and enhancements on iOS platform"
+      ]
+    },
     "0.9.13": {
       "date": "2025-02-19",
       "notes": [
