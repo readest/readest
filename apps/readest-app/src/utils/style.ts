@@ -201,6 +201,10 @@ const getLayoutStyles = (
   .duokan-footnote-item {
     display: none;
   }
+
+  .calibre {
+    color: unset;
+  }
 `;
 
 export const getFootnoteStyles = () => `
