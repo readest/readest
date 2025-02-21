@@ -9,7 +9,7 @@ extern crate objc;
 #[cfg(target_os = "macos")]
 mod menu;
 #[cfg(target_os = "macos")]
-mod traffic_light_plugin;
+mod traffic_light;
 
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -127,10 +127,13 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
 
     #[cfg(target_os = "macos")]
-    let builder = builder.plugin(traffic_light_plugin::init());
+    let builder = builder.plugin(traffic_light::init());
 
     #[cfg(target_os = "ios")]
     let builder = builder.plugin(tauri_plugin_sign_in_with_apple::init());
+
+    #[cfg(any(target_os = "ios", target_os = "android"))]
+    let builder = builder.plugin(tauri_plugin_haptics::init());
 
     builder
         .setup(|#[allow(unused_variables)] app| {

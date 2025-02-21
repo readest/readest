@@ -70,6 +70,10 @@
     "oauth:allow-cancel",
     "sign-in-with-apple:default",
     "opener:default",
+    "haptics:allow-vibrate",
+    "haptics:allow-impact-feedback",
+    "haptics:allow-notification-feedback",
+    "haptics:allow-selection-feedback",
     "deep-link:default"
   ]
 }

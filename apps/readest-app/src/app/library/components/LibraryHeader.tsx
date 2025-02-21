@@ -91,7 +91,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             />
           </div>
           <div className='absolute right-4 flex items-center space-x-2 text-gray-500 sm:space-x-4'>
-            <span className='mx-2 h-6 w-[1px] bg-gray-400'></span>
+            <span className='bg-base-content/50 mx-2 h-4 w-[0.5px]'></span>
             <Dropdown
               className='exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center'
               buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'

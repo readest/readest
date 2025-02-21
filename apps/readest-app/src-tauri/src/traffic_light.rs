@@ -14,7 +14,7 @@ unsafe impl Send for UnsafeWindowHandle {}
 unsafe impl Sync for UnsafeWindowHandle {}
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    Builder::new("traffic_light_positioner")
+    Builder::new("traffic_light")
         .on_window_ready(|window| {
             #[cfg(target_os = "macos")]
             setup_traffic_light_positioner(window.clone());

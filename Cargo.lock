@@ -23,6 +23,7 @@ dependencies = [
  "tauri-plugin-devtools",
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
+ "tauri-plugin-haptics",
  "tauri-plugin-http",
  "tauri-plugin-log",
  "tauri-plugin-oauth",
@@ -5205,6 +5206,20 @@ dependencies = [
  "toml 0.8.19",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "tauri-plugin-haptics"
+version = "2.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52db8ae1bb6eab8502ee5c32acb905323c9651491c7f229d84f45b8c57d12327"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.11",
 ]
 
 [[package]]

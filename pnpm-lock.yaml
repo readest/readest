@@ -68,6 +68,9 @@ importers:
       '@tauri-apps/plugin-fs':
         specifier: ^2.2.0
         version: 2.2.0
+      '@tauri-apps/plugin-haptics':
+        specifier: ^2.2.3
+        version: 2.2.3
       '@tauri-apps/plugin-http':
         specifier: ^2.3.0
         version: 2.3.0
@@ -1734,6 +1737,9 @@ packages:
 
   '@tauri-apps/plugin-fs@2.2.0':
     resolution: {integrity: sha512-+08mApuONKI8/sCNEZ6AR8vf5vI9DXD4YfrQ9NQmhRxYKMLVhRW164vdW5BSLmMpuevftpQ2FVoL9EFkfG9Z+g==}
+
+  '@tauri-apps/plugin-haptics@2.2.3':
+    resolution: {integrity: sha512-tHWAOR0TSOuWIdJ4Fh/4z+L8CvSfHdg5i7XfCqjErPu63PMf+2n856VIGcC6fjF29hf/vq+BiGApWt38n66Gvg==}
 
   '@tauri-apps/plugin-http@2.3.0':
     resolution: {integrity: sha512-pigTvz+zzAqbIhCzRiR1GE98Jw7A03j2V+Eiexr9thBI8VfMiwFQMcbgON51xlwnVaI72LdbYKNajU84im8tlg==}
@@ -6633,6 +6639,10 @@ snapshots:
       '@tauri-apps/api': 2.2.0
 
   '@tauri-apps/plugin-fs@2.2.0':
+    dependencies:
+      '@tauri-apps/api': 2.2.0
+
+  '@tauri-apps/plugin-haptics@2.2.3':
     dependencies:
       '@tauri-apps/api': 2.2.0
 

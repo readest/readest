@@ -16,6 +16,7 @@ import { parseOpenWithFiles } from '@/helpers/cli';
 import { isTauriAppPlatform, hasUpdater } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
+import { impactFeedback } from '@tauri-apps/plugin-haptics';
 
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -335,10 +336,16 @@ const LibraryPage = () => {
   };
 
   const handleToggleSelectMode = () => {
+    if (!isSelectMode && appService?.isMobile) {
+      impactFeedback('medium');
+    }
     setIsSelectMode(!isSelectMode);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {
+    if (selectMode && appService?.isMobile) {
+      impactFeedback('medium');
+    }
     setIsSelectMode(selectMode);
   };
 

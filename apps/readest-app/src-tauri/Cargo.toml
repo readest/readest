@@ -45,6 +45,7 @@ tauri-plugin-oauth = "2"
 tauri-plugin-opener = "2.2.2"
 tauri-plugin-deep-link = "2"
 tauri-plugin-sign-in-with-apple = "1.0.2"
+tauri-plugin-haptics = "2.2.3"
 [patch.crates-io]
 tauri = { path = "../../../packages/tauri/crates/tauri" }
 

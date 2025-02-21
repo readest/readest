@@ -219,7 +219,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   };
 
   const { pressing, handlers } = useLongPress({
-    onLongPress: () => {
+    onLongPress: async () => {
       if (!isSelectMode) {
         handleSetSelectMode(true);
       }
