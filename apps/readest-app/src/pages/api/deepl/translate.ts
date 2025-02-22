@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { supabase } from '@/utils/supabase';
+import { getUserPlan } from '@/utils/access';
 
 const DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
@@ -18,11 +19,22 @@ const getUserAndToken = async (authHeader: string | undefined) => {
   return { user, token };
 };
 
+const getDeepLAPIKey = (keys: string | undefined) => {
+  const keyArray = keys?.split(',') ?? [];
+  return keyArray[Math.floor(Math.random() * keyArray.length)];
+};
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { user, token } = await getUserAndToken(req.headers['authorization']);
-  const deeplApiUrl = user && token ? DEEPL_PRO_API : DEEPL_FREE_API;
+  let deeplApiUrl = DEEPL_FREE_API;
+  if (user && token) {
+    const userPlan = await getUserPlan(token);
+    if (userPlan !== 'free') deeplApiUrl = DEEPL_PRO_API;
+  }
   const deeplAuthKey =
-    user && token ? process.env['DEEPL_PRO_API_KEY'] : process.env['DEEPL_FREE_API_KEY'];
+    deeplApiUrl === DEEPL_PRO_API
+      ? getDeepLAPIKey(process.env['DEEPL_PRO_API_KEYS'])
+      : getDeepLAPIKey(process.env['DEEPL_FREE_API_KEYS']);
 
   await runMiddleware(req, res, corsAllMethods);
 
