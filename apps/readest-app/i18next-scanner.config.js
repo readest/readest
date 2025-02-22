@@ -24,7 +24,7 @@ module.exports = {
       'hi',
       'id',
       'vi',
-	  'ar',
+      'ar',
       'zh-CN',
       'zh-TW',
     ],
