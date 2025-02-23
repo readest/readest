@@ -11,6 +11,8 @@ export interface ShortcutConfig {
   onGoRight: string[];
   onGoNext: string[];
   onGoPrev: string[];
+  onGoHalfPageDown: string[];
+  onGoHalfPageUp: string[];
   onGoBack: string[];
   onGoForward: string[];
   onZoomIn: string[];
@@ -33,13 +35,15 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onGoRight: ['ArrowRight', 'PageDown', 'l', ' '],
   onGoNext: ['ArrowDown', 'j'],
   onGoPrev: ['ArrowUp', 'k'],
+  onGoHalfPageDown: ['shift+ArrowDown', 'd'],
+  onGoHalfPageUp: ['shift+ArrowUp', 'u'],
   onGoBack: ['shift+ArrowLeft', 'shift+h'],
   onGoForward: ['shift+ArrowRight', 'shift+l'],
   onZoomIn: ['ctrl+=', 'cmd+=', 'shift+='],
   onZoomOut: ['ctrl+-', 'cmd+-', 'shift+-'],
   onResetZoom: ['ctrl+0', 'cmd+0'],
   onSaveNote: ['ctrl+Enter'],
-  onCloseNote: ['Escape']
+  onCloseNote: ['Escape'],
 };
 
 // Load shortcuts from localStorage or fallback to defaults

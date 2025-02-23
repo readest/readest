@@ -61,6 +61,22 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     getView(sideBarBookKey)?.history.back();
   };
 
+  const goHalfPageDown = () => {
+    const view = getView(sideBarBookKey);
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    if (view && viewSettings && viewSettings.scrolled) {
+      view.next(view.renderer.size / 2);
+    }
+  };
+
+  const goHalfPageUp = () => {
+    const view = getView(sideBarBookKey);
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    if (view && viewSettings && viewSettings.scrolled) {
+      view.prev(view.renderer.size / 2);
+    }
+  };
+
   const goForward = () => {
     getView(sideBarBookKey)?.history.forward();
   };
@@ -123,6 +139,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoRight: goRight,
       onGoPrev: goPrev,
       onGoNext: goNext,
+      onGoHalfPageDown: goHalfPageDown,
+      onGoHalfPageUp: goHalfPageUp,
       onGoBack: goBack,
       onGoForward: goForward,
       onZoomIn: zoomIn,

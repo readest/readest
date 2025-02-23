@@ -36,8 +36,8 @@ export interface FoliateView extends HTMLElement {
   };
   renderer: {
     scrolled?: boolean;
-    size: number;
-    viewSize: number;
+    size: number; // current page height
+    viewSize: number; // whole document view height
     start: number;
     end: number;
     setAttribute: (name: string, value: string | number) => void;
