@@ -1,3 +1,5 @@
+import { eventDispatcher } from './event';
+
 export const tauriGetWindowLogicalPosition = async () => {
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const currentWindow = getCurrentWindow();
@@ -40,4 +42,10 @@ export const tauriHandleOnWindowFocus = async (callback: () => void) => {
   return currentWindow.listen(TauriEvent.WINDOW_FOCUS, async () => {
     await callback();
   });
+};
+
+export const tauriQuitApp = async () => {
+  await eventDispatcher.dispatch('quit-app');
+  const { exit } = await import('@tauri-apps/plugin-process');
+  await exit(0);
 };

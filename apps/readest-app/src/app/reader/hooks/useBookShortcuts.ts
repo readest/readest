@@ -7,7 +7,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
-import { eventDispatcher } from '@/utils/event';
+import { tauriQuitApp } from '@/utils/window';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 
 interface UseBookShortcutsProps {
@@ -88,9 +88,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const quitApp = async () => {
     // on web platform use browser's default shortcut to close the tab
     if (isTauriAppPlatform()) {
-      await eventDispatcher.dispatch('quit-app');
-      const { exit } = await import('@tauri-apps/plugin-process');
-      await exit(0);
+      await tauriQuitApp();
     }
   };
 

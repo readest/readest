@@ -27,6 +27,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { tauriQuitApp } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
@@ -34,7 +36,7 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import BookDetailModal from '@/components/BookDetailModal';
-import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import useShortcuts from '@/hooks/useShortcuts';
 
 const LibraryPage = () => {
   const router = useRouter();
@@ -68,6 +70,14 @@ const LibraryPage = () => {
 
   usePullToRefresh(containerRef, pullLibrary);
   useScreenWakeLock(settings.screenWakeLock);
+
+  useShortcuts({
+    onQuitApp: async () => {
+      if (isTauriAppPlatform()) {
+        await tauriQuitApp();
+      }
+    },
+  });
 
   useEffect(() => {
     updateAppTheme('base-200');
@@ -339,7 +349,7 @@ const LibraryPage = () => {
     if (!isSelectMode && appService?.isMobile) {
       impactFeedback('medium');
     }
-    setIsSelectMode(!isSelectMode);
+    setIsSelectMode((pre) => !pre);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {

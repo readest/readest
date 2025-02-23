@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
@@ -16,6 +16,7 @@ import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
+import useShortcuts from '@/hooks/useShortcuts';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -37,17 +38,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const iconSize16 = useResponsiveSize(16);
   const iconSize20 = useResponsiveSize(20);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.shiftKey) {
-        onToggleSelectMode();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onToggleSelectMode]);
+  useShortcuts({
+    onToggleSelectMode,
+  });
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const isInGroupView = !!searchParams?.get('group');
