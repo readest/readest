@@ -16,6 +16,7 @@ const getFontStyles = (
   monospace: string,
   defaultFont: string,
   fontSize: number,
+  minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
 ) => {
@@ -36,6 +37,27 @@ const getFontStyles = (
       font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
       font-size: ${fontSize}px !important;
       font-weight: ${fontWeight};
+    }
+    font[size="1"] {
+      font-size: ${minFontSize}px;
+    }
+    font[size="2"] {
+      font-size: ${minFontSize * 1.5}px;
+    }
+    font[size="3"] {
+      font-size: ${fontSize}px;
+    }
+    font[size="4"] {
+      font-size: ${fontSize * 1.2}px;
+    }
+    font[size="5"] {
+      font-size: ${fontSize * 1.5}px;
+    }
+    font[size="6"] {
+      font-size: ${fontSize * 2}px;
+    }
+    font[size="7"] {
+      font-size: ${fontSize * 3}px;
     }
     body * {
       font-family: revert ${overrideFont ? '!important' : ''};
@@ -255,6 +277,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
     viewSettings.defaultFontSize! * fontScale,
+    viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
   );
