@@ -50,6 +50,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
 
 // Load shortcuts from localStorage or fallback to defaults
 export const loadShortcuts = (): ShortcutConfig => {
+  if (typeof localStorage === 'undefined') return DEFAULT_SHORTCUTS;
   const customShortcuts = JSON.parse(localStorage.getItem('customShortcuts') || '{}');
   return {
     ...DEFAULT_SHORTCUTS,
