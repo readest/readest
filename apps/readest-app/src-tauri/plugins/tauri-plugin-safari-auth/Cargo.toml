@@ -1,0 +1,17 @@
+[package]
+name = "tauri-plugin-safari-auth"
+version = "0.1.0"
+authors = [ "chrox" ]
+description = "OAuth with ASWebAuthenticationSession on iOS"
+edition = "2021"
+rust-version = "1.77.2"
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
+links = "tauri-plugin-safari-auth"
+
+[dependencies]
+tauri = { version = "2.2.4" }
+serde = "1.0"
+thiserror = "2"
+
+[build-dependencies]
+tauri-plugin = { version = "2.0.3", features = ["build"] }

@@ -22,6 +22,7 @@ import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oau
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
+import { authWithSafari } from './utils/safariAuth';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -67,11 +68,15 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   const getTauriRedirectTo = () => {
-    return process.env.NODE_ENV === 'production' || appService?.isMobile
-      ? appService?.isMobile
-        ? WEB_AUTH_CALLBACK
-        : DEEPLINK_CALLBACK
-      : `http://localhost:${port}`; // only for development env on Desktop
+    if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
+      if (appService?.isIOSApp) {
+        return DEEPLINK_CALLBACK;
+      } else if (appService?.isAndroidApp) {
+        return WEB_AUTH_CALLBACK;
+      }
+      return DEEPLINK_CALLBACK;
+    }
+    return `http://localhost:${port}`; // only for development env on Desktop
   };
 
   const tauriSignInApple = async () => {
@@ -111,7 +116,16 @@ export default function AuthPage() {
       console.error('Authentication error:', error);
       return;
     }
-    await openUrl(data.url);
+    // Open the OAuth URL in a ASWebAuthenticationSession on iOS to comply with Apple's guidelines
+    // for other platforms, open the OAuth URL in the default browser
+    if (appService?.isIOSApp) {
+      const res = await authWithSafari({ authUrl: data.url });
+      if (res) {
+        handleOAuthUrl(res.redirectUrl);
+      }
+    } else {
+      await openUrl(data.url);
+    }
   };
 
   const handleOAuthUrl = async (url: string) => {
