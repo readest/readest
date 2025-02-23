@@ -21,7 +21,7 @@ const getUserAndToken = async (authHeader: string | undefined) => {
 
 const getDeepLAPIKey = (keys: string | undefined) => {
   const keyArray = keys?.split(',') ?? [];
-  return keyArray[Math.floor(Math.random() * keyArray.length)];
+  return keyArray.length ? keyArray[Math.floor(Math.random() * keyArray.length)] : '';
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {

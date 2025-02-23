@@ -67,10 +67,10 @@ export default function AuthPage() {
   const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const getTauriRedirectTo = () => {
+  const getTauriRedirectTo = (isOAuth: boolean) => {
     if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
       if (appService?.isIOSApp) {
-        return DEEPLINK_CALLBACK;
+        return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
       } else if (appService?.isAndroidApp) {
         return WEB_AUTH_CALLBACK;
       }
@@ -108,7 +108,7 @@ export default function AuthPage() {
       provider,
       options: {
         skipBrowserRedirect: true,
-        redirectTo: getTauriRedirectTo(),
+        redirectTo: getTauriRedirectTo(true),
       },
     });
 
@@ -332,16 +332,20 @@ export default function AuthPage() {
           Icon={FaGithub}
           label={_('Sign in with GitHub')}
         />
-        <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
-        <Auth
-          supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
-          theme={isDarkMode ? 'dark' : 'light'}
-          magicLink={true}
-          providers={[]}
-          redirectTo={getTauriRedirectTo()}
-          localization={getAuthLocalization()}
-        />
+        {!appService?.isIOSApp && (
+          <div>
+            <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
+            <Auth
+              supabaseClient={supabase}
+              appearance={{ theme: ThemeSupa }}
+              theme={isDarkMode ? 'dark' : 'light'}
+              magicLink={true}
+              providers={[]}
+              redirectTo={getTauriRedirectTo(false)}
+              localization={getAuthLocalization()}
+            />
+          </div>
+        )}
       </div>
     </div>
   ) : (
