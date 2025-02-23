@@ -37,8 +37,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     onHandleHighlight(true);
   };
   const handleSelectColor = (color: HighlightColor) => {
-    const style = globalReadSettings.highlightStyle;
-    globalReadSettings.highlightStyles[style] = color;
+    globalReadSettings.highlightStyle = selectedStyle;
+    globalReadSettings.highlightStyles[selectedStyle] = color;
     setSettings(settings);
     setSelectedColor(color);
     onHandleHighlight(true);

@@ -357,6 +357,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (existingIndex !== -1) {
       views.forEach((view) => view?.addAnnotation(annotation, true));
       if (update) {
+        annotation.id = annotations[existingIndex]!.id;
         annotations[existingIndex] = annotation;
         views.forEach((view) => view?.addAnnotation(annotation));
       } else {
