@@ -14,8 +14,11 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     _app: &AppHandle<R>,
     api: PluginApi<R, C>,
 ) -> crate::Result<SafariAuth<R>> {
+    #[cfg(target_os = "android")]
+    let handle = api.register_android_plugin("com.bilingify.safari_auth", "ExamplePlugin")?;
     #[cfg(target_os = "ios")]
     let handle = api.register_ios_plugin(init_plugin_safari_auth)?;
+
     Ok(SafariAuth(handle))
 }
 
