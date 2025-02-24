@@ -9,11 +9,11 @@ import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useDrag } from '@/hooks/useDrag';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
 import useSidebar from '../../hooks/useSidebar';
-import useDragBar from '../../hooks/useDragBar';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -33,6 +33,7 @@ const SideBar: React.FC<{
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const isMobile = window.innerWidth < 640;
   const {
     sideBarWidth,
     isSideBarPinned,
@@ -42,7 +43,7 @@ const SideBar: React.FC<{
     handleSideBarTogglePin,
   } = useSidebar(
     settings.globalReadSettings.sideBarWidth,
-    window.innerWidth >= 640 ? settings.globalReadSettings.isSideBarPinned : false,
+    isMobile ? false : settings.globalReadSettings.isSideBarPinned,
   );
 
   const onSearchEvent = async (event: CustomEvent) => {
@@ -79,12 +80,52 @@ const SideBar: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDragMove = (e: MouseEvent) => {
-    const widthFraction = e.clientX / window.innerWidth;
+  const handleVerticalDragMove = (data: { clientY: number }) => {
+    if (!isMobile) return;
+
+    const heightFraction = data.clientY / window.innerHeight;
+    const newTop = Math.max(0.0, Math.min(1, heightFraction));
+
+    const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
+    const overlay = document.querySelector('.overlay') as HTMLElement;
+
+    if (sidebar && overlay) {
+      sidebar.style.top = `${newTop * 100}%`;
+      overlay.style.opacity = `${1 - heightFraction}`;
+    }
+  };
+
+  const handleVerticalDragEnd = (velocity: number) => {
+    const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
+    const overlay = document.querySelector('.overlay') as HTMLElement;
+
+    if (!sidebar || !overlay) return;
+
+    if (velocity > 0.5) {
+      sidebar.style.transition = `top ${0.15 / velocity}s ease-out`;
+      sidebar.style.top = '100%';
+      overlay.style.transition = `opacity ${0.15 / velocity}s ease-out`;
+      overlay.style.opacity = '0';
+      setTimeout(() => setSideBarVisible(false), 300);
+    } else {
+      sidebar.style.transition = 'top 0.3s ease-out';
+      sidebar.style.top = '0%';
+      overlay.style.transition = 'opacity 0.3s ease-out';
+      overlay.style.opacity = '0.8';
+    }
+  };
+
+  const handleHorizontalDragMove = (data: { clientX: number }) => {
+    const widthFraction = data.clientX / window.innerWidth;
     const newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, widthFraction));
     handleSideBarResize(`${Math.round(newWidth * 10000) / 100}%`);
   };
-  const { handleMouseDown } = useDragBar(handleDragMove);
+
+  const { handleDragStart: handleVerticalDragStart } = useDrag(
+    handleVerticalDragMove,
+    handleVerticalDragEnd,
+  );
+  const { handleDragStart: handleHorizontalDragStart } = useDrag(handleHorizontalDragMove);
 
   const handleClickOverlay = () => {
     setSideBarVisible(false);
@@ -135,10 +176,27 @@ const SideBar: React.FC<{
             .sidebar-container {
               width: 100%;
               min-width: 100%;
+              border-top-left-radius: 16px;
+              border-top-right-radius: 16px;
+            }
+            .sidebar-container.open {
+              top: 0%;
+            }
+            .overlay {
+              transition: opacity 0.3s ease-in-out;
             }
           }
         `}</style>
         <div className='flex-shrink-0'>
+          {isMobile && (
+            <div
+              className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+              onMouseDown={handleVerticalDragStart}
+              onTouchStart={handleVerticalDragStart}
+            >
+              <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
+            </div>
+          )}
           <SidebarHeader
             isPinned={isSideBarPinned}
             isSearchBarVisible={isSearchBarVisible}
@@ -174,11 +232,14 @@ const SideBar: React.FC<{
         )}
         <div
           className='drag-bar absolute right-0 top-0 h-full w-0.5 cursor-col-resize'
-          onMouseDown={handleMouseDown}
+          onMouseDown={handleHorizontalDragStart}
         ></div>
       </div>
       {!isSideBarPinned && (
-        <div className='overlay fixed inset-0 z-10 bg-black/20' onClick={handleClickOverlay} />
+        <div
+          className='overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20'
+          onClick={handleClickOverlay}
+        />
       )}
     </>
   ) : null;

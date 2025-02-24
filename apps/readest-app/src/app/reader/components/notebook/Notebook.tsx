@@ -9,11 +9,11 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
+import { useDrag } from '@/hooks/useDrag';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
-import useDragBar from '../../hooks/useDragBar';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
@@ -81,12 +81,6 @@ const Notebook: React.FC = ({}) => {
     setNotebookEditAnnotation(null);
   };
 
-  const handleDragMove = (e: MouseEvent) => {
-    const widthFraction = 1 - e.clientX / window.innerWidth;
-    const newWidth = Math.max(MIN_NOTEBOOK_WIDTH, Math.min(MAX_NOTEBOOK_WIDTH, widthFraction));
-    handleNotebookResize(`${Math.round(newWidth * 10000) / 100}%`);
-  };
-
   const handleSaveNote = (selection: TextSelection, note: string) => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
@@ -132,7 +126,13 @@ const Notebook: React.FC = ({}) => {
     setNotebookEditAnnotation(null);
   };
 
-  const { handleMouseDown } = useDragBar(handleDragMove);
+  const onDragMove = (data: { clientX: number }) => {
+    const widthFraction = 1 - data.clientX / window.innerWidth;
+    const newWidth = Math.max(MIN_NOTEBOOK_WIDTH, Math.min(MAX_NOTEBOOK_WIDTH, widthFraction));
+    handleNotebookResize(`${Math.round(newWidth * 10000) / 100}%`);
+  };
+
+  const { handleDragStart } = useDrag(onDragMove);
 
   if (!sideBarBookKey) return null;
 
@@ -175,7 +175,7 @@ const Notebook: React.FC = ({}) => {
         `}</style>
         <div
           className='drag-bar absolute left-0 top-0 h-full w-0.5 cursor-col-resize'
-          onMouseDown={handleMouseDown}
+          onMouseDown={handleDragStart}
         />
         <NotebookHeader
           isPinned={isNotebookPinned}

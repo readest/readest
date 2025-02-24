@@ -16,7 +16,7 @@ export const useScreenWakeLock = (lock: boolean) => {
           console.log('Wake lock acquired');
         }
       } catch (err) {
-        console.error('Failed to acquire wake lock:', err);
+        console.info('Failed to acquire wake lock:', err);
       }
     };
 

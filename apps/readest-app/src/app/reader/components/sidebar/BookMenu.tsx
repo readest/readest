@@ -64,6 +64,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
                 />
               }
               label={book.title}
+              labelClass='max-w-36'
               onClick={() => handleParallelView(book.hash)}
             />
           ))}

@@ -346,14 +346,14 @@ const LibraryPage = () => {
   };
 
   const handleToggleSelectMode = () => {
-    if (!isSelectMode && appService?.isMobile) {
+    if (!isSelectMode && appService?.hasHaptics) {
       impactFeedback('medium');
     }
     setIsSelectMode((pre) => !pre);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {
-    if (selectMode && appService?.isMobile) {
+    if (selectMode && appService?.hasHaptics) {
       impactFeedback('medium');
     }
     setIsSelectMode(selectMode);
@@ -402,8 +402,9 @@ const LibraryPage = () => {
           <div
             ref={containerRef}
             className={clsx(
-              'mt-12 flex-grow overflow-auto px-4 sm:px-2',
+              'scroll-container mt-12 flex-grow overflow-auto px-4 sm:px-2',
               appService?.hasSafeAreaInset && 'mt-[calc(48px+env(safe-area-inset-top))]',
+              appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom))]',
             )}
           >
             <Bookshelf

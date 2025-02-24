@@ -49,7 +49,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 flex h-11 w-full items-center py-2 pr-4 sm:pr-6',
+        'titlebar h-13 z-10 flex w-full items-center py-2 pr-4 sm:pr-6',
         appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
@@ -68,7 +68,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               </div>
             </button>
           )}
-          <div className='relative flex h-7 w-full items-center'>
+          <div className='relative flex h-9 w-full items-center sm:h-7'>
             <span className='absolute left-3 text-gray-500'>
               <FaSearch className='h-4 w-4' />
             </span>
@@ -77,7 +77,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               placeholder={_('Search Books...')}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge bg-base-300/50 h-7 w-full pl-10 pr-10',
+                'input rounded-badge bg-base-300/50 h-9 w-full pl-10 pr-10 sm:h-7',
                 'font-sans text-sm font-light',
                 'border-none focus:outline-none focus:ring-0',
               )}

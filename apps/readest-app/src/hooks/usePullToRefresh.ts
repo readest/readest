@@ -25,7 +25,7 @@ export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger
       const initialX = startEvent.touches[0]!.clientX;
       const initialY = startEvent.touches[0]!.clientY;
 
-      el.addEventListener('touchmove', handleTouchMove, { passive: false });
+      el.addEventListener('touchmove', handleTouchMove, { passive: true });
       el.addEventListener('touchend', handleTouchEnd);
 
       function handleTouchMove(moveEvent: TouchEvent) {

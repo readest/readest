@@ -204,6 +204,7 @@ foliate-view {
 .scroll-container {
   overflow-y: scroll;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .scroll-container.hidden-scrollbar {

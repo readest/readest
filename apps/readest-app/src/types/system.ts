@@ -29,6 +29,7 @@ export interface AppService {
   hasContextMenu: boolean;
   hasRoundedWindow: boolean;
   hasSafeAreaInset: boolean;
+  hasHaptics: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
   isAndroidApp: boolean;

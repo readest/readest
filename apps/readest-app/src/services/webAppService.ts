@@ -188,6 +188,7 @@ export class WebAppService extends BaseAppService {
   hasContextMenu = false;
   hasRoundedWindow = false;
   hasSafeAreaInset = isPWA();
+  hasHaptics = false;
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

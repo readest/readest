@@ -1,8 +1,13 @@
 import clsx from 'clsx';
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { MdArrowBackIosNew } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
+import { useDrag } from '@/hooks/useDrag';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { impactFeedback } from '@tauri-apps/plugin-haptics';
+
+const DISMISS_THRESHOLD = 100;
+const VELOCITY_THRESHOLD = 0.5;
 
 interface DialogProps {
   id?: string;
@@ -28,7 +33,10 @@ const Dialog: React.FC<DialogProps> = ({
   onClose,
 }) => {
   const { appService } = useEnv();
+  const [translateY, setTranslateY] = useState(0);
   const iconSize22 = useResponsiveSize(22);
+  const isMobile = window.innerWidth < 640;
+
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       onClose();
@@ -43,23 +51,67 @@ const Dialog: React.FC<DialogProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleDragMove = (data: { clientY: number; deltaY: number }) => {
+    if (!isMobile) return;
+
+    const modal = document.querySelector('.modal-box') as HTMLElement;
+    const overlay = document.querySelector('.overlay') as HTMLElement;
+    if (modal && overlay) {
+      modal.style.transition = '';
+      overlay.style.opacity = `${1 - data.clientY / window.innerHeight}`;
+    }
+    setTranslateY((prev) => Math.max(prev + data.deltaY, 0));
+  };
+
+  const handleDragEnd = (velocity: number) => {
+    const modal = document.querySelector('.modal-box') as HTMLElement;
+    if (!modal) return;
+
+    if (translateY > DISMISS_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
+      modal.style.transition = `transform ${0.15 / velocity}s ease-out`;
+      onClose();
+      setTimeout(() => setTranslateY(0), 300);
+      if (appService?.hasHaptics) {
+        impactFeedback('medium');
+      }
+    } else {
+      modal.style.transition = `transform 0.3s ease-out`;
+      setTranslateY(0);
+      if (appService?.hasHaptics) {
+        impactFeedback('medium');
+      }
+    }
+  };
+
+  const { handleDragStart } = useDrag(handleDragMove, handleDragEnd);
+
   return (
     <dialog
       id={id ?? 'dialog'}
       open={isOpen}
-      className={clsx(
-        'modal sm:min-w-90 z-50 h-full w-full !bg-[rgba(0,0,0,0.2)] sm:w-full',
-        className,
-      )}
+      className={clsx('modal sm:min-w-90 z-50 h-full w-full sm:w-full', className)}
     >
+      <div className='overlay fixed inset-0 z-10 bg-black/30 sm:bg-black/20' />
       <div
         className={clsx(
-          'modal-box settings-content flex flex-col rounded-none p-0 sm:rounded-2xl',
+          'modal-box settings-content z-20 flex flex-col rounded-none rounded-tl-2xl rounded-tr-2xl p-0 sm:rounded-2xl',
           'h-full max-h-full w-full max-w-full sm:w-[65%] sm:max-w-[600px]',
           appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)] sm:pt-0',
           boxClassName,
         )}
+        style={{
+          transform: `translateY(${translateY}px)`,
+        }}
       >
+        {window.innerWidth < 640 && (
+          <div
+            className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+          >
+            <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
+          </div>
+        )}
         <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-4'>
           {header ? (
             header
