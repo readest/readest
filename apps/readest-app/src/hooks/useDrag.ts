@@ -2,7 +2,14 @@ import { useCallback, useRef } from 'react';
 
 export const useDrag = (
   onDragMove: (data: { clientX: number; clientY: number; deltaX: number; deltaY: number }) => void,
-  onDragEnd?: (velocity: number) => void,
+  onDragEnd?: (data: {
+    velocity: number;
+    deltaT: number;
+    clientX: number;
+    clientY: number;
+    deltaX: number;
+    deltaY: number;
+  }) => void,
 ) => {
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -52,17 +59,28 @@ export const useDrag = (
 
       const handleEnd = (event: MouseEvent | TouchEvent) => {
         isDragging.current = false;
+        let deltaX = 0;
+        let deltaY = 0;
+        let clientX = 0;
+        let clientY = 0;
         const endTime = performance.now();
         const deltaT = endTime - startTime.current;
 
-        const distanceY =
-          'touches' in event
-            ? event.changedTouches[0]!.clientY - startY.current
-            : event.clientY - startY.current;
-        const velocity = distanceY / deltaT;
+        if ('touches' in event) {
+          const currentTouch = event.changedTouches[0]!;
+          clientX = currentTouch.clientX;
+          clientY = currentTouch.clientY;
+        } else {
+          const evt = event as MouseEvent;
+          clientX = evt.clientX;
+          clientY = evt.clientY;
+        }
+        deltaX = clientX - startX.current;
+        deltaY = clientY - startY.current;
+        const velocity = deltaY / deltaT;
 
         if (onDragEnd) {
-          onDragEnd(velocity);
+          onDragEnd({ velocity, deltaT, clientX, clientY, deltaX, deltaY });
         }
 
         window.removeEventListener('mousemove', handleMove);

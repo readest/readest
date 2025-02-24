@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
+import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -20,6 +21,8 @@ import useShortcuts from '@/hooks/useShortcuts';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
+
+const VELOCITY_THRESHOLD = 0.5;
 
 const SideBar: React.FC<{
   onGoToLibrary: () => void;
@@ -95,23 +98,33 @@ const SideBar: React.FC<{
     }
   };
 
-  const handleVerticalDragEnd = (velocity: number) => {
+  const handleVerticalDragEnd = (data: { velocity: number; clientY: number }) => {
     const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
     const overlay = document.querySelector('.overlay') as HTMLElement;
 
     if (!sidebar || !overlay) return;
 
-    if (velocity > 0.5) {
-      sidebar.style.transition = `top ${0.15 / velocity}s ease-out`;
+    if (
+      data.velocity > VELOCITY_THRESHOLD ||
+      (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
+    ) {
+      const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
+      sidebar.style.transition = `top ${transitionDuration}s ease-out`;
       sidebar.style.top = '100%';
-      overlay.style.transition = `opacity ${0.15 / velocity}s ease-out`;
+      overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
       overlay.style.opacity = '0';
       setTimeout(() => setSideBarVisible(false), 300);
+      if (appService?.hasHaptics) {
+        impactFeedback('medium');
+      }
     } else {
       sidebar.style.transition = 'top 0.3s ease-out';
       sidebar.style.top = '0%';
       overlay.style.transition = 'opacity 0.3s ease-out';
       overlay.style.opacity = '0.8';
+      if (appService?.hasHaptics) {
+        impactFeedback('medium');
+      }
     }
   };
 

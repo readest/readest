@@ -1,12 +1,11 @@
 import clsx from 'clsx';
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { MdArrowBackIosNew } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useDrag } from '@/hooks/useDrag';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 
-const DISMISS_THRESHOLD = 100;
 const VELOCITY_THRESHOLD = 0.5;
 
 interface DialogProps {
@@ -33,7 +32,6 @@ const Dialog: React.FC<DialogProps> = ({
   onClose,
 }) => {
   const { appService } = useEnv();
-  const [translateY, setTranslateY] = useState(0);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
 
@@ -56,27 +54,42 @@ const Dialog: React.FC<DialogProps> = ({
 
     const modal = document.querySelector('.modal-box') as HTMLElement;
     const overlay = document.querySelector('.overlay') as HTMLElement;
+
+    const heightFraction = data.clientY / window.innerHeight;
+    const newTop = Math.max(0.0, Math.min(1, heightFraction));
+
     if (modal && overlay) {
       modal.style.transition = '';
-      overlay.style.opacity = `${1 - data.clientY / window.innerHeight}`;
+      modal.style.transform = `translateY(${newTop * 100}%)`;
+      overlay.style.opacity = `${1 - heightFraction}`;
     }
-    setTranslateY((prev) => Math.max(prev + data.deltaY, 0));
   };
 
-  const handleDragEnd = (velocity: number) => {
+  const handleDragEnd = (data: { velocity: number; clientY: number }) => {
     const modal = document.querySelector('.modal-box') as HTMLElement;
-    if (!modal) return;
+    const overlay = document.querySelector('.overlay') as HTMLElement;
+    if (!modal || !overlay) return;
 
-    if (translateY > DISMISS_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
-      modal.style.transition = `transform ${0.15 / velocity}s ease-out`;
-      onClose();
-      setTimeout(() => setTranslateY(0), 300);
+    if (
+      data.velocity > VELOCITY_THRESHOLD ||
+      (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
+    ) {
+      const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
+      modal.style.transition = `transform ${transitionDuration}s ease-out`;
+      modal.style.transform = 'translateY(100%)';
+      overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        onClose();
+        modal.style.transform = 'translateY(0%)';
+      }, 300);
       if (appService?.hasHaptics) {
         impactFeedback('medium');
       }
     } else {
       modal.style.transition = `transform 0.3s ease-out`;
-      setTranslateY(0);
+      modal.style.transform = `translateY(0%)`;
+      overlay.style.opacity = '0';
       if (appService?.hasHaptics) {
         impactFeedback('medium');
       }
@@ -89,9 +102,9 @@ const Dialog: React.FC<DialogProps> = ({
     <dialog
       id={id ?? 'dialog'}
       open={isOpen}
-      className={clsx('modal sm:min-w-90 z-50 h-full w-full sm:w-full', className)}
+      className={clsx('modal sm:min-w-90 z-50 h-full w-full !bg-transparent sm:w-full', className)}
     >
-      <div className='overlay fixed inset-0 z-10 bg-black/30 sm:bg-black/20' />
+      <div className='overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20' />
       <div
         className={clsx(
           'modal-box settings-content z-20 flex flex-col rounded-none rounded-tl-2xl rounded-tr-2xl p-0 sm:rounded-2xl',
@@ -99,9 +112,6 @@ const Dialog: React.FC<DialogProps> = ({
           appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)] sm:pt-0',
           boxClassName,
         )}
-        style={{
-          transform: `translateY(${translateY}px)`,
-        }}
       >
         {window.innerWidth < 640 && (
           <div
