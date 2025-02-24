@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.17": {
+      "date": "2025-02-24",
+      "notes": [
+        "Add Arabic localization",
+        "Add Dockerfile to selfhost",
+        "Add safari-auth plugin for iOS OAuth",
+        "UX enhancements for mobile platforms with haptics feedback and pull-down dismissal"
+      ]
+    },
     "0.9.15": {
       "date": "2025-02-21",
       "notes": [

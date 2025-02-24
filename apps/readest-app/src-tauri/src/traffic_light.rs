@@ -7,7 +7,7 @@ use tauri::{
 }; // 0.8
 
 const WINDOW_CONTROL_PAD_X: f64 = 10.0;
-const WINDOW_CONTROL_PAD_Y: f64 = 20.0;
+const WINDOW_CONTROL_PAD_Y: f64 = 22.0;
 
 struct UnsafeWindowHandle(*mut std::ffi::c_void);
 unsafe impl Send for UnsafeWindowHandle {}
