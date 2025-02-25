@@ -24,6 +24,7 @@ import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
+import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
@@ -176,14 +177,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
+    const hexColor = color ? HIGHLIGHT_COLOR_HEX[color] : color;
     if (style === 'highlight') {
-      draw(Overlayer.highlight, { color });
+      draw(Overlayer.highlight, { color: hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
       const { writingMode } = defaultView.getComputedStyle(el);
-      draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color });
+      draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor });
     }
   };
 
