@@ -82,7 +82,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         title={_('Book Details')}
         isOpen={isOpen}
         onClose={handleClose}
-        className='!bg-[rgba(0,0,0,0.5)]'
+        bgClassName='sm:bg-black/50'
         boxClassName='sm:min-w-[480px] sm:h-auto'
         contentClassName='!px-6 !py-2'
       >

@@ -76,7 +76,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     if (!gridFrame) return;
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
-    const triangPos = getPosition(detail.a, rect, viewSettings.vertical);
+    const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
     const popupPos = getPopupPosition(
       triangPos,
       rect,
@@ -113,7 +113,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     if (!gridFrame) return;
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
-    const triangPos = getPosition(element, rect, viewSettings.vertical);
+    const triangPos = getPosition(element, rect, popupPadding, viewSettings.vertical);
     const popupPos = getPopupPosition(
       triangPos,
       rect,

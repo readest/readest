@@ -15,6 +15,7 @@ interface DialogProps {
   header?: ReactNode;
   title?: string;
   className?: string;
+  bgClassName?: string;
   boxClassName?: string;
   contentClassName?: string;
   onClose: () => void;
@@ -27,6 +28,7 @@ const Dialog: React.FC<DialogProps> = ({
   header,
   title,
   className,
+  bgClassName,
   boxClassName,
   contentClassName,
   onClose,
@@ -104,7 +106,7 @@ const Dialog: React.FC<DialogProps> = ({
       open={isOpen}
       className={clsx('modal sm:min-w-90 z-50 h-full w-full !bg-transparent sm:w-full', className)}
     >
-      <div className='overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20' />
+      <div className={clsx('overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20', bgClassName)} />
       <div
         className={clsx(
           'modal-box settings-content z-20 flex flex-col rounded-none rounded-tl-2xl rounded-tr-2xl p-0 sm:rounded-2xl',

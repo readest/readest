@@ -250,7 +250,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
       const rect = gridFrame.getBoundingClientRect();
-      const triangPos = getPosition(selection.range, rect, viewSettings.vertical);
+      const triangPos = getPosition(selection.range, rect, popupPadding, viewSettings.vertical);
       const annotPopupPos = getPopupPosition(
         triangPos,
         rect,

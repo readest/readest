@@ -64,7 +64,19 @@ const getIframeElement = (nodeElement: Range | Element): HTMLIFrameElement | nul
   return null;
 };
 
-export const getPosition = (target: Range | Element, rect: Rect, isVertical: boolean = false) => {
+const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => {
+  return {
+    x: Math.max(padding, Math.min(point.x, rect.right - padding)),
+    y: Math.max(padding, Math.min(point.y, rect.bottom - padding)),
+  };
+};
+
+export const getPosition = (
+  target: Range | Element,
+  rect: Rect,
+  paddingPx: number,
+  isVertical: boolean = false,
+) => {
   const frameElement = getIframeElement(target);
   const transform = frameElement ? getComputedStyle(frameElement).transform : '';
   const match = transform.match(/matrix\((.+)\)/);
@@ -80,10 +92,14 @@ export const getPosition = (target: Range | Element, rect: Rect, isVertical: boo
     const rightSpace = rect.right - first.right;
     const dir = leftSpace > rightSpace ? 'left' : 'right';
     const position = {
-      point: {
-        x: dir === 'left' ? first.left - rect.left - 6 : first.right - rect.left + 6,
-        y: (first.top + first.bottom) / 2 - rect.top,
-      },
+      point: constrainPointWithinRect(
+        {
+          x: dir === 'left' ? first.left - rect.left - 6 : first.right - rect.left + 6,
+          y: (first.top + first.bottom) / 2 - rect.top,
+        },
+        rect,
+        paddingPx,
+      ),
       dir,
     } as Position;
     const inView = pointIsInView(position.point);
@@ -119,12 +135,12 @@ export const getPopupPosition = (
     popupPoint.y = position.point.y - popupHeightPx;
   } else if (position.dir === 'down') {
     popupPoint.x = position.point.x - popupWidthPx / 2;
-    popupPoint.y = position.point.y + 5;
+    popupPoint.y = position.point.y + 6;
   } else if (position.dir === 'left') {
     popupPoint.x = position.point.x - popupWidthPx;
     popupPoint.y = position.point.y - popupHeightPx / 2;
   } else if (position.dir === 'right') {
-    popupPoint.x = position.point.x + 5;
+    popupPoint.x = position.point.x + 6;
     popupPoint.y = position.point.y - popupHeightPx / 2;
   }
 
