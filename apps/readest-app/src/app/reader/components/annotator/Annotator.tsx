@@ -95,11 +95,26 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       }
       setSelection({ key: bookKey, text: sel.toString(), range, index });
     };
+    // FIXME: extremely hacky way to dismiss system selection tools on iOS
+    const makeSelectionOnIOS = (sel: Selection) => {
+      isTextSelected.current = true;
+      const range = sel.getRangeAt(0);
+      setTimeout(() => {
+        sel.removeAllRanges();
+        setTimeout(() => {
+          if (!isTextSelected.current) return;
+          sel.addRange(range);
+          setSelection({ key: bookKey, text: range.toString(), range, index });
+        }, 40);
+      }, 0);
+    };
     const handleSelectionchange = () => {
       // Available on iOS, Android and Desktop, fired when the selection is changed
       // Ideally the popup only shows when the selection is done,
       // but on Android no proper events are fired to notify selection done or I didn't find it,
       // we make the popup show when the selection is changed
+      if (osPlatform === 'ios' || appService?.isIOSApp) return;
+
       const sel = doc.getSelection();
       if (isValidSelection(sel)) {
         if (osPlatform === 'android' && isTouchstarted.current) {
@@ -118,7 +133,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // Note that on Android, pointerup event is fired after an additional touch event
       const sel = doc.getSelection();
       if (isValidSelection(sel)) {
-        makeSelection(sel, true);
+        if (osPlatform === 'ios' || appService?.isIOSApp) {
+          makeSelectionOnIOS(sel);
+        } else {
+          makeSelection(sel, true);
+        }
       }
     };
     const handleTouchstart = () => {
