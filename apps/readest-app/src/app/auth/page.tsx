@@ -332,20 +332,16 @@ export default function AuthPage() {
           Icon={FaGithub}
           label={_('Sign in with GitHub')}
         />
-        {!appService?.isIOSApp && (
-          <div>
-            <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
-            <Auth
-              supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa }}
-              theme={isDarkMode ? 'dark' : 'light'}
-              magicLink={true}
-              providers={[]}
-              redirectTo={getTauriRedirectTo(false)}
-              localization={getAuthLocalization()}
-            />
-          </div>
-        )}
+        <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
+        <Auth
+          supabaseClient={supabase}
+          appearance={{ theme: ThemeSupa }}
+          theme={isDarkMode ? 'dark' : 'light'}
+          magicLink={true}
+          providers={[]}
+          redirectTo={getTauriRedirectTo(false)}
+          localization={getAuthLocalization()}
+        />
       </div>
     </div>
   ) : (

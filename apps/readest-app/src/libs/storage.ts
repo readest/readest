@@ -1,5 +1,6 @@
 import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
-import { getAccessToken, getUserID } from '@/utils/access';
+import { getUserID } from '@/utils/access';
+import { fetchWithAuth } from '@/utils/fetch';
 import {
   tauriUpload,
   tauriDownload,
@@ -13,27 +14,6 @@ const API_ENDPOINTS = {
   upload: getAPIBaseUrl() + '/storage/upload',
   download: getAPIBaseUrl() + '/storage/download',
   delete: getAPIBaseUrl() + '/storage/delete',
-};
-
-const fetchWithAuth = async (url: string, options: RequestInit) => {
-  const token = await getAccessToken();
-  if (!token) {
-    throw new Error('Not authenticated');
-  }
-  const headers = {
-    ...options.headers,
-    Authorization: `Bearer ${token}`,
-  };
-
-  const response = await fetch(url, { ...options, headers });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Error:', errorData.error || response.statusText);
-    throw new Error(errorData.error || 'Request failed');
-  }
-
-  return response;
 };
 
 export const createProgressHandler = (

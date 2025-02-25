@@ -13,7 +13,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStoragePlanData } from '@/utils/access';
-import { navigateToLogin } from '@/utils/nav';
+import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { QuotaType } from '@/types/user';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -26,7 +26,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig } = useEnv();
-  const { token, user, logout } = useAuth();
+  const { token, user } = useAuth();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -47,11 +47,8 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
-  const handleUserLogout = () => {
-    logout();
-    settings.keepLogin = false;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+  const handleUserProfile = () => {
+    navigateToProfile(router);
     setIsDropdownOpen?.(false);
   };
 
@@ -135,8 +132,8 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           }
         >
           <ul>
-            <Quota quotas={quotas} />
-            <MenuItem label={_('Sign Out')} noIcon onClick={handleUserLogout} />
+            <Quota quotas={quotas} className='h-10 pl-4 pr-2' />
+            <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
           </ul>
         </MenuItem>
       ) : (

@@ -25,6 +25,10 @@ export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
   router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
 };
 
+export const navigateToProfile = (router: ReturnType<typeof useRouter>) => {
+  router.push('/user');
+};
+
 export const navigateToLibrary = (
   router: ReturnType<typeof useRouter>,
   queryParams?: string,

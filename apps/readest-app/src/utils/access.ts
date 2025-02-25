@@ -10,7 +10,7 @@ interface Token {
   [key: string]: string | number;
 }
 
-export const getUserPlan = async (token: string): Promise<UserPlan> => {
+export const getUserPlan = (token: string): UserPlan => {
   const data = jwtDecode<Token>(token) || {};
   return data['plan'] || 'free';
 };

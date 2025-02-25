@@ -28,7 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { user, token } = await getUserAndToken(req.headers['authorization']);
   let deeplApiUrl = DEEPL_FREE_API;
   if (user && token) {
-    const userPlan = await getUserPlan(token);
+    const userPlan = getUserPlan(token);
     if (userPlan !== 'free') deeplApiUrl = DEEPL_PRO_API;
   }
   const deeplAuthKey =
