@@ -95,9 +95,9 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 The Readest app is available for download! 🥳 🚀
 
 - macOS : Search for "Readest" on the [macOS App Store][link-macos-appstore].
-- Windows / Linux: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
+- Windows / Linux / Android: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
+- iOS: Available on TestFlight (send your Apple ID to readestapp@gmail.com to request access)
 - Web: Visit [https://web.readest.com][link-web-readest].
-- iOS / Android: coming soon 👀
 
 ## Requirements
 
@@ -149,8 +149,9 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 ### 4. Build for Development
 
 ```bash
+# Start development for the Tauri app
 pnpm tauri dev
-# or start development for the Web version only
+# or start development for the Web app
 pnpm dev-web
 ```
 
