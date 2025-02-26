@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.18": {
+      "date": "2025-02-26",
+      "notes": [
+        "Add user profile page and option to delete account in the cloud",
+        "Fix TTS failed to start with invalid book language",
+        "Enhancements on iOS with modals and annotation tools",
+        "UX enhancements with modern highlights colors"
+      ]
+    },
     "0.9.17": {
       "date": "2025-02-24",
       "notes": [

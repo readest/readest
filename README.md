@@ -94,9 +94,8 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 The Readest app is available for download! 🥳 🚀
 
-- macOS : Search for "Readest" on the [macOS App Store][link-macos-appstore].
+- macOS / iOS / iPadOS : Search for "Readest" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to readestapp@gmail.com to request access).
 - Windows / Linux / Android: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
-- iOS: Available on TestFlight (send your Apple ID to readestapp@gmail.com to request access)
 - Web: Visit [https://web.readest.com][link-web-readest].
 
 ## Requirements
@@ -242,7 +241,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
 [badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
-[link-macos-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
+[link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
 [link-web-readest]: https://web.readest.com
 [link-gh-releases]: https://github.com/readest/readest/releases
