@@ -112,24 +112,24 @@ const TTSPanel = ({
         </div>
       </div>
       <div className='flex items-center justify-between space-x-2'>
-        <button onClick={onBackward} className='hover:bg-base-200/75 rounded-full p-1'>
+        <button onClick={onBackward} className='rounded-full p-1'>
           <MdFastRewind size={iconSize32} />
         </button>
-        <button onClick={onTogglePlay} className='hover:bg-base-200/75 rounded-full p-1'>
+        <button onClick={onTogglePlay} className='rounded-full p-1'>
           {isPlaying ? (
             <MdPauseCircle size={iconSize48} className='fill-primary' />
           ) : (
             <MdPlayCircle size={iconSize48} className='fill-primary' />
           )}
         </button>
-        <button onClick={onForward} className='hover:bg-base-200/75 rounded-full p-1'>
+        <button onClick={onForward} className='rounded-full p-1'>
           <MdFastForward size={iconSize32} />
         </button>
-        <button onClick={onStop} className='hover:bg-base-200/75 rounded-full p-1'>
+        <button onClick={onStop} className='rounded-full p-1'>
           <MdStop size={iconSize32} />
         </button>
         <div className='dropdown dropdown-top'>
-          <button tabIndex={0} className='hover:bg-base-200/75 rounded-full p-1'>
+          <button tabIndex={0} className='rounded-full p-1'>
             <RiVoiceAiFill size={iconSize32} />
           </button>
           <ul

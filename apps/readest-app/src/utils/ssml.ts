@@ -58,5 +58,11 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
 
 export const parseSSMLLang = (ssml: string): string | null => {
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
-  return match ? match[1]! : null;
+  if (match && match[1]) {
+    const parts = match[1].split('-');
+    return parts.length > 1
+      ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
+      : parts[0]!.toLowerCase();
+  }
+  return null;
 };

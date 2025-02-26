@@ -95,11 +95,11 @@ const ProfilePage = () => {
           name: _('Free Tier'),
           color: 'bg-gray-200 text-gray-800',
           features: [
+            _('Community Support'),
+            _('DeepL Free Access'),
+            _('Essential Text-to-Speech Voices'),
             _('Unlimited Offline/Online Reading'),
             _('Unlimited Cloud Sync Devices'),
-            _('Essential Text-to-Speech Voices'),
-            _('DeepL Free Access'),
-            _('Community Support'),
             _('500 MB Cloud Sync Space'),
           ],
         };
@@ -109,9 +109,9 @@ const ProfilePage = () => {
           color: 'bg-blue-200 text-blue-800',
           features: [
             _('Includes All Free Tier Benefits'),
+            _('Priority Support'),
             _('AI Summaries'),
             _('AI Translations'),
-            _('Priority Support'),
             _('DeepL Pro Access'),
             _('Expanded Text-to-Speech Voices'),
             _('2000 MB Cloud Sync Space'),
@@ -196,16 +196,15 @@ const ProfilePage = () => {
                   <span
                     className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${planDetails.color}`}
                   >
-                    {planDetails.name} {_('Plan')}
+                    {planDetails.name}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className='bg-base-100 mb-8 rounded-lg p-6'>
-              <h3 className='text-base-content mb-2 text-lg font-semibold'>{_('Plan Details')}</h3>
+              <h3 className='text-base-content mb-2 text-lg font-semibold'>{_('Features')}</h3>
               <div className='mt-6'>
-                <p className='text-base-content/85 mb-2 text-base'>{_('Features')}</p>
                 <ul className='text-base-content/60 grid grid-cols-1 gap-2 md:grid-cols-2'>
                   {planDetails.features.map((feature, index) => (
                     <li key={index} className='flex items-center'>
