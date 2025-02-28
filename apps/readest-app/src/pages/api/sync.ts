@@ -30,19 +30,26 @@ const getUserAndToken = async (req: NextRequest) => {
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) return {};
-  return { user, token };
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    if (error?.message === 'fetch failed') {
+      return { error: 'Network error' };
+    } else if (error || !user) {
+      return { error: 'Not authenticated' };
+    }
+    return { user, token };
+  } catch {
+    return { error: 'Network error' };
+  }
 };
 
 export async function GET(req: NextRequest) {
-  const { user, token } = await getUserAndToken(req);
-  if (!user || !token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { user, token, error } = await getUserAndToken(req);
+  if (!user || !token || error) {
+    return NextResponse.json({ error: error || 'Unknown error' }, { status: 401 });
   }
   const supabase = createSupabaseClient(token);
 
@@ -114,9 +121,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, token } = await getUserAndToken(req);
-  if (!user || !token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { user, token, error } = await getUserAndToken(req);
+  if (!user || !token || error) {
+    return NextResponse.json({ error: error || 'Unknown error' }, { status: 401 });
   }
   const supabase = createSupabaseClient(token);
 
