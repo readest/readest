@@ -10,6 +10,7 @@ import {
 } from '@/types/book';
 import { ReadSettings, SystemSettings } from '@/types/settings';
 import { UserStorageQuota } from '@/types/user';
+import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
 export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
@@ -62,8 +63,8 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   scrolled: false,
   disableClick: false,
   maxColumnCount: 2,
-  maxInlineSize: 720,
-  maxBlockSize: 1440,
+  maxInlineSize: getDefaultMaxInlineSize(),
+  maxBlockSize: getDefaultMaxBlockSize(),
   animated: false,
   writingMode: 'auto',
   vertical: false,
@@ -380,8 +381,6 @@ export const ANDROID_FONTS = [
   'Verdana',
   'XiHeiti',
 ];
-
-export const ONE_COLUMN_MAX_INLINE_SIZE = 9999;
 
 export const BOOK_IDS_SEPARATOR = '+';
 

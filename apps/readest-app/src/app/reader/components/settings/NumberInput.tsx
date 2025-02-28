@@ -9,6 +9,7 @@ interface NumberInputProps {
   min: number;
   max: number;
   step?: number;
+  disabled?: boolean;
   onChange: (value: number) => void;
 }
 
@@ -20,6 +21,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   min,
   max,
   step,
+  disabled,
 }) => {
   const [localValue, setLocalValue] = useState(value);
   const numberStep = step || 1;
@@ -74,13 +76,13 @@ const NumberInput: React.FC<NumberInputProps> = ({
         />
         <button
           onClick={decrement}
-          className={`btn btn-circle btn-sm ${value === min ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${value <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
           <FiMinus className='h-4 w-4' />
         </button>
         <button
           onClick={increment}
-          className={`btn btn-circle btn-sm ${value === max ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${value >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
           <FiPlus className='h-4 w-4' />
         </button>

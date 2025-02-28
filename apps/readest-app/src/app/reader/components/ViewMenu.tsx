@@ -5,17 +5,13 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 
-import {
-  MAX_ZOOM_LEVEL,
-  MIN_ZOOM_LEVEL,
-  ONE_COLUMN_MAX_INLINE_SIZE,
-  ZOOM_STEP,
-} from '@/services/constants';
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import MenuItem from '@/components/MenuItem';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme, ThemeMode } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
+import { getMaxInlineSize } from '@/utils/config';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -65,7 +61,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
-      `${viewSettings.maxColumnCount === 1 || isScrolledMode ? ONE_COLUMN_MAX_INLINE_SIZE : viewSettings.maxInlineSize}px`,
+      `${getMaxInlineSize(viewSettings)}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
     viewSettings!.scrolled = isScrolledMode;

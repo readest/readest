@@ -12,7 +12,6 @@ import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromWritingMode } from '@/utils/book';
 import { useTheme } from '@/hooks/useTheme';
-import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import {
   handleKeydown,
   handleMousedown,
@@ -23,6 +22,7 @@ import {
   handleTouchMove,
   handleTouchEnd,
 } from '../utils/iframeEventHandlers';
+import { getMaxInlineSize } from '@/utils/config';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -154,10 +154,7 @@ const FoliateViewer: React.FC<{
       const gapPercent = viewSettings.gapPercent!;
       const animated = viewSettings.animated!;
       const maxColumnCount = viewSettings.maxColumnCount!;
-      const maxInlineSize =
-        maxColumnCount === 1 || isScrolled
-          ? ONE_COLUMN_MAX_INLINE_SIZE
-          : viewSettings.maxInlineSize!;
+      const maxInlineSize = getMaxInlineSize(viewSettings);
       const maxBlockSize = viewSettings.maxBlockSize!;
       if (animated) {
         view.renderer.setAttribute('animated', '');

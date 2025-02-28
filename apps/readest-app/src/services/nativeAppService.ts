@@ -127,6 +127,7 @@ export class NativeAppService extends BaseAppService {
   hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
+  hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

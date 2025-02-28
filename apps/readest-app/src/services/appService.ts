@@ -53,6 +53,7 @@ export abstract class BaseAppService implements AppService {
   abstract hasRoundedWindow: boolean;
   abstract hasSafeAreaInset: boolean;
   abstract hasHaptics: boolean;
+  abstract hasSysFontsList: boolean;
 
   abstract resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string };
   abstract getCoverImageUrl(book: Book): string;

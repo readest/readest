@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { MdOutlineAutoMode } from 'react-icons/md';
 import { MdOutlineTextRotationDown, MdOutlineTextRotationNone } from 'react-icons/md';
 
-import { ONE_COLUMN_MAX_INLINE_SIZE } from '@/services/constants';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
+import { getMaxInlineSize } from '@/utils/config';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import NumberInput from './NumberInput';
 
@@ -147,10 +147,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setSettings(settings);
     }
     view?.renderer.setAttribute('max-column-count', maxColumnCount);
-    view?.renderer.setAttribute(
-      'max-inline-size',
-      `${maxColumnCount === 1 || viewSettings.scrolled ? ONE_COLUMN_MAX_INLINE_SIZE : maxInlineSize}px`,
-    );
+    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxColumnCount]);
 
@@ -161,10 +158,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.maxInlineSize = maxInlineSize;
       setSettings(settings);
     }
-    view?.renderer.setAttribute(
-      'max-inline-size',
-      `${maxColumnCount === 1 || viewSettings.scrolled ? ONE_COLUMN_MAX_INLINE_SIZE : maxInlineSize}px`,
-    );
+    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxInlineSize]);
 
@@ -353,6 +347,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Maximum Inline Size')}
               value={maxInlineSize}
               onChange={setMaxInlineSize}
+              disabled={maxColumnCount === 1 || viewSettings.scrolled}
               min={500}
               max={9999}
               step={100}

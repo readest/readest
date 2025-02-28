@@ -17,9 +17,10 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
+import { useEnv } from '@/context/EnvContext';
 import { getStyles } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
-import { FONT_ENUM_SUPPORTED_OS_PLATFORMS, getSysFontsList } from '@/utils/font';
+import { getSysFontsList } from '@/utils/font';
 import { isTauriAppPlatform } from '@/services/environment';
 
 interface FontFaceProps {
@@ -60,6 +61,7 @@ const FontFace = ({
 
 const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const view = getView(bookKey);
@@ -109,7 +111,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight!);
 
   useEffect(() => {
-    if (isTauriAppPlatform() && FONT_ENUM_SUPPORTED_OS_PLATFORMS.includes(osPlatform)) {
+    if (isTauriAppPlatform() && appService?.hasSysFontsList) {
       getSysFontsList().then((fonts) => {
         setSysFonts(fonts);
       });
