@@ -2,8 +2,8 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect, Suspense } from 'react';
+import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
@@ -28,6 +28,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { tauriQuitApp } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
@@ -38,7 +39,12 @@ import Bookshelf from './components/Bookshelf';
 import BookDetailModal from '@/components/BookDetailModal';
 import useShortcuts from '@/hooks/useShortcuts';
 
-const LibraryPage = () => {
+const LibraryPageWithSearchParams = () => {
+  const searchParams = useSearchParams();
+  return <LibraryPageContent searchParams={searchParams} />;
+};
+
+const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
@@ -47,7 +53,7 @@ const LibraryPage = () => {
     updateBook,
     setLibrary,
     checkOpenWithBooks,
-    clearOpenWithBooks,
+    setCheckOpenWithBooks,
   } = useLibraryStore();
   const _ = useTranslation();
   const { updateAppTheme } = useTheme();
@@ -62,6 +68,8 @@ const LibraryPage = () => {
   }>({});
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useOpenWithBooks();
 
   const { pullLibrary, pushLibrary } = useBooksSync({
     onSyncStart: () => setLoading(true),
@@ -113,7 +121,9 @@ const LibraryPage = () => {
 
       console.log('Opening books:', bookIds);
       if (bookIds.length > 0) {
-        navigateToReader(router, bookIds);
+        setTimeout(() => {
+          navigateToReader(router, bookIds);
+        }, 0);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -148,7 +158,7 @@ const LibraryPage = () => {
       if (checkOpenWithBooks && isTauriAppPlatform()) {
         await handleOpenWithBooks(appService, libraryBooks);
       } else {
-        clearOpenWithBooks();
+        setCheckOpenWithBooks(false);
         setLibrary(libraryBooks);
       }
 
@@ -163,7 +173,7 @@ const LibraryPage = () => {
       if (openWithFiles.length > 0) {
         await processOpenWithFiles(appService, openWithFiles, libraryBooks);
       } else {
-        clearOpenWithBooks();
+        setCheckOpenWithBooks(false);
         setLibrary(libraryBooks);
       }
     };
@@ -171,10 +181,11 @@ const LibraryPage = () => {
     initLogin();
     initLibrary();
     return () => {
-      clearOpenWithBooks();
+      setCheckOpenWithBooks(false);
+      isInitiating.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -446,6 +457,20 @@ const LibraryPage = () => {
       <AboutWindow />
       <Toast />
     </div>
+  );
+};
+
+const LibraryPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+          <Spinner loading />
+        </div>
+      }
+    >
+      <LibraryPageWithSearchParams />
+    </Suspense>
   );
 };
 

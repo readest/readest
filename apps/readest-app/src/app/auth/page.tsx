@@ -129,7 +129,7 @@ export default function AuthPage() {
   };
 
   const handleOAuthUrl = async (url: string) => {
-    console.log('Received OAuth URL:', url);
+    console.log('Handle OAuth URL:', url);
     const hashMatch = url.match(/#(.*)/);
     if (hashMatch) {
       const hash = hashMatch[1];

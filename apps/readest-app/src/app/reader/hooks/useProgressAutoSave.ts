@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { throttle } from '@/utils/throttle';
 
 export const useProgressAutoSave = (bookKey: string) => {
-  const { envConfig, appService } = useEnv();
+  const { envConfig } = useEnv();
   const { getConfig, saveConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
   const progress = getProgress(bookKey);
@@ -22,9 +22,6 @@ export const useProgressAutoSave = (bookKey: string) => {
   );
 
   useEffect(() => {
-    // FIXME: On Android and iOS we need a better way to be notified
-    // when the app is about to go in background
-    if (!appService?.isMobile || !progress) return;
     saveBookConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, bookKey]);

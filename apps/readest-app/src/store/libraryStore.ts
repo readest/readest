@@ -5,7 +5,7 @@ import { EnvConfigType } from '@/services/environment';
 interface LibraryState {
   library: Book[];
   checkOpenWithBooks: boolean;
-  clearOpenWithBooks: () => void;
+  setCheckOpenWithBooks: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
 }
@@ -13,7 +13,7 @@ interface LibraryState {
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
   checkOpenWithBooks: true,
-  clearOpenWithBooks: () => set({ checkOpenWithBooks: false }),
+  setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setLibrary: (books) => set({ library: books }),
   updateBook: async (envConfig: EnvConfigType, book: Book) => {
     const appService = await envConfig.getAppService();
