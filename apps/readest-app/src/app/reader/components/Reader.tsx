@@ -16,7 +16,7 @@ import ReaderContent from './ReaderContent';
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
-  const { library, setLibrary } = useLibraryStore();
+  const { getVisibleLibrary, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
 
   const { updateAppTheme } = useTheme();
@@ -38,7 +38,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, []);
 
   return (
-    library.length > 0 &&
+    getVisibleLibrary().length > 0 &&
     settings.globalReadSettings && (
       <div
         className={clsx(

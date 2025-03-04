@@ -17,7 +17,7 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
-  const { library } = useLibraryStore();
+  const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const handleParallelView = (id: string) => {
     openParallelView(id);
@@ -48,26 +48,28 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     >
       <MenuItem label={_('Parallel Read')} noIcon>
         <ul className='max-h-60 overflow-y-auto'>
-          {library.slice(0, 20).map((book) => (
-            <MenuItem
-              key={book.hash}
-              icon={
-                <Image
-                  src={book.coverImageUrl!}
-                  alt={book.title}
-                  width={56}
-                  height={80}
-                  className='aspect-auto max-h-8 max-w-6 rounded-sm shadow-md'
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              }
-              label={book.title}
-              labelClass='max-w-36'
-              onClick={() => handleParallelView(book.hash)}
-            />
-          ))}
+          {getVisibleLibrary()
+            .slice(0, 20)
+            .map((book) => (
+              <MenuItem
+                key={book.hash}
+                icon={
+                  <Image
+                    src={book.coverImageUrl!}
+                    alt={book.title}
+                    width={56}
+                    height={80}
+                    className='aspect-auto max-h-8 max-w-6 rounded-sm shadow-md'
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                }
+                label={book.title}
+                labelClass='max-w-36'
+                onClick={() => handleParallelView(book.hash)}
+              />
+            ))}
         </ul>
       </MenuItem>
       <MenuItem label={_('Reload Page')} noIcon shortcut='Shift+R' onClick={handleReloadPage} />

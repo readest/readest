@@ -3,8 +3,9 @@ import { Book } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 
 interface LibraryState {
-  library: Book[];
+  library: Book[]; // might contain deleted books
   checkOpenWithBooks: boolean;
+  getVisibleLibrary: () => Book[];
   setCheckOpenWithBooks: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
@@ -13,6 +14,7 @@ interface LibraryState {
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
   checkOpenWithBooks: true,
+  getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
   setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setLibrary: (books) => set({ library: books }),
   updateBook: async (envConfig: EnvConfigType, book: Book) => {
