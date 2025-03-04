@@ -180,8 +180,6 @@ export async function POST(req: NextRequest) {
           clientDeletedAt > serverDeletedAt || clientUpdatedAt > serverUpdatedAt;
 
         if (clientIsNewer) {
-          // use server updated_at for updated records
-          dbRec.updated_at = new Date().toISOString();
           const { data: updated, error: updateError } = await supabase
             .from(table)
             .update(dbRec)

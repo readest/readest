@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
+import { BookNote } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 
@@ -11,12 +12,6 @@ export const useNotesSync = (bookKey: string) => {
 
   const config = getConfig(bookKey);
   const bookHash = bookKey.split('-')[0]!;
-
-  useEffect(() => {
-    if (!user) return;
-    syncNotes([], bookHash, 'pull');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const lastSyncTime = useRef<number>(0);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,13 +52,25 @@ export const useNotesSync = (bookKey: string) => {
   }, [config]);
 
   useEffect(() => {
-    if (syncedNotes?.length && config?.location) {
+    const processNewNote = (note: BookNote) => {
+      const oldNotes = config?.booknotes ?? [];
+      const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
+      if (existingNote) {
+        if (existingNote.updatedAt < note.updatedAt) {
+          return { ...existingNote, ...note };
+        } else {
+          return { ...note, ...existingNote };
+        }
+      }
+      return note;
+    };
+    if (syncedNotes?.length && config) {
       const newNotes = syncedNotes.filter((note) => note.bookHash === bookHash);
       if (!newNotes.length) return;
       const oldNotes = config.booknotes ?? [];
       const mergedNotes = [
         ...oldNotes.filter((oldNote) => !newNotes.some((newNote) => newNote.id === oldNote.id)),
-        ...newNotes,
+        ...newNotes.map(processNewNote),
       ];
       setConfig(bookKey, { ...config, booknotes: mergedNotes });
     }
