@@ -178,7 +178,6 @@ const getLayoutStyles = (
     background: var(--background-set, none);
   }
   body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
-    border-color: currentColor !important;
     ${bg === '#ffffff' ? '' : `color: inherit;`}
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
   }
@@ -226,6 +225,10 @@ const getLayoutStyles = (
 
   .calibre {
     color: unset;
+  }
+
+  .chapterHeader {
+    border-color: unset;
   }
 `;
 
