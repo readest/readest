@@ -10,7 +10,7 @@ import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
-import { getBookDirFromWritingMode } from '@/utils/book';
+import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useTheme } from '@/hooks/useTheme';
 import {
   handleKeydown,
@@ -58,8 +58,9 @@ const FoliateViewer: React.FC<{
     if (detail.doc) {
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
-      viewSettings.vertical = writingDir?.vertical || false;
-      viewSettings.rtl = writingDir?.rtl || false;
+      viewSettings.vertical =
+        writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
+      viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
       setViewSettings(bookKey, viewSettings);
       if (viewSettings.scrolled && shouldAutoHideScrollbar) {
         handleScrollbarAutoHide(detail.doc);
@@ -137,21 +138,24 @@ const FoliateViewer: React.FC<{
       document.body.append(view);
       containerRef.current?.appendChild(view);
 
+      const viewSettings = getViewSettings(bookKey)!;
+      const writingMode = viewSettings.writingMode;
+      if (writingMode) {
+        const settingsDir = getBookDirFromWritingMode(writingMode);
+        const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
+        if (settingsDir !== 'auto') {
+          bookDoc.dir = settingsDir;
+        } else if (languageDir !== 'auto') {
+          bookDoc.dir = languageDir;
+        }
+      }
+
       await view.open(bookDoc);
       // make sure we can listen renderer events after opening book
       viewRef.current = view;
       setFoliateView(bookKey, view);
 
-      const viewSettings = getViewSettings(bookKey)!;
       view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
-
-      const writingMode = viewSettings.writingMode;
-      if (writingMode) {
-        const dir = getBookDirFromWritingMode(writingMode);
-        if (dir !== 'auto') {
-          view.book.dir = dir;
-        }
-      }
 
       const isScrolled = viewSettings.scrolled!;
       const marginPx = viewSettings.marginPx!;

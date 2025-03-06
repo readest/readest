@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MdOutlineAutoMode } from 'react-icons/md';
-import { MdOutlineTextRotationDown, MdOutlineTextRotationNone } from 'react-icons/md';
+import { MdOutlineTextRotationNone, MdTextRotateVertical } from 'react-icons/md';
+import { TbTextDirectionRtl } from 'react-icons/tb';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -175,11 +176,18 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     // global settings are not supported for writing mode
+    const prevWritingMode = viewSettings.writingMode;
     viewSettings.writingMode = writingMode;
     setViewSettings(bookKey, viewSettings);
     if (view) {
       view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
       view.book.dir = getBookDirFromWritingMode(writingMode);
+    }
+    if (
+      prevWritingMode !== writingMode &&
+      (writingMode === 'horizontal-rl' || prevWritingMode === 'horizontal-rl')
+    ) {
+      setTimeout(() => window.location.reload(), 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [writingMode]);
@@ -196,11 +204,12 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [overrideLayout]);
 
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
-  const isCJKBook = langCode === 'zh' || langCode === 'ja' || langCode === 'ko';
+  const mightBeRTLBook =
+    langCode === 'zh' || langCode === 'ja' || langCode === 'ko' || langCode === '';
 
   return (
     <div className='my-4 w-full space-y-6'>
-      {isCJKBook && (
+      {mightBeRTLBook && (
         <div className='w-full'>
           <div className='flex items-center justify-between'>
             <h2 className='font-medium'>{_('Writing Mode')}</h2>
@@ -228,7 +237,16 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   className={`btn btn-ghost btn-circle ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('vertical-rl')}
                 >
-                  <MdOutlineTextRotationDown />
+                  <MdTextRotateVertical />
+                </button>
+              </div>
+
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('RTL Direction')}>
+                <button
+                  className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setWritingMode('horizontal-rl')}
+                >
+                  <TbTextDirectionRtl />
                 </button>
               </div>
             </div>

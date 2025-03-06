@@ -57,9 +57,9 @@ export const listFormater = (narrow = false, lang = userLang) => {
 export const getBookLangCode = (lang: string | string[] | undefined) => {
   try {
     const bookLang = typeof lang === 'string' ? lang : lang?.[0];
-    return bookLang ? bookLang.split('-')[0]! : 'en';
+    return bookLang ? bookLang.split('-')[0]! : '';
   } catch {
-    return 'en';
+    return '';
   }
 };
 
@@ -67,7 +67,7 @@ export const formatAuthors = (
   contributors: string | Contributor | [string | Contributor],
   bookLang?: string | string[],
 ) => {
-  const langCode = getBookLangCode(bookLang);
+  const langCode = getBookLangCode(bookLang) || 'en';
   return Array.isArray(contributors)
     ? listFormater(langCode === 'zh', langCode).format(
         contributors.map((contributor) =>
@@ -88,6 +88,10 @@ export const formatPublisher = (publisher: string | LanguageMap) => {
 
 export const formatLanguage = (lang: string | string[] | undefined) => {
   return Array.isArray(lang) ? lang.join(', ') : lang;
+};
+
+export const primaryLanguage = (lang: string | string[] | undefined) => {
+  return Array.isArray(lang) ? lang[0] : lang;
 };
 
 export const formatDate = (date: string | number | Date | undefined) => {
@@ -130,4 +134,12 @@ export const getBookDirFromWritingMode = (writingMode: WritingMode) => {
     default:
       return 'auto';
   }
+};
+
+export const getBookDirFromLanguage = (language: string | string[] | undefined) => {
+  const lang = primaryLanguage(language);
+  if (!lang) return 'auto';
+  const rtlLanguages = new Set(['ar', 'he', 'fa', 'ur', 'dv', 'ps', 'sd', 'yi']);
+  const primaryLang = lang.split('-')[0]!.toLowerCase();
+  return rtlLanguages.has(primaryLang) ? 'rtl' : 'auto';
 };
