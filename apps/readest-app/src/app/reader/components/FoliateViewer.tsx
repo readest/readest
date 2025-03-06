@@ -12,6 +12,7 @@ import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useTheme } from '@/hooks/useTheme';
+import { useUICSS } from '@/hooks/useUICSS';
 import {
   handleKeydown,
   handleMousedown,
@@ -36,6 +37,7 @@ const FoliateViewer: React.FC<{
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { themeCode } = useTheme();
+  const viewSettings = getViewSettings(bookKey)!;
 
   const [toastMessage, setToastMessage] = useState('');
   useEffect(() => {
@@ -43,6 +45,7 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
+  useUICSS(viewSettings);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
 
@@ -138,7 +141,6 @@ const FoliateViewer: React.FC<{
       document.body.append(view);
       containerRef.current?.appendChild(view);
 
-      const viewSettings = getViewSettings(bookKey)!;
       const writingMode = viewSettings.writingMode;
       if (writingMode) {
         const settingsDir = getBookDirFromWritingMode(writingMode);

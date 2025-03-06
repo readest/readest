@@ -52,7 +52,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setDraftStylesheet(formattedCSS);
     setDraftStylesheetSaved(true);
     viewSettings.userStylesheet = formattedCSS;
-    setViewSettings(bookKey, viewSettings);
+    setViewSettings(bookKey, { ...viewSettings });
 
     if (isFontLayoutSettingsGlobal) {
       settings.globalViewSettings.userStylesheet = formattedCSS;
