@@ -59,6 +59,7 @@ const FoliateViewer: React.FC<{
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
       viewSettings.vertical = writingDir?.vertical || false;
+      viewSettings.rtl = writingDir?.rtl || false;
       setViewSettings(bookKey, viewSettings);
       if (viewSettings.scrolled && shouldAutoHideScrollbar) {
         handleScrollbarAutoHide(detail.doc);
@@ -146,7 +147,10 @@ const FoliateViewer: React.FC<{
 
       const writingMode = viewSettings.writingMode;
       if (writingMode) {
-        view.book.dir = getBookDirFromWritingMode(writingMode);
+        const dir = getBookDirFromWritingMode(writingMode);
+        if (dir !== 'auto') {
+          view.book.dir = dir;
+        }
       }
 
       const isScrolled = viewSettings.scrolled!;

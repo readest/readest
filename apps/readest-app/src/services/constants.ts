@@ -68,6 +68,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   animated: false,
   writingMode: 'auto',
   vertical: false,
+  rtl: false,
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

@@ -250,7 +250,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={0.5}
             />
             <NumberInput
-              className='config-item-top'
               label={_('Line Spacing')}
               value={lineHeight}
               onChange={setLineHeight}
@@ -259,7 +258,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={0.1}
             />
             <NumberInput
-              className='config-item-top'
               label={_('Word Spacing')}
               value={wordSpacing}
               onChange={setWordSpacing}
@@ -268,7 +266,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={0.5}
             />
             <NumberInput
-              className='config-item-top'
               label={_('Letter Spacing')}
               value={letterSpacing}
               onChange={setLetterSpacing}
@@ -277,7 +274,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={0.1}
             />
             <NumberInput
-              className='config-item-top'
               label={_('Text Indent')}
               value={textIndent}
               onChange={setTextIndent}

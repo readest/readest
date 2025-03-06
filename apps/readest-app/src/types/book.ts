@@ -66,6 +66,7 @@ export interface BookLayout {
   animated: boolean;
   writingMode: WritingMode;
   vertical: boolean;
+  rtl: boolean;
 }
 
 export interface BookStyle {

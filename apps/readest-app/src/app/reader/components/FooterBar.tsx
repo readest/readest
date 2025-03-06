@@ -20,10 +20,12 @@ interface FooterBarProps {
 const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { hoveredBookKey, setHoveredBookKey, getView, getProgress } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, getView, getProgress, getViewSettings } =
+    useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const view = getView(bookKey);
   const progress = getProgress(bookKey);
+  const viewSettings = getViewSettings(bookKey);
 
   const handleProgressChange = (event: React.ChangeEvent) => {
     const newProgress = parseInt((event.target as HTMLInputElement).value, 10);
@@ -92,7 +94,7 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
       </span>
       <input
         type='range'
-        className='text-base-content mx-2 w-full'
+        className={clsx('text-base-content mx-2 w-full', viewSettings?.rtl && 'direction-rtl')}
         min={0}
         max={100}
         value={pageinfoValid ? progressFraction * 100 : 0}

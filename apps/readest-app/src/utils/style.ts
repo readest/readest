@@ -182,6 +182,7 @@ const getLayoutStyles = (
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
   }
   body {
+    overflow: unset;
     zoom: ${zoomLevel};
   }
   svg, img {
