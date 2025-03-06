@@ -76,7 +76,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const dictPopupHeight = Math.min(300, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
   const transPopupHeight = Math.min(360, maxHeight);
-  const annotPopupWidth = useResponsiveSize(280);
+  const annotPopupWidth = useResponsiveSize(300);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 8;
 
@@ -487,6 +487,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       )}
       {showAnnotPopup && trianglePosition && annotPopupPosition && (
         <AnnotationPopup
+          dir={viewSettings.rtl ? 'rtl' : 'ltr'}
           buttons={buttons}
           position={annotPopupPosition}
           trianglePosition={trianglePosition}

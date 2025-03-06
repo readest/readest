@@ -26,9 +26,10 @@ const SidebarHeader: React.FC<{
   return (
     <div
       className={clsx(
-        'sidebar-header flex h-11 items-center justify-between pr-2',
-        isTrafficLightVisible ? 'pl-20' : 'pl-1.5',
+        'sidebar-header flex h-11 items-center justify-between pe-2',
+        isTrafficLightVisible ? 'pl-20' : 'ps-1.5',
       )}
+      dir='ltr'
     >
       <div className='flex items-center gap-x-8'>
         <button

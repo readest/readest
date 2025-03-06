@@ -15,10 +15,11 @@ const TabNavigation: React.FC<{
   return (
     <div
       className={clsx('bottom-tab border-base-300/50 bg-base-200 relative flex w-full border-t')}
+      dir='ltr'
     >
       <div
         className={clsx(
-          'bg-base-300 absolute bottom-1.5 left-1 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',
+          'bg-base-300 absolute bottom-1.5 start-1 h-[calc(100%-12px)] w-[calc(33.3%-8px)] rounded-lg',
           'transform transition-transform duration-300',
           activeTab === 'toc' && 'translate-x-0',
           activeTab === 'annotations' && 'translate-x-[calc(100%+8px)]',

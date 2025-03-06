@@ -81,11 +81,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
         isHoveredAnim && 'hover-bar-anim',
         hoveredBookKey === bookKey ? `opacity-100` : `opacity-0`,
       )}
+      dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
       <div className='hidden sm:flex'>
-        <Button icon={<RiArrowLeftWideLine />} onClick={handleGoPrev} tooltip={_('Go Left')} />
+        <Button
+          icon={viewSettings?.rtl ? <RiArrowRightWideLine /> : <RiArrowLeftWideLine />}
+          onClick={viewSettings?.rtl ? handleGoNext : handleGoPrev}
+          tooltip={viewSettings?.rtl ? _('Go Right') : _('Go Left')}
+        />
       </div>
       <Button
         icon={<RiArrowGoBackLine />}
@@ -104,7 +109,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       </span>
       <input
         type='range'
-        className={clsx('text-base-content mx-2 w-full', viewSettings?.rtl && 'direction-rtl')}
+        className='text-base-content mx-2 w-full'
         min={0}
         max={100}
         value={progressValid ? progressFraction * 100 : 0}
@@ -112,7 +117,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
       />
       <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />
       <div className='hidden sm:flex'>
-        <Button icon={<RiArrowRightWideLine />} onClick={handleGoNext} tooltip={_('Go Right')} />
+        <Button
+          icon={viewSettings?.rtl ? <RiArrowLeftWideLine /> : <RiArrowRightWideLine />}
+          onClick={viewSettings?.rtl ? handleGoPrev : handleGoNext}
+          tooltip={viewSettings?.rtl ? _('Go Left') : _('Go Right')}
+        />
       </div>
     </div>
   );
