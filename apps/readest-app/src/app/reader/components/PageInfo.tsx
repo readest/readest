@@ -4,8 +4,8 @@ import { PageInfo } from '@/types/book';
 
 interface PageInfoProps {
   bookFormat: string;
-  section: PageInfo | null;
-  pageinfo: PageInfo | null;
+  section?: PageInfo;
+  pageinfo?: PageInfo;
   gapRight: string;
 }
 

@@ -9,15 +9,24 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { PageInfo } from '@/types/book';
 import Button from '@/components/Button';
 
 interface FooterBarProps {
   bookKey: string;
-  pageinfo: { current: number; total: number } | undefined;
+  bookFormat: string;
+  section?: PageInfo;
+  pageinfo?: PageInfo;
   isHoveredAnim: boolean;
 }
 
-const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim }) => {
+const FooterBar: React.FC<FooterBarProps> = ({
+  bookKey,
+  bookFormat,
+  section,
+  pageinfo,
+  isHoveredAnim,
+}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { hoveredBookKey, setHoveredBookKey, getView, getProgress, getViewSettings } =
@@ -58,8 +67,9 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
     }
   };
 
-  const pageinfoValid = pageinfo && pageinfo.total > 0 && pageinfo.current >= 0;
-  const progressFraction = pageinfoValid ? pageinfo.current / pageinfo.total : 0;
+  const progressInfo = bookFormat === 'PDF' ? section : pageinfo;
+  const progressValid = !!progressInfo;
+  const progressFraction = progressValid ? (progressInfo!.current + 1) / progressInfo!.total : 0;
   return (
     <div
       className={clsx(
@@ -90,14 +100,14 @@ const FooterBar: React.FC<FooterBarProps> = ({ bookKey, pageinfo, isHoveredAnim 
         disabled={!view?.history.canGoForward}
       />
       <span className='mx-2 text-center text-sm'>
-        {pageinfoValid ? `${Math.round(progressFraction * 100)}%` : ''}
+        {progressValid ? `${Math.round(progressFraction * 100)}%` : ''}
       </span>
       <input
         type='range'
         className={clsx('text-base-content mx-2 w-full', viewSettings?.rtl && 'direction-rtl')}
         min={0}
         max={100}
-        value={pageinfoValid ? progressFraction * 100 : 0}
+        value={progressValid ? progressFraction * 100 : 0}
         onChange={(e) => handleProgressChange(e)}
       />
       <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />

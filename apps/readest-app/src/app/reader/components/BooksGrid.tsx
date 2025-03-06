@@ -85,14 +85,20 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
                 <HintInfo bookKey={bookKey} gapRight={marginGap} />
                 <PageInfoView
                   bookFormat={book.format}
-                  section={section ?? null}
-                  pageinfo={pageinfo ?? null}
+                  section={section}
+                  pageinfo={pageinfo}
                   gapRight={marginGap}
                 />
               </>
             )}
             <Annotator bookKey={bookKey} />
-            <FooterBar bookKey={bookKey} pageinfo={pageinfo} isHoveredAnim={false} />
+            <FooterBar
+              bookKey={bookKey}
+              bookFormat={book.format}
+              section={section}
+              pageinfo={pageinfo}
+              isHoveredAnim={false}
+            />
             {isFontLayoutSettingsDialogOpen && <SettingsDialog bookKey={bookKey} config={config} />}
           </div>
         );
