@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React from 'react';
 
 import { useSidebarStore } from '@/store/sidebarStore';
-import useTrafficLight from '@/hooks/useTrafficLight';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 
 interface SectionInfoProps {
   section?: string;
@@ -11,7 +11,7 @@ interface SectionInfoProps {
 
 const SectionInfo: React.FC<SectionInfoProps> = ({ section, gapLeft }) => {
   const { isSideBarVisible } = useSidebarStore();
-  const { isTrafficLightVisible } = useTrafficLight();
+  const { isTrafficLightVisible } = useTrafficLightStore();
   return (
     <div
       className={clsx(

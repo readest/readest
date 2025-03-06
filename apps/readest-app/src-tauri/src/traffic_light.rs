@@ -1,13 +1,14 @@
 use objc::{msg_send, sel, sel_impl};
 use rand::{distributions::Alphanumeric, Rng};
-use tauri::Emitter;
 use tauri::{
+    command,
     plugin::{Builder, TauriPlugin},
-    Runtime, Window,
-}; // 0.8
+    Emitter, Runtime, Window,
+};
 
-const WINDOW_CONTROL_PAD_X: f64 = 10.0;
-const WINDOW_CONTROL_PAD_Y: f64 = 22.0;
+static mut WINDOW_CONTROL_PAD_X: f64 = 10.0;
+static mut WINDOW_CONTROL_PAD_Y: f64 = 22.0;
+static mut TRAFFIC_LIGHTS_VISIBLE: bool = true;
 
 struct UnsafeWindowHandle(*mut std::ffi::c_void);
 unsafe impl Send for UnsafeWindowHandle {}
@@ -30,7 +31,24 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 }
 
 #[cfg(target_os = "macos")]
-fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, x: f64, y: f64) {
+#[command]
+pub fn set_traffic_lights(window: Window, visible: bool, x: f64, y: f64) {
+    unsafe {
+        TRAFFIC_LIGHTS_VISIBLE = visible;
+        WINDOW_CONTROL_PAD_X = x;
+        WINDOW_CONTROL_PAD_Y = y;
+
+        position_traffic_lights(
+            UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
+            TRAFFIC_LIGHTS_VISIBLE,
+            WINDOW_CONTROL_PAD_X,
+            WINDOW_CONTROL_PAD_Y,
+        );
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool, x: f64, y: f64) {
     use cocoa::appkit::{NSView, NSWindow, NSWindowButton};
     use cocoa::foundation::NSRect;
     let ns_window = ns_window_handle.0 as cocoa::base::id;
@@ -45,7 +63,10 @@ fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, x: f64, y: f64)
         let close_rect: NSRect = msg_send![close, frame];
         let button_height = close_rect.size.height;
 
-        let title_bar_frame_height = button_height + y;
+        let mut title_bar_frame_height = button_height + y;
+        if !visible {
+            title_bar_frame_height = 0.0;
+        }
         let mut title_bar_rect = NSView::frame(title_bar_container_view);
         title_bar_rect.size.height = title_bar_frame_height;
         title_bar_rect.origin.y = NSView::frame(ns_window).size.height - title_bar_frame_height;
@@ -77,11 +98,14 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
     use std::ffi::c_void;
 
     // Do the initial positioning
-    position_traffic_lights(
-        UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
-        WINDOW_CONTROL_PAD_X,
-        WINDOW_CONTROL_PAD_Y,
-    );
+    unsafe {
+        position_traffic_lights(
+            UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
+            TRAFFIC_LIGHTS_VISIBLE,
+            WINDOW_CONTROL_PAD_X,
+            WINDOW_CONTROL_PAD_Y,
+        );
+    }
 
     // Ensure they stay in place while resizing the window.
     fn with_window_state<R: Runtime, F: FnOnce(&mut WindowState<R>) -> T, T>(
@@ -127,6 +151,7 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                     #[cfg(target_os = "macos")]
                     position_traffic_lights(
                         UnsafeWindowHandle(id as *mut std::ffi::c_void),
+                        TRAFFIC_LIGHTS_VISIBLE,
                         WINDOW_CONTROL_PAD_X,
                         WINDOW_CONTROL_PAD_Y,
                     );
@@ -258,6 +283,7 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                     let id = state.window.ns_window().expect("Failed to emit event") as id;
                     position_traffic_lights(
                         UnsafeWindowHandle(id as *mut std::ffi::c_void),
+                        TRAFFIC_LIGHTS_VISIBLE,
                         WINDOW_CONTROL_PAD_X,
                         WINDOW_CONTROL_PAD_Y,
                     );

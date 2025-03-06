@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { eventDispatcher } from '@/utils/event';
-import useTrafficLight from '@/hooks/useTrafficLight';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -11,7 +11,7 @@ interface SectionInfoProps {
 
 const HintInfo: React.FC<SectionInfoProps> = ({ bookKey, gapRight }) => {
   const { isSideBarVisible } = useSidebarStore();
-  const { isTrafficLightVisible } = useTrafficLight();
+  const { isTrafficLightVisible } = useTrafficLightStore();
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
   const hintTimeout = useRef(2000);
   const dismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -10,6 +10,8 @@ extern crate objc;
 mod menu;
 #[cfg(target_os = "macos")]
 mod traffic_light;
+#[cfg(target_os = "macos")]
+use traffic_light::set_traffic_lights;
 
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -98,6 +100,8 @@ pub fn run() {
             start_server,
             download_file,
             upload_file,
+            #[cfg(target_os = "macos")]
+            set_traffic_lights,
             #[cfg(desktop)]
             list_fonts
         ])

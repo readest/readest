@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
@@ -10,8 +10,8 @@ import { MdArrowBackIosNew } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
-import useTrafficLight from '@/hooks/useTrafficLight';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
@@ -33,7 +33,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
-  const { isTrafficLightVisible } = useTrafficLight();
+  const {
+    isTrafficLightVisible,
+    initializeTrafficLightStore,
+    initializeTrafficLightListeners,
+    cleanupTrafficLightListeners,
+  } = useTrafficLightStore();
+
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize16 = useResponsiveSize(16);
   const iconSize20 = useResponsiveSize(20);
@@ -41,6 +47,17 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   useShortcuts({
     onToggleSelectMode,
   });
+
+  useEffect(() => {
+    if (!appService?.hasTrafficLight) return;
+
+    initializeTrafficLightStore(appService);
+    initializeTrafficLightListeners();
+    return () => {
+      cleanupTrafficLightListeners();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const isInGroupView = !!searchParams?.get('group');
