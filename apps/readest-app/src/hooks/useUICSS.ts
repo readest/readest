@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 // This hook allows you to inject custom CSS into the reader UI.
 // Note that the book content is rendered in an iframe, so UI CSS won't affect book rendering.
-export const useUICSS = (viewSettings: ViewSettings) => {
+export const useUICSS = (bookKey: string, viewSettings: ViewSettings) => {
   const [styleElement, setStyleElement] = useState<HTMLStyleElement | null>(null);
 
   useEffect(() => {
@@ -12,8 +12,9 @@ export const useUICSS = (viewSettings: ViewSettings) => {
       styleElement.remove();
     }
 
+    const rawCSS = viewSettings.userStylesheet;
     const newStyleEl = document.createElement('style');
-    newStyleEl.textContent = viewSettings.userStylesheet;
+    newStyleEl.textContent = rawCSS.replace('foliate-view', `#foliate-view-${bookKey}`);
     document.head.appendChild(newStyleEl);
     setStyleElement(newStyleEl);
 

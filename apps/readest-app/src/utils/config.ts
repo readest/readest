@@ -13,7 +13,7 @@ export const getDefaultMaxInlineSize = () => {
 
   const screenWidth = window.innerWidth;
   const screenHeight = window.innerHeight;
-  return screenWidth < screenHeight ? screenWidth : 720;
+  return screenWidth < screenHeight ? Math.max(screenWidth, 720) : 720;
 };
 
 export const getDefaultMaxBlockSize = () => {
@@ -21,5 +21,5 @@ export const getDefaultMaxBlockSize = () => {
 
   const screenWidth = window.innerWidth;
   const screenHeight = window.innerHeight;
-  return Math.max(screenWidth, screenHeight);
+  return Math.max(screenWidth, screenHeight, 1440);
 };

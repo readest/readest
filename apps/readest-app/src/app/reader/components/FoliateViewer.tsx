@@ -45,7 +45,7 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  useUICSS(viewSettings);
+  useUICSS(bookKey, viewSettings);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
 
@@ -138,6 +138,7 @@ const FoliateViewer: React.FC<{
       console.log('Opening book', bookKey);
       await import('foliate-js/view.js');
       const view = wrappedFoliateView(document.createElement('foliate-view') as FoliateView);
+      view.id = `foliate-view-${bookKey}`;
       document.body.append(view);
       containerRef.current?.appendChild(view);
 
