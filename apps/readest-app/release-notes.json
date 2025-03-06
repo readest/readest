@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.19": {
+      "date": "2025-03-07",
+      "notes": [
+        "Support custom CSS for Reader UI",
+        "Initial support of RTL layout for Arabic and Hebrew books",
+        "Various fixes and enhancements on layout and sync"
+      ]
+    },
     "0.9.18": {
       "date": "2025-02-26",
       "notes": [
