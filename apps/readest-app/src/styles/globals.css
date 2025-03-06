@@ -7,6 +7,7 @@
   --foreground: #171717;
   border-radius: 10px;
   scrollbar-gutter: auto !important;
+  overscroll-behavior: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +36,7 @@ body {
     sans-serif;
   border-radius: 10px;
   background-color: transparent;
+  cursor: default;
 }
 
 @layer utilities {

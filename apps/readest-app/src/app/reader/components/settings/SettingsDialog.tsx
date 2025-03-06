@@ -64,7 +64,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
         isOpen={true}
         onClose={handleClose}
         className='modal-open'
-        boxClassName='sm:min-w-[480px]'
+        boxClassName='sm:min-w-[520px]'
         header={
           <div className='flex w-full items-center justify-between'>
             <button
@@ -76,12 +76,12 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
             >
               <MdArrowBackIosNew />
             </button>
-            <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center justify-around pl-4'>
+            <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center pl-4 gap-2'>
               {tabConfig.map(({ tab, icon: Icon, label }) => (
                 <button
                   key={tab}
                   className={clsx(
-                    'btn btn-ghost text-base-content h-8 min-h-8',
+                    'btn btn-ghost text-base-content btn-sm',
                     activePanel === tab ? 'btn-active' : '',
                   )}
                   onClick={() => setActivePanel(tab)}
