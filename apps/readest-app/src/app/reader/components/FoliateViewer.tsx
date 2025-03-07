@@ -91,7 +91,8 @@ const FoliateViewer: React.FC<{
 
     if (detail.reason === 'scroll') {
       const renderer = viewRef.current?.renderer;
-      if (renderer) {
+      const viewSettings = getViewSettings(bookKey)!;
+      if (renderer && viewSettings.continuousScroll) {
         if (renderer.start <= 0) {
           viewRef.current?.prev(1);
           // sometimes viewSize has subpixel value that the end never reaches
