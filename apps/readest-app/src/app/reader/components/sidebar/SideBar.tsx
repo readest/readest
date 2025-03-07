@@ -8,6 +8,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
+import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useDrag } from '@/hooks/useDrag';
@@ -168,6 +169,7 @@ const SideBar: React.FC<{
     return null;
   }
   const { book, bookDoc } = bookData;
+  const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
 
   return isSideBarVisible ? (
     <>
@@ -179,7 +181,7 @@ const SideBar: React.FC<{
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
         )}
-        dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
+        dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
           width: `${sideBarWidth}`,
           maxWidth: `${MAX_SIDEBAR_WIDTH * 100}%`,
