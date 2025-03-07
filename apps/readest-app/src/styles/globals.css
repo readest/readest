@@ -10,6 +10,17 @@
   overscroll-behavior: none;
 }
 
+:root:has(
+    :is(
+        .modal-open,
+        .modal:target,
+        .modal-toggle:checked + .modal,
+        .modal[open]
+      )
+  ) {
+  scrollbar-gutter: unset !important;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #222222;
