@@ -10,6 +10,8 @@
   overscroll-behavior: none;
 }
 
+/* Fixes the scrollbar gutter issue for DaisyUI */
+/* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
 :root:has(
     :is(
         .modal-open,
