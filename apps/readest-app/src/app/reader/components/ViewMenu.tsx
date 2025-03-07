@@ -58,13 +58,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   }, [themeCode]);
 
   useEffect(() => {
+    viewSettings!.scrolled = isScrolledMode;
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
       `${getMaxInlineSize(viewSettings)}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
-    viewSettings!.scrolled = isScrolledMode;
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
