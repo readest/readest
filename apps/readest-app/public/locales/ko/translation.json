@@ -64,8 +64,6 @@
   "Match Case": "대소문자 구분",
   "Match Diacritics": "발음 구별 부호 구분",
   "Match Whole Words": "전체 단어 일치",
-  "Maximum Block Size": "최대 블록 크기",
-  "Maximum Inline Size": "최대 인라인 크기",
   "Maximum Number of Columns": "최대 열 수",
   "Minimum Font Size": "최소 글꼴 크기",
   "Misc": "기타",
@@ -230,5 +228,8 @@
   "Delete Permanently": "영구 삭제",
   "Free Tier": "무료 등급",
   "Plus Tier": "플러스 등급",
-  "Pro Tier": "프로 등급"
+  "Pro Tier": "프로 등급",
+  "RTL Direction": "RTL 방향",
+  "Maximum Column Height": "최대 열 높이",
+  "Maximum Column Width": "최대 열 너비"
 }

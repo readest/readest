@@ -64,8 +64,6 @@
   "Match Case": "Uwzględnij wielkość liter",
   "Match Diacritics": "Uwzględnij znaki diakrytyczne",
   "Match Whole Words": "Uwzględnij całe słowa",
-  "Maximum Block Size": "Maksymalny rozmiar bloku",
-  "Maximum Inline Size": "Maksymalny rozmiar linii",
   "Maximum Number of Columns": "Maksymalna liczba kolumn",
   "Minimum Font Size": "Minimalny rozmiar czcionki",
   "Misc": "Różne",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Usuń trwale",
   "Free Tier": "Plan darmowy",
   "Plus Tier": "Plan Plus",
-  "Pro Tier": "Plan Pro"
+  "Pro Tier": "Plan Pro",
+  "RTL Direction": "Kierunek RTL",
+  "Maximum Column Height": "Maksymalna wysokość kolumny",
+  "Maximum Column Width": "Maksymalna szerokość kolumny"
 }

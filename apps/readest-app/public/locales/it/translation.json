@@ -64,8 +64,6 @@
   "Match Case": "Maiuscole/minuscole",
   "Match Diacritics": "Corrispondenza diacritici",
   "Match Whole Words": "Parole intere",
-  "Maximum Block Size": "Dimensione massima blocco",
-  "Maximum Inline Size": "Dimensione massima in linea",
   "Maximum Number of Columns": "Numero massimo di colonne",
   "Minimum Font Size": "Dimensione minima font",
   "Misc": "Varie",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Elimina definitivamente",
   "Free Tier": "Piano gratuito",
   "Plus Tier": "Piano Plus",
-  "Pro Tier": "Piano Pro"
+  "Pro Tier": "Piano Pro",
+  "RTL Direction": "Direzione RTL",
+  "Maximum Column Height": "Altezza massima colonna",
+  "Maximum Column Width": "Larghezza massima colonna"
 }

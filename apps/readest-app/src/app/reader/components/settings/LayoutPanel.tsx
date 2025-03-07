@@ -358,19 +358,20 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={4}
             />
             <NumberInput
-              label={_('Maximum Inline Size')}
+              label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
               value={maxInlineSize}
               onChange={setMaxInlineSize}
               disabled={maxColumnCount === 1 || viewSettings.scrolled}
-              min={500}
+              min={400}
               max={9999}
               step={100}
             />
             <NumberInput
-              label={_('Maximum Block Size')}
+              label={viewSettings.vertical ? _('Maximum Column Width') : _('Maximum Column Height')}
               value={maxBlockSize}
               onChange={setMaxBlockSize}
-              min={500}
+              disabled={maxColumnCount === 1 || viewSettings.scrolled}
+              min={400}
               max={9999}
               step={100}
             />

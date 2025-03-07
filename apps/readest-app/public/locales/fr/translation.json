@@ -64,8 +64,6 @@
   "Match Case": "Respecter la casse",
   "Match Diacritics": "Respecter les accents",
   "Match Whole Words": "Mots entiers",
-  "Maximum Block Size": "Taille maximale du bloc",
-  "Maximum Inline Size": "Taille maximale en ligne",
   "Maximum Number of Columns": "Nombre maximal de colonnes",
   "Minimum Font Size": "Taille minimale de police",
   "Misc": "Divers",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Supprimer définitivement",
   "Free Tier": "Niveau gratuit",
   "Plus Tier": "Niveau Plus",
-  "Pro Tier": "Niveau Pro"
+  "Pro Tier": "Niveau Pro",
+  "RTL Direction": "Direction RTL",
+  "Maximum Column Height": "Hauteur maximale de colonne",
+  "Maximum Column Width": "Largeur maximale de colonne"
 }

@@ -64,8 +64,6 @@
   "Match Case": "Ταίριασμα πεζών-κεφαλαίων",
   "Match Diacritics": "Ταίριασμα διακριτικών σημείων",
   "Match Whole Words": "Ταίριασμα ολόκληρων λέξεων",
-  "Maximum Block Size": "Μέγιστο μέγεθος μπλοκ",
-  "Maximum Inline Size": "Μέγιστο μέγεθος γραμμής",
   "Maximum Number of Columns": "Μέγιστος αριθμός στηλών",
   "Minimum Font Size": "Ελάχιστο μέγεθος γραμματοσειράς",
   "Misc": "Διάφορα",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Μόνιμη διαγραφή",
   "Free Tier": "Δωρεάν βαθμίδα",
   "Plus Tier": "Βαθμίδα Plus",
-  "Pro Tier": "Βαθμίδα Pro"
+  "Pro Tier": "Βαθμίδα Pro",
+  "RTL Direction": "Κατεύθυνση RTL",
+  "Maximum Column Height": "Μέγιστο ύψος στήλης",
+  "Maximum Column Width": "Μέγιστο πλάτος στήλης"
 }

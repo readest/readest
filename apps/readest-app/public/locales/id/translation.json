@@ -64,8 +64,6 @@
   "Match Case": "Cocokkan Huruf Besar/Kecil",
   "Match Diacritics": "Cocokkan Diakritik",
   "Match Whole Words": "Cocokkan Kata Utuh",
-  "Maximum Block Size": "Ukuran Blok Maksimum",
-  "Maximum Inline Size": "Ukuran Sebaris Maksimum",
   "Maximum Number of Columns": "Jumlah Kolom Maksimum",
   "Minimum Font Size": "Ukuran Font Minimum",
   "Misc": "Lain-lain",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Hapus Secara Permanen",
   "Free Tier": "Tingkat Gratis",
   "Plus Tier": "Tingkat Plus",
-  "Pro Tier": "Tingkat Pro"
+  "Pro Tier": "Tingkat Pro",
+  "RTL Direction": "Arah RTL",
+  "Maximum Column Height": "Tinggi Kolom Maksimum",
+  "Maximum Column Width": "Lebar Kolom Maksimum"
 }

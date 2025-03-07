@@ -64,8 +64,6 @@
   "Match Case": "Büyük/Küçük Harf Eşleştir",
   "Match Diacritics": "Aksan İşaretlerini Eşleştir",
   "Match Whole Words": "Tam Kelimeleri Eşleştir",
-  "Maximum Block Size": "Maksimum Blok Boyutu",
-  "Maximum Inline Size": "Maksimum Satır İçi Boyut",
   "Maximum Number of Columns": "Maksimum Sütun Sayısı",
   "Minimum Font Size": "Minimum Yazı Boyutu",
   "Misc": "Diğer",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Kalıcı Olarak Sil",
   "Free Tier": "Ücretsiz Paket",
   "Plus Tier": "Plus Paket",
-  "Pro Tier": "Pro Paket"
+  "Pro Tier": "Pro Paket",
+  "RTL Direction": "RTL Yönü",
+  "Maximum Column Height": "Maksimum Sütun Yüksekliği",
+  "Maximum Column Width": "Maksimum Sütun Genişliği"
 }

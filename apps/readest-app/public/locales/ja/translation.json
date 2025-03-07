@@ -64,8 +64,6 @@
   "Match Case": "大文字・小文字を区別",
   "Match Diacritics": "アクセント記号を区別",
   "Match Whole Words": "単語全体を一致",
-  "Maximum Block Size": "最大ブロックサイズ",
-  "Maximum Inline Size": "最大インラインサイズ",
   "Maximum Number of Columns": "最大列数",
   "Minimum Font Size": "最小フォントサイズ",
   "Misc": "その他",
@@ -230,5 +228,8 @@
   "Delete Permanently": "完全に削除",
   "Free Tier": "無料プラン",
   "Plus Tier": "Plusプラン",
-  "Pro Tier": "Proプラン"
+  "Pro Tier": "Proプラン",
+  "RTL Direction": "RTL方向",
+  "Maximum Column Height": "最大列高",
+  "Maximum Column Width": "最大列幅"
 }

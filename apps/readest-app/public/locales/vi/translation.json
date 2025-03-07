@@ -64,8 +64,6 @@
   "Match Case": "Phân biệt chữ hoa/thường",
   "Match Diacritics": "Phân biệt dấu",
   "Match Whole Words": "Khớp toàn bộ từ",
-  "Maximum Block Size": "Kích thước khối tối đa",
-  "Maximum Inline Size": "Kích thước nội tuyến tối đa",
   "Maximum Number of Columns": "Số cột tối đa",
   "Minimum Font Size": "Cỡ chữ tối thiểu",
   "Misc": "Khác",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Xóa vĩnh viễn",
   "Free Tier": "Gói miễn phí",
   "Plus Tier": "Gói Plus",
-  "Pro Tier": "Gói Pro"
+  "Pro Tier": "Gói Pro",
+  "RTL Direction": "Hướng RTL",
+  "Maximum Column Height": "Chiều cao cột tối đa",
+  "Maximum Column Width": "Chiều rộng cột tối đa"
 }

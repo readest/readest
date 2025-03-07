@@ -64,8 +64,6 @@
   "Match Case": "مطابقة حالة الأحرف",
   "Match Diacritics": "مطابقة التشكيل",
   "Match Whole Words": "مطابقة الكلمات الكاملة",
-  "Maximum Block Size": "أقصى مساحة رأسية",
-  "Maximum Inline Size": "أقصى مساحة أفقية",
   "Maximum Number of Columns": "العدد الأقصى للأعمدة",
   "Minimum Font Size": "الحد الأدنى لحجم الخط",
   "Misc": "أخرى",
@@ -230,5 +228,8 @@
   "Delete Permanently": "حذف نهائي",
   "Free Tier": "الفئة المجانية",
   "Plus Tier": "فئة Plus",
-  "Pro Tier": "فئة Pro"
+  "Pro Tier": "فئة Pro",
+  "RTL Direction": "الاتجاه من اليمين إلى اليسار",
+  "Maximum Column Height": "الارتفاع الأقصى للعمود",
+  "Maximum Column Width": "العرض الأقصى للعمود"
 }

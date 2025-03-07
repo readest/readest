@@ -64,8 +64,6 @@
   "Match Case": "केस मैच करें",
   "Match Diacritics": "डायाक्रिटिक्स मैच करें",
   "Match Whole Words": "पूरे शब्द मैच करें",
-  "Maximum Block Size": "अधिकतम ब्लॉक साइज़",
-  "Maximum Inline Size": "अधिकतम इनलाइन साइज़",
   "Maximum Number of Columns": "कॉलम की अधिकतम संख्या",
   "Minimum Font Size": "न्यूनतम फ़ॉन्ट साइज़",
   "Misc": "विविध",
@@ -230,5 +228,8 @@
   "Delete Permanently": "स्थायी रूप से हटाएं",
   "Free Tier": "फ्री टियर",
   "Plus Tier": "प्लस टियर",
-  "Pro Tier": "प्रो टियर"
+  "Pro Tier": "प्रो टियर",
+  "RTL Direction": "RTL दिशा",
+  "Maximum Column Height": "कॉलम की अधिकतम ऊँचाई",
+  "Maximum Column Width": "कॉलम की अधिकतम चौड़ाई"
 }

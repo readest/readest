@@ -64,8 +64,6 @@
   "Match Case": "Groß-/Kleinschreibung beachten",
   "Match Diacritics": "Akzente beachten",
   "Match Whole Words": "Ganze Wörter",
-  "Maximum Block Size": "Maximale Blockgröße",
-  "Maximum Inline Size": "Maximale Zeilengröße",
   "Maximum Number of Columns": "Maximale Spaltenanzahl",
   "Minimum Font Size": "Minimale Schriftgröße",
   "Misc": "Sonstiges",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Dauerhaft löschen",
   "Free Tier": "Kostenlose Stufe",
   "Plus Tier": "Plus-Stufe",
-  "Pro Tier": "Pro-Stufe"
+  "Pro Tier": "Pro-Stufe",
+  "RTL Direction": "RTL-Richtung",
+  "Maximum Column Height": "Maximale Spaltenhöhe",
+  "Maximum Column Width": "Maximale Spaltenbreite"
 }

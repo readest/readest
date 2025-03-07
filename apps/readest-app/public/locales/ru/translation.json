@@ -64,8 +64,6 @@
   "Match Case": "Учитывать регистр",
   "Match Diacritics": "Учитывать диакритические знаки",
   "Match Whole Words": "Только целые слова",
-  "Maximum Block Size": "Максимальный размер блока",
-  "Maximum Inline Size": "Максимальный размер строки",
   "Maximum Number of Columns": "Максимальное количество колонок",
   "Minimum Font Size": "Минимальный размер шрифта",
   "Misc": "Разное",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Удалить навсегда",
   "Free Tier": "Бесплатный тариф",
   "Plus Tier": "Тариф Plus",
-  "Pro Tier": "Тариф Pro"
+  "Pro Tier": "Тариф Pro",
+  "RTL Direction": "Направление RTL",
+  "Maximum Column Height": "Максимальная высота колонки",
+  "Maximum Column Width": "Максимальная ширина колонки"
 }

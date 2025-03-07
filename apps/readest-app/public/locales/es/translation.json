@@ -64,8 +64,6 @@
   "Match Case": "Coincidir mayúsculas y minúsculas",
   "Match Diacritics": "Coincidir diacríticos",
   "Match Whole Words": "Coincidir palabras completas",
-  "Maximum Block Size": "Tamaño máximo de bloque",
-  "Maximum Inline Size": "Tamaño máximo en línea",
   "Maximum Number of Columns": "Número máximo de columnas",
   "Minimum Font Size": "Tamaño de fuente mínimo",
   "Misc": "Varios",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Eliminar permanentemente",
   "Free Tier": "Nivel gratuito",
   "Plus Tier": "Nivel Plus",
-  "Pro Tier": "Nivel Pro"
+  "Pro Tier": "Nivel Pro",
+  "RTL Direction": "Dirección RTL",
+  "Maximum Column Height": "Altura máxima de columna",
+  "Maximum Column Width": "Ancho máximo de columna"
 }

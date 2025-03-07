@@ -64,8 +64,6 @@
   "Match Case": "Diferenciar Maiúsculas e Minúsculas",
   "Match Diacritics": "Corresponder Acentos",
   "Match Whole Words": "Corresponder Palavras Inteiras",
-  "Maximum Block Size": "Tamanho Máximo do Bloco",
-  "Maximum Inline Size": "Tamanho Máximo em Linha",
   "Maximum Number of Columns": "Número Máximo de Colunas",
   "Minimum Font Size": "Tamanho Mínimo da Fonte",
   "Misc": "Diversos",
@@ -230,5 +228,8 @@
   "Delete Permanently": "Excluir permanentemente",
   "Free Tier": "Plano gratuito",
   "Plus Tier": "Plano Plus",
-  "Pro Tier": "Plano Pro"
+  "Pro Tier": "Plano Pro",
+  "RTL Direction": "Direção RTL",
+  "Maximum Column Height": "Altura Máxima da Coluna",
+  "Maximum Column Width": "Largura Máxima da Coluna"
 }
