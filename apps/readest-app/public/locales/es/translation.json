@@ -233,5 +233,7 @@
   "Maximum Column Height": "Altura máxima de columna",
   "Maximum Column Width": "Ancho máximo de columna",
   "Continuous Scroll": "Desplazamiento continuo",
-  "Fullscreen": "Pantalla completa"
+  "Fullscreen": "Pantalla completa",
+  "No supported files found. Supported formats: {{formats}}": "No se encontraron archivos compatibles. Formatos compatibles: {{formats}}",
+  "Drop to Import Books": "Soltar para importar libros"
 }

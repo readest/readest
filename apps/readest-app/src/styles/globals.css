@@ -281,3 +281,47 @@ foliate-view {
 .direction-rtl {
   direction: rtl;
 }
+
+.drop-zone {
+  position: relative;
+}
+
+.drag-over {
+  border: 2px dashed #4a90e2 !important;
+  background-color: rgba(74, 144, 226, 0.1) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.drag-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.drop-zone.drag-over .drag-overlay {
+  display: block;
+}
+
+.drop-indicator {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  padding: 20px;
+  background-color: theme('colors.base-300');
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.drop-zone.drag-over .drop-indicator {
+  display: block;
+}

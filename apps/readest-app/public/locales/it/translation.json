@@ -233,5 +233,7 @@
   "Maximum Column Height": "Altezza massima colonna",
   "Maximum Column Width": "Larghezza massima colonna",
   "Continuous Scroll": "Scorrimento continuo",
-  "Fullscreen": "Schermo intero"
+  "Fullscreen": "Schermo intero",
+  "No supported files found. Supported formats: {{formats}}": "Nessun file supportato trovato. Formati supportati: {{formats}}",
+  "Drop to Import Books": "Rilascia per importare libri"
 }

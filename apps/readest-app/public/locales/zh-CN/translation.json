@@ -233,5 +233,7 @@
   "Maximum Column Height": "最大列高",
   "Maximum Column Width": "最大列宽",
   "Continuous Scroll": "连续滚动",
-  "Fullscreen": "全屏"
+  "Fullscreen": "全屏",
+  "No supported files found. Supported formats: {{formats}}": "未找到支持的文件。支持的格式：{{formats}}",
+  "Drop to Import Books": "拖放导入书籍"
 }

@@ -233,5 +233,7 @@
   "Maximum Column Height": "الارتفاع الأقصى للعمود",
   "Maximum Column Width": "العرض الأقصى للعمود",
   "Continuous Scroll": "التمرير المستمر",
-  "Fullscreen": "ملء الشاشة"
+  "Fullscreen": "ملء الشاشة",
+  "No supported files found. Supported formats: {{formats}}": "لم يتم العثور على ملفات مدعومة. الصيغ المدعومة: {{formats}}",
+  "Drop to Import Books": "اسحب لاستيراد الكتب"
 }

@@ -233,5 +233,7 @@
   "Maximum Column Height": "Μέγιστο ύψος στήλης",
   "Maximum Column Width": "Μέγιστο πλάτος στήλης",
   "Continuous Scroll": "Συνεχής κύλιση",
-  "Fullscreen": "Πλήρης οθόνη"
+  "Fullscreen": "Πλήρης οθόνη",
+  "No supported files found. Supported formats: {{formats}}": "Δεν βρέθηκαν υποστηριζόμενα αρχεία. Υποστηριζόμενες μορφές: {{formats}}",
+  "Drop to Import Books": "Ρίξτε για εισαγωγή βιβλίων"
 }

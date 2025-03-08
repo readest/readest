@@ -233,5 +233,7 @@
   "Maximum Column Height": "最大列高",
   "Maximum Column Width": "最大列幅",
   "Continuous Scroll": "連続スクロール",
-  "Fullscreen": "全画面"
+  "Fullscreen": "全画面",
+  "No supported files found. Supported formats: {{formats}}": "サポートされているファイルが見つかりません。サポートされている形式：{{formats}}",
+  "Drop to Import Books": "書籍をインポートするにはドロップ"
 }

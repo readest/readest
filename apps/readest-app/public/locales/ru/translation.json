@@ -233,5 +233,7 @@
   "Maximum Column Height": "Максимальная высота колонки",
   "Maximum Column Width": "Максимальная ширина колонки",
   "Continuous Scroll": "Непрерывная прокрутка",
-  "Fullscreen": "Полноэкранный режим"
+  "Fullscreen": "Полноэкранный режим",
+  "No supported files found. Supported formats: {{formats}}": "Поддерживаемые файлы не найдены. Поддерживаемые форматы: {{formats}}",
+  "Drop to Import Books": "Перетащите сюда книги для импорта"
 }

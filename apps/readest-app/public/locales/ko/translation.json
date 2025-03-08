@@ -233,5 +233,7 @@
   "Maximum Column Height": "최대 열 높이",
   "Maximum Column Width": "최대 열 너비",
   "Continuous Scroll": "연속 스크롤",
-  "Fullscreen": "전체 화면"
+  "Fullscreen": "전체 화면",
+  "No supported files found. Supported formats: {{formats}}": "지원되는 파일이 없습니다. 지원되는 형식: {{formats}}",
+  "Drop to Import Books": "책 가져오기 위해 드롭"
 }

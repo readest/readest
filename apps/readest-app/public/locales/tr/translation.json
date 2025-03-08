@@ -233,5 +233,7 @@
   "Maximum Column Height": "Maksimum Sütun Yüksekliği",
   "Maximum Column Width": "Maksimum Sütun Genişliği",
   "Continuous Scroll": "Sürekli Kaydırma",
-  "Fullscreen": "Tam Ekran"
+  "Fullscreen": "Tam Ekran",
+  "No supported files found. Supported formats: {{formats}}": "Desteklenen dosya bulunamadı. Desteklenen formatlar: {{formats}}",
+  "Drop to Import Books": "Kitapları İçe Aktarmak İçin Bırak"
 }

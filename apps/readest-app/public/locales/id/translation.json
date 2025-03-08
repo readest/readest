@@ -233,5 +233,7 @@
   "Maximum Column Height": "Tinggi Kolom Maksimum",
   "Maximum Column Width": "Lebar Kolom Maksimum",
   "Continuous Scroll": "Gulir Terus",
-  "Fullscreen": "Layar Penuh"
+  "Fullscreen": "Layar Penuh",
+  "No supported files found. Supported formats: {{formats}}": "Tidak ada file yang didukung ditemukan. Format yang didukung: {{formats}}",
+  "Drop to Import Books": "Jatuhkan untuk Mengimpor Buku"
 }

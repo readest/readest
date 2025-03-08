@@ -233,5 +233,7 @@
   "Maximum Column Height": "Chiều cao cột tối đa",
   "Maximum Column Width": "Chiều rộng cột tối đa",
   "Continuous Scroll": "Cuộn liên tục",
-  "Fullscreen": "Toàn màn hình"
+  "Fullscreen": "Toàn màn hình",
+  "No supported files found. Supported formats: {{formats}}": "Không tìm thấy tệp được hỗ trợ. Định dạng được hỗ trợ: {{formats}}",
+  "Drop to Import Books": "Kéo và thả để nhập sách"
 }

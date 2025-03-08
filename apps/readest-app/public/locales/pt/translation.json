@@ -233,5 +233,7 @@
   "Maximum Column Height": "Altura Máxima da Coluna",
   "Maximum Column Width": "Largura Máxima da Coluna",
   "Continuous Scroll": "Rolagem Contínua",
-  "Fullscreen": "Tela Cheia"
+  "Fullscreen": "Tela Cheia",
+  "No supported files found. Supported formats: {{formats}}": "Nenhum arquivo suportado encontrado. Formatos suportados: {{formats}}",
+  "Drop to Import Books": "Arraste para Importar Livros"
 }
