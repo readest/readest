@@ -6,13 +6,15 @@ import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
-import MenuItem from '@/components/MenuItem';
+import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ThemeMode } from '@/styles/themes';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
+import { tauriHandleToggleFullScreen } from '@/utils/window';
+import MenuItem from '@/components/MenuItem';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -26,6 +28,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   onSetSettingsDialogOpen,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { getView, getViews, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
@@ -49,6 +52,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     const nextMode: ThemeMode =
       themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
     setThemeMode(nextMode);
+  };
+
+  const handleFullScreen = () => {
+    tauriHandleToggleFullScreen();
+    setIsDropdownOpen?.(false);
   };
 
   useEffect(() => {
@@ -132,6 +140,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr className='border-base-300 my-1' />
 
+      {appService?.hasRoundedWindow && (
+        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
+      )}
       <MenuItem
         label={
           themeMode === 'dark'

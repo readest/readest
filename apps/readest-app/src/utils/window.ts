@@ -1,7 +1,9 @@
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { TauriEvent } from '@tauri-apps/api/event';
+import { exit } from '@tauri-apps/plugin-process';
 import { eventDispatcher } from './event';
 
 export const tauriGetWindowLogicalPosition = async () => {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const currentWindow = getCurrentWindow();
   const factor = await currentWindow.scaleFactor();
   const physicalPos = await currentWindow.outerPosition();
@@ -9,24 +11,18 @@ export const tauriGetWindowLogicalPosition = async () => {
 };
 
 export const tauriHandleMinimize = async () => {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
   getCurrentWindow().minimize();
 };
 
 export const tauriHandleToggleMaximize = async () => {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
   getCurrentWindow().toggleMaximize();
 };
 
 export const tauriHandleClose = async () => {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
   getCurrentWindow().close();
 };
 
 export const tauriHandleOnCloseWindow = async (callback: () => void) => {
-  const { TauriEvent } = await import('@tauri-apps/api/event');
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
-  const { exit } = await import('@tauri-apps/plugin-process');
   const currentWindow = getCurrentWindow();
   return currentWindow.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async () => {
     await callback();
@@ -35,9 +31,14 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   });
 };
 
+export const tauriHandleToggleFullScreen = async () => {
+  const currentWindow = getCurrentWindow();
+  const isFullscreen = await currentWindow.isFullscreen();
+  const newIsFullscreen = !isFullscreen;
+  await currentWindow.setFullscreen(newIsFullscreen);
+};
+
 export const tauriHandleOnWindowFocus = async (callback: () => void) => {
-  const { TauriEvent } = await import('@tauri-apps/api/event');
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const currentWindow = getCurrentWindow();
   return currentWindow.listen(TauriEvent.WINDOW_FOCUS, async () => {
     await callback();
@@ -46,6 +47,5 @@ export const tauriHandleOnWindowFocus = async (callback: () => void) => {
 
 export const tauriQuitApp = async () => {
   await eventDispatcher.dispatch('quit-app');
-  const { exit } = await import('@tauri-apps/plugin-process');
   await exit(0);
 };

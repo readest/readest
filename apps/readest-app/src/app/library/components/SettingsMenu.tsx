@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStoragePlanData } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
+import { tauriHandleToggleFullScreen } from '@/utils/window';
 import { QuotaType } from '@/types/user';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -25,7 +26,7 @@ interface BookMenuProps {
 const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
@@ -54,6 +55,11 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
 
   const handleReloadPage = () => {
     window.location.reload();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleFullScreen = () => {
+    tauriHandleToggleFullScreen();
     setIsDropdownOpen?.(false);
   };
 
@@ -157,6 +163,9 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={toggleScreenWakeLock}
       />
       <hr className='border-base-200 my-1' />
+      {appService?.hasRoundedWindow && (
+        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
+      )}
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
