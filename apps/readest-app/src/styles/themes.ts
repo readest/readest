@@ -7,6 +7,7 @@ type BaseColor = {
   primary: string;
 };
 
+export type ThemeMode = 'auto' | 'light' | 'dark';
 export type Palette = {
   'base-100': string;
   'base-200': string;

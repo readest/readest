@@ -7,7 +7,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/hooks/useTheme';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
@@ -21,7 +20,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const view = getView(bookKey);
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
-  const { themeCode } = useTheme();
 
   const [paragraphMargin, setParagraphMargin] = useState(viewSettings.paragraphMargin!);
   const [lineHeight, setLineHeight] = useState(viewSettings.lineHeight!);
@@ -45,7 +43,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.paragraphMargin = paragraphMargin;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paragraphMargin]);
 
@@ -56,7 +54,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.lineHeight = lineHeight;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineHeight]);
 
@@ -67,7 +65,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.wordSpacing = wordSpacing;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wordSpacing]);
 
@@ -78,7 +76,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.letterSpacing = letterSpacing;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letterSpacing]);
 
@@ -89,7 +87,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.textIndent = textIndent;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textIndent]);
 
@@ -100,7 +98,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.fullJustification = fullJustification;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullJustification]);
 
@@ -111,7 +109,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.hyphenation = hyphenation;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hyphenation]);
 
@@ -180,7 +178,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     viewSettings.writingMode = writingMode;
     setViewSettings(bookKey, viewSettings);
     if (view) {
-      view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+      view.renderer.setStyles?.(getStyles(viewSettings));
       view.book.dir = getBookDirFromWritingMode(writingMode);
     }
     if (
@@ -199,7 +197,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.overrideLayout = overrideLayout;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);
 
@@ -213,10 +211,10 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='w-full'>
           <div className='flex items-center justify-between'>
             <h2 className='font-medium'>{_('Writing Mode')}</h2>
-            <div className='flex gap-2'>
+            <div className='flex gap-4'>
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Default')}>
                 <button
-                  className={`btn btn-ghost btn-circle ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('auto')}
                 >
                   <MdOutlineAutoMode />
@@ -225,7 +223,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Horizontal Direction')}>
                 <button
-                  className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('horizontal-tb')}
                 >
                   <MdOutlineTextRotationNone />
@@ -234,7 +232,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Vertical Direction')}>
                 <button
-                  className={`btn btn-ghost btn-circle ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('vertical-rl')}
                 >
                   <MdTextRotateVertical />
@@ -243,7 +241,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('RTL Direction')}>
                 <button
-                  className={`btn btn-ghost btn-circle ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
                   onClick={() => setWritingMode('horizontal-rl')}
                 >
                   <TbTextDirectionRtl />

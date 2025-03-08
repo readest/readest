@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
+import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
@@ -11,7 +12,6 @@ import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
-import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
   handleKeydown,
@@ -36,7 +36,7 @@ const FoliateViewer: React.FC<{
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
-  const { themeCode } = useTheme();
+  const { themeCode } = useThemeStore();
   const viewSettings = getViewSettings(bookKey)!;
 
   const [toastMessage, setToastMessage] = useState('');
@@ -126,7 +126,7 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {
       const viewSettings = getViewSettings(bookKey)!;
-      viewRef.current.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode]);
@@ -159,7 +159,7 @@ const FoliateViewer: React.FC<{
       viewRef.current = view;
       setFoliateView(bookKey, view);
 
-      view.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+      view.renderer.setStyles?.(getStyles(viewSettings));
 
       const isScrolled = viewSettings.scrolled!;
       const marginPx = viewSettings.marginPx!;

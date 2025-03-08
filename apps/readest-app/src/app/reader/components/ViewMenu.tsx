@@ -7,9 +7,10 @@ import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import MenuItem from '@/components/MenuItem';
+import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme, ThemeMode } from '@/hooks/useTheme';
+import { ThemeMode } from '@/styles/themes';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 
@@ -28,7 +29,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { getView, getViews, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
-  const { themeMode, isDarkMode, themeCode, updateThemeMode } = useTheme();
+  const { themeMode, isDarkMode, themeCode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
   const [isInvertedColors, setInvertedColors] = useState(viewSettings!.invert);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
@@ -47,12 +48,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const cycleThemeMode = () => {
     const nextMode: ThemeMode =
       themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    updateThemeMode(nextMode);
+    setThemeMode(nextMode);
   };
 
   useEffect(() => {
     getViews().forEach((view) => {
-      view.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
+      view.renderer.setStyles?.(getStyles(viewSettings!));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode]);
@@ -64,14 +65,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       'max-inline-size',
       `${getMaxInlineSize(viewSettings)}px`,
     );
-    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
+    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
 
   useEffect(() => {
     document.body.classList.toggle('invert', isInvertedColors);
-    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
+    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInvertedColors]);
 
@@ -80,7 +81,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     if (!view) return;
     viewSettings!.zoomLevel = zoomLevel;
     setViewSettings(bookKey, viewSettings!);
-    view.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
+    view.renderer.setStyles?.(getStyles(viewSettings!));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomLevel]);
 

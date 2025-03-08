@@ -3,24 +3,24 @@ import { MdOutlineLightMode, MdOutlineDarkMode } from 'react-icons/md';
 import { MdRadioButtonUnchecked, MdRadioButtonChecked } from 'react-icons/md';
 import { TbSunMoon } from 'react-icons/tb';
 
-import { useTheme } from '@/hooks/useTheme';
 import { themes } from '@/styles/themes';
 import { getStyles } from '@/utils/style';
+import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { themeMode, themeColor, themeCode, isDarkMode, updateThemeMode, updateThemeColor } =
-    useTheme();
+  const { themeMode, themeColor, themeCode, isDarkMode, setThemeMode, setThemeColor } =
+    useThemeStore();
   const { getViews, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
   const iconSize24 = useResponsiveSize(24);
 
   useEffect(() => {
     getViews().forEach((view) => {
-      view.renderer.setStyles?.(getStyles(viewSettings!, themeCode));
+      view.renderer.setStyles?.(getStyles(viewSettings!));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode]);
@@ -29,11 +29,11 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <div className='my-4 w-full space-y-6'>
       <div className='flex items-center justify-between'>
         <h2 className='font-medium'>{_('Theme Mode')}</h2>
-        <div className='flex gap-2'>
+        <div className='flex gap-4'>
           <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto Mode')}>
             <button
-              className={`btn btn-ghost btn-circle ${themeMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
-              onClick={() => updateThemeMode('auto')}
+              className={`btn btn-ghost btn-circle btn-sm ${themeMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setThemeMode('auto')}
             >
               <TbSunMoon />
             </button>
@@ -41,8 +41,8 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
           <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Light Mode')}>
             <button
-              className={`btn btn-ghost btn-circle ${themeMode === 'light' ? 'btn-active bg-base-300' : ''}`}
-              onClick={() => updateThemeMode('light')}
+              className={`btn btn-ghost btn-circle btn-sm ${themeMode === 'light' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setThemeMode('light')}
             >
               <MdOutlineLightMode />
             </button>
@@ -50,8 +50,8 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
           <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Dark Mode')}>
             <button
-              className={`btn btn-ghost btn-circle ${themeMode === 'dark' ? 'btn-active bg-base-300' : ''}`}
-              onClick={() => updateThemeMode('dark')}
+              className={`btn btn-ghost btn-circle btn-sm ${themeMode === 'dark' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setThemeMode('dark')}
             >
               <MdOutlineDarkMode />
             </button>
@@ -78,7 +78,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 name='theme'
                 value={name}
                 checked={themeColor === name}
-                onChange={() => updateThemeColor(name)}
+                onChange={() => setThemeColor(name)}
                 className='hidden'
               />
               {themeColor === name ? (

@@ -20,11 +20,12 @@ import { impactFeedback } from '@tauri-apps/plugin-haptics';
 
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/hooks/useTheme';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useTheme } from '@/hooks/useTheme';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
@@ -56,7 +57,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setCheckOpenWithBooks,
   } = useLibraryStore();
   const _ = useTranslation();
-  const { updateAppTheme } = useTheme();
+  useTheme();
+  const { updateAppTheme } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);

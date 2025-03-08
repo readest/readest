@@ -5,7 +5,7 @@ import {
   FALLBACK_FONTS,
 } from '@/services/constants';
 import { ViewSettings } from '@/types/book';
-import { Palette } from '@/styles/themes';
+import { themes, Palette, ThemeMode } from '@/styles/themes';
 
 import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
 import { getOSPlatform } from './misc';
@@ -178,7 +178,6 @@ const getLayoutStyles = (
     background: var(--background-set, none);
   }
   body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
-    ${bg === '#ffffff' ? '' : `color: inherit;`}
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
   }
   body {
@@ -224,6 +223,7 @@ const getLayoutStyles = (
     display: none;
   }
 
+  /* Now begins really dirty hacks to fix some badly designed epubs */
   .calibre {
     color: unset;
   }
@@ -256,7 +256,30 @@ export interface ThemeCode {
   palette: Palette;
 }
 
-export const getStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
+export const getThemeCode = () => {
+  let themeMode = 'auto';
+  let themeColor = 'default';
+  let systemIsDarkMode = false;
+  if (typeof window !== 'undefined') {
+    themeColor = localStorage.getItem('themeColor') || 'default';
+    themeMode = localStorage.getItem('themeMode') as ThemeMode;
+    systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  const isDarkMode = themeMode === 'dark' || (themeMode === 'auto' && systemIsDarkMode);
+  const defaultTheme = themes.find((theme) => theme.name === themeColor);
+  const defaultPalette = isDarkMode ? defaultTheme!.colors.dark : defaultTheme!.colors.light;
+  return {
+    bg: defaultPalette['base-100'],
+    fg: defaultPalette['base-content'],
+    primary: defaultPalette.primary,
+    palette: defaultPalette,
+  } as ThemeCode;
+};
+
+export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => {
+  if (!themeCode) {
+    themeCode = getThemeCode();
+  }
   const layoutStyles = getLayoutStyles(
     viewSettings.overrideLayout!,
     viewSettings.paragraphMargin!,

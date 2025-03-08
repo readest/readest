@@ -4,7 +4,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
-import { useTheme } from '@/hooks/useTheme';
 import cssbeautify from 'cssbeautify';
 import cssValidate from '@/utils/css';
 
@@ -13,7 +12,6 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
-  const { themeCode } = useTheme();
 
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
@@ -60,7 +58,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setSettings(settings);
     }
 
-    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings));
   };
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {

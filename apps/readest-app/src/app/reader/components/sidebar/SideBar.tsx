@@ -10,8 +10,8 @@ import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
-import { useTheme } from '@/hooks/useTheme';
 import { useDrag } from '@/hooks/useDrag';
+import { useThemeStore } from '@/store/themeStore';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
@@ -29,7 +29,7 @@ const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
   const { appService } = useEnv();
-  const { updateAppTheme } = useTheme();
+  const { updateAppTheme } = useThemeStore();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
   const { getBookData } = useBookDataStore();

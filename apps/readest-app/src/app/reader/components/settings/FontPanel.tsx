@@ -16,7 +16,6 @@ import {
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
 import { getStyles } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
@@ -66,7 +65,6 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
-  const { themeCode } = useTheme();
 
   const fontFamilyOptions = [
     {
@@ -126,7 +124,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.defaultFont = defaultFont;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFont]);
 
@@ -137,7 +135,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.defaultFontSize = defaultFontSize;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFontSize]);
 
@@ -148,7 +146,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.minimumFontSize = minFontSize;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minFontSize]);
 
@@ -159,7 +157,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.fontWeight = fontWeight;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontWeight]);
 
@@ -170,7 +168,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.serifFont = serifFont;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serifFont]);
 
@@ -181,7 +179,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.sansSerifFont = sansSerifFont;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sansSerifFont]);
 
@@ -192,7 +190,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.monospaceFont = monospaceFont;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monospaceFont]);
 
@@ -203,7 +201,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       settings.globalViewSettings.overrideFont = overrideFont;
       setSettings(settings);
     }
-    view?.renderer.setStyles?.(getStyles(viewSettings, themeCode));
+    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideFont]);
 

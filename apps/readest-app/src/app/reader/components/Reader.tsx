@@ -6,6 +6,7 @@ import { useEffect, Suspense, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useThemeStore } from '@/store/themeStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
@@ -19,7 +20,8 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { getVisibleLibrary, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
 
-  const { updateAppTheme } = useTheme();
+  const { updateAppTheme } = useThemeStore();
+  useTheme();
   useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {

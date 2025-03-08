@@ -12,8 +12,8 @@ import { IoArrowBack } from 'react-icons/io5';
 
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/utils/supabase';
-import { useTheme } from '@/hooks/useTheme';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -61,7 +61,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
