@@ -106,7 +106,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-y'>
+          <div className='divide-base-200 divide-y'>
             <div className='config-item config-item-top config-item-bottom'>
               <span className=''>{_('Paging Animation')}</span>
               <input
@@ -123,7 +123,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-y'>
+          <div className='divide-base-200 divide-y'>
             <div className='config-item config-item-top'>
               <span className=''>{_('Continuous Scroll')}</span>
               <input

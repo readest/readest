@@ -120,7 +120,7 @@ const Dialog: React.FC<DialogProps> = ({
       >
         {window.innerWidth < 640 && (
           <div
-            className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+            className='drag-handle flex h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center'
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
           >
