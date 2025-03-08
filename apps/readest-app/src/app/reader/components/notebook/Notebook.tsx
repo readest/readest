@@ -14,6 +14,7 @@ import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
+import { getBookDirFromLanguage } from '@/utils/book';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
@@ -29,8 +30,8 @@ const Notebook: React.FC = ({}) => {
   const { sideBarBookKey } = useSidebarStore();
   const { notebookWidth, isNotebookVisible, isNotebookPinned } = useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getView } = useReaderStore();
+  const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const { getView, getViewSettings } = useReaderStore();
   const { setNotebookWidth, setNotebookVisible, toggleNotebookPin } = useNotebookStore();
   const { setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
 
@@ -136,6 +137,14 @@ const Notebook: React.FC = ({}) => {
 
   if (!sideBarBookKey) return null;
 
+  const bookData = getBookData(sideBarBookKey);
+  const viewSettings = getViewSettings(sideBarBookKey);
+  if (!bookData || !bookData.bookDoc) {
+    return null;
+  }
+  const { bookDoc } = bookData;
+  const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
+
   const config = getConfig(sideBarBookKey);
   const { booknotes: allNotes = [] } = config || {};
   const annotationNotes = allNotes
@@ -159,6 +168,7 @@ const Notebook: React.FC = ({}) => {
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           !isNotebookPinned && 'shadow-2xl',
         )}
+        dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
           width: `${notebookWidth}`,
           maxWidth: `${MAX_NOTEBOOK_WIDTH * 100}%`,
@@ -183,7 +193,7 @@ const Notebook: React.FC = ({}) => {
           handleTogglePin={handleTogglePin}
         />
         <div className='max-h-[calc(100vh-44px)] overflow-y-auto px-3'>
-          <div>
+          <div dir='ltr'>
             {excerptNotes.length > 0 && (
               <p className='content font-size-base pt-1'>{_('Excerpts')}</p>
             )}
@@ -196,7 +206,7 @@ const Notebook: React.FC = ({}) => {
                   className='collapse-arrow border-base-300 bg-base-100 collapse border'
                 >
                   <div
-                    className='collapse-title font-size-sm h-9 min-h-9 p-2 pr-8 font-medium'
+                    className='collapse-title font-size-sm h-9 min-h-9 p-2 pe-8 font-medium'
                     style={
                       {
                         '--top-override': '1.2rem',
@@ -208,7 +218,7 @@ const Notebook: React.FC = ({}) => {
                   </div>
                   <div className='collapse-content font-size-xs select-text px-3 pb-0'>
                     <p className='hyphens-auto text-justify'>{item.text}</p>
-                    <div className='flex justify-end'>
+                    <div className='flex justify-end' dir='ltr'>
                       <div
                         className='font-size-xs cursor-pointer align-bottom text-red-500 hover:text-red-600'
                         onClick={handleEditNote.bind(null, item, true)}
@@ -221,7 +231,7 @@ const Notebook: React.FC = ({}) => {
               </li>
             ))}
           </ul>
-          <div>
+          <div dir='ltr'>
             {(notebookNewAnnotation || annotationNotes.length > 0) && (
               <p className='content font-size-base pt-1'>{_('Notes')}</p>
             )}

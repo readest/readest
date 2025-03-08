@@ -15,10 +15,10 @@ const NotebookHeader: React.FC<{
   const _ = useTranslation();
   const iconSize14 = useResponsiveSize(14);
   return (
-    <div className='notebook-header relative flex h-11 items-center px-3'>
+    <div className='notebook-header relative flex h-11 items-center px-3' dir='ltr'>
       <div className='absolute inset-0 flex items-center justify-center space-x-2'>
         <LuNotebookPen />
-        <div className='notebook-title text-sm font-medium'>{_('Notebook')}</div>
+        <div className='notebook-title hidden text-sm font-medium sm:flex'>{_('Notebook')}</div>
       </div>
       <div className='z-10 flex items-center gap-x-4'>
         <button

@@ -81,10 +81,14 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           } as React.CSSProperties
         }
       >
-        {item.note && <span className='content font-size-sm font-normal'>{item.note}</span>}
+        {item.note && (
+          <span className='content font-size-sm font-normal' dir='auto'>
+            {item.note}
+          </span>
+        )}
         <div className='flex items-start'>
           {item.note && (
-            <div className='my-1 mr-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
+            <div className='my-1 me-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
           )}
           <div className={clsx('content font-size-sm line-clamp-3', item.note && 'py-2')}>
             <span
@@ -116,7 +120,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
         }
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex justify-end space-x-3 p-2'>
+        <div className='flex justify-end space-x-3 p-2' dir='ltr'>
           {item.note && (
             <button
               className={clsx(

@@ -114,6 +114,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
               'inset-0 w-full rounded-none border-0 bg-transparent p-0',
               'content font-size-sm',
             )}
+            dir='auto'
             ref={editorRef}
             value={note}
             rows={1}
@@ -130,7 +131,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
           <span className='content font-size-xs inline text-gray-500'>{getAnnotationText()}</span>
         </div>
       </div>
-      <div className='flex justify-end p-2'>
+      <div className='flex justify-end p-2' dir='ltr'>
         <button
           className={clsx(
             'content btn btn-ghost font-size-sm hover:bg-transparent',
