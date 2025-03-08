@@ -79,6 +79,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         appService?.hasRoundedWindow && 'rounded-window-bottom-right',
         !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
         isHoveredAnim && 'hover-bar-anim',
+        viewSettings?.vertical && viewSettings?.scrolled ? 'mb-3 !h-6' : '',
         hoveredBookKey === bookKey ? `opacity-100` : `opacity-0`,
       )}
       dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
