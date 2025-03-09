@@ -59,6 +59,8 @@ export const useClickEvent = (
             }
           }
         } else if (msg.data.type === 'iframe-wheel') {
+          // FIXME: conlict with the touchpad scroll event on macOS
+          if (viewSettings.scrolled && appService?.osPlatform === 'macos') return;
           const { deltaY } = msg.data;
           const fontSize = viewSettings?.defaultFontSize ?? 16;
           const lineHeight = viewSettings?.lineHeight ?? 1.6;
