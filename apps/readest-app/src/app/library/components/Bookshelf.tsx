@@ -21,9 +21,9 @@ interface BookshelfProps {
   libraryBooks: Book[];
   isSelectMode: boolean;
   handleImportBooks: () => void;
-  handleBookUpload: (book: Book) => void;
-  handleBookDownload: (book: Book) => void;
-  handleBookDelete: (book: Book) => void;
+  handleBookUpload: (book: Book) => Promise<boolean>;
+  handleBookDownload: (book: Book) => Promise<boolean>;
+  handleBookDelete: (book: Book) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
   booksTransferProgress: { [key: string]: number | null };

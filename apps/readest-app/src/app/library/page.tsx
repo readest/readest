@@ -360,17 +360,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           title: book.title,
         }),
       });
+      return true;
     } catch (err) {
       if (err instanceof Error) {
         if (err.message.includes('Not authenticated') && settings.keepLogin) {
           navigateToLogin(router);
-          return;
+          return false;
         } else if (err.message.includes('Insufficient storage quota')) {
           eventDispatcher.dispatch('toast', {
             type: 'error',
             message: _('Insufficient storage quota'),
           });
-          return;
+          return false;
         }
       }
       eventDispatcher.dispatch('toast', {
@@ -379,6 +380,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           title: book.title,
         }),
       });
+      return false;
     }
   };
 
@@ -395,6 +397,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           title: book.title,
         }),
       });
+      return true;
     } catch {
       eventDispatcher.dispatch('toast', {
         message: _('Failed to download book: {{title}}', {
@@ -402,6 +405,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         }),
         type: 'error',
       });
+      return false;
     }
   };
 
@@ -417,6 +421,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           title: book.title,
         }),
       });
+      return true;
     } catch {
       eventDispatcher.dispatch('toast', {
         message: _('Failed to delete book: {{title}}', {
@@ -424,6 +429,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         }),
         type: 'error',
       });
+      return false;
     }
   };
 

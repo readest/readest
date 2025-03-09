@@ -72,9 +72,9 @@ interface BookshelfItemProps {
   transferProgress: number | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
-  handleBookUpload: (book: Book) => void;
-  handleBookDownload: (book: Book) => void;
-  handleBookDelete: (book: Book) => void;
+  handleBookUpload: (book: Book) => Promise<boolean>;
+  handleBookDownload: (book: Book) => Promise<boolean>;
+  handleBookDelete: (book: Book) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
 }
@@ -109,9 +109,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       let available = false;
       const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
-        await handleBookDownload(book);
+        available = await handleBookDownload(book);
         updateBook(envConfig, book);
-        available = true;
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
         setLoading(false);
