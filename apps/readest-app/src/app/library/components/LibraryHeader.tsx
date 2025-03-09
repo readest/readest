@@ -37,6 +37,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     isTrafficLightVisible,
     initializeTrafficLightStore,
     initializeTrafficLightListeners,
+    setTrafficLightVisibility,
     cleanupTrafficLightListeners,
   } = useTrafficLightStore();
 
@@ -53,6 +54,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
 
     initializeTrafficLightStore(appService);
     initializeTrafficLightListeners();
+    setTrafficLightVisibility(true);
     return () => {
       cleanupTrafficLightListeners();
     };

@@ -56,10 +56,17 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
     initializeTrafficLightStore(appService);
     initializeTrafficLightListeners();
-    setTrafficLightVisibility(isSideBarVisible);
+    setTrafficLightVisibility(true);
     return () => {
       cleanupTrafficLightListeners();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!appService?.hasTrafficLight) return;
+
+    setTrafficLightVisibility(isSideBarVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSideBarVisible]);
 
