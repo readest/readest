@@ -103,15 +103,15 @@ const FooterBar: React.FC<FooterBarProps> = ({
         </div>
         <Button
           icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
-          onClick={viewSettings?.rtl ? handleGoForward : handleGoBack}
-          tooltip={viewSettings?.rtl ? _('Go Forward') : _('Go Back')}
-          disabled={viewSettings?.rtl ? !view?.history.canGoForward : !view?.history.canGoBack}
+          onClick={handleGoBack}
+          tooltip={_('Go Back')}
+          disabled={!view?.history.canGoBack}
         />
         <Button
           icon={viewSettings?.rtl ? <RiArrowGoBackLine /> : <RiArrowGoForwardLine />}
-          onClick={viewSettings?.rtl ? handleGoBack : handleGoForward}
-          tooltip={viewSettings?.rtl ? _('Go Back') : _('Go Forward')}
-          disabled={viewSettings?.rtl ? !view?.history.canGoBack : !view?.history.canGoForward}
+          onClick={handleGoForward}
+          tooltip={_('Go Forward')}
+          disabled={!view?.history.canGoForward}
         />
         <span className='mx-2 text-center text-sm'>
           {progressValid ? `${Math.round(progressFraction * 100)}%` : ''}
