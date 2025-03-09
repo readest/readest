@@ -32,7 +32,7 @@
 
 <div align="center">
   <a href="https://readest.com" target="_blank">
-    <img src="./data/screenshots/landing_preview.png" alt="Readest Banner" width="100%" />
+    <img src="./data/screenshots/landing_all_platforms.png" alt="Readest Banner" width="100%" />
   </a>
 </div>
 
@@ -80,7 +80,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 ![DeepL](./data/screenshots/deepl.png)
 
-![TTS](./data/screenshots/tts_control.png)
+![TTS](./data/screenshots/tts_speak_aloud.png)
 
 ![Footnote](./data/screenshots/footnote_popover.png)
 
@@ -205,7 +205,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 <a href="https://github.com/readest/readest/graphs/contributors">
   <p align="left">
-    <img width="300" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
+    <img width="500" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
   </p>
 </a>
 
