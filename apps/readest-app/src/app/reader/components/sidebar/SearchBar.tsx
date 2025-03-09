@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
 
@@ -7,9 +8,9 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookSearchConfig, BookSearchResult } from '@/types/book';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const MINIMUM_SEARCH_TERM_LENGTH_DEFAULT = 2;
 const MINIMUM_SEARCH_TERM_LENGTH_CJK = 1;
@@ -172,7 +173,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
         <div className='bg-base-300 flex h-8 w-8 items-center rounded-r-lg'>
           <Dropdown
-            className='dropdown-bottom flex justify-center'
+            className={clsx(
+              window.innerWidth < 640 && 'dropdown-end',
+              'dropdown-bottom flex justify-center',
+            )}
+            menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg'
             toggleButton={<FaChevronDown size={iconSize12} className='text-gray-500' />}
           >

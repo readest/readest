@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { BookSearchConfig } from '@/types/book';
@@ -6,6 +7,7 @@ import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 
 interface SearchOptionsProps {
   searchConfig: BookSearchConfig;
+  menuClassName?: string;
   onSearchConfigChanged: (searchConfig: BookSearchConfig) => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
@@ -32,6 +34,7 @@ const Option: React.FC<OptionProps> = ({ label, isActive, onClick }) => (
 
 const SearchOptions: React.FC<SearchOptionsProps> = ({
   searchConfig,
+  menuClassName,
   onSearchConfigChanged,
   setIsDropdownOpen,
 }) => {
@@ -44,7 +47,10 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
   return (
     <div
       tabIndex={0}
-      className='book-menu dropdown-content dropdown-center border-base-200 z-20 mt-3 w-56 border shadow-2xl'
+      className={clsx(
+        'book-menu dropdown-content dropdown-center border-base-200 z-20 w-56 border shadow-2xl',
+        menuClassName,
+      )}
     >
       <Option
         label={_('Book')}
