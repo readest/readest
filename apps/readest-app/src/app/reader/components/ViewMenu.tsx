@@ -32,16 +32,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { getView, getViews, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
-  const { themeMode, isDarkMode, themeCode, setThemeMode } = useThemeStore();
+  const { themeMode, themeCode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
-  const [isInvertedColors, setInvertedColors] = useState(viewSettings!.invert);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
 
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
-  const toggleInvertedColors = () => setInvertedColors(!isInvertedColors);
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
@@ -77,12 +75,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
-
-  useEffect(() => {
-    document.body.classList.toggle('invert', isInvertedColors);
-    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInvertedColors]);
 
   useEffect(() => {
     const view = getView(bookKey);
@@ -153,12 +145,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         icon={themeMode === 'dark' ? <BiMoon /> : themeMode === 'light' ? <BiSun /> : <TbSunMoon />}
         onClick={cycleThemeMode}
-      />
-      <MenuItem
-        label={_('Invert Colors in Dark Mode')}
-        icon={isInvertedColors ? <MdCheck className='text-base-content' /> : undefined}
-        onClick={toggleInvertedColors}
-        disabled={!isDarkMode}
       />
     </div>
   );
