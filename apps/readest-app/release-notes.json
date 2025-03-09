@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.21": {
+      "date": "2025-03-10",
+      "notes": [
+        "Fix column height in vertical layout on mobile",
+        "Fix drag handle height not constant on mobile",
+        "Add fullscreen option on desktop",
+        "Add drag and drop to import books on desktop",
+        "Various fixes and enhancements on updater, footerbar and note"
+      ]
+    },
     "0.9.20": {
       "date": "2025-03-10",
       "notes": [
