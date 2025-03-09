@@ -6,7 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { deserializeConfig, serializeConfig } from '@/utils/serializer';
+import { serializeConfig } from '@/utils/serializer';
 import { CFI } from '@/libs/document';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
@@ -106,14 +106,9 @@ export const useProgressSync = (bookKey: string) => {
       configSynced.current = true;
       const syncedConfig = syncedConfigs.filter((c) => c.bookHash === bookKey.split('-')[0])[0];
       if (syncedConfig) {
-        const newConfig = deserializeConfig(
-          JSON.stringify(syncedConfig),
-          settings.globalViewSettings,
-          DEFAULT_BOOK_SEARCH_CONFIG,
-        );
-        setConfig(bookKey, { ...config, ...newConfig });
-        const syncedCFI = syncedConfig.location;
         const configCFI = config?.location;
+        const syncedCFI = syncedConfig.location;
+        setConfig(bookKey, syncedConfig);
         if (syncedCFI && configCFI) {
           if (CFI.compare(configCFI, syncedCFI) < 0) {
             if (view) {

@@ -17,7 +17,7 @@ interface BookData {
 interface BookDataState {
   booksData: { [id: string]: BookData };
   getConfig: (key: string | null) => BookConfig | null;
-  setConfig: (key: string, config: BookConfig) => void;
+  setConfig: (key: string, partialConfig: Partial<BookConfig>) => void;
   saveConfig: (
     envConfig: EnvConfigType,
     bookKey: string,
@@ -39,9 +39,11 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const id = key.split('-')[0]!;
     return get().booksData[id]?.config || null;
   },
-  setConfig: (key: string, config: BookConfig) => {
+  setConfig: (key: string, partialConfig: Partial<BookConfig>) => {
     set((state: BookDataState) => {
       const id = key.split('-')[0]!;
+      const config = (state.booksData[id]?.config || {}) as BookConfig;
+      Object.assign(config, partialConfig);
       return {
         booksData: {
           ...state.booksData,

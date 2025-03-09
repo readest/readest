@@ -72,7 +72,7 @@ export const useNotesSync = (bookKey: string) => {
         ...oldNotes.filter((oldNote) => !newNotes.some((newNote) => newNote.id === oldNote.id)),
         ...newNotes.map(processNewNote),
       ];
-      setConfig(bookKey, { ...config, booknotes: mergedNotes });
+      setConfig(bookKey, { booknotes: mergedNotes });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedNotes]);
