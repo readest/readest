@@ -90,7 +90,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           {item.note && (
             <div className='my-1 me-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
           )}
-          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'py-2')}>
+          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'my-2')}>
             <span
               className={clsx(
                 'inline',

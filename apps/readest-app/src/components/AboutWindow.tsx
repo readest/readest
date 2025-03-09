@@ -20,7 +20,7 @@ export const AboutWindow = () => {
   const [isUpdated, setIsUpdated] = React.useState(false);
 
   const handleCheckUpdate = async () => {
-    const update = await checkForAppUpdates(_);
+    const update = await checkForAppUpdates(_, false);
     if (!update) {
       setIsUpdated(true);
     }
