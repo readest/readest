@@ -36,6 +36,15 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const handleBeforeRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const { view } = detail;
+      view.addEventListener('link', (e: Event) => {
+        e.preventDefault();
+        const { detail: popupLinkDetail } = e as CustomEvent;
+        popupLinkDetail['follow'] = true;
+        footnoteHandler.handle(bookDoc, e)?.catch((err) => {
+          console.warn(err);
+          getView(bookKey)?.goTo(popupLinkDetail.href);
+        });
+      });
       footnoteViewRef.current = view;
       footnoteRef.current?.replaceChildren(view);
       const { renderer } = view;
