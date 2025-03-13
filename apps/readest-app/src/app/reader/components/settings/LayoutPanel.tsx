@@ -35,6 +35,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize!);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
   const [overrideLayout, setOverrideLayout] = useState(viewSettings.overrideLayout!);
+  const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
 
   useEffect(() => {
     viewSettings.paragraphMargin = paragraphMargin;
@@ -201,12 +202,40 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);
 
+  useEffect(() => {
+    viewSettings!.scrolled = isScrolledMode;
+    getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
+    getView(bookKey)?.renderer.setAttribute(
+      'max-inline-size',
+      `${getMaxInlineSize(viewSettings)}px`,
+    );
+    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
+    setViewSettings(bookKey, viewSettings!);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.scrolled = isScrolledMode;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isScrolledMode]);
+
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
   const mightBeRTLBook =
     langCode === 'zh' || langCode === 'ja' || langCode === 'ko' || langCode === '';
 
   return (
     <div className='my-4 w-full space-y-6'>
+      <div className='w-full'>
+        <div className='flex items-center justify-between'>
+          <h2 className='font-medium'>{_('Scrolled Mode')}</h2>
+          <input
+            type='checkbox'
+            className='toggle'
+            checked={isScrolledMode}
+            onChange={() => setScrolledMode(!isScrolledMode)}
+          />
+        </div>
+      </div>
+
       {mightBeRTLBook && (
         <div className='w-full'>
           <div className='flex items-center justify-between'>
