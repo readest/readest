@@ -80,7 +80,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
     <div className='mt-6 rounded-lg'>
       <div className='mb-4'>
         <div className='mb-4 flex items-center justify-between'>
-          <label className='text-sm font-medium'>{_('Custom Theme')}</label>
+          <label className='font-medium'>{_('Custom Theme')}</label>
           <div className='flex w-[calc(50%-12px)] justify-between'>
             <button
               className='btn btn-ghost btn-sm text-base-content px-2'
@@ -107,7 +107,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           </div>
         </div>
         <div className='mb-4 flex items-center justify-between'>
-          <label className='flex-1 text-sm font-medium'>{_('Theme Name')}</label>
+          <label className='font-medium'>{_('Theme Name')}</label>
           <input
             type='text'
             value={themeName}

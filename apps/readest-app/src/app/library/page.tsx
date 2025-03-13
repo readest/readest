@@ -434,6 +434,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleImportBooks = async () => {
+    setIsSelectMode(false);
     console.log('Importing books...');
     let files;
 
