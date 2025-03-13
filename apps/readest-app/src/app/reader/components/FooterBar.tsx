@@ -75,7 +75,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
   return (
     <>
       <div
-        className='absolute bottom-0 left-0 z-10 h-12 w-full'
+        className={clsx(
+          'absolute bottom-0 left-0 z-10 h-12 w-full',
+          viewSettings?.vertical && viewSettings?.scrolled ? 'bottom-3 !h-6' : '',
+        )}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
