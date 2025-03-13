@@ -53,7 +53,6 @@
   "Hyphenation": "Heceleme",
   "Identifier:": "Tanımlayıcı:",
   "Import Books": "Kitapları İçe Aktar",
-  "Invert Colors in Dark Mode": "Karanlık Modda Renkleri Ters Çevir",
   "Language:": "Dil:",
   "Layout": "Düzen",
   "Light Mode": "Aydınlık Mod",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Sürekli Kaydırma",
   "Fullscreen": "Tam Ekran",
   "No supported files found. Supported formats: {{formats}}": "Desteklenen dosya bulunamadı. Desteklenen formatlar: {{formats}}",
-  "Drop to Import Books": "Kitapları İçe Aktarmak İçin Bırak"
+  "Drop to Import Books": "Kitapları İçe Aktarmak İçin Bırak",
+  "Custom": "Özel",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Tüm dünya bir sahnedir,\nVe tüm erkekler ve kadınlar sadece oyunculardır;\nOnların çıkışları ve girişleri vardır,\nVe bir adam zamanında birçok rol oynar,\nOnun eylemleri yedi yaşındadır.\n\n— William Shakespeare",
+  "Custom Theme": "Özel Tema",
+  "Theme Name": "Tema Adı",
+  "Text Color": "Metin Rengi",
+  "Background Color": "Arka Plan Rengi",
+  "Preview": "Önizleme",
+  "Contrast": "Kontrast",
+  "Sunset": "Gün Batımı"
 }

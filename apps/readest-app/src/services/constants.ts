@@ -39,6 +39,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   autohideCursor: true,
   translateTargetLang: 'EN',
 
+  customThemes: [],
   highlightStyle: 'highlight',
   highlightStyles: {
     highlight: 'yellow',
@@ -416,3 +417,42 @@ export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
   blue: '#60a5fa', // blue-400
   violet: '#a78bfa', // violet-400
 };
+
+export const CUSTOM_THEME_TEMPLATES = [
+  {
+    light: {
+      fg: '#2b2b2b',
+      bg: '#f3f3f3',
+      primary: '#3c5a72',
+    },
+    dark: {
+      fg: '#d0d0d0',
+      bg: '#1a1c1f',
+      primary: '#486e8a',
+    },
+  },
+  {
+    light: {
+      fg: '#3f2f3c',
+      bg: '#f5ecf8',
+      primary: '#7b5291',
+    },
+    dark: {
+      fg: '#d6cadd',
+      bg: '#3a2c3d',
+      primary: '#bda0cc',
+    },
+  },
+  {
+    light: {
+      fg: '#2b2b2b',
+      bg: '#defcd9',
+      primary: '#00796b',
+    },
+    dark: {
+      fg: '#c8e6c9',
+      bg: '#273c33',
+      primary: '#26a69a',
+    },
+  },
+];

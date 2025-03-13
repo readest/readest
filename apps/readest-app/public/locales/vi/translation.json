@@ -53,7 +53,6 @@
   "Hyphenation": "Gạch nối từ",
   "Identifier:": "Định danh:",
   "Import Books": "Nhập sách",
-  "Invert Colors in Dark Mode": "Đảo màu trong chế độ tối",
   "Language:": "Ngôn ngữ:",
   "Layout": "Bố cục",
   "Light Mode": "Chế độ sáng",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Cuộn liên tục",
   "Fullscreen": "Toàn màn hình",
   "No supported files found. Supported formats: {{formats}}": "Không tìm thấy tệp được hỗ trợ. Định dạng được hỗ trợ: {{formats}}",
-  "Drop to Import Books": "Kéo và thả để nhập sách"
+  "Drop to Import Books": "Kéo và thả để nhập sách",
+  "Custom": "Tùy chỉnh",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Cả thế giới này là một sân khấu,\nVà tất cả đàn ông và phụ nữ chỉ là những diễn viên;\nHọ có cửa ra và cửa vào của mình,\nVà một người trong cuộc đời mình đóng nhiều vai,\nHành động của mình là bảy tuổi.\n\n— William Shakespeare",
+  "Custom Theme": "Chủ đề tùy chỉnh",
+  "Theme Name": "Tên chủ đề",
+  "Text Color": "Màu văn bản",
+  "Background Color": "Màu nền",
+  "Preview": "Xem trước",
+  "Contrast": "Tương phản",
+  "Sunset": "Hoàng hôn"
 }

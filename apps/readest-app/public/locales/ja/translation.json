@@ -53,7 +53,6 @@
   "Hyphenation": "ハイフネーション",
   "Identifier:": "識別子：",
   "Import Books": "書籍をインポート",
-  "Invert Colors in Dark Mode": "ダークモードで色を反転",
   "Language:": "言語：",
   "Layout": "レイアウト",
   "Light Mode": "ライトモード",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "連続スクロール",
   "Fullscreen": "全画面",
   "No supported files found. Supported formats: {{formats}}": "サポートされているファイルが見つかりません。サポートされている形式：{{formats}}",
-  "Drop to Import Books": "書籍をインポートするにはドロップ"
+  "Drop to Import Books": "書籍をインポートするにはドロップ",
+  "Custom": "カスタム",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "全世界は舞台であり、\nそしてすべての男性と女性は単なる役者です。\n彼らは出入り口を持っており、\nそして一人の男性は時に多くの役を演じます。\n彼の行為は七つの時代です。\n\n— ウィリアム・シェイクスピア",
+  "Custom Theme": "カスタムテーマ",
+  "Theme Name": "テーマ名",
+  "Text Color": "テキストカラー",
+  "Background Color": "背景色",
+  "Preview": "プレビュー",
+  "Contrast": "コントラスト",
+  "Sunset": "サンセット"
 }

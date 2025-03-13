@@ -53,7 +53,6 @@
   "Hyphenation": "Dzielenie wyrazów",
   "Identifier:": "Identyfikator:",
   "Import Books": "Importuj książki",
-  "Invert Colors in Dark Mode": "Odwróć kolory w trybie ciemnym",
   "Language:": "Język:",
   "Layout": "Układ",
   "Light Mode": "Tryb jasny",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Przewijanie ciągłe",
   "Fullscreen": "Pełny ekran",
   "No supported files found. Supported formats: {{formats}}": "Nie znaleziono obsługiwanych plików. Obsługiwane formaty: {{formats}}",
-  "Drop to Import Books": "Upuść, aby zaimportować książki"
+  "Drop to Import Books": "Upuść, aby zaimportować książki",
+  "Custom": "Niestandardowy",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Cały świat jest sceną,\nA wszyscy mężczyźni i kobiety są tylko aktorami;\nMają swoje wyjścia i wejścia,\nI jeden człowiek w swoim czasie gra wiele ról,\nJego czyny to siedem wieków.\n\n— William Shakespeare",
+  "Custom Theme": "Niestandardowy motyw",
+  "Theme Name": "Nazwa motywu",
+  "Text Color": "Kolor tekstu",
+  "Background Color": "Kolor tła",
+  "Preview": "Podgląd",
+  "Contrast": "Kontrast",
+  "Sunset": "Zachód słońca"
 }

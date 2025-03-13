@@ -53,7 +53,6 @@
   "Hyphenation": "الواصلة",
   "Identifier:": "المعرف:",
   "Import Books": "استيراد الكتب",
-  "Invert Colors in Dark Mode": "عكس الألوان في الوضع المظلم",
   "Language:": "اللغة:",
   "Layout": "التخطيط",
   "Light Mode": "الوضع الفاتح",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "التمرير المستمر",
   "Fullscreen": "ملء الشاشة",
   "No supported files found. Supported formats: {{formats}}": "لم يتم العثور على ملفات مدعومة. الصيغ المدعومة: {{formats}}",
-  "Drop to Import Books": "اسحب لاستيراد الكتب"
+  "Drop to Import Books": "اسحب لاستيراد الكتب",
+  "Custom": "مخصص",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "العالم مسرح،\nوالناس فيه ممثلون؛\nلهم مخارج ومداخل،\nوالإنسان في حياته يلعب دورًا كثيرًا،\nوأفعاله تمر بسبع مراحل.\n\n— ويليام شكسبير",
+  "Custom Theme": "سمة مخصصة",
+  "Theme Name": "اسم السمة",
+  "Text Color": "لون النص",
+  "Background Color": "لون الخلفية",
+  "Preview": "معاينة",
+  "Contrast": "التباين",
+  "Sunset": "غروب الشمس"
 }

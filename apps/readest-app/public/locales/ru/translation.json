@@ -53,7 +53,6 @@
   "Hyphenation": "Перенос слов",
   "Identifier:": "Идентификатор:",
   "Import Books": "Импорт книг",
-  "Invert Colors in Dark Mode": "Инвертировать цвета в тёмной теме",
   "Language:": "Язык:",
   "Layout": "Макет",
   "Light Mode": "Светлая тема",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Непрерывная прокрутка",
   "Fullscreen": "Полноэкранный режим",
   "No supported files found. Supported formats: {{formats}}": "Поддерживаемые файлы не найдены. Поддерживаемые форматы: {{formats}}",
-  "Drop to Import Books": "Перетащите сюда книги для импорта"
+  "Drop to Import Books": "Перетащите сюда книги для импорта",
+  "Custom": "Пользовательский",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Весь мир — театр,\nИ все мужчины и женщины — просто актёры;\nУ них есть свои выходы и входы,\nИ один человек в своё время играет много ролей,\nЕго поступки — это семь веков.\n\n— Уильям Шекспир",
+  "Custom Theme": "Пользовательская тема",
+  "Theme Name": "Название темы",
+  "Text Color": "Цвет текста",
+  "Background Color": "Цвет фона",
+  "Preview": "Предпросмотр",
+  "Contrast": "Контраст",
+  "Sunset": "Закат"
 }

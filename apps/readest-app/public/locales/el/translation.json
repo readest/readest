@@ -53,7 +53,6 @@
   "Hyphenation": "Συλλαβισμός",
   "Identifier:": "Αναγνωριστικό:",
   "Import Books": "Εισαγωγή βιβλίων",
-  "Invert Colors in Dark Mode": "Αντιστροφή χρωμάτων στη σκοτεινή λειτουργία",
   "Language:": "Γλώσσα:",
   "Layout": "Διάταξη",
   "Light Mode": "Φωτεινή λειτουργία",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Συνεχής κύλιση",
   "Fullscreen": "Πλήρης οθόνη",
   "No supported files found. Supported formats: {{formats}}": "Δεν βρέθηκαν υποστηριζόμενα αρχεία. Υποστηριζόμενες μορφές: {{formats}}",
-  "Drop to Import Books": "Ρίξτε για εισαγωγή βιβλίων"
+  "Drop to Import Books": "Ρίξτε για εισαγωγή βιβλίων",
+  "Custom": "Προσαρμοσμένο",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Όλος ο κόσμος είναι σκηνή,\nΚαι όλοι οι άνδρες και οι γυναίκες απλώς ηθοποιοί·\nΈχουν τις εξόδους και τις εισόδους τους,\nΚαι ένας άνθρωπος στον χρόνο του παίζει πολλούς ρόλους,\nΟι πράξεις του υπάρχουν σε επτά ηλικίες.\n\n— William Shakespeare",
+  "Custom Theme": "Προσαρμοσμένο θέμα",
+  "Theme Name": "Όνομα θέματος",
+  "Text Color": "Χρώμα κειμένου",
+  "Background Color": "Χρώμα φόντου",
+  "Preview": "Προεπισκόπηση",
+  "Contrast": "Αντίθεση",
+  "Sunset": "Ηλιοβασίλεμα"
 }

@@ -53,7 +53,6 @@
   "Hyphenation": "Pemenggalan Kata",
   "Identifier:": "Pengenal:",
   "Import Books": "Impor Buku",
-  "Invert Colors in Dark Mode": "Balik Warna di Mode Gelap",
   "Language:": "Bahasa:",
   "Layout": "Tata Letak",
   "Light Mode": "Mode Terang",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "Gulir Terus",
   "Fullscreen": "Layar Penuh",
   "No supported files found. Supported formats: {{formats}}": "Tidak ada file yang didukung ditemukan. Format yang didukung: {{formats}}",
-  "Drop to Import Books": "Jatuhkan untuk Mengimpor Buku"
+  "Drop to Import Books": "Jatuhkan untuk Mengimpor Buku",
+  "Custom": "Kustom",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Seluruh dunia adalah panggung,\nDan semua pria dan wanita hanyalah pemain;\nMereka memiliki keluar dan masuk mereka,\nDan seorang pria dalam hidupnya memainkan banyak peran,\nTindakannya ada tujuh zaman.\n\n— William Shakespeare",
+  "Custom Theme": "Tema Kustom",
+  "Theme Name": "Nama Tema",
+  "Text Color": "Warna Teks",
+  "Background Color": "Warna Latar Belakang",
+  "Preview": "Pratinjau",
+  "Contrast": "Kontras",
+  "Sunset": "Senja"
 }

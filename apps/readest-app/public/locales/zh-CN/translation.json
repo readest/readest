@@ -53,7 +53,6 @@
   "Hyphenation": "断字",
   "Identifier:": "识别码",
   "Import Books": "导入书籍",
-  "Invert Colors in Dark Mode": "深色主题下反色",
   "Language:": "语言",
   "Layout": "布局",
   "Light Mode": "浅色主题",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "连续滚动",
   "Fullscreen": "全屏",
   "No supported files found. Supported formats: {{formats}}": "未找到支持的文件。支持的格式：{{formats}}",
-  "Drop to Import Books": "拖放导入书籍"
+  "Drop to Import Books": "拖放导入书籍",
+  "Custom": "自定义",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "世界是座舞台， \n所有男女都只是演员； \n各有其出场和入场； \n每个人皆扮演许多角色， \n而演出共分为七个阶段。\n\n————威廉·莎士比亚",
+  "Custom Theme": "自定义主题",
+  "Theme Name": "主题名称",
+  "Text Color": "文本颜色",
+  "Background Color": "背景颜色",
+  "Preview": "预览",
+  "Contrast": "对比",
+  "Sunset": "日落"
 }

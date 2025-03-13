@@ -5,7 +5,14 @@ import {
   FALLBACK_FONTS,
 } from '@/services/constants';
 import { ViewSettings } from '@/types/book';
-import { themes, Palette, ThemeMode } from '@/styles/themes';
+import {
+  themes,
+  Palette,
+  ThemeMode,
+  CustomTheme,
+  generateLightPalette,
+  generateDarkPalette,
+} from '@/styles/themes';
 
 import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
 import { getOSPlatform } from './misc';
@@ -260,14 +267,30 @@ export const getThemeCode = () => {
   let themeMode = 'auto';
   let themeColor = 'default';
   let systemIsDarkMode = false;
+  let customThemes: CustomTheme[] = [];
   if (typeof window !== 'undefined') {
     themeColor = localStorage.getItem('themeColor') || 'default';
     themeMode = localStorage.getItem('themeMode') as ThemeMode;
+    customThemes = JSON.parse(localStorage.getItem('customThemes') || '[]');
     systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   const isDarkMode = themeMode === 'dark' || (themeMode === 'auto' && systemIsDarkMode);
-  const defaultTheme = themes.find((theme) => theme.name === themeColor);
-  const defaultPalette = isDarkMode ? defaultTheme!.colors.dark : defaultTheme!.colors.light;
+  let currentTheme = themes.find((theme) => theme.name === themeColor);
+  if (!currentTheme) {
+    const customTheme = customThemes.find((theme) => theme.name === themeColor);
+    if (customTheme) {
+      currentTheme = {
+        name: customTheme.name,
+        label: customTheme.label,
+        colors: {
+          light: generateLightPalette(customTheme.colors.light),
+          dark: generateDarkPalette(customTheme.colors.dark),
+        },
+      };
+    }
+  }
+  if (!currentTheme) currentTheme = themes[0];
+  const defaultPalette = isDarkMode ? currentTheme!.colors.dark : currentTheme!.colors.light;
   return {
     bg: defaultPalette['base-100'],
     fg: defaultPalette['base-content'],

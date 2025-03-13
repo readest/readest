@@ -53,7 +53,6 @@
   "Hyphenation": "하이픈 넣기",
   "Identifier:": "식별자:",
   "Import Books": "책 가져오기",
-  "Invert Colors in Dark Mode": "다크 모드에서 색상 반전",
   "Language:": "언어:",
   "Layout": "레이아웃",
   "Light Mode": "라이트 모드",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "연속 스크롤",
   "Fullscreen": "전체 화면",
   "No supported files found. Supported formats: {{formats}}": "지원되는 파일이 없습니다. 지원되는 형식: {{formats}}",
-  "Drop to Import Books": "책 가져오기 위해 드롭"
+  "Drop to Import Books": "책 가져오기 위해 드롭",
+  "Custom": "사용자 정의",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "세상은 무대이며,\n그리고 모든 남자와 여자는 단지 배우일 뿐입니다;\n그들은 나가는 곳과 들어오는 곳이 있으며,\n그리고 한 남자는 그의 시간에 많은 역할을 합니다,\n그의 행동은 일곱 시대입니다.\n\n— 윌리엄 셰익스피어",
+  "Custom Theme": "사용자 정의 테마",
+  "Theme Name": "테마 이름",
+  "Text Color": "텍스트 색상",
+  "Background Color": "배경 색상",
+  "Preview": "미리보기",
+  "Contrast": "대비",
+  "Sunset": "일몰"
 }

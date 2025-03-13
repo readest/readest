@@ -53,7 +53,6 @@
   "Hyphenation": "हाइफ़नेशन",
   "Identifier:": "पहचानकर्ता:",
   "Import Books": "पुस्तकें आयात करें",
-  "Invert Colors in Dark Mode": "डार्क मोड में रंग उलटें",
   "Language:": "भाषा:",
   "Layout": "लेआउट",
   "Light Mode": "लाइट मोड",
@@ -235,5 +234,14 @@
   "Continuous Scroll": "निरंतर स्क्रॉल",
   "Fullscreen": "पूर्णस्क्रीन",
   "No supported files found. Supported formats: {{formats}}": "कोई समर्थित फ़ाइलें नहीं मिलीं। समर्थित प्रारूप: {{formats}}",
-  "Drop to Import Books": "पुस्तकें आयात करने के लिए छोड़ें"
+  "Drop to Import Books": "पुस्तकें आयात करने के लिए छोड़ें",
+  "Custom": "कस्टम",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "पूरी दुनिया एक स्टेज है,\nऔर सभी आदमी और महिलाएँ केवल अभिनेता हैं;\nउनके निकास और प्रवेश होते हैं,\nऔर एक आदमी अपने समय में कई भूमिकाएँ निभाता है,\nउसके कार्य सात युग होते हैं।\n\n— विलियम शेक्सपियर",
+  "Custom Theme": "कस्टम थीम",
+  "Theme Name": "थीम का नाम",
+  "Text Color": "टेक्स्ट रंग",
+  "Background Color": "पृष्ठभूमि रंग",
+  "Preview": "पूर्वावलोकन",
+  "Contrast": "विरोधाभास",
+  "Sunset": "सनसेट"
 }
