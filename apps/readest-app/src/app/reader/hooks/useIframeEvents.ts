@@ -58,17 +58,13 @@ export const useClickEvent = (
               }
             }
           }
-        } else if (msg.data.type === 'iframe-wheel') {
-          // FIXME: conlict with the touchpad scroll event on macOS
-          if (viewSettings.scrolled && appService?.osPlatform === 'macos') return;
+        } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
+          // The wheel event is handled by the iframe itself in scrolled mode.
           const { deltaY } = msg.data;
-          const fontSize = viewSettings?.defaultFontSize ?? 16;
-          const lineHeight = viewSettings?.lineHeight ?? 1.6;
-          const distance = fontSize * lineHeight * 3;
           if (deltaY > 0) {
-            viewRef.current?.next(viewSettings.scrolled ? distance : 1);
+            viewRef.current?.next(1);
           } else if (deltaY < 0) {
-            viewRef.current?.prev(viewSettings.scrolled ? distance : 1);
+            viewRef.current?.prev(1);
           }
         } else if (msg.data.type === 'iframe-mouseup') {
           if (msg.data.button === 3) {
