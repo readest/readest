@@ -32,6 +32,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
       <button
         tabIndex={0}
         className='btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case'
+        onClick={(e) => e.currentTarget.focus()}
       >
         <span style={{ fontFamily: onGetFontFamily(selectedOption.option, family ?? '') }}>
           {selectedOption.label}

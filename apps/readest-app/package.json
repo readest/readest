@@ -87,7 +87,7 @@
     "@types/tinycolor2": "^1.4.6",
     "autoprefixer": "^10.4.20",
     "cpx2": "^8.0.0",
-    "daisyui": "^4.12.23",
+    "daisyui": "^4.12.24",
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.0.3",
