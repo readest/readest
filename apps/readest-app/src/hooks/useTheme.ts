@@ -14,9 +14,8 @@ export const useTheme = () => {
   }, [settings]);
 
   useEffect(() => {
-    document.documentElement.setAttribute(
-      'data-theme',
-      `${themeColor}-${isDarkMode ? 'dark' : 'light'}`,
-    );
+    const colorScheme = isDarkMode ? 'dark' : 'light';
+    document.documentElement.style.setProperty('color-scheme', colorScheme);
+    document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
   }, [themeColor, isDarkMode]);
 };

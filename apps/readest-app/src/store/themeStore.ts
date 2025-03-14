@@ -47,7 +47,9 @@ export const useThemeStore = create<ThemeState>((set, get) => {
   if (typeof window !== 'undefined') {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
-      set({ systemIsDarkMode: mediaQuery.matches });
+      const mode = get().themeMode;
+      const isDarkMode = mode === 'dark' || (mode === 'auto' && mediaQuery.matches);
+      set({ systemIsDarkMode: mediaQuery.matches, isDarkMode });
     };
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);

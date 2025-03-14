@@ -36,7 +36,7 @@ const FoliateViewer: React.FC<{
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
-  const { themeCode } = useThemeStore();
+  const { themeCode, isDarkMode } = useThemeStore();
   const viewSettings = getViewSettings(bookKey)!;
 
   const [toastMessage, setToastMessage] = useState('');
@@ -129,7 +129,7 @@ const FoliateViewer: React.FC<{
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode]);
+  }, [themeCode, isDarkMode]);
 
   useEffect(() => {
     if (isViewCreated.current) return;
