@@ -7,9 +7,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { isCJKEnv } from '@/utils/misc';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
+import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -244,8 +246,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [borderColor]);
 
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
-  const mightBeRTLBook =
-    langCode === 'zh' || langCode === 'ja' || langCode === 'ko' || langCode === '';
+  const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
 
   return (
     <div className='my-4 w-full space-y-6'>

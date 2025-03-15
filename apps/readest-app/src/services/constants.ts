@@ -458,3 +458,18 @@ export const CUSTOM_THEME_TEMPLATES = [
     },
   },
 ];
+
+export const MIGHT_BE_RTL_LANGS = [
+  'zh',
+  'ja',
+  'ko',
+  'ar',
+  'he',
+  'fa',
+  'ur',
+  'dv',
+  'ps',
+  'sd',
+  'yi',
+  '',
+];
