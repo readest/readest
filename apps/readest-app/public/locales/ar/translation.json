@@ -57,7 +57,6 @@
   "Layout": "التخطيط",
   "Light Mode": "الوضع الفاتح",
   "Loading...": "جارٍ التحميل...",
-  "Loc. {{currentPage}} / {{totalPage}}": "الصفحة {{currentPage}} \\ {{totalPage}}",
   "Logged in": "تم تسجيل الدخول",
   "Logged in as {{userDisplayName}}": "تم تسجيل الدخول باسم {{userDisplayName}}",
   "Match Case": "مطابقة حالة الأحرف",
@@ -243,5 +242,7 @@
   "Background Color": "لون الخلفية",
   "Preview": "معاينة",
   "Contrast": "التباين",
-  "Sunset": "غروب الشمس"
+  "Sunset": "غروب الشمس",
+  "Double Border": "حدود مزدوجة",
+  "Border Color": "لون الحدود"
 }

@@ -57,7 +57,6 @@
   "Layout": "版面",
   "Light Mode": "淺色主題",
   "Loading...": "載入中...",
-  "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "已登入",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} 已登入",
   "Match Case": "匹配大小寫",
@@ -243,5 +242,7 @@
   "Background Color": "背景顏色",
   "Preview": "預覽",
   "Contrast": "對比",
-  "Sunset": "日落"
+  "Sunset": "日落",
+  "Double Border": "頁面邊框",
+  "Border Color": "邊框顏色"
 }

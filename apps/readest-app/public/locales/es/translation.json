@@ -57,7 +57,6 @@
   "Layout": "Diseño",
   "Light Mode": "Modo claro",
   "Loading...": "Cargando...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Sesión iniciada",
   "Logged in as {{userDisplayName}}": "Sesión iniciada como {{userDisplayName}}",
   "Match Case": "Coincidir mayúsculas y minúsculas",
@@ -243,5 +242,7 @@
   "Background Color": "Color de fondo",
   "Preview": "Vista previa",
   "Contrast": "Contraste",
-  "Sunset": "Atardecer"
+  "Sunset": "Atardecer",
+  "Double Border": "Doble borde",
+  "Border Color": "Color del borde"
 }

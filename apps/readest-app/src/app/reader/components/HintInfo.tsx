@@ -6,10 +6,17 @@ import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
   bookKey: string;
-  gapRight: string;
+  isVertical: boolean;
+  horizontalGap: number;
+  verticalMargin: number;
 }
 
-const HintInfo: React.FC<SectionInfoProps> = ({ bookKey, gapRight }) => {
+const HintInfo: React.FC<SectionInfoProps> = ({
+  bookKey,
+  isVertical,
+  horizontalGap,
+  verticalMargin,
+}) => {
   const { isSideBarVisible } = useSidebarStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
@@ -42,13 +49,26 @@ const HintInfo: React.FC<SectionInfoProps> = ({ bookKey, gapRight }) => {
   return (
     <div
       className={clsx(
-        'pageinfo absolute right-0 top-0 flex max-w-[50%] items-end',
-        isTrafficLightVisible && !isSideBarVisible ? 'h-[44px]' : 'h-[30px]',
-        hintMessage ? '' : '',
+        'sectioninfo absolute flex justify-end overflow-hidden',
+        !isVertical && (isTrafficLightVisible && !isSideBarVisible ? 'h-[44px]' : 'h-[30px]'),
+        isVertical ? 'writing-vertical-rl w-[32px] items-center' : 'top-0 items-end',
+        isVertical ? 'max-h-[50%]' : 'max-w-[50%]',
       )}
-      style={{ right: gapRight }}
+      style={
+        isVertical
+          ? {
+              bottom: `calc(${horizontalGap / 2}% + ${verticalMargin}px)`,
+              left: `calc(100% - ${horizontalGap * 2}%)`,
+              height: `calc(100% - ${verticalMargin * 2}px)`,
+            }
+          : { right: `${horizontalGap}%` }
+      }
     >
-      <h2 className='text-neutral-content line-clamp-1 text-center font-sans text-xs font-light'>
+      <h2
+        className={clsx(
+          'text-neutral-content line-clamp-1 text-center font-sans text-xs font-light',
+        )}
+      >
         {hintMessage || ''}
       </h2>
     </div>

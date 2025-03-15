@@ -57,7 +57,6 @@
   "Layout": "Düzen",
   "Light Mode": "Aydınlık Mod",
   "Loading...": "Yükleniyor...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Konum {{currentPage}} / {{totalPage}}",
   "Logged in": "Giriş Yapıldı",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} olarak giriş yapıldı",
   "Match Case": "Büyük/Küçük Harf Eşleştir",
@@ -243,5 +242,7 @@
   "Background Color": "Arka Plan Rengi",
   "Preview": "Önizleme",
   "Contrast": "Kontrast",
-  "Sunset": "Gün Batımı"
+  "Sunset": "Gün Batımı",
+  "Double Border": "Çift Sınır",
+  "Border Color": "Sınır Rengi"
 }

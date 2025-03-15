@@ -57,7 +57,6 @@
   "Layout": "Layout",
   "Light Mode": "Hellmodus",
   "Loading...": "Wird geladen...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Angemeldet",
   "Logged in as {{userDisplayName}}": "Angemeldet als {{userDisplayName}}",
   "Match Case": "Groß-/Kleinschreibung beachten",
@@ -243,5 +242,7 @@
   "Background Color": "Hintergrundfarbe",
   "Preview": "Vorschau",
   "Contrast": "Kontrast",
-  "Sunset": "Sonnenuntergang"
+  "Sunset": "Sonnenuntergang",
+  "Double Border": "Doppelter Rand",
+  "Border Color": "Randfarbe"
 }

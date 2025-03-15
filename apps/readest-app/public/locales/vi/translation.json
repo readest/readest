@@ -57,7 +57,6 @@
   "Layout": "Bố cục",
   "Light Mode": "Chế độ sáng",
   "Loading...": "Đang tải...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Vị trí {{currentPage}} / {{totalPage}}",
   "Logged in": "Đã đăng nhập",
   "Logged in as {{userDisplayName}}": "Đăng nhập với tên {{userDisplayName}}",
   "Match Case": "Phân biệt chữ hoa/thường",
@@ -243,5 +242,7 @@
   "Background Color": "Màu nền",
   "Preview": "Xem trước",
   "Contrast": "Tương phản",
-  "Sunset": "Hoàng hôn"
+  "Sunset": "Hoàng hôn",
+  "Double Border": "Đôi viền",
+  "Border Color": "Màu viền"
 }

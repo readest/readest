@@ -17,6 +17,7 @@ import SettingsDialog from './settings/SettingsDialog';
 import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
+import DoubleBorder from './DoubleBorder';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -60,7 +61,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
 
         const { section, pageinfo, sectionLabel } = progress || {};
         const isBookmarked = getViewState(bookKey)?.ribbonVisible;
-        const marginGap = `${viewSettings.gapPercent}%`;
+        const horizontalGapPercent = viewSettings.gapPercent;
+        const verticalMarginPixels = viewSettings.marginPx;
 
         return (
           <div
@@ -68,7 +70,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             key={bookKey}
             className={`${appService?.hasRoundedWindow ? 'rounded-window' : ''} relative h-full w-full overflow-hidden`}
           >
-            {isBookmarked && <Ribbon width={marginGap} />}
+            {isBookmarked && <Ribbon width={`${horizontalGapPercent}%`} />}
             <HeaderBar
               bookKey={bookKey}
               bookTitle={book.title}
@@ -81,13 +83,32 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
             {viewSettings.scrolled ? null : (
               <>
-                <SectionInfo section={sectionLabel} gapLeft={marginGap} />
-                <HintInfo bookKey={bookKey} gapRight={marginGap} />
+                {viewSettings.vertical && viewSettings.doubleBorder && (
+                  <DoubleBorder
+                    borderColor={viewSettings.borderColor}
+                    horizontalGap={horizontalGapPercent}
+                    verticalMargin={verticalMarginPixels}
+                  />
+                )}
+                <SectionInfo
+                  section={sectionLabel}
+                  isVertical={viewSettings.vertical}
+                  horizontalGap={horizontalGapPercent}
+                  verticalMargin={verticalMarginPixels}
+                />
+                <HintInfo
+                  bookKey={bookKey}
+                  isVertical={viewSettings.vertical}
+                  horizontalGap={horizontalGapPercent}
+                  verticalMargin={verticalMarginPixels}
+                />
                 <PageInfoView
                   bookFormat={book.format}
                   section={section}
                   pageinfo={pageinfo}
-                  gapRight={marginGap}
+                  isVertical={viewSettings.vertical}
+                  horizontalGap={horizontalGapPercent}
+                  verticalMargin={verticalMarginPixels}
                 />
               </>
             )}

@@ -57,7 +57,6 @@
   "Layout": "Mise en page",
   "Light Mode": "Mode clair",
   "Loading...": "Chargement...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Pos. {{currentPage}} / {{totalPage}}",
   "Logged in": "Connecté",
   "Logged in as {{userDisplayName}}": "Connecté en tant que {{userDisplayName}}",
   "Match Case": "Respecter la casse",
@@ -243,5 +242,7 @@
   "Background Color": "Couleur de fond",
   "Preview": "Aperçu",
   "Contrast": "Contraste",
-  "Sunset": "Coucher de soleil"
+  "Sunset": "Coucher de soleil",
+  "Double Border": "Double bordure",
+  "Border Color": "Couleur de la bordure"
 }

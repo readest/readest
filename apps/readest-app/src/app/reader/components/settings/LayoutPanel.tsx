@@ -36,6 +36,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
   const [overrideLayout, setOverrideLayout] = useState(viewSettings.overrideLayout!);
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
+  const [doubleBorder, setDoubleBorder] = useState(viewSettings.doubleBorder!);
+  const [borderColor, setBorderColor] = useState(viewSettings.borderColor!);
 
   useEffect(() => {
     viewSettings.paragraphMargin = paragraphMargin;
@@ -177,6 +179,9 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // global settings are not supported for writing mode
     const prevWritingMode = viewSettings.writingMode;
     viewSettings.writingMode = writingMode;
+    if (writingMode.includes('vertical')) {
+      viewSettings.vertical = true;
+    }
     setViewSettings(bookKey, viewSettings);
     if (view) {
       view.renderer.setStyles?.(getStyles(viewSettings));
@@ -217,6 +222,26 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
+
+  useEffect(() => {
+    viewSettings.doubleBorder = doubleBorder;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.doubleBorder = doubleBorder;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doubleBorder]);
+
+  useEffect(() => {
+    viewSettings.borderColor = borderColor;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.borderColor = borderColor;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [borderColor]);
 
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
   const mightBeRTLBook =
@@ -279,6 +304,39 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {viewSettings.vertical && (
+        <>
+          <div className='w-full'>
+            <div className='flex items-center justify-between'>
+              <h2 className='font-medium'>{_('Double Border')}</h2>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={doubleBorder}
+                onChange={() => setDoubleBorder(!doubleBorder)}
+              />
+            </div>
+          </div>
+
+          <div className='w-full'>
+            <div className='flex items-center justify-between'>
+              <h2 className='font-medium'>{_('Border Color')}</h2>
+              <div className='flex gap-4'>
+                <button
+                  className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
+                  onClick={() => setBorderColor('red')}
+                ></button>
+
+                <button
+                  className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
+                  onClick={() => setBorderColor('black')}
+                ></button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       <div className='w-full'>
@@ -374,7 +432,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Horizontal Margins (%)')}
               value={gapPercent}
               onChange={setGapPercent}
-              min={0}
+              min={viewSettings.vertical ? 2 : 0}
               max={30}
             />
             <NumberInput

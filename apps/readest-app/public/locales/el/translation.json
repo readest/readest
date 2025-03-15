@@ -57,7 +57,6 @@
   "Layout": "Διάταξη",
   "Light Mode": "Φωτεινή λειτουργία",
   "Loading...": "Φόρτωση...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Θέση {{currentPage}} / {{totalPage}}",
   "Logged in": "Συνδεδεμένος",
   "Logged in as {{userDisplayName}}": "Συνδεδεμένος ως {{userDisplayName}}",
   "Match Case": "Ταίριασμα πεζών-κεφαλαίων",
@@ -243,5 +242,7 @@
   "Background Color": "Χρώμα φόντου",
   "Preview": "Προεπισκόπηση",
   "Contrast": "Αντίθεση",
-  "Sunset": "Ηλιοβασίλεμα"
+  "Sunset": "Ηλιοβασίλεμα",
+  "Double Border": "Διπλό περιθώριο",
+  "Border Color": "Χρώμα περιγράμματος"
 }

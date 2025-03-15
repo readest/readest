@@ -57,7 +57,6 @@
   "Layout": "レイアウト",
   "Light Mode": "ライトモード",
   "Loading...": "読み込み中...",
-  "Loc. {{currentPage}} / {{totalPage}}": "位置 {{currentPage}} / {{totalPage}}",
   "Logged in": "ログイン済み",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}}としてログイン中",
   "Match Case": "大文字・小文字を区別",
@@ -243,5 +242,7 @@
   "Background Color": "背景色",
   "Preview": "プレビュー",
   "Contrast": "コントラスト",
-  "Sunset": "サンセット"
+  "Sunset": "サンセット",
+  "Double Border": "二重枠",
+  "Border Color": "ボーダーカラー"
 }

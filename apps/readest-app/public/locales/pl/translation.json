@@ -57,7 +57,6 @@
   "Layout": "Układ",
   "Light Mode": "Tryb jasny",
   "Loading...": "Ładowanie...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Poz. {{currentPage}} / {{totalPage}}",
   "Logged in": "Zalogowano",
   "Logged in as {{userDisplayName}}": "Zalogowano jako {{userDisplayName}}",
   "Match Case": "Uwzględnij wielkość liter",
@@ -243,5 +242,7 @@
   "Background Color": "Kolor tła",
   "Preview": "Podgląd",
   "Contrast": "Kontrast",
-  "Sunset": "Zachód słońca"
+  "Sunset": "Zachód słońca",
+  "Double Border": "Podwójna ramka",
+  "Border Color": "Kolor ramki"
 }

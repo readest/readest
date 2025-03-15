@@ -68,6 +68,8 @@ export interface BookLayout {
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
+  doubleBorder: boolean;
+  borderColor: string;
 }
 
 export interface BookStyle {

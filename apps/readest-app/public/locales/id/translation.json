@@ -57,7 +57,6 @@
   "Layout": "Tata Letak",
   "Light Mode": "Mode Terang",
   "Loading...": "Memuat...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Lok. {{currentPage}} / {{totalPage}}",
   "Logged in": "Sudah Masuk",
   "Logged in as {{userDisplayName}}": "Masuk sebagai {{userDisplayName}}",
   "Match Case": "Cocokkan Huruf Besar/Kecil",
@@ -243,5 +242,7 @@
   "Background Color": "Warna Latar Belakang",
   "Preview": "Pratinjau",
   "Contrast": "Kontras",
-  "Sunset": "Senja"
+  "Sunset": "Senja",
+  "Double Border": "Garis Ganda",
+  "Border Color": "Warna Garis"
 }

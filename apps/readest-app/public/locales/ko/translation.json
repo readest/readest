@@ -57,7 +57,6 @@
   "Layout": "레이아웃",
   "Light Mode": "라이트 모드",
   "Loading...": "로딩 중...",
-  "Loc. {{currentPage}} / {{totalPage}}": "위치 {{currentPage}} / {{totalPage}}",
   "Logged in": "로그인됨",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}}(으)로 로그인됨",
   "Match Case": "대소문자 구분",
@@ -243,5 +242,7 @@
   "Background Color": "배경 색상",
   "Preview": "미리보기",
   "Contrast": "대비",
-  "Sunset": "일몰"
+  "Sunset": "일몰",
+  "Double Border": "이중 테두리",
+  "Border Color": "테두리 색상"
 }

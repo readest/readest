@@ -57,7 +57,6 @@
   "Layout": "Макет",
   "Light Mode": "Світлий режим",
   "Loading...": "Завантаження...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Поз. {{currentPage}} / {{totalPage}}",
   "Logged in": "Увійшли",
   "Logged in as {{userDisplayName}}": "Увійшли як {{userDisplayName}}",
   "Match Case": "Враховувати регістр",
@@ -243,5 +242,7 @@
   "Background Color": "Колір фону",
   "Preview": "Попередній перегляд",
   "Contrast": "Контраст",
-  "Sunset": "Захід сонця"
+  "Sunset": "Захід сонця",
+  "Double Border": "Подвійна рамка",
+  "Border Color": "Колір рамки"
 }

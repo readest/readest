@@ -57,7 +57,6 @@
   "Layout": "लेआउट",
   "Light Mode": "लाइट मोड",
   "Loading...": "लोड हो रहा है...",
-  "Loc. {{currentPage}} / {{totalPage}}": "स्थान {{currentPage}} / {{totalPage}}",
   "Logged in": "लॉग इन किया",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} के रूप में लॉग इन किया",
   "Match Case": "केस मैच करें",
@@ -243,5 +242,7 @@
   "Background Color": "पृष्ठभूमि रंग",
   "Preview": "पूर्वावलोकन",
   "Contrast": "विरोधाभास",
-  "Sunset": "सनसेट"
+  "Sunset": "सनसेट",
+  "Double Border": "डबल बॉर्डर",
+  "Border Color": "बॉर्डर रंग"
 }

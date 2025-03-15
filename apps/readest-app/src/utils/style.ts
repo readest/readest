@@ -133,6 +133,7 @@ const getLayoutStyles = (
   hyphenate: boolean,
   zoomLevel: number,
   writingMode: string,
+  vertical: boolean,
   bg: string,
   fg: string,
   primary: string,
@@ -181,6 +182,7 @@ const getLayoutStyles = (
     color: ${fg};
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode};`}
     text-align: var(--default-text-align);
+    max-height: unset;
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
@@ -195,7 +197,7 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    margin: ${paragraphMargin}em 0;
+    margin: ${vertical ? `0 ${paragraphMargin}em` : `${paragraphMargin}em 0`};
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -314,6 +316,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.hyphenation!,
     viewSettings.zoomLevel! / 100.0,
     viewSettings.writingMode!,
+    viewSettings.vertical!,
     themeCode.bg,
     themeCode.fg,
     themeCode.primary,

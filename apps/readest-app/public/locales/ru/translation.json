@@ -57,7 +57,6 @@
   "Layout": "Макет",
   "Light Mode": "Светлая тема",
   "Loading...": "Загрузка...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Поз. {{currentPage}} / {{totalPage}}",
   "Logged in": "Выполнен вход",
   "Logged in as {{userDisplayName}}": "Вход выполнен как {{userDisplayName}}",
   "Match Case": "Учитывать регистр",
@@ -243,5 +242,7 @@
   "Background Color": "Цвет фона",
   "Preview": "Предпросмотр",
   "Contrast": "Контраст",
-  "Sunset": "Закат"
+  "Sunset": "Закат",
+  "Double Border": "Двойная граница",
+  "Border Color": "Цвет границы"
 }

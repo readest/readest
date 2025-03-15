@@ -57,7 +57,6 @@
   "Layout": "Layout",
   "Light Mode": "Modo Claro",
   "Loading...": "Carregando...",
-  "Loc. {{currentPage}} / {{totalPage}}": "Loc. {{currentPage}} / {{totalPage}}",
   "Logged in": "Conectado",
   "Logged in as {{userDisplayName}}": "Conectado como {{userDisplayName}}",
   "Match Case": "Diferenciar Maiúsculas e Minúsculas",
@@ -243,5 +242,7 @@
   "Background Color": "Cor de Fundo",
   "Preview": "Visualizar",
   "Contrast": "Contraste",
-  "Sunset": "Pôr do Sol"
+  "Sunset": "Pôr do Sol",
+  "Double Border": "Borda Dupla",
+  "Border Color": "Cor da Borda"
 }

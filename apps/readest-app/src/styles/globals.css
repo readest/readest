@@ -278,6 +278,10 @@ foliate-view {
   line-height: 1em !important;
 }
 
+.writing-vertical-rl {
+  writing-mode: vertical-rl;
+}
+
 .direction-rtl {
   direction: rtl;
 }
