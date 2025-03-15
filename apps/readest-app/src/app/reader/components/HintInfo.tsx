@@ -64,11 +64,7 @@ const HintInfo: React.FC<SectionInfoProps> = ({
           : { right: `${horizontalGap}%` }
       }
     >
-      <h2
-        className={clsx(
-          'text-neutral-content line-clamp-1 text-center font-sans text-xs font-light',
-        )}
-      >
+      <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
         {hintMessage || ''}
       </h2>
     </div>

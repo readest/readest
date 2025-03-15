@@ -191,7 +191,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     if (
       prevWritingMode !== writingMode &&
-      (writingMode === 'horizontal-rl' || prevWritingMode === 'horizontal-rl')
+      (['horizontal-rl', 'vertical-rl'].includes(writingMode) ||
+        ['horizontal-rl', 'vertical-rl'].includes(prevWritingMode))
     ) {
       setTimeout(() => window.location.reload(), 100);
     }
