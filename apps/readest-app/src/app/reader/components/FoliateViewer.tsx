@@ -9,7 +9,6 @@ import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { useAutoHideScrollbar } from '../hooks/useAutoHideScrollbar';
 import { getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -54,7 +53,6 @@ const FoliateViewer: React.FC<{
     setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
   };
 
-  const { shouldAutoHideScrollbar, handleScrollbarAutoHide } = useAutoHideScrollbar();
   const docLoadHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     console.log('doc loaded:', detail);
@@ -65,9 +63,6 @@ const FoliateViewer: React.FC<{
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
       viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
       setViewSettings(bookKey, viewSettings);
-      if (viewSettings.scrolled && shouldAutoHideScrollbar) {
-        handleScrollbarAutoHide(detail.doc);
-      }
 
       mountAdditionalFonts(detail.doc);
 
