@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.22": {
+      "date": "2025-03-16",
+      "notes": [
+        "Add theme color editor for more customization",
+        "Add border frame for vertical layout",
+        "Fix layout glitches on macOS in scroll mode",
+        "Various fixes and enhancements on translator, footnote, and scrollbar"
+      ]
+    },
     "0.9.21": {
       "date": "2025-03-10",
       "notes": [
