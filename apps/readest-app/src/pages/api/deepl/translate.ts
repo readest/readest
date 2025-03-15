@@ -40,26 +40,31 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   await runMiddleware(req, res, corsAllMethods);
 
-  const { text, source_lang = 'auto', target_lang = 'en' } = req.body;
+  const {
+    text,
+    source_lang: sourceLang = 'auto',
+    target_lang: targetLang = 'en',
+  }: { text: string[]; source_lang: string; target_lang: string } = req.body;
   try {
-    if (userPlan !== 'pro') {
-      const result = await deeplQuery({
-        text: text[0],
-        sourceLang: source_lang,
-        targetLang: target_lang,
+    if (targetLang.toLowerCase().includes('zh')) {
+      const response = await fetch(deeplApiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `DeepL-Auth-Key ${deeplAuthKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
       });
-      return res.status(200).json(result);
+      res.status(response.status);
+      res.json(await response.json());
+    } else {
+      const result = await deeplQuery({
+        text: text[0] ?? '',
+        sourceLang,
+        targetLang,
+      });
+      res.status(200).json(result);
     }
-    const response = await fetch(deeplApiUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `DeepL-Auth-Key ${deeplAuthKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
-    });
-    res.status(response.status);
-    res.json(await response.json());
   } catch (error) {
     console.error('Error proxying DeepL request:', error);
     res.status(500).json({ error: 'Internal Server Error' });
