@@ -359,3 +359,8 @@ export const mountAdditionalFonts = (document: Document) => {
   style.textContent = getAdditionalFontFaces();
   document.head.appendChild(style);
 };
+
+export const applyColorScheme = (document: Document, isDarkMode: boolean) => {
+  const colorScheme = isDarkMode ? 'dark' : 'light';
+  document.documentElement.style.setProperty('color-scheme', colorScheme);
+};

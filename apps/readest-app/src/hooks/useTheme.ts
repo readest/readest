@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { applyCustomTheme } from '@/styles/themes';
+import { applyColorScheme } from '@/utils/style';
 
 export const useTheme = () => {
   const { settings } = useSettingsStore();
@@ -15,7 +16,7 @@ export const useTheme = () => {
 
   useEffect(() => {
     const colorScheme = isDarkMode ? 'dark' : 'light';
-    document.documentElement.style.setProperty('color-scheme', colorScheme);
     document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
+    applyColorScheme(document, isDarkMode);
   }, [themeColor, isDarkMode]);
 };

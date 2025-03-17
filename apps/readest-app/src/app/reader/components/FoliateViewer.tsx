@@ -9,7 +9,7 @@ import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { getStyles, mountAdditionalFonts } from '@/utils/style';
+import { applyColorScheme, getStyles, mountAdditionalFonts } from '@/utils/style';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
@@ -64,6 +64,7 @@ const FoliateViewer: React.FC<{
       viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
       setViewSettings(bookKey, viewSettings);
 
+      applyColorScheme(detail.doc, isDarkMode);
       mountAdditionalFonts(detail.doc);
 
       if (!detail.doc.isEventListenersAdded) {
@@ -122,6 +123,9 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const viewSettings = getViewSettings(bookKey)!;
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+      // Safari does not recognize color-scheme from the root document in iframe
+      const doc = viewRef.current.renderer.getContents()[0]!.doc;
+      applyColorScheme(doc, isDarkMode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode, isDarkMode]);
