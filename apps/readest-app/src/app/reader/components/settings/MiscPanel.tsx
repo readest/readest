@@ -107,7 +107,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item config-item-top config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Paging Animation')}</span>
               <input
                 type='checkbox'
@@ -124,7 +124,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item config-item-top'>
+            <div className='config-item'>
               <span className=''>{_('Continuous Scroll')}</span>
               <input
                 type='checkbox'
@@ -133,7 +133,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 onChange={() => setIsContinuousScroll(!isContinuousScroll)}
               />
             </div>
-            <div className='config-item config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Disable Click-to-Flip')}</span>
               <input
                 type='checkbox'

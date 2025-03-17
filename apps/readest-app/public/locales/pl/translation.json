@@ -244,5 +244,8 @@
   "Contrast": "Kontrast",
   "Sunset": "Zachód słońca",
   "Double Border": "Podwójna ramka",
-  "Border Color": "Kolor ramki"
+  "Border Color": "Kolor ramki",
+  "Border Frame": "Ramka",
+  "Show Header": "Pokaż nagłówek",
+  "Show Footer": "Pokaż stopkę"
 }

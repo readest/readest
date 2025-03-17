@@ -244,5 +244,8 @@
   "Contrast": "विरोधाभास",
   "Sunset": "सनसेट",
   "Double Border": "डबल बॉर्डर",
-  "Border Color": "बॉर्डर रंग"
+  "Border Color": "बॉर्डर रंग",
+  "Border Frame": "बॉर्डर फ्रेम",
+  "Show Header": "हेडर दिखाएं",
+  "Show Footer": "फ़ुटर दिखाएं"
 }

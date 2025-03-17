@@ -244,5 +244,8 @@
   "Contrast": "التباين",
   "Sunset": "غروب الشمس",
   "Double Border": "حدود مزدوجة",
-  "Border Color": "لون الحدود"
+  "Border Color": "لون الحدود",
+  "Border Frame": "إطار الحدود",
+  "Show Header": "عرض الرأس",
+  "Show Footer": "عرض التذييل"
 }

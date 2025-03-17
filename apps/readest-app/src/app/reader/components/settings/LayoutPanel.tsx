@@ -40,6 +40,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
   const [doubleBorder, setDoubleBorder] = useState(viewSettings.doubleBorder!);
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor!);
+  const [showHeader, setShowHeader] = useState(viewSettings.showHeader!);
+  const [showFooter, setShowFooter] = useState(viewSettings.showFooter!);
 
   useEffect(() => {
     viewSettings.paragraphMargin = paragraphMargin;
@@ -246,6 +248,26 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [borderColor]);
 
+  useEffect(() => {
+    viewSettings.showHeader = showHeader;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.showHeader = showHeader;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHeader]);
+
+  useEffect(() => {
+    viewSettings.showFooter = showFooter;
+    setViewSettings(bookKey, viewSettings);
+    if (isFontLayoutSettingsGlobal) {
+      settings.globalViewSettings.showFooter = showFooter;
+      setSettings(settings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFooter]);
+
   const langCode = getBookLangCode(bookData.bookDoc?.metadata?.language);
   const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
 
@@ -309,36 +331,37 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       )}
 
       {viewSettings.vertical && (
-        <>
-          <div className='w-full'>
-            <div className='flex items-center justify-between'>
-              <h2 className='font-medium'>{_('Double Border')}</h2>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={doubleBorder}
-                onChange={() => setDoubleBorder(!doubleBorder)}
-              />
-            </div>
-          </div>
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Border Frame')}</h2>
+          <div className='card bg-base-100 border-base-200 border shadow'>
+            <div className='divide-base-200 divide-y'>
+              <div className='config-item'>
+                <span className=''>{_('Double Border')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={doubleBorder}
+                  onChange={() => setDoubleBorder(!doubleBorder)}
+                />
+              </div>
 
-          <div className='w-full'>
-            <div className='flex items-center justify-between'>
-              <h2 className='font-medium'>{_('Border Color')}</h2>
-              <div className='flex gap-4'>
-                <button
-                  className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
-                  onClick={() => setBorderColor('red')}
-                ></button>
+              <div className='config-item'>
+                <span className=''>{_('Border Color')}</span>
+                <div className='flex gap-4'>
+                  <button
+                    className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
+                    onClick={() => setBorderColor('red')}
+                  ></button>
 
-                <button
-                  className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
-                  onClick={() => setBorderColor('black')}
-                ></button>
+                  <button
+                    className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
+                    onClick={() => setBorderColor('black')}
+                  ></button>
+                </div>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       <div className='w-full'>
@@ -346,7 +369,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <NumberInput
-              className='config-item-top'
               label={_('Paragraph Margin')}
               value={paragraphMargin}
               onChange={setParagraphMargin}
@@ -386,7 +408,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={4}
               step={1}
             />
-            <div className='config-item config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Full Justification')}</span>
               <input
                 type='checkbox'
@@ -395,7 +417,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 onChange={() => setFullJustification(!fullJustification)}
               />
             </div>
-            <div className='config-item config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Hyphenation')}</span>
               <input
                 type='checkbox'
@@ -404,7 +426,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 onChange={() => setHyphenation(!hyphenation)}
               />
             </div>
-            <div className='config-item config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Override Book Layout')}</span>
               <input
                 type='checkbox'
@@ -421,8 +443,25 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <h2 className='mb-2 font-medium'>{_('Page')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Show Header')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showHeader}
+                onChange={() => setShowHeader(!showHeader)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Footer')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showFooter}
+                onChange={() => setShowFooter(!showFooter)}
+              />
+            </div>
             <NumberInput
-              className='config-item-top'
               label={_('Vertical Margins (px)')}
               value={marginPx}
               onChange={setMarginPx}
@@ -436,6 +475,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               onChange={setGapPercent}
               min={viewSettings.vertical ? 2 : 0}
               max={30}
+              step={0.5}
             />
             <NumberInput
               label={_('Maximum Number of Columns')}

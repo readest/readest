@@ -35,7 +35,7 @@ const FoliateViewer: React.FC<{
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
-  const { themeCode, isDarkMode } = useThemeStore();
+  const { themeCode, isDarkMode, getIsDarkMode } = useThemeStore();
   const viewSettings = getViewSettings(bookKey)!;
 
   const [toastMessage, setToastMessage] = useState('');
@@ -64,7 +64,7 @@ const FoliateViewer: React.FC<{
       viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
       setViewSettings(bookKey, viewSettings);
 
-      applyColorScheme(detail.doc, isDarkMode);
+      applyColorScheme(detail.doc, getIsDarkMode());
       mountAdditionalFonts(detail.doc);
 
       if (!detail.doc.isEventListenersAdded) {

@@ -225,7 +225,6 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <NumberInput
-              className='config-item-top'
               label={_('Default Font Size')}
               value={defaultFontSize}
               onChange={setDefaultFontSize}
@@ -233,7 +232,6 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={120}
             />
             <NumberInput
-              className='config-item-bottom'
               label={_('Minimum Font Size')}
               value={minFontSize}
               onChange={setMinFontSize}
@@ -249,7 +247,6 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <NumberInput
-              className='config-item-top'
               label={_('Font Weight')}
               value={fontWeight}
               onChange={setFontWeight}
@@ -265,7 +262,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <h2 className='mb-2 font-medium'>{_('Font Family')}</h2>
         <div className='card border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item config-item-top'>
+            <div className='config-item'>
               <span className=''>{_('Default Font')}</span>
               <FontDropdown
                 options={fontFamilyOptions}
@@ -275,7 +272,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               />
             </div>
 
-            <div className='config-item config-item-bottom'>
+            <div className='config-item'>
               <span className=''>{_('Override Book Font')}</span>
               <input
                 type='checkbox'

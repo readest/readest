@@ -42,14 +42,13 @@ const PageInfoView: React.FC<PageInfoProps> = ({
     <div
       className={clsx(
         'pageinfo absolute bottom-0 flex items-center justify-end',
-        isVertical ? 'left-0' : 'right-0',
-        isVertical ? 'writing-vertical-rl w-[32px]' : 'h-12',
+        isVertical ? 'writing-vertical-rl left-0 w-[32px]' : 'bg-base-100 right-0 h-12 w-full',
       )}
       style={
         isVertical
           ? {
-              bottom: `calc(${horizontalGap / 2}% + ${verticalMargin}px)`,
-              left: `calc(${horizontalGap * 2}% - 32px)`,
+              bottom: `${verticalMargin * 1.5}px`,
+              left: `calc(${horizontalGap}% - 32px)`,
               height: `calc(100% - ${verticalMargin * 2}px)`,
             }
           : { paddingRight: `${horizontalGap}%` }

@@ -81,36 +81,50 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             />
             <FoliateViewer bookKey={bookKey} bookDoc={bookDoc} config={config} />
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
-            {viewSettings.scrolled ? null : (
-              <>
-                {viewSettings.vertical && viewSettings.doubleBorder && (
-                  <DoubleBorder
-                    borderColor={viewSettings.borderColor}
-                    horizontalGap={horizontalGapPercent}
-                    verticalMargin={verticalMarginPixels}
-                  />
-                )}
-                <SectionInfo
-                  section={sectionLabel}
-                  isVertical={viewSettings.vertical}
-                  horizontalGap={horizontalGapPercent}
-                  verticalMargin={verticalMarginPixels}
-                />
-                <HintInfo
-                  bookKey={bookKey}
-                  isVertical={viewSettings.vertical}
-                  horizontalGap={horizontalGapPercent}
-                  verticalMargin={verticalMarginPixels}
-                />
-                <PageInfoView
-                  bookFormat={book.format}
-                  section={section}
-                  pageinfo={pageinfo}
-                  isVertical={viewSettings.vertical}
-                  horizontalGap={horizontalGapPercent}
-                  verticalMargin={verticalMarginPixels}
-                />
-              </>
+            <div
+              className='bg-base-100 absolute left-0 top-0 h-full'
+              style={{
+                width: `${horizontalGapPercent}%`,
+              }}
+            />
+            <div
+              className='bg-base-100 absolute right-0 top-0 h-full'
+              style={{
+                width: `${horizontalGapPercent}%`,
+              }}
+            />
+            {viewSettings.vertical && viewSettings.doubleBorder && (
+              <DoubleBorder
+                showHeader={viewSettings.showHeader}
+                showFooter={viewSettings.showFooter}
+                borderColor={viewSettings.borderColor}
+                horizontalGap={horizontalGapPercent}
+                verticalMargin={verticalMarginPixels}
+              />
+            )}
+            {viewSettings.showHeader && (
+              <SectionInfo
+                section={sectionLabel}
+                isVertical={viewSettings.vertical}
+                horizontalGap={horizontalGapPercent}
+                verticalMargin={verticalMarginPixels}
+              />
+            )}
+            <HintInfo
+              bookKey={bookKey}
+              isVertical={viewSettings.vertical}
+              horizontalGap={horizontalGapPercent}
+              verticalMargin={verticalMarginPixels}
+            />
+            {viewSettings.showFooter && (
+              <PageInfoView
+                bookFormat={book.format}
+                section={section}
+                pageinfo={pageinfo}
+                isVertical={viewSettings.vertical}
+                horizontalGap={horizontalGapPercent}
+                verticalMargin={verticalMarginPixels}
+              />
             )}
             <Annotator bookKey={bookKey} />
             <FooterBar

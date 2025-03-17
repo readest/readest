@@ -244,5 +244,8 @@
   "Contrast": "Kontrast",
   "Sunset": "Sonnenuntergang",
   "Double Border": "Doppelter Rand",
-  "Border Color": "Randfarbe"
+  "Border Color": "Randfarbe",
+  "Border Frame": "Rahmenrand",
+  "Show Header": "Kopfzeile anzeigen",
+  "Show Footer": "Fußzeile anzeigen"
 }

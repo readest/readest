@@ -244,5 +244,8 @@
   "Contrast": "Kontras",
   "Sunset": "Senja",
   "Double Border": "Garis Ganda",
-  "Border Color": "Warna Garis"
+  "Border Color": "Warna Garis",
+  "Border Frame": "Bingkai Garis",
+  "Show Header": "Tampilkan Header",
+  "Show Footer": "Tampilkan Footer"
 }

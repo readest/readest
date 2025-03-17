@@ -244,5 +244,8 @@
   "Contrast": "Tương phản",
   "Sunset": "Hoàng hôn",
   "Double Border": "Đôi viền",
-  "Border Color": "Màu viền"
+  "Border Color": "Màu viền",
+  "Border Frame": "Khung viền",
+  "Show Header": "Hiển thị tiêu đề",
+  "Show Footer": "Hiển thị chân trang"
 }

@@ -244,5 +244,8 @@
   "Contrast": "Contraste",
   "Sunset": "Pôr do Sol",
   "Double Border": "Borda Dupla",
-  "Border Color": "Cor da Borda"
+  "Border Color": "Cor da Borda",
+  "Border Frame": "Moldura da Borda",
+  "Show Header": "Mostrar Cabeçalho",
+  "Show Footer": "Mostrar Rodapé"
 }

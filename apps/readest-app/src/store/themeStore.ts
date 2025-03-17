@@ -10,6 +10,7 @@ interface ThemeState {
   systemIsDarkMode: boolean;
   themeCode: ThemeCode;
   isDarkMode: boolean;
+  getIsDarkMode: () => boolean;
   setThemeMode: (mode: ThemeMode) => void;
   setThemeColor: (color: string) => void;
   updateAppTheme: (color: keyof Palette) => void;
@@ -61,6 +62,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     systemIsDarkMode,
     isDarkMode,
     themeCode,
+    getIsDarkMode: () => get().isDarkMode,
     setThemeMode: (mode) => {
       if (typeof window !== 'undefined' && localStorage) {
         localStorage.setItem('themeMode', mode);

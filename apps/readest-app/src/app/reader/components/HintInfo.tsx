@@ -1,7 +1,5 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
-import { useSidebarStore } from '@/store/sidebarStore';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
@@ -17,8 +15,6 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   horizontalGap,
   verticalMargin,
 }) => {
-  const { isSideBarVisible } = useSidebarStore();
-  const { isTrafficLightVisible } = useTrafficLightStore();
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
   const hintTimeout = useRef(2000);
   const dismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,17 +45,15 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   return (
     <div
       className={clsx(
-        'sectioninfo absolute flex justify-end overflow-hidden',
-        !isVertical && (isTrafficLightVisible && !isSideBarVisible ? 'h-[44px]' : 'h-[30px]'),
-        isVertical ? 'writing-vertical-rl w-[32px] items-center' : 'top-0 items-end',
-        isVertical ? 'max-h-[50%]' : 'max-w-[50%]',
+        'hintinfo absolute flex items-center justify-end overflow-hidden',
+        hintMessage ? 'bg-base-100' : 'bg-transparent',
+        isVertical ? 'writing-vertical-rl max-h-[50%] w-[30px]' : 'top-0 h-[44px] max-w-[50%]',
       )}
       style={
         isVertical
           ? {
-              bottom: `calc(${horizontalGap / 2}% + ${verticalMargin}px)`,
-              left: `calc(100% - ${horizontalGap * 2}%)`,
-              height: `calc(100% - ${verticalMargin * 2}px)`,
+              bottom: `${verticalMargin * 1.5}px`,
+              left: `calc(100% - ${horizontalGap}%)`,
             }
           : { right: `${horizontalGap}%` }
       }

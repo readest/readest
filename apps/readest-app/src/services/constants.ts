@@ -73,6 +73,8 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   rtl: false,
   doubleBorder: true,
   borderColor: 'red',
+  showHeader: true,
+  showFooter: true,
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

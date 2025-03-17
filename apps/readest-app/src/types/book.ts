@@ -70,6 +70,8 @@ export interface BookLayout {
   rtl: boolean;
   doubleBorder: boolean;
   borderColor: string;
+  showHeader: boolean;
+  showFooter: boolean;
 }
 
 export interface BookStyle {

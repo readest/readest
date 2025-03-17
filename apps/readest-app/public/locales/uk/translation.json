@@ -244,5 +244,8 @@
   "Contrast": "Контраст",
   "Sunset": "Захід сонця",
   "Double Border": "Подвійна рамка",
-  "Border Color": "Колір рамки"
+  "Border Color": "Колір рамки",
+  "Border Frame": "Рамка рамки",
+  "Show Header": "Показати заголовок",
+  "Show Footer": "Показати нижню частину"
 }

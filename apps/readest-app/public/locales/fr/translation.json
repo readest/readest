@@ -244,5 +244,8 @@
   "Contrast": "Contraste",
   "Sunset": "Coucher de soleil",
   "Double Border": "Double bordure",
-  "Border Color": "Couleur de la bordure"
+  "Border Color": "Couleur de la bordure",
+  "Border Frame": "Cadre de bordure",
+  "Show Header": "Afficher l'en-tête",
+  "Show Footer": "Afficher le pied de page"
 }

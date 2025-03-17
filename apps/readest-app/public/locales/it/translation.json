@@ -244,5 +244,8 @@
   "Contrast": "Contrasto",
   "Sunset": "Tramonto",
   "Double Border": "Doppio bordo",
-  "Border Color": "Colore bordo"
+  "Border Color": "Colore bordo",
+  "Border Frame": "Cornice bordo",
+  "Show Header": "Mostra intestazione",
+  "Show Footer": "Mostra piè di pagina"
 }

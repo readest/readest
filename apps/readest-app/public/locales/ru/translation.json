@@ -244,5 +244,8 @@
   "Contrast": "Контраст",
   "Sunset": "Закат",
   "Double Border": "Двойная граница",
-  "Border Color": "Цвет границы"
+  "Border Color": "Цвет границы",
+  "Border Frame": "Граница рамки",
+  "Show Header": "Показать заголовок",
+  "Show Footer": "Показать нижний колонтитул"
 }

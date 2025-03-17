@@ -191,14 +191,6 @@ foliate-view {
   @apply hover:bg-base-100/50;
 }
 
-.config-item-top {
-  @apply rounded-t-2xl;
-}
-
-.config-item-bottom {
-  @apply rounded-b-2xl;
-}
-
 .collapse-arrow > .collapse-title:after {
   top: var(--top-override, default-value);
   inset-inline-end: var(--end-override, default-value);

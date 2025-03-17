@@ -244,5 +244,8 @@
   "Contrast": "Contraste",
   "Sunset": "Atardecer",
   "Double Border": "Doble borde",
-  "Border Color": "Color del borde"
+  "Border Color": "Color del borde",
+  "Border Frame": "Marco de borde",
+  "Show Header": "Mostrar encabezado",
+  "Show Footer": "Mostrar pie de página"
 }

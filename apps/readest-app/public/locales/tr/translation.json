@@ -244,5 +244,8 @@
   "Contrast": "Kontrast",
   "Sunset": "Gün Batımı",
   "Double Border": "Çift Sınır",
-  "Border Color": "Sınır Rengi"
+  "Border Color": "Sınır Rengi",
+  "Border Frame": "Sınır Çerçevesi",
+  "Show Header": "Başlık Göster",
+  "Show Footer": "Altbilgi Göster"
 }

@@ -243,6 +243,9 @@
   "Preview": "预览",
   "Contrast": "对比",
   "Sunset": "日落",
-  "Double Border": "页面版框",
-  "Border Color": "版框颜色"
+  "Double Border": "显示版框",
+  "Border Color": "版框颜色",
+  "Border Frame": "页面版框",
+  "Show Header": "显示页眉",
+  "Show Footer": "显示页脚"
 }

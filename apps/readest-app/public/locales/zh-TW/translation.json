@@ -243,6 +243,9 @@
   "Preview": "預覽",
   "Contrast": "對比",
   "Sunset": "日落",
-  "Double Border": "頁面邊框",
-  "Border Color": "邊框顏色"
+  "Double Border": "顯示邊框",
+  "Border Color": "邊框顏色",
+  "Border Frame": "頁面邊框",
+  "Show Header": "顯示頁眉",
+  "Show Footer": "顯示頁腳"
 }

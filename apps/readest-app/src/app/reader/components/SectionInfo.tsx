@@ -1,9 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
 
-import { useSidebarStore } from '@/store/sidebarStore';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
-
 interface SectionInfoProps {
   section?: string;
   isVertical: boolean;
@@ -17,24 +14,22 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   horizontalGap,
   verticalMargin,
 }) => {
-  const { isSideBarVisible } = useSidebarStore();
-  const { isTrafficLightVisible } = useTrafficLightStore();
   return (
     <div
       className={clsx(
-        'sectioninfo absolute flex overflow-hidden',
-        !isVertical && (isTrafficLightVisible && !isSideBarVisible ? 'h-[44px]' : 'h-[30px]'),
-        isVertical ? 'writing-vertical-rl w-[32px] items-center' : 'top-0 items-end',
-        isVertical ? 'max-h-[50%]' : 'max-w-[50%]',
+        'sectioninfo absolute flex items-center overflow-hidden',
+        isVertical
+          ? 'writing-vertical-rl max-h-[85%] w-[32px]'
+          : 'bg-base-100 top-0 h-[44px] w-full',
       )}
       style={
         isVertical
           ? {
-              top: `calc(${horizontalGap / 2}% + ${verticalMargin}px)`,
-              left: `calc(100% - ${horizontalGap * 2}%)`,
+              top: `${verticalMargin * 1.5}px`,
+              left: `calc(100% - ${horizontalGap}%)`,
               height: `calc(100% - ${verticalMargin * 2}px)`,
             }
-          : { left: `${horizontalGap}%` }
+          : { paddingLeft: `${horizontalGap}%` }
       }
     >
       <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>

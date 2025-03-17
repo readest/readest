@@ -244,5 +244,8 @@
   "Contrast": "コントラスト",
   "Sunset": "サンセット",
   "Double Border": "二重枠",
-  "Border Color": "ボーダーカラー"
+  "Border Color": "ボーダーカラー",
+  "Border Frame": "ボーダーフレーム",
+  "Show Header": "ヘッダーを表示",
+  "Show Footer": "フッターを表示"
 }
