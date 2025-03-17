@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
-import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { getFootnoteStyles, getStyles } from '@/utils/style';
+import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
@@ -27,7 +26,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
   const { getView, getViewSettings } = useReaderStore();
-  const { themeCode } = useThemeStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
@@ -52,6 +50,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       renderer.setAttribute('margin', '0px');
       renderer.setAttribute('gap', '5%');
       const viewSettings = getViewSettings(bookKey)!;
+      const themeCode = getThemeCode();
       const popupTheme = { ...themeCode };
       const popupContainer = document.getElementById('popup-container');
       if (popupContainer) {
@@ -76,7 +75,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       footnoteHandler.removeEventListener('render', handleRender);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, themeCode]);
+  }, [view]);
 
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
