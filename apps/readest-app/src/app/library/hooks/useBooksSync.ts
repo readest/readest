@@ -85,9 +85,8 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
         }
         const mergedBook =
           matchingBook.updatedAt > oldBook.updatedAt
-            ? { ...oldBook, ...matchingBook, updatedAt: oldBook.updatedAt }
-            : { ...matchingBook, ...oldBook, updatedAt: oldBook.updatedAt };
-        mergedBook.progress = matchingBook.progress ?? oldBook.progress;
+            ? { ...oldBook, ...matchingBook }
+            : { ...matchingBook, ...oldBook };
         return mergedBook;
       }
       return oldBook;

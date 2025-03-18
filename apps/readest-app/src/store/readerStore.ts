@@ -222,7 +222,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const viewState = state.viewStates[key];
       if (!viewState || !bookData) return state;
 
-      const progress: [number, number] = [pageinfo.current, pageinfo.total];
+      const progress: [number, number] = [(pageinfo.next ?? pageinfo.current) + 1, pageinfo.total];
 
       // Update library book progress
       const { library, setLibrary } = useLibraryStore.getState();

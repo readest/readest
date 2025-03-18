@@ -66,6 +66,7 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const bookIndex = library.findIndex((b) => b.hash === bookKey.split('-')[0]);
     if (bookIndex == -1) return;
     const book = library.splice(bookIndex, 1)[0]!;
+    book.progress = config.progress;
     book.updatedAt = Date.now();
     library.unshift(book);
     setLibrary(library);

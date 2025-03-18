@@ -32,7 +32,12 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           : { paddingLeft: `${horizontalGap}%` }
       }
     >
-      <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
+      <h2
+        className={clsx(
+          'text-neutral-content text-center font-sans text-xs font-light',
+          isVertical ? '' : 'line-clamp-1',
+        )}
+      >
         {section || ''}
       </h2>
     </div>

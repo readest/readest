@@ -13,7 +13,8 @@ const getProgressPercentage = (book: Book) => {
   if (book.progress && book.progress[1] === 1) {
     return 100;
   }
-  return Math.round((book.progress[0] / book.progress[1]) * 100);
+  const percentage = Math.round((book.progress[0] / book.progress[1]) * 100);
+  return Math.max(0, Math.min(100, percentage));
 };
 
 const ReadingProgress: React.FC<ReadingProgressProps> = memo(

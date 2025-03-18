@@ -24,7 +24,7 @@ export interface Book {
   downloadedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
-  progress?: [number, number]; // Add progress field: [current, total]
+  progress?: [number, number]; // Add progress field: [current, total], 1-based page number
 }
 
 export interface BookGroupType {
@@ -149,7 +149,7 @@ export interface BookSearchResult {
 
 export interface BookConfig {
   bookHash?: string;
-  progress?: [number, number];
+  progress?: [number, number]; // [current pagenum, total pagenum], 1-based page number
   location?: string;
   booknotes?: BookNote[];
   searchConfig?: Partial<BookSearchConfig>;
