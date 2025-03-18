@@ -7,6 +7,7 @@ interface PageInfoProps {
   bookFormat: string;
   section?: PageInfo;
   pageinfo?: PageInfo;
+  showDoubleBorder: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -16,6 +17,7 @@ const PageInfoView: React.FC<PageInfoProps> = ({
   bookFormat,
   section,
   pageinfo,
+  showDoubleBorder,
   isVertical,
   horizontalGap,
   verticalMargin,
@@ -42,16 +44,17 @@ const PageInfoView: React.FC<PageInfoProps> = ({
     <div
       className={clsx(
         'pageinfo absolute bottom-0 flex items-center justify-end',
-        isVertical ? 'writing-vertical-rl left-0 w-[32px]' : 'bg-base-100 right-0 h-12 w-full',
+        isVertical ? 'writing-vertical-rl' : 'bg-base-100 h-12 w-full',
       )}
       style={
         isVertical
           ? {
               bottom: `${verticalMargin * 1.5}px`,
-              left: `calc(${horizontalGap}% - 32px)`,
+              left: showDoubleBorder ? `calc(${horizontalGap}% - 32px)` : 0,
+              width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
               height: `calc(100% - ${verticalMargin * 2}px)`,
             }
-          : { paddingRight: `${horizontalGap}%` }
+          : { insetInlineEnd: `${horizontalGap}%` }
       }
     >
       <h2 className='text-neutral-content text-right font-sans text-xs font-extralight'>

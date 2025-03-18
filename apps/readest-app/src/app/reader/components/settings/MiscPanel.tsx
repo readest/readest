@@ -1,14 +1,17 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
+import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import cssbeautify from 'cssbeautify';
 import cssValidate from '@/utils/css';
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
+  const { envConfig } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
@@ -67,12 +70,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   useEffect(() => {
-    viewSettings.animated = animated;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.animated = animated;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'animated', animated);
     if (animated) {
       getView(bookKey)?.renderer.setAttribute('animated', '');
     } else {
@@ -82,22 +80,12 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [animated]);
 
   useEffect(() => {
-    viewSettings.disableClick = isDisableClick;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.disableClick = isDisableClick;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
 
   useEffect(() => {
-    viewSettings.continuousScroll = isContinuousScroll;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.continuousScroll = isContinuousScroll;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isContinuousScroll]);
 

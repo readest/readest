@@ -81,18 +81,24 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             />
             <FoliateViewer bookKey={bookKey} bookDoc={bookDoc} config={config} />
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
-            <div
-              className='bg-base-100 absolute left-0 top-0 h-full'
-              style={{
-                width: `${horizontalGapPercent}%`,
-              }}
-            />
-            <div
-              className='bg-base-100 absolute right-0 top-0 h-full'
-              style={{
-                width: `${horizontalGapPercent}%`,
-              }}
-            />
+            {viewSettings.vertical && (
+              <>
+                <div
+                  className='bg-base-100 absolute left-0 top-0 h-full'
+                  style={{
+                    width: `calc(${horizontalGapPercent}%)`,
+                    height: `calc(100% - ${verticalMarginPixels}px)`,
+                  }}
+                />
+                <div
+                  className='bg-base-100 absolute right-0 top-0 h-full'
+                  style={{
+                    width: `calc(${horizontalGapPercent}%)`,
+                    height: `calc(100% - ${verticalMarginPixels}px)`,
+                  }}
+                />
+              </>
+            )}
             {viewSettings.vertical && viewSettings.doubleBorder && (
               <DoubleBorder
                 showHeader={viewSettings.showHeader}
@@ -105,6 +111,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             {viewSettings.showHeader && (
               <SectionInfo
                 section={sectionLabel}
+                showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
                 isVertical={viewSettings.vertical}
                 horizontalGap={horizontalGapPercent}
                 verticalMargin={verticalMarginPixels}
@@ -112,6 +119,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             )}
             <HintInfo
               bookKey={bookKey}
+              showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
               isVertical={viewSettings.vertical}
               horizontalGap={horizontalGapPercent}
               verticalMargin={verticalMarginPixels}
@@ -121,6 +129,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
                 bookFormat={book.format}
                 section={section}
                 pageinfo={pageinfo}
+                showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
                 isVertical={viewSettings.vertical}
                 horizontalGap={horizontalGapPercent}
                 verticalMargin={verticalMarginPixels}

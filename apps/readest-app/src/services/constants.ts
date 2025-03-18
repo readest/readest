@@ -71,7 +71,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   writingMode: 'auto',
   vertical: false,
   rtl: false,
-  doubleBorder: true,
+  doubleBorder: false,
   borderColor: 'red',
   showHeader: true,
   showFooter: true,

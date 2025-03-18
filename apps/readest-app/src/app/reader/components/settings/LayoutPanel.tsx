@@ -3,7 +3,7 @@ import { MdOutlineAutoMode } from 'react-icons/md';
 import { MdOutlineTextRotationNone, MdTextRotateVertical } from 'react-icons/md';
 import { TbTextDirectionRtl } from 'react-icons/tb';
 
-import { useSettingsStore } from '@/store/settingsStore';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,11 +12,12 @@ import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
+import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const view = getView(bookKey);
@@ -44,100 +45,55 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter!);
 
   useEffect(() => {
-    viewSettings.paragraphMargin = paragraphMargin;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.paragraphMargin = paragraphMargin;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'paragraphMargin', paragraphMargin);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paragraphMargin]);
 
   useEffect(() => {
-    viewSettings.lineHeight = lineHeight;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.lineHeight = lineHeight;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'lineHeight', lineHeight);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineHeight]);
 
   useEffect(() => {
-    viewSettings.wordSpacing = wordSpacing;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.wordSpacing = wordSpacing;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'wordSpacing', wordSpacing);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wordSpacing]);
 
   useEffect(() => {
-    viewSettings.letterSpacing = letterSpacing;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.letterSpacing = letterSpacing;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'letterSpacing', letterSpacing);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letterSpacing]);
 
   useEffect(() => {
-    viewSettings.textIndent = textIndent;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.textIndent = textIndent;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'textIndent', textIndent);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textIndent]);
 
   useEffect(() => {
-    viewSettings.fullJustification = fullJustification;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.fullJustification = fullJustification;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'fullJustification', fullJustification);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullJustification]);
 
   useEffect(() => {
-    viewSettings.hyphenation = hyphenation;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.hyphenation = hyphenation;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'hyphenation', hyphenation);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hyphenation]);
 
   useEffect(() => {
-    viewSettings.marginPx = marginPx;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.marginPx = marginPx;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx);
     view?.renderer.setAttribute('margin', `${marginPx}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginPx]);
 
   useEffect(() => {
-    viewSettings.gapPercent = gapPercent;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.gapPercent = gapPercent;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent);
     view?.renderer.setAttribute('gap', `${gapPercent}%`);
     if (viewSettings.scrolled) {
       view?.renderer.setAttribute('flow', 'scrolled');
@@ -146,35 +102,20 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [gapPercent]);
 
   useEffect(() => {
-    viewSettings.maxColumnCount = maxColumnCount;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.maxColumnCount = maxColumnCount;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'maxColumnCount', maxColumnCount);
     view?.renderer.setAttribute('max-column-count', maxColumnCount);
     view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxColumnCount]);
 
   useEffect(() => {
-    viewSettings.maxInlineSize = maxInlineSize;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.maxInlineSize = maxInlineSize;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'maxInlineSize', maxInlineSize);
     view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxInlineSize]);
 
   useEffect(() => {
-    viewSettings.maxBlockSize = maxBlockSize;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.maxBlockSize = maxBlockSize;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'maxBlockSize', maxBlockSize);
     view?.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxBlockSize]);
@@ -182,11 +123,10 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     // global settings are not supported for writing mode
     const prevWritingMode = viewSettings.writingMode;
-    viewSettings.writingMode = writingMode;
-    if (writingMode.includes('vertical')) {
-      viewSettings.vertical = true;
+    if (!writingMode.includes('vertical')) {
+      viewSettings.vertical = false;
     }
-    setViewSettings(bookKey, viewSettings);
+    saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true);
     if (view) {
       view.renderer.setStyles?.(getStyles(viewSettings));
       view.book.dir = getBookDirFromWritingMode(writingMode);
@@ -202,69 +142,46 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [writingMode]);
 
   useEffect(() => {
-    viewSettings.overrideLayout = overrideLayout;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.overrideLayout = overrideLayout;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'overrideLayout', overrideLayout);
     view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);
 
   useEffect(() => {
-    viewSettings!.scrolled = isScrolledMode;
+    saveViewSettings(envConfig, bookKey, 'scrolled', isScrolledMode);
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
       `${getMaxInlineSize(viewSettings)}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
-    setViewSettings(bookKey, viewSettings!);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.scrolled = isScrolledMode;
-      setSettings(settings);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
 
   useEffect(() => {
-    viewSettings.doubleBorder = doubleBorder;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.doubleBorder = doubleBorder;
-      setSettings(settings);
+    if (doubleBorder && viewSettings.vertical) {
+      viewSettings.gapPercent = Math.max(
+        viewSettings.gapPercent,
+        Math.ceil(4800 / window.innerWidth),
+      );
+      setViewSettings(bookKey, viewSettings);
     }
+    saveViewSettings(envConfig, bookKey, 'doubleBorder', doubleBorder);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doubleBorder]);
 
   useEffect(() => {
-    viewSettings.borderColor = borderColor;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.borderColor = borderColor;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'borderColor', borderColor);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [borderColor]);
 
   useEffect(() => {
-    viewSettings.showHeader = showHeader;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.showHeader = showHeader;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'showHeader', showHeader);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHeader]);
 
   useEffect(() => {
-    viewSettings.showFooter = showFooter;
-    setViewSettings(bookKey, viewSettings);
-    if (isFontLayoutSettingsGlobal) {
-      settings.globalViewSettings.showFooter = showFooter;
-      setSettings(settings);
-    }
+    saveViewSettings(envConfig, bookKey, 'showFooter', showFooter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFooter]);
 
@@ -473,9 +390,12 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Horizontal Margins (%)')}
               value={gapPercent}
               onChange={setGapPercent}
-              min={viewSettings.vertical ? 2 : 0}
+              min={
+                viewSettings.vertical && (showFooter || showHeader)
+                  ? Math.ceil(4800 / window.innerWidth)
+                  : 0
+              }
               max={30}
-              step={0.5}
             />
             <NumberInput
               label={_('Maximum Number of Columns')}

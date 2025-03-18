@@ -28,7 +28,9 @@ type TabConfig = {
 
 const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const [activePanel, setActivePanel] = useState<SettingsPanelType>('Font');
+  const [activePanel, setActivePanel] = useState<SettingsPanelType>(
+    (localStorage.getItem('lastConfigPanel') || 'Font') as SettingsPanelType,
+  );
   const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
   const tabConfig = [
@@ -54,6 +56,11 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     },
   ] as TabConfig[];
 
+  const handleSetActivePanel = (tab: SettingsPanelType) => {
+    setActivePanel(tab);
+    localStorage.setItem('lastConfigPanel', tab);
+  };
+
   const handleClose = () => {
     setFontLayoutSettingsDialogOpen(false);
   };
@@ -76,7 +83,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
             >
               <MdArrowBackIosNew />
             </button>
-            <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center pl-4 gap-2'>
+            <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center gap-2 pl-4'>
               {tabConfig.map(({ tab, icon: Icon, label }) => (
                 <button
                   key={tab}
@@ -84,7 +91,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                     'btn btn-ghost text-base-content btn-sm',
                     activePanel === tab ? 'btn-active' : '',
                   )}
-                  onClick={() => setActivePanel(tab)}
+                  onClick={() => handleSetActivePanel(tab)}
                 >
                   <Icon className='mr-0' />
                   {window.innerWidth >= 500 ? label : ''}

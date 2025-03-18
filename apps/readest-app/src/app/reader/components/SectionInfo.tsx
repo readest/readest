@@ -3,6 +3,7 @@ import React from 'react';
 
 interface SectionInfoProps {
   section?: string;
+  showDoubleBorder: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -10,6 +11,7 @@ interface SectionInfoProps {
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
   section,
+  showDoubleBorder,
   isVertical,
   horizontalGap,
   verticalMargin,
@@ -18,18 +20,17 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
     <div
       className={clsx(
         'sectioninfo absolute flex items-center overflow-hidden',
-        isVertical
-          ? 'writing-vertical-rl max-h-[85%] w-[32px]'
-          : 'bg-base-100 top-0 h-[44px] w-full',
+        isVertical ? 'writing-vertical-rl max-h-[85%]' : 'bg-base-100 top-0 h-[44px]',
       )}
       style={
         isVertical
           ? {
               top: `${verticalMargin * 1.5}px`,
               left: `calc(100% - ${horizontalGap}%)`,
+              width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
               height: `calc(100% - ${verticalMargin * 2}px)`,
             }
-          : { paddingLeft: `${horizontalGap}%` }
+          : { insetInlineStart: `${horizontalGap}%`, width: `calc(100% - ${horizontalGap * 2}%)` }
       }
     >
       <h2

@@ -4,6 +4,7 @@ import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
   bookKey: string;
+  showDoubleBorder: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -11,6 +12,7 @@ interface SectionInfoProps {
 
 const HintInfo: React.FC<SectionInfoProps> = ({
   bookKey,
+  showDoubleBorder,
   isVertical,
   horizontalGap,
   verticalMargin,
@@ -47,15 +49,16 @@ const HintInfo: React.FC<SectionInfoProps> = ({
       className={clsx(
         'hintinfo absolute flex items-center justify-end overflow-hidden',
         hintMessage ? 'bg-base-100' : 'bg-transparent',
-        isVertical ? 'writing-vertical-rl max-h-[50%] w-[30px]' : 'top-0 h-[44px] max-w-[50%]',
+        isVertical ? 'writing-vertical-rl max-h-[50%]' : 'top-0 h-[44px] max-w-[50%]',
       )}
       style={
         isVertical
           ? {
               bottom: `${verticalMargin * 1.5}px`,
               left: `calc(100% - ${horizontalGap}%)`,
+              width: showDoubleBorder ? '30px' : `${horizontalGap}%`,
             }
-          : { right: `${horizontalGap}%` }
+          : { insetInlineEnd: `${horizontalGap}%` }
       }
     >
       <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
