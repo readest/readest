@@ -25,10 +25,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const [trianglePosition, setTrianglePosition] = useState<Position | null>();
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
-  const { getView, getViewSettings } = useReaderStore();
+
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const progress = getProgress(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
+
+  const [gridRect, setGridRect] = useState<DOMRect | null>(null);
+  const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
+  const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
 
   useEffect(() => {
     const handleBeforeRender = (e: Event) => {
@@ -48,7 +54,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       const { renderer } = view;
       renderer.setAttribute('flow', 'scrolled');
       renderer.setAttribute('margin', '0px');
-      renderer.setAttribute('gap', '5%');
+      renderer.setAttribute('gap', '0%');
       const viewSettings = getViewSettings(bookKey)!;
       const themeCode = getThemeCode();
       const popupTheme = { ...themeCode };
@@ -64,8 +70,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
     const handleRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      console.log('render footnote', detail);
-      setShowPopup(true);
+      // console.log('render footnote', detail);
+      const { view } = detail;
+      view.addEventListener('relocate', () => {
+        const { renderer } = view as FoliateView;
+        if (viewSettings.vertical) {
+          setResponsiveWidth(Math.min(renderer.viewSize, window.innerWidth / 2));
+        } else {
+          setResponsiveHeight(Math.min(renderer.viewSize, window.innerHeight / 2));
+        }
+        setShowPopup(true);
+      });
     };
 
     footnoteHandler.addEventListener('before-render', handleBeforeRender);
@@ -77,23 +92,44 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
+  useEffect(() => {
+    handleDismissPopup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress]);
+
+  useEffect(() => {
+    if (viewSettings.vertical) {
+      setResponsiveWidth(popupHeight);
+      setResponsiveHeight(Math.max(360, window.innerHeight / 4));
+    } else {
+      setResponsiveWidth(Math.max(360, window.innerWidth / 4));
+      setResponsiveHeight(popupHeight);
+    }
+  }, [viewSettings]);
+
+  useEffect(() => {
+    if (trianglePosition && gridRect) {
+      const popupPos = getPopupPosition(
+        trianglePosition,
+        gridRect,
+        responsiveWidth,
+        responsiveHeight,
+        popupPadding,
+      );
+      setPopupPosition(popupPos);
+    }
+  }, [trianglePosition, gridRect, responsiveWidth, responsiveHeight]);
+
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    console.log('doc link click', detail);
+    // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
-    const popupPos = getPopupPosition(
-      triangPos,
-      rect,
-      viewSettings.vertical ? popupHeight : popupWidth,
-      viewSettings.vertical ? popupWidth : popupHeight,
-      popupPadding,
-    );
+    setGridRect(rect);
     setTrianglePosition(triangPos);
-    setPopupPosition(popupPos);
 
     footnoteHandler.handle(bookDoc, event)?.catch((err) => {
       console.warn(err);
@@ -110,11 +146,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
   const handleDismissPopup = () => {
     closePopup();
+    setGridRect(null);
     setPopupPosition(null);
     setTrianglePosition(null);
     setShowPopup(false);
   };
 
+  // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
     const { element, footnote } = event.detail;
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
@@ -122,21 +160,30 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(element, rect, popupPadding, viewSettings.vertical);
-    const popupPos = getPopupPosition(
-      triangPos,
-      rect,
-      viewSettings.vertical ? popupHeight : popupWidth,
-      viewSettings.vertical ? popupWidth : popupHeight,
-      popupPadding,
-    );
     if (footnoteRef.current) {
       const elem = document.createElement('p');
       elem.textContent = footnote;
-      elem.setAttribute('style', `padding: 16px; hanging-punctuation: allow-end last;`);
+      elem.setAttribute('style', `padding: 1em; hanging-punctuation: allow-end last;`);
+      elem.style.visibility = 'hidden';
+      if (viewSettings.vertical) {
+        elem.style.height = `${responsiveHeight}px`;
+      } else {
+        elem.style.width = `${responsiveWidth}px`;
+      }
+      document.body.appendChild(elem);
+      const popupSize = elem.getBoundingClientRect();
+      if (viewSettings.vertical) {
+        setResponsiveWidth(Math.min(popupSize.width, window.innerWidth / 2));
+      } else {
+        setResponsiveHeight(Math.min(popupSize.height, window.innerHeight / 2));
+      }
+      document.body.removeChild(elem);
+
+      elem.style.visibility = 'visible';
       footnoteRef.current.replaceChildren(elem);
-      setShowPopup(true);
+      setGridRect(rect);
       setTrianglePosition(triangPos);
-      setPopupPosition(popupPos);
+      setShowPopup(true);
     }
   };
 
@@ -158,9 +205,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     }
   }, [footnoteRef]);
 
-  const width = viewSettings.vertical ? popupHeight : popupWidth;
-  const height = viewSettings.vertical ? popupWidth : popupHeight;
-
   return (
     <div>
       {showPopup && (
@@ -171,8 +215,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         />
       )}
       <Popup
-        width={width}
-        height={height}
+        width={responsiveWidth}
+        height={responsiveHeight}
         position={showPopup ? popupPosition! : undefined}
         trianglePosition={showPopup ? trianglePosition! : undefined}
         className='select-text overflow-y-auto'
@@ -181,8 +225,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           className=''
           ref={footnoteRef}
           style={{
-            width: `${width}px`,
-            height: `${height}px`,
+            width: `${responsiveWidth}px`,
+            height: `${responsiveHeight}px`,
           }}
         ></div>
       </Popup>

@@ -62,7 +62,7 @@ const FoliateViewer: React.FC<{
       viewSettings.vertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
       viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
-      setViewSettings(bookKey, viewSettings);
+      setViewSettings(bookKey, { ...viewSettings });
 
       applyColorScheme(detail.doc, getIsDarkMode());
       mountAdditionalFonts(detail.doc);

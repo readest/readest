@@ -254,7 +254,9 @@ export const getFootnoteStyles = () => `
   }
 
   p, li, blockquote, dd {
-    text-indent: 0;
+    padding: 1em !important;
+    margin: 0 !important;
+    text-indent: 0 !important;
   }
 `;
 
