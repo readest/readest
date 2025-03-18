@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.23": {
+      "date": "2025-03-19",
+      "notes": [
+        "Add options to show/hide header and footer",
+        "Add responsive window size for popup footnotes",
+        "Fix theme color not applied on Safari browsers",
+        "Fix progress not updated to 100% when finished reading"
+      ]
+    },
     "0.9.22": {
       "date": "2025-03-16",
       "notes": [
