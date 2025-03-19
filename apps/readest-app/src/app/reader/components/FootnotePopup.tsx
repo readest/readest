@@ -26,15 +26,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
 
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
-  const progress = getProgress(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
 
   const [gridRect, setGridRect] = useState<DOMRect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
+
+  const getResponsivePopupSize = (size: number, isVertical: boolean) => {
+    const maxSize = isVertical ? window.innerWidth / 2 : window.innerHeight / 2;
+    return Math.min(size, maxSize - popupPadding - 12);
+  };
 
   useEffect(() => {
     const handleBeforeRender = (e: Event) => {
@@ -75,9 +79,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       view.addEventListener('relocate', () => {
         const { renderer } = view as FoliateView;
         if (viewSettings.vertical) {
-          setResponsiveWidth(Math.min(renderer.viewSize, window.innerWidth / 2));
+          setResponsiveWidth(getResponsivePopupSize(renderer.viewSize, true));
         } else {
-          setResponsiveHeight(Math.min(renderer.viewSize, window.innerHeight / 2));
+          setResponsiveHeight(getResponsivePopupSize(renderer.viewSize, false));
         }
         setShowPopup(true);
       });
@@ -93,16 +97,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   }, [view]);
 
   useEffect(() => {
-    handleDismissPopup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress]);
-
-  useEffect(() => {
     if (viewSettings.vertical) {
       setResponsiveWidth(popupHeight);
-      setResponsiveHeight(Math.max(360, window.innerHeight / 4));
+      setResponsiveHeight(Math.max(popupWidth, window.innerHeight / 4));
     } else {
-      setResponsiveWidth(Math.max(360, window.innerWidth / 4));
+      setResponsiveWidth(Math.max(popupWidth, window.innerWidth / 4));
       setResponsiveHeight(popupHeight);
     }
   }, [viewSettings]);
@@ -173,9 +172,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       document.body.appendChild(elem);
       const popupSize = elem.getBoundingClientRect();
       if (viewSettings.vertical) {
-        setResponsiveWidth(Math.min(popupSize.width, window.innerWidth / 2));
+        setResponsiveWidth(getResponsivePopupSize(popupSize.width, true));
       } else {
-        setResponsiveHeight(Math.min(popupSize.height, window.innerHeight / 2));
+        setResponsiveHeight(getResponsivePopupSize(popupSize.height, false));
       }
       document.body.removeChild(elem);
 
@@ -192,8 +191,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   });
 
   useEffect(() => {
+    window.addEventListener('resize', handleDismissPopup);
     eventDispatcher.on('footnote-popup', handleFootnotePopupEvent);
     return () => {
+      window.removeEventListener('resize', handleDismissPopup);
       eventDispatcher.off('footnote-popup', handleFootnotePopupEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

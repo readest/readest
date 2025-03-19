@@ -253,10 +253,13 @@ export const getFootnoteStyles = () => `
     padding: 0;
   }
 
-  p, li, blockquote, dd {
+  body {
     padding: 1em !important;
-    margin: 0 !important;
-    text-indent: 0 !important;
+  }
+
+  p, li, blockquote, dd {
+    margin: unset;
+    text-indent: unset;
   }
 `;
 
