@@ -7,11 +7,13 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 
 const VELOCITY_THRESHOLD = 0.5;
+const SNAP_THRESHOLD = 0.2;
 
 interface DialogProps {
   id?: string;
   isOpen: boolean;
   children: ReactNode;
+  snapHeight?: number;
   header?: ReactNode;
   title?: string;
   className?: string;
@@ -25,6 +27,7 @@ const Dialog: React.FC<DialogProps> = ({
   id,
   isOpen,
   children,
+  snapHeight,
   header,
   title,
   className,
@@ -34,6 +37,7 @@ const Dialog: React.FC<DialogProps> = ({
   onClose,
 }) => {
   const { appService } = useEnv();
+  const [isFullHeightInMobile, setIsFullHeightInMobile] = React.useState(!snapHeight);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
 
@@ -61,9 +65,12 @@ const Dialog: React.FC<DialogProps> = ({
     const newTop = Math.max(0.0, Math.min(1, heightFraction));
 
     if (modal && overlay) {
-      modal.style.transition = '';
+      modal.style.height = '100%';
       modal.style.transform = `translateY(${newTop * 100}%)`;
       overlay.style.opacity = `${1 - heightFraction}`;
+
+      setIsFullHeightInMobile(data.clientY < 44);
+      modal.style.transition = `padding-top 0.3s ease-out`;
     }
   };
 
@@ -72,11 +79,14 @@ const Dialog: React.FC<DialogProps> = ({
     const overlay = document.querySelector('.overlay') as HTMLElement;
     if (!modal || !overlay) return;
 
+    const snapUpper = snapHeight ? 1 - snapHeight - SNAP_THRESHOLD : 0.5;
+    const snapLower = snapHeight ? 1 - snapHeight + SNAP_THRESHOLD : 0.5;
     if (
       data.velocity > VELOCITY_THRESHOLD ||
-      (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
+      (data.velocity >= 0 && data.clientY >= window.innerHeight * snapLower)
     ) {
       const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
+      modal.style.height = '100%';
       modal.style.transition = `transform ${transitionDuration}s ease-out`;
       modal.style.transform = 'translateY(100%)';
       overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
@@ -88,7 +98,22 @@ const Dialog: React.FC<DialogProps> = ({
       if (appService?.hasHaptics) {
         impactFeedback('medium');
       }
+    } else if (
+      snapHeight &&
+      data.clientY > window.innerHeight * snapUpper &&
+      data.clientY < window.innerHeight * snapLower
+    ) {
+      modal.style.transition = `transform 0.3s ease-out`;
+      modal.style.transform = `translateY(${(1 - snapHeight) * window.innerHeight}px)`;
+      setTimeout(() => {
+        modal.style.height = `${snapHeight * 100}%`;
+      }, 100);
+      if (appService?.hasHaptics) {
+        impactFeedback('medium');
+      }
     } else {
+      setIsFullHeightInMobile(true);
+      modal.style.height = '100%';
       modal.style.transition = `transform 0.3s ease-out`;
       modal.style.transform = `translateY(0%)`;
       overlay.style.opacity = '0';
@@ -104,9 +129,15 @@ const Dialog: React.FC<DialogProps> = ({
     <dialog
       id={id ?? 'dialog'}
       open={isOpen}
-      className={clsx('modal sm:min-w-90 z-50 h-full w-full !bg-transparent sm:w-full', className)}
+      className={clsx(
+        'modal sm:min-w-90 z-50 h-full w-full !items-start !bg-transparent sm:w-full sm:!items-center',
+        className,
+      )}
     >
-      <div className={clsx('overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20', bgClassName)} />
+      <div
+        className={clsx('overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20', bgClassName)}
+        onClick={onClose}
+      />
       <div
         className={clsx(
           'modal-box settings-content z-20 flex flex-col rounded-none rounded-tl-2xl rounded-tr-2xl p-0 sm:rounded-2xl',
@@ -114,9 +145,19 @@ const Dialog: React.FC<DialogProps> = ({
           window.innerWidth < window.innerHeight
             ? 'sm:h-[50%] sm:w-3/4'
             : 'sm:h-[65%] sm:w-1/2 sm:max-w-[600px]',
-          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)] sm:pt-0',
+          appService?.hasSafeAreaInset &&
+            isFullHeightInMobile &&
+            'pt-[env(safe-area-inset-top)] sm:pt-0',
           boxClassName,
         )}
+        style={
+          snapHeight
+            ? {
+                height: `${snapHeight * 100}%`,
+                transform: `translateY(${(1 - snapHeight) * window.innerHeight}px)`,
+              }
+            : {}
+        }
       >
         {window.innerWidth < 640 && (
           <div
