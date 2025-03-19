@@ -164,6 +164,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         viewSettings.gapPercent,
         Math.ceil(4800 / window.innerWidth),
       );
+      setGapPercent(viewSettings.gapPercent);
       setViewSettings(bookKey, viewSettings);
     }
     saveViewSettings(envConfig, bookKey, 'doubleBorder', doubleBorder);
@@ -176,11 +177,35 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [borderColor]);
 
   useEffect(() => {
+    if (showHeader && !viewSettings.vertical) {
+      viewSettings.marginPx = Math.max(viewSettings.marginPx, 44);
+      setMarginPx(viewSettings.marginPx);
+      setViewSettings(bookKey, viewSettings);
+    } else if (showHeader && viewSettings.vertical) {
+      viewSettings.gapPercent = Math.max(
+        viewSettings.gapPercent,
+        Math.ceil(4800 / window.innerWidth),
+      );
+      setGapPercent(viewSettings.gapPercent);
+      setViewSettings(bookKey, viewSettings);
+    }
     saveViewSettings(envConfig, bookKey, 'showHeader', showHeader);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHeader]);
 
   useEffect(() => {
+    if (showFooter && !viewSettings.vertical) {
+      viewSettings.marginPx = Math.max(viewSettings.marginPx, 44);
+      setMarginPx(viewSettings.marginPx);
+      setViewSettings(bookKey, viewSettings);
+    } else if (showFooter && viewSettings.vertical) {
+      viewSettings.gapPercent = Math.max(
+        viewSettings.gapPercent,
+        Math.ceil(4800 / window.innerWidth),
+      );
+      setGapPercent(viewSettings.gapPercent);
+      setViewSettings(bookKey, viewSettings);
+    }
     saveViewSettings(envConfig, bookKey, 'showFooter', showFooter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFooter]);
@@ -382,7 +407,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Vertical Margins (px)')}
               value={marginPx}
               onChange={setMarginPx}
-              min={0}
+              min={!viewSettings.vertical && (showFooter || showHeader) ? 44 : 0}
               max={88}
               step={4}
             />

@@ -137,7 +137,11 @@ export const useTouchEvent = (
     if (hoveredBookKey && touchEnd) {
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      if (!viewSettings!.scrolled && !viewSettings!.vertical) {
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+          setHoveredBookKey(null);
+        }
+      } else {
         setHoveredBookKey(null);
       }
     }
@@ -161,8 +165,10 @@ export const useTouchEvent = (
         Math.abs(deltaY) > Math.abs(deltaX) &&
         Math.abs(deltaX) < windowWidth * 0.3
       ) {
-        // swipe up to toggle the header bar and the footer bar
-        setHoveredBookKey(hoveredBookKey ? null : bookKey);
+        // swipe up to toggle the header bar and the footer bar, only for horizontal page mode
+        if (!viewSettings!.scrolled && !viewSettings!.vertical) {
+          setHoveredBookKey(hoveredBookKey ? null : bookKey);
+        }
       } else {
         if (hoveredBookKey) {
           setHoveredBookKey(null);
@@ -187,15 +193,10 @@ export const useTouchEvent = (
   };
 
   useEffect(() => {
-    // swipe touch is not compatible with scrolled mode, so only enable it in page mode
-    if (!viewSettings!.scrolled) {
-      window.addEventListener('message', handleTouch);
-      return () => {
-        window.removeEventListener('message', handleTouch);
-      };
-    } else {
-      return () => {};
-    }
+    window.addEventListener('message', handleTouch);
+    return () => {
+      window.removeEventListener('message', handleTouch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey, viewRef]);
 };

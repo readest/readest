@@ -137,10 +137,11 @@ const getLayoutStyles = (
   bg: string,
   fg: string,
   primary: string,
+  isDarkMode: boolean,
 ) => `
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
-    color-scheme: light dark;
+    color-scheme: ${isDarkMode ? 'dark' : 'light'};
     color: ${fg};
   }
   a:any-link {
@@ -158,6 +159,8 @@ const getLayoutStyles = (
   
   html {
     --theme-bg-color: ${bg};
+    --theme-fg-color: ${fg};
+    --theme-primary-color: ${primary};
     --default-text-align: ${justify ? 'justify' : 'start'};
     hanging-punctuation: allow-end last;
     orphans: 2;
@@ -248,13 +251,17 @@ export const getFootnoteStyles = () => `
     display: block !important;
   }
 
+  body {
+    padding: 1em !important;
+  }
+
+  a:any-link {
+    text-decoration: none;
+  }
+
   ol {
     margin: 0;
     padding: 0;
-  }
-
-  body {
-    padding: 1em !important;
   }
 
   p, li, blockquote, dd {
@@ -268,6 +275,7 @@ export interface ThemeCode {
   fg: string;
   primary: string;
   palette: Palette;
+  isDarkMode: boolean;
 }
 
 export const getThemeCode = () => {
@@ -303,6 +311,7 @@ export const getThemeCode = () => {
     fg: defaultPalette['base-content'],
     primary: defaultPalette.primary,
     palette: defaultPalette,
+    isDarkMode,
   } as ThemeCode;
 };
 
@@ -325,6 +334,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     themeCode.bg,
     themeCode.fg,
     themeCode.primary,
+    themeCode.isDarkMode,
   );
   // scale the font size on-the-fly so that we can sync the same font size on different devices
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
@@ -363,9 +373,4 @@ export const mountAdditionalFonts = (document: Document) => {
   const style = document.createElement('style');
   style.textContent = getAdditionalFontFaces();
   document.head.appendChild(style);
-};
-
-export const applyColorScheme = (document: Document, isDarkMode: boolean) => {
-  const colorScheme = isDarkMode ? 'dark' : 'light';
-  document.documentElement.style.setProperty('color-scheme', colorScheme);
 };

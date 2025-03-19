@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 
 interface NumberInputProps {
@@ -25,6 +25,10 @@ const NumberInput: React.FC<NumberInputProps> = ({
 }) => {
   const [localValue, setLocalValue] = useState(value);
   const numberStep = step || 1;
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

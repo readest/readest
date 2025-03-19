@@ -81,7 +81,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             />
             <FoliateViewer bookKey={bookKey} bookDoc={bookDoc} config={config} />
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
-            {viewSettings.vertical && (
+            {viewSettings.vertical && viewSettings.scrolled && (
               <>
                 <div
                   className='bg-base-100 absolute left-0 top-0 h-full'
