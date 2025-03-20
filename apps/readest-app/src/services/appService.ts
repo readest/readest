@@ -36,6 +36,7 @@ import { getOSPlatform, isCJKEnv, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
 import { ProgressHandler } from '@/utils/transfer';
+import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
 export abstract class BaseAppService implements AppService {
@@ -125,7 +126,7 @@ export abstract class BaseAppService implements AppService {
   }
 
   async importBook(
-    file: string | File,
+    file: string | File, // file path/url or file object
     books: Book[],
     saveBook: boolean = true,
     saveCover: boolean = true,
@@ -144,6 +145,10 @@ export abstract class BaseAppService implements AppService {
         } else {
           filename = file.name;
           fileobj = file;
+        }
+        if (filename.endsWith('.txt')) {
+          const txt2epub = new TxtToEpubConverter();
+          ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
         }
         ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
         if (!loadedBook.metadata.title) {
@@ -177,7 +182,7 @@ export abstract class BaseAppService implements AppService {
         await this.fs.createDir(getDir(book), 'Books');
       }
       if (saveBook && (!(await this.fs.exists(getFilename(book), 'Books')) || overwrite)) {
-        if (typeof file === 'string' && !isValidURL(file)) {
+        if (typeof file === 'string' && !isValidURL(file) && !filename.endsWith('.txt')) {
           await this.fs.copyFile(file, getFilename(book), 'Books');
         } else {
           await this.fs.writeFile(getFilename(book), 'Books', await fileobj.arrayBuffer());
