@@ -200,7 +200,7 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    margin: ${vertical ? `0 ${paragraphMargin}em` : `${paragraphMargin}em 0`};
+    margin: ${vertical ? `0 ${paragraphMargin}em` : `${paragraphMargin}em 0`} ${overrideLayout ? '!important' : ''};
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -213,6 +213,9 @@ const getLayoutStyles = (
     -webkit-hyphenate-limit-lines: 2;
     hanging-punctuation: allow-end last;
     widows: 2;
+  }
+  li, p:has(> :is(img, video, font, h1, h2, h3, h4, h5, table)) {
+    text-indent: 0 !important;
   }
   /* prevent the above from overriding the align attribute */
   [align="left"] { text-align: left; }

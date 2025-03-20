@@ -326,21 +326,23 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={3.0}
               step={0.1}
             />
-            <NumberInput
-              label={_('Word Spacing')}
-              value={wordSpacing}
-              onChange={setWordSpacing}
-              min={-4}
-              max={8}
-              step={0.5}
-            />
+            {langCode !== 'zh' && (
+              <NumberInput
+                label={_('Word Spacing')}
+                value={wordSpacing}
+                onChange={setWordSpacing}
+                min={-4}
+                max={8}
+                step={0.5}
+              />
+            )}
             <NumberInput
               label={_('Letter Spacing')}
               value={letterSpacing}
               onChange={setLetterSpacing}
               min={-2}
               max={4}
-              step={0.1}
+              step={0.5}
             />
             <NumberInput
               label={_('Text Indent')}
