@@ -114,11 +114,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
           <main className='flex-grow overflow-y-auto px-2 font-sans'></main>
           <footer className='mt-auto hidden data-[state=loaded]:block data-[state=error]:hidden data-[state=loading]:hidden'>
             <div className='flex items-center px-4 py-2 text-sm opacity-60'>
-              From <a id='link'>Wikipedia</a>, released under the{' '}
-              <a href='https://en.wikipedia.org/wiki/Wikipedia:Text_of_the_Creative_Commons_Attribution-ShareAlike_4.0_International_License'>
-                CC BY-SA License
-              </a>
-              .
+              From Wikipedia, released under the CC BY-SA License.
             </div>
           </footer>
         </div>

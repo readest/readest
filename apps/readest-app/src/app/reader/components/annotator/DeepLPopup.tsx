@@ -165,13 +165,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
           ) : (
             <div>
               <p className='text-base'>{translation || 'No translation available.'}</p>
-              <div className='pt-4 text-sm opacity-60'>
-                Translated by{' '}
-                <a href='https://www.deepl.com/' target='_blank' rel='noopener noreferrer'>
-                  DeepL
-                </a>
-                .
-              </div>
+              <div className='pt-4 text-sm opacity-60'>Translated by DeepL.</div>
             </div>
           )}
         </div>

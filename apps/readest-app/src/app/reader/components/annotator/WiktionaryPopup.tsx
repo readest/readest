@@ -169,8 +169,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
           <main className='flex-grow overflow-y-auto p-4 font-sans' />
           <footer className='mt-auto hidden data-[state=loaded]:block data-[state=error]:hidden data-[state=loading]:hidden'>
             <div className='flex items-center px-4 py-2 text-sm opacity-60'>
-              From <a id='link'>Wiktionary</a>, released under the{' '}
-              <a href='https://creativecommons.org/licenses/by-sa/4.0/'>CC BY-SA License</a>.
+              From Wiktionary, released under the CC BY-SA License.
             </div>
           </footer>
         </div>
