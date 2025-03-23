@@ -1,0 +1,12 @@
+<p>b>Readest</b> is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
+<p>Whether you're a casual reader, a student, or a researcher, Readest is packed with thoughtful features to enhance your reading experience. From flexible reading modes to powerful annotation tools and cloud sync, it’s designed to make reading smarter, smoother, and more enjoyable.</p>
+<ul>
+<li><b>Support for Multiple eBook Formats:</b> Compatible with EPUB, MOBI, AZW3, TXT, PDF, and more.</li>
+<li><b>Paging/Scrolling Reading Modes:</b> Freely switch between modes to suit different reading preferences.</li>
+<li><b>Efficient Annotation & Marking:</b> Supports highlights, bookmarks, and notes—easily organize key information.</li>
+<li><b>Full-Text Search & Translation:</b> Includes full-text search, built-in DeepL translation tool, and Wikipedia lookup.</li>
+<li><b>Dual-Screen Parallel Reading:</b> Read two books at the same time—ideal for academic research and text comparison.</li>
+<li><b>Personalized Layout Settings:</b> Customize fonts, themes, and colors for a tailored reading experience.</li>
+<li><b>Built-in Sync Server:</b> Each user gets 500 MB of cloud storage; unlimited devices supported. Log in to sync eBooks, reading progress, highlights, and notes across devices.</li>
+<li><b>TTS Voice Reading:</b> Unlimited text-to-speech with Edge TTS; multiple voice options available.</li>
+</ul>
