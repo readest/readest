@@ -251,5 +251,12 @@
   "Small": "小",
   "Large": "大",
   "Auto": "自动",
-  "Language": "语言"
+  "Language": "语言",
+  "No annotations to export": "没有要导出的笔记",
+  "Author": "作者",
+  "Exported from Readest": "从 Readest 导出",
+  "Highlights & Annotations": "划线和笔记",
+  "Note": "笔记",
+  "Copied to clipboard": "已复制到剪贴板",
+  "Export Annotations": "导出笔记"
 }

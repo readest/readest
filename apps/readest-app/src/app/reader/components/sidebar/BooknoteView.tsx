@@ -4,15 +4,8 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { findTocItemBS } from '@/utils/toc';
 import { TOCItem } from '@/libs/document';
-import { BookNote, BookNoteType } from '@/types/book';
+import { BooknoteGroup, BookNoteType } from '@/types/book';
 import BooknoteItem from './BooknoteItem';
-
-interface BooknoteGroup {
-  id: number;
-  href: string;
-  label: string;
-  booknotes: BookNote[];
-}
 
 const BooknoteView: React.FC<{
   type: BookNoteType;

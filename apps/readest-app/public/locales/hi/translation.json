@@ -251,5 +251,12 @@
   "Small": "छोटा",
   "Large": "बड़ा",
   "Auto": "स्वचालित",
-  "Language": "भाषा"
+  "Language": "भाषा",
+  "No annotations to export": "निर्यात करने के लिए कोई टिप्पणियाँ नहीं हैं",
+  "Author": "लेखक",
+  "Exported from Readest": "Readest से निर्यात किया गया",
+  "Highlights & Annotations": "हाइलाइट और टिप्पणियाँ",
+  "Note": "टिप्पणी",
+  "Copied to clipboard": "क्लिपबोर्ड पर कॉपी किया गया",
+  "Export Annotations": "टिप्पणियाँ निर्यात करें"
 }

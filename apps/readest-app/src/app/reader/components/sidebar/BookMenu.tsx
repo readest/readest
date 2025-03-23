@@ -5,8 +5,10 @@ import Image from 'next/image';
 import MenuItem from '@/components/MenuItem';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
+import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
 
@@ -19,6 +21,8 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const _ = useTranslation();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
+  const { sideBarBookKey } = useSidebarStore();
+
   const handleParallelView = (id: string) => {
     openParallelView(id);
     setIsDropdownOpen?.(false);
@@ -35,6 +39,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     window.open(DOWNLOAD_READEST_URL, '_blank');
     setIsDropdownOpen?.(false);
   };
+  const handleExportAnnotations = () => {
+    eventDispatcher.dispatch('export-annotations', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
 
   const isWebApp = isWebAppPlatform();
 
@@ -49,6 +57,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       <MenuItem label={_('Parallel Read')} noIcon>
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
+            .filter((book) => book.format !== 'PDF' && book.format !== 'CBZ')
             .slice(0, 20)
             .map((book) => (
               <MenuItem
@@ -72,6 +81,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             ))}
         </ul>
       </MenuItem>
+      <MenuItem label={_('Export Annotations')} noIcon onClick={handleExportAnnotations} />
       <MenuItem label={_('Reload Page')} noIcon shortcut='Shift+R' onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} noIcon onClick={downloadReadest} />}

@@ -251,5 +251,12 @@
   "Small": "Nhỏ",
   "Large": "Lớn",
   "Auto": "Tự động",
-  "Language": "Ngôn ngữ"
+  "Language": "Ngôn ngữ",
+  "No annotations to export": "Không có chú thích để xuất",
+  "Author": "Tác giả",
+  "Exported from Readest": "Đã xuất từ Readest",
+  "Highlights & Annotations": "Điểm nổi bật & Chú thích",
+  "Note": "Ghi chú",
+  "Copied to clipboard": "Đã sao chép vào bảng ghi",
+  "Export Annotations": "Xuất chú thích"
 }

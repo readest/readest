@@ -251,5 +251,12 @@
   "Small": "Μικρό",
   "Large": "Μεγάλο",
   "Auto": "Αυτόματο",
-  "Language": "Γλώσσα"
+  "Language": "Γλώσσα",
+  "No annotations to export": "Δεν υπάρχουν σχολιασμοί για εξαγωγή",
+  "Author": "Συγγραφέας",
+  "Exported from Readest": "Εξήχθη από το Readest",
+  "Highlights & Annotations": "Επισημάνσεις & Σχολιασμοί",
+  "Note": "Σημείωση",
+  "Copied to clipboard": "Αντιγράφηκε στο πρόχειρο",
+  "Export Annotations": "Εξαγωγή σχολιασμών"
 }

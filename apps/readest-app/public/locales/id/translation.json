@@ -251,5 +251,12 @@
   "Small": "Kecil",
   "Large": "Besar",
   "Auto": "Otomatis",
-  "Language": "Bahasa"
+  "Language": "Bahasa",
+  "No annotations to export": "Tidak ada anotasi yang diekspor",
+  "Author": "Penulis",
+  "Exported from Readest": "Diekspor dari Readest",
+  "Highlights & Annotations": "Sorotan & Anotasi",
+  "Note": "Catatan",
+  "Copied to clipboard": "Disalin ke papan klip",
+  "Export Annotations": "Ekspor Anotasi"
 }

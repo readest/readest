@@ -251,5 +251,12 @@
   "Small": "Küçük",
   "Large": "Büyük",
   "Auto": "Otomatik",
-  "Language": "Dil"
+  "Language": "Dil",
+  "No annotations to export": "Dışa aktarılacak not yok",
+  "Author": "Yazar",
+  "Exported from Readest": "Readest'ten dışa aktarıldı",
+  "Highlights & Annotations": "Vurgular ve Notlar",
+  "Note": "Not",
+  "Copied to clipboard": "Panoya kopyalandı",
+  "Export Annotations": "Notları Dışa Aktar"
 }

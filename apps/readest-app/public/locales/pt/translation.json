@@ -251,5 +251,12 @@
   "Small": "Pequeno",
   "Large": "Grande",
   "Auto": "Automático",
-  "Language": "Idioma"
+  "Language": "Idioma",
+  "No annotations to export": "Nenhuma anotação para exportar",
+  "Author": "Autor",
+  "Exported from Readest": "Exportado do Readest",
+  "Highlights & Annotations": "Destaques e Anotações",
+  "Note": "Nota",
+  "Copied to clipboard": "Copiado para a área de transferência",
+  "Export Annotations": "Exportar Anotações"
 }

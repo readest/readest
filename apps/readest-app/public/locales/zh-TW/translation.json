@@ -251,5 +251,12 @@
   "Small": "小",
   "Large": "大",
   "Auto": "自動",
-  "Language": "語言"
+  "Language": "語言",
+  "No annotations to export": "沒有要匯出的筆記",
+  "Author": "作者",
+  "Exported from Readest": "從 Readest 匯出",
+  "Highlights & Annotations": "高亮和筆記",
+  "Note": "筆記",
+  "Copied to clipboard": "已複製到剪貼板",
+  "Export Annotations": "匯出筆記"
 }

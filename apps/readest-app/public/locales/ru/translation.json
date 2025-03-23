@@ -251,5 +251,12 @@
   "Small": "Маленький",
   "Large": "Большой",
   "Auto": "Авто",
-  "Language": "Язык"
+  "Language": "Язык",
+  "No annotations to export": "Нет аннотаций для экспорта",
+  "Author": "Автор",
+  "Exported from Readest": "Экспортировано из Readest",
+  "Highlights & Annotations": "Выделения и аннотации",
+  "Note": "Заметка",
+  "Copied to clipboard": "Скопировано в буфер обмена",
+  "Export Annotations": "Экспортировать аннотации"
 }

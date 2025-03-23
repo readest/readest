@@ -53,6 +53,13 @@ export interface BookNote {
   deletedAt?: number | null;
 }
 
+export interface BooknoteGroup {
+  id: number;
+  href: string;
+  label: string;
+  booknotes: BookNote[];
+}
+
 export type WritingMode = 'auto' | 'horizontal-tb' | 'horizontal-rl' | 'vertical-rl';
 
 export interface BookLayout {

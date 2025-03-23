@@ -251,5 +251,12 @@
   "Small": "小",
   "Large": "大",
   "Auto": "自動",
-  "Language": "言語"
+  "Language": "言語",
+  "No annotations to export": "エクスポートする注釈はありません",
+  "Author": "著者",
+  "Exported from Readest": "Readestからエクスポート",
+  "Highlights & Annotations": "ハイライトと注釈",
+  "Note": "メモ",
+  "Copied to clipboard": "クリップボードにコピー",
+  "Export Annotations": "注釈をエクスポート"
 }

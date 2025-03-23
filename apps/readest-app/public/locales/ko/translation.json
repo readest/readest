@@ -251,5 +251,12 @@
   "Small": "작음",
   "Large": "큼",
   "Auto": "자동",
-  "Language": "언어"
+  "Language": "언어",
+  "No annotations to export": "내보낼 주석이 없습니다",
+  "Author": "저자",
+  "Exported from Readest": "Readest에서 내보냄",
+  "Highlights & Annotations": "하이라이트 및 주석",
+  "Note": "노트",
+  "Copied to clipboard": "클립보드에 복사",
+  "Export Annotations": "주석 내보내기"
 }

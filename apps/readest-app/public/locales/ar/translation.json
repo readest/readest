@@ -251,5 +251,12 @@
   "Small": "صغير",
   "Large": "كبير",
   "Auto": "تلقائي",
-  "Language": "اللغة"
+  "Language": "اللغة",
+  "No annotations to export": "لا توجد تعليقات للتصدير",
+  "Author": "المؤلف",
+  "Exported from Readest": "تم التصدير من ريديست",
+  "Highlights & Annotations": "التمييزات والتعليقات",
+  "Note": "ملاحظة",
+  "Copied to clipboard": "تم النسخ إلى الحافظة",
+  "Export Annotations": "تصدير التعليقات"
 }
