@@ -249,5 +249,7 @@
   "Show Header": "Mostrar Cabeçalho",
   "Show Footer": "Mostrar Rodapé",
   "Small": "Pequeno",
-  "Large": "Grande"
+  "Large": "Grande",
+  "Auto": "Automático",
+  "Language": "Idioma"
 }

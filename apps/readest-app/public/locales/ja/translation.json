@@ -249,5 +249,7 @@
   "Show Header": "ヘッダーを表示",
   "Show Footer": "フッターを表示",
   "Small": "小",
-  "Large": "大"
+  "Large": "大",
+  "Auto": "自動",
+  "Language": "言語"
 }

@@ -249,5 +249,7 @@
   "Show Header": "Mostrar encabezado",
   "Show Footer": "Mostrar pie de página",
   "Small": "Pequeño",
-  "Large": "Grande"
+  "Large": "Grande",
+  "Auto": "Automático",
+  "Language": "Idioma"
 }

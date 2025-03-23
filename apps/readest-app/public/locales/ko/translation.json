@@ -249,5 +249,7 @@
   "Show Header": "헤더 표시",
   "Show Footer": "푸터 표시",
   "Small": "작음",
-  "Large": "큼"
+  "Large": "큼",
+  "Auto": "자동",
+  "Language": "언어"
 }

@@ -249,5 +249,7 @@
   "Show Header": "Başlık Göster",
   "Show Footer": "Altbilgi Göster",
   "Small": "Küçük",
-  "Large": "Büyük"
+  "Large": "Büyük",
+  "Auto": "Otomatik",
+  "Language": "Dil"
 }

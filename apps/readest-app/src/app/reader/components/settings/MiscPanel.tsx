@@ -1,13 +1,16 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
+import i18n from 'i18next';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { TRANSLATED_LANGS } from '@/services/constants';
 import cssbeautify from 'cssbeautify';
 import cssValidate from '@/utils/css';
+import DropDown from './DropDown';
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -69,6 +72,31 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     e.nativeEvent.stopImmediatePropagation();
   };
 
+  const getCurrentUILangOption = () => {
+    const uiLanguage = viewSettings.uiLanguage;
+    return {
+      option: uiLanguage,
+      label:
+        uiLanguage === ''
+          ? _('Auto')
+          : TRANSLATED_LANGS[uiLanguage as keyof typeof TRANSLATED_LANGS],
+    };
+  };
+
+  const getUILangOptions = () => {
+    const langs = TRANSLATED_LANGS as Record<string, string>;
+    const options = Object.entries(langs).map(([option, label]) => ({ option, label }));
+    options.sort((a, b) => a.label.localeCompare(b.label));
+    options.unshift({ option: '', label: _('Auto') });
+    return options;
+  };
+
+  const handleSelectUILang = (option: string) => {
+    viewSettings.uiLanguage = option;
+    saveViewSettings(envConfig, bookKey, 'uiLanguage', option);
+    i18n.changeLanguage(option ? option : navigator.language);
+  };
+
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'animated', animated);
     if (animated) {
@@ -91,6 +119,22 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div className='my-4 w-full space-y-6'>
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Language')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Language')}</span>
+              <DropDown
+                selected={getCurrentUILangOption()}
+                options={getUILangOptions()}
+                onSelect={handleSelectUILang}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>

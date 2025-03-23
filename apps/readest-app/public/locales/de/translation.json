@@ -249,5 +249,7 @@
   "Show Header": "Kopfzeile anzeigen",
   "Show Footer": "Fußzeile anzeigen",
   "Small": "Klein",
-  "Large": "Groß"
+  "Large": "Groß",
+  "Auto": "Automatisch",
+  "Language": "Sprache"
 }

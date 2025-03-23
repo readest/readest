@@ -115,6 +115,7 @@ export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
+  uiLanguage: '',
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
@@ -485,3 +486,25 @@ export const MIGHT_BE_RTL_LANGS = [
   'yi',
   '',
 ];
+
+export const TRANSLATED_LANGS = {
+  en: 'English',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ja: '日本語',
+  ko: '한국어',
+  es: 'Español',
+  pt: 'Português',
+  ru: 'Русский',
+  ar: 'العربية',
+  el: 'Ελληνικά',
+  uk: 'Українська',
+  pl: 'Polski',
+  tr: 'Türkçe',
+  hi: 'हिन्दी',
+  id: 'Bahasa Indonesia',
+  vi: 'Tiếng Việt',
+  'zh-CN': '简体中文',
+  'zh-TW': '正體中文',
+};

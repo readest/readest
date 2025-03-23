@@ -141,7 +141,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     <>
       <div
         className={clsx(
-          'absolute bottom-0 left-0 z-10 h-12 w-full sm:h-[52px]',
+          'absolute bottom-0 left-0 z-10 hidden w-full sm:flex sm:h-[52px]',
           // show scroll bar when vertical and scrolled in desktop
           viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
         )}
@@ -150,16 +150,15 @@ const FooterBar: React.FC<FooterBarProps> = ({
       />
       <div
         className={clsx(
-          'footer-bar shadow-xs absolute bottom-0 z-50 flex w-full flex-col sm:h-[52px]',
+          'footer-bar shadow-xs absolute bottom-0 z-50 flex w-full flex-col',
+          'sm:h-[52px] sm:justify-center',
           'sm:bg-base-100 border-base-300/50 border sm:border-none',
           'transition-[opacity,transform] duration-300',
           appService?.hasRoundedWindow && 'rounded-window-bottom-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
           isHoveredAnim && 'hover-bar-anim',
           // show scroll bar when vertical and scrolled in desktop
-          viewSettings?.vertical &&
-            viewSettings?.scrolled &&
-            'sm:!bottom-3 sm:!h-7 sm:justify-center',
+          viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
           isVisible
             ? `pointer-events-auto translate-y-0 opacity-100`
             : `pointer-events-none translate-y-full opacity-0 sm:translate-y-0`,

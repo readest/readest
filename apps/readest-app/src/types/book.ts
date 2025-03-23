@@ -102,6 +102,7 @@ export interface BookFont {
 
 export interface ViewConfig {
   sideBarTab: string;
+  uiLanguage: string;
 }
 
 export interface TTSConfig {

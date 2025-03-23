@@ -249,5 +249,7 @@
   "Show Header": "Mostra intestazione",
   "Show Footer": "Mostra piè di pagina",
   "Small": "Piccolo",
-  "Large": "Grande"
+  "Large": "Grande",
+  "Auto": "Automatico",
+  "Language": "Lingua"
 }

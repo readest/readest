@@ -249,5 +249,7 @@
   "Show Header": "Afficher l'en-tête",
   "Show Footer": "Afficher le pied de page",
   "Small": "Petit",
-  "Large": "Grand"
+  "Large": "Grand",
+  "Auto": "Automatique",
+  "Language": "Langue"
 }

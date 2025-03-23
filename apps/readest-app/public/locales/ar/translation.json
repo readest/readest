@@ -249,5 +249,7 @@
   "Show Header": "عرض الرأس",
   "Show Footer": "عرض التذييل",
   "Small": "صغير",
-  "Large": "كبير"
+  "Large": "كبير",
+  "Auto": "تلقائي",
+  "Language": "اللغة"
 }

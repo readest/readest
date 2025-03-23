@@ -1,8 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
-import NumberInput from './NumberInput';
-import FontDropdown from './FontDropDown';
 import {
   ANDROID_FONTS,
   IOS_FONTS,
@@ -21,6 +19,8 @@ import { getOSPlatform } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/font';
 import { isTauriAppPlatform } from '@/services/environment';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import NumberInput from './NumberInput';
+import FontDropdown from './FontDropDown';
 
 interface FontFaceProps {
   className?: string;
