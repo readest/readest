@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.25": {
+      "date": "2025-03-24",
+      "notes": [
+        "Support exporting annotations in markdown format",
+        "Support importing TXT files",
+        "Support setting reader language in the UI",
+        "Add bottom action bar on mobile platforms",
+        "Various fixes on layout settings and styles"
+      ]
+    },
     "0.9.23": {
       "date": "2025-03-19",
       "notes": [
