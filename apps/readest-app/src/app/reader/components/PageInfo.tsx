@@ -9,6 +9,7 @@ interface PageInfoProps {
   section?: PageInfo;
   pageinfo?: PageInfo;
   showDoubleBorder: boolean;
+  isScrolled: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -19,34 +20,32 @@ const PageInfoView: React.FC<PageInfoProps> = ({
   section,
   pageinfo,
   showDoubleBorder,
+  isScrolled,
   isVertical,
   horizontalGap,
   verticalMargin,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const pageInfo =
-    bookFormat === 'PDF'
-      ? section
-        ? isVertical
-          ? `${section.current + 1} · ${section.total}`
-          : `${section.current + 1} / ${section.total}`
-        : ''
-      : pageinfo
-        ? _(
-            isVertical ? '{{currentPage}} · {{totalPage}}' : 'Loc. {{currentPage}} / {{totalPage}}',
-            {
-              currentPage: (pageinfo.next ?? pageinfo.current) + 1,
-              totalPage: pageinfo.total,
-            },
-          )
-        : '';
+  const pageInfo = ['PDF', 'CBZ'].includes(bookFormat)
+    ? section
+      ? isVertical
+        ? `${section.current + 1} · ${section.total}`
+        : `${section.current + 1} / ${section.total}`
+      : ''
+    : pageinfo
+      ? _(isVertical ? '{{currentPage}} · {{totalPage}}' : 'Loc. {{currentPage}} / {{totalPage}}', {
+          currentPage: (pageinfo.next ?? pageinfo.current) + 1,
+          totalPage: pageinfo.total,
+        })
+      : '';
 
   return (
     <div
       className={clsx(
         'pageinfo absolute bottom-0 flex items-center justify-end',
-        isVertical ? 'writing-vertical-rl' : 'bg-base-100 h-12 w-full',
+        isVertical ? 'writing-vertical-rl' : 'h-12 w-full',
+        isScrolled && 'bg-base-100',
       )}
       style={
         isVertical

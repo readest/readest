@@ -198,6 +198,9 @@ export abstract class BaseAppService implements AppService {
       if (!existingBook) {
         await this.saveBookConfig(book, INIT_BOOK_CONFIG);
         books.splice(0, 0, book);
+      } else {
+        existingBook.title = book.title;
+        existingBook.author = book.author;
       }
 
       if (typeof file === 'string' && isValidURL(file)) {

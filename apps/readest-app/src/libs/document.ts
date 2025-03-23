@@ -99,6 +99,31 @@ export class DocumentLoader {
   }
 
   private async makeZipLoader() {
+    const getComment = async (): Promise<string | null> => {
+      const EOCD_SIGNATURE = [0x50, 0x4b, 0x05, 0x06];
+      const maxEOCDSearch = 1024 * 64;
+
+      const sliceSize = Math.min(maxEOCDSearch, this.file.size);
+      const tail = await this.file.slice(this.file.size - sliceSize, this.file.size).arrayBuffer();
+      const bytes = new Uint8Array(tail);
+
+      for (let i = bytes.length - 22; i >= 0; i--) {
+        if (
+          bytes[i] === EOCD_SIGNATURE[0] &&
+          bytes[i + 1] === EOCD_SIGNATURE[1] &&
+          bytes[i + 2] === EOCD_SIGNATURE[2] &&
+          bytes[i + 3] === EOCD_SIGNATURE[3]
+        ) {
+          const commentLength = bytes[i + 20]! + (bytes[i + 21]! << 8);
+          const commentStart = i + 22;
+          const commentBytes = bytes.slice(commentStart, commentStart + commentLength);
+          return new TextDecoder().decode(commentBytes);
+        }
+      }
+
+      return null;
+    };
+
     const { configure, ZipReader, BlobReader, TextWriter, BlobWriter } = await import(
       '@zip.js/zip.js'
     );
@@ -120,7 +145,7 @@ export class DocumentLoader {
     );
     const getSize = (name: string) => map.get(name)?.uncompressedSize ?? 0;
 
-    return { entries, loadText, loadBlob, getSize, sha1: undefined };
+    return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
   }
 
   private isCBZ(): boolean {
@@ -155,7 +180,7 @@ export class DocumentLoader {
 
       if (this.isCBZ()) {
         const { makeComicBook } = await import('foliate-js/comic-book.js');
-        book = makeComicBook(loader, this.file);
+        book = await makeComicBook(loader, this.file);
         format = 'CBZ';
       } else if (this.isFBZ()) {
         const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));

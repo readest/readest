@@ -4,6 +4,7 @@ import React from 'react';
 interface SectionInfoProps {
   section?: string;
   showDoubleBorder: boolean;
+  isScrolled: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -12,6 +13,7 @@ interface SectionInfoProps {
 const SectionInfo: React.FC<SectionInfoProps> = ({
   section,
   showDoubleBorder,
+  isScrolled,
   isVertical,
   horizontalGap,
   verticalMargin,
@@ -20,7 +22,8 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
     <div
       className={clsx(
         'sectioninfo absolute flex items-center overflow-hidden',
-        isVertical ? 'writing-vertical-rl max-h-[85%]' : 'bg-base-100 top-0 h-[44px]',
+        isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0 h-[44px]',
+        isScrolled && 'bg-base-100',
       )}
       style={
         isVertical
