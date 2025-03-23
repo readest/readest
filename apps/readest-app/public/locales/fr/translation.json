@@ -247,5 +247,7 @@
   "Border Color": "Couleur de la bordure",
   "Border Frame": "Cadre de bordure",
   "Show Header": "Afficher l'en-tête",
-  "Show Footer": "Afficher le pied de page"
+  "Show Footer": "Afficher le pied de page",
+  "Small": "Petit",
+  "Large": "Grand"
 }

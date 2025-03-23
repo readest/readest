@@ -38,7 +38,10 @@ const SidebarHeader: React.FC<{
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
-        <button className='btn btn-ghost h-8 min-h-8 w-8 p-0' onClick={onGoToLibrary}>
+        <button
+          className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
+          onClick={onGoToLibrary}
+        >
           <GiBookshelf className='fill-base-content' />
         </button>
       </div>

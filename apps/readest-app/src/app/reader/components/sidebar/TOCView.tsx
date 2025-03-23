@@ -68,7 +68,7 @@ const TOCItemView: React.FC<{
         aria-selected={isActive ? 'true' : 'false'}
         data-href={item.href ? getContentMd5(item.href) : undefined}
         className={`flex w-full cursor-pointer items-center rounded-md py-2 ${
-          isActive ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/85'
+          isActive ? 'bg-base-300/85 hover:bg-base-300' : 'sm:hover:bg-base-300/85'
         }`}
       >
         {item.subitems && (

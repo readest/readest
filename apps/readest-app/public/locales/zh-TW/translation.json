@@ -247,5 +247,7 @@
   "Border Color": "邊框顏色",
   "Border Frame": "頁面邊框",
   "Show Header": "顯示頁眉",
-  "Show Footer": "顯示頁腳"
+  "Show Footer": "顯示頁腳",
+  "Small": "小",
+  "Large": "大"
 }

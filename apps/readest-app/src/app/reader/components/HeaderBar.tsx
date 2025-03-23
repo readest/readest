@@ -86,8 +86,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       onMouseEnter={() => setHoveredBookKey(bookKey)}
       onMouseLeave={() => setHoveredBookKey('')}
     >
-      <div className='sidebar-bookmark-toggler bg-base-100 z-20 flex h-full items-center space-x-4'>
-        <SidebarToggler bookKey={bookKey} />
+      <div className='sidebar-bookmark-toggler bg-base-100 z-20 flex h-full items-center gap-x-4'>
+        <div className='hidden sm:flex'>
+          <SidebarToggler bookKey={bookKey} />
+        </div>
         <BookmarkToggler bookKey={bookKey} />
       </div>
 

@@ -268,8 +268,8 @@ export const getFootnoteStyles = () => `
   }
 
   p, li, blockquote, dd {
-    margin: unset;
-    text-indent: unset;
+    margin: unset !important;
+    text-indent: unset !important;
   }
 `;
 

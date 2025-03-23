@@ -169,9 +169,9 @@ const ProfilePage = () => {
       >
         <IoArrowBack className='text-base-content' />
       </button>
-      <div className='w-full max-w-4xl px-6 py-10'>
+      <div className='w-full max-w-4xl px-4 py-10'>
         <div className='bg-base-200 overflow-hidden rounded-lg p-2 shadow-md sm:p-6'>
-          <div className='p-6'>
+          <div className='p-2 sm:p-6'>
             <div className='mb-8 flex flex-col items-center gap-x-6 gap-y-4 md:flex-row md:items-start'>
               <div className='flex-shrink-0'>
                 {avatarUrl ? (
@@ -202,7 +202,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className='bg-base-100 mb-8 rounded-lg p-6'>
+            <div className='bg-base-100 mb-8 rounded-lg px-4 py-6'>
               <h3 className='text-base-content mb-2 text-lg font-semibold'>{_('Features')}</h3>
               <div className='mt-6'>
                 <ul className='text-base-content/60 grid grid-cols-1 gap-2 md:grid-cols-2'>

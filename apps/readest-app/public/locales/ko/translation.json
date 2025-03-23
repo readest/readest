@@ -247,5 +247,7 @@
   "Border Color": "테두리 색상",
   "Border Frame": "테두리 프레임",
   "Show Header": "헤더 표시",
-  "Show Footer": "푸터 표시"
+  "Show Footer": "푸터 표시",
+  "Small": "작음",
+  "Large": "큼"
 }

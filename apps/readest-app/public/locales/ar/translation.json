@@ -247,5 +247,7 @@
   "Border Color": "لون الحدود",
   "Border Frame": "إطار الحدود",
   "Show Header": "عرض الرأس",
-  "Show Footer": "عرض التذييل"
+  "Show Footer": "عرض التذييل",
+  "Small": "صغير",
+  "Large": "كبير"
 }

@@ -247,5 +247,7 @@
   "Border Color": "版框颜色",
   "Border Frame": "页面版框",
   "Show Header": "显示页眉",
-  "Show Footer": "显示页脚"
+  "Show Footer": "显示页脚",
+  "Small": "小",
+  "Large": "大"
 }

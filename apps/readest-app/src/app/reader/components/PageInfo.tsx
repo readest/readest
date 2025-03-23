@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PageInfo } from '@/types/book';
 
@@ -23,6 +24,7 @@ const PageInfoView: React.FC<PageInfoProps> = ({
   verticalMargin,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const pageInfo =
     bookFormat === 'PDF'
       ? section
@@ -54,7 +56,10 @@ const PageInfoView: React.FC<PageInfoProps> = ({
               width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
               height: `calc(100% - ${verticalMargin * 2}px)`,
             }
-          : { insetInlineEnd: `${horizontalGap}%` }
+          : {
+              insetInlineEnd: `${horizontalGap}%`,
+              paddingBottom: appService?.hasSafeAreaInset ? 'env(safe-area-inset-bottom)' : 0,
+            }
       }
     >
       <h2 className='text-neutral-content text-right font-sans text-xs font-extralight'>

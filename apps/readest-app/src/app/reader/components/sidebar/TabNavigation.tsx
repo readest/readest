@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdToc, MdEditNote, MdBookmarkBorder } from 'react-icons/md';
+import { MdBookmarkBorder as BookmarkIcon } from 'react-icons/md';
+import { IoIosList as TOCIcon } from 'react-icons/io';
+import { PiNotePencil as NoteIcon } from 'react-icons/pi';
 
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -34,13 +36,13 @@ const TabNavigation: React.FC<{
             tab === 'toc' ? _('TOC') : tab === 'annotations' ? _('Annotate') : _('Bookmark')
           }
         >
-          <div className={clsx('')} onClick={() => onTabChange(tab)}>
+          <div className={clsx('flex h-6 items-center')} onClick={() => onTabChange(tab)}>
             {tab === 'toc' ? (
-              <MdToc className='mx-auto' />
+              <TOCIcon className='mx-auto' />
             ) : tab === 'annotations' ? (
-              <MdEditNote className='mx-auto' />
+              <NoteIcon className='mx-auto' />
             ) : (
-              <MdBookmarkBorder className='mx-auto' />
+              <BookmarkIcon className='mx-auto' />
             )}
           </div>
         </div>

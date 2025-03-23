@@ -247,5 +247,7 @@
   "Border Color": "Cor da Borda",
   "Border Frame": "Moldura da Borda",
   "Show Header": "Mostrar Cabeçalho",
-  "Show Footer": "Mostrar Rodapé"
+  "Show Footer": "Mostrar Rodapé",
+  "Small": "Pequeno",
+  "Large": "Grande"
 }

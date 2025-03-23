@@ -78,7 +78,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(360, maxHeight);
   const annotPopupWidth = useResponsiveSize(300);
   const annotPopupHeight = useResponsiveSize(44);
-  const androidSelectionHandlerHeight = 8;
+  const androidSelectionHandlerHeight = 0;
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
