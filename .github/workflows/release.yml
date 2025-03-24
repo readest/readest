@@ -56,21 +56,29 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          - os: ubuntu-latest
+            release: android
+            rust_target: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
           - os: ubuntu-22.04
+            release: linux
             arch: x86_64
             rust_target: x86_64-unknown-linux-gnu
           - os: ubuntu-22.04-arm
+            release: linux
             arch: aarch64
             rust_target: aarch64-unknown-linux-gnu
           - os: macos-latest
+            release: macos
             arch: aarch64
             rust_target: x86_64-apple-darwin,aarch64-apple-darwin
             args: '--target universal-apple-darwin'
           - os: windows-latest
+            release: windows
             arch: x86_64
             rust_target: x86_64-pc-windows-msvc
             args: '--target x86_64-pc-windows-msvc'
           - os: windows-latest
+            release: windows
             arch: aarch64
             rust_target: aarch64-pc-windows-msvc
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
@@ -94,6 +102,21 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: setup Java (for Android build only)
+        if: matrix.config.release == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: setup Android SDK (for Android build only)
+        if: matrix.config.release == 'android'
+        uses: android-actions/setup-android@v3
+
+      - name: install NDK (for Android build only)
+        if: matrix.config.release == 'android'
+        run: sdkmanager "ndk;27.0.11902837"
+
       - name: install dependencies
         run: pnpm install
 
@@ -109,6 +132,12 @@ jobs:
         with:
           key: ${{ matrix.config.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
+      - name: install dependencies (ubuntu only)
+        if: contains(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
       - name: create .env.local file for Next.js
         run: |
           echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
@@ -116,17 +145,41 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+          cp .env.local apps/readest-app/.env.local
 
-      - name: copy .env.local to apps/readest-app
-        run: cp .env.local apps/readest-app/.env.local
-
-      - name: install dependencies (ubuntu only)
-        if: contains(matrix.config.os, 'ubuntu')
+      - name: setup Android build environment
+        if: matrix.config.release == 'android'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+          cd apps/readest-app/
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
+          cd src-tauri/gen/android
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+
+      - name: build and upload Android releases
+        if: matrix.config.release == 'android'
+        run: |
+          cd apps/readest-app/
+          version=${{ needs.get-release.outputs.release_version }}
+          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
+          universial_apk=Readest_${version}_universal.apk
+          arm64_apk=Readest_${version}_arm64.apk
+          pnpm tauri android build
+          cp ${apk_path}/app-universal-release.apk $universial_apk
+          pnpm tauri android build -t aarch64
+          cp ${apk_path}/app-universal-release.apk $arm64_apk
+
+          echo "Uploading $universial_apk to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk --clobber
+          echo "Uploading $arm64_apk to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
 
       - uses: tauri-apps/tauri-action@v0
+        if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
