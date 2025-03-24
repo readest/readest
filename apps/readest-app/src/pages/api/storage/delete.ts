@@ -2,8 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { createSupabaseClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/utils/s3';
+import { deleteObject } from '@/utils/r2';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -41,13 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Unauthorized access to the file' });
     }
 
-    const deleteCommand = new DeleteObjectCommand({
-      Bucket: process.env['R2_BUCKET_NAME'] || '',
-      Key: fileKey,
-    });
-
     try {
-      await s3Client.send(deleteCommand);
+      await deleteObject(process.env['R2_BUCKET_NAME'] || '', fileKey);
       const { error: deleteError } = await supabase.from('files').delete().eq('id', fileRecord.id);
 
       if (deleteError) {

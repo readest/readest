@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase, createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { s3Client } from '@/utils/s3';
+import { getDownloadSignedUrl } from '@/utils/r2';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
   if (!authHeader) return {};
@@ -56,15 +54,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Unauthorized access to the file' });
     }
 
-    const getCommand = new GetObjectCommand({
-      Bucket: process.env['R2_BUCKET_NAME'] || '',
-      Key: fileKey,
-    });
-
     try {
-      const downloadUrl = await getSignedUrl(s3Client, getCommand, {
-        expiresIn: 1800,
-      });
+      const bucketName = process.env['R2_BUCKET_NAME'] || '';
+      const downloadUrl = await getDownloadSignedUrl(bucketName, fileKey, 1800);
 
       res.status(200).json({
         downloadUrl,

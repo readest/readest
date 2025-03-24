@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase, createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getStoragePlanData } from '@/utils/access';
-import { s3Client } from '@/utils/s3';
+import { getUploadSignedUrl } from '@/utils/r2';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
   if (!authHeader) return {};
@@ -75,19 +73,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (insertError) return res.status(500).json({ error: insertError.message });
     }
 
-    const signableHeaders = new Set<string>();
-    signableHeaders.add('content-length');
-    const putCommand = new PutObjectCommand({
-      Bucket: process.env['R2_BUCKET_NAME'] || '',
-      Key: objectKey,
-      ContentLength: objSize,
-    });
-
     try {
-      const uploadUrl = await getSignedUrl(s3Client, putCommand, {
-        expiresIn: 1800,
-        signableHeaders,
-      });
+      const uploadUrl = await getUploadSignedUrl(
+        process.env['R2_BUCKET_NAME'] || '',
+        objectKey,
+        objSize,
+        1800,
+      );
 
       res.status(200).json({
         uploadUrl,
