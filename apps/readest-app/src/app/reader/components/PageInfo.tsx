@@ -45,7 +45,7 @@ const PageInfoView: React.FC<PageInfoProps> = ({
       className={clsx(
         'pageinfo absolute bottom-0 flex items-center justify-end',
         isVertical ? 'writing-vertical-rl' : 'h-12 w-full',
-        isScrolled && 'bg-base-100',
+        isScrolled && !isVertical && 'bg-base-100',
       )}
       style={
         isVertical

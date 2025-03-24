@@ -23,7 +23,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
       className={clsx(
         'sectioninfo absolute flex items-center overflow-hidden',
         isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0 h-[44px]',
-        isScrolled && 'bg-base-100',
+        isScrolled && !isVertical && 'bg-base-100',
       )}
       style={
         isVertical
