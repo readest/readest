@@ -448,6 +448,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const { bookDoc, book } = bookData;
     if (!bookDoc || !book || !bookDoc.toc) return;
 
+    const config = getConfig(bookKey)!;
     const { booknotes: allNotes = [] } = config;
     const booknotes = allNotes.filter((note) => !note.deletedAt);
     if (booknotes.length === 0) {
