@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { IoArrowBack } from 'react-icons/io5';
@@ -17,6 +17,7 @@ import { navigateToLibrary } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
 import { Toast } from '@/components/Toast';
+import WindowButtons from '@/components/WindowButtons';
 import Quota from '@/components/Quota';
 
 const ProfilePage = () => {
@@ -28,6 +29,8 @@ const ProfilePage = () => {
   const [userPlan, setUserPlan] = useState<UserPlan>('free');
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme();
 
@@ -154,21 +157,31 @@ const ProfilePage = () => {
   return (
     <div
       className={clsx(
-        'mt-6 flex justify-center',
+        'bg-base-100 border-base-200 flex h-dvh w-full select-none flex-col items-center border',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
-        appService?.hasTrafficLight && 'pt-11',
       )}
     >
-      <button
-        onClick={handleGoBack}
+      <div
+        ref={headerRef}
         className={clsx(
-          'btn btn-ghost fixed left-4 h-8 min-h-8 w-8 p-0',
-          appService?.hasSafeAreaInset && 'top-[calc(env(safe-area-inset-top)+16px)]',
-          appService?.hasTrafficLight && 'top-11',
+          'flex w-full items-center justify-between py-2 pe-6 ps-4',
+          appService?.hasTrafficLight && 'pt-11',
         )}
       >
-        <IoArrowBack className='text-base-content' />
-      </button>
+        <button onClick={handleGoBack} className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0')}>
+          <IoArrowBack className='text-base-content' />
+        </button>
+
+        {appService?.hasWindowBar && (
+          <WindowButtons
+            headerRef={headerRef}
+            showMinimize={appService?.hasWindowBar}
+            showMaximize={appService?.hasWindowBar}
+            showClose={appService?.hasWindowBar}
+            onClose={handleGoBack}
+          />
+        )}
+      </div>
       <div className='w-full max-w-4xl px-4 py-10'>
         <div className='bg-base-200 overflow-hidden rounded-lg p-2 shadow-md sm:p-6'>
           <div className='p-2 sm:p-6'>

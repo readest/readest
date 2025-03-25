@@ -184,6 +184,7 @@ export class WebAppService extends BaseAppService {
   isAndroidApp = false;
   isIOSApp = false;
   hasTrafficLight = false;
+  hasWindow = false;
   hasWindowBar = false;
   hasContextMenu = false;
   hasRoundedWindow = false;

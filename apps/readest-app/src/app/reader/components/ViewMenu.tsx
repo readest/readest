@@ -132,9 +132,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr className='border-base-300 my-1' />
 
-      {appService?.hasRoundedWindow && (
-        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
-      )}
+      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       <MenuItem
         label={
           themeMode === 'dark'

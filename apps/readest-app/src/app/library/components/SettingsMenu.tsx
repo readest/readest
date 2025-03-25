@@ -163,9 +163,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={toggleScreenWakeLock}
       />
       <hr className='border-base-200 my-1' />
-      {appService?.hasRoundedWindow && (
-        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
-      )}
+      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

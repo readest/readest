@@ -64,8 +64,8 @@ export const Toast = () => {
         >
           <span
             className={clsx(
-              'max-h-[50vh] min-w-[30vw] max-w-80',
-              'overflow-scroll whitespace-normal break-words text-center',
+              'max-h-[50vh] min-w-32 max-w-80',
+              'overflow-y-auto whitespace-normal break-words text-center',
               messageClass.current,
             )}
           >

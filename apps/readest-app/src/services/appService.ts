@@ -49,6 +49,7 @@ export abstract class BaseAppService implements AppService {
   abstract isAndroidApp: boolean;
   abstract isIOSApp: boolean;
   abstract hasTrafficLight: boolean;
+  abstract hasWindow: boolean;
   abstract hasWindowBar: boolean;
   abstract hasContextMenu: boolean;
   abstract hasRoundedWindow: boolean;

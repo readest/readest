@@ -209,7 +209,7 @@ foliate-view {
 }
 
 .scroll-container {
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
 }

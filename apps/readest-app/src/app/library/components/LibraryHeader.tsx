@@ -68,7 +68,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar h-13 z-10 flex w-full items-center py-2 pr-4 sm:pr-6',
+        'titlebar z-10 flex w-full items-center py-2 pr-4 sm:pr-6',
         appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}

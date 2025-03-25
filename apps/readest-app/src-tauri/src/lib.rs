@@ -63,6 +63,15 @@ fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
+#[cfg(desktop)]
+fn set_rounded_window(app: &AppHandle, rounded: bool) {
+    let window = app.get_webview_window("main").unwrap();
+    let script = format!("window.IS_ROUNDED = {};", rounded);
+    if let Err(e) = window.eval(&script) {
+        eprintln!("Failed to set IS_ROUNDED variable: {}", e);
+    }
+}
+
 #[command]
 async fn start_server(window: Window) -> Result<u16, String> {
     start(move |url| {
@@ -185,6 +194,12 @@ pub fn run() {
                     app_handle.get_webview_window("main").unwrap()
                         .eval("window.__READEST_CLI_ACCESS = true; window.__READEST_UPDATER_ACCESS = true;")
                         .expect("Failed to set cli access config");
+
+                    set_rounded_window(&app_handle, true);
+                    #[cfg(target_os = "windows")]
+                    if tauri_plugin_os::version() <= tauri_plugin_os::Version::from_string("10.0.19045") {
+                        set_rounded_window(&app_handle, false);
+                    }
                 });
             }
 
@@ -225,8 +240,7 @@ pub fn run() {
                     .title("Readest");
 
                 if cfg!(target_os = "windows") {
-                    let version = tauri_plugin_os::version();
-                    if version <= tauri_plugin_os::Version::from_string("10.0.19045") {
+                    if tauri_plugin_os::version() <= tauri_plugin_os::Version::from_string("10.0.19045") {
                         win_builder = win_builder.shadow(false);
                     } else {
                         win_builder = win_builder.shadow(true);

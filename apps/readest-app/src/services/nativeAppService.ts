@@ -23,6 +23,12 @@ import { isValidURL } from '@/utils/misc';
 import { BaseAppService } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
 
+declare global {
+  interface Window {
+    IS_ROUNDED?: boolean;
+  }
+}
+
 const OS_TYPE = osType();
 
 const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } => {
@@ -122,9 +128,10 @@ export class NativeAppService extends BaseAppService {
   isAndroidApp = OS_TYPE === 'android';
   isIOSApp = OS_TYPE === 'ios';
   hasTrafficLight = OS_TYPE === 'macos';
+  hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
   hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');

@@ -23,6 +23,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithSafari } from './utils/safariAuth';
+import WindowButtons from '@/components/WindowButtons';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
 
@@ -47,11 +48,11 @@ const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Ic
       onClick={() => handleSignIn(provider)}
       className={clsx(
         'mb-2 flex w-64 items-center justify-center rounded border p-2.5',
-        'bg-base-100 border-gray-300 shadow-sm transition hover:bg-gray-50',
+        'bg-base-100 border-base-300 hover:bg-base-200 shadow-sm transition',
       )}
     >
       <Icon />
-      <span className='text-neutral-content/70 px-2 text-sm'>{label}</span>
+      <span className='text-base-content/75 px-2 text-sm'>{label}</span>
     </button>
   );
 };
@@ -66,6 +67,8 @@ export default function AuthPage() {
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
@@ -298,21 +301,31 @@ export default function AuthPage() {
   return isTauriAppPlatform() ? (
     <div
       className={clsx(
-        'mt-6 flex',
+        'bg-base-100 border-base-200 flex h-dvh w-full select-none flex-col items-center border',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
-        appService?.hasTrafficLight && 'pt-11',
       )}
     >
-      <button
-        onClick={handleGoBack}
+      <div
+        ref={headerRef}
         className={clsx(
-          'btn btn-ghost fixed left-4 h-8 min-h-8 w-8 p-0',
-          appService?.hasSafeAreaInset && 'top-[calc(env(safe-area-inset-top)+16px)]',
-          appService?.hasTrafficLight && 'top-11',
+          'flex w-full items-center justify-between py-2 pe-6 ps-4',
+          appService?.hasTrafficLight && 'pt-11',
         )}
       >
-        <IoArrowBack className='text-base-content' />
-      </button>
+        <button onClick={handleGoBack} className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0')}>
+          <IoArrowBack className='text-base-content' />
+        </button>
+
+        {appService?.hasWindowBar && (
+          <WindowButtons
+            headerRef={headerRef}
+            showMinimize={appService?.hasWindowBar}
+            showMaximize={appService?.hasWindowBar}
+            showClose={appService?.hasWindowBar}
+            onClose={handleGoBack}
+          />
+        )}
+      </div>
       <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
         <ProviderLogin
           provider='google'
@@ -332,7 +345,7 @@ export default function AuthPage() {
           Icon={FaGithub}
           label={_('Sign in with GitHub')}
         />
-        <hr className='my-3 mt-6 w-64 border-t border-gray-200' />
+        <hr className='border-base-300 my-3 mt-6 w-64 border-t' />
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}

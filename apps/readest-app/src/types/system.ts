@@ -25,6 +25,7 @@ export interface AppService {
   osPlatform: string;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
+  hasWindow: boolean;
   hasWindowBar: boolean;
   hasContextMenu: boolean;
   hasRoundedWindow: boolean;
