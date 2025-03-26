@@ -5,7 +5,8 @@ import { FileSystem, BaseDir } from '@/types/system';
 import { Book, BookConfig, BookContent, BookFormat } from '@/types/book';
 import {
   getDir,
-  getFilename,
+  getLocalBookFilename,
+  getRemoteBookFilename,
   getBaseFilename,
   getCoverFilename,
   getConfigFilename,
@@ -31,7 +32,6 @@ import {
   DEFAULT_SYSTEM_SETTINGS,
   DEFAULT_CJK_VIEW_SETTINGS,
 } from './constants';
-import { isWebAppPlatform } from './environment';
 import { getOSPlatform, isCJKEnv, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
@@ -184,11 +184,11 @@ export abstract class BaseAppService implements AppService {
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
         await this.fs.createDir(getDir(book), 'Books');
       }
-      if (saveBook && (!(await this.fs.exists(getFilename(book), 'Books')) || overwrite)) {
+      if (saveBook && (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)) {
         if (typeof file === 'string' && !isValidURL(file) && !filename.endsWith('.txt')) {
-          await this.fs.copyFile(file, getFilename(book), 'Books');
+          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else {
-          await this.fs.writeFile(getFilename(book), 'Books', await fileobj.arrayBuffer());
+          await this.fs.writeFile(getLocalBookFilename(book), 'Books', await fileobj.arrayBuffer());
         }
       }
       if (saveCover && (!(await this.fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
@@ -218,12 +218,12 @@ export abstract class BaseAppService implements AppService {
   }
 
   async deleteBook(book: Book, includingUploaded = false): Promise<void> {
-    const fps = [getFilename(book), getCoverFilename(book)];
-    const localDeleteFps = (
-      await Promise.all(fps.map(async (fp) => ((await this.fs.exists(fp, 'Books')) ? fp : null)))
-    ).filter(Boolean) as string[];
+    const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
+    const localDeleteFps = [getLocalBookFilename(book), getCoverFilename(book)];
     for (const fp of localDeleteFps) {
-      await this.fs.removeFile(fp, 'Books');
+      if (await this.fs.exists(fp, 'Books')) {
+        await this.fs.removeFile(fp, 'Books');
+      }
     }
     for (const fp of fps) {
       if (includingUploaded) {
@@ -243,38 +243,61 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
+  async uploadFileToCloud(
+    lfp: string,
+    cfp: string,
+    handleProgress: ProgressHandler,
+    hash: string
+  ) {
     let file: File;
+    if (this.appPlatform === 'web') {
+      const content = await this.fs.readFile(lfp, 'Books', 'binary');
+      file = new File([content], cfp);
+    } else {
+      file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${lfp}`), cfp).open();
+    }
+    console.log('Uploading file:', lfp, 'to', cfp);
+    const localFullpath = `${this.localBooksDir}/${lfp}`;
+    await uploadFile(file, localFullpath, handleProgress, hash);
+  }
+
+  async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
     let uploaded = false;
     const completedFiles = { count: 0 };
-    const fps = (
-      await Promise.all(
-        [getCoverFilename(book), getFilename(book)].map(async (fp) =>
-          (await this.fs.exists(fp, 'Books')) ? fp : null,
-        ),
-      )
-    ).filter(Boolean) as string[];
-    if (!fps.includes(getFilename(book)) && book.url) {
+    let toUploadFpCount = 0;
+    const coverExist = (await this.fs.exists(getCoverFilename(book), 'Books'));
+    let bookFileExist = (await this.fs.exists(getLocalBookFilename(book), 'Books'));
+    if (coverExist) {
+      toUploadFpCount++;
+    }
+    if (bookFileExist) {
+      toUploadFpCount++;
+    }
+    if (!bookFileExist && book.url) {
       // download the book from the URL
       const fileobj = await new RemoteFile(book.url).open();
-      await this.fs.writeFile(getFilename(book), 'Books', await fileobj.arrayBuffer());
-      fps.push(getFilename(book));
+      await this.fs.writeFile(getLocalBookFilename(book), 'Books', await fileobj.arrayBuffer());
+      bookFileExist = true;
     }
-    const handleProgress = createProgressHandler(fps.length, completedFiles, onProgress);
-    for (const fp of fps) {
-      const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-      const fullpath = `${this.localBooksDir}/${fp}`;
-      if (this.appPlatform === 'web') {
-        const content = await this.fs.readFile(fp, 'Books', 'binary');
-        file = new File([content], cfp);
-      } else {
-        file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), cfp).open();
-      }
-      console.log('Uploading file:', fp);
-      await uploadFile(file, fullpath, handleProgress, book.hash);
+
+    const handleProgress = createProgressHandler(toUploadFpCount, completedFiles, onProgress);
+
+    if (coverExist) {
+      const lfp = getCoverFilename(book);
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
+      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
       uploaded = true;
       completedFiles.count++;
     }
+
+    if (bookFileExist) {
+      const lfp = getLocalBookFilename(book);
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
+      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
+      uploaded = true;
+      completedFiles.count++;
+    }
+
     if (uploaded) {
       book.deletedAt = null;
       book.updatedAt = Date.now();
@@ -285,52 +308,60 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async downloadBook(book: Book, onlyCover = false, onProgress?: ProgressHandler): Promise<void> {
-    const fps = onlyCover ? [getCoverFilename(book)] : [getCoverFilename(book), getFilename(book)];
+  async downloadCloudFile(
+    lfp: string,
+    cfp: string,
+    handleProgress: ProgressHandler,
+  ) {
+    console.log('Downloading file:', cfp, "to", lfp);
+    const localFullpath = `${this.localBooksDir}/${lfp}`;
+    const result = await downloadFile(cfp, localFullpath, handleProgress);
+    try {
+      if (this.appPlatform === 'web') {
+        const fileobj = result as Blob;
+        await this.fs.writeFile(lfp, 'Books', await fileobj.arrayBuffer());
+      }
+    } catch {
+      console.log('Failed to download file:', cfp);
+      throw new Error('Failed to download file');
+    }
+  }
 
+  async downloadBook(book: Book, onlyCover = false, onProgress?: ProgressHandler): Promise<void> {
     let bookDownloaded = false;
     const completedFiles = { count: 0 };
-    const toDownloadFps = (
-      await Promise.all(
-        [getFilename(book), getCoverFilename(book)].map(async (fp) =>
-          (await this.fs.exists(fp, 'Books')) ? null : fp,
-        ),
-      )
-    ).filter(Boolean) as string[];
-    const handleProgress = createProgressHandler(toDownloadFps.length, completedFiles, onProgress);
-    for (const fp of fps) {
-      let downloaded = false;
-      const existed = !toDownloadFps.includes(fp);
-      if (existed) {
-        downloaded = true;
-      } else {
-        console.log('Downloading file:', fp);
-        const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-        const fullpath = `${this.localBooksDir}/${fp}`;
-        if (!(await this.fs.exists(getDir(book), 'Books'))) {
-          await this.fs.createDir(getDir(book), 'Books');
-        }
-        try {
-          const result = await downloadFile(cfp, fullpath, handleProgress);
-          if (isWebAppPlatform()) {
-            const fileobj = result as Blob;
-            await this.fs.writeFile(fp, 'Books', await fileobj.arrayBuffer());
-            downloaded = true;
-          } else {
-            downloaded = await this.fs.exists(fp, 'Books');
-          }
-        } catch {
-          if (fp === getCoverFilename(book)) {
-            console.log('Failed to download cover image:', fp);
-          } else {
-            throw new Error('Failed to download book file');
-          }
-        }
-        completedFiles.count++;
-      }
-      if (fp === getFilename(book)) {
-        bookDownloaded = downloaded;
-      }
+    let toDownloadFpCount = 0;
+    const needDownCover = (!(await this.fs.exists(getCoverFilename(book), 'Books')));
+    const needDownBook = (!onlyCover) && !(await this.fs.exists(getLocalBookFilename(book), 'Books'));
+    if (needDownCover) {
+      toDownloadFpCount++;
+    }
+    if (needDownBook) {
+      toDownloadFpCount++;
+    }
+
+    const handleProgress = createProgressHandler(toDownloadFpCount, completedFiles, onProgress);
+
+    if (!(await this.fs.exists(getDir(book), 'Books'))) {
+      await this.fs.createDir(getDir(book), 'Books');
+    }
+
+
+
+    if (needDownCover) {
+      const lfp = getCoverFilename(book);
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${lfp}`;
+      await this.downloadCloudFile(lfp, cfp, handleProgress);
+      completedFiles.count++;
+    }
+
+    if (needDownBook) {
+      const lfp = getLocalBookFilename(book);
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
+      await this.downloadCloudFile(lfp, cfp, handleProgress);
+      const localFullpath = `${this.localBooksDir}/${lfp}`;
+      bookDownloaded = await this.fs.exists(localFullpath, 'Books');
+      completedFiles.count++;
     }
     // some books may not have cover image, so we need to check if the book is downloaded
     if (bookDownloaded) {
@@ -340,7 +371,7 @@ export abstract class BaseAppService implements AppService {
 
   async loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent> {
     let file: File;
-    const fp = getFilename(book);
+    const fp = getLocalBookFilename(book);
     if (await this.fs.exists(fp, 'Books')) {
       // TODO: fix random access for android
       if (this.appPlatform === 'web' || getOSPlatform() === 'android') {
@@ -371,7 +402,7 @@ export abstract class BaseAppService implements AppService {
   }
 
   async fetchBookDetails(book: Book, settings: SystemSettings) {
-    const fp = getFilename(book);
+    const fp = getLocalBookFilename(book);
     if (!(await this.fs.exists(fp, 'Books')) && book.uploadedAt) {
       await this.downloadBook(book);
     }

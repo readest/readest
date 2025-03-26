@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase, createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { getDownloadSignedUrl } from '@/utils/r2';
+import { getDownloadSignedUrl } from '@/utils/object';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
   if (!authHeader) return {};
@@ -55,8 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const bucketName = process.env['R2_BUCKET_NAME'] || '';
-      const downloadUrl = await getDownloadSignedUrl(bucketName, fileKey, 1800);
+      const downloadUrl = await getDownloadSignedUrl(fileKey, 1800);
 
       res.status(200).json({
         downloadUrl,

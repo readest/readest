@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { createSupabaseClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
-import { deleteObject } from '@/utils/r2';
+import { deleteObject } from '@/utils/object';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      await deleteObject(process.env['R2_BUCKET_NAME'] || '', fileKey);
+      await deleteObject(fileKey);
       const { error: deleteError } = await supabase.from('files').delete().eq('id', fileRecord.id);
 
       if (deleteError) {
