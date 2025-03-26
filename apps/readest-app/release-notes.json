@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.26": {
+      "date": "2025-03-27",
+      "notes": [
+        "Support open book from file manager without importing",
+        "Add LXGW WenKai font in Serif fonts list",
+        "Various fixes on layout and styles on Windows and Android"
+      ]
+    },
     "0.9.25": {
       "date": "2025-03-24",
       "notes": [
