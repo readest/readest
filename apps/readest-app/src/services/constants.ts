@@ -11,6 +11,7 @@ import {
 import { ReadSettings, SystemSettings } from '@/types/settings';
 import { UserStorageQuota } from '@/types/user';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
+import { stubTranslation as _ } from '@/utils/misc';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
 export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
@@ -107,6 +108,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
   animated: true,
+  defaultFont: 'Sans-serif',
 };
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
@@ -140,6 +142,7 @@ export const SERIF_FONTS = [
   'Vollkorn',
   'Georgia',
   'Times New Roman',
+  _('LXGW WenKai GB Screen'),
 ];
 
 export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica', 'Arial'];

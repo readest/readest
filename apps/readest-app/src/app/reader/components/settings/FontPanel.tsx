@@ -44,19 +44,22 @@ const FontFace = ({
   moreOptions,
   selected,
   onSelect,
-}: FontFaceProps) => (
-  <div className={clsx('config-item', className)}>
-    <span className=''>{label}</span>
-    <FontDropdown
-      family={family}
-      options={options.map((option) => ({ option, label: option }))}
-      moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
-      selected={selected}
-      onSelect={onSelect}
-      onGetFontFamily={handleFontFaceFont}
-    />
-  </div>
-);
+}: FontFaceProps) => {
+  const _ = useTranslation();
+  return (
+    <div className={clsx('config-item', className)}>
+      <span className=''>{label}</span>
+      <FontDropdown
+        family={family}
+        options={options.map((option) => ({ option, label: _(option) }))}
+        moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
+        selected={selected}
+        onSelect={onSelect}
+        onGetFontFamily={handleFontFaceFont}
+      />
+    </div>
+  );
+};
 
 const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
