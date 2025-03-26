@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Выделения и аннотации",
   "Note": "Заметка",
   "Copied to clipboard": "Скопировано в буфер обмена",
-  "Export Annotations": "Экспортировать аннотации"
+  "Export Annotations": "Экспортировать аннотации",
+  "Auto Import on File Open": "Автоматический импорт при открытии файла"
 }

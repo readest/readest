@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Điểm nổi bật & Chú thích",
   "Note": "Ghi chú",
   "Copied to clipboard": "Đã sao chép vào bảng ghi",
-  "Export Annotations": "Xuất chú thích"
+  "Export Annotations": "Xuất chú thích",
+  "Auto Import on File Open": "Tự động nhập khi mở tệp"
 }

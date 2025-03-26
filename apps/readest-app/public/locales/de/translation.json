@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Hervorhebungen & Anmerkungen",
   "Note": "Notiz",
   "Copied to clipboard": "In die Zwischenablage kopiert",
-  "Export Annotations": "Anmerkungen exportieren"
+  "Export Annotations": "Anmerkungen exportieren",
+  "Auto Import on File Open": "Automatischer Import beim Öffnen einer Datei"
 }

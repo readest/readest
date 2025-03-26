@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Surlignages et annotations",
   "Note": "Note",
   "Copied to clipboard": "Copié dans le presse-papiers",
-  "Export Annotations": "Exporter les annotations"
+  "Export Annotations": "Exporter les annotations",
+  "Auto Import on File Open": "Importation automatique à l'ouverture du fichier"
 }

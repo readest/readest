@@ -132,6 +132,7 @@ export abstract class BaseAppService implements AppService {
     saveBook: boolean = true,
     saveCover: boolean = true,
     overwrite: boolean = false,
+    transient: boolean = false,
   ): Promise<Book | null> {
     try {
       let loadedBook: BookDoc;
@@ -163,7 +164,7 @@ export abstract class BaseAppService implements AppService {
       const hash = await partialMD5(fileobj);
       const existingBook = books.filter((b) => b.hash === hash)[0];
       if (existingBook) {
-        if (existingBook.deletedAt) {
+        if (!transient) {
           existingBook.deletedAt = null;
         }
         existingBook.updatedAt = Date.now();
@@ -176,6 +177,7 @@ export abstract class BaseAppService implements AppService {
         author: formatAuthors(loadedBook.metadata.author, loadedBook.metadata.language),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
         uploadedAt: existingBook ? existingBook.uploadedAt : null,
+        deletedAt: transient ? Date.now() : null,
         downloadedAt: Date.now(),
         updatedAt: Date.now(),
       };

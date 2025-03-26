@@ -258,5 +258,6 @@
   "Highlights & Annotations": "하이라이트 및 주석",
   "Note": "노트",
   "Copied to clipboard": "클립보드에 복사",
-  "Export Annotations": "주석 내보내기"
+  "Export Annotations": "주석 내보내기",
+  "Auto Import on File Open": "파일 열 때 자동 가져오기"
 }

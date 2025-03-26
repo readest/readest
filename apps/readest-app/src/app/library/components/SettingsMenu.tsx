@@ -6,7 +6,7 @@ import { PiUserCircleCheck } from 'react-icons/pi';
 import { MdCheck } from 'react-icons/md';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { hasUpdater, isWebAppPlatform } from '@/services/environment';
+import { hasUpdater, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -33,6 +33,9 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
+  const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
+    settings.autoImportBooksOnOpen,
+  );
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -72,6 +75,13 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
     if (settings.autoUpload && !user) {
       navigateToLogin(router);
     }
+  };
+
+  const toggleAutoImportBooksOnOpen = () => {
+    settings.autoImportBooksOnOpen = !settings.autoImportBooksOnOpen;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAutoImportBooksOnOpen(settings.autoImportBooksOnOpen);
   };
 
   const toggleAutoCheckUpdates = () => {
@@ -150,6 +160,13 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
         icon={isAutoUpload ? <MdCheck className='text-base-content' /> : undefined}
         onClick={toggleAutoUploadBooks}
       />
+      {isTauriAppPlatform() && !appService?.isMobile && (
+        <MenuItem
+          label={_('Auto Import on File Open')}
+          icon={isAutoImportBooksOnOpen ? <MdCheck className='text-base-content' /> : undefined}
+          onClick={toggleAutoImportBooksOnOpen}
+        />
+      )}
       {hasUpdater() && (
         <MenuItem
           label={_('Check Updates on Start')}

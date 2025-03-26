@@ -258,5 +258,6 @@
   "Highlights & Annotations": "हाइलाइट और टिप्पणियाँ",
   "Note": "टिप्पणी",
   "Copied to clipboard": "क्लिपबोर्ड पर कॉपी किया गया",
-  "Export Annotations": "टिप्पणियाँ निर्यात करें"
+  "Export Annotations": "टिप्पणियाँ निर्यात करें",
+  "Auto Import on File Open": "फ़ाइल खोलने पर स्वचालित आयात"
 }

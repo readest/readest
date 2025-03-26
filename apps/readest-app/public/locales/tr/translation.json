@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Vurgular ve Notlar",
   "Note": "Not",
   "Copied to clipboard": "Panoya kopyalandı",
-  "Export Annotations": "Notları Dışa Aktar"
+  "Export Annotations": "Notları Dışa Aktar",
+  "Auto Import on File Open": "Dosya Açıldığında Otomatik İçe Aktar"
 }

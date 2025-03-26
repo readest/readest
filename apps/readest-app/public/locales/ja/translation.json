@@ -258,5 +258,6 @@
   "Highlights & Annotations": "ハイライトと注釈",
   "Note": "メモ",
   "Copied to clipboard": "クリップボードにコピー",
-  "Export Annotations": "注釈をエクスポート"
+  "Export Annotations": "注釈をエクスポート",
+  "Auto Import on File Open": "ファイルを開くと自動インポート"
 }

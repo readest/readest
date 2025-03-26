@@ -258,5 +258,6 @@
   "Highlights & Annotations": "التمييزات والتعليقات",
   "Note": "ملاحظة",
   "Copied to clipboard": "تم النسخ إلى الحافظة",
-  "Export Annotations": "تصدير التعليقات"
+  "Export Annotations": "تصدير التعليقات",
+  "Auto Import on File Open": "استيراد تلقائي عند فتح الملف"
 }

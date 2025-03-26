@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Επισημάνσεις & Σχολιασμοί",
   "Note": "Σημείωση",
   "Copied to clipboard": "Αντιγράφηκε στο πρόχειρο",
-  "Export Annotations": "Εξαγωγή σχολιασμών"
+  "Export Annotations": "Εξαγωγή σχολιασμών",
+  "Auto Import on File Open": "Αυτόματη εισαγωγή κατά το άνοιγμα αρχείου"
 }

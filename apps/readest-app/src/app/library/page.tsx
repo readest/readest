@@ -191,11 +191,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const processOpenWithFiles = React.useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
+      const settings = await appService.loadSettings();
       const bookIds: string[] = [];
       for (const file of openWithFiles) {
         console.log('Open with book:', file);
         try {
-          const book = await appService.importBook(file, libraryBooks);
+          const temp = !settings.autoImportBooksOnOpen;
+          const book = await appService.importBook(file, libraryBooks, true, true, false, temp);
           if (book) {
             bookIds.push(book.hash);
           }

@@ -258,5 +258,6 @@
   "Highlights & Annotations": "Evidenziazioni e annotazioni",
   "Note": "Nota",
   "Copied to clipboard": "Copiato negli appunti",
-  "Export Annotations": "Esporta annotazioni"
+  "Export Annotations": "Esporta annotazioni",
+  "Auto Import on File Open": "Importazione automatica all'apertura del file"
 }

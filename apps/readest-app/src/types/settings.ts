@@ -24,6 +24,7 @@ export interface SystemSettings {
   autoUpload: boolean;
   autoCheckUpdates: boolean;
   screenWakeLock: boolean;
+  autoImportBooksOnOpen: boolean;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

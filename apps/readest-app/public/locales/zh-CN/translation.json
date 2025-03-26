@@ -258,5 +258,6 @@
   "Highlights & Annotations": "划线和笔记",
   "Note": "笔记",
   "Copied to clipboard": "已复制到剪贴板",
-  "Export Annotations": "导出笔记"
+  "Export Annotations": "导出笔记",
+  "Auto Import on File Open": "打开文件时自动导入"
 }

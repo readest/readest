@@ -258,5 +258,6 @@
   "Highlights & Annotations": "高亮和筆記",
   "Note": "筆記",
   "Copied to clipboard": "已複製到剪貼板",
-  "Export Annotations": "匯出筆記"
+  "Export Annotations": "匯出筆記",
+  "Auto Import on File Open": "打開文件時自動導入"
 }
