@@ -145,7 +145,7 @@ const getLayoutStyles = (
     color: ${fg};
   }
   a:any-link {
-    color: ${primary} ${bg === '#ffffff' ? '' : '!important'};
+    color: ${primary} ${isDarkMode ? '!important' : ''};
   }
   aside[epub|type~="footnote"] {
     display: none;
@@ -189,8 +189,8 @@ const getLayoutStyles = (
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
-  body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
-    ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
+  body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(img):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
+    ${isDarkMode ? `background-color: ${bg} !important;` : ''}
   }
   body {
     overflow: unset;
