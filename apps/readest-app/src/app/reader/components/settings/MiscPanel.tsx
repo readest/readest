@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import i18n from 'i18next';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -14,7 +14,7 @@ import DropDown from './DropDown';
 
 const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
@@ -25,6 +25,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [inputFocusInAndroid, setInputFocusInAndroid] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleUserStylesheetChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const cssInput = e.target.value;
@@ -70,6 +73,24 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
+  };
+
+  const handleInputFocus = () => {
+    if (appService?.isAndroidApp) {
+      setInputFocusInAndroid(true);
+    }
+    setTimeout(() => {
+      textareaRef.current?.scrollIntoView({
+        behavior: 'instant',
+        block: 'center',
+      });
+    }, 300);
+  };
+
+  const handleInputBlur = () => {
+    if (appService?.isAndroidApp) {
+      setInputFocusInAndroid(false);
+    }
   };
 
   const getCurrentUILangOption = () => {
@@ -118,7 +139,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [isContinuousScroll]);
 
   return (
-    <div className='my-4 w-full space-y-6'>
+    <div
+      className={clsx('my-4 w-full space-y-6', inputFocusInAndroid && 'h-[50%] overflow-y-auto')}
+    >
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Language')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
@@ -185,6 +208,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         >
           <div className='relative p-1'>
             <textarea
+              ref={textareaRef}
               className={clsx(
                 'textarea textarea-ghost h-48 w-full border-0 p-3 text-base !outline-none sm:text-sm',
                 'placeholder:text-base-content/70',
@@ -192,6 +216,8 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               placeholder={_('Enter your custom CSS here...')}
               spellCheck='false'
               value={draftStylesheet}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               onInput={handleInput}
               onKeyDown={handleInput}
               onKeyUp={handleInput}
