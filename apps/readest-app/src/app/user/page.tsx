@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { QuotaType, UserPlan } from '@/types/user';
 import { getStoragePlanData, getUserPlan } from '@/utils/access';
 import { navigateToLibrary } from '@/utils/nav';
@@ -25,6 +26,7 @@ const ProfilePage = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user, logout } = useAuth();
+  const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [userPlan, setUserPlan] = useState<UserPlan>('free');
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
@@ -164,7 +166,8 @@ const ProfilePage = () => {
       <div
         ref={headerRef}
         className={clsx(
-          'flex w-full items-center justify-between py-2 pe-6 ps-4',
+          'fixed flex w-full items-center justify-between py-2 pe-6 ps-4',
+          appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
           appService?.hasTrafficLight && 'pt-11',
         )}
       >
@@ -175,9 +178,9 @@ const ProfilePage = () => {
         {appService?.hasWindowBar && (
           <WindowButtons
             headerRef={headerRef}
-            showMinimize={appService?.hasWindowBar}
-            showMaximize={appService?.hasWindowBar}
-            showClose={appService?.hasWindowBar}
+            showMinimize={!isTrafficLightVisible}
+            showMaximize={!isTrafficLightVisible}
+            showClose={!isTrafficLightVisible}
             onClose={handleGoBack}
           />
         )}

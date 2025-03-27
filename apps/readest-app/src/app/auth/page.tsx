@@ -16,6 +16,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
@@ -63,6 +64,7 @@ export default function AuthPage() {
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
   const { isDarkMode } = useThemeStore();
+  const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
   const isOAuthServerRunning = useRef(false);
@@ -308,7 +310,8 @@ export default function AuthPage() {
       <div
         ref={headerRef}
         className={clsx(
-          'flex w-full items-center justify-between py-2 pe-6 ps-4',
+          'fixed flex w-full items-center justify-between py-2 pe-6 ps-4',
+          appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
           appService?.hasTrafficLight && 'pt-11',
         )}
       >
@@ -319,9 +322,9 @@ export default function AuthPage() {
         {appService?.hasWindowBar && (
           <WindowButtons
             headerRef={headerRef}
-            showMinimize={appService?.hasWindowBar}
-            showMaximize={appService?.hasWindowBar}
-            showClose={appService?.hasWindowBar}
+            showMinimize={!isTrafficLightVisible}
+            showMaximize={!isTrafficLightVisible}
+            showClose={!isTrafficLightVisible}
             onClose={handleGoBack}
           />
         )}
