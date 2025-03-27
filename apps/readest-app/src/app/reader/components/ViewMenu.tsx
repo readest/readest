@@ -14,6 +14,7 @@ import { ThemeMode } from '@/styles/themes';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
+import { saveViewSettings } from '../utils/viewSettingsHelper';
 import MenuItem from '@/components/MenuItem';
 
 interface ViewMenuProps {
@@ -28,11 +29,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   onSetSettingsDialogOpen,
 }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
-  const { getView, getViews, getViewSettings, setViewSettings } = useReaderStore();
+  const { envConfig, appService } = useEnv();
+  const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
-  const { themeMode, themeCode, setThemeMode } = useThemeStore();
+  const { themeMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
 
@@ -58,13 +59,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   useEffect(() => {
-    getViews().forEach((view) => {
-      view.renderer.setStyles?.(getStyles(viewSettings!));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode]);
-
-  useEffect(() => {
+    if (isScrolledMode === viewSettings!.scrolled) return;
     viewSettings!.scrolled = isScrolledMode;
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
@@ -77,11 +72,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   }, [isScrolledMode]);
 
   useEffect(() => {
-    const view = getView(bookKey);
-    if (!view) return;
-    viewSettings!.zoomLevel = zoomLevel;
-    setViewSettings(bookKey, viewSettings!);
-    view.renderer.setStyles?.(getStyles(viewSettings!));
+    saveViewSettings(envConfig, bookKey, 'zoomLevel', zoomLevel, true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomLevel]);
 

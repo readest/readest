@@ -19,7 +19,6 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
 import { PageInfo } from '@/types/book';
-import { getStyles } from '@/utils/style';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
 
@@ -59,14 +58,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const handleFontSizeChange = (value: number) => {
     saveViewSettings(envConfig, bookKey, 'defaultFontSize', value);
-    view?.renderer.setStyles?.(getStyles(viewSettings!));
   };
 
   const handleMarginChange = (value: number) => {
     const marginPx = Math.round((value / 100) * 88);
     const gapPercent = Math.round((value / 100) * 10);
-    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx);
-    saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent);
+    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx, false, false);
+    saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent, false, false);
     view?.renderer.setAttribute('margin', `${marginPx}px`);
     view?.renderer.setAttribute('gap', `${gapPercent}%`);
     if (viewSettings?.scrolled) {
@@ -76,7 +74,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const handleLineHeightChange = (value: number) => {
     saveViewSettings(envConfig, bookKey, 'lineHeight', value / 10);
-    view?.renderer.setStyles?.(getStyles(viewSettings!));
   };
 
   const handleGoPrev = () => {

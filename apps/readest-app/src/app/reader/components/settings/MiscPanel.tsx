@@ -114,13 +114,12 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const handleSelectUILang = (option: string) => {
-    viewSettings.uiLanguage = option;
-    saveViewSettings(envConfig, bookKey, 'uiLanguage', option);
+    saveViewSettings(envConfig, bookKey, 'uiLanguage', option, false, false);
     i18n.changeLanguage(option ? option : navigator.language);
   };
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'animated', animated);
+    saveViewSettings(envConfig, bookKey, 'animated', animated, false, false);
     if (animated) {
       getView(bookKey)?.renderer.setAttribute('animated', '');
     } else {
@@ -130,17 +129,17 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [animated]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick);
+    saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea);
+    saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapClickArea]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll);
+    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isContinuousScroll]);
 

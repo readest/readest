@@ -46,54 +46,49 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'paragraphMargin', paragraphMargin);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paragraphMargin]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'lineHeight', lineHeight);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineHeight]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'wordSpacing', wordSpacing);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wordSpacing]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'letterSpacing', letterSpacing);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letterSpacing]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'textIndent', textIndent);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textIndent]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'fullJustification', fullJustification);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullJustification]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'hyphenation', hyphenation);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hyphenation]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx);
+    if (marginPx === viewSettings.marginPx) return;
+    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx, false, false);
     view?.renderer.setAttribute('margin', `${marginPx}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginPx]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent);
+    if (gapPercent === viewSettings.gapPercent) return;
+    saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent, false, false);
     view?.renderer.setAttribute('gap', `${gapPercent}%`);
     if (viewSettings.scrolled) {
       view?.renderer.setAttribute('flow', 'scrolled');
@@ -102,25 +97,29 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [gapPercent]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'maxColumnCount', maxColumnCount);
+    if (maxColumnCount === viewSettings.maxColumnCount) return;
+    saveViewSettings(envConfig, bookKey, 'maxColumnCount', maxColumnCount, false, false);
     view?.renderer.setAttribute('max-column-count', maxColumnCount);
     view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxColumnCount]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'maxInlineSize', maxInlineSize);
+    if (maxInlineSize === viewSettings.maxInlineSize) return;
+    saveViewSettings(envConfig, bookKey, 'maxInlineSize', maxInlineSize, false, false);
     view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxInlineSize]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'maxBlockSize', maxBlockSize);
+    if (maxBlockSize === viewSettings.maxBlockSize) return;
+    saveViewSettings(envConfig, bookKey, 'maxBlockSize', maxBlockSize, false, false);
     view?.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxBlockSize]);
 
   useEffect(() => {
+    if (writingMode === viewSettings.writingMode) return;
     // global settings are not supported for writing mode
     const prevWritingMode = viewSettings.writingMode;
     if (!writingMode.includes('vertical')) {
@@ -143,11 +142,11 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'overrideLayout', overrideLayout);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);
 
   useEffect(() => {
+    if (isScrolledMode === viewSettings.scrolled) return;
     saveViewSettings(envConfig, bookKey, 'scrolled', isScrolledMode);
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
@@ -159,6 +158,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [isScrolledMode]);
 
   useEffect(() => {
+    if (doubleBorder === viewSettings.doubleBorder) return;
     if (doubleBorder && viewSettings.vertical) {
       viewSettings.gapPercent = Math.max(
         viewSettings.gapPercent,
@@ -167,16 +167,17 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setGapPercent(viewSettings.gapPercent);
       setViewSettings(bookKey, viewSettings);
     }
-    saveViewSettings(envConfig, bookKey, 'doubleBorder', doubleBorder);
+    saveViewSettings(envConfig, bookKey, 'doubleBorder', doubleBorder, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doubleBorder]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'borderColor', borderColor);
+    saveViewSettings(envConfig, bookKey, 'borderColor', borderColor, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [borderColor]);
 
   useEffect(() => {
+    if (showHeader === viewSettings.showHeader) return;
     if (showHeader && !viewSettings.vertical) {
       viewSettings.marginPx = Math.max(viewSettings.marginPx, 44);
       setMarginPx(viewSettings.marginPx);
@@ -189,11 +190,12 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setGapPercent(viewSettings.gapPercent);
       setViewSettings(bookKey, viewSettings);
     }
-    saveViewSettings(envConfig, bookKey, 'showHeader', showHeader);
+    saveViewSettings(envConfig, bookKey, 'showHeader', showHeader, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHeader]);
 
   useEffect(() => {
+    if (showFooter === viewSettings.showFooter) return;
     if (showFooter && !viewSettings.vertical) {
       viewSettings.marginPx = Math.max(viewSettings.marginPx, 44);
       setMarginPx(viewSettings.marginPx);
@@ -206,7 +208,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setGapPercent(viewSettings.gapPercent);
       setViewSettings(bookKey, viewSettings);
     }
-    saveViewSettings(envConfig, bookKey, 'showFooter', showFooter);
+    saveViewSettings(envConfig, bookKey, 'showFooter', showFooter, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFooter]);
 

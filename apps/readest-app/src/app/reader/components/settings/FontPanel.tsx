@@ -14,7 +14,6 @@ import {
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
-import { getStyles } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/font';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -64,8 +63,7 @@ const FontFace = ({
 const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getView, getViewSettings } = useReaderStore();
-  const view = getView(bookKey);
+  const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
   const fontFamilyOptions = [
@@ -121,49 +119,41 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'defaultFont', defaultFont);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFont]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'defaultFontSize', defaultFontSize);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFontSize]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'minimumFontSize', minFontSize);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minFontSize]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'fontWeight', fontWeight);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontWeight]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'serifFont', serifFont);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serifFont]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'sansSerifFont', sansSerifFont);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sansSerifFont]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'monospaceFont', monospaceFont);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monospaceFont]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'overrideFont', overrideFont);
-    view?.renderer.setStyles?.(getStyles(viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideFont]);
 

@@ -12,42 +12,24 @@ import {
   Theme,
   themes,
 } from '@/styles/themes';
-import { getStyles } from '@/utils/style';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
-import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import ThemeEditor from './ThemeEditor';
 
-const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const ColorPanel: React.FC<{ bookKey: string }> = ({}) => {
   const _ = useTranslation();
-  const {
-    themeMode,
-    themeColor,
-    themeCode,
-    isDarkMode,
-    setThemeMode,
-    setThemeColor,
-    saveCustomTheme,
-  } = useThemeStore();
+  const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor, saveCustomTheme } =
+    useThemeStore();
   const { envConfig } = useEnv();
   const { settings, setSettings } = useSettingsStore();
-  const { getViews, getViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
   const iconSize16 = useResponsiveSize(16);
   const iconSize24 = useResponsiveSize(24);
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThems, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
-
-  useEffect(() => {
-    getViews().forEach((view) => {
-      view.renderer.setStyles?.(getStyles(viewSettings));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
