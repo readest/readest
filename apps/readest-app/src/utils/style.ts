@@ -190,7 +190,7 @@ const getLayoutStyles = (
   }
   html, body {
     color: ${fg};
-    ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode};`}
+    ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     text-align: var(--default-text-align);
     max-height: unset;
     background-color: var(--theme-bg-color, transparent);
