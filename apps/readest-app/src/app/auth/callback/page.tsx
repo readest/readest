@@ -16,9 +16,10 @@ export default function AuthCallback() {
 
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
+  const type = params.get('type');
   const next = params.get('next') ?? '/';
 
-  handleAuthCallback({ accessToken, refreshToken, next, login, navigate: router.push });
+  handleAuthCallback({ accessToken, refreshToken, type, next, login, navigate: router.push });
 
   return null;
 }

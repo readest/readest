@@ -6,6 +6,7 @@ interface UseAuthCallbackOptions {
   refreshToken?: string | null;
   login: (accessToken: string, user: User) => void;
   navigate: (path: string) => void;
+  type?: string | null;
   next?: string;
 }
 
@@ -14,6 +15,7 @@ export function handleAuthCallback({
   refreshToken,
   login,
   navigate,
+  type,
   next = '/',
 }: UseAuthCallbackOptions) {
   async function finalizeSession() {
@@ -39,6 +41,10 @@ export function handleAuthCallback({
     } = await supabase.auth.getUser();
     if (user) {
       login(accessToken, user);
+      if (type === 'recovery') {
+        navigate('/auth/recovery');
+        return;
+      }
       navigate(next);
     } else {
       console.error('Error fetching user data');

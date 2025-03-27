@@ -240,13 +240,6 @@ export default function AuthPage() {
           link_text: _('Forgot your password?'),
           confirmation_text: _('Check your email for the password reset link'),
         },
-        update_password: {
-          password_label: _('New Password'),
-          password_input_placeholder: _('Your new password'),
-          button_label: _('Update password'),
-          loading_button_label: _('Updating password ...'),
-          confirmation_text: _('Your password has been updated'),
-        },
         verify_otp: {
           email_input_label: _('Email address'),
           email_input_placeholder: _('Your email address'),
