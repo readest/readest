@@ -46,6 +46,30 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
+fn get_files_from_argv(argv: Vec<String>) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    // NOTICE: `args` may include URL protocol (`your-app-protocol://`)
+    // or arguments (`--`) if your app supports them.
+    // files may also be passed as `file://path/to/file`
+    for (_, maybe_file) in argv.iter().enumerate().skip(1) {
+        // skip flags like -f or --flag
+        if maybe_file.starts_with("-") {
+            continue;
+        }
+        // handle `file://` path urls and skip other urls
+        if let Ok(url) = Url::parse(maybe_file) {
+            if let Ok(path) = url.to_file_path() {
+                files.push(path);
+            } else {
+                files.push(PathBuf::from(maybe_file))
+            }
+        } else {
+            files.push(PathBuf::from(maybe_file))
+        }
+    }
+    files
+}
+
 #[cfg(desktop)]
 fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
     let files = files
@@ -127,6 +151,10 @@ pub fn run() {
             .get_webview_window("main")
             .expect("no main window")
             .set_focus();
+        let files = get_files_from_argv(argv.clone());
+        if !files.is_empty() {
+            allow_file_in_scopes(app, files.clone());
+        }
         app.emit("single-instance", Payload { args: argv, cwd })
             .unwrap();
     }));
@@ -155,26 +183,7 @@ pub fn run() {
         .setup(|#[allow(unused_variables)] app| {
             #[cfg(desktop)]
             {
-                let mut files = Vec::new();
-                // NOTICE: `args` may include URL protocol (`your-app-protocol://`)
-                // or arguments (`--`) if your app supports them.
-                // files may also be passed as `file://path/to/file`
-                for maybe_file in std::env::args().skip(1) {
-                    // skip flags like -f or --flag
-                    if maybe_file.starts_with("-") {
-                        continue;
-                    }
-                    // handle `file://` path urls and skip other urls
-                    if let Ok(url) = Url::parse(&maybe_file) {
-                        if let Ok(path) = url.to_file_path() {
-                            files.push(path);
-                        } else {
-                            files.push(PathBuf::from(maybe_file))
-                        }
-                    } else {
-                        files.push(PathBuf::from(maybe_file))
-                    }
-                }
+                let files = get_files_from_argv(std::env::args().collect());
                 if !files.is_empty() {
                     let app_handle = app.handle().clone();
                     allow_file_in_scopes(&app_handle, files.clone());
