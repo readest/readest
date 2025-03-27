@@ -27,7 +27,13 @@ const getFontStyles = (
   fontWeight: number,
   overrideFont: boolean,
 ) => {
-  const serifFonts = [serif, ...SERIF_FONTS.filter((font) => font !== serif), ...FALLBACK_FONTS];
+  const lastSerifFonts = ['Georgia', 'Times New Roman'];
+  const serifFonts = [
+    serif,
+    ...SERIF_FONTS.filter((font) => font !== serif && !lastSerifFonts.includes(font)),
+    ...lastSerifFonts.filter((font) => SERIF_FONTS.includes(font)),
+    ...FALLBACK_FONTS,
+  ];
   const sansSerifFonts = [
     sansSerif,
     ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif),

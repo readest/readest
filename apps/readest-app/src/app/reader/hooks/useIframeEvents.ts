@@ -51,9 +51,17 @@ export const useClickEvent = (
                   setHoveredBookKey(null);
                 }
                 if (!viewSettings.disableClick! && screenX >= viewCenterX) {
-                  viewRef.current?.goRight();
+                  if (viewSettings.swapClickArea) {
+                    viewRef.current?.goLeft();
+                  } else {
+                    viewRef.current?.goRight();
+                  }
                 } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
-                  viewRef.current?.goLeft();
+                  if (viewSettings.swapClickArea) {
+                    viewRef.current?.goRight();
+                  } else {
+                    viewRef.current?.goLeft();
+                  }
                 }
               }
             }

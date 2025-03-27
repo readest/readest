@@ -21,6 +21,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
+  const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
   const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll!);
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
@@ -134,6 +135,11 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [isDisableClick]);
 
   useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swapClickArea]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isContinuousScroll]);
@@ -195,6 +201,16 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='toggle'
                 checked={isDisableClick}
                 onChange={() => setIsDisableClick(!isDisableClick)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Swap Click-to-Flip Area')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={swapClickArea}
+                disabled={isDisableClick}
+                onChange={() => setSwapClickArea(!swapClickArea)}
               />
             </div>
           </div>

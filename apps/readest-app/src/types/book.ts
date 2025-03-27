@@ -67,6 +67,7 @@ export interface BookLayout {
   gapPercent: number;
   scrolled: boolean;
   disableClick: boolean;
+  swapClickArea: boolean;
   continuousScroll: boolean;
   maxColumnCount: number;
   maxInlineSize: number;
