@@ -351,7 +351,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
     handleDismissPopupAndSelection();
-    setNotebookVisible(true);
+    if (!appService?.isMobile) {
+      setNotebookVisible(true);
+    }
   };
 
   const handleHighlight = (update = false) => {

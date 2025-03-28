@@ -312,7 +312,6 @@ export default function AuthPage() {
         ref={headerRef}
         className={clsx(
           'fixed flex w-full items-center justify-between py-2 pe-6 ps-4',
-          appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
           appService?.hasTrafficLight && 'pt-11',
         )}
       >

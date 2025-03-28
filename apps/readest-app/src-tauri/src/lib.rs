@@ -46,6 +46,7 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
+#[cfg(desktop)]
 fn get_files_from_argv(argv: Vec<String>) -> Vec<PathBuf> {
     let mut files = Vec::new();
     // NOTICE: `args` may include URL protocol (`your-app-protocol://`)
