@@ -243,12 +243,7 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async uploadFileToCloud(
-    lfp: string,
-    cfp: string,
-    handleProgress: ProgressHandler,
-    hash: string
-  ) {
+  async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {
     let file: File;
     if (this.appPlatform === 'web') {
       const content = await this.fs.readFile(lfp, 'Books', 'binary');
@@ -265,8 +260,8 @@ export abstract class BaseAppService implements AppService {
     let uploaded = false;
     const completedFiles = { count: 0 };
     let toUploadFpCount = 0;
-    const coverExist = (await this.fs.exists(getCoverFilename(book), 'Books'));
-    let bookFileExist = (await this.fs.exists(getLocalBookFilename(book), 'Books'));
+    const coverExist = await this.fs.exists(getCoverFilename(book), 'Books');
+    let bookFileExist = await this.fs.exists(getLocalBookFilename(book), 'Books');
     if (coverExist) {
       toUploadFpCount++;
     }
@@ -308,12 +303,8 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async downloadCloudFile(
-    lfp: string,
-    cfp: string,
-    handleProgress: ProgressHandler,
-  ) {
-    console.log('Downloading file:', cfp, "to", lfp);
+  async downloadCloudFile(lfp: string, cfp: string, handleProgress: ProgressHandler) {
+    console.log('Downloading file:', cfp, 'to', lfp);
     const localFullpath = `${this.localBooksDir}/${lfp}`;
     const result = await downloadFile(cfp, localFullpath, handleProgress);
     try {
@@ -331,8 +322,8 @@ export abstract class BaseAppService implements AppService {
     let bookDownloaded = false;
     const completedFiles = { count: 0 };
     let toDownloadFpCount = 0;
-    const needDownCover = (!(await this.fs.exists(getCoverFilename(book), 'Books')));
-    const needDownBook = (!onlyCover) && !(await this.fs.exists(getLocalBookFilename(book), 'Books'));
+    const needDownCover = !(await this.fs.exists(getCoverFilename(book), 'Books'));
+    const needDownBook = !onlyCover && !(await this.fs.exists(getLocalBookFilename(book), 'Books'));
     if (needDownCover) {
       toDownloadFpCount++;
     }
@@ -345,8 +336,6 @@ export abstract class BaseAppService implements AppService {
     if (!(await this.fs.exists(getDir(book), 'Books'))) {
       await this.fs.createDir(getDir(book), 'Books');
     }
-
-
 
     if (needDownCover) {
       const lfp = getCoverFilename(book);
@@ -364,7 +353,7 @@ export abstract class BaseAppService implements AppService {
       completedFiles.count++;
     }
     // some books may not have cover image, so we need to check if the book is downloaded
-    if (bookDownloaded) {
+    if (bookDownloaded || (!onlyCover && !needDownBook)) {
       book.downloadedAt = Date.now();
     }
   }
