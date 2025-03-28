@@ -78,6 +78,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       const { view } = detail;
       view.addEventListener('relocate', () => {
         const { renderer } = view as FoliateView;
+        const viewSettings = getViewSettings(bookKey)!;
         if (viewSettings.vertical) {
           setResponsiveWidth(getResponsivePopupSize(renderer.viewSize, true));
         } else {
