@@ -3,6 +3,7 @@ import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { AsyncQueue } from '@/utils/queue';
 import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
+import { TTSUtils } from './TTSUtils';
 
 const BLACKLISTED_VOICES = [
   'Albert',
@@ -214,15 +215,14 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
-    const ssmlLang = parseSSMLLang(ssml) || 'en';
-    let lang = ssmlLang;
-    if (lang === 'en' && /[\p{Script=Han}]/u.test(ssml)) {
-      lang = 'zh';
-    }
-    if (!this.#voice || ssmlLang !== lang) {
-      const voices = await this.getVoices(lang);
-      const voiceId = voices[0]?.id ?? '';
-      this.#voice = this.#voices.find((v) => v.voiceURI === voiceId) || null;
+    const lang = parseSSMLLang(ssml) || 'en';
+    if (!this.#voice || this.#currentVoiceLang !== lang) {
+      const preferredVoiceId = TTSUtils.getPreferredVoice('web-speech', lang);
+      const preferredVoice = this.#voices.find((v) => v.voiceURI === preferredVoiceId);
+      const voiceId = (await this.getVoices(lang))[0]?.id ?? '';
+      this.#voice = preferredVoice
+        ? preferredVoice
+        : this.#voices.find((v) => v.voiceURI === voiceId) || null;
       this.#currentVoiceLang = lang;
     }
     for await (const ev of speakWithMarks(

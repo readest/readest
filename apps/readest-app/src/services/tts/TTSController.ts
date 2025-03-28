@@ -2,6 +2,7 @@ import { FoliateView, TTSGranularity } from '@/types/view';
 import { TTSClient, TTSMessageCode, TTSVoice } from './TTSClient';
 import { WebSpeechClient } from './WebSpeechClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
+import { TTSUtils } from './TTSUtils';
 
 type TTSState =
   | 'stopped'
@@ -19,6 +20,7 @@ export class TTSController extends EventTarget {
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
 
+  ttsLang: string = '';
   ttsRate: number = 1.0;
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
@@ -67,13 +69,23 @@ export class TTSController extends EventTarget {
     if (!tts) return;
     let preloaded = 0;
     for (let i = 0; i < count; i++) {
-      const ssml = tts.next();
+      const ssml = this.#preprocessSSML(tts.next());
       this.preloadSSML(ssml);
       if (ssml) preloaded++;
     }
     for (let i = 0; i < preloaded; i++) {
       tts.prev();
     }
+  }
+
+  #preprocessSSML(ssml?: string) {
+    if (!ssml) return;
+    ssml = ssml
+      .replace(/[–—]/g, ',')
+      .replace(/\.{3,}/g, '<break time="400ms"/>')
+      .replace(/·/g, '<break time="200ms"/>');
+
+    return ssml;
   }
 
   async #speak(ssml: string | undefined | Promise<string>) {
@@ -85,7 +97,7 @@ export class TTSController extends EventTarget {
       try {
         console.log('TTS speak');
         this.state = 'playing';
-        ssml = await ssml;
+        ssml = this.#preprocessSSML(await ssml);
         await this.preloadSSML(ssml);
         if (!ssml) {
           this.#nossmlCnt++;
@@ -205,6 +217,10 @@ export class TTSController extends EventTarget {
     }
   }
 
+  async setLang(lang: string) {
+    this.ttsLang = lang;
+  }
+
   async setRate(rate: number) {
     this.state = 'setrate-paused';
     this.ttsRate = rate;
@@ -225,9 +241,11 @@ export class TTSController extends EventTarget {
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
+      TTSUtils.setPreferredVoice('edge-tts', this.ttsLang, voiceId);
     } else {
       this.ttsClient = this.ttsWebClient;
       await this.ttsClient.setRate(this.ttsRate);
+      TTSUtils.setPreferredVoice('web-speech', this.ttsLang, voiceId);
     }
     await this.ttsClient.setVoice(voiceId);
   }

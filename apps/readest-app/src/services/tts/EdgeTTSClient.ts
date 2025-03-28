@@ -3,6 +3,7 @@ import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
+import { TTSUtils } from './TTSUtils';
 
 export class EdgeTTSClient implements TTSClient {
   #rate = 1.0;
@@ -61,16 +62,12 @@ export class EdgeTTSClient implements TTSClient {
     preload = false,
   ): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
-    const ssmlLang = parseSSMLLang(ssml) || 'en';
-    let lang = ssmlLang;
-    if (lang === 'en' && /[\p{Script=Han}]/u.test(ssml)) {
-      lang = 'zh';
-    }
-
+    const lang = parseSSMLLang(ssml) || 'en';
     let voiceId = 'en-US-AriaNeural';
-    if (!this.#voice || ssmlLang !== lang) {
-      const voices = await this.getVoices(lang);
-      this.#voice = voices[0] ? voices[0] : this.#voices.find((v) => v.id === voiceId) || null;
+    if (!this.#voice || this.#currentVoiceLang !== lang) {
+      const preferredVoiceId = TTSUtils.getPreferredVoice('edge-tts', lang);
+      const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
+      this.#voice = preferredVoice ? preferredVoice : (await this.getVoices(lang))[0] || null;
       this.#currentVoiceLang = lang;
     }
     if (this.#voice) {
@@ -78,15 +75,32 @@ export class EdgeTTSClient implements TTSClient {
     }
 
     if (preload) {
-      for (const mark of marks) {
+      // preload the first 2 marks immediately and the rest in the background
+      const maxImmediate = 2;
+      for (let i = 0; i < Math.min(maxImmediate, marks.length); i++) {
+        const mark = marks[i]!;
         await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId)).catch((err) => {
-          console.warn('Error preloading:', err);
+          console.warn('Error preloading mark', i, err);
         });
       }
+      if (marks.length > maxImmediate) {
+        (async () => {
+          for (let i = maxImmediate; i < marks.length; i++) {
+            const mark = marks[i]!;
+            try {
+              await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId));
+            } catch (err) {
+              console.warn('Error preloading mark (bg)', i, err);
+            }
+          }
+        })();
+      }
+
       yield {
         code: 'end',
         message: 'Preload finished',
       };
+
       return;
     } else {
       await this.stopInternal();

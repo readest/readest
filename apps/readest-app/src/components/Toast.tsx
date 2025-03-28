@@ -50,7 +50,7 @@ export const Toast = () => {
     toastMessage && (
       <div
         className={clsx(
-          'toast toast-center toast-middle w-auto max-w-screen-sm',
+          'toast toast-center toast-middle z-50 w-auto max-w-screen-sm',
           toastClassMap[toastType.current],
           toastClassMap[toastType.current].includes('toast-top') &&
             'pt-[calc(44px+env(safe-area-inset-top))]',

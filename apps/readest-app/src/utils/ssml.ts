@@ -58,7 +58,9 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
 
 export const parseSSMLLang = (ssml: string): string | null => {
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
-  if (match && match[1]) {
+  if (/[\p{Script=Han}]/u.test(ssml)) {
+    return 'zh';
+  } else if (match && match[1]) {
     const parts = match[1].split('-');
     return parts.length > 1
       ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`

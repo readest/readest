@@ -102,14 +102,15 @@ const TTSControl = () => {
       await ttsController.initViewTTS();
       const ssml = view.tts?.from(range);
       if (ssml) {
+        const lang = parseSSMLLang(ssml) || 'en';
+        setTtsLang(lang);
+        setIsPlaying(true);
+
+        ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
         ttsController.setVoice(viewSettings.ttsVoice);
         ttsController.speak(ssml);
         ttsControllerRef.current = ttsController;
-
-        const lang = parseSSMLLang(ssml) || 'en';
-        setTtsLang(lang);
-        setIsPlaying(true);
       }
     } catch (error) {
       eventDispatcher.dispatch('toast', {

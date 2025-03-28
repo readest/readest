@@ -1,11 +1,13 @@
 import clsx from 'clsx';
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { useReaderStore } from '@/store/readerStore';
-import { useTranslation } from '@/hooks/useTranslation';
 import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdStop } from 'react-icons/md';
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
 import { TTSVoice } from '@/services/tts';
+import { useEnv } from '@/context/EnvContext';
+import { useReaderStore } from '@/store/readerStore';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 type TTSPanelProps = {
@@ -36,7 +38,9 @@ const TTSPanel = ({
   onGetVoiceId,
 }: TTSPanelProps) => {
   const _ = useTranslation();
+  const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings } = useReaderStore();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey);
 
   const [voices, setVoices] = useState<TTSVoice[]>([]);
@@ -54,7 +58,10 @@ const TTSPanel = ({
     onSetRate(newRate);
     const viewSettings = getViewSettings(bookKey)!;
     viewSettings.ttsRate = newRate;
+    settings.globalViewSettings.ttsRate = newRate;
     setViewSettings(bookKey, viewSettings);
+    setSettings(settings);
+    saveSettings(envConfig, settings);
   };
 
   const handleSelectVoice = (voice: string) => {
