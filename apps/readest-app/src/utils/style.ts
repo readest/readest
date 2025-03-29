@@ -207,12 +207,11 @@ const getLayoutStyles = (
     background-color: transparent !important;
   }
   p, li, blockquote, dd {
-    margin: ${vertical ? `0 ${paragraphMargin}em` : `${paragraphMargin}em 0`} ${overrideLayout ? '!important' : ''};
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
-    text-indent: ${textIndent}em ${overrideLayout ? '!important' : ''};
-    text-align: ${overrideLayout ? 'var(--default-text-align) !important' : 'inherit'};
+    text-indent: ${vertical ? textIndent * 1.2 : textIndent}em;
+    text-align: ${overrideLayout ? 'var(--default-text-align)' : 'inherit'};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
@@ -220,6 +219,12 @@ const getLayoutStyles = (
     -webkit-hyphenate-limit-lines: 2;
     hanging-punctuation: allow-end last;
     widows: 2;
+  }
+  p {
+    ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
   }
   li, p:has(> :is(img, video, font, h1, h2, h3, h4, h5, table)) {
     text-indent: 0 !important;
@@ -238,6 +243,14 @@ const getLayoutStyles = (
   aside[epub|type~="note"],
   aside[epub|type~="rearnote"] {
     display: none;
+  }
+
+  img.pi {
+    ${vertical ? 'transform: rotate(90deg);' : ''}
+    ${vertical ? 'transform-origin: center;' : ''}
+    ${vertical ? 'height: 2em;' : ''}
+    ${vertical ? `width: ${lineSpacing}em;` : ''}
+    ${vertical ? `vertical-align: unset;` : ''}
   }
 
   .duokan-footnote-content,
@@ -383,4 +396,21 @@ export const mountAdditionalFonts = (document: Document) => {
   const style = document.createElement('style');
   style.textContent = getAdditionalFontFaces();
   document.head.appendChild(style);
+};
+
+export const transformStylesheet = (css: string) => {
+  // replace absolute font sizes with rem units
+  // replace hardcoded colors
+  return css
+    .replace(/font-size\s*:\s*xx-small/gi, 'font-size: 0.6rem')
+    .replace(/font-size\s*:\s*x-small/gi, 'font-size: 0.75rem')
+    .replace(/font-size\s*:\s*small/gi, 'font-size: 0.875rem')
+    .replace(/font-size\s*:\s*medium/gi, 'font-size: 1rem')
+    .replace(/font-size\s*:\s*large/gi, 'font-size: 1.2rem')
+    .replace(/font-size\s*:\s*x-large/gi, 'font-size: 1.5rem')
+    .replace(/font-size\s*:\s*xx-large/gi, 'font-size: 2rem')
+    .replace(/font-size\s*:\s*xxx-large/gi, 'font-size: 3rem')
+    .replace(/\scolor\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
+    .replace(/\scolor\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
+    .replace(/\scolor\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
 };

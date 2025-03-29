@@ -66,6 +66,7 @@ export interface BookDoc {
   dir: string;
   toc?: Array<TOCItem>;
   sections?: Array<SectionItem>;
+  transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
 }

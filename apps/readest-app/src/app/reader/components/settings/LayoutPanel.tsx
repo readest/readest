@@ -122,7 +122,9 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (writingMode === viewSettings.writingMode) return;
     // global settings are not supported for writing mode
     const prevWritingMode = viewSettings.writingMode;
-    if (!writingMode.includes('vertical')) {
+    if (writingMode.includes('vertical')) {
+      viewSettings.vertical = true;
+    } else {
       viewSettings.vertical = false;
     }
     saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true);

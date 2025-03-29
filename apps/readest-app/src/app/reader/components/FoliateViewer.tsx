@@ -9,7 +9,7 @@ import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { getStyles, mountAdditionalFonts } from '@/utils/style';
+import { getStyles, mountAdditionalFonts, transformStylesheet } from '@/utils/style';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
@@ -23,6 +23,7 @@ import {
   handleTouchEnd,
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
+import { transformContent } from '@/services/transformService';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -51,6 +52,28 @@ const FoliateViewer: React.FC<{
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
+  };
+
+  const docTransformHandler = (event: Event) => {
+    const { detail } = event as CustomEvent;
+    detail.data = Promise.resolve(detail.data)
+      .then((data) => {
+        const viewSettings = getViewSettings(bookKey)!;
+        if (detail.type === 'text/css') return transformStylesheet(data);
+        if (detail.type === 'application/xhtml+xml') {
+          const ctx = {
+            bookKey,
+            viewSettings,
+            content: data,
+          };
+          return Promise.resolve(transformContent(ctx));
+        }
+        return data;
+      })
+      .catch((e) => {
+        console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
+        return '';
+      });
   };
 
   const docLoadHandler = (event: Event) => {
@@ -154,6 +177,9 @@ const FoliateViewer: React.FC<{
       viewRef.current = view;
       setFoliateView(bookKey, view);
 
+      const { book } = view;
+
+      book.transformTarget?.addEventListener('data', docTransformHandler);
       view.renderer.setStyles?.(getStyles(viewSettings));
 
       const isScrolled = viewSettings.scrolled!;
