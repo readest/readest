@@ -7,6 +7,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getStyles } from '@/utils/style';
 import { tauriQuitApp } from '@/utils/window';
+import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 
 interface UseBookShortcutsProps {
@@ -90,6 +91,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
+  const showSearchBar = () => {
+    eventDispatcher.dispatch('search', { term: '' });
+  };
+
   const zoomIn = () => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
@@ -129,6 +134,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
+      onToggleSearchBar: showSearchBar,
       onReloadPage: reloadPage,
       onQuitApp: quitApp,
       onGoLeft: goLeft,

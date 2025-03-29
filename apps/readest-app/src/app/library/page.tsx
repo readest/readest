@@ -366,6 +366,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     } catch (err) {
       if (err instanceof Error) {
         if (err.message.includes('Not authenticated') && settings.keepLogin) {
+          settings.keepLogin = false;
+          setSettings(settings);
           navigateToLogin(router);
           return false;
         } else if (err.message.includes('Insufficient storage quota')) {
