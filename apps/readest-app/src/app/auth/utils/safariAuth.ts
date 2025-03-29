@@ -9,7 +9,7 @@ export interface SafariAuthResponse {
 }
 
 export async function authWithSafari(request: SafariAuthRequest): Promise<SafariAuthResponse> {
-  const result = await invoke<SafariAuthResponse>('plugin:safari-auth|auth_with_safari', {
+  const result = await invoke<SafariAuthResponse>('plugin:native-bridge|auth_with_safari', {
     payload: request,
   });
 

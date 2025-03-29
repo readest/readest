@@ -75,7 +75,7 @@
     "haptics:allow-impact-feedback",
     "haptics:allow-notification-feedback",
     "haptics:allow-selection-feedback",
-    "safari-auth:default",
+    "native-bridge:default",
     "deep-link:default"
   ]
 }

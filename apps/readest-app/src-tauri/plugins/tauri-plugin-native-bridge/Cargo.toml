@@ -1,0 +1,19 @@
+[package]
+name = "tauri-plugin-native-bridge"
+version = "0.1.0"
+authors = [ "You" ]
+description = "a bridge between tauri app and native OS functionality"
+edition = "2021"
+rust-version = "1.77.2"
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
+links = "tauri-plugin-native-bridge"
+
+[dependencies]
+tauri = { version = "2.3.1" }
+serde = "1.0"
+thiserror = "2"
+schemars = "0.8"
+
+[build-dependencies]
+tauri-plugin = { version = "2.0.4", features = ["build"] }
+schemars = "0.8"
