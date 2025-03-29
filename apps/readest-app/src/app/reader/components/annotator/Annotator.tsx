@@ -406,11 +406,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!selection || !selection.text) return;
     const { sectionHref: href } = progress;
     selection.href = href;
-    setShowAnnotPopup(false);
-    setHighlightOptionsVisible(false);
+    handleHighlight(true);
     setNotebookVisible(true);
     setNotebookNewAnnotation(selection);
-    handleHighlight(true);
+    handleDismissPopup();
   };
 
   const handleSearch = () => {
