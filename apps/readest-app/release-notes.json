@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.27": {
+      "date": "2025-03-29",
+      "notes": [
+        "Added option to swap click-to-flip area and reset password",
+        "Added global shortcuts for full-text search",
+        "Added support for both R2 and S3 storage in cloud sync",
+        "Improved TTS with fewer unintended pauses, faster startup, and support for preferred voices",
+        "Various fixes for rendering styles and UI layout"
+      ]
+    },
     "0.9.26": {
       "date": "2025-03-27",
       "notes": [
