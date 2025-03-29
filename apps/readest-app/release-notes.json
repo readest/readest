@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.28": {
+      "date": "2025-03-30",
+      "notes": [
+        "Improved vertical reading mode with better support for Chinese punctuations",
+        "Fixed TXT file importing issue on desktop apps — TXT books now load reliably and display as expected",
+        "Improved annotation experience — highlighting tools are now properly dismissed when adding notes to avoid UI conflicts"
+      ]
+    },
     "0.9.27": {
       "date": "2025-03-29",
       "notes": [
