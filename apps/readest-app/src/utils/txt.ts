@@ -1,3 +1,4 @@
+import { getBaseFilename } from './book';
 import { partialMD5 } from './md5';
 
 interface Metadata {
@@ -38,12 +39,12 @@ export class TxtToEpubConverter {
   public async convert(options: Txt2EpubOptions): Promise<ConversionResult> {
     const { file: txtFile, author: providedAuthor, language: providedLanguage } = options;
 
-    const fileContent = await this.readFileAsArrayBuffer(txtFile);
+    const fileContent = await txtFile.arrayBuffer();
     const detectedEncoding = this.detectEncoding(fileContent) || 'utf-8';
     const decoder = new TextDecoder(detectedEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
-    const bookTitle = this.extractBookTitle(txtFile.name);
+    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
     const fileName = `${bookTitle}.epub`;
 
     const fileHeader = txtContent.slice(0, 1024);
@@ -356,15 +357,6 @@ export class TxtToEpubConverter {
     }
 
     return 'en';
-  }
-
-  private readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
-    });
   }
 
   private extractBookTitle(filename: string): string {

@@ -261,5 +261,8 @@
   "Export Annotations": "注釈をエクスポート",
   "Auto Import on File Open": "ファイルを開くと自動インポート",
   "LXGW WenKai GB Screen": "LXGW WenKai",
-  "Swap Click-to-Flip Area": "クリックめくりエリアを入れ替え"
+  "Swap Click-to-Flip Area": "クリックめくりエリアを入れ替え",
+  "No chapters detected.": "章が検出されません。",
+  "Failed to parse the EPUB file.": "EPUBファイルの解析に失敗しました。",
+  "This book format is not supported.": "この書籍形式はサポートされていません。"
 }

@@ -296,6 +296,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const importBooks = async (files: (string | File)[]) => {
     setLoading(true);
     const failedFiles = [];
+    const errorMap: [string, string][] = [
+      ['No chapters detected.', _('No chapters detected.')],
+      ['Failed to parse EPUB.', _('Failed to parse the EPUB file.')],
+      ['Unsupported format.', _('This book format is not supported.')],
+    ];
     for (const file of files) {
       try {
         const book = await appService?.importBook(file, libraryBooks);
@@ -308,10 +313,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         const filename = typeof file === 'string' ? file : file.name;
         const baseFilename = getBaseFilename(filename);
         failedFiles.push(baseFilename);
+        const errorMessage =
+          error instanceof Error
+            ? errorMap.find(([substring]) => error.message.includes(substring))?.[1] || ''
+            : '';
         eventDispatcher.dispatch('toast', {
-          message: _('Failed to import book(s): {{filenames}}', {
-            filenames: listFormater(false).format(failedFiles),
-          }),
+          message:
+            _('Failed to import book(s): {{filenames}}', {
+              filenames: listFormater(false).format(failedFiles),
+            }) + (errorMessage ? `\n${errorMessage}` : ''),
           type: 'error',
         });
         console.error('Failed to import book:', filename, error);

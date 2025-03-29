@@ -261,5 +261,8 @@
   "Export Annotations": "Notları Dışa Aktar",
   "Auto Import on File Open": "Dosya Açıldığında Otomatik İçe Aktar",
   "LXGW WenKai GB Screen": "LXGW WenKai",
-  "Swap Click-to-Flip Area": "Tıkla-Çevir Alanını Değiştir"
+  "Swap Click-to-Flip Area": "Tıkla-Çevir Alanını Değiştir",
+  "No chapters detected.": "Bölüm bulunamadı.",
+  "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
+  "This book format is not supported.": "Bu kitap formatı desteklenmiyor."
 }

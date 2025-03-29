@@ -261,5 +261,8 @@
   "Export Annotations": "تصدير التعليقات",
   "Auto Import on File Open": "استيراد تلقائي عند فتح الملف",
   "LXGW WenKai GB Screen": "LXGW WenKai",
-  "Swap Click-to-Flip Area": "تبديل منطقة التقليب بالنقر"
+  "Swap Click-to-Flip Area": "تبديل منطقة التقليب بالنقر",
+  "No chapters detected.": "لم يتم التعرف على فصول.",
+  "Failed to parse the EPUB file.": "فشل في تحليل ملف EPUB.",
+  "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم."
 }

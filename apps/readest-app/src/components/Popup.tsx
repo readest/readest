@@ -21,7 +21,20 @@ const Popup = ({
 }) => (
   <div>
     <div
-      className={`triangle text-base-300 absolute z-40 ${triangleClassName}`}
+      id='popup-container'
+      className={`bg-base-300 absolute rounded-lg font-sans shadow-xl ${className}`}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        left: `${position ? position.point.x : -999}px`,
+        top: `${position ? position.point.y : -999}px`,
+        ...additionalStyle,
+      }}
+    >
+      {children}
+    </div>
+    <div
+      className={`triangle text-base-300 absolute ${triangleClassName}`}
       style={{
         left:
           trianglePosition?.dir === 'left'
@@ -65,19 +78,6 @@ const Popup = ({
             : 'translateX(-50%)',
       }}
     />
-    <div
-      id='popup-container'
-      className={`bg-base-300 absolute z-30 rounded-lg font-sans shadow-xl ${className}`}
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-        left: `${position ? position.point.x : -999}px`,
-        top: `${position ? position.point.y : -999}px`,
-        ...additionalStyle,
-      }}
-    >
-      {children}
-    </div>
   </div>
 );
 

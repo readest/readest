@@ -69,7 +69,12 @@ export const Toast = () => {
               messageClass.current,
             )}
           >
-            {toastMessage}
+            {toastMessage.split('\n').map((line, idx) => (
+              <React.Fragment key={idx}>
+                {line || <>&nbsp;</>}
+                <br />
+              </React.Fragment>
+            ))}
           </span>
         </div>
       </div>

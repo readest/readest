@@ -261,5 +261,8 @@
   "Export Annotations": "Exportar anotaciones",
   "Auto Import on File Open": "Importación automática al abrir archivo",
   "LXGW WenKai GB Screen": "LXGW WenKai",
-  "Swap Click-to-Flip Area": "Intercambiar área de clic para voltear"
+  "Swap Click-to-Flip Area": "Intercambiar área de clic para voltear",
+  "No chapters detected.": "No se detectaron capítulos.",
+  "Failed to parse the EPUB file.": "Error al analizar el archivo EPUB.",
+  "This book format is not supported.": "Este formato de libro no es compatible."
 }
