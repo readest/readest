@@ -90,7 +90,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleInputBlur = () => {
     if (appService?.isAndroidApp) {
-      setInputFocusInAndroid(false);
+      setTimeout(() => {
+        setInputFocusInAndroid(false);
+      }, 100);
     }
   };
 
@@ -145,7 +147,10 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div
-      className={clsx('my-4 w-full space-y-6', inputFocusInAndroid && 'h-[50%] overflow-y-auto')}
+      className={clsx(
+        'my-4 w-full space-y-6',
+        inputFocusInAndroid && 'h-[50%] overflow-y-auto pb-[200px]',
+      )}
     >
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Language')}</h2>
