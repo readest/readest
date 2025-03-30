@@ -4,8 +4,9 @@ import { supabase } from '@/utils/supabase';
 import { getUserPlan } from '@/utils/access';
 import { query as deeplQuery } from '@/utils/deepl';
 
-const DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
-const DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
+const DEEPL_FREE_API = process.env['DEEPL_FREE_API'] || 'https://api-free.deepl.com/v2/translate';
+const DEEPL_PRO_API = process.env['DEEPL_PRO_API'] || 'https://api.deepl.com/v2/translate';
+const DEEPL_X_FINGERPRINT = process.env['DEEPL_X_FINGERPRINT'] || '';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
   if (!authHeader) return {};
@@ -31,7 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   let userPlan = 'free';
   if (user && token) {
     userPlan = getUserPlan(token);
-    if (userPlan !== 'free') deeplApiUrl = DEEPL_PRO_API;
+    if (userPlan === 'pro') deeplApiUrl = DEEPL_PRO_API;
   }
   const deeplAuthKey =
     deeplApiUrl === DEEPL_PRO_API
@@ -46,18 +47,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     target_lang: targetLang = 'en',
   }: { text: string[]; source_lang: string; target_lang: string } = req.body;
   try {
-    if (targetLang.toLowerCase().includes('zh')) {
+    try {
       const response = await fetch(deeplApiUrl, {
         method: 'POST',
         headers: {
           Authorization: `DeepL-Auth-Key ${deeplAuthKey}`,
+          'X-Fingerprint': DEEPL_X_FINGERPRINT,
           'Content-Type': 'application/json',
         },
         body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
       });
       res.status(response.status);
       res.json(await response.json());
-    } else {
+    } catch {
       const result = await deeplQuery({
         text: text[0] ?? '',
         sourceLang,
