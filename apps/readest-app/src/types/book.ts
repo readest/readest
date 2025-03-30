@@ -4,8 +4,10 @@ export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet';
 
 export interface Book {
-  // if Book is a remote book we just lazy load the book content
+  // if Book is a remote book we just lazy load the book content via url
   url?: string;
+  // if Book is a transient local book we can load the book content via filePath
+  filePath?: string;
   hash: string;
   format: BookFormat;
   title: string;

@@ -140,6 +140,10 @@ export abstract class BaseAppService implements AppService {
       let filename: string;
       let fileobj: File;
 
+      if (transient && typeof file !== 'string') {
+        throw new Error('Transient import is only supported for file paths');
+      }
+
       try {
         if (typeof file === 'string') {
           filename = file;
@@ -184,7 +188,11 @@ export abstract class BaseAppService implements AppService {
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
         await this.fs.createDir(getDir(book), 'Books');
       }
-      if (saveBook && (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)) {
+      if (
+        saveBook &&
+        !transient &&
+        (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)
+      ) {
         if (typeof file === 'string' && !isValidURL(file) && !filename.endsWith('.txt')) {
           await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else {
@@ -204,8 +212,14 @@ export abstract class BaseAppService implements AppService {
       } else {
         existingBook.title = book.title;
         existingBook.author = book.author;
+        if (transient) {
+          existingBook.filePath = filename;
+        }
       }
 
+      if (transient) {
+        book.filePath = filename;
+      }
       if (typeof file === 'string' && isValidURL(file)) {
         book.url = file;
       }
@@ -369,6 +383,8 @@ export abstract class BaseAppService implements AppService {
       } else {
         file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), fp).open();
       }
+    } else if (book.filePath) {
+      file = await new RemoteFile(this.fs.getURL(book.filePath), fp).open();
     } else if (book.url) {
       file = await new RemoteFile(book.url).open();
     } else {
