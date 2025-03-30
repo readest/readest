@@ -1,25 +1,10 @@
 import type { Transformer } from './types';
 
 const punctuationMap: Record<string, string> = {
-  '，': '︐', // full-width comma
-  '。': '︒', // full stop
-  '、': '︑', // enumeration comma
-  '：': '︓', // colon
-  '；': '︔', // semicolon
-  '！': '︕', // exclamation
-  '？': '︖', // question
-  '（': '︵',
-  '）': '︶',
-  '《': '︽',
-  '》': '︾',
-  '「': '﹁',
-  '」': '﹂',
-  '『': '﹃',
-  '』': '﹄',
-  '“': '﹁',
-  '”': '﹂',
-  '‘': '﹃',
-  '’': '﹄',
+  '“': '﹃',
+  '”': '﹄',
+  '‘': '﹁',
+  '’': '﹂',
 };
 
 export const punctuationTransformer: Transformer = {

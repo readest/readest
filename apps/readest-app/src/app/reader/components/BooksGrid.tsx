@@ -80,7 +80,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               onSetSettingsDialogOpen={setFontLayoutSettingsDialogOpen}
             />
             <FoliateViewer bookKey={bookKey} bookDoc={bookDoc} config={config} />
-            <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
             {viewSettings.vertical && viewSettings.scrolled && (
               <>
                 <div
@@ -138,6 +137,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               />
             )}
             <Annotator bookKey={bookKey} />
+            <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
             <FooterBar
               bookKey={bookKey}
               bookFormat={book.format}
