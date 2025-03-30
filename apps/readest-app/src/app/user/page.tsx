@@ -159,7 +159,8 @@ const ProfilePage = () => {
   return (
     <div
       className={clsx(
-        'bg-base-100 border-base-200 flex h-dvh w-full select-none flex-col items-center border',
+        'fixed inset-0 z-0 flex select-none flex-col items-center overflow-y-auto',
+        'bg-base-100 border-base-200 border',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >
@@ -184,7 +185,7 @@ const ProfilePage = () => {
           />
         )}
       </div>
-      <div className='w-full max-w-4xl px-4 py-10'>
+      <div className='w-full min-w-60 max-w-4xl px-4 py-10'>
         <div className='bg-base-200 overflow-hidden rounded-lg p-2 shadow-md sm:p-6'>
           <div className='p-2 sm:p-6'>
             <div className='mb-8 flex flex-col items-center gap-x-6 gap-y-4 md:flex-row md:items-start'>

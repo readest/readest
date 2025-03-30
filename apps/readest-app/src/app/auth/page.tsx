@@ -304,14 +304,15 @@ export default function AuthPage() {
   return isTauriAppPlatform() ? (
     <div
       className={clsx(
-        'bg-base-100 border-base-200 flex h-dvh w-full select-none flex-col items-center border',
+        'fixed inset-0 z-0 flex select-none flex-col items-center overflow-y-auto',
+        'bg-base-100 border-base-200 border',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >
       <div
         ref={headerRef}
         className={clsx(
-          'fixed flex w-full items-center justify-between py-2 pe-6 ps-4',
+          'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
           appService?.hasTrafficLight && 'pt-11',
         )}
       >
@@ -329,7 +330,10 @@ export default function AuthPage() {
           />
         )}
       </div>
-      <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem' }}>
+      <div
+        className={clsx('z-20 pb-8', appService?.hasTrafficLight ? 'mt-24' : 'mt-12')}
+        style={{ maxWidth: '420px' }}
+      >
         <ProviderLogin
           provider='google'
           handleSignIn={tauriSignIn}
