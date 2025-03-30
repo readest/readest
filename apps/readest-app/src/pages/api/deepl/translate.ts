@@ -4,9 +4,8 @@ import { supabase } from '@/utils/supabase';
 import { getUserPlan } from '@/utils/access';
 import { query as deeplQuery } from '@/utils/deepl';
 
-const DEEPL_FREE_API = process.env['DEEPL_FREE_API'] || 'https://api-free.deepl.com/v2/translate';
-const DEEPL_PRO_API = process.env['DEEPL_PRO_API'] || 'https://api.deepl.com/v2/translate';
-const DEEPL_X_FINGERPRINT = process.env['DEEPL_X_FINGERPRINT'] || '';
+const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
+const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
 
 const getUserAndToken = async (authHeader: string | undefined) => {
   if (!authHeader) return {};
@@ -28,14 +27,20 @@ const getDeepLAPIKey = (keys: string | undefined) => {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { user, token } = await getUserAndToken(req.headers['authorization']);
-  let deeplApiUrl = DEEPL_FREE_API;
+  const { DEEPL_PRO_API, DEEPL_FREE_API } = process.env;
+  const deepFreeApiUrl = DEEPL_FREE_API || DEFAULT_DEEPL_FREE_API;
+  const deeplProApiUrl = DEEPL_PRO_API || DEFAULT_DEEPL_PRO_API;
+
+  let deeplApiUrl = deepFreeApiUrl;
   let userPlan = 'free';
   if (user && token) {
     userPlan = getUserPlan(token);
-    if (userPlan === 'pro') deeplApiUrl = DEEPL_PRO_API;
+    if (userPlan === 'pro') deeplApiUrl = deeplProApiUrl;
+  } else {
+    res.status(403).json({ error: 'Not authenticated' });
   }
   const deeplAuthKey =
-    deeplApiUrl === DEEPL_PRO_API
+    deeplApiUrl === deeplProApiUrl
       ? getDeepLAPIKey(process.env['DEEPL_PRO_API_KEYS'])
       : getDeepLAPIKey(process.env['DEEPL_FREE_API_KEYS']);
 
@@ -47,19 +52,20 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     target_lang: targetLang = 'en',
   }: { text: string[]; source_lang: string; target_lang: string } = req.body;
   try {
-    try {
+    if (user && token) {
+      console.log('deeplApiUrl', deeplApiUrl);
       const response = await fetch(deeplApiUrl, {
         method: 'POST',
         headers: {
           Authorization: `DeepL-Auth-Key ${deeplAuthKey}`,
-          'X-Fingerprint': DEEPL_X_FINGERPRINT,
+          'x-fingerprint': process.env['DEEPL_X_FINGERPRINT'] || '',
           'Content-Type': 'application/json',
         },
         body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
       });
       res.status(response.status);
       res.json(await response.json());
-    } catch {
+    } else {
       const result = await deeplQuery({
         text: text[0] ?? '',
         sourceLang,
