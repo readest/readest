@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "交換點擊翻頁區域",
   "No chapters detected.": "未檢測到章節。",
   "Failed to parse the EPUB file.": "無法解析 EPUB 文件。",
-  "This book format is not supported.": "不支援此書籍格式。"
+  "This book format is not supported.": "不支援此書籍格式。",
+  "Unable to fetch the translation. Please log in first and try again.": "無法獲取翻譯。請先登入然後重試。"
 }

@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "Hoán đổi khu vực nhấp để lật trang",
   "No chapters detected.": "Không phát hiện thấy chương nào.",
   "Failed to parse the EPUB file.": "Không thể phân tích tệp EPUB.",
-  "This book format is not supported.": "Định dạng sách này không được hỗ trợ."
+  "This book format is not supported.": "Định dạng sách này không được hỗ trợ.",
+  "Unable to fetch the translation. Please log in first and try again.": "Không thể tải dịch vụ. Vui lòng đăng nhập trước và thử lại."
 }

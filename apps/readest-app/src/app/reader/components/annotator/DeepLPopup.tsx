@@ -103,7 +103,11 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
         setTranslation(translatedText);
       } catch (err) {
         console.error(err);
-        setError(_('Unable to fetch the translation. Try again later.'));
+        if (!token) {
+          setError(_('Unable to fetch the translation. Please log in first and try again.'));
+        } else {
+          setError(_('Unable to fetch the translation. Try again later.'));
+        }
       } finally {
         setLoading(false);
       }

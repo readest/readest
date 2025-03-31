@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "Intercambiar área de clic para voltear",
   "No chapters detected.": "No se detectaron capítulos.",
   "Failed to parse the EPUB file.": "Error al analizar el archivo EPUB.",
-  "This book format is not supported.": "Este formato de libro no es compatible."
+  "This book format is not supported.": "Este formato de libro no es compatible.",
+  "Unable to fetch the translation. Please log in first and try again.": "No se puede obtener la traducción. Por favor, inicia sesión primero e inténtalo de nuevo."
 }

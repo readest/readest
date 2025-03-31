@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "क्लिक-टू-फ्लिप क्षेत्र स्वैप करें",
   "No chapters detected.": "कोई अध्याय नहीं मिला।",
   "Failed to parse the EPUB file.": "EPUB फ़ाइल को पार्स करने में विफल।",
-  "This book format is not supported.": "यह पुस्तक प्रारूप समर्थित नहीं है।"
+  "This book format is not supported.": "यह पुस्तक प्रारूप समर्थित नहीं है।",
+  "Unable to fetch the translation. Please log in first and try again.": "अनुवाद प्राप्त करने में असमर्थ। कृपया पहले लॉग इन करें और पुनः प्रयास करें।"
 }

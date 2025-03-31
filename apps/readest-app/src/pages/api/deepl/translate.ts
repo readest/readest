@@ -26,6 +26,12 @@ const getDeepLAPIKey = (keys: string | undefined) => {
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  await runMiddleware(req, res, corsAllMethods);
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const { user, token } = await getUserAndToken(req.headers['authorization']);
   const { DEEPL_PRO_API, DEEPL_FREE_API } = process.env;
   const deepFreeApiUrl = DEEPL_FREE_API || DEFAULT_DEEPL_FREE_API;
@@ -44,8 +50,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       ? getDeepLAPIKey(process.env['DEEPL_PRO_API_KEYS'])
       : getDeepLAPIKey(process.env['DEEPL_FREE_API_KEYS']);
 
-  await runMiddleware(req, res, corsAllMethods);
-
   const {
     text,
     source_lang: sourceLang = 'auto',
@@ -61,7 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           'x-fingerprint': process.env['DEEPL_X_FINGERPRINT'] || '',
           'Content-Type': 'application/json',
         },
-        body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
+        body: JSON.stringify(req.body),
       });
       res.status(response.status);
       res.json(await response.json());

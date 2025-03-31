@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "Ανταλλαγή περιοχής κλικ για γύρισμα σελίδας",
   "No chapters detected.": "Δεν εντοπίστηκαν κεφάλαια.",
   "Failed to parse the EPUB file.": "Αποτυχία ανάλυσης του αρχείου EPUB.",
-  "This book format is not supported.": "Αυτή η μορφή βιβλίου δεν υποστηρίζεται."
+  "This book format is not supported.": "Αυτή η μορφή βιβλίου δεν υποστηρίζεται.",
+  "Unable to fetch the translation. Please log in first and try again.": "Αδυναμία λήψης της μετάφρασης. Παρακαλώ συνδεθείτε πρώτα και δοκιμάστε ξανά."
 }

@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "Tıkla-Çevir Alanını Değiştir",
   "No chapters detected.": "Bölüm bulunamadı.",
   "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
-  "This book format is not supported.": "Bu kitap formatı desteklenmiyor."
+  "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
+  "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin."
 }

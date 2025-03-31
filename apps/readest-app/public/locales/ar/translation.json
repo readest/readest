@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "تبديل منطقة التقليب بالنقر",
   "No chapters detected.": "لم يتم التعرف على فصول.",
   "Failed to parse the EPUB file.": "فشل في تحليل ملف EPUB.",
-  "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم."
+  "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم.",
+  "Unable to fetch the translation. Please log in first and try again.": "تعذر جلب الترجمة. يرجى تسجيل الدخول أولاً ثم المحاولة مرة أخرى."
 }

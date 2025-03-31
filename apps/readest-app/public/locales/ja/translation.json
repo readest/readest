@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "クリックめくりエリアを入れ替え",
   "No chapters detected.": "章が検出されません。",
   "Failed to parse the EPUB file.": "EPUBファイルの解析に失敗しました。",
-  "This book format is not supported.": "この書籍形式はサポートされていません。"
+  "This book format is not supported.": "この書籍形式はサポートされていません。",
+  "Unable to fetch the translation. Please log in first and try again.": "翻訳を取得できません。まずログインして再試行してください。"
 }

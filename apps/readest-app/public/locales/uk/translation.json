@@ -264,5 +264,6 @@
   "Swap Click-to-Flip Area": "Поміняти місцями область кліку для перевороту",
   "No chapters detected.": "Не виявлено жодного розділу.",
   "Failed to parse the EPUB file.": "Не вдалося розібрати файл EPUB.",
-  "This book format is not supported.": "Цей формат книги не підтримується."
+  "This book format is not supported.": "Цей формат книги не підтримується.",
+  "Unable to fetch the translation. Please log in first and try again.": "Не вдалося отримати переклад. Будь ласка, спочатку увійдіть у систему та спробуйте ще раз."
 }
