@@ -20,4 +20,8 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<SafariAuthResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn copy_uri_to_path(&self, _payload: CopyURIRequest) -> crate::Result<CopyURIResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

@@ -34,3 +34,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn copy_uri_to_path(&self, payload: CopyURIRequest) -> crate::Result<CopyURIResponse> {
+        self.0
+            .run_mobile_plugin("copy_uri_to_path", payload)
+            .map_err(Into::into)
+    }
+}

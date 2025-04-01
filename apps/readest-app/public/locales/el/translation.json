@@ -152,7 +152,6 @@
   "Text Indent": "Εσοχή κειμένου",
   "Paragraph Margin": "Περιθώριο παραγράφου",
   "Override Book Layout": "Παράκαμψη διάταξης βιβλίου",
-  "Add to Group": "Προσθήκη στην ομάδα",
   "Untitled Group": "Ομάδα χωρίς τίτλο",
   "Group Books": "Ομαδοποίηση βιβλίων",
   "Remove From Group": "Αφαίρεση από την ομάδα",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Δεν εντοπίστηκαν κεφάλαια.",
   "Failed to parse the EPUB file.": "Αποτυχία ανάλυσης του αρχείου EPUB.",
   "This book format is not supported.": "Αυτή η μορφή βιβλίου δεν υποστηρίζεται.",
-  "Unable to fetch the translation. Please log in first and try again.": "Αδυναμία λήψης της μετάφρασης. Παρακαλώ συνδεθείτε πρώτα και δοκιμάστε ξανά."
+  "Unable to fetch the translation. Please log in first and try again.": "Αδυναμία λήψης της μετάφρασης. Παρακαλώ συνδεθείτε πρώτα και δοκιμάστε ξανά.",
+  "Group": "Ομάδα"
 }

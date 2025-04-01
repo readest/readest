@@ -210,7 +210,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               )}
             >
               <LuFolderPlus />
-              <div>{_('Add to Group')}</div>
+              <div>{_('Group')}</div>
             </button>
             <button
               onClick={deleteSelectedBooks}

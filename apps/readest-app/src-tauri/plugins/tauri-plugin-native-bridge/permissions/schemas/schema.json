@@ -305,6 +305,16 @@
           "const": "deny-auth-with-safari"
         },
         {
+          "description": "Enables the copy_uri_to_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-copy-uri-to-path"
+        },
+        {
+          "description": "Denies the copy_uri_to_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-copy-uri-to-path"
+        },
+        {
           "description": "Default permissions for the plugin",
           "type": "string",
           "const": "default"

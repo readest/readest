@@ -152,7 +152,6 @@
   "Text Indent": "Thụt lề",
   "Paragraph Margin": "Lề đoạn",
   "Override Book Layout": "Ghi đè bố cục sách",
-  "Add to Group": "Thêm vào nhóm",
   "Untitled Group": "Nhóm không có tiêu đề",
   "Group Books": "Nhóm sách",
   "Remove From Group": "Xóa khỏi nhóm",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Không phát hiện thấy chương nào.",
   "Failed to parse the EPUB file.": "Không thể phân tích tệp EPUB.",
   "This book format is not supported.": "Định dạng sách này không được hỗ trợ.",
-  "Unable to fetch the translation. Please log in first and try again.": "Không thể tải dịch vụ. Vui lòng đăng nhập trước và thử lại."
+  "Unable to fetch the translation. Please log in first and try again.": "Không thể tải dịch vụ. Vui lòng đăng nhập trước và thử lại.",
+  "Group": "Nhóm"
 }

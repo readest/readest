@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-copy-uri-to-path"
+description = "Enables the copy_uri_to_path command without any pre-configured scope."
+commands.allow = ["copy_uri_to_path"]
+
+[[permission]]
+identifier = "deny-copy-uri-to-path"
+description = "Denies the copy_uri_to_path command without any pre-configured scope."
+commands.deny = ["copy_uri_to_path"]

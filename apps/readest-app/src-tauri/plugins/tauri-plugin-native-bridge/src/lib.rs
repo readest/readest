@@ -36,7 +36,10 @@ impl<R: Runtime, T: Manager<R>> crate::NativeBridgeExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("native-bridge")
-        .invoke_handler(tauri::generate_handler![commands::auth_with_safari])
+        .invoke_handler(tauri::generate_handler![
+            commands::auth_with_safari,
+            commands::copy_uri_to_path,
+        ])
         .setup(|app, api| {
             #[cfg(mobile)]
             let native_bridge = mobile::init(app, api)?;

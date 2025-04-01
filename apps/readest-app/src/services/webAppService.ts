@@ -2,6 +2,7 @@ import { Book } from '@/types/book';
 import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getCoverFilename } from '@/utils/book';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
+import { RemoteFile } from '@/utils/file';
 
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
@@ -51,6 +52,14 @@ const indexedDBFileSystem: FileSystem = {
       return URL.createObjectURL(new Blob([content]));
     } catch {
       return path;
+    }
+  },
+  async openFile(path: string, base: BaseDir) {
+    if (isValidURL(path)) {
+      return await new RemoteFile(path).open();
+    } else {
+      const content = await this.readFile(path, base, 'binary');
+      return new File([content], path);
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
@@ -173,6 +182,9 @@ const indexedDBFileSystem: FileSystem = {
       request.onsuccess = () => resolve(!!request.result);
       request.onerror = () => reject(request.error);
     });
+  },
+  getPrefix() {
+    return null;
   },
 };
 

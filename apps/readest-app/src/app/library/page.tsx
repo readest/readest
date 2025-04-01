@@ -8,7 +8,7 @@ import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/naviga
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
-import { getBaseFilename, listFormater } from '@/utils/book';
+import { getFilename, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
@@ -311,7 +311,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         }
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
-        const baseFilename = getBaseFilename(filename);
+        const baseFilename = getFilename(filename);
         failedFiles.push(baseFilename);
         const errorMessage =
           error instanceof Error
@@ -332,7 +332,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const selectFilesTauri = async () => {
-    return appService?.selectFiles('Select Books', SUPPORTED_FILE_EXTS);
+    return (await appService?.selectFiles(_('Select Books'), SUPPORTED_FILE_EXTS)) || [];
   };
 
   const selectFilesWeb = () => {
@@ -453,7 +453,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     let files;
 
     if (isTauriAppPlatform()) {
-      if (appService?.isMobile) {
+      if (appService?.isIOSApp) {
         files = (await selectFilesWeb()) as [File];
       } else {
         files = (await selectFilesTauri()) as [string];

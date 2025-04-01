@@ -59,6 +59,10 @@ export const getOSPlatform = () => {
   return '';
 };
 
+export const isContentURI = (uri: string) => {
+  return uri.startsWith('content://');
+};
+
 export const isValidURL = (url: string, allowedSchemes: string[] = ['http', 'https']) => {
   try {
     const { protocol } = new URL(url);

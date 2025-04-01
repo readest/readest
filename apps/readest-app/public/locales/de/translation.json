@@ -152,7 +152,6 @@
   "Text Indent": "Texteinzug",
   "Paragraph Margin": "Absatzrand",
   "Override Book Layout": "Buch-Layout überschreiben",
-  "Add to Group": "Zur Gruppe hinzufügen",
   "Untitled Group": "Unbenannte Gruppe",
   "Group Books": "Bücher gruppieren",
   "Remove From Group": "Aus Gruppe entfernen",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Keine Kapitel erkannt.",
   "Failed to parse the EPUB file.": "Fehler beim Parsen der EPUB-Datei.",
   "This book format is not supported.": "Dieses Buchformat wird nicht unterstützt.",
-  "Unable to fetch the translation. Please log in first and try again.": "Übersetzung konnte nicht abgerufen werden. Bitte zuerst anmelden und erneut versuchen."
+  "Unable to fetch the translation. Please log in first and try again.": "Übersetzung konnte nicht abgerufen werden. Bitte zuerst anmelden und erneut versuchen.",
+  "Group": "Gruppieren"
 }

@@ -152,7 +152,6 @@
   "Text Indent": "مسافة بادئة للنص",
   "Paragraph Margin": "هامش الفقرة",
   "Override Book Layout": "تجاوز تخطيط الكتاب",
-  "Add to Group": "إضافة إلى مجموعة",
   "Untitled Group": "مجموعة بدون عنوان",
   "Group Books": "تجميع الكتب",
   "Remove From Group": "إزالة من المجموعة",
@@ -265,5 +264,6 @@
   "No chapters detected.": "لم يتم التعرف على فصول.",
   "Failed to parse the EPUB file.": "فشل في تحليل ملف EPUB.",
   "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم.",
-  "Unable to fetch the translation. Please log in first and try again.": "تعذر جلب الترجمة. يرجى تسجيل الدخول أولاً ثم المحاولة مرة أخرى."
+  "Unable to fetch the translation. Please log in first and try again.": "تعذر جلب الترجمة. يرجى تسجيل الدخول أولاً ثم المحاولة مرة أخرى.",
+  "Group": "تجميع"
 }

@@ -1,6 +1,7 @@
 import {
   exists,
   mkdir,
+  open as openFile,
   readTextFile,
   readFile,
   writeTextFile,
@@ -9,16 +10,19 @@ import {
   remove,
   copyFile,
   BaseDirectory,
+  WriteFileOptions,
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { open, message } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, message } from '@tauri-apps/plugin-dialog';
 import { join, appDataDir } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
 
 import { Book } from '@/types/book';
 import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
-import { getCoverFilename } from '@/utils/book';
-import { isValidURL } from '@/utils/misc';
+import { isContentURI, isValidURL } from '@/utils/misc';
+import { getCoverFilename, getFilename } from '@/utils/book';
+import { copyURIToPath } from '@/utils/bridge';
+import { NativeFile, RemoteFile } from '@/utils/file';
 
 import { BaseAppService } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
@@ -47,6 +51,12 @@ const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDi
         fp: `${LOCAL_BOOKS_SUBDIR}/${fp}`,
         base,
       };
+    case 'None':
+      return {
+        baseDir: 0,
+        fp,
+        base,
+      };
     default:
       return {
         baseDir: BaseDirectory.Temp,
@@ -64,9 +74,45 @@ export const nativeFileSystem: FileSystem = {
     const content = await this.readFile(path, base, 'binary');
     return URL.createObjectURL(new Blob([content]));
   },
+  async openFile(path: string, base: BaseDir, name?: string) {
+    const { fp, baseDir } = resolvePath(path, base);
+    const fname = name || getFilename(fp);
+    if (isValidURL(path)) {
+      return await new RemoteFile(path, name).open();
+    } else if (isContentURI(path)) {
+      return await new NativeFile(fp, fname, base ? baseDir : null).open();
+    } else {
+      const prefix = this.getPrefix(base);
+      if (prefix && OS_TYPE !== 'android') {
+        // NOTE: RemoteFile currently performs about 2× faster than NativeFile
+        // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
+        // Once the bug is resolved, we should switch back to using NativeFile.
+        // RemoteFile is not usable on Android due to unknown issues of range fetch with Android WebView.
+        const absolutePath = await join(prefix, path);
+        return await new RemoteFile(this.getURL(absolutePath), path).open();
+      } else {
+        return await new NativeFile(fp, fname, base ? baseDir : null).open();
+      }
+    }
+  },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    const { fp, baseDir } = resolvePath(dstPath, base);
-    await copyFile(srcPath, fp, base && { toPathBaseDir: baseDir });
+    if (isContentURI(srcPath)) {
+      const prefix = this.getPrefix(base);
+      if (!prefix) {
+        throw new Error('Invalid base directory');
+      }
+      const res = await copyURIToPath({
+        uri: srcPath,
+        dst: `${prefix}/${dstPath}`,
+      });
+      if (!res.success) {
+        console.error('Failed to copy file:', res);
+        throw new Error('Failed to copy file');
+      }
+    } else {
+      const { fp, baseDir } = resolvePath(dstPath, base);
+      await copyFile(srcPath, fp, base && { toPathBaseDir: baseDir });
+    }
   },
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
     const { fp, baseDir } = resolvePath(path, base);
@@ -75,12 +121,32 @@ export const nativeFileSystem: FileSystem = {
       ? (readTextFile(fp, base && { baseDir }) as Promise<string>)
       : ((await readFile(fp, base && { baseDir })).buffer as ArrayBuffer);
   },
-  async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer) {
+  async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File) {
+    // NOTE: this could be very slow for large files and might block the UI thread
+    // so do not use this for large files
     const { fp, baseDir } = resolvePath(path, base);
 
-    return typeof content === 'string'
-      ? writeTextFile(fp, content, base && { baseDir })
-      : writeFile(fp, new Uint8Array(content), base && { baseDir });
+    if (typeof content === 'string') {
+      return writeTextFile(fp, content, base && { baseDir });
+    } else if (content instanceof File) {
+      const writeOptions = { write: true, create: true, baseDir } as WriteFileOptions;
+      // TODO: use writeFile directly when @tauri-apps/plugin-fs@2.2.1 is released
+      // return writeFile(fp, content.stream(), base && writeOptions);
+      const file = await openFile(fp, base && writeOptions);
+      const reader = content.stream().getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          await file.write(value);
+        }
+      } finally {
+        reader.releaseLock();
+        await file.close();
+      }
+    } else {
+      return writeFile(fp, new Uint8Array(content), base && { baseDir });
+    }
   },
   async removeFile(path: string, base: BaseDir) {
     const { fp, baseDir } = resolvePath(path, base);
@@ -118,6 +184,9 @@ export const nativeFileSystem: FileSystem = {
       return false;
     }
   },
+  getPrefix() {
+    return null;
+  },
 };
 
 export class NativeAppService extends BaseAppService {
@@ -145,7 +214,7 @@ export class NativeAppService extends BaseAppService {
   }
 
   async selectFiles(name: string, extensions: string[]): Promise<string[]> {
-    const selected = await open({
+    const selected = await openDialog({
       multiple: true,
       filters: [{ name, extensions }],
     });

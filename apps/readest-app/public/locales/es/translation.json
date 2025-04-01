@@ -152,7 +152,6 @@
   "Text Indent": "Sangría de texto",
   "Paragraph Margin": "Margen de párrafo",
   "Override Book Layout": "Sobrescribir diseño del libro",
-  "Add to Group": "Añadir a grupo",
   "Untitled Group": "Grupo sin título",
   "Group Books": "Agrupar libros",
   "Remove From Group": "Eliminar del grupo",
@@ -265,5 +264,6 @@
   "No chapters detected.": "No se detectaron capítulos.",
   "Failed to parse the EPUB file.": "Error al analizar el archivo EPUB.",
   "This book format is not supported.": "Este formato de libro no es compatible.",
-  "Unable to fetch the translation. Please log in first and try again.": "No se puede obtener la traducción. Por favor, inicia sesión primero e inténtalo de nuevo."
+  "Unable to fetch the translation. Please log in first and try again.": "No se puede obtener la traducción. Por favor, inicia sesión primero e inténtalo de nuevo.",
+  "Group": "Grupo"
 }
