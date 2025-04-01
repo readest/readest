@@ -1,3 +1,18 @@
 [workspace]
-members = ["apps/readest-app/src-tauri"]
+members = [
+  "apps/readest-app/src-tauri",
+  "packages/tauri/crates/tauri",
+]
 resolver = "2"
+
+[workspace.package]
+authors = ["Bilingify LLC"]
+homepage = "https://readest.com"
+license = "AGPL-3.0"
+repository = "https://github.com/readest/readest"
+categories = []
+edition = "2021"
+rust-version = "1.77.2"
+
+[patch.crates-io]
+tauri = { path = "packages/tauri/crates/tauri" }

@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.29": {
+      "date": "2025-04-02",
+      "notes": [
+        "Improved Login on Android without needing to rely on external Chrome browser",
+        "Local large book files now load more efficiently on Android",
+        "Balanced the load of online service between different types of users to keep things running smoothly for everyone"
+      ]
+    },
     "0.9.28": {
       "date": "2025-03-30",
       "notes": [

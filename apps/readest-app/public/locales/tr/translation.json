@@ -152,7 +152,6 @@
   "Text Indent": "Metin Girintisi",
   "Paragraph Margin": "Paragraf Kenarı",
   "Override Book Layout": "Kitap Düzenini Geçersiz Kıl",
-  "Add to Group": "Gruba Ekle",
   "Untitled Group": "Başlıksız Grup",
   "Group Books": "Kitapları Grupla",
   "Remove From Group": "Grubu Kaldır",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Bölüm bulunamadı.",
   "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
   "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
-  "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin."
+  "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin.",
+  "Group": "Grup"
 }

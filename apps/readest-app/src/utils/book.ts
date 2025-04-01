@@ -1,6 +1,6 @@
 import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
-import { getUserLang, makeSafeFilename } from './misc';
+import { getUserLang, isContentURI, isValidURL, makeSafeFilename } from './misc';
 import { getStorageType } from './object';
 
 export const getDir = (book: Book) => {
@@ -30,6 +30,15 @@ export const getConfigFilename = (book: Book) => {
 };
 export const isBookFile = (filename: string) => {
   return Object.values(EXTS).includes(filename.split('.').pop()!);
+};
+export const getFilename = (fileOrUri: string) => {
+  if (isValidURL(fileOrUri) || isContentURI(fileOrUri)) {
+    fileOrUri = decodeURI(fileOrUri);
+  }
+  const normalizedPath = fileOrUri.replace(/\\/g, '/');
+  const parts = normalizedPath.split('/');
+  const lastPart = parts.pop()!;
+  return lastPart.split('?')[0]!;
 };
 export const getBaseFilename = (filename: string) => {
   const normalizedPath = filename.replace(/\\/g, '/');

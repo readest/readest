@@ -14,8 +14,8 @@ import {
   INIT_BOOK_CONFIG,
   formatTitle,
   formatAuthors,
+  getFilename,
 } from '@/utils/book';
-import { RemoteFile } from '@/utils/file';
 import { partialMD5 } from '@/utils/md5';
 import { BookDoc, DocumentLoader } from '@/libs/document';
 import {
@@ -32,7 +32,7 @@ import {
   DEFAULT_SYSTEM_SETTINGS,
   DEFAULT_CJK_VIEW_SETTINGS,
 } from './constants';
-import { getOSPlatform, isCJKEnv, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
 import { ProgressHandler } from '@/utils/transfer';
@@ -117,6 +117,12 @@ export abstract class BaseAppService implements AppService {
     }
 
     this.localBooksDir = settings.localBooksDir;
+    this.fs.getPrefix = (baseDir: BaseDir) => {
+      if (baseDir === 'Books') {
+        return this.localBooksDir;
+      }
+      return null;
+    };
     return settings;
   }
 
@@ -127,7 +133,12 @@ export abstract class BaseAppService implements AppService {
   }
 
   async importBook(
-    file: string | File, // file path/url or file object
+    // file might be:
+    // 1. absolute path for local file
+    // 2. remote url
+    // 3. content provider uri
+    // 4. File object from browsers
+    file: string | File,
     books: Book[],
     saveBook: boolean = true,
     saveCover: boolean = true,
@@ -146,8 +157,8 @@ export abstract class BaseAppService implements AppService {
 
       try {
         if (typeof file === 'string') {
-          filename = file;
-          fileobj = await new RemoteFile(this.fs.getURL(file), file).open();
+          filename = getFilename(file);
+          fileobj = await this.fs.openFile(file, 'None');
         } else {
           filename = file.name;
           fileobj = file;
@@ -185,6 +196,12 @@ export abstract class BaseAppService implements AppService {
         downloadedAt: Date.now(),
         updatedAt: Date.now(),
       };
+      // update book metadata when reimporting the same book
+      if (existingBook) {
+        existingBook.title = book.title;
+        existingBook.author = book.author;
+      }
+
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
         await this.fs.createDir(getDir(book), 'Books');
       }
@@ -193,10 +210,14 @@ export abstract class BaseAppService implements AppService {
         !transient &&
         (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)
       ) {
-        if (typeof file === 'string' && !isValidURL(file) && !filename.endsWith('.txt')) {
+        if (typeof file === 'string' && isContentURI(file)) {
+          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+        } else if (filename.endsWith('.txt')) {
+          await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+        } else if (typeof file === 'string' && !isValidURL(file)) {
           await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else {
-          await this.fs.writeFile(getLocalBookFilename(book), 'Books', await fileobj.arrayBuffer());
+          await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
         }
       }
       if (saveCover && (!(await this.fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
@@ -209,19 +230,18 @@ export abstract class BaseAppService implements AppService {
       if (!existingBook) {
         await this.saveBookConfig(book, INIT_BOOK_CONFIG);
         books.splice(0, 0, book);
-      } else {
-        existingBook.title = book.title;
-        existingBook.author = book.author;
-        if (transient) {
-          existingBook.filePath = filename;
-        }
       }
 
-      if (transient) {
-        book.filePath = filename;
-      }
-      if (typeof file === 'string' && isValidURL(file)) {
-        book.url = file;
+      // update file links with url or path or content uri
+      if (typeof file === 'string') {
+        if (isValidURL(file)) {
+          book.url = file;
+          if (existingBook) existingBook.url = file;
+        }
+        if (transient) {
+          book.filePath = file;
+          if (existingBook) existingBook.filePath = file;
+        }
       }
       book.coverImageUrl = await this.generateCoverImageUrl(book);
 
@@ -258,14 +278,8 @@ export abstract class BaseAppService implements AppService {
   }
 
   async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {
-    let file: File;
-    if (this.appPlatform === 'web') {
-      const content = await this.fs.readFile(lfp, 'Books', 'binary');
-      file = new File([content], cfp);
-    } else {
-      file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${lfp}`), cfp).open();
-    }
     console.log('Uploading file:', lfp, 'to', cfp);
+    const file = await this.fs.openFile(lfp, 'Books', cfp);
     const localFullpath = `${this.localBooksDir}/${lfp}`;
     await uploadFile(file, localFullpath, handleProgress, hash);
   }
@@ -284,7 +298,7 @@ export abstract class BaseAppService implements AppService {
     }
     if (!bookFileExist && book.url) {
       // download the book from the URL
-      const fileobj = await new RemoteFile(book.url).open();
+      const fileobj = await this.fs.openFile(book.url, 'None');
       await this.fs.writeFile(getLocalBookFilename(book), 'Books', await fileobj.arrayBuffer());
       bookFileExist = true;
     }
@@ -376,17 +390,11 @@ export abstract class BaseAppService implements AppService {
     let file: File;
     const fp = getLocalBookFilename(book);
     if (await this.fs.exists(fp, 'Books')) {
-      // TODO: fix random access for android
-      if (this.appPlatform === 'web' || getOSPlatform() === 'android') {
-        const content = await this.fs.readFile(fp, 'Books', 'binary');
-        file = new File([content], fp);
-      } else {
-        file = await new RemoteFile(this.fs.getURL(`${this.localBooksDir}/${fp}`), fp).open();
-      }
+      file = await this.fs.openFile(fp, 'Books');
     } else if (book.filePath) {
-      file = await new RemoteFile(this.fs.getURL(book.filePath), fp).open();
+      file = await this.fs.openFile(book.filePath, 'None');
     } else if (book.url) {
-      file = await new RemoteFile(book.url).open();
+      file = await this.fs.openFile(book.url, 'None');
     } else {
       throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
     }

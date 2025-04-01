@@ -217,14 +217,11 @@ pub fn run() {
                 app.deep_link().register_all()?;
             }
 
-            #[cfg(desktop)]
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .build(),
+            )?;
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
 

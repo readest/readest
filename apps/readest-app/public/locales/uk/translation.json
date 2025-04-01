@@ -152,7 +152,6 @@
   "Text Indent": "Відступ тексту",
   "Paragraph Margin": "Відступ абзацу",
   "Override Book Layout": "Перевизначити макет книги",
-  "Add to Group": "Додати до групи",
   "Untitled Group": "Група без назви",
   "Group Books": "Групувати книги",
   "Remove From Group": "Видалити з групи",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Не виявлено жодного розділу.",
   "Failed to parse the EPUB file.": "Не вдалося розібрати файл EPUB.",
   "This book format is not supported.": "Цей формат книги не підтримується.",
-  "Unable to fetch the translation. Please log in first and try again.": "Не вдалося отримати переклад. Будь ласка, спочатку увійдіть у систему та спробуйте ще раз."
+  "Unable to fetch the translation. Please log in first and try again.": "Не вдалося отримати переклад. Будь ласка, спочатку увійдіть у систему та спробуйте ще раз.",
+  "Group": "Група"
 }

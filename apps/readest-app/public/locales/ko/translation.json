@@ -152,7 +152,6 @@
   "Text Indent": "들여쓰기",
   "Paragraph Margin": "단락 여백",
   "Override Book Layout": "책 레이아웃 덮어쓰기",
-  "Add to Group": "그룹에 추가",
   "Untitled Group": "제목 없는 그룹",
   "Group Books": "책 그룹화",
   "Remove From Group": "그룹에서 제거",
@@ -265,5 +264,6 @@
   "No chapters detected.": "장 발견되지 않음.",
   "Failed to parse the EPUB file.": "EPUB 파일 구문 분석 실패.",
   "This book format is not supported.": "이 책 형식은 지원되지 않습니다.",
-  "Unable to fetch the translation. Please log in first and try again.": "번역을 가져올 수 없습니다. 먼저 로그인하고 다시 시도하세요."
+  "Unable to fetch the translation. Please log in first and try again.": "번역을 가져올 수 없습니다. 먼저 로그인하고 다시 시도하세요.",
+  "Group": "그룹"
 }

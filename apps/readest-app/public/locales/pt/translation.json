@@ -152,7 +152,6 @@
   "Text Indent": "Recuo de Texto",
   "Paragraph Margin": "Margem de Parágrafo",
   "Override Book Layout": "Sobrescrever Layout do Livro",
-  "Add to Group": "Adicionar ao Grupo",
   "Untitled Group": "Grupo Sem Título",
   "Group Books": "Agrupar Livros",
   "Remove From Group": "Remover do Grupo",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Nenhum capítulo detectado.",
   "Failed to parse the EPUB file.": "Falha ao analisar o arquivo EPUB.",
   "This book format is not supported.": "Este formato de livro não é suportado.",
-  "Unable to fetch the translation. Please log in first and try again.": "Não foi possível buscar a tradução. Faça login primeiro e tente novamente."
+  "Unable to fetch the translation. Please log in first and try again.": "Não foi possível buscar a tradução. Faça login primeiro e tente novamente.",
+  "Group": "Grupo"
 }

@@ -63,6 +63,7 @@
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
     "core:window:allow-set-fullscreen",
+    "log:default",
     "shell:default",
     "process:default",
     "process:allow-exit",

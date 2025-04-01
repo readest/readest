@@ -152,7 +152,6 @@
   "Text Indent": "首行縮進",
   "Paragraph Margin": "段間距",
   "Override Book Layout": "覆蓋版面佈局",
-  "Add to Group": "添加到組",
   "Untitled Group": "無標題組",
   "Group Books": "分組書籍",
   "Remove From Group": "從組中移除",
@@ -265,5 +264,6 @@
   "No chapters detected.": "未檢測到章節。",
   "Failed to parse the EPUB file.": "無法解析 EPUB 文件。",
   "This book format is not supported.": "不支援此書籍格式。",
-  "Unable to fetch the translation. Please log in first and try again.": "無法獲取翻譯。請先登入然後重試。"
+  "Unable to fetch the translation. Please log in first and try again.": "無法獲取翻譯。請先登入然後重試。",
+  "Group": "分組"
 }

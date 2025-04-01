@@ -152,7 +152,6 @@
   "Text Indent": "Отступ текста",
   "Paragraph Margin": "Отступ абзаца",
   "Override Book Layout": "Переопределить макет книги",
-  "Add to Group": "Добавить в группу",
   "Untitled Group": "Группа без названия",
   "Group Books": "Группировать книги",
   "Remove From Group": "Удалить из группы",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Не обнаружено глав.",
   "Failed to parse the EPUB file.": "Не удалось разобрать файл EPUB.",
   "This book format is not supported.": "Этот формат книги не поддерживается.",
-  "Unable to fetch the translation. Please log in first and try again.": "Не удалось получить перевод. Пожалуйста, войдите в систему и попробуйте снова."
+  "Unable to fetch the translation. Please log in first and try again.": "Не удалось получить перевод. Пожалуйста, войдите в систему и попробуйте снова.",
+  "Group": "Группа"
 }

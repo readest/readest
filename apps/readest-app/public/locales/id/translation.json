@@ -152,7 +152,6 @@
   "Text Indent": "Indentasi Teks",
   "Paragraph Margin": "Margin Paragraf",
   "Override Book Layout": "Ganti Tata Letak Buku",
-  "Add to Group": "Tambahkan ke Grup",
   "Untitled Group": "Grup Tanpa Judul",
   "Group Books": "Grupkan Buku",
   "Remove From Group": "Hapus dari Grup",
@@ -265,5 +264,6 @@
   "No chapters detected.": "Tidak ada bab yang terdeteksi.",
   "Failed to parse the EPUB file.": "Gagal mengurai file EPUB.",
   "This book format is not supported.": "Format buku ini tidak didukung.",
-  "Unable to fetch the translation. Please log in first and try again.": "Tidak dapat mengambil terjemahan. Silakan masuk terlebih dahulu dan coba lagi."
+  "Unable to fetch the translation. Please log in first and try again.": "Tidak dapat mengambil terjemahan. Silakan masuk terlebih dahulu dan coba lagi.",
+  "Group": "Grup"
 }
