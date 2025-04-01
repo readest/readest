@@ -25,12 +25,17 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct NativeBridge<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn auth_with_safari(
-        &self,
-        payload: SafariAuthRequest,
-    ) -> crate::Result<SafariAuthResponse> {
+    pub fn auth_with_safari(&self, payload: AuthRequest) -> crate::Result<AuthResponse> {
         self.0
             .run_mobile_plugin("auth_with_safari", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn auth_with_custom_tab(&self, payload: AuthRequest) -> crate::Result<AuthResponse> {
+        self.0
+            .run_mobile_plugin("auth_with_custom_tab", payload)
             .map_err(Into::into)
     }
 }

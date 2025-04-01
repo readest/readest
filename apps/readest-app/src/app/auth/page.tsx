@@ -23,7 +23,7 @@ import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oau
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
-import { authWithSafari } from './utils/safariAuth';
+import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import { READEST_WEB_BASE_URL } from '@/services/constants';
 import WindowButtons from '@/components/WindowButtons';
 
@@ -42,7 +42,7 @@ interface ProviderLoginProp {
 }
 
 const WEB_AUTH_CALLBACK = `${READEST_WEB_BASE_URL}/auth/callback`;
-const DEEPLINK_CALLBACK = 'readest://auth/callback';
+const DEEPLINK_CALLBACK = 'readest://auth-callback';
 
 const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Icon, label }) => {
   return (
@@ -75,10 +75,8 @@ export default function AuthPage() {
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
-      if (appService?.isIOSApp) {
+      if (appService?.isMobile) {
         return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
-      } else if (appService?.isAndroidApp) {
-        return WEB_AUTH_CALLBACK;
       }
       return DEEPLINK_CALLBACK;
     }
@@ -132,6 +130,11 @@ export default function AuthPage() {
     // for other platforms, open the OAuth URL in the default browser
     if (appService?.isIOSApp) {
       const res = await authWithSafari({ authUrl: data.url });
+      if (res) {
+        handleOAuthUrl(res.redirectUrl);
+      }
+    } else if (appService?.isAndroidApp) {
+      const res = await authWithCustomTab({ authUrl: data.url });
       if (res) {
         handleOAuthUrl(res.redirectUrl);
       }

@@ -1,4 +1,8 @@
-const COMMANDS: &[&str] = &["auth_with_safari", "copy_uri_to_path"];
+const COMMANDS: &[&str] = &[
+    "auth_with_safari",
+    "auth_with_custom_tab",
+    "copy_uri_to_path",
+];
 
 fn main() {
     tauri_plugin::Builder::new(COMMANDS)

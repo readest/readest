@@ -1,7 +1,10 @@
 package com.readest.native_bridge
 
 import android.app.Activity
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
+import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
@@ -11,7 +14,7 @@ import app.tauri.plugin.Invoke
 import java.io.*
 
 @InvokeArg
-class SafariAuthRequestArgs {
+class AuthRequestArgs {
   var authUrl: String? = null
 }
 
@@ -24,14 +27,25 @@ class CopyURIRequestArgs {
 @TauriPlugin
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = NativeBridge()
+    private var redirectScheme = "readest"
+    private var redirectHost = "auth-callback"
+
+    companion object {
+        var pendingInvoke: Invoke? = null
+    }
 
     @Command
-    fun auth_with_safari(invoke: Invoke) {
-        val args = invoke.parseArgs(SafariAuthRequestArgs::class.java)
+    fun auth_with_custom_tab(invoke: Invoke) {
+        val args = invoke.parseArgs(AuthRequestArgs::class.java)
+        val uri = Uri.parse(args.authUrl)
 
-        val ret = JSObject()
-        ret.put("redirectUrl", implementation.auth_with_safari(args.authUrl ?: ""))
-        invoke.resolve(ret)
+        val customTabsIntent = CustomTabsIntent.Builder().build()
+        customTabsIntent.intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+
+        Log.d("NativeBridgePlugin", "Launching OAuth URL: ${args.authUrl}")
+        customTabsIntent.launchUrl(activity, uri)
+
+        pendingInvoke = invoke
     }
 
     @Command

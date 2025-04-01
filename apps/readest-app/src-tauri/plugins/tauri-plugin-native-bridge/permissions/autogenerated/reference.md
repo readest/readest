@@ -3,6 +3,7 @@
 Default permissions for the plugin
 
 - `allow-auth-with-safari`
+- `allow-auth-with-custom-tab`
 - `allow-copy-uri-to-path`
 
 ## Permission Table
@@ -13,6 +14,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`native-bridge:allow-auth-with-custom-tab`
+
+</td>
+<td>
+
+Enables the auth_with_custom_tab command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-auth-with-custom-tab`
+
+</td>
+<td>
+
+Denies the auth_with_custom_tab command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>

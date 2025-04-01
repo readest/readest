@@ -7,9 +7,17 @@ use crate::Result;
 #[command]
 pub(crate) async fn auth_with_safari<R: Runtime>(
     app: AppHandle<R>,
-    payload: SafariAuthRequest,
-) -> Result<SafariAuthResponse> {
+    payload: AuthRequest,
+) -> Result<AuthResponse> {
     app.native_bridge().auth_with_safari(payload)
+}
+
+#[command]
+pub(crate) async fn auth_with_custom_tab<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AuthRequest,
+) -> Result<AuthResponse> {
+    app.native_bridge().auth_with_custom_tab(payload)
 }
 
 #[command]

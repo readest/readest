@@ -14,10 +14,11 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct NativeBridge<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn auth_with_safari(
-        &self,
-        _payload: SafariAuthRequest,
-    ) -> crate::Result<SafariAuthResponse> {
+    pub fn auth_with_safari(&self, _payload: AuthRequest) -> crate::Result<AuthResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn auth_with_custom_tab(&self, _payload: AuthRequest) -> crate::Result<AuthResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 

@@ -295,6 +295,16 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the auth_with_custom_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-auth-with-custom-tab"
+        },
+        {
+          "description": "Denies the auth_with_custom_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-auth-with-custom-tab"
+        },
+        {
           "description": "Enables the auth_with_safari command without any pre-configured scope.",
           "type": "string",
           "const": "allow-auth-with-safari"

@@ -38,6 +38,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("native-bridge")
         .invoke_handler(tauri::generate_handler![
             commands::auth_with_safari,
+            commands::auth_with_custom_tab,
             commands::copy_uri_to_path,
         ])
         .setup(|app, api| {
