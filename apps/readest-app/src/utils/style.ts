@@ -73,8 +73,9 @@ const getFontStyles = (
       font-size: ${fontSize * 3}px;
     }
     body * {
-      font-family: revert ${overrideFont ? '!important' : ''};
-      font-family: inherit;
+      ${overrideFont ? 'font-family: revert !important' : ''};
+      ${overrideFont ? 'font-size: revert  !important' : ''};
+      ${overrideFont ? 'color: revert !important' : ''};
     }
   `;
   return fontStyles;

@@ -78,7 +78,7 @@ const FoliateViewer: React.FC<{
 
   const docLoadHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    console.log('doc loaded:', detail);
+    console.log('doc index loaded:', detail.index);
     if (detail.doc) {
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
