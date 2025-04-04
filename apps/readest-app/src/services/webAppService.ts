@@ -54,12 +54,12 @@ const indexedDBFileSystem: FileSystem = {
       return path;
     }
   },
-  async openFile(path: string, base: BaseDir) {
+  async openFile(path: string, base: BaseDir, filename?: string) {
     if (isValidURL(path)) {
-      return await new RemoteFile(path).open();
+      return await new RemoteFile(path, filename).open();
     } else {
       const content = await this.readFile(path, base, 'binary');
-      return new File([content], path);
+      return new File([content], filename || path);
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
