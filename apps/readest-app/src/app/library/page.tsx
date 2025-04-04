@@ -332,7 +332,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const selectFilesTauri = async () => {
-    return (await appService?.selectFiles(_('Select Books'), SUPPORTED_FILE_EXTS)) || [];
+    const exts = appService?.isAndroidApp ? [] : SUPPORTED_FILE_EXTS;
+    const files = (await appService?.selectFiles(_('Select Books'), exts)) || [];
+    return files.filter((file) => SUPPORTED_FILE_EXTS.some((ext) => file.endsWith(`.${ext}`)));
   };
 
   const selectFilesWeb = () => {
