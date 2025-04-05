@@ -297,37 +297,44 @@
         {
           "description": "Enables the auth_with_custom_tab command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-auth-with-custom-tab"
+          "const": "allow-auth-with-custom-tab",
+          "markdownDescription": "Enables the auth_with_custom_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the auth_with_custom_tab command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-auth-with-custom-tab"
+          "const": "deny-auth-with-custom-tab",
+          "markdownDescription": "Denies the auth_with_custom_tab command without any pre-configured scope."
         },
         {
           "description": "Enables the auth_with_safari command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-auth-with-safari"
+          "const": "allow-auth-with-safari",
+          "markdownDescription": "Enables the auth_with_safari command without any pre-configured scope."
         },
         {
           "description": "Denies the auth_with_safari command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-auth-with-safari"
+          "const": "deny-auth-with-safari",
+          "markdownDescription": "Denies the auth_with_safari command without any pre-configured scope."
         },
         {
           "description": "Enables the copy_uri_to_path command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-copy-uri-to-path"
+          "const": "allow-copy-uri-to-path",
+          "markdownDescription": "Enables the copy_uri_to_path command without any pre-configured scope."
         },
         {
           "description": "Denies the copy_uri_to_path command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-copy-uri-to-path"
+          "const": "deny-copy-uri-to-path",
+          "markdownDescription": "Denies the copy_uri_to_path command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`",
           "type": "string",
-          "const": "default"
+          "const": "default",
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`"
         }
       ]
     }

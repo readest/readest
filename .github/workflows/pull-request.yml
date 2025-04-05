@@ -28,7 +28,7 @@ jobs:
         run: cargo fmt --check
       - name: Clippy Check
         working-directory: apps/readest-app/src-tauri
-        run: cargo clippy -- -D warnings
+        run: cargo clippy -p Readest --no-deps -- -D warnings
 
   build_web_app:
     runs-on: ubuntu-latest

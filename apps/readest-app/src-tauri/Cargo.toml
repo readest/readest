@@ -1,6 +1,6 @@
 [package]
 name = "Readest"
-version = "0.2.1"
+version = "0.2.2"
 description = "Your online library"
 authors = ["Bilingify LLC"]
 license = ""
@@ -15,7 +15,7 @@ name = "readestlib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0.3", features = [] }
+tauri-build = { version = "2.1.1", features = [] }
 
 [dependencies]
 serde_json = "1.0"
@@ -31,20 +31,20 @@ reqwest = { version = "0.12", default-features = false, features = [
   "stream",
 ] }
 # FIXME: remove the devtools feature in production
-tauri = { version = "2.4.0", features = [ "protocol-asset", "devtools"] }
-tauri-build = "2.1.0"
+tauri = { version = "2.4.1", features = [ "protocol-asset", "devtools"] }
+tauri-build = "2.1.1"
 tauri-plugin-log = "2.3.1"
-tauri-plugin-fs = "2.2.0"
-tauri-plugin-dialog = "2.2.0"
+tauri-plugin-fs = "2.2.1"
+tauri-plugin-dialog = "2.2.1"
 tauri-plugin-os = "2.2.1"
-tauri-plugin-http = "2.4.2"
-tauri-plugin-shell = "2.2.0"
-tauri-plugin-process = "2.2.0"
+tauri-plugin-http = "2.4.3"
+tauri-plugin-shell = "2.2.1"
+tauri-plugin-process = "2.2.1"
 tauri-plugin-oauth = "2"
-tauri-plugin-opener = "2.2.2"
-tauri-plugin-deep-link = "2"
+tauri-plugin-opener = "2.2.6"
+tauri-plugin-deep-link = "2.2.1"
 tauri-plugin-sign-in-with-apple = "1.0.2"
-tauri-plugin-haptics = "2.2.3"
+tauri-plugin-haptics = "2.2.4"
 tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 
 [target."cfg(target_os = \"macos\")".dependencies]
@@ -54,7 +54,7 @@ rand = "0.8"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-cli = "2"
-tauri-plugin-single-instance = "2.2.0"
-tauri-plugin-updater = "2"
-tauri-plugin-window-state = "2.2.0"
+tauri-plugin-single-instance = "2.2.3"
+tauri-plugin-updater = "2.7.0"
+tauri-plugin-window-state = "2.2.2"
 font-enumeration = "0.9.0"
