@@ -26,7 +26,9 @@ const getFontStyles = (
   minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
+  themeCode: ThemeCode,
 ) => {
+  const { primary } = themeCode;
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
@@ -73,9 +75,18 @@ const getFontStyles = (
       font-size: ${fontSize * 3}px;
     }
     body * {
-      ${overrideFont ? 'font-family: revert !important' : ''};
-      ${overrideFont ? 'font-size: revert  !important' : ''};
-      ${overrideFont ? 'color: revert !important' : ''};
+      ${overrideFont ? 'font-family: revert !important;' : ''}
+      ${overrideFont ? 'font-size: revert  !important;' : ''}
+      ${overrideFont ? 'color: revert !important;' : ''}
+    }
+    a:any-link {
+      ${overrideFont ? `color: ${primary};` : ''}
+    }
+    /* https://github.com/whatwg/html/issues/5426 */
+    @media (prefers-color-scheme: dark) {
+      a:link {
+        ${overrideFont ? `color: lightblue;` : ''}
+      }
     }
   `;
   return fontStyles;
@@ -142,29 +153,15 @@ const getLayoutStyles = (
   zoomLevel: number,
   writingMode: string,
   vertical: boolean,
-  bg: string,
-  fg: string,
-  primary: string,
-  isDarkMode: boolean,
-) => `
+  themeCode: ThemeCode,
+) => {
+  const { bg, fg, primary, isDarkMode } = themeCode;
+  const layoutStyle = `
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
     color-scheme: ${isDarkMode ? 'dark' : 'light'};
     color: ${fg};
   }
-  a:any-link {
-    color: ${primary} ${isDarkMode ? '!important' : ''};
-  }
-  aside[epub|type~="footnote"] {
-    display: none;
-  }
-  /* https://github.com/whatwg/html/issues/5426 */
-  @media (prefers-color-scheme: dark) {
-    a:link {
-        color: lightblue;
-    }
-  }
-  
   html {
     --theme-bg-color: ${bg};
     --theme-fg-color: ${fg};
@@ -254,6 +251,10 @@ const getLayoutStyles = (
     ${vertical ? `vertical-align: unset;` : ''}
   }
 
+  aside[epub|type~="footnote"] {
+    display: none;
+  }
+
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
@@ -268,6 +269,8 @@ const getLayoutStyles = (
     border-color: unset;
   }
 `;
+  return layoutStyle;
+};
 
 export const getFootnoteStyles = () => `
   .duokan-footnote-content,
@@ -355,10 +358,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.zoomLevel! / 100.0,
     viewSettings.writingMode!,
     viewSettings.vertical!,
-    themeCode.bg,
-    themeCode.fg,
-    themeCode.primary,
-    themeCode.isDarkMode,
+    themeCode,
   );
   // scale the font size on-the-fly so that we can sync the same font size on different devices
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
@@ -372,6 +372,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
+    themeCode,
   );
   const userStylesheet = viewSettings.userStylesheet!;
   return `${layoutStyles}\n${fontStyles}\n${fontfacesCSS}\n${userStylesheet}`;
