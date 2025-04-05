@@ -50,7 +50,12 @@ class DeferredBlob extends Blob {
   }
 }
 
-export class NativeFile extends File {
+export interface ClosableFile extends File {
+  open(): Promise<this>;
+  close(): Promise<void>;
+}
+
+export class NativeFile extends File implements ClosableFile {
   #handle: FileHandle | null = null;
   #fp: string;
   #name: string;
@@ -58,6 +63,11 @@ export class NativeFile extends File {
   #lastModified: number = 0;
   #size: number = -1;
   #type: string = '';
+
+  static MAX_CACHE_CHUNK_SIZE = 1024 * 1024;
+  static MAX_CACHE_ITEMS_SIZE = 20;
+  #cache: Map<number, ArrayBuffer> = new Map();
+  #order: number[] = [];
 
   constructor(fp: string, name?: string, baseDir: BaseDirectory | null = null, type = '') {
     super([], name || fp, { type });
@@ -72,6 +82,15 @@ export class NativeFile extends File {
     this.#size = stats.size;
     this.#lastModified = stats.mtime ? stats.mtime.getTime() : Date.now();
     return this;
+  }
+
+  async close() {
+    if (this.#handle) {
+      await this.#handle.close();
+      this.#handle = null;
+    }
+    this.#cache.clear();
+    this.#order = [];
   }
 
   override get name() {
@@ -94,10 +113,6 @@ export class NativeFile extends File {
     return this.#handle?.stat();
   }
 
-  async close(): Promise<void> {
-    return this.#handle?.close();
-  }
-
   async seek(offset: number, whence: SeekMode): Promise<number> {
     if (!this.#handle) {
       throw new Error('File handle is not open');
@@ -112,10 +127,58 @@ export class NativeFile extends File {
     }
     start = Math.max(0, start);
     end = Math.max(start, Math.min(this.size, end));
-    await this.#handle.seek(start, SeekMode.Start);
-    const buffer = new Uint8Array(end - start);
+    const size = end - start;
+
+    if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
+      await this.#handle.seek(start, SeekMode.Start);
+      const buffer = new Uint8Array(size);
+      await this.#handle.read(buffer);
+      return buffer.buffer;
+    }
+
+    const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
+      const buffer = this.#cache.get(chunkStart)!;
+      return start >= chunkStart && end <= chunkStart + buffer.byteLength;
+    });
+
+    if (cachedChunkStart !== undefined) {
+      this.#updateAccessOrder(cachedChunkStart);
+      const buffer = this.#cache.get(cachedChunkStart)!;
+      const offset = start - cachedChunkStart;
+      return buffer.slice(offset, offset + size);
+    }
+
+    const chunkStart = Math.max(0, start - 1024);
+    const chunkEnd = Math.min(this.size, chunkStart + NativeFile.MAX_CACHE_CHUNK_SIZE);
+    const chunkSize = chunkEnd - chunkStart;
+
+    await this.#handle.seek(chunkStart, SeekMode.Start);
+    const buffer = new Uint8Array(chunkSize);
     await this.#handle.read(buffer);
-    return buffer.buffer;
+
+    this.#cache.set(chunkStart, buffer.buffer);
+    this.#updateAccessOrder(chunkStart);
+    this.#ensureCacheSize();
+
+    const offset = start - chunkStart;
+    return buffer.buffer.slice(offset, offset + size);
+  }
+
+  #updateAccessOrder(chunkStart: number) {
+    const index = this.#order.indexOf(chunkStart);
+    if (index > -1) {
+      this.#order.splice(index, 1);
+    }
+    this.#order.unshift(chunkStart);
+  }
+
+  #ensureCacheSize() {
+    while (this.#cache.size > NativeFile.MAX_CACHE_ITEMS_SIZE) {
+      const oldestKey = this.#order.pop();
+      if (oldestKey !== undefined) {
+        this.#cache.delete(oldestKey);
+      }
+    }
   }
 
   override slice(start = 0, end = this.size, contentType = this.type): Blob {
@@ -172,7 +235,7 @@ export class NativeFile extends File {
   }
 }
 
-export class RemoteFile extends File {
+export class RemoteFile extends File implements ClosableFile {
   url: string;
   #name: string;
   #lastModified: number;
@@ -238,7 +301,10 @@ export class RemoteFile extends File {
     }
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> {
+    this.#cache.clear();
+    this.#order = [];
+  }
 
   async fetchRangePart(start: number, end: number) {
     start = Math.max(0, start);

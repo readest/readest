@@ -35,6 +35,7 @@ import {
 import { getOSPlatform, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
+import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
@@ -244,6 +245,10 @@ export abstract class BaseAppService implements AppService {
         }
       }
       book.coverImageUrl = await this.generateCoverImageUrl(book);
+      const f = file as ClosableFile;
+      if (f && f.close) {
+        await f.close();
+      }
 
       return book;
     } catch (error) {
@@ -282,6 +287,10 @@ export abstract class BaseAppService implements AppService {
     const file = await this.fs.openFile(lfp, 'Books', cfp);
     const localFullpath = `${this.localBooksDir}/${lfp}`;
     await uploadFile(file, localFullpath, handleProgress, hash);
+    const f = file as ClosableFile;
+    if (f && f.close) {
+      await f.close();
+    }
   }
 
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
@@ -421,6 +430,10 @@ export abstract class BaseAppService implements AppService {
     }
     const { file } = (await this.loadBookContent(book, settings)) as BookContent;
     const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
+    const f = file as ClosableFile;
+    if (f && f.close) {
+      await f.close();
+    }
     return bookDoc.metadata;
   }
 
