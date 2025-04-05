@@ -13,10 +13,12 @@ import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
+import { useSidebarStore } from '@/store/sidebarStore';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
+  const { isSideBarVisible } = useSidebarStore();
   const { getVisibleLibrary, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
 
@@ -45,7 +47,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       <div
         className={clsx(
           `reader-page bg-base-100 text-base-content select-none`,
-          appService?.hasRoundedWindow && 'rounded-window',
+          !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window',
         )}
       >
         <Suspense>
