@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.30": {
+      "date": "2025-04-05",
+      "notes": [
+        "Added fixed storage quata when running the app in self-hosted mode",
+        "Link colors will only change when you override fonts",
+        "Added cache for native files for better performance"
+      ]
+    },
     "0.9.29": {
       "date": "2025-04-02",
       "notes": [
