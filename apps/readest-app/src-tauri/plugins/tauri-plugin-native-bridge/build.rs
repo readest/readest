@@ -2,6 +2,7 @@ const COMMANDS: &[&str] = &[
     "auth_with_safari",
     "auth_with_custom_tab",
     "copy_uri_to_path",
+    "use_background_audio",
 ];
 
 fn main() {

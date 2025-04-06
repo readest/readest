@@ -58,9 +58,9 @@ const FoliateViewer: React.FC<{
     const { detail } = event as CustomEvent;
     detail.data = Promise.resolve(detail.data)
       .then((data) => {
-        const viewSettings = getViewSettings(bookKey)!;
+        const viewSettings = getViewSettings(bookKey);
         if (detail.type === 'text/css') return transformStylesheet(data);
-        if (detail.type === 'application/xhtml+xml') {
+        if (viewSettings && detail.type === 'application/xhtml+xml') {
           const ctx = {
             bookKey,
             viewSettings,

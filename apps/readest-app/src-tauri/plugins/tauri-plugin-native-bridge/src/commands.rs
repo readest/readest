@@ -27,3 +27,11 @@ pub(crate) async fn copy_uri_to_path<R: Runtime>(
 ) -> Result<CopyURIResponse> {
     app.native_bridge().copy_uri_to_path(payload)
 }
+
+#[command]
+pub(crate) async fn use_background_audio<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UseBackgroundAudioRequest,
+) -> Result<()> {
+    app.native_bridge().use_background_audio(payload)
+}

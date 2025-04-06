@@ -25,4 +25,8 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn copy_uri_to_path(&self, _payload: CopyURIRequest) -> crate::Result<CopyURIResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn use_background_audio(&self, _payload: UseBackgroundAudioRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

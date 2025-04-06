@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-use-background-audio"
+description = "Enables the use_background_audio command without any pre-configured scope."
+commands.allow = ["use_background_audio"]
+
+[[permission]]
+identifier = "deny-use-background-audio"
+description = "Denies the use_background_audio command without any pre-configured scope."
+commands.deny = ["use_background_audio"]

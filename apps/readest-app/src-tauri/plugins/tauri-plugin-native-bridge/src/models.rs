@@ -25,3 +25,9 @@ pub struct CopyURIResponse {
     pub success: bool,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UseBackgroundAudioRequest {
+    pub enabled: bool,
+}

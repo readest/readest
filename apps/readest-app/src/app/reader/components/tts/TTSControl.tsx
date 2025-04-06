@@ -11,6 +11,7 @@ import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
+import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -39,15 +40,32 @@ const TTSControl = () => {
 
   const iconRef = useRef<HTMLDivElement>(null);
   const ttsControllerRef = useRef<TTSController | null>(null);
+  const unblockerAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // this enables WebAudio to play even when the mute toggle switch is ON
   const unblockAudio = () => {
-    const audio = document.createElement('audio');
-    audio.setAttribute('x-webkit-airplay', 'deny');
-    audio.preload = 'auto';
-    audio.loop = true;
-    audio.src = SILENCE_DATA;
-    audio.play();
+    if (unblockerAudioRef.current) return;
+    unblockerAudioRef.current = document.createElement('audio');
+    unblockerAudioRef.current.setAttribute('x-webkit-airplay', 'deny');
+    unblockerAudioRef.current.preload = 'auto';
+    unblockerAudioRef.current.loop = true;
+    unblockerAudioRef.current.src = SILENCE_DATA;
+    unblockerAudioRef.current.play();
+  };
+
+  const releaseUnblockAudio = () => {
+    if (!unblockerAudioRef.current) return;
+    try {
+      unblockerAudioRef.current.pause();
+      unblockerAudioRef.current.currentTime = 0;
+      unblockerAudioRef.current.removeAttribute('src');
+      unblockerAudioRef.current.src = '';
+      unblockerAudioRef.current.load();
+      unblockerAudioRef.current = null;
+      console.log('Unblock audio released');
+    } catch (err) {
+      console.warn('Error releasing unblock audio:', err);
+    }
   };
 
   useEffect(() => {
@@ -94,6 +112,9 @@ const TTSControl = () => {
     setShowIndicator(true);
 
     try {
+      if (appService?.isIOSApp) {
+        await invokeUseBackgroundAudio({ enabled: true });
+      }
       if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
         unblockAudio();
       }
@@ -176,6 +197,12 @@ const TTSControl = () => {
       setIsPlaying(false);
       setShowPanel(false);
       setShowIndicator(false);
+    }
+    if (appService?.isIOSApp) {
+      await invokeUseBackgroundAudio({ enabled: false });
+    }
+    if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
+      releaseUnblockAudio();
     }
   };
 

@@ -1,4 +1,6 @@
 import AuthenticationServices
+import AVFoundation
+import MediaPlayer
 import SwiftRs
 import Tauri
 import UIKit
@@ -8,8 +10,32 @@ class SafariAuthRequestArgs: Decodable {
   let authUrl: String
 }
 
+class UseBackgroundAudioRequestArgs: Decodable {
+  let enabled: Bool
+}
+
 class NativeBridgePlugin: Plugin {
   private var authSession: ASWebAuthenticationSession?
+
+  @objc public func use_background_audio(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(UseBackgroundAudioRequestArgs.self)
+      let enabled = args.enabled
+      let session = AVAudioSession.sharedInstance()
+      if enabled {
+        try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try session.setActive(true)
+        print("AVAudioSession activated")
+      } else {
+        try session.setActive(false)
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        print("AVAudioSession deactivated")
+      }
+      invoke.resolve()
+    } catch {
+      print("Failed to set up audio session:", error)
+    }
+  }
 
   @objc public func auth_with_safari(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(SafariAuthRequestArgs.self)
