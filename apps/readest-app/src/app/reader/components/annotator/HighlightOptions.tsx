@@ -9,6 +9,7 @@ const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
 
 interface HighlightOptionsProps {
+  isVertical: boolean;
   style: React.CSSProperties;
   selectedStyle: HighlightStyle;
   selectedColor: HighlightColor;
@@ -17,6 +18,7 @@ interface HighlightOptionsProps {
 
 const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   style,
+  isVertical,
   selectedStyle: _selectedStyle,
   selectedColor: _selectedColor,
   onHandleHighlight,
@@ -44,13 +46,22 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     onHandleHighlight(true);
   };
   return (
-    <div className='highlight-options absolute flex items-center justify-between' style={style}>
-      <div className='flex gap-2' style={{ height: size28 }}>
+    <div
+      className={clsx(
+        'highlight-options absolute flex items-center justify-between',
+        isVertical ? 'flex-col' : 'flex-row',
+      )}
+      style={style}
+    >
+      <div
+        className={clsx('flex gap-2', isVertical ? 'flex-col' : 'flex-row')}
+        style={isVertical ? { width: size28 } : { height: size28 }}
+      >
         {styles.map((style) => (
           <button
             key={style}
             onClick={() => handleSelectStyle(style)}
-            className={`flex items-center justify-center rounded-full bg-gray-700 p-0`}
+            className='flex items-center justify-center rounded-full bg-gray-700 p-0'
             style={{ width: size28, height: size28, minHeight: size28 }}
           >
             <div
@@ -78,8 +89,11 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
       </div>
 
       <div
-        className='flex items-center justify-center gap-2 rounded-3xl bg-gray-700 px-2'
-        style={{ height: size28 }}
+        className={clsx(
+          'flex items-center justify-center gap-2 rounded-3xl bg-gray-700',
+          isVertical ? 'flex-col py-2' : 'flex-row px-2',
+        )}
+        style={isVertical ? { width: size28 } : { height: size28 }}
       >
         {colors.map((color) => (
           <button

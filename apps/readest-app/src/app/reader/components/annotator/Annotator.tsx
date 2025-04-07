@@ -259,8 +259,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const annotPopupPos = getPopupPosition(
         triangPos,
         rect,
-        annotPopupWidth,
-        annotPopupHeight,
+        viewSettings.vertical ? annotPopupHeight : annotPopupWidth,
+        viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
         popupPadding,
       );
       if (isTextSelected.current && annotPopupPos.dir === 'down' && osPlatform === 'android') {
@@ -577,6 +577,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       {showAnnotPopup && trianglePosition && annotPopupPosition && (
         <AnnotationPopup
           dir={viewSettings.rtl ? 'rtl' : 'ltr'}
+          isVertical={viewSettings.vertical}
           buttons={buttons}
           position={annotPopupPosition}
           trianglePosition={trianglePosition}

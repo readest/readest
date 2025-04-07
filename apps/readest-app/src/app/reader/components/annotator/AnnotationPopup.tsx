@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import Popup from '@/components/Popup';
 import PopupButton from './PopupButton';
@@ -8,6 +9,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface AnnotationPopupProps {
   dir: 'ltr' | 'rtl';
+  isVertical: boolean;
   buttons: Array<{ tooltipText: string; Icon: React.ElementType; onClick: () => void }>;
   position: Position;
   trianglePosition: Position;
@@ -24,6 +26,7 @@ const OPTIONS_PADDING_PIX = 16;
 
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   dir,
+  isVertical,
   buttons,
   position,
   trianglePosition,
@@ -39,17 +42,20 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   return (
     <div dir={dir}>
       <Popup
-        width={popupWidth}
-        height={popupHeight}
+        width={isVertical ? popupHeight : popupWidth}
+        height={isVertical ? popupWidth : popupHeight}
         position={position}
         trianglePosition={trianglePosition}
-        className='selection-popup bg-gray-600 px-4 text-white'
+        className='selection-popup bg-gray-600 text-white'
         triangleClassName='text-gray-600'
       >
         <div
-          className='selection-buttons flex items-center justify-between'
+          className={clsx(
+            'selection-buttons flex items-center justify-between p-2',
+            isVertical ? 'flex-col' : 'flex-row',
+          )}
           style={{
-            height: popupHeight,
+            height: isVertical ? popupWidth : popupHeight,
           }}
         >
           {buttons.map((button, index) => (
@@ -65,15 +71,27 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
       </Popup>
       {highlightOptionsVisible && (
         <HighlightOptions
+          isVertical={isVertical}
           style={{
-            width: `${popupWidth}px`,
-            height: `${popupHeight}px`,
-            left: `${position.point.x}px`,
-            top: `${
-              position.point.y +
-              (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
-                (trianglePosition.dir === 'up' ? -1 : 1)
-            }px`,
+            width: `${isVertical ? popupHeight : popupWidth}px`,
+            height: `${isVertical ? popupWidth : popupHeight}px`,
+            ...(isVertical
+              ? {
+                  left: `${
+                    position.point.x +
+                    (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
+                      (trianglePosition.dir === 'left' ? -1 : 1)
+                  }px`,
+                  top: `${position.point.y}px`,
+                }
+              : {
+                  left: `${position.point.x}px`,
+                  top: `${
+                    position.point.y +
+                    (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
+                      (trianglePosition.dir === 'up' ? -1 : 1)
+                  }px`,
+                }),
           }}
           selectedStyle={selectedStyle}
           selectedColor={selectedColor}

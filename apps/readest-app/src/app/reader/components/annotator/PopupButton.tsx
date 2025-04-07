@@ -20,7 +20,7 @@ const PopupButton: React.FC<PopupButtonProps> = ({ showTooltip, tooltipText, Ico
     >
       <button
         onClick={handleClick}
-        className='my-2 flex h-8 min-h-8 w-8 items-center justify-center p-0'
+        className='flex h-8 min-h-8 w-8 items-center justify-center p-0'
       >
         <Icon />
       </button>
