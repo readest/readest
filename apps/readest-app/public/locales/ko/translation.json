@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "EPUB 파일 구문 분석 실패.",
   "This book format is not supported.": "이 책 형식은 지원되지 않습니다.",
   "Unable to fetch the translation. Please log in first and try again.": "번역을 가져올 수 없습니다. 먼저 로그인하고 다시 시도하세요.",
-  "Group": "그룹"
+  "Group": "그룹",
+  "Always on Top": "항상 위에"
 }

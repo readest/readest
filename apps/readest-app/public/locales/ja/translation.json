@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "EPUBファイルの解析に失敗しました。",
   "This book format is not supported.": "この書籍形式はサポートされていません。",
   "Unable to fetch the translation. Please log in first and try again.": "翻訳を取得できません。まずログインして再試行してください。",
-  "Group": "グループ"
+  "Group": "グループ",
+  "Always on Top": "常に最前面"
 }

@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "Échec de l'analyse du fichier EPUB.",
   "This book format is not supported.": "Ce format de livre n'est pas pris en charge.",
   "Unable to fetch the translation. Please log in first and try again.": "Impossible de récupérer la traduction. Veuillez d'abord vous connecter et réessayer.",
-  "Group": "Groupe"
+  "Group": "Groupe",
+  "Always on Top": "Toujours au-dessus"
 }

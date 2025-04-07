@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "Не удалось разобрать файл EPUB.",
   "This book format is not supported.": "Этот формат книги не поддерживается.",
   "Unable to fetch the translation. Please log in first and try again.": "Не удалось получить перевод. Пожалуйста, войдите в систему и попробуйте снова.",
-  "Group": "Группа"
+  "Group": "Группа",
+  "Always on Top": "Всегда сверху"
 }

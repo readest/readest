@@ -38,6 +38,16 @@ export const tauriHandleToggleFullScreen = async () => {
   await currentWindow.setFullscreen(newIsFullscreen);
 };
 
+export const tauriHandleSetAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
+  const currentWindow = getCurrentWindow();
+  await currentWindow.setAlwaysOnTop(isAlwaysOnTop);
+};
+
+export const tauriGetAlwaysOnTop = async () => {
+  const currentWindow = getCurrentWindow();
+  return await currentWindow.isAlwaysOnTop();
+};
+
 export const tauriHandleOnWindowFocus = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
   return currentWindow.listen(TauriEvent.WINDOW_FOCUS, async () => {

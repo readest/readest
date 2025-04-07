@@ -14,7 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStoragePlanData } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
-import { tauriHandleToggleFullScreen } from '@/utils/window';
+import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { QuotaType } from '@/types/user';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -32,6 +32,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
+  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
@@ -63,6 +64,15 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
 
   const handleFullScreen = () => {
     tauriHandleToggleFullScreen();
+    setIsDropdownOpen?.(false);
+  };
+
+  const toggleAlwaysOnTop = () => {
+    settings.alwaysOnTop = !settings.alwaysOnTop;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAlwaysOnTop(settings.alwaysOnTop);
+    tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
     setIsDropdownOpen?.(false);
   };
 
@@ -174,13 +184,20 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={toggleAutoCheckUpdates}
         />
       )}
+      <hr className='border-base-200 my-1' />
+      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
+      {appService?.hasWindow && (
+        <MenuItem
+          label={_('Always on Top')}
+          icon={isAlwaysOnTop ? <MdCheck className='text-base-content' /> : undefined}
+          onClick={toggleAlwaysOnTop}
+        />
+      )}
       <MenuItem
         label={_('Keep Screen Awake')}
         icon={isScreenWakeLock ? <MdCheck className='text-base-content' /> : undefined}
         onClick={toggleScreenWakeLock}
       />
-      <hr className='border-base-200 my-1' />
-      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

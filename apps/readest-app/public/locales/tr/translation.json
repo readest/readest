@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
   "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
   "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin.",
-  "Group": "Grup"
+  "Group": "Grup",
+  "Always on Top": "Her Zaman Üstte"
 }

@@ -31,7 +31,7 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { tauriQuitApp } from '@/utils/window';
+import { tauriHandleSetAlwaysOnTop, tauriQuitApp } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
 import { Toast } from '@/components/Toast';
@@ -104,6 +104,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         await checkForAppUpdates(_);
       }
     };
+    if (settings.alwaysOnTop) {
+      tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
+    }
     doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);

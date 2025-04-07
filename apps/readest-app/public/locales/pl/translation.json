@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "Nie udało się przeanalizować pliku EPUB.",
   "This book format is not supported.": "Ten format książki nie jest obsługiwany.",
   "Unable to fetch the translation. Please log in first and try again.": "Nie można pobrać tłumaczenia. Proszę najpierw się zalogować i spróbować ponownie.",
-  "Group": "Grupa"
+  "Group": "Grupa",
+  "Always on Top": "Zawsze na wierzchu"
 }

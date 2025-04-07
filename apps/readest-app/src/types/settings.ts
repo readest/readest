@@ -22,6 +22,7 @@ export interface SystemSettings {
 
   keepLogin: boolean;
   autoUpload: boolean;
+  alwaysOnTop: boolean;
   autoCheckUpdates: boolean;
   screenWakeLock: boolean;
   autoImportBooksOnOpen: boolean;

@@ -230,7 +230,7 @@
   "Maximum Column Height": "最大列高",
   "Maximum Column Width": "最大列宽",
   "Continuous Scroll": "连续滚动",
-  "Fullscreen": "全屏",
+  "Fullscreen": "全屏显示",
   "No supported files found. Supported formats: {{formats}}": "未找到支持的文件。支持的格式：{{formats}}",
   "Drop to Import Books": "拖放导入书籍",
   "Custom": "自定义",
@@ -265,5 +265,6 @@
   "Failed to parse the EPUB file.": "无法解析 EPUB 文件。",
   "This book format is not supported.": "不支持此书籍格式。",
   "Unable to fetch the translation. Please log in first and try again.": "无法获取翻译。请登录后重试。",
-  "Group": "分组"
+  "Group": "分组",
+  "Always on Top": "窗口置顶"
 }
