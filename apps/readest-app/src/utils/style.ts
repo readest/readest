@@ -8,7 +8,6 @@ import { ViewSettings } from '@/types/book';
 import {
   themes,
   Palette,
-  ThemeMode,
   CustomTheme,
   generateLightPalette,
   generateDarkPalette,
@@ -312,7 +311,7 @@ export const getThemeCode = () => {
   let customThemes: CustomTheme[] = [];
   if (typeof window !== 'undefined') {
     themeColor = localStorage.getItem('themeColor') || 'default';
-    themeMode = localStorage.getItem('themeMode') as ThemeMode;
+    themeMode = localStorage.getItem('themeMode') || 'auto';
     customThemes = JSON.parse(localStorage.getItem('customThemes') || '[]');
     systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
