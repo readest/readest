@@ -266,5 +266,10 @@
   "This book format is not supported.": "यह पुस्तक प्रारूप समर्थित नहीं है।",
   "Unable to fetch the translation. Please log in first and try again.": "अनुवाद प्राप्त करने में असमर्थ। कृपया पहले लॉग इन करें और पुनः प्रयास करें।",
   "Group": "समूह",
-  "Always on Top": "सर्वोच्च पर हमेशा"
+  "Always on Top": "सर्वोच्च पर हमेशा",
+  "No Timeout": "कोई समय समाप्त नहीं",
+  "{{value}} minute": "{{value}} मिनट",
+  "{{value}} minutes": "{{value}} मिनट",
+  "{{value}} hour": "{{value}} घंटा",
+  "{{value}} hours": "{{value}} घंटे"
 }

@@ -1,12 +1,12 @@
 import clsx from 'clsx';
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdStop } from 'react-icons/md';
+import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdAlarm } from 'react-icons/md';
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
 import { TTSVoice } from '@/services/tts';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
-import { useTranslation } from '@/hooks/useTranslation';
+import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
 
@@ -14,28 +14,104 @@ type TTSPanelProps = {
   bookKey: string;
   ttsLang: string;
   isPlaying: boolean;
+  timeoutOption: number;
+  timeoutTimestamp: number;
   onTogglePlay: () => void;
   onBackward: () => void;
   onForward: () => void;
-  onStop: () => void;
   onSetRate: (rate: number) => void;
   onGetVoices: (lang: string) => Promise<TTSVoice[]>;
   onSetVoice: (voice: string) => void;
   onGetVoiceId: () => string;
+  onSelectTimeout: (value: number) => void;
+};
+
+const getTTSTimeoutOptions = (_: TranslationFunc) => {
+  return [
+    {
+      label: _('No Timeout'),
+      value: 0,
+    },
+    {
+      label: _('{{value}} minute', { value: 1 }),
+      value: 60,
+    },
+    {
+      label: _('{{value}} minutes', { value: 3 }),
+      value: 180,
+    },
+    {
+      label: _('{{value}} minutes', { value: 5 }),
+      value: 300,
+    },
+    {
+      label: _('{{value}} minutes', { value: 10 }),
+      value: 600,
+    },
+    {
+      label: _('{{value}} minutes', { value: 20 }),
+      value: 1200,
+    },
+    {
+      label: _('{{value}} minutes', { value: 30 }),
+      value: 1800,
+    },
+    {
+      label: _('{{value}} minutes', { value: 45 }),
+      value: 2700,
+    },
+    {
+      label: _('{{value}} hour', { value: 1 }),
+      value: 3600,
+    },
+    {
+      label: _('{{value}} hours', { value: 2 }),
+      value: 7200,
+    },
+    {
+      label: _('{{value}} hours', { value: 3 }),
+      value: 10800,
+    },
+    {
+      label: _('{{value}} hours', { value: 4 }),
+      value: 14400,
+    },
+    {
+      label: _('{{value}} hours', { value: 6 }),
+      value: 21600,
+    },
+    {
+      label: _('{{value}} hours', { value: 8 }),
+      value: 28800,
+    },
+  ];
+};
+
+const getCountdownTime = (timeout: number) => {
+  const now = Date.now();
+  if (timeout > now) {
+    const remainingTime = Math.floor((timeout - now) / 1000);
+    const minutes = Math.floor(remainingTime / 3600) * 60 + Math.floor((remainingTime % 3600) / 60);
+    const seconds = remainingTime % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
+  return '';
 };
 
 const TTSPanel = ({
   bookKey,
   ttsLang,
   isPlaying,
+  timeoutOption,
+  timeoutTimestamp,
   onTogglePlay,
   onBackward,
   onForward,
-  onStop,
   onSetRate,
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
+  onSelectTimeout,
 }: TTSPanelProps) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -46,6 +122,10 @@ const TTSPanel = ({
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState(viewSettings?.ttsVoice ?? '');
+
+  const [timeoutCountdown, setTimeoutCountdown] = useState(() => {
+    return getCountdownTime(timeoutTimestamp);
+  });
 
   const defaultIconSize = useDefaultIconSize();
   const iconSize32 = useResponsiveSize(32);
@@ -72,6 +152,23 @@ const TTSPanel = ({
     setViewSettings(bookKey, viewSettings);
   };
 
+  const updateTimeout = (timeout: number) => {
+    const now = Date.now();
+    if (timeout > 0 && timeout < now) {
+      onSelectTimeout(0);
+      setTimeoutCountdown('');
+    } else if (timeout > 0) {
+      setTimeoutCountdown(getCountdownTime(timeout));
+    }
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      updateTimeout(timeoutTimestamp);
+    }, 1000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeoutTimestamp, timeoutCountdown]);
+
   useEffect(() => {
     const voiceId = onGetVoiceId();
     setSelectedVoice(voiceId);
@@ -86,6 +183,8 @@ const TTSPanel = ({
     fetchVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsLang]);
+
+  const timeoutOptions = getTTSTimeoutOptions(_);
 
   return (
     <div className='flex w-full flex-col items-center justify-center gap-2 rounded-2xl p-4'>
@@ -132,9 +231,40 @@ const TTSPanel = ({
         <button onClick={onForward} className='rounded-full p-1'>
           <MdFastForward size={iconSize32} />
         </button>
-        <button onClick={onStop} className='rounded-full p-1'>
-          <MdStop size={iconSize32} />
-        </button>
+        <div className='dropdown dropdown-top'>
+          <button className='flex flex-col items-center justify-center rounded-full p-1'>
+            <MdAlarm size={iconSize32} />
+            {timeoutCountdown && (
+              <span
+                className={clsx(
+                  'absolute bottom-0 left-1/2 w-12 translate-x-[-50%] translate-y-[80%] px-1',
+                  'bg-primary/80 text-base-100 rounded-full text-center text-xs',
+                )}
+              >
+                {timeoutCountdown}
+              </span>
+            )}
+          </button>
+          <ul
+            tabIndex={0}
+            className={clsx(
+              'dropdown-content bgcolor-base-200 no-triangle menu menu-vertical rounded-box absolute right-0 z-[1] shadow',
+              'mt-4 inline max-h-96 w-[250px] overflow-y-scroll',
+            )}
+          >
+            {timeoutOptions.map((option, index) => (
+              <li key={`${index}-${option.value}`} onClick={() => onSelectTimeout(option.value)}>
+                <div className='flex items-center px-2'>
+                  <span style={{ minWidth: `${defaultIconSize}px` }}>
+                    {timeoutOption === option.value && <MdCheck className='text-base-content' />}
+                  </span>
+                  <span className={clsx('text-base sm:text-sm')}>{option.label}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className='dropdown dropdown-top'>
           <button tabIndex={0} className='rounded-full p-1'>
             <RiVoiceAiFill size={iconSize32} />

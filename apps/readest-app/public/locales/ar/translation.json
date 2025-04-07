@@ -266,5 +266,10 @@
   "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم.",
   "Unable to fetch the translation. Please log in first and try again.": "تعذر جلب الترجمة. يرجى تسجيل الدخول أولاً ثم المحاولة مرة أخرى.",
   "Group": "تجميع",
-  "Always on Top": "دائمًا في المقدمة"
+  "Always on Top": "دائمًا في المقدمة",
+  "No Timeout": "لا مهلة",
+  "{{value}} minute": "{{value}} دقيقة",
+  "{{value}} minutes": "{{value}} دقائق",
+  "{{value}} hour": "{{value}} ساعة",
+  "{{value}} hours": "{{value}} ساعات"
 }

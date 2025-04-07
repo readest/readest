@@ -266,5 +266,10 @@
   "This book format is not supported.": "이 책 형식은 지원되지 않습니다.",
   "Unable to fetch the translation. Please log in first and try again.": "번역을 가져올 수 없습니다. 먼저 로그인하고 다시 시도하세요.",
   "Group": "그룹",
-  "Always on Top": "항상 위에"
+  "Always on Top": "항상 위에",
+  "No Timeout": "타임아웃 없음",
+  "{{value}} minute": "{{value}} 분",
+  "{{value}} minutes": "{{value}} 분",
+  "{{value}} hour": "{{value}} 시간",
+  "{{value}} hours": "{{value}} 시간"
 }

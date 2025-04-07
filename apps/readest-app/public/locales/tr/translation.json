@@ -266,5 +266,10 @@
   "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
   "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin.",
   "Group": "Grup",
-  "Always on Top": "Her Zaman Üstte"
+  "Always on Top": "Her Zaman Üstte",
+  "No Timeout": "Zaman Aşımı Yok",
+  "{{value}} minute": "{{value}} dakika",
+  "{{value}} minutes": "{{value}} dakika",
+  "{{value}} hour": "{{value}} saat",
+  "{{value}} hours": "{{value}} saat"
 }

@@ -266,5 +266,10 @@
   "This book format is not supported.": "不支持此书籍格式。",
   "Unable to fetch the translation. Please log in first and try again.": "无法获取翻译。请登录后重试。",
   "Group": "分组",
-  "Always on Top": "窗口置顶"
+  "Always on Top": "窗口置顶",
+  "No Timeout": "关闭定时",
+  "{{value}} minute": "{{value}}分钟",
+  "{{value}} minutes": "{{value}}分钟",
+  "{{value}} hour": "{{value}}小时",
+  "{{value}} hours": "{{value}}小时"
 }

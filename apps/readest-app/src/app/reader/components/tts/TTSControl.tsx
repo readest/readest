@@ -34,6 +34,10 @@ const TTSControl = () => {
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
 
+  const [timeoutOption, setTimeoutOption] = useState(0);
+  const [timeoutTimestamp, setTimeoutTimestamp] = useState(0);
+  const [timeoutFunc, setTimeoutFunc] = useState<ReturnType<typeof setTimeout> | null>(null);
+
   const popupWidth = useResponsiveSize(POPUP_WIDTH);
   const popupHeight = useResponsiveSize(POPUP_HEIGHT);
   const popupPadding = useResponsiveSize(POPUP_PADDING);
@@ -142,11 +146,8 @@ const TTSControl = () => {
     }
   };
 
-  const handleTTSStop = async (event: CustomEvent) => {
-    const { bookKey: stopBookKey } = event.detail;
-    if (bookKey === stopBookKey) {
-      handleStop();
-    }
+  const handleTTSStop = async () => {
+    handleStop();
   };
 
   const handleQueryIsSpeaking = () => {
@@ -257,6 +258,23 @@ const TTSControl = () => {
     return '';
   };
 
+  const handleSelectTimeout = (value: number) => {
+    setTimeoutOption(value);
+    if (timeoutFunc) {
+      clearTimeout(timeoutFunc);
+    }
+    if (value > 0) {
+      setTimeoutFunc(
+        setTimeout(() => {
+          handleStop();
+        }, value * 1000),
+      );
+      setTimeoutTimestamp(Date.now() + value * 1000);
+    } else {
+      setTimeoutTimestamp(0);
+    }
+  };
+
   const updatePanelPosition = () => {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect();
@@ -323,14 +341,16 @@ const TTSControl = () => {
             bookKey={bookKey}
             ttsLang={ttsLang}
             isPlaying={isPlaying}
+            timeoutOption={timeoutOption}
+            timeoutTimestamp={timeoutTimestamp}
             onTogglePlay={handleTogglePlay}
             onBackward={handleBackward}
             onForward={handleForward}
-            onStop={handleStop}
             onSetRate={handleSetRate}
             onGetVoices={handleGetVoices}
             onSetVoice={handleSetVoice}
             onGetVoiceId={handleGetVoiceId}
+            onSelectTimeout={handleSelectTimeout}
           />
         </Popup>
       )}

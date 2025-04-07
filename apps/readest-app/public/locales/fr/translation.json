@@ -266,5 +266,10 @@
   "This book format is not supported.": "Ce format de livre n'est pas pris en charge.",
   "Unable to fetch the translation. Please log in first and try again.": "Impossible de récupérer la traduction. Veuillez d'abord vous connecter et réessayer.",
   "Group": "Groupe",
-  "Always on Top": "Toujours au-dessus"
+  "Always on Top": "Toujours au-dessus",
+  "No Timeout": "Aucun délai d'attente",
+  "{{value}} minute": "{{value}} minute",
+  "{{value}} minutes": "{{value}} minutes",
+  "{{value}} hour": "{{value}} heure",
+  "{{value}} hours": "{{value}} heures"
 }

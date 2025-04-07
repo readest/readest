@@ -266,5 +266,10 @@
   "This book format is not supported.": "Dieses Buchformat wird nicht unterstützt.",
   "Unable to fetch the translation. Please log in first and try again.": "Übersetzung konnte nicht abgerufen werden. Bitte zuerst anmelden und erneut versuchen.",
   "Group": "Gruppieren",
-  "Always on Top": "Immer im Vordergrund"
+  "Always on Top": "Immer im Vordergrund",
+  "No Timeout": "Kein Timeout",
+  "{{value}} minute": "{{value}} Minute",
+  "{{value}} minutes": "{{value}} Minuten",
+  "{{value}} hour": "{{value}} Stunde",
+  "{{value}} hours": "{{value}} Stunden"
 }

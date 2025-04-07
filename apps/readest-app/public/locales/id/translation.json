@@ -266,5 +266,10 @@
   "This book format is not supported.": "Format buku ini tidak didukung.",
   "Unable to fetch the translation. Please log in first and try again.": "Tidak dapat mengambil terjemahan. Silakan masuk terlebih dahulu dan coba lagi.",
   "Group": "Grup",
-  "Always on Top": "Selalu di Atas"
+  "Always on Top": "Selalu di Atas",
+  "No Timeout": "Tidak Ada Waktu Habis",
+  "{{value}} minute": "{{value}} menit",
+  "{{value}} minutes": "{{value}} menit",
+  "{{value}} hour": "{{value}} jam",
+  "{{value}} hours": "{{value}} jam"
 }

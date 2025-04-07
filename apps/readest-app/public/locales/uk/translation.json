@@ -266,5 +266,10 @@
   "This book format is not supported.": "Цей формат книги не підтримується.",
   "Unable to fetch the translation. Please log in first and try again.": "Не вдалося отримати переклад. Будь ласка, спочатку увійдіть у систему та спробуйте ще раз.",
   "Group": "Група",
-  "Always on Top": "Завжди зверху"
+  "Always on Top": "Завжди зверху",
+  "No Timeout": "Без тайм-ауту",
+  "{{value}} minute": "{{value}} хвилина",
+  "{{value}} minutes": "{{value}} хвилин",
+  "{{value}} hour": "{{value}} година",
+  "{{value}} hours": "{{value}} години"
 }

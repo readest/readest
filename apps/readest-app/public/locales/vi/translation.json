@@ -266,5 +266,10 @@
   "This book format is not supported.": "Định dạng sách này không được hỗ trợ.",
   "Unable to fetch the translation. Please log in first and try again.": "Không thể tải dịch vụ. Vui lòng đăng nhập trước và thử lại.",
   "Group": "Nhóm",
-  "Always on Top": "Luôn ở trên cùng"
+  "Always on Top": "Luôn ở trên cùng",
+  "No Timeout": "Không có thời gian chờ",
+  "{{value}} minute": "{{value}} phút",
+  "{{value}} minutes": "{{value}} phút",
+  "{{value}} hour": "{{value}} giờ",
+  "{{value}} hours": "{{value}} giờ"
 }

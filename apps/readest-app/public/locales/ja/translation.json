@@ -266,5 +266,10 @@
   "This book format is not supported.": "この書籍形式はサポートされていません。",
   "Unable to fetch the translation. Please log in first and try again.": "翻訳を取得できません。まずログインして再試行してください。",
   "Group": "グループ",
-  "Always on Top": "常に最前面"
+  "Always on Top": "常に最前面",
+  "No Timeout": "タイムアウトなし",
+  "{{value}} minute": "{{value}}分",
+  "{{value}} minutes": "{{value}}分",
+  "{{value}} hour": "{{value}}時間",
+  "{{value}} hours": "{{value}}時間"
 }
