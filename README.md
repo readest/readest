@@ -26,6 +26,7 @@
   <a href="#screenshots">Screenshots</a> •
   <a href="#downloads">Downloads</a> •
   <a href="#getting-started">Getting Started</a> •
+  <a href="#troubleshooting">Troubleshooting</a> •
   <a href="#contributors">Contributors</a> •
   <a href="#license">License</a>
 </p>
@@ -198,6 +199,39 @@ nix develop ./ops#android # enter a dev shell for the android app
 ### 7. More information
 
 Please check the [wiki][link-gh-wiki] of this project for more information on development.
+
+## Troubleshooting
+
+### 1. Readest Won’t Launch on Windows (Missing Edge WebView2 Runtime)
+
+**Symptom**
+
+- When you double-click readest.exe, nothing happens. No window appears, and Task Manager does not show the process.
+- This can affect both the standard installer and the portable version.
+
+**Cause**
+
+- Microsoft Edge WebView2 Runtime is either missing, outdated, or improperly installed on your system. Readest depends on WebView2 to render the interface on Windows.
+
+**How to Fix**
+
+1. Check if WebView2 is installed
+   - Open “Add or Remove Programs” (a.k.a. Apps & features) on Windows. Look for “Microsoft Edge WebView2 Runtime.”
+2. Install or Update WebView2
+   - Download the WebView2 Runtime directly from Microsoft: [link](https://developer.microsoft.com/en-us/microsoft-edge/webview2?form=MA13LH).
+   - If you prefer an offline installer, download the offline package and run it as an Administrator.
+3. Re-run Readest
+   - After installing/updating WebView2, launch readest.exe again.
+   - If you still encounter problems, reboot your PC and try again.
+
+**Additional Tips**
+
+- If reinstalling once doesn’t work, uninstall Edge WebView2 completely, then reinstall it with Administrator privileges.
+- Verify your Windows installation has the latest updates from Microsoft.
+
+**Still Stuck?**
+
+- See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
 
 ## Contributors
 
