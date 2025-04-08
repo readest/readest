@@ -164,9 +164,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useEffect(() => {
     const libraryPage = document.querySelector('.library-page');
-    libraryPage?.addEventListener('dragover', handleDragOver as unknown as EventListener);
-    libraryPage?.addEventListener('dragleave', handleDragLeave as unknown as EventListener);
-    libraryPage?.addEventListener('drop', handleDrop as unknown as EventListener);
+    if (!appService?.isMobile) {
+      libraryPage?.addEventListener('dragover', handleDragOver as unknown as EventListener);
+      libraryPage?.addEventListener('dragleave', handleDragLeave as unknown as EventListener);
+      libraryPage?.addEventListener('drop', handleDrop as unknown as EventListener);
+    }
 
     if (isTauriAppPlatform()) {
       const unlisten = getCurrentWebview().onDragDropEvent((event) => {
@@ -185,9 +187,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
 
     return () => {
-      libraryPage?.removeEventListener('dragover', handleDragOver as unknown as EventListener);
-      libraryPage?.removeEventListener('dragleave', handleDragLeave as unknown as EventListener);
-      libraryPage?.removeEventListener('drop', handleDrop as unknown as EventListener);
+      if (!appService?.isMobile) {
+        libraryPage?.removeEventListener('dragover', handleDragOver as unknown as EventListener);
+        libraryPage?.removeEventListener('dragleave', handleDragLeave as unknown as EventListener);
+        libraryPage?.removeEventListener('drop', handleDrop as unknown as EventListener);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageRef.current]);
@@ -337,7 +341,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const selectFilesTauri = async () => {
     const exts = appService?.isAndroidApp ? [] : SUPPORTED_FILE_EXTS;
     const files = (await appService?.selectFiles(_('Select Books'), exts)) || [];
-    return files.filter((file) => SUPPORTED_FILE_EXTS.some((ext) => file.endsWith(`.${ext}`)));
+    // Cannot filter out files on Android since some content providers may not return the file name
+    return files;
   };
 
   const selectFilesWeb = () => {

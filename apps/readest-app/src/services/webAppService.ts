@@ -1,5 +1,5 @@
 import { Book } from '@/types/book';
-import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
+import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getCoverFilename } from '@/utils/book';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { RemoteFile } from '@/utils/file';
@@ -212,16 +212,16 @@ export class WebAppService extends BaseAppService {
     return LOCAL_BOOKS_SUBDIR;
   }
 
+  async getCacheDir(): Promise<string> {
+    return 'Cache';
+  }
+
   async selectDirectory(): Promise<string> {
     throw new Error('selectDirectory is not supported in browser');
   }
 
   async selectFiles(): Promise<string[]> {
     throw new Error('selectFiles is not supported in browser');
-  }
-
-  async showMessage(msg: string, kind: ToastType = 'info'): Promise<void> {
-    alert(`${kind.toUpperCase()}: ${msg}`);
   }
 
   getCoverImageUrl = (book: Book): string => {

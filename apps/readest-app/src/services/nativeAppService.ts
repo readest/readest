@@ -13,12 +13,12 @@ import {
   WriteFileOptions,
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { open as openDialog, message } from '@tauri-apps/plugin-dialog';
-import { join, appDataDir } from '@tauri-apps/api/path';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { join, appDataDir, appCacheDir } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
 
 import { Book } from '@/types/book';
-import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
+import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { isContentURI, isValidURL } from '@/utils/misc';
 import { getCoverFilename, getFilename } from '@/utils/book';
 import { copyURIToPath } from '@/utils/bridge';
@@ -80,7 +80,22 @@ export const nativeFileSystem: FileSystem = {
     if (isValidURL(path)) {
       return await new RemoteFile(path, name).open();
     } else if (isContentURI(path)) {
-      return await new NativeFile(fp, fname, base ? baseDir : null).open();
+      if (path.includes('com.android.externalstorage')) {
+        // If the URI is from shared internal storage (like /storage/emulated/0),
+        // we can access it directly using the path — no need to copy.
+        return await new NativeFile(fp, fname, base ? baseDir : null).open();
+      } else {
+        // Otherwise, for content:// URIs (e.g. from MediaStore, Drive, or third-party apps),
+        // we cannot access the file directly — so we copy it to a temporary cache location.
+        const prefix = this.getPrefix('Cache');
+        const dst = `${prefix}/${fname}`;
+        const res = await copyURIToPath({ uri: path, dst });
+        if (!res.success) {
+          console.error('Failed to open file:', res);
+          throw new Error('Failed to open file');
+        }
+        return await new NativeFile(dst, fname, base ? baseDir : null).open();
+      }
     } else {
       const prefix = this.getPrefix(base);
       if (prefix && OS_TYPE !== 'android') {
@@ -213,21 +228,24 @@ export class NativeAppService extends BaseAppService {
     return join(await appDataDir(), LOCAL_BOOKS_SUBDIR);
   }
 
+  async getCacheDir(): Promise<string> {
+    return await appCacheDir();
+  }
+
+  async selectDirectory(): Promise<string> {
+    const selected = await openDialog({
+      directory: true,
+      multiple: false,
+    });
+    return selected as string;
+  }
+
   async selectFiles(name: string, extensions: string[]): Promise<string[]> {
     const selected = await openDialog({
       multiple: true,
       filters: [{ name, extensions }],
     });
     return Array.isArray(selected) ? selected : selected ? [selected] : [];
-  }
-
-  async showMessage(
-    msg: string,
-    kind: ToastType = 'info',
-    title?: string,
-    okLabel?: string,
-  ): Promise<void> {
-    await message(msg, { kind, title, okLabel });
   }
 
   getCoverImageUrl = (book: Book): string => {

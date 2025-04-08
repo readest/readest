@@ -5,7 +5,6 @@ import { ProgressHandler } from '@/utils/transfer';
 
 export type AppPlatform = 'web' | 'tauri';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Log' | 'Cache' | 'None';
-export type ToastType = 'info' | 'warning' | 'error';
 
 export interface FileSystem {
   getURL(path: string): string;
@@ -39,9 +38,8 @@ export interface AppService {
   isAndroidApp: boolean;
   isIOSApp: boolean;
 
+  selectDirectory(): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
-  showMessage(msg: string, kind?: ToastType, title?: string, okLabel?: string): Promise<void>;
-
   loadSettings(): Promise<SystemSettings>;
   saveSettings(settings: SystemSettings): Promise<void>;
   importBook(

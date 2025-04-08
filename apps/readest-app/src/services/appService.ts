@@ -1,4 +1,4 @@
-import { AppPlatform, AppService, ToastType } from '@/types/system';
+import { AppPlatform, AppService } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, BaseDir } from '@/types/system';
@@ -62,13 +62,9 @@ export abstract class BaseAppService implements AppService {
   abstract getCoverImageUrl(book: Book): string;
   abstract getCoverImageBlobUrl(book: Book): Promise<string>;
   abstract getInitBooksDir(): Promise<string>;
+  abstract getCacheDir(): Promise<string>;
+  abstract selectDirectory(): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
-  abstract showMessage(
-    msg: string,
-    kind?: ToastType,
-    title?: string,
-    okLabel?: string,
-  ): Promise<void>;
 
   async loadSettings(): Promise<SystemSettings> {
     let settings: SystemSettings;
@@ -118,9 +114,12 @@ export abstract class BaseAppService implements AppService {
     }
 
     this.localBooksDir = settings.localBooksDir;
+    const cacheDir = await this.getCacheDir();
     this.fs.getPrefix = (baseDir: BaseDir) => {
       if (baseDir === 'Books') {
         return this.localBooksDir;
+      } else if (baseDir === 'Cache') {
+        return cacheDir;
       }
       return null;
     };
