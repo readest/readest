@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}} minutes",
   "{{value}} hour": "{{value}} heure",
   "{{value}} hours": "{{value}} heures",
-  "CJK Font": "Police CJK"
+  "CJK Font": "Police CJK",
+  "Clear Search": "Effacer la recherche"
 }

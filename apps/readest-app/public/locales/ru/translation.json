@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}} минуты",
   "{{value}} hour": "{{value}} час",
   "{{value}} hours": "{{value}} часа",
-  "CJK Font": "CJK Шрифт"
+  "CJK Font": "CJK Шрифт",
+  "Clear Search": "Очистить поиск"
 }

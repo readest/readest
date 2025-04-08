@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}} minuti",
   "{{value}} hour": "{{value}} ora",
   "{{value}} hours": "{{value}} ore",
-  "CJK Font": "Font CJK"
+  "CJK Font": "Font CJK",
+  "Clear Search": "Cancella ricerca"
 }

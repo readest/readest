@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}}分钟",
   "{{value}} hour": "{{value}}小时",
   "{{value}} hours": "{{value}}小时",
-  "CJK Font": "中文字体"
+  "CJK Font": "中文字体",
+  "Clear Search": "清除搜索"
 }

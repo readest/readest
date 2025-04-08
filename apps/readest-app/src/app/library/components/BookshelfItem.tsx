@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -94,6 +94,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
 }) => {
   const _ = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
@@ -133,7 +134,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     if (isSelectMode) {
       toggleSelection(group.id);
     } else {
-      navigateToLibrary(router, `group=${group.id}`);
+      const params = new URLSearchParams(searchParams?.toString());
+      params.set('group', group.id);
+      navigateToLibrary(router, `${params.toString()}`);
     }
   };
 

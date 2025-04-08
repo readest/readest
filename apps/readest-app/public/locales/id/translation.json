@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}} menit",
   "{{value}} hour": "{{value}} jam",
   "{{value}} hours": "{{value}} jam",
-  "CJK Font": "Font CJK"
+  "CJK Font": "Font CJK",
+  "Clear Search": "Hapus Pencarian"
 }

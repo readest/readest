@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}}分",
   "{{value}} hour": "{{value}}時間",
   "{{value}} hours": "{{value}}時間",
-  "CJK Font": "CJKフォント"
+  "CJK Font": "CJKフォント",
+  "Clear Search": "検索をクリア"
 }

@@ -272,5 +272,6 @@
   "{{value}} minutes": "{{value}} 분",
   "{{value}} hour": "{{value}} 시간",
   "{{value}} hours": "{{value}} 시간",
-  "CJK Font": "CJK 글꼴"
+  "CJK Font": "CJK 글꼴",
+  "Clear Search": "검색 지우기"
 }
