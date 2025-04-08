@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} хвилина",
   "{{value}} minutes": "{{value}} хвилин",
   "{{value}} hour": "{{value}} година",
-  "{{value}} hours": "{{value}} години"
+  "{{value}} hours": "{{value}} години",
+  "CJK Font": "CJK шрифт"
 }

@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}}分鐘",
   "{{value}} minutes": "{{value}}分鐘",
   "{{value}} hour": "{{value}}小時",
-  "{{value}} hours": "{{value}}小時"
+  "{{value}} hours": "{{value}}小時",
+  "CJK Font": "中文字體"
 }

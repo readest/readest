@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} dakika",
   "{{value}} minutes": "{{value}} dakika",
   "{{value}} hour": "{{value}} saat",
-  "{{value}} hours": "{{value}} saat"
+  "{{value}} hours": "{{value}} saat",
+  "CJK Font": "CJK Yazı Tipi"
 }

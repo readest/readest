@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} Minute",
   "{{value}} minutes": "{{value}} Minuten",
   "{{value}} hour": "{{value}} Stunde",
-  "{{value}} hours": "{{value}} Stunden"
+  "{{value}} hours": "{{value}} Stunden",
+  "CJK Font": "CJK-Schriftart"
 }

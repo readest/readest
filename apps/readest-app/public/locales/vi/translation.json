@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} phút",
   "{{value}} minutes": "{{value}} phút",
   "{{value}} hour": "{{value}} giờ",
-  "{{value}} hours": "{{value}} giờ"
+  "{{value}} hours": "{{value}} giờ",
+  "CJK Font": "Phông chữ CJK"
 }

@@ -32,7 +32,12 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
 
 export const getUserLang = () => navigator?.language.split('-')[0] || 'en';
 
-export const isCJKEnv = () => ['zh', 'ja', 'ko'].includes(getUserLang());
+export const isCJKEnv = () => {
+  const isCJKLocale = ['zh', 'ja', 'ko'].includes(getUserLang());
+  const uiLanguage = localStorage.getItem('i18nextLng') || '';
+  const isCJKUI = ['zh', 'ja', 'ko'].some((lang) => uiLanguage.startsWith(lang));
+  return isCJKLocale || isCJKUI;
+};
 
 export const getUserLocale = (lang: string): string | undefined => {
   const languages =

@@ -105,6 +105,7 @@ export interface BookFont {
   sansSerifFont: string;
   monospaceFont: string;
   defaultFont: string;
+  defaultCJKFont: string;
   defaultFontSize: number;
   minimumFontSize: number;
   fontWeight: number;

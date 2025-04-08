@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} λεπτό",
   "{{value}} minutes": "{{value}} λεπτά",
   "{{value}} hour": "{{value}} ώρα",
-  "{{value}} hours": "{{value}} ώρες"
+  "{{value}} hours": "{{value}} ώρες",
+  "CJK Font": "Γραμματοσειρά CJK"
 }

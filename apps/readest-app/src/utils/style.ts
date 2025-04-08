@@ -21,6 +21,7 @@ const getFontStyles = (
   sansSerif: string,
   monospace: string,
   defaultFont: string,
+  defaultCJKFont: string,
   fontSize: number,
   minFontSize: number,
   fontWeight: number,
@@ -28,16 +29,22 @@ const getFontStyles = (
   themeCode: ThemeCode,
 ) => {
   const { primary } = themeCode;
-  const lastSerifFonts = ['Georgia', 'Times New Roman'];
+  const lastSerifFonts = ['LXGW WenKai GB Screen', 'Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
-    ...SERIF_FONTS.filter((font) => font !== serif && !lastSerifFonts.includes(font)),
+    ...SERIF_FONTS.filter(
+      (font) => font !== serif && font !== defaultCJKFont && !lastSerifFonts.includes(font),
+    ),
+    ...(defaultCJKFont !== serif && !lastSerifFonts.includes(defaultCJKFont)
+      ? [defaultCJKFont]
+      : []),
     ...lastSerifFonts.filter((font) => SERIF_FONTS.includes(font)),
     ...FALLBACK_FONTS,
   ];
   const sansSerifFonts = [
     sansSerif,
-    ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif),
+    ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
+    ...(defaultCJKFont !== sansSerif ? [defaultCJKFont] : []),
     ...FALLBACK_FONTS,
   ];
   const monospaceFonts = [monospace, ...MONOSPACE_FONTS.filter((font) => font !== monospace)];
@@ -367,6 +374,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.sansSerifFont!,
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
+    viewSettings.defaultCJKFont!,
     viewSettings.defaultFontSize! * fontScale,
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,

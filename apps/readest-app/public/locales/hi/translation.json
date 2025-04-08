@@ -271,5 +271,6 @@
   "{{value}} minute": "{{value}} मिनट",
   "{{value}} minutes": "{{value}} मिनट",
   "{{value}} hour": "{{value}} घंटा",
-  "{{value}} hours": "{{value}} घंटे"
+  "{{value}} hours": "{{value}} घंटे",
+  "CJK Font": "CJK फ़ॉन्ट"
 }

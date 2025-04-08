@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 
 import {
   ANDROID_FONTS,
+  CJK_FONTS_PATTENS,
+  CJK_NAMES_PATTENS,
   IOS_FONTS,
   LINUX_FONTS,
   MACOS_FONTS,
@@ -14,7 +16,7 @@ import {
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
-import { getOSPlatform } from '@/utils/misc';
+import { getOSPlatform, isCJKEnv } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/font';
 import { isTauriAppPlatform } from '@/services/environment';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
@@ -63,8 +65,9 @@ const FontFace = ({
 const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
+  const view = getView(bookKey)!;
 
   const fontFamilyOptions = [
     {
@@ -103,6 +106,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize!);
   const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont!);
   const [defaultFont, setDefaultFont] = useState(viewSettings.defaultFont!);
+  const [defaultCJKFont, setDefaultCJKFont] = useState(viewSettings.defaultCJKFont!);
   const [serifFont, setSerifFont] = useState(viewSettings.serifFont!);
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
@@ -121,6 +125,11 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     saveViewSettings(envConfig, bookKey, 'defaultFont', defaultFont);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFont]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'defaultCJKFont', defaultCJKFont);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCJKFont]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'defaultFontSize', defaultFontSize);
@@ -223,6 +232,19 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 onGetFontFamily={handleFontFamilyFont}
               />
             </div>
+
+            {(isCJKEnv() || view?.language.isCJK) && (
+              <FontFace
+                className='config-item-top'
+                family='serif'
+                label={_('CJK Font')}
+                options={sysFonts.filter(
+                  (font) => CJK_FONTS_PATTENS.test(font) || CJK_NAMES_PATTENS.test(font),
+                )}
+                selected={defaultCJKFont}
+                onSelect={setDefaultCJKFont}
+              />
+            )}
 
             <div className='config-item'>
               <span className=''>{_('Override Book Font')}</span>
