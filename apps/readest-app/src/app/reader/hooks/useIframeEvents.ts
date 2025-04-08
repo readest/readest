@@ -43,7 +43,10 @@ export const useClickEvent = (
             if (!consumed) {
               const centerStartX = viewStartX + viewRect.width * 0.375;
               const centerEndX = viewStartX + viewRect.width * 0.625;
-              if (screenX >= centerStartX && screenX <= centerEndX) {
+              if (
+                viewSettings.disableClick! ||
+                (screenX >= centerStartX && screenX <= centerEndX)
+              ) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
               } else {
