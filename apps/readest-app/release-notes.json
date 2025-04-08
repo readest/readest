@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.31": {
+      "date": "2025-04-08",
+      "notes": [
+        "iOS: Text-to-Speech (TTS) now works in the background",
+        "Android: Import files from native file manager",
+        "Desktop: Add option to keep window on top",
+        "Vertical layout for highlighting tools",
+        "Added options to auto-stop TTS after timeout",
+        "Added book search functionality in bookshelf",
+        "Improved font support for CJK users"
+      ]
+    },
     "0.9.30": {
       "date": "2025-04-05",
       "notes": [
