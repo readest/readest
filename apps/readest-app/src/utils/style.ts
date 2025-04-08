@@ -28,7 +28,7 @@ const getFontStyles = (
   overrideFont: boolean,
   themeCode: ThemeCode,
 ) => {
-  const { primary } = themeCode;
+  const { fg, primary } = themeCode;
   const lastSerifFonts = ['LXGW WenKai GB Screen', 'Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
@@ -82,8 +82,6 @@ const getFontStyles = (
     }
     body * {
       ${overrideFont ? 'font-family: revert !important;' : ''}
-      ${overrideFont ? 'font-size: revert  !important;' : ''}
-      ${overrideFont ? 'color: revert !important;' : ''}
     }
     a:any-link {
       ${overrideFont ? `color: ${primary};` : ''}
@@ -93,6 +91,13 @@ const getFontStyles = (
       a:link {
         ${overrideFont ? `color: lightblue;` : ''}
       }
+    }
+    /* override inline hardcoded text color */
+    *[style*="color: rgb(0,0,0)"], *[style*="color: rgb(0, 0, 0)"],
+    *[style*="color: #000"], *[style*="color: #000000"], *[style*="color: black"],
+    *[style*="color:rgb(0,0,0)"], *[style*="color:rgb(0, 0, 0)"],
+    *[style*="color:#000"], *[style*="color:#000000"], *[style*="color:black"] {
+      color: ${fg} !important;
     }
   `;
   return fontStyles;
@@ -419,7 +424,15 @@ export const transformStylesheet = (css: string) => {
     .replace(/font-size\s*:\s*x-large/gi, 'font-size: 1.5rem')
     .replace(/font-size\s*:\s*xx-large/gi, 'font-size: 2rem')
     .replace(/font-size\s*:\s*xxx-large/gi, 'font-size: 3rem')
-    .replace(/\scolor\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
-    .replace(/\scolor\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
-    .replace(/\scolor\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
+    .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)px/gi, (_, px) => {
+      const rem = parseFloat(px) / 16;
+      return `font-size: ${rem}rem`;
+    })
+    .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)pt/gi, (_, pt) => {
+      const rem = parseFloat(pt) / 12;
+      return `font-size: ${rem}rem`;
+    })
+    .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
+    .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
+    .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
 };
