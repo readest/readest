@@ -2,6 +2,7 @@ import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
 import { getUserLang, isContentURI, isValidURL, makeSafeFilename } from './misc';
 import { getStorageType } from './object';
+import { getDirFromLanguage } from './rtl';
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;
@@ -57,16 +58,16 @@ export interface Contributor {
   name: LanguageMap;
 }
 
-const userLang = getUserLang();
-
 const formatLanguageMap = (x: string | LanguageMap): string => {
+  const userLang = getUserLang();
   if (!x) return '';
   if (typeof x === 'string') return x;
   const keys = Object.keys(x);
   return x[userLang] || x[keys[0]!]!;
 };
 
-export const listFormater = (narrow = false, lang = userLang) => {
+export const listFormater = (narrow = false, lang = '') => {
+  lang = lang ? lang : getUserLang();
   if (narrow) {
     return new Intl.ListFormat('en', { style: 'narrow', type: 'unit' });
   } else {
@@ -116,6 +117,7 @@ export const primaryLanguage = (lang: string | string[] | undefined) => {
 
 export const formatDate = (date: string | number | Date | undefined) => {
   if (!date) return;
+  const userLang = getUserLang();
   try {
     return new Date(date).toLocaleDateString(userLang, {
       year: 'numeric',
@@ -157,9 +159,6 @@ export const getBookDirFromWritingMode = (writingMode: WritingMode) => {
 };
 
 export const getBookDirFromLanguage = (language: string | string[] | undefined) => {
-  const lang = primaryLanguage(language);
-  if (!lang) return 'auto';
-  const rtlLanguages = new Set(['ar', 'he', 'fa', 'ur', 'dv', 'ps', 'sd', 'yi']);
-  const primaryLang = lang.split('-')[0]!.toLowerCase();
-  return rtlLanguages.has(primaryLang) ? 'rtl' : 'auto';
+  const lang = primaryLanguage(language) || '';
+  return getDirFromLanguage(lang);
 };

@@ -56,7 +56,7 @@ export const AboutWindow = () => {
 
           <div className='divider py-12 sm:py-2'></div>
 
-          <div className='flex flex-col items-center px-4 text-center'>
+          <div className='flex flex-col items-center px-4 text-center' dir='ltr'>
             <p className='text-neutral-content text-sm'>
               © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
             </p>

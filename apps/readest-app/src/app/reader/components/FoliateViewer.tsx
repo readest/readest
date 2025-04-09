@@ -23,6 +23,7 @@ import {
   handleTouchEnd,
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
+import { getDirFromUILanguage } from '@/utils/rtl';
 import { transformContent } from '@/services/transformService';
 
 const FoliateViewer: React.FC<{
@@ -84,7 +85,11 @@ const FoliateViewer: React.FC<{
       const viewSettings = getViewSettings(bookKey)!;
       viewSettings.vertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
-      viewSettings.rtl = writingDir?.rtl || viewSettings.writingMode.includes('rl') || false;
+      viewSettings.rtl =
+        writingDir?.rtl ||
+        getDirFromUILanguage() === 'rtl' ||
+        viewSettings.writingMode.includes('rl') ||
+        false;
       setViewSettings(bookKey, { ...viewSettings });
 
       mountAdditionalFonts(detail.doc);

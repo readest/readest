@@ -30,12 +30,16 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   return safeName.trim();
 };
 
-export const getUserLang = () => navigator?.language.split('-')[0] || 'en';
+export const getUserLang = () => {
+  const locale = localStorage?.getItem('i18nextLng') || navigator?.language || '';
+  return locale.split('-')[0] || 'en';
+};
 
 export const isCJKEnv = () => {
-  const isCJKLocale = ['zh', 'ja', 'ko'].includes(getUserLang());
-  const uiLanguage = localStorage.getItem('i18nextLng') || '';
+  const browserLanguage = navigator.language || '';
+  const uiLanguage = localStorage?.getItem('i18nextLng') || '';
   const isCJKUI = ['zh', 'ja', 'ko'].some((lang) => uiLanguage.startsWith(lang));
+  const isCJKLocale = ['zh', 'ja', 'ko'].some((lang) => browserLanguage.startsWith(lang));
   return isCJKLocale || isCJKUI;
 };
 

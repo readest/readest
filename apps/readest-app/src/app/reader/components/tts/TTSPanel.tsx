@@ -249,7 +249,7 @@ const TTSPanel = ({
             tabIndex={0}
             className={clsx(
               'dropdown-content bgcolor-base-200 no-triangle menu menu-vertical rounded-box absolute right-0 z-[1] shadow',
-              'mt-4 inline max-h-96 w-[250px] overflow-y-scroll',
+              'mt-4 inline max-h-96 w-[200px] overflow-y-scroll',
             )}
           >
             {timeoutOptions.map((option, index) => (

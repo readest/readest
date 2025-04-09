@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface SliderProps {
   min?: number;
@@ -34,6 +34,8 @@ const Slider: React.FC<SliderProps> = ({
   onChange,
 }) => {
   const [value, setValue] = useState(initialValue);
+  const [isRtl, setIsRtl] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (e: React.ChangeEvent) => {
     const newValue = parseInt((e.target as HTMLInputElement).value, 10);
@@ -44,28 +46,50 @@ const Slider: React.FC<SliderProps> = ({
   };
 
   useEffect(() => {
+    let node: HTMLElement | null = sliderRef.current;
+    while (node) {
+      if (node.getAttribute('dir') === 'rtl') {
+        setIsRtl(true);
+        break;
+      }
+      node = node.parentElement;
+    }
+  }, []);
+
+  useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
   const percentage = ((value - min) / (max - min)) * 100;
 
   return (
-    <div className={`slider bg-base-200 mx-auto w-full max-w-md rounded-xl ${className}`}>
+    <div
+      ref={sliderRef}
+      className={`slider bg-base-200 mx-auto w-full max-w-md rounded-xl ${className}`}
+      dir={isRtl ? 'rtl' : undefined}
+    >
       <div className='relative' style={{ height: `${heightPx}px` }}>
+        {/* Background track */}
         <div className='bg-base-300/40 absolute h-full w-full rounded-full'></div>
+        {/* Filled portion */}
         <div
           className='bg-base-300 absolute h-full rounded-full'
-          style={{ width: percentage > 0 ? `calc(${percentage}% + ${heightPx / 2}px)` : '0px' }}
+          style={{
+            width: percentage > 0 ? `calc(${percentage}% + ${heightPx / 2}px)` : '0px',
+            [isRtl ? 'right' : 'left']: 0,
+          }}
         ></div>
+        {/* Min/Max labels */}
         <div className='absolute inset-0 flex items-center justify-between px-4 text-sm'>
           <span className={`ml-2 ${minClassName}`}>{minLabel}</span>
           <span className={`mr-2 ${maxClassName}`}>{maxLabel}</span>
         </div>
+        {/* Thumb bubble */}
         <div
           className='pointer-events-none absolute top-0 z-10'
           style={{
-            left: `max(${heightPx / 2}px, calc(${percentage}%))`,
-            transform: 'translateX(calc(-50%))',
+            [isRtl ? 'right' : 'left']: `max(${heightPx / 2}px, calc(${percentage}%))`,
+            transform: isRtl ? 'translateX(calc(50%))' : 'translateX(calc(-50%))',
             height: '100%',
           }}
         >

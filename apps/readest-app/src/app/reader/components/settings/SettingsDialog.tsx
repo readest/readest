@@ -8,8 +8,8 @@ import { RiDashboardLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { IoAccessibilityOutline } from 'react-icons/io5';
-import { MdArrowBackIosNew } from 'react-icons/md';
-
+import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
+import { getDirFromUILanguage } from '@/utils/rtl';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
@@ -28,6 +28,7 @@ type TabConfig = {
 
 const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ bookKey }) => {
   const _ = useTranslation();
+  const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const [activePanel, setActivePanel] = useState<SettingsPanelType>(
     (localStorage.getItem('lastConfigPanel') || 'Font') as SettingsPanelType,
   );
@@ -79,10 +80,10 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
               tabIndex={-1}
               onClick={handleClose}
               className={
-                'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
+                'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
               }
             >
-              <MdArrowBackIosNew />
+              {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}
             </button>
             <div className='dialog-tabs flex h-10 max-w-[100%] flex-grow items-center gap-2 pl-4'>
               {tabConfig.map(({ tab, icon: Icon, label }) => (

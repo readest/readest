@@ -1,10 +1,11 @@
 import clsx from 'clsx';
-import React, { ReactNode, useEffect } from 'react';
-import { MdArrowBackIosNew } from 'react-icons/md';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useDrag } from '@/hooks/useDrag';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
+import { getDirFromUILanguage } from '@/utils/rtl';
 
 const VELOCITY_THRESHOLD = 0.5;
 const SNAP_THRESHOLD = 0.2;
@@ -38,6 +39,7 @@ const Dialog: React.FC<DialogProps> = ({
 }) => {
   const { appService } = useEnv();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = React.useState(!snapHeight);
+  const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
 
@@ -133,6 +135,7 @@ const Dialog: React.FC<DialogProps> = ({
         'modal sm:min-w-90 z-50 h-full w-full !items-start !bg-transparent sm:w-full sm:!items-center',
         className,
       )}
+      dir={isRtl ? 'rtl' : undefined}
     >
       <div
         className={clsx('overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20', bgClassName)}
@@ -177,10 +180,14 @@ const Dialog: React.FC<DialogProps> = ({
                 tabIndex={-1}
                 onClick={onClose}
                 className={
-                  'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent focus:outline-none sm:hidden'
+                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
                 }
               >
-                <MdArrowBackIosNew size={iconSize22} />
+                {isRtl ? (
+                  <MdArrowForwardIos size={iconSize22} />
+                ) : (
+                  <MdArrowBackIosNew size={iconSize22} />
+                )}
               </button>
               <div className='z-15 pointer-events-none absolute inset-0 flex h-11 items-center justify-center'>
                 <span className='line-clamp-1 text-center font-bold'>{title ?? ''}</span>
