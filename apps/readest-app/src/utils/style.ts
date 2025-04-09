@@ -29,16 +29,16 @@ const getFontStyles = (
   themeCode: ThemeCode,
 ) => {
   const { fg, primary } = themeCode;
-  const lastSerifFonts = ['LXGW WenKai GB Screen', 'Georgia', 'Times New Roman'];
+  const lastSerifFonts = ['LXGW WenKai GB Screen', 'LXGW WenKai TC', 'Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
     ...SERIF_FONTS.filter(
       (font) => font !== serif && font !== defaultCJKFont && !lastSerifFonts.includes(font),
     ),
-    ...(defaultCJKFont !== serif && !lastSerifFonts.includes(defaultCJKFont)
-      ? [defaultCJKFont]
-      : []),
-    ...lastSerifFonts.filter((font) => SERIF_FONTS.includes(font)),
+    ...(defaultCJKFont !== serif ? [defaultCJKFont] : []),
+    ...lastSerifFonts.filter(
+      (font) => SERIF_FONTS.includes(font) && !lastSerifFonts.includes(defaultCJKFont),
+    ),
     ...FALLBACK_FONTS,
   ];
   const sansSerifFonts = [
@@ -106,6 +106,7 @@ const getFontStyles = (
 const getAdditionalFontLinks = () => `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" crossorigin="anonymous">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" crossorigin="anonymous">
 `;
 
