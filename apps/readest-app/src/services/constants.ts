@@ -145,9 +145,11 @@ export const SERIF_FONTS = [
   'Vollkorn',
   'Georgia',
   'Times New Roman',
-  _('LXGW WenKai GB Screen'),
-  _('LXGW WenKai TC'),
 ];
+
+export const CJK_SERIF_FONTS = [_('LXGW WenKai GB Screen'), _('LXGW WenKai TC')];
+
+export const CJK_SANS_SERIF_FONTS = ['Noto Sans SC', 'Noto Sans TC'];
 
 export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica', 'Arial'];
 

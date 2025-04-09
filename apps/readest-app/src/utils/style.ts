@@ -3,6 +3,8 @@ import {
   SANS_SERIF_FONTS,
   SERIF_FONTS,
   FALLBACK_FONTS,
+  CJK_SANS_SERIF_FONTS,
+  CJK_SERIF_FONTS,
 } from '@/services/constants';
 import { ViewSettings } from '@/types/book';
 import {
@@ -29,13 +31,14 @@ const getFontStyles = (
   themeCode: ThemeCode,
 ) => {
   const { fg, primary } = themeCode;
-  const lastSerifFonts = ['LXGW WenKai GB Screen', 'LXGW WenKai TC', 'Georgia', 'Times New Roman'];
+  const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
     ...SERIF_FONTS.filter(
       (font) => font !== serif && font !== defaultCJKFont && !lastSerifFonts.includes(font),
     ),
     ...(defaultCJKFont !== serif ? [defaultCJKFont] : []),
+    ...CJK_SERIF_FONTS.filter((font) => font !== serif && font !== defaultCJKFont),
     ...lastSerifFonts.filter(
       (font) => SERIF_FONTS.includes(font) && !lastSerifFonts.includes(defaultCJKFont),
     ),
@@ -45,6 +48,7 @@ const getFontStyles = (
     sansSerif,
     ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
     ...(defaultCJKFont !== sansSerif ? [defaultCJKFont] : []),
+    ...CJK_SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
     ...FALLBACK_FONTS,
   ];
   const monospaceFonts = [monospace, ...MONOSPACE_FONTS.filter((font) => font !== monospace)];
@@ -107,6 +111,7 @@ const getAdditionalFontLinks = () => `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Sans+TC&display=swap" crossorigin="anonymous">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" crossorigin="anonymous">
 `;
 

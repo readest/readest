@@ -5,6 +5,8 @@ import {
   ANDROID_FONTS,
   CJK_FONTS_PATTENS,
   CJK_NAMES_PATTENS,
+  CJK_SANS_SERIF_FONTS,
+  CJK_SERIF_FONTS,
   IOS_FONTS,
   LINUX_FONTS,
   MACOS_FONTS,
@@ -111,6 +113,11 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight!);
+  const [CJKFonts] = useState<string[]>(() => {
+    return Array.from(new Set([...sysFonts, ...CJK_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]))
+      .filter((font) => CJK_FONTS_PATTENS.test(font) || CJK_NAMES_PATTENS.test(font))
+      .sort((a, b) => a.localeCompare(b));
+  });
 
   useEffect(() => {
     if (isTauriAppPlatform() && appService?.hasSysFontsList) {
@@ -238,9 +245,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='config-item-top'
                 family='serif'
                 label={_('CJK Font')}
-                options={sysFonts.filter(
-                  (font) => CJK_FONTS_PATTENS.test(font) || CJK_NAMES_PATTENS.test(font),
-                )}
+                options={CJKFonts}
                 selected={defaultCJKFont}
                 onSelect={setDefaultCJKFont}
               />
@@ -267,7 +272,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               className='config-item-top'
               family='serif'
               label={_('Serif Font')}
-              options={SERIF_FONTS}
+              options={[...SERIF_FONTS, ...CJK_SERIF_FONTS]}
               moreOptions={sysFonts}
               selected={serifFont}
               onSelect={setSerifFont}
@@ -275,7 +280,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             <FontFace
               family='sans-serif'
               label={_('Sans-Serif Font')}
-              options={SANS_SERIF_FONTS}
+              options={[...SANS_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]}
               moreOptions={sysFonts}
               selected={sansSerifFont}
               onSelect={setSansSerifFont}
