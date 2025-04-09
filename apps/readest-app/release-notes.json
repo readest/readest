@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.32": {
+      "date": "2025-04-09",
+      "notes": [
+        "No more resetting of font size and color when you apply custom book styles",
+        "The underline and squiggly highlight decorations have been adjusted to sit neatly between text lines",
+        "With more font options available, the font menu is no longer forced in-line",
+        "LXGW WenKai TC is now part of our CJK font list"
+      ]
+    },
     "0.9.31": {
       "date": "2025-04-08",
       "notes": [
