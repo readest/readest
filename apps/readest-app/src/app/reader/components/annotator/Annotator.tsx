@@ -175,6 +175,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const onDrawAnnotation = (event: Event) => {
+    const viewSettings = getViewSettings(bookKey)!;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
@@ -185,8 +186,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { defaultView } = doc;
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
-      const { writingMode } = defaultView.getComputedStyle(el);
-      draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor });
+      const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
+      const lineHeightValue =
+        parseFloat(lineHeight) || viewSettings.lineHeight * viewSettings.defaultFontSize;
+      const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
+      console.log('style', writingMode, lineHeight, fontSize);
+      const strokeWidth = style === 'underline' ? 2 : 4;
+      const padding = (lineHeightValue - fontSizeValue - strokeWidth) / 2;
+      draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor, padding });
     }
   };
 
