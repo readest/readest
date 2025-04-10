@@ -19,7 +19,6 @@ interface DemoBooks {
 
 export const useDemoBooks = () => {
   const { envConfig } = useEnv();
-  const userLang = getUserLang() as keyof typeof libraries;
   const [books, setBooks] = useState<Book[]>([]);
   const isLoading = useRef(false);
 
@@ -27,6 +26,7 @@ export const useDemoBooks = () => {
     if (isLoading.current) return;
     isLoading.current = true;
 
+    const userLang = getUserLang() as keyof typeof libraries;
     const fetchDemoBooks = async () => {
       try {
         const appService = await envConfig.getAppService();

@@ -17,6 +17,9 @@ dependencies = [
  "futures-util",
  "log",
  "objc",
+ "objc2 0.6.0",
+ "objc2-authentication-services",
+ "objc2-foundation 0.3.0",
  "rand 0.8.5",
  "read-progress-stream",
  "reqwest",
@@ -3040,6 +3043,21 @@ dependencies = [
  "objc2-core-image",
  "objc2-foundation 0.3.0",
  "objc2-quartz-core 0.3.0",
+]
+
+[[package]]
+name = "objc2-authentication-services"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8963a73216bfe9565fe78e86fcc908b65232468d195b95346d2489110a60fca"
+dependencies = [
+ "bitflags 2.9.0",
+ "block2 0.6.0",
+ "objc2 0.6.0",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.0",
+ "objc2-security",
 ]
 
 [[package]]

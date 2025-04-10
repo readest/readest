@@ -7,6 +7,10 @@ extern crate cocoa;
 extern crate objc;
 
 #[cfg(target_os = "macos")]
+mod apple_auth;
+#[cfg(target_os = "macos")]
+use apple_auth::start_apple_sign_in;
+#[cfg(target_os = "macos")]
 mod menu;
 #[cfg(target_os = "macos")]
 mod traffic_light;
@@ -134,6 +138,8 @@ pub fn run() {
             start_server,
             download_file,
             upload_file,
+            #[cfg(target_os = "macos")]
+            start_apple_sign_in,
             #[cfg(target_os = "macos")]
             set_traffic_lights,
             #[cfg(desktop)]

@@ -48,9 +48,12 @@ tauri-plugin-haptics = "2.2.4"
 tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 
 [target."cfg(target_os = \"macos\")".dependencies]
+rand = "0.8"
 cocoa = "0.25"
 objc = "0.2.7"
-rand = "0.8"
+objc2 = "0.6"
+objc2-authentication-services = "0.3"
+objc2-foundation = { version = "0.3", features = ["NSError", "NSArray"] }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-cli = "2"

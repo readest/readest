@@ -43,6 +43,7 @@ interface ProviderLoginProp {
 
 const WEB_AUTH_CALLBACK = `${READEST_WEB_BASE_URL}/auth/callback`;
 const DEEPLINK_CALLBACK = 'readest://auth-callback';
+const USE_APPLE_SIGN_IN = process.env['NEXT_PUBLIC_USE_APPLE_SIGN_IN'] === 'true';
 
 const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Icon, label }) => {
   return (
@@ -74,7 +75,7 @@ export default function AuthPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
-    if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
+    if (process.env.NODE_ENV === 'production' || appService?.isMobile || USE_APPLE_SIGN_IN) {
       if (appService?.isMobile) {
         return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
       }
@@ -97,15 +98,19 @@ export default function AuthPage() {
     const request = {
       scope: ['fullName', 'email'] as Scope[],
     };
-    const appleAuthResponse = await getAppleIdAuth(request);
-    if (appleAuthResponse.identityToken) {
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token: appleAuthResponse.identityToken,
-      });
-      if (error) {
-        console.error('Authentication error:', error);
+    if (appService?.isIOSApp || USE_APPLE_SIGN_IN) {
+      const appleAuthResponse = await getAppleIdAuth(request);
+      if (appleAuthResponse.identityToken) {
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: appleAuthResponse.identityToken,
+        });
+        if (error) {
+          console.error('Authentication error:', error);
+        }
       }
+    } else {
+      console.log('Sign in with Apple on this platform is not supported yet');
     }
   };
 
@@ -161,7 +166,7 @@ export default function AuthPage() {
 
   const startTauriOAuth = async () => {
     try {
-      if (process.env.NODE_ENV === 'production' || appService?.isMobile) {
+      if (process.env.NODE_ENV === 'production' || appService?.isMobile || USE_APPLE_SIGN_IN) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const currentWindow = getCurrentWindow();
         currentWindow.listen('single-instance', ({ event, payload }) => {
@@ -345,7 +350,7 @@ export default function AuthPage() {
         />
         <ProviderLogin
           provider='apple'
-          handleSignIn={appService?.isIOSApp ? tauriSignInApple : tauriSignIn}
+          handleSignIn={appService?.isIOSApp || USE_APPLE_SIGN_IN ? tauriSignInApple : tauriSignIn}
           Icon={FaApple}
           label={_('Sign in with Apple')}
         />
