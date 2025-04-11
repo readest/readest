@@ -157,11 +157,11 @@ export abstract class BaseAppService implements AppService {
 
       try {
         if (typeof file === 'string') {
-          filename = getFilename(file);
           fileobj = await this.fs.openFile(file, 'None');
+          filename = fileobj.name || getFilename(file);
         } else {
-          filename = file.name;
           fileobj = file;
+          filename = file.name;
         }
         if (filename.endsWith('.txt')) {
           const txt2epub = new TxtToEpubConverter();
@@ -210,10 +210,10 @@ export abstract class BaseAppService implements AppService {
         !transient &&
         (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)
       ) {
-        if (typeof file === 'string' && isContentURI(file)) {
-          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
-        } else if (filename.endsWith('.txt')) {
+        if (filename.endsWith('.txt')) {
           await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+        } else if (typeof file === 'string' && isContentURI(file)) {
+          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else if (typeof file === 'string' && !isValidURL(file)) {
           await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else {
