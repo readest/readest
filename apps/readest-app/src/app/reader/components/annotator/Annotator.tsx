@@ -25,6 +25,7 @@ import { useNotesSync } from '../../hooks/useNotesSync';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
+import { transformContent } from '@/services/transformService';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -88,25 +89,34 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const isValidSelection = (sel: Selection) => {
       return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
     };
-    const makeSelection = (sel: Selection, rebuildRange = false) => {
+    const transformCtx = {
+      bookKey,
+      viewSettings: getViewSettings(bookKey)!,
+      content: '',
+      transformers: ['punctuation'],
+      reversePunctuationTransform: true,
+    };
+    const makeSelection = async (sel: Selection, rebuildRange = false) => {
       isTextSelected.current = true;
       const range = sel.getRangeAt(0);
       if (rebuildRange) {
         sel.removeAllRanges();
         sel.addRange(range);
       }
-      setSelection({ key: bookKey, text: sel.toString(), range, index });
+      transformCtx['content'] = sel.toString();
+      setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
     };
     // FIXME: extremely hacky way to dismiss system selection tools on iOS
-    const makeSelectionOnIOS = (sel: Selection) => {
+    const makeSelectionOnIOS = async (sel: Selection) => {
       isTextSelected.current = true;
       const range = sel.getRangeAt(0);
       setTimeout(() => {
         sel.removeAllRanges();
-        setTimeout(() => {
+        setTimeout(async () => {
           if (!isTextSelected.current) return;
           sel.addRange(range);
-          setSelection({ key: bookKey, text: range.toString(), range, index });
+          transformCtx['content'] = range.toString();
+          setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
         }, 40);
       }, 0);
     };
