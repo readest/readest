@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} година",
   "{{value}} hours": "{{value}} години",
   "CJK Font": "CJK шрифт",
-  "Clear Search": "Очистити пошук"
+  "Clear Search": "Очистити пошук",
+  "Header & Footer": "Заголовок і нижній колонтитул",
+  "Apply also in Scrolled Mode": "Застосувати також у прокрученому режимі"
 }

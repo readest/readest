@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}}小时",
   "{{value}} hours": "{{value}}小时",
   "CJK Font": "中文字体",
-  "Clear Search": "清除搜索"
+  "Clear Search": "清除搜索",
+  "Header & Footer": "页眉页脚",
+  "Apply also in Scrolled Mode": "应用到滚动模式"
 }

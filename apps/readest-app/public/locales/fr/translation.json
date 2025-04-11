@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} heure",
   "{{value}} hours": "{{value}} heures",
   "CJK Font": "Police CJK",
-  "Clear Search": "Effacer la recherche"
+  "Clear Search": "Effacer la recherche",
+  "Header & Footer": "En-tête et pied de page",
+  "Apply also in Scrolled Mode": "Appliquer également en mode défilement"
 }

@@ -149,7 +149,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         className={clsx(
           'footer-bar shadow-xs absolute bottom-0 z-50 flex w-full flex-col',
           'sm:h-[52px] sm:justify-center',
-          'sm:bg-base-100 border-base-300/50 border sm:border-none',
+          'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
           'transition-[opacity,transform] duration-300',
           appService?.hasRoundedWindow && 'rounded-window-bottom-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',

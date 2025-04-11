@@ -43,6 +43,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor!);
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader!);
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter!);
+  const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll!);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'paragraphMargin', paragraphMargin);
@@ -195,6 +196,11 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     saveViewSettings(envConfig, bookKey, 'showHeader', showHeader, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHeader]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showBarsOnScroll', showBarsOnScroll, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showBarsOnScroll]);
 
   useEffect(() => {
     if (showFooter === viewSettings.showFooter) return;
@@ -391,24 +397,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <h2 className='mb-2 font-medium'>{_('Page')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Show Header')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showHeader}
-                onChange={() => setShowHeader(!showHeader)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Footer')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showFooter}
-                onChange={() => setShowFooter(!showFooter)}
-              />
-            </div>
             <NumberInput
               label={_('Vertical Margins (px)')}
               value={marginPx}
@@ -453,6 +441,41 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={9999}
               step={100}
             />
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Header & Footer')}</h2>
+        <div className='card bg-base-100 border-base-200 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Show Header')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showHeader}
+                onChange={() => setShowHeader(!showHeader)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Footer')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showFooter}
+                onChange={() => setShowFooter(!showFooter)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Apply also in Scrolled Mode')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showBarsOnScroll}
+                onChange={() => setShowBarsOnScroll(!showBarsOnScroll)}
+              />
+            </div>
           </div>
         </div>
       </div>

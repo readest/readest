@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} 시간",
   "{{value}} hours": "{{value}} 시간",
   "CJK Font": "CJK 글꼴",
-  "Clear Search": "검색 지우기"
+  "Clear Search": "검색 지우기",
+  "Header & Footer": "헤더 및 푸터",
+  "Apply also in Scrolled Mode": "스크롤 모드에서도 적용"
 }

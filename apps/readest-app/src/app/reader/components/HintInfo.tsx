@@ -45,26 +45,35 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   }, [hintMessage]);
 
   return (
-    <div
-      className={clsx(
-        'hintinfo absolute flex items-center justify-end overflow-hidden',
-        hintMessage ? 'bg-base-100' : 'bg-transparent',
-        isVertical ? 'writing-vertical-rl max-h-[50%]' : 'top-0 h-[44px] max-w-[50%]',
-      )}
-      style={
-        isVertical
-          ? {
-              bottom: `${verticalMargin * 1.5}px`,
-              left: `calc(100% - ${horizontalGap}%)`,
-              width: showDoubleBorder ? '30px' : `${horizontalGap}%`,
-            }
-          : { insetInlineEnd: `${horizontalGap}%` }
-      }
-    >
-      <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
-        {hintMessage || ''}
-      </h2>
-    </div>
+    <>
+      <div
+        className={clsx(
+          'absolute left-0 right-0 top-0 z-10 h-[env(safe-area-inset-top)]',
+          hintMessage ? 'bg-base-100' : 'bg-transparent',
+        )}
+      />
+      <div
+        className={clsx(
+          'hintinfo absolute flex items-center justify-end overflow-hidden ps-2',
+          'mt-[env(safe-area-inset-top)]',
+          hintMessage ? 'bg-base-100' : 'bg-transparent',
+          isVertical ? 'writing-vertical-rl max-h-[50%]' : 'top-0 h-[44px] max-w-[50%]',
+        )}
+        style={
+          isVertical
+            ? {
+                bottom: `${verticalMargin * 1.5}px`,
+                left: `calc(100% - ${horizontalGap}%)`,
+                width: showDoubleBorder ? '30px' : `${horizontalGap}%`,
+              }
+            : { insetInlineEnd: `${horizontalGap}%` }
+        }
+      >
+        <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
+          {hintMessage || ''}
+        </h2>
+      </div>
+    </>
   );
 };
 

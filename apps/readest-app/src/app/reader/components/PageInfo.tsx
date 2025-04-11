@@ -57,7 +57,9 @@ const PageInfoView: React.FC<PageInfoProps> = ({
             }
           : {
               insetInlineEnd: `${horizontalGap}%`,
-              paddingBottom: appService?.hasSafeAreaInset ? 'env(safe-area-inset-bottom)' : 0,
+              paddingBottom: appService?.hasSafeAreaInset
+                ? 'calc(env(safe-area-inset-bottom)*0.67)'
+                : 0,
             }
       }
     >

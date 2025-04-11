@@ -90,6 +90,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   borderColor: 'red',
   showHeader: true,
   showFooter: true,
+  showBarsOnScroll: false,
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

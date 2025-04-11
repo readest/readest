@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} час",
   "{{value}} hours": "{{value}} часа",
   "CJK Font": "CJK Шрифт",
-  "Clear Search": "Очистить поиск"
+  "Clear Search": "Очистить поиск",
+  "Header & Footer": "Заголовок и нижний колонтитул",
+  "Apply also in Scrolled Mode": "Применить также в прокручиваемом режиме"
 }

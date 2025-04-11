@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}}時間",
   "{{value}} hours": "{{value}}時間",
   "CJK Font": "CJKフォント",
-  "Clear Search": "検索をクリア"
+  "Clear Search": "検索をクリア",
+  "Header & Footer": "ヘッダーとフッター",
+  "Apply also in Scrolled Mode": "スクロールモードでも適用"
 }

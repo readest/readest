@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} hora",
   "{{value}} hours": "{{value}} horas",
   "CJK Font": "Fuente CJK",
-  "Clear Search": "Limpiar búsqueda"
+  "Clear Search": "Limpiar búsqueda",
+  "Header & Footer": "Encabezado y pie de página",
+  "Apply also in Scrolled Mode": "Aplicar también en modo desplazamiento"
 }

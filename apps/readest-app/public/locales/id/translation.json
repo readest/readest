@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} jam",
   "{{value}} hours": "{{value}} jam",
   "CJK Font": "Font CJK",
-  "Clear Search": "Hapus Pencarian"
+  "Clear Search": "Hapus Pencarian",
+  "Header & Footer": "Header & Footer",
+  "Apply also in Scrolled Mode": "Terapkan juga di Mode Gulir"
 }

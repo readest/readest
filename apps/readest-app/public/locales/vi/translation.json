@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} giờ",
   "{{value}} hours": "{{value}} giờ",
   "CJK Font": "Phông chữ CJK",
-  "Clear Search": "Xóa tìm kiếm"
+  "Clear Search": "Xóa tìm kiếm",
+  "Header & Footer": "Đầu trang & Chân trang",
+  "Apply also in Scrolled Mode": "Áp dụng cũng trong chế độ cuộn"
 }

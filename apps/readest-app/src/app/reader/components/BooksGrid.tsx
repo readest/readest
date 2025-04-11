@@ -42,10 +42,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
 
   return (
     <div
-      className={clsx(
-        'grid h-full flex-grow',
-        appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
-      )}
+      className={clsx('grid h-full flex-grow')}
       style={{
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,
@@ -63,6 +60,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         const isBookmarked = getViewState(bookKey)?.ribbonVisible;
         const horizontalGapPercent = viewSettings.gapPercent;
         const verticalMarginPixels = viewSettings.marginPx;
+        const scrolled = viewSettings.scrolled;
+        const showBarsOnScroll = viewSettings.showBarsOnScroll;
+        const showHeader = viewSettings.showHeader && (scrolled ? showBarsOnScroll : true);
+        const showFooter = viewSettings.showFooter && (scrolled ? showBarsOnScroll : true);
 
         return (
           <div
@@ -70,6 +71,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             key={bookKey}
             className={clsx(
               'relative h-full w-full overflow-hidden',
+              index === 0 &&
+                !viewSettings?.scrolled &&
+                appService?.hasSafeAreaInset &&
+                'pt-[env(safe-area-inset-top)]',
               !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window',
             )}
           >
@@ -85,32 +90,36 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             <FoliateViewer bookKey={bookKey} bookDoc={bookDoc} config={config} />
             {viewSettings.vertical && viewSettings.scrolled && (
               <>
-                <div
-                  className='bg-base-100 absolute left-0 top-0 h-full'
-                  style={{
-                    width: `calc(${horizontalGapPercent}%)`,
-                    height: `calc(100% - ${verticalMarginPixels}px)`,
-                  }}
-                />
-                <div
-                  className='bg-base-100 absolute right-0 top-0 h-full'
-                  style={{
-                    width: `calc(${horizontalGapPercent}%)`,
-                    height: `calc(100% - ${verticalMarginPixels}px)`,
-                  }}
-                />
+                {(showFooter || viewSettings.doubleBorder) && (
+                  <div
+                    className='bg-base-100 absolute left-0 top-0 h-full'
+                    style={{
+                      width: `calc(${horizontalGapPercent}%)`,
+                      height: `calc(100% - ${verticalMarginPixels}px)`,
+                    }}
+                  />
+                )}
+                {(showHeader || viewSettings.doubleBorder) && (
+                  <div
+                    className='bg-base-100 absolute right-0 top-0 h-full'
+                    style={{
+                      width: `calc(${horizontalGapPercent}%)`,
+                      height: `calc(100% - ${verticalMarginPixels}px)`,
+                    }}
+                  />
+                )}
               </>
             )}
             {viewSettings.vertical && viewSettings.doubleBorder && (
               <DoubleBorder
-                showHeader={viewSettings.showHeader}
-                showFooter={viewSettings.showFooter}
+                showHeader={showHeader}
+                showFooter={showFooter}
                 borderColor={viewSettings.borderColor}
                 horizontalGap={horizontalGapPercent}
                 verticalMargin={verticalMarginPixels}
               />
             )}
-            {viewSettings.showHeader && (
+            {showHeader && (
               <SectionInfo
                 section={sectionLabel}
                 showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
@@ -127,7 +136,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               horizontalGap={horizontalGapPercent}
               verticalMargin={verticalMarginPixels}
             />
-            {viewSettings.showFooter && (
+            {showFooter && (
               <PageInfoView
                 bookFormat={book.format}
                 section={section}

@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} Stunde",
   "{{value}} hours": "{{value}} Stunden",
   "CJK Font": "CJK-Schriftart",
-  "Clear Search": "Suche löschen"
+  "Clear Search": "Suche löschen",
+  "Header & Footer": "Kopf- & Fußzeile",
+  "Apply also in Scrolled Mode": "Auch im Scroll-Modus anwenden"
 }

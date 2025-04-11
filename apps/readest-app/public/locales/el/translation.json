@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} ώρα",
   "{{value}} hours": "{{value}} ώρες",
   "CJK Font": "Γραμματοσειρά CJK",
-  "Clear Search": "Καθαρισμός αναζήτησης"
+  "Clear Search": "Καθαρισμός αναζήτησης",
+  "Header & Footer": "Κεφαλίδα & Υποσέλιδο",
+  "Apply also in Scrolled Mode": "Εφαρμογή και σε λειτουργία κύλισης"
 }

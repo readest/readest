@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} ساعة",
   "{{value}} hours": "{{value}} ساعات",
   "CJK Font": "خط CJK",
-  "Clear Search": "مسح البحث"
+  "Clear Search": "مسح البحث",
+  "Header & Footer": "الرأس والتذييل",
+  "Apply also in Scrolled Mode": "تطبيق أيضًا في وضع التمرير"
 }

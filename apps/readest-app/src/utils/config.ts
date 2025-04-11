@@ -2,11 +2,12 @@ import { ViewSettings } from '@/types/book';
 
 export const getMaxInlineSize = (viewSettings: ViewSettings) => {
   const isScrolled = viewSettings.scrolled!;
+  const isVertical = viewSettings.vertical!;
   const maxColumnCount = viewSettings.maxColumnCount!;
   const screenWidth = window.innerWidth;
   const screenHeight = window.innerHeight;
 
-  return maxColumnCount === 1 || isScrolled
+  return maxColumnCount === 1 || isScrolled || isVertical
     ? Math.max(screenWidth, screenHeight, 720)
     : viewSettings.maxInlineSize!;
 };

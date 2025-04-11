@@ -31,7 +31,10 @@ export const useClickEvent = (
               if (appService?.isMobile) {
                 windowStartX = 0;
               } else {
-                const windowPosition = await tauriGetWindowLogicalPosition();
+                const windowPosition = (await tauriGetWindowLogicalPosition()) as {
+                  x: number;
+                  y: number;
+                };
                 windowStartX = windowPosition.x;
               }
             } else {
@@ -52,6 +55,7 @@ export const useClickEvent = (
               } else {
                 if (hoveredBookKey) {
                   setHoveredBookKey(null);
+                  return;
                 }
                 if (!viewSettings.disableClick! && screenX >= viewCenterX) {
                   if (viewSettings.swapClickArea) {

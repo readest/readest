@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} घंटा",
   "{{value}} hours": "{{value}} घंटे",
   "CJK Font": "CJK फ़ॉन्ट",
-  "Clear Search": "खोज साफ करें"
+  "Clear Search": "खोज साफ करें",
+  "Header & Footer": "हेडर और फ़ुटर",
+  "Apply also in Scrolled Mode": "स्क्रॉल मोड में भी लागू करें"
 }

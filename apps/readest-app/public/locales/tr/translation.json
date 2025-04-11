@@ -274,5 +274,7 @@
   "{{value}} hour": "{{value}} saat",
   "{{value}} hours": "{{value}} saat",
   "CJK Font": "CJK Yazı Tipi",
-  "Clear Search": "Aramayı Temizle"
+  "Clear Search": "Aramayı Temizle",
+  "Header & Footer": "Başlık ve Altbilgi",
+  "Apply also in Scrolled Mode": "Kaydırılmış Modda da Uygula"
 }

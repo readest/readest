@@ -82,6 +82,7 @@ export interface BookLayout {
   borderColor: string;
   showHeader: boolean;
   showFooter: boolean;
+  showBarsOnScroll: boolean;
 }
 
 export interface BookStyle {
