@@ -126,8 +126,6 @@
   "Apply to All Books": "تطبيق على جميع الكتب",
   "Apply to This Book": "تطبيق على هذا الكتاب",
   "Unable to fetch the translation. Try again later.": "تعذر جلب الترجمة. حاول مرة أخرى لاحقًا.",
-  "Update Now!": "قم بالتحديث الآن!",
-  "Update": "تحديث",
   "Check Update": "التحقق من التحديث",
   "Already the latest version": "الإصدار الحالي هو الإصدار الأحدث بالفعل",
   "Book Details": "تفاصيل الكتاب",
@@ -276,5 +274,12 @@
   "CJK Font": "خط CJK",
   "Clear Search": "مسح البحث",
   "Header & Footer": "الرأس والتذييل",
-  "Apply also in Scrolled Mode": "تطبيق أيضًا في وضع التمرير"
+  "Apply also in Scrolled Mode": "تطبيق أيضًا في وضع التمرير",
+  "A new version of Readest is Available!": "إصدار جديد من ريديست متاح!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "إصدار ريديست {{newVersion}} متاح (الإصدار المثبت {{currentVersion}}).",
+  "Download and install now?": "هل ترغب في تنزيل وتثبيت الآن؟",
+  "Downloading {{downloaded}} of {{contentLength}}": "جارٍ تنزيل {{downloaded}} من {{contentLength}}",
+  "Download finished": "اكتمل التنزيل",
+  "DOWNLOAD & INSTALL": "تنزيل وتثبيت",
+  "Changelog:": "سجل التغييرات:"
 }

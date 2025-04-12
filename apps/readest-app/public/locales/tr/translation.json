@@ -126,8 +126,6 @@
   "Apply to All Books": "Tüm kitaplara uygula",
   "Apply to This Book": "Bu kitaba uygula",
   "Unable to fetch the translation. Try again later.": "Çeviri alınamıyor. Daha sonra tekrar deneyin.",
-  "Update Now!": "Şimdi Güncelle!",
-  "Update": "Güncelle",
   "Check Update": "Güncellemeyi kontrol et",
   "Already the latest version": "Zaten en son sürüm",
   "Book Details": "Kitap Detayları",
@@ -276,5 +274,12 @@
   "CJK Font": "CJK Yazı Tipi",
   "Clear Search": "Aramayı Temizle",
   "Header & Footer": "Başlık ve Altbilgi",
-  "Apply also in Scrolled Mode": "Kaydırılmış Modda da Uygula"
+  "Apply also in Scrolled Mode": "Kaydırılmış Modda da Uygula",
+  "A new version of Readest is Available!": "Yeni bir Readest sürümü mevcut!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} mevcut (yüklü sürüm {{currentVersion}}).",
+  "Download and install now?": "Şimdi indirip yükleyelim mi?",
+  "Downloading {{downloaded}} of {{contentLength}}": "İndiriliyor {{downloaded}}/{{contentLength}}",
+  "Download finished": "İndirme tamamlandı",
+  "DOWNLOAD & INSTALL": "İNDİR & YÜKLE",
+  "Changelog:": "Değişiklik Günlüğü:"
 }

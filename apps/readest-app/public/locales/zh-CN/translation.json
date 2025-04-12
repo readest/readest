@@ -126,8 +126,6 @@
   "Apply to All Books": "应用于所有书籍",
   "Apply to This Book": "应用于此书籍",
   "Unable to fetch the translation. Try again later.": "无法获取翻译，请稍后重试。",
-  "Update Now!": "立即更新！",
-  "Update": "更新",
   "Check Update": "检查更新",
   "Already the latest version": "已经是最新版本",
   "Book Details": "书籍详情",
@@ -276,5 +274,12 @@
   "CJK Font": "中文字体",
   "Clear Search": "清除搜索",
   "Header & Footer": "页眉页脚",
-  "Apply also in Scrolled Mode": "应用到滚动模式"
+  "Apply also in Scrolled Mode": "应用到滚动模式",
+  "A new version of Readest is Available!": "有新版本的 Readest 可更新！",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} 可更新（已安装版本 {{currentVersion}}）。",
+  "Download and install now?": "立即下载并安装？",
+  "Downloading {{downloaded}} of {{contentLength}}": "正在下载 {{downloaded}} / {{contentLength}}",
+  "Download finished": "下载完成",
+  "DOWNLOAD & INSTALL": "下载并安装",
+  "Changelog:": "更新日志："
 }

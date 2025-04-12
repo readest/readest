@@ -126,8 +126,6 @@
   "Apply to All Books": "すべての書籍に適用",
   "Apply to This Book": "この書籍に適用",
   "Unable to fetch the translation. Try again later.": "翻訳を取得できません。後で再試行してください。",
-  "Update Now!": "今すぐ更新！",
-  "Update": "更新",
   "Check Update": "更新を確認",
   "Already the latest version": "すでに最新バージョン",
   "Book Details": "書籍の詳細",
@@ -276,5 +274,12 @@
   "CJK Font": "CJKフォント",
   "Clear Search": "検索をクリア",
   "Header & Footer": "ヘッダーとフッター",
-  "Apply also in Scrolled Mode": "スクロールモードでも適用"
+  "Apply also in Scrolled Mode": "スクロールモードでも適用",
+  "A new version of Readest is Available!": "新しいバージョンのReadestが利用可能です！",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}}が利用可能です（インストールされたバージョン{{currentVersion}}）。",
+  "Download and install now?": "今すぐダウンロードしてインストールしますか？",
+  "Downloading {{downloaded}} of {{contentLength}}": "ダウンロード中 {{downloaded}} / {{contentLength}}",
+  "Download finished": "ダウンロード完了",
+  "DOWNLOAD & INSTALL": "更新",
+  "Changelog:": "変更ログ："
 }

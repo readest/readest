@@ -126,8 +126,6 @@
   "Apply to All Books": "Áp dụng cho tất cả sách",
   "Apply to This Book": "Áp dụng cho sách này",
   "Unable to fetch the translation. Try again later.": "Không thể tải dịch vụ. Vui lòng thử lại sau.",
-  "Update Now!": "Cập nhật ngay!",
-  "Update": "Cập nhật",
   "Check Update": "Kiểm tra cập nhật",
   "Already the latest version": "Đã là phiên bản mới nhất",
   "Book Details": "Chi tiết sách",
@@ -276,5 +274,12 @@
   "CJK Font": "Phông chữ CJK",
   "Clear Search": "Xóa tìm kiếm",
   "Header & Footer": "Đầu trang & Chân trang",
-  "Apply also in Scrolled Mode": "Áp dụng cũng trong chế độ cuộn"
+  "Apply also in Scrolled Mode": "Áp dụng cũng trong chế độ cuộn",
+  "A new version of Readest is Available!": "Đã có phiên bản mới của Readest!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} đã có sẵn (phiên bản đã cài đặt {{currentVersion}}).",
+  "Download and install now?": "Tải xuống và cài đặt ngay bây giờ?",
+  "Downloading {{downloaded}} of {{contentLength}}": "Đang tải {{downloaded}} trong {{contentLength}}",
+  "Download finished": "Tải xuống hoàn tất",
+  "DOWNLOAD & INSTALL": "TẢI XUỐNG & CÀI ĐẶT",
+  "Changelog:": "Thay đổi:"
 }

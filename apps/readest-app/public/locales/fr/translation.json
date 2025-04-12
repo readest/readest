@@ -126,8 +126,6 @@
   "Apply to All Books": "Appliquer à tous les livres",
   "Apply to This Book": "Appliquer à ce livre",
   "Unable to fetch the translation. Try again later.": "Impossible de récupérer la traduction. Réessayez plus tard.",
-  "Update Now!": "Mettre à jour maintenant !",
-  "Update": "Mettre à jour",
   "Check Update": "Vérifier la mise à jour",
   "Already the latest version": "Déjà la dernière version",
   "Book Details": "Détails du livre",
@@ -276,5 +274,12 @@
   "CJK Font": "Police CJK",
   "Clear Search": "Effacer la recherche",
   "Header & Footer": "En-tête et pied de page",
-  "Apply also in Scrolled Mode": "Appliquer également en mode défilement"
+  "Apply also in Scrolled Mode": "Appliquer également en mode défilement",
+  "A new version of Readest is Available!": "Avis de mise à jour",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} est disponible (version installée {{currentVersion}}).",
+  "Download and install now?": "Télécharger et installer maintenant ?",
+  "Downloading {{downloaded}} of {{contentLength}}": "Téléchargement {{downloaded}} sur {{contentLength}}",
+  "Download finished": "Téléchargement terminé",
+  "DOWNLOAD & INSTALL": "TÉLÉCHARGER ET INSTALLER",
+  "Changelog:": "Journal des modifications :"
 }

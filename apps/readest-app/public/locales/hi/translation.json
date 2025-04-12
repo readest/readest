@@ -126,8 +126,6 @@
   "Apply to All Books": "सभी पुस्तकों पर लागू करें",
   "Apply to This Book": "इस पुस्तक पर लागू करें",
   "Unable to fetch the translation. Try again later.": "अनुवाद प्राप्त करने में असमर्थ। बाद में पुनः प्रयास करें।",
-  "Update Now!": "अभी अपडेट करें!",
-  "Update": "अपडेट करें",
   "Check Update": "अपडेट जांचें",
   "Already the latest version": "पहले से ही नवीनतम संस्करण",
   "Book Details": "पुस्तक विवरण",
@@ -276,5 +274,12 @@
   "CJK Font": "CJK फ़ॉन्ट",
   "Clear Search": "खोज साफ करें",
   "Header & Footer": "हेडर और फ़ुटर",
-  "Apply also in Scrolled Mode": "स्क्रॉल मोड में भी लागू करें"
+  "Apply also in Scrolled Mode": "स्क्रॉल मोड में भी लागू करें",
+  "A new version of Readest is Available!": "Readest का एक नया संस्करण उपलब्ध है!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} उपलब्ध है (स्थापित संस्करण {{currentVersion}})।",
+  "Download and install now?": "अब डाउनलोड और इंस्टॉल करें?",
+  "Downloading {{downloaded}} of {{contentLength}}": "डाउनलोड कर रहा है {{downloaded}} का {{contentLength}}",
+  "Download finished": "डाउनलोड पूरा हुआ",
+  "DOWNLOAD & INSTALL": "डाउनलोड और इंस्टॉल करें",
+  "Changelog:": "चेंजलॉग:"
 }

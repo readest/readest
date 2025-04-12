@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": ["main"],
+  "windows": ["main", "updater"],
   "permissions": [
     "core:default",
     "fs:default",
@@ -46,6 +46,9 @@
           "url": "https://*.deepl.com"
         },
         {
+          "url": "https://github.com/readest/*"
+        },
+        {
           "url": "https://*.cloudflarestorage.com"
         }
       ]
@@ -65,6 +68,8 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-set-fullscreen",
     "core:window:allow-set-always-on-top",
+    "core:webview:allow-create-webview-window",
+    "core:path:allow-resolve-directory",
     "log:default",
     "shell:default",
     "process:default",

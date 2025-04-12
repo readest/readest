@@ -126,8 +126,6 @@
   "Apply to All Books": "Застосувати до всіх книг",
   "Apply to This Book": "Застосувати до цієї книги",
   "Unable to fetch the translation. Try again later.": "Не вдалося отримати переклад. Спробуйте пізніше.",
-  "Update Now!": "Оновити зараз!",
-  "Update": "Оновити",
   "Check Update": "Перевірити оновлення",
   "Already the latest version": "Вже остання версія",
   "Book Details": "Деталі книги",
@@ -276,5 +274,12 @@
   "CJK Font": "CJK шрифт",
   "Clear Search": "Очистити пошук",
   "Header & Footer": "Заголовок і нижній колонтитул",
-  "Apply also in Scrolled Mode": "Застосувати також у прокрученому режимі"
+  "Apply also in Scrolled Mode": "Застосувати також у прокрученому режимі",
+  "A new version of Readest is Available!": "Доступна нова версія Readest!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} доступна (встановлена версія {{currentVersion}}).",
+  "Download and install now?": "Завантажити та встановити зараз?",
+  "Downloading {{downloaded}} of {{contentLength}}": "Завантаження {{downloaded}} з {{contentLength}}",
+  "Download finished": "Завантаження завершено",
+  "DOWNLOAD & INSTALL": "ЗАВАНТАЖИТИ І ВСТАНОВИТИ",
+  "Changelog:": "Журнал змін:"
 }

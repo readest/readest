@@ -126,8 +126,6 @@
   "Apply to All Books": "Terapkan ke semua buku",
   "Apply to This Book": "Terapkan ke buku ini",
   "Unable to fetch the translation. Try again later.": "Tidak dapat mengambil terjemahan. Coba lagi nanti.",
-  "Update Now!": "Perbarui Sekarang!",
-  "Update": "Perbarui",
   "Check Update": "Periksa pembaruan",
   "Already the latest version": "Sudah versi terbaru",
   "Book Details": "Detail Buku",
@@ -276,5 +274,12 @@
   "CJK Font": "Font CJK",
   "Clear Search": "Hapus Pencarian",
   "Header & Footer": "Header & Footer",
-  "Apply also in Scrolled Mode": "Terapkan juga di Mode Gulir"
+  "Apply also in Scrolled Mode": "Terapkan juga di Mode Gulir",
+  "A new version of Readest is Available!": "Versi baru Readest Tersedia!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} tersedia (versi terinstal {{currentVersion}}).",
+  "Download and install now?": "Unduh dan instal sekarang?",
+  "Downloading {{downloaded}} of {{contentLength}}": "Mengunduh {{downloaded}} dari {{contentLength}}",
+  "Download finished": "Unduhan selesai",
+  "DOWNLOAD & INSTALL": "UNDUH & INSTAL",
+  "Changelog:": "Catatan Perubahan:"
 }

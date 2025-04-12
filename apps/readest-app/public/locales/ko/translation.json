@@ -126,8 +126,6 @@
   "Apply to All Books": "모든 책에 적용",
   "Apply to This Book": "이 책에 적용",
   "Unable to fetch the translation. Try again later.": "번역을 가져올 수 없습니다. 나중에 다시 시도하세요.",
-  "Update Now!": "지금 업데이트!",
-  "Update": "업데이트",
   "Check Update": "업데이트 확인",
   "Already the latest version": "이미 최신 버전",
   "Book Details": "책 세부 정보",
@@ -276,5 +274,12 @@
   "CJK Font": "CJK 글꼴",
   "Clear Search": "검색 지우기",
   "Header & Footer": "헤더 및 푸터",
-  "Apply also in Scrolled Mode": "스크롤 모드에서도 적용"
+  "Apply also in Scrolled Mode": "스크롤 모드에서도 적용",
+  "A new version of Readest is Available!": "Readest의 새 버전이 있습니다!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}}가 사용 가능 (설치된 버전 {{currentVersion}}).",
+  "Download and install now?": "지금 다운로드하고 설치하시겠습니까?",
+  "Downloading {{downloaded}} of {{contentLength}}": "다운로드 중 {{downloaded}} / {{contentLength}}",
+  "Download finished": "다운로드 완료",
+  "DOWNLOAD & INSTALL": "다운로드 및 설치",
+  "Changelog:": "변경 로그:"
 }

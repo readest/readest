@@ -55,14 +55,21 @@ export const AboutWindow = () => {
                 {_('Version {{version}}', { version: packageJson.version })} {`(${browserInfo})`}
               </p>
             </div>
-            {hasUpdater() && !isUpdated && (
-              <span className='badge badge-primary mt-2 cursor-pointer' onClick={handleCheckUpdate}>
-                {_('Check Update')}
-              </span>
-            )}
-            {isUpdated && (
-              <p className='text-neutral-content mt-2 text-xs'>{_('Already the latest version')}</p>
-            )}
+            <div className='h-5'>
+              {hasUpdater() && !isUpdated && (
+                <span
+                  className='badge badge-primary mt-2 cursor-pointer'
+                  onClick={handleCheckUpdate}
+                >
+                  {_('Check Update')}
+                </span>
+              )}
+              {isUpdated && (
+                <p className='text-neutral-content mt-2 text-xs'>
+                  {_('Already the latest version')}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className='divider py-12 sm:py-2'></div>
