@@ -42,21 +42,23 @@ import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
 export abstract class BaseAppService implements AppService {
   osPlatform: string = getOSPlatform();
-  localBooksDir: string = '';
+  appPlatform: AppPlatform = 'tauri';
+  localBooksDir = '';
+  isMobile = false;
+  isMacOSApp = false;
+  isAppDataSandbox = false;
+  isAndroidApp = false;
+  isIOSApp = false;
+  hasTrafficLight = false;
+  hasWindow = false;
+  hasWindowBar = false;
+  hasContextMenu = false;
+  hasRoundedWindow = false;
+  hasSafeAreaInset = false;
+  hasHaptics = false;
+  hasSysFontsList = false;
+
   abstract fs: FileSystem;
-  abstract appPlatform: AppPlatform;
-  abstract isAppDataSandbox: boolean;
-  abstract isMobile: boolean;
-  abstract isAndroidApp: boolean;
-  abstract isIOSApp: boolean;
-  abstract hasTrafficLight: boolean;
-  abstract hasWindow: boolean;
-  abstract hasWindowBar: boolean;
-  abstract hasContextMenu: boolean;
-  abstract hasRoundedWindow: boolean;
-  abstract hasSafeAreaInset: boolean;
-  abstract hasHaptics: boolean;
-  abstract hasSysFontsList: boolean;
 
   abstract resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string };
   abstract getCoverImageUrl(book: Book): string;

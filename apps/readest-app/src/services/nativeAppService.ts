@@ -207,19 +207,20 @@ export const nativeFileSystem: FileSystem = {
 
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
-  appPlatform = 'tauri' as AppPlatform;
-  isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
-  isMobile = ['android', 'ios'].includes(OS_TYPE);
-  isAndroidApp = OS_TYPE === 'android';
-  isIOSApp = OS_TYPE === 'ios';
-  hasTrafficLight = OS_TYPE === 'macos';
-  hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
-  hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override appPlatform = 'tauri' as AppPlatform;
+  override isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
+  override isMobile = ['android', 'ios'].includes(OS_TYPE);
+  override isAndroidApp = OS_TYPE === 'android';
+  override isIOSApp = OS_TYPE === 'ios';
+  override isMacOSApp = OS_TYPE === 'macos';
+  override hasTrafficLight = OS_TYPE === 'macos';
+  override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
+  override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
+  override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
+  override hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

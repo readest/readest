@@ -22,16 +22,6 @@ export interface AppleIDAuthorizationResponse {
   state: string | null;
 }
 
-type NativeSuccess = {
-  authorization_code: string;
-  identity_token: string | null;
-  user_identifier: string | null;
-  given_name: string | null;
-  family_name: string | null;
-  email: string | null;
-  state: string | null;
-};
-
 export async function getAppleIdAuth(
   request: AppleIDAuthorizationRequest,
 ): Promise<AppleIDAuthorizationResponse> {
@@ -47,19 +37,11 @@ export async function getAppleIdAuth(
     return result;
   } else if (OS_TYPE === 'macos') {
     return new Promise<AppleIDAuthorizationResponse>(async (resolve, reject) => {
-      const unlistenComplete = await listen<NativeSuccess>(
+      const unlistenComplete = await listen<AppleIDAuthorizationResponse>(
         'apple-sign-in-complete',
         ({ payload }) => {
           cleanup();
-          resolve({
-            userIdentifier: payload.user_identifier,
-            authorizationCode: payload.authorization_code,
-            identityToken: payload.identity_token,
-            givenName: payload.given_name,
-            familyName: payload.family_name,
-            email: payload.email,
-            state: payload.state,
-          });
+          resolve(payload);
         },
       );
 

@@ -51,6 +51,9 @@ tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 rand = "0.8"
 cocoa = "0.25"
 objc = "0.2.7"
+objc-foundation = "0.1.1"
+objc_id = "0.1.1"
+block = "0.1.6"
 objc2 = "0.6"
 objc2-authentication-services = "0.3"
 objc2-foundation = { version = "0.3", features = ["NSError", "NSArray"] }

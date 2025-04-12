@@ -17,14 +17,16 @@ use serde_json::json;
 
 use tauri::{command, AppHandle, Emitter};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppleIDAuthorizationRequest {
     pub scope: Vec<String>,
     pub nonce: Option<String>,
     pub state: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppleIDAuthorizationResponse {
     pub user_identifier: Option<String>,
     pub given_name: Option<String>,

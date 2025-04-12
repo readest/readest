@@ -37,6 +37,7 @@ export interface AppService {
   isAppDataSandbox: boolean;
   isAndroidApp: boolean;
   isIOSApp: boolean;
+  isMacOSApp: boolean;
 
   selectDirectory(): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;

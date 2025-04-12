@@ -190,19 +190,9 @@ const indexedDBFileSystem: FileSystem = {
 
 export class WebAppService extends BaseAppService {
   fs = indexedDBFileSystem;
-  appPlatform = 'web' as AppPlatform;
-  isAppDataSandbox = false;
-  isMobile = ['android', 'ios'].includes(getOSPlatform());
-  isAndroidApp = false;
-  isIOSApp = false;
-  hasTrafficLight = false;
-  hasWindow = false;
-  hasWindowBar = false;
-  hasContextMenu = false;
-  hasRoundedWindow = false;
-  hasSafeAreaInset = isPWA();
-  hasHaptics = false;
-  hasSysFontsList = false;
+  override isMobile = ['android', 'ios'].includes(getOSPlatform());
+  override appPlatform = 'web' as AppPlatform;
+  override hasSafeAreaInset = isPWA();
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

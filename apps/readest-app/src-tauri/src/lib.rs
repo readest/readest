@@ -7,17 +7,6 @@ extern crate cocoa;
 extern crate objc;
 
 #[cfg(target_os = "macos")]
-mod apple_auth;
-#[cfg(target_os = "macos")]
-use apple_auth::start_apple_sign_in;
-#[cfg(target_os = "macos")]
-mod menu;
-#[cfg(target_os = "macos")]
-mod traffic_light;
-#[cfg(target_os = "macos")]
-use traffic_light::set_traffic_lights;
-
-#[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
 #[cfg(desktop)]
@@ -27,6 +16,8 @@ use tauri::{AppHandle, Listener, Manager, Url};
 #[cfg(desktop)]
 use tauri_plugin_fs::FsExt;
 
+#[cfg(target_os = "macos")]
+mod macos;
 mod transfer_file;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
 use tauri_plugin_oauth::start;
@@ -139,9 +130,11 @@ pub fn run() {
             download_file,
             upload_file,
             #[cfg(target_os = "macos")]
-            start_apple_sign_in,
+            macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
-            set_traffic_lights,
+            macos::apple_auth::start_apple_sign_in,
+            #[cfg(target_os = "macos")]
+            macos::traffic_light::set_traffic_lights,
             #[cfg(desktop)]
             list_fonts
         ])
@@ -176,7 +169,10 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
 
     #[cfg(target_os = "macos")]
-    let builder = builder.plugin(traffic_light::init());
+    let builder = builder.plugin(macos::traffic_light::init());
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.plugin(macos::safari_auth::init());
 
     #[cfg(target_os = "ios")]
     let builder = builder.plugin(tauri_plugin_sign_in_with_apple::init());
@@ -268,7 +264,7 @@ pub fn run() {
             // win.open_devtools();
 
             #[cfg(target_os = "macos")]
-            menu::setup_macos_menu(app.handle())?;
+            macos::menu::setup_macos_menu(app.handle())?;
 
             app.handle().emit("window-ready", ()).unwrap();
 

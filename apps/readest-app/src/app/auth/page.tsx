@@ -81,7 +81,10 @@ export default function AuthPage() {
       }
       return DEEPLINK_CALLBACK;
     }
-    return `http://localhost:${port}`; // only for development env on Desktop
+    // For development env on Desktop, use a custom OAuth callback server
+    // it's possible to register a custom URL scheme for the app
+    // but this is not supported by macOS, so we use a local server instead
+    return `http://localhost:${port}`;
   };
 
   const getWebRedirectTo = () => {
@@ -133,7 +136,7 @@ export default function AuthPage() {
     }
     // Open the OAuth URL in a ASWebAuthenticationSession on iOS to comply with Apple's guidelines
     // for other platforms, open the OAuth URL in the default browser
-    if (appService?.isIOSApp) {
+    if (appService?.isIOSApp || appService?.isMacOSApp) {
       const res = await authWithSafari({ authUrl: data.url });
       if (res) {
         handleOAuthUrl(res.redirectUrl);

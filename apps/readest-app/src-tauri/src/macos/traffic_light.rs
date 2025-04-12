@@ -30,7 +30,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
-#[cfg(target_os = "macos")]
 #[command]
 pub fn set_traffic_lights(window: Window, visible: bool, x: f64, y: f64) {
     unsafe {
@@ -47,7 +46,6 @@ pub fn set_traffic_lights(window: Window, visible: bool, x: f64, y: f64) {
     }
 }
 
-#[cfg(target_os = "macos")]
 fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool, x: f64, y: f64) {
     use cocoa::appkit::{NSView, NSWindow, NSWindowButton};
     use cocoa::foundation::NSRect;
@@ -83,13 +81,11 @@ fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool, 
     }
 }
 
-#[cfg(target_os = "macos")]
 #[derive(Debug)]
 struct WindowState<R: Runtime> {
     window: Window<R>,
 }
 
-#[cfg(target_os = "macos")]
 pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
     use cocoa::appkit::NSWindow;
     use cocoa::base::{id, BOOL};

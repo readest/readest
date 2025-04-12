@@ -12,14 +12,17 @@ checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 name = "Readest"
 version = "0.2.2"
 dependencies = [
+ "block",
  "cocoa",
  "font-enumeration",
  "futures-util",
  "log",
  "objc",
+ "objc-foundation",
  "objc2 0.6.0",
  "objc2-authentication-services",
  "objc2-foundation 0.3.0",
+ "objc_id",
  "rand 0.8.5",
  "read-progress-stream",
  "reqwest",
@@ -3001,6 +3004,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc-foundation"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1add1b659e36c9607c7aab864a76c7a4c2760cd0cd2e120f3fb8b952c7e22bf9"
+dependencies = [
+ "block",
+ "objc",
+ "objc_id",
+]
+
+[[package]]
 name = "objc-sys"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3249,6 +3263,15 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-foundation 0.3.0",
  "objc2-security",
+]
+
+[[package]]
+name = "objc_id"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c92d4ddb4bd7b50d730c215ff871754d0da6b2178849f8a2a2ab69712d0c073b"
+dependencies = [
+ "objc",
 ]
 
 [[package]]
