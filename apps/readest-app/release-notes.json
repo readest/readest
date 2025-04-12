@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.33": {
+      "date": "2025-04-13",
+      "notes": [
+        "New: Redesigned update dialog with a progress bar during downloads for a smoother update experience.",
+        "New: You can now set header and footer visibility separately for paginated and scroll modes.",
+        "Fixed layout issues in the bottom configuration panel when using RTL (right-to-left) languages.",
+        "Fixed TXT file import issues on Android by improving support for content provider file paths.",
+        "Fixed transformed punctuations when highlighting text with vertical layout.",
+        "Improved login flow on macOS by handling OAuth with the native ASWebAuthenticationSession."
+      ]
+    },
     "0.9.32": {
       "date": "2025-04-09",
       "notes": [

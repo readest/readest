@@ -199,6 +199,13 @@ jobs:
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
 
+      - name: upload release notes to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading release notes to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
+
       - name: upload portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'
         env:
