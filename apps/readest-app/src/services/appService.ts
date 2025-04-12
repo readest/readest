@@ -1,4 +1,4 @@
-import { AppPlatform, AppService } from '@/types/system';
+import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, BaseDir } from '@/types/system';
@@ -41,7 +41,7 @@ import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
 export abstract class BaseAppService implements AppService {
-  osPlatform: string = getOSPlatform();
+  osPlatform: OsPlatform = getOSPlatform();
   appPlatform: AppPlatform = 'tauri';
   localBooksDir = '';
   isMobile = false;

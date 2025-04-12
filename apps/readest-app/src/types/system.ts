@@ -4,6 +4,7 @@ import { BookDoc } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 
 export type AppPlatform = 'web' | 'tauri';
+export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Log' | 'Cache' | 'None';
 
 export interface FileSystem {
@@ -23,7 +24,7 @@ export interface FileSystem {
 
 export interface AppService {
   fs: FileSystem;
-  osPlatform: string;
+  osPlatform: OsPlatform;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
   hasWindow: boolean;

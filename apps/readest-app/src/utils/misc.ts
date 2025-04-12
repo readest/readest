@@ -1,3 +1,4 @@
+import { OsPlatform } from '@/types/system';
 import { md5 } from 'js-md5';
 
 export const uniqueId = () => Math.random().toString(36).substring(2, 9);
@@ -56,7 +57,7 @@ export const getUserLocale = (lang: string): string | undefined => {
 // Note that iPad may have a user agent string like a desktop browser
 // when possible please use appService.isIOSApp || getOSPlatform() === 'ios'
 // to check if the app is running on iOS
-export const getOSPlatform = () => {
+export const getOSPlatform = (): OsPlatform => {
   const userAgent = navigator.userAgent.toLowerCase();
 
   if (/iphone|ipad|ipod/.test(userAgent)) return 'ios';
@@ -65,7 +66,7 @@ export const getOSPlatform = () => {
   if (userAgent.includes('windows nt')) return 'windows';
   if (userAgent.includes('linux')) return 'linux';
 
-  return '';
+  return 'unknown';
 };
 
 export const isContentURI = (uri: string) => {

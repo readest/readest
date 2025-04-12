@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import packageJson from '../../package.json';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { hasUpdater } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
+import { parseWebViewVersion } from '@/utils/ua';
 import Dialog from './Dialog';
 
 export const setAboutDialogVisible = (visible: boolean) => {
@@ -17,7 +19,14 @@ export const setAboutDialogVisible = (visible: boolean) => {
 
 export const AboutWindow = () => {
   const _ = useTranslation();
-  const [isUpdated, setIsUpdated] = React.useState(false);
+  const { appService } = useEnv();
+  const [isUpdated, setIsUpdated] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState('');
+
+  useEffect(() => {
+    setBrowserInfo(parseWebViewVersion(appService));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCheckUpdate = async () => {
     const update = await checkForAppUpdates(_, false);
@@ -37,13 +46,15 @@ export const AboutWindow = () => {
       >
         <div className='about-content flex h-full flex-col items-center justify-center'>
           <div className='flex flex-col items-center px-8'>
-            <div className='mb-4'>
+            <div className='mb-3'>
               <Image src='/icon.png' alt='App Logo' className='h-24 w-24' width={64} height={64} />
             </div>
-            <h2 className='text-2xl font-bold'>Readest</h2>
-            <p className='text-neutral-content text-sm'>
-              {_('Version {{version}}', { version: packageJson.version })}
-            </p>
+            <div className='flex select-text flex-col items-center'>
+              <h2 className='text-2xl font-bold'>Readest</h2>
+              <p className='text-neutral-content text-sm'>
+                {_('Version {{version}}', { version: packageJson.version })} {`(${browserInfo})`}
+              </p>
+            </div>
             {hasUpdater() && !isUpdated && (
               <span className='badge badge-primary mt-2 cursor-pointer' onClick={handleCheckUpdate}>
                 {_('Check Update')}
