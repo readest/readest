@@ -15,7 +15,14 @@ export const tauriHandleMinimize = async () => {
 };
 
 export const tauriHandleToggleMaximize = async () => {
-  getCurrentWindow().toggleMaximize();
+  const currentWindow = getCurrentWindow();
+  const isFullscreen = await currentWindow.isFullscreen();
+  if (isFullscreen) {
+    await currentWindow.setFullscreen(false);
+    await currentWindow.unmaximize();
+  } else {
+    getCurrentWindow().toggleMaximize();
+  }
 };
 
 export const tauriHandleClose = async () => {
@@ -34,8 +41,12 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
 export const tauriHandleToggleFullScreen = async () => {
   const currentWindow = getCurrentWindow();
   const isFullscreen = await currentWindow.isFullscreen();
-  const newIsFullscreen = !isFullscreen;
-  await currentWindow.setFullscreen(newIsFullscreen);
+  const isMaximized = await currentWindow.isMaximized();
+  if (isMaximized) {
+    await currentWindow.unmaximize();
+  } else {
+    await currentWindow.setFullscreen(!isFullscreen);
+  }
 };
 
 export const tauriHandleSetAlwaysOnTop = async (isAlwaysOnTop: boolean) => {

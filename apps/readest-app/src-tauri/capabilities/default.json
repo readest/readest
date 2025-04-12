@@ -57,6 +57,7 @@
     "core:window:allow-center",
     "core:window:allow-minimize",
     "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
     "core:window:allow-set-size",
     "core:window:allow-set-focus",
     "core:window:allow-is-maximized",
