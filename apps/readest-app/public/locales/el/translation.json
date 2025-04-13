@@ -281,5 +281,6 @@
   "Downloading {{downloaded}} of {{contentLength}}": "Κατεβάζω {{downloaded}} από {{contentLength}}",
   "Download finished": "Η λήψη ολοκληρώθηκε",
   "DOWNLOAD & INSTALL": "ΛΗΨΗ & ΕΓΚΑΤΑΣΤΑΣΗ",
-  "Changelog:": "Αλλαγές:"
+  "Changelog:": "Αλλαγές:",
+  "Redownload": "Επαναφόρτωση"
 }

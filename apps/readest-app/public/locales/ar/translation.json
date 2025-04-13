@@ -281,5 +281,6 @@
   "Downloading {{downloaded}} of {{contentLength}}": "جارٍ تنزيل {{downloaded}} من {{contentLength}}",
   "Download finished": "اكتمل التنزيل",
   "DOWNLOAD & INSTALL": "تنزيل وتثبيت",
-  "Changelog:": "سجل التغييرات:"
+  "Changelog:": "سجل التغييرات:",
+  "Redownload": "إعادة التنزيل"
 }

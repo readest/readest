@@ -129,9 +129,11 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                     >
                       {_('Delete')}
                     </button>
-                    <button className='btn btn-disabled bg-primary/25 hover:bg-primary/85 rounded-xl px-4 text-white'>
-                      {_('More Info')}
-                    </button>
+                    {book.uploadedAt && (
+                      <button className='btn rounded-xl bg-orange-500 text-white hover:bg-orange-600'>
+                        {_('Redownload')}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -145,9 +147,11 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                 >
                   {_('Delete')}
                 </button>
-                <button className='btn btn-disabled bg-primary/25 hover:bg-primary/85 rounded px-4 text-white'>
-                  {_('More Info')}
-                </button>
+                {book.uploadedAt && (
+                  <button className='btn rounded bg-orange-500 text-white hover:bg-orange-600'>
+                    {_('Redownload')}
+                  </button>
+                )}
               </div>
             )}
 

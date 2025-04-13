@@ -98,11 +98,12 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
         if (newBook.uploadedAt && !newBook.deletedAt) {
           try {
             await appService?.downloadBook(newBook, true);
+          } catch {
+            console.error('Failed to download book:', newBook);
+          } finally {
             newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
             updatedLibrary.push(newBook);
             setLibrary(updatedLibrary);
-          } catch {
-            console.error('Failed to download book:', newBook);
           }
         }
       }

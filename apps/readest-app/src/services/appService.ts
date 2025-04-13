@@ -375,11 +375,16 @@ export abstract class BaseAppService implements AppService {
       await this.fs.createDir(getDir(book), 'Books');
     }
 
-    if (needDownCover) {
-      const lfp = getCoverFilename(book);
-      const cfp = `${CLOUD_BOOKS_SUBDIR}/${lfp}`;
-      await this.downloadCloudFile(lfp, cfp, handleProgress);
-      completedFiles.count++;
+    try {
+      if (needDownCover) {
+        const lfp = getCoverFilename(book);
+        const cfp = `${CLOUD_BOOKS_SUBDIR}/${lfp}`;
+        await this.downloadCloudFile(lfp, cfp, handleProgress);
+        completedFiles.count++;
+      }
+    } catch (error) {
+      // don't throw error here since some books may not have cover images at all
+      console.log('Failed to download cover file:', error);
     }
 
     if (needDownBook) {

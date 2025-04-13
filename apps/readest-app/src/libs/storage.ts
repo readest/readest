@@ -97,7 +97,7 @@ export const downloadFile = async (
       return;
     }
   } catch (error) {
-    console.error('File download failed:', error);
+    console.error(`File '${filePath}' download failed:`, error);
     throw new Error('File download failed');
   }
 };

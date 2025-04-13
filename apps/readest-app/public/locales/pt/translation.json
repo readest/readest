@@ -281,5 +281,6 @@
   "Downloading {{downloaded}} of {{contentLength}}": "Baixando {{downloaded}} de {{contentLength}}",
   "Download finished": "Download concluído",
   "DOWNLOAD & INSTALL": "BAIXAR E INSTALAR",
-  "Changelog:": "Notas de versão:"
+  "Changelog:": "Notas de versão:",
+  "Redownload": "Baixar novamente"
 }
