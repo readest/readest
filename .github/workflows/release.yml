@@ -152,6 +152,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
+          KEY_DATA: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           cd apps/readest-app/
           rm -rf src-tauri/gen/android
@@ -175,10 +177,47 @@ jobs:
           pnpm tauri android build -t aarch64
           cp ${apk_path}/app-universal-release.apk $arm64_apk
 
+          echo "$KEY_DATA" | base64 -d > encrypted.key
+          openssl pkcs8 -inform PEM -in encrypted.key -passin pass:$KEY_PASSWORD -out private.key
+          pnpm tauri signer sign \
+            --private-key-path private.key \
+            --file $universial_apk \
+            --output $universial_apk.sig
+          pnpm tauri signer sign \
+            --private-key-path private.key \
+            --file $arm64_apk \
+            --output $arm64_apk.sig
+
           echo "Uploading $universial_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk --clobber
           echo "Uploading $arm64_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
+          echo "Uploading signatures to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
+
+      - name: download and update latest.json for Android release
+        if: matrix.config.release == 'android'
+        run: |
+          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+
+          version=${{ needs.get-release.outputs.release_version }}
+          universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
+          arm64_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_arm64.apk"
+
+          universial_sig=$(cat Readest_${version}_universal.apk.sig | base64 -w 0)
+          arm64_sig=$(cat Readest_${version}_arm64.apk.sig | base64 -w 0)
+
+          jq --arg url "$universial_apk_url" \
+              --arg sig "$universial_sig" \
+              '.platforms["android-universal"] = {url: $url, signature: $sig}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+
+          jq --arg url "$arm64_apk_url" \
+              --arg sig "$arm64_sig" \
+              '.platforms["android-arm64"] = {url: $url, signature: $sig}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+
+          echo "Uploading updated latest.json to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
       - uses: tauri-apps/tauri-action@v0
         if: matrix.config.release != 'android'
