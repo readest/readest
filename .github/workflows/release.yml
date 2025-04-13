@@ -204,11 +204,11 @@ jobs:
 
           jq --arg url "$universial_apk_url" \
               --arg sig "$universial_sig" \
-              '.platforms["android-universal"] = {url: $url, signature: $sig}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+              '.platforms["android-universal"] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
 
           jq --arg url "$arm64_apk_url" \
               --arg sig "$arm64_sig" \
-              '.platforms["android-arm64"] = {url: $url, signature: $sig}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+              '.platforms["android-arm64"] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
 
           echo "Uploading updated latest.json to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber

@@ -4,14 +4,11 @@ import { READEST_WEB_BASE_URL } from './constants';
 declare global {
   interface Window {
     __READEST_CLI_ACCESS?: boolean;
-    __READEST_UPDATER_ACCESS?: boolean;
   }
 }
 
 export const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 export const isWebAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
-export const hasUpdater = () =>
-  window.__READEST_UPDATER_ACCESS === true && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'];
 export const hasCli = () => window.__READEST_CLI_ACCESS === true;
 export const isPWA = () => window.matchMedia('(display-mode: standalone)').matches;
 

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
@@ -22,6 +23,11 @@ class AuthRequestArgs {
 class CopyURIRequestArgs {
   var uri: String? = null
   var dst: String? = null
+}
+
+@InvokeArg
+class InstallPackageRequestArgs {
+  var path: String? = null
 }
 
 @TauriPlugin
@@ -67,6 +73,36 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             } else {
                 ret.put("success", false)
                 ret.put("error", "Failed to open input stream from URI")
+            }
+        } catch (e: Exception) {
+            ret.put("success", false)
+            ret.put("error", e.message)
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun install_package(invoke: Invoke) {
+        val args = invoke.parseArgs(InstallPackageRequestArgs::class.java)
+        val ret = JSObject()
+        try {
+            val file = File(args.path ?: "")
+            if (file.exists()) {
+                val intent = Intent(Intent.ACTION_VIEW)
+                val apkUri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+                intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                val packageManager = activity.packageManager
+                val resolveInfos = packageManager.queryIntentActivities(intent, 0)
+                for (resolveInfo in resolveInfos) {
+                    val packageName = resolveInfo.activityInfo.packageName
+                    activity.grantUriPermission(packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                activity.startActivity(intent)
+                ret.put("success", true)
+            } else {
+                ret.put("success", false)
+                ret.put("error", "File does not exist")
             }
         } catch (e: Exception) {
             ret.put("success", false)

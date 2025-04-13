@@ -14,6 +14,15 @@ export interface UseBackgroundAudioRequest {
   enabled: boolean;
 }
 
+export interface InstallPackageRequest {
+  path: string;
+}
+
+export interface InstallPackageResponse {
+  success: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -26,4 +35,13 @@ export async function invokeUseBackgroundAudio(request: UseBackgroundAudioReques
   await invoke('plugin:native-bridge|use_background_audio', {
     payload: request,
   });
+}
+
+export async function installPackage(
+  request: InstallPackageRequest,
+): Promise<InstallPackageResponse> {
+  const result = await invoke<InstallPackageResponse>('plugin:native-bridge|install_package', {
+    payload: request,
+  });
+  return result;
 }

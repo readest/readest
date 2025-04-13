@@ -221,6 +221,7 @@ export class NativeAppService extends BaseAppService {
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override hasUpdater = OS_TYPE !== 'ios' && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'];
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

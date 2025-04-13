@@ -42,13 +42,13 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
     <div className='mb-2 mt-4'>
       <label className='mb-1 block text-sm font-medium'>{label}</label>
       <div
-        className='border-base-300 overflow-hidden rounded border p-3'
+        className='border-base-300 overflow-hidden rounded border p-2'
         style={{
           backgroundColor: backgroundColor,
           color: textColor,
         }}
       >
-        <p className='mb-2 whitespace-pre-line text-sm'>
+        <p className='mb-2 whitespace-pre-line text-xs'>
           {_(
             "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}

@@ -35,3 +35,11 @@ pub(crate) async fn use_background_audio<R: Runtime>(
 ) -> Result<()> {
     app.native_bridge().use_background_audio(payload)
 }
+
+#[command]
+pub(crate) async fn install_package<R: Runtime>(
+    app: AppHandle<R>,
+    payload: InstallPackageRequest,
+) -> Result<InstallPackageResponse> {
+    app.native_bridge().install_package(payload)
+}

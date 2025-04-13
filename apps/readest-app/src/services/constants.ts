@@ -468,6 +468,12 @@ export const DOWNLOAD_READEST_URL = 'https://readest.com?utm_source=readest_web'
 
 export const READEST_WEB_BASE_URL = 'https://web.readest.com';
 
+export const GITHUB_LATEST_DOWNLOAD = 'https://github.com/readest/readest/releases/latest/download';
+
+export const READEST_UPDATER_FILE = `${GITHUB_LATEST_DOWNLOAD}/latest.json`;
+
+export const READEST_CHANGELOG_FILE = `${GITHUB_LATEST_DOWNLOAD}/release-notes.json`;
+
 export const SYNC_PROGRESS_INTERVAL_SEC = 60;
 export const SYNC_NOTES_INTERVAL_SEC = 10;
 export const SYNC_BOOKS_INTERVAL_SEC = 10;

@@ -8,12 +8,13 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { AboutWindow } from '@/components/AboutWindow';
+import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
-import { useSidebarStore } from '@/store/sidebarStore';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
@@ -53,6 +54,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <Suspense>
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />
+          <UpdaterWindow />
           <Toast />
         </Suspense>
       </div>

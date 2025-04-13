@@ -201,13 +201,17 @@ pub fn run() {
 
                 let app_handle = app.handle().clone();
                 app.listen("window-ready", move |_| {
-                    app_handle.get_webview_window("main").unwrap()
-                        .eval("window.__READEST_CLI_ACCESS = true; window.__READEST_UPDATER_ACCESS = true;")
+                    app_handle
+                        .get_webview_window("main")
+                        .unwrap()
+                        .eval("window.__READEST_CLI_ACCESS = true;")
                         .expect("Failed to set cli access config");
 
                     set_rounded_window(&app_handle, true);
                     #[cfg(target_os = "windows")]
-                    if tauri_plugin_os::version() <= tauri_plugin_os::Version::from_string("10.0.19045") {
+                    if tauri_plugin_os::version()
+                        <= tauri_plugin_os::Version::from_string("10.0.19045")
+                    {
                         set_rounded_window(&app_handle, false);
                     }
                 });
@@ -228,9 +232,7 @@ pub fn run() {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
 
             #[cfg(desktop)]
-            let win_builder = win_builder
-                .inner_size(800.0, 600.0)
-                .resizable(true);
+            let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
 
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
@@ -247,7 +249,9 @@ pub fn run() {
                     .title("Readest");
 
                 if cfg!(target_os = "windows") {
-                    if tauri_plugin_os::version() <= tauri_plugin_os::Version::from_string("10.0.19045") {
+                    if tauri_plugin_os::version()
+                        <= tauri_plugin_os::Version::from_string("10.0.19045")
+                    {
                         win_builder = win_builder.shadow(false);
                     } else {
                         win_builder = win_builder.shadow(true);

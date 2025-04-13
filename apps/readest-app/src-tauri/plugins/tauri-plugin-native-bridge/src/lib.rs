@@ -41,6 +41,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::auth_with_custom_tab,
             commands::copy_uri_to_path,
             commands::use_background_audio,
+            commands::install_package,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

@@ -55,3 +55,14 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn install_package(
+        &self,
+        payload: InstallPackageRequest,
+    ) -> crate::Result<InstallPackageResponse> {
+        self.0
+            .run_mobile_plugin("install_package", payload)
+            .map_err(Into::into)
+    }
+}

@@ -1,3 +1,9 @@
 [default]
 description = "Default permissions for the plugin"
-permissions = ["allow-auth-with-safari", "allow-auth-with-custom-tab", "allow-copy-uri-to-path", "allow-use-background-audio"]
+permissions = [
+  "allow-auth-with-safari",
+  "allow-auth-with-custom-tab",
+  "allow-copy-uri-to-path",
+  "allow-use-background-audio",
+  "allow-install-package",
+]

@@ -6,7 +6,7 @@ import { PiUserCircleCheck } from 'react-icons/pi';
 import { MdCheck } from 'react-icons/md';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { hasUpdater, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -177,7 +177,7 @@ const SettingsMenu: React.FC<BookMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={toggleAutoImportBooksOnOpen}
         />
       )}
-      {hasUpdater() && (
+      {appService?.hasUpdater && (
         <MenuItem
           label={_('Check Updates on Start')}
           icon={isAutoCheckUpdates ? <MdCheck className='text-base-content' /> : undefined}
