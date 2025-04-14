@@ -69,6 +69,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   const [changelogs, setChangelogs] = useState<Changelog[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
   const [contentLength, setContentLength] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
 
   useEffect(() => {
@@ -214,6 +215,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     let contentLength = 0;
     let lastLogged = 0;
     setProgress(0);
+    setIsDownloading(true);
     await update.downloadAndInstall?.((event) => {
       switch (event.event) {
         case 'Started':
@@ -293,7 +295,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
                 <button
                   className={clsx(
                     'btn btn-warning text-base-100 px-6 font-bold',
-                    !update && 'btn-disabled',
+                    (!update || isDownloading) && 'btn-disabled',
                   )}
                   onClick={handleDownloadInstall}
                 >

@@ -578,7 +578,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         />
       )}
       <AboutWindow />
-      <UpdaterWindow />
+      {appService?.isAndroidApp && <UpdaterWindow />}
       <Toast />
     </div>
   );

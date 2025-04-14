@@ -4,6 +4,7 @@ import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 
 interface MenuItemProps {
   label: string;
+  buttonClass?: string;
   labelClass?: string;
   shortcut?: string;
   disabled?: boolean;
@@ -15,6 +16,7 @@ interface MenuItemProps {
 
 const MenuItem: React.FC<MenuItemProps> = ({
   label,
+  buttonClass,
   labelClass,
   shortcut,
   disabled,
@@ -29,6 +31,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       className={clsx(
         'hover:bg-base-300 text-base-content flex h-10 w-full items-center justify-between rounded-md p-2',
         disabled && 'btn-disabled text-gray-400',
+        buttonClass,
       )}
       onClick={onClick}
       disabled={disabled}

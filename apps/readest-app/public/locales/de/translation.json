@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "HERUNTERLADEN & INSTALLIEREN",
   "Changelog:": "Änderungsprotokoll:",
   "Redownload": "Neu herunterladen",
-  "Software Update": "Software-Update"
+  "Software Update": "Software-Update",
+  "Title": "Titel",
+  "Date Read": "Datum gelesen",
+  "Date Added": "Datum hinzugefügt",
+  "Format": "Format",
+  "Ascending": "Aufsteigend",
+  "Descending": "Absteigend",
+  "Sort by...": "Sortieren nach..."
 }

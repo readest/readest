@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "TÉLÉCHARGER ET INSTALLER",
   "Changelog:": "Journal des modifications :",
   "Redownload": "Télécharger à nouveau",
-  "Software Update": "Mise à jour logicielle"
+  "Software Update": "Mise à jour logicielle",
+  "Title": "Titre",
+  "Date Read": "Date de lecture",
+  "Date Added": "Date ajoutée",
+  "Format": "Format",
+  "Ascending": "Ascendant",
+  "Descending": "Descendant",
+  "Sort by...": "Trier par..."
 }

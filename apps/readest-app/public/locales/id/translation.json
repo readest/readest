@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "UNDUH & INSTAL",
   "Changelog:": "Catatan Perubahan:",
   "Redownload": "Unduh Ulang",
-  "Software Update": "Pembaruan Perangkat Lunak"
+  "Software Update": "Pembaruan Perangkat Lunak",
+  "Title": "Judul",
+  "Date Read": "Tanggal Dibaca",
+  "Date Added": "Tanggal Ditambahkan",
+  "Format": "Format",
+  "Ascending": "Naik",
+  "Descending": "Turun",
+  "Sort by...": "Urutkan berdasarkan..."
 }

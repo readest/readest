@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "ΛΗΨΗ & ΕΓΚΑΤΑΣΤΑΣΗ",
   "Changelog:": "Αλλαγές:",
   "Redownload": "Επαναφόρτωση",
-  "Software Update": "Ενημέρωση λογισμικού"
+  "Software Update": "Ενημέρωση λογισμικού",
+  "Title": "Τίτλος",
+  "Date Read": "Ημερομηνία ανάγνωσης",
+  "Date Added": "Ημερομηνία προσθήκης",
+  "Format": "Μορφή",
+  "Ascending": "Αύξουσα",
+  "Descending": "Φθίνουσα",
+  "Sort by...": "Ταξινόμηση κατά..."
 }

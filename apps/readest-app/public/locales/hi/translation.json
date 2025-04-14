@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "डाउनलोड और इंस्टॉल करें",
   "Changelog:": "चेंजलॉग:",
   "Redownload": "री-डाउनलोड करें",
-  "Software Update": "सॉफ़्टवेयर अपडेट"
+  "Software Update": "सॉफ़्टवेयर अपडेट",
+  "Title": "शीर्षक",
+  "Date Read": "पढ़ने की तारीख",
+  "Date Added": "जोड़ा गया दिनांक",
+  "Format": "फॉर्मेट",
+  "Ascending": "आरोही",
+  "Descending": "अवरोही",
+  "Sort by...": "द्वारा क्रमबद्ध करें..."
 }

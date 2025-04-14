@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "TẢI XUỐNG & CÀI ĐẶT",
   "Changelog:": "Thay đổi:",
   "Redownload": "Tải lại",
-  "Software Update": "Cập nhật phần mềm"
+  "Software Update": "Cập nhật phần mềm",
+  "Title": "Tiêu đề",
+  "Date Read": "Ngày đã đọc",
+  "Date Added": "Ngày thêm",
+  "Format": "Định dạng",
+  "Ascending": "Tăng dần",
+  "Descending": "Giảm dần",
+  "Sort by...": "Sắp xếp theo..."
 }

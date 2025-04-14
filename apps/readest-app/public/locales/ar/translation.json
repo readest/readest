@@ -283,5 +283,12 @@
   "DOWNLOAD & INSTALL": "تنزيل وتثبيت",
   "Changelog:": "سجل التغييرات:",
   "Redownload": "إعادة التنزيل",
-  "Software Update": "تحديث البرنامج"
+  "Software Update": "تحديث البرنامج",
+  "Title": "العنوان",
+  "Date Read": "تاريخ القراءة",
+  "Date Added": "تاريخ الإضافة",
+  "Format": "التنسيق",
+  "Ascending": "تصاعدي",
+  "Descending": "تنازلي",
+  "Sort by...": "ترتيب حسب..."
 }

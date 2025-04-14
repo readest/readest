@@ -7,6 +7,7 @@ import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
@@ -45,6 +46,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
@@ -53,6 +55,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [queryTerm, setQueryTerm] = useState<string | null>(null);
   const [navBooksGroup, setNavBooksGroup] = useState<BooksGroup | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
+  const [sortBy, setSortBy] = useState(searchParams?.get('sort') || 'updated');
+  const [sortOrder, setSortOrder] = useState(searchParams?.get('order') || 'desc');
   const isImportingBook = useRef(false);
 
   const { setLibrary } = useLibraryStore();
@@ -89,10 +93,31 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   useEffect(() => {
     const group = searchParams?.get('group') || '';
     const query = searchParams?.get('q') || '';
+    const sort = searchParams?.get('sort') || settings.librarySortBy;
+    const order = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
+    const params = new URLSearchParams(searchParams?.toString());
     if (query) {
+      params.set('q', query);
       setQueryTerm(query);
     } else {
+      params.delete('q');
       setQueryTerm(null);
+    }
+    if (sort) {
+      params.set('sort', sort);
+      setSortBy(sort);
+    } else {
+      params.delete('sort');
+    }
+    if (order) {
+      params.set('order', order);
+      setSortOrder(order);
+    } else {
+      params.delete('order');
+    }
+    if (sort === 'updated' && order === 'desc') {
+      params.delete('sort');
+      params.delete('order');
     }
     if (group) {
       const booksGroup = allBookshelfItems.find(
@@ -100,12 +125,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       ) as BooksGroup;
       if (booksGroup) {
         setNavBooksGroup(booksGroup);
+        params.set('group', group);
       } else {
-        navigateToLibrary(router, query ? `q=${query}` : undefined);
+        params.delete('group');
+        navigateToLibrary(router, `${params.toString()}`);
       }
     } else {
       setNavBooksGroup(null);
-      navigateToLibrary(router, query ? `q=${query}` : undefined);
+      params.delete('group');
+      navigateToLibrary(router, `${params.toString()}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, libraryBooks, showGroupingModal]);
@@ -152,11 +180,50 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const authors = formatAuthors(item.author);
     return searchTerm.test(title) || searchTerm.test(authors);
   };
-  const filteredBookshelfItems = currentBookshelfItems.filter((item) => {
-    if ('name' in item) return item.books.some((book) => bookFilter(book, queryTerm || ''));
-    else if (queryTerm) return bookFilter(item, queryTerm);
-    return true;
-  });
+  const bookSorter = (a: Book, b: Book) => {
+    const uiLanguage = localStorage?.getItem('i18nextLng') || '';
+    switch (sortBy) {
+      case 'title':
+        const aTitle = formatTitle(a.title);
+        const bTitle = formatTitle(b.title);
+        return aTitle.localeCompare(bTitle, uiLanguage || navigator.language);
+      case 'author':
+        const aAuthors = formatAuthors(a.author);
+        const bAuthors = formatAuthors(b.author);
+        return aAuthors.localeCompare(bAuthors, uiLanguage || navigator.language);
+      case 'updated':
+        return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      case 'created':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'format':
+        return a.format.localeCompare(b.format, uiLanguage || navigator.language);
+      default:
+        return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+    }
+  };
+  const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
+  const filteredBookshelfItems = currentBookshelfItems
+    .filter((item) => {
+      if ('name' in item) return item.books.some((book) => bookFilter(book, queryTerm || ''));
+      else if (queryTerm) return bookFilter(item, queryTerm);
+      return true;
+    })
+    .sort((a, b) => {
+      const uiLanguage = localStorage?.getItem('i18nextLng') || '';
+      if (sortBy === 'updated') {
+        return (
+          (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * sortOrderMultiplier
+        );
+      } else if ('name' in a || 'name' in b) {
+        const aName = 'name' in a ? a.name : formatTitle(a.title);
+        const bName = 'name' in b ? b.name : formatTitle(b.title);
+        return aName.localeCompare(bName, uiLanguage || navigator.language) * sortOrderMultiplier;
+      } else if (!('name' in a || 'name' in b)) {
+        return bookSorter(a, b) * sortOrderMultiplier;
+      } else {
+        return 0;
+      }
+    });
 
   return (
     <div className='bookshelf'>

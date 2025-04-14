@@ -54,7 +54,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <Suspense>
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />
-          <UpdaterWindow />
+          {appService?.isAndroidApp && <UpdaterWindow />}
           <Toast />
         </Suspense>
       </div>
