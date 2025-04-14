@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.35": {
+      "date": "2025-04-15",
+      "notes": [
+        "🛠️ Fixed an issue where books without cover images can not be synced across devices",
+        "📱 Added in-app update support for Android",
+        "📚 You can now sort books by title or author in your library"
+      ]
+    },
     "0.9.33": {
       "date": "2025-04-13",
       "notes": [

@@ -54,6 +54,7 @@
 | **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                             | ✅         |
 | **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms. | ✅         |
 | **Text-to-Speech (TTS) Support**        | Enable text-to-speech functionality for a more accessible reading experience.                  | ✅         |
+| **Library Management**                  | Organize, sort, and manage your entire ebook library.                                          | ✅         |
 
 ## Planned Features
 
@@ -62,7 +63,6 @@
 
 | **Feature**                     | **Description**                                                                            | **Priority** |
 | ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
-| **Library Management**          | Organize, sort, and manage your entire ebook library.                                      | 🛠           |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
 | **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
 | **Keyboard Navigation**         | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
