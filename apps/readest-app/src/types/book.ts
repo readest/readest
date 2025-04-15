@@ -122,7 +122,7 @@ export interface TTSConfig {
   ttsVoice: string;
 }
 
-export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig, TTSConfig {}
+export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig, TTSConfig { }
 
 export interface BookProgress {
   location: string;
@@ -193,4 +193,23 @@ export interface BookContent {
   book: Book;
   file: File;
   config: BookConfig;
+}
+
+export interface PaperNoteApi {
+  title: string;
+  cover?: string;
+  author?: string;
+  translator?: string;
+  publisher?: string;
+  publishDate?: number;
+  isbn?: string;
+  type: 0 | 1;
+  locationUnit: 0 | 1 | 2;
+  entries: {
+    page?: number;
+    text?: string;
+    note?: string;
+    chapter?: string;
+    time?: number;
+  }[];
 }

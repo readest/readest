@@ -11,6 +11,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
+import {setImportDialogVisible } from '@/components/PaperNoteModal';
 
 interface BookMenuProps {
   menuClassName?: string;
@@ -41,6 +42,11 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   };
   const handleExportAnnotations = () => {
     eventDispatcher.dispatch('export-annotations', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleExportAnnotationsToPaperNote = () => {
+    setImportDialogVisible(true);
     setIsDropdownOpen?.(false);
   };
 
@@ -82,6 +88,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         </ul>
       </MenuItem>
       <MenuItem label={_('Export Annotations')} noIcon onClick={handleExportAnnotations} />
+      <MenuItem label={_('Export Annotations to PaperNote')} noIcon  onClick={handleExportAnnotationsToPaperNote} />
       <MenuItem label={_('Reload Page')} noIcon shortcut='Shift+R' onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebApp && <MenuItem label={_('Download Readest')} noIcon onClick={downloadReadest} />}

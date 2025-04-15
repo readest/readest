@@ -15,6 +15,7 @@ import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
+import { ExportToPaperNoteWindow } from '@/components/PaperNoteModal';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
@@ -55,6 +56,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
           <ReaderContent ids={ids} settings={settings} />
           <AboutWindow />
           {appService?.isAndroidApp && <UpdaterWindow />}
+          <ExportToPaperNoteWindow/>
           <Toast />
         </Suspense>
       </div>
