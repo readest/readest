@@ -17,10 +17,10 @@ export const Toast = () => {
     error: 'toast-error toast-top toast-end',
   };
   const alertClassMap = {
-    info: 'alert-primary',
-    success: 'alert-success',
-    warning: 'alert-warning',
-    error: 'alert-error',
+    info: 'alert-primary border-base-300',
+    success: 'alert-success border-0',
+    warning: 'alert-warning border-0',
+    error: 'alert-error border-0',
   };
 
   useEffect(() => {
@@ -58,14 +58,17 @@ export const Toast = () => {
       >
         <div
           className={clsx(
-            'alert flex max-w-80 items-center justify-center border-0',
+            'alert flex items-center justify-center',
             alertClassMap[toastType.current],
           )}
         >
           <span
             className={clsx(
-              'max-h-[50vh] min-w-32 max-w-80',
-              'overflow-y-auto whitespace-normal break-words text-center',
+              'max-h-[50vh] min-w-32',
+              'overflow-y-auto text-center',
+              toastType.current === 'info'
+                ? 'max-w-[80vw]'
+                : 'max-w-80 whitespace-normal break-words',
               messageClass.current,
             )}
           >

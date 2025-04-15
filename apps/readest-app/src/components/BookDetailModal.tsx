@@ -1,13 +1,13 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { MdDelete, MdCloudDownload, MdCloudUpload } from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useLibraryStore } from '@/store/libraryStore';
 import {
   formatAuthors,
   formatDate,
@@ -24,16 +24,25 @@ interface BookDetailModalProps {
   book: Book;
   isOpen: boolean;
   onClose: () => void;
+  handleBookDownload?: (book: Book) => void;
+  handleBookUpload?: (book: Book) => void;
+  handleBookDelete?: (book: Book) => void;
 }
 
-const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
+const BookDetailModal = ({
+  book,
+  isOpen,
+  onClose,
+  handleBookDownload,
+  handleBookUpload,
+  handleBookDelete,
+}: BookDetailModalProps) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
-  const { envConfig, appService } = useEnv();
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { updateBook } = useLibraryStore();
 
   useEffect(() => {
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
@@ -61,10 +70,25 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   };
 
   const confirmDelete = async () => {
-    await appService?.deleteBook(book, !!book.uploadedAt);
-    await updateBook(envConfig, book);
     handleClose();
     setShowDeleteAlert(false);
+    if (handleBookDelete) {
+      handleBookDelete(book);
+    }
+  };
+
+  const handleRedownload = async () => {
+    handleClose();
+    if (handleBookDownload) {
+      handleBookDownload(book);
+    }
+  };
+
+  const handleReupload = async () => {
+    handleClose();
+    if (handleBookUpload) {
+      handleBookUpload(book);
+    }
   };
 
   if (!bookMeta)
@@ -83,13 +107,13 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
         isOpen={isOpen}
         onClose={handleClose}
         bgClassName='sm:bg-black/50'
-        boxClassName='sm:min-w-[480px] sm:h-auto'
+        boxClassName='sm:min-w-[480px] sm:max-w-[480px] sm:h-auto'
         contentClassName='!px-6 !py-2'
       >
         <div className='flex w-full select-text items-center justify-center'>
           <div className='relative w-full rounded-lg'>
-            <div className='mb-10 flex h-40 items-start'>
-              <div className='book-cover relative mr-10 aspect-[28/41] h-40 items-end shadow-lg'>
+            <div className='mb-10 me-4 flex h-32 items-start'>
+              <div className='book-cover relative mr-10 aspect-[28/41] h-32 items-end shadow-lg'>
                 <Image
                   src={book.coverImageUrl!}
                   alt={formatTitle(book.title)}
@@ -112,48 +136,34 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                 </div>
               </div>
 
-              <div className='title-author flex h-40 flex-col justify-between'>
+              <div className='title-author flex h-32 flex-col justify-between'>
                 <div>
-                  <p className='text-base-content mb-2 line-clamp-2 break-all text-2xl font-bold'>
+                  <p className='text-base-content mb-2 line-clamp-2 break-all text-lg font-bold'>
                     {formatTitle(book.title) || _('Untitled')}
                   </p>
                   <p className='text-neutral-content line-clamp-1'>
                     {formatAuthors(book.author, bookMeta.language) || _('Unknown')}
                   </p>
                 </div>
-                {window.innerWidth >= 400 && (
-                  <div className='flex flex-wrap items-center gap-x-4 gap-y-2 py-2'>
-                    <button
-                      className='btn rounded-xl bg-red-600 px-4 text-white hover:bg-red-700'
-                      onClick={handleDelete}
-                    >
-                      {_('Delete')}
+                <div className='flex flex-wrap items-center gap-x-4'>
+                  {handleBookDelete && (
+                    <button onClick={handleDelete}>
+                      <MdDelete className='fill-red-500' />
                     </button>
-                    {book.uploadedAt && (
-                      <button className='btn rounded-xl bg-orange-500 text-white hover:bg-orange-600'>
-                        {_('Redownload')}
-                      </button>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {book.uploadedAt && handleBookDownload && (
+                    <button onClick={handleRedownload}>
+                      <MdCloudDownload className='fill-base-content' />
+                    </button>
+                  )}
+                  {book.downloadedAt && handleBookUpload && (
+                    <button onClick={handleReupload}>
+                      <MdCloudUpload className='fill-base-content' />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-
-            {window.innerWidth < 400 && (
-              <div className='flex flex-wrap items-center gap-x-4 gap-y-2 py-2'>
-                <button
-                  className='btn rounded bg-red-600 text-white hover:bg-red-700'
-                  onClick={handleDelete}
-                >
-                  {_('Delete')}
-                </button>
-                {book.uploadedAt && (
-                  <button className='btn rounded bg-orange-500 text-white hover:bg-orange-600'>
-                    {_('Redownload')}
-                  </button>
-                )}
-              </div>
-            )}
 
             <div className='text-base-content my-4'>
               <div className='mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3'>
@@ -171,11 +181,12 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                 </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Updated:')}</span>
-                  <p className='text-neutral-content text-sm'>
-                    {formatDate(book.lastUpdated) || ''}
-                  </p>
+                  <p className='text-neutral-content text-sm'>{formatDate(book.updatedAt) || ''}</p>
                 </div>
-
+                <div className='overflow-hidden'>
+                  <span className='font-bold'>{_('Added:')}</span>
+                  <p className='text-neutral-content text-sm'>{formatDate(book.createdAt) || ''}</p>
+                </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Language:')}</span>
                   <p className='text-neutral-content text-sm'>
@@ -192,6 +203,12 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
                   <span className='font-bold'>{_('Subjects:')}</span>
                   <p className='text-neutral-content line-clamp-1 text-sm'>
                     {formatSubject(bookMeta.subject) || _('Unknown')}
+                  </p>
+                </div>
+                <div className='overflow-hidden'>
+                  <span className='font-bold'>{_('Format:')}</span>
+                  <p className='text-neutral-content line-clamp-1 text-sm'>
+                    {book.format || _('Unknown')}
                   </p>
                 </div>
               </div>

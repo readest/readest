@@ -282,7 +282,6 @@
   "Download finished": "다운로드 완료",
   "DOWNLOAD & INSTALL": "다운로드 및 설치",
   "Changelog:": "변경 로그:",
-  "Redownload": "다시 다운로드",
   "Software Update": "소프트웨어 업데이트",
   "Title": "제목",
   "Date Read": "읽은 날짜",
@@ -290,5 +289,7 @@
   "Format": "형식",
   "Ascending": "오름차순",
   "Descending": "내림차순",
-  "Sort by...": "정렬 기준..."
+  "Sort by...": "정렬 기준...",
+  "Added:": "추가됨:",
+  "Format:": "형식:"
 }

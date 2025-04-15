@@ -282,7 +282,6 @@
   "Download finished": "Téléchargement terminé",
   "DOWNLOAD & INSTALL": "TÉLÉCHARGER ET INSTALLER",
   "Changelog:": "Journal des modifications :",
-  "Redownload": "Télécharger à nouveau",
   "Software Update": "Mise à jour logicielle",
   "Title": "Titre",
   "Date Read": "Date de lecture",
@@ -290,5 +289,7 @@
   "Format": "Format",
   "Ascending": "Ascendant",
   "Descending": "Descendant",
-  "Sort by...": "Trier par..."
+  "Sort by...": "Trier par...",
+  "Added:": "Ajouté :",
+  "Format:": "Format :"
 }

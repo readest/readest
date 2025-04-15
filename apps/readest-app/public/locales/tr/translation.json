@@ -282,7 +282,6 @@
   "Download finished": "İndirme tamamlandı",
   "DOWNLOAD & INSTALL": "İNDİR & YÜKLE",
   "Changelog:": "Değişiklik Günlüğü:",
-  "Redownload": "Yeniden İndir",
   "Software Update": "Yazılım Güncellemesi",
   "Title": "Başlık",
   "Date Read": "Okunma Tarihi",
@@ -290,5 +289,7 @@
   "Format": "Biçim",
   "Ascending": "Artan",
   "Descending": "Azalan",
-  "Sort by...": "Şuna göre sırala..."
+  "Sort by...": "Şuna göre sırala...",
+  "Added:": "Eklenme:",
+  "Format:": "Biçim:"
 }

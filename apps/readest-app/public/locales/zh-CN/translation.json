@@ -282,7 +282,6 @@
   "Download finished": "下载完成",
   "DOWNLOAD & INSTALL": "下载并安装",
   "Changelog:": "更新日志：",
-  "Redownload": "重新下载",
   "Software Update": "软件更新",
   "Title": "书名",
   "Date Read": "阅读日期",
@@ -290,5 +289,7 @@
   "Format": "格式",
   "Ascending": "升序",
   "Descending": "降序",
-  "Sort by...": "排序方式..."
+  "Sort by...": "排序方式...",
+  "Added:": "添加日期",
+  "Format:": "格式"
 }

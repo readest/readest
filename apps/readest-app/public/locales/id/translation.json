@@ -282,7 +282,6 @@
   "Download finished": "Unduhan selesai",
   "DOWNLOAD & INSTALL": "UNDUH & INSTAL",
   "Changelog:": "Catatan Perubahan:",
-  "Redownload": "Unduh Ulang",
   "Software Update": "Pembaruan Perangkat Lunak",
   "Title": "Judul",
   "Date Read": "Tanggal Dibaca",
@@ -290,5 +289,7 @@
   "Format": "Format",
   "Ascending": "Naik",
   "Descending": "Turun",
-  "Sort by...": "Urutkan berdasarkan..."
+  "Sort by...": "Urutkan berdasarkan...",
+  "Added:": "Ditambahkan:",
+  "Format:": "Format:"
 }

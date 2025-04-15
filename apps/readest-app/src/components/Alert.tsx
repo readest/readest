@@ -38,7 +38,7 @@ const Alert: React.FC<{
             <div className='text-xs'>{message}</div>
           </div>
         </div>
-        <div className='flex flex-wrap items-center justify-center gap-2'>
+        <div className='flex max-w-[20vw] flex-wrap items-center justify-center gap-2'>
           <button className='btn btn-sm' onClick={onCancel}>
             {_('Cancel')}
           </button>

@@ -282,7 +282,6 @@
   "Download finished": "اكتمل التنزيل",
   "DOWNLOAD & INSTALL": "تنزيل وتثبيت",
   "Changelog:": "سجل التغييرات:",
-  "Redownload": "إعادة التنزيل",
   "Software Update": "تحديث البرنامج",
   "Title": "العنوان",
   "Date Read": "تاريخ القراءة",
@@ -290,5 +289,7 @@
   "Format": "التنسيق",
   "Ascending": "تصاعدي",
   "Descending": "تنازلي",
-  "Sort by...": "ترتيب حسب..."
+  "Sort by...": "ترتيب حسب...",
+  "Added:": "تاريخ الإضافة:",
+  "Format:": "التنسيق:"
 }

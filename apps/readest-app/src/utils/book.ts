@@ -115,7 +115,7 @@ export const primaryLanguage = (lang: string | string[] | undefined) => {
   return Array.isArray(lang) ? lang[0] : lang;
 };
 
-export const formatDate = (date: string | number | Date | undefined) => {
+export const formatDate = (date: string | number | Date | null | undefined) => {
   if (!date) return;
   const userLang = getUserLang();
   try {
