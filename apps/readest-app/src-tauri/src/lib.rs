@@ -71,7 +71,8 @@ fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
     let files = files
         .into_iter()
         .map(|f| {
-            let file = f.to_string_lossy()
+            let file = f
+                .to_string_lossy()
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
             format!("\"{file}\"",)
