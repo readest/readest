@@ -137,7 +137,8 @@ export abstract class BaseAppService implements AppService {
 
   async importBook(
     // file might be:
-    // 1. absolute path for local file
+    // 1.1 absolute path for local file on Desktop
+    // 1.2 /private/var inbox file path on iOS
     // 2. remote url
     // 3. content provider uri
     // 4. File object from browsers

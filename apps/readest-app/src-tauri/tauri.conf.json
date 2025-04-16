@@ -25,7 +25,12 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["$RESOURCE/**", "$APPDATA/**/*", "$TEMP/**/*"],
+          "allow": [
+            "$RESOURCE/**",
+            "$APPDATA/**/*",
+            "$TEMP/**/*",
+            "/private/var/mobile/Containers/Data/Application/**/*"
+          ],
           "deny": []
         }
       }

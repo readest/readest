@@ -40,6 +40,17 @@
       ]
     },
     {
+      "identifier": "fs:allow-cache-read",
+      "allow": [
+        {
+          "path": "$CACHEDIR/**/*"
+        },
+        {
+          "path": "/private/var/mobile/Containers/Data/Application/**/*"
+        }
+      ]
+    },
+    {
       "identifier": "http:default",
       "allow": [
         {

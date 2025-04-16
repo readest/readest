@@ -37,13 +37,18 @@ const parseIntentOpenWithFiles = async () => {
   const urls = await getCurrent();
   if (urls && urls.length > 0) {
     console.log('Intent Open with URL:', urls);
-    const files = urls.map((url) => {
-      if (url.startsWith('file://')) {
-        return decodeURI(url.replace('file://', ''));
-      }
-      return url;
-    });
-    return files;
+    return urls
+      .map((url) => {
+        if (url.startsWith('file://')) {
+          return decodeURI(url.replace('file://', ''));
+        } else if (url.startsWith('content://')) {
+          return url;
+        } else {
+          console.info('Skip non-file URL:', url);
+          return null;
+        }
+      })
+      .filter((url) => url !== null) as string[];
   }
   return null;
 };
@@ -52,11 +57,11 @@ export const parseOpenWithFiles = async () => {
   if (isWebAppPlatform()) return [];
 
   let files = parseWindowOpenWithFiles();
-  if (!files) {
-    files = await parseIntentOpenWithFiles();
-  }
-  if (!files && hasCli()) {
+  if ((!files || files.length === 0) && hasCli()) {
     files = await parseCLIOpenWithFiles();
+  }
+  if (!files || files.length === 0) {
+    files = await parseIntentOpenWithFiles();
   }
   return files;
 };
