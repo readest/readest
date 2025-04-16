@@ -200,8 +200,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const lineHeightValue =
         parseFloat(lineHeight) || viewSettings.lineHeight * viewSettings.defaultFontSize;
       const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
-      const strokeWidth = style === 'underline' ? 2 : 4;
-      const padding = (lineHeightValue - fontSizeValue - strokeWidth) / 2;
+      const strokeWidth = 2;
+      const padding = viewSettings.vertical
+        ? (lineHeightValue - fontSizeValue - strokeWidth) / 2
+        : strokeWidth;
       draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor, padding });
     }
   };

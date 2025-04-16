@@ -12,7 +12,7 @@ import { getFilename, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
-import { parseOpenWithFiles } from '@/helpers/cli';
+import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform } from '@/services/environment';
 import { checkForAppUpdates } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
@@ -204,7 +204,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       for (const file of openWithFiles) {
         console.log('Open with book:', file);
         try {
-          const temp = !settings.autoImportBooksOnOpen;
+          const temp = appService.isMobile ? false : !settings.autoImportBooksOnOpen;
           const book = await appService.importBook(file, libraryBooks, true, true, false, temp);
           if (book) {
             bookIds.push(book.hash);

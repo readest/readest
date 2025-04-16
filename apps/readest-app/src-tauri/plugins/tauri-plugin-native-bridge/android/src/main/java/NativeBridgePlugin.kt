@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.webkit.WebView
 import androidx.core.content.FileProvider
 import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
@@ -38,6 +39,40 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     companion object {
         var pendingInvoke: Invoke? = null
+    }
+
+    override fun load(webView: WebView) {
+        super.load(webView)
+        handleIntent(activity.intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        Log.e("NativeBridgePlugin", "Received intent: $uri")
+        when {
+          uri.scheme == "readest" && uri.host == "auth-callback" -> {
+              val result = JSObject().apply {
+                  put("redirectUrl", uri.toString())
+              }
+              pendingInvoke?.resolve(result)
+              pendingInvoke = null
+          }
+
+          intent.action == Intent.ACTION_VIEW -> {
+              try {
+                activity.contentResolver.takePersistableUriPermission(
+                      uri,
+                      Intent.FLAG_GRANT_READ_URI_PERMISSION
+                  )
+              } catch (e: SecurityException) {
+                Log.e("NativeBridgePlugin", "Failed to take persistable URI permission: ${e.message}")
+              }
+          }
+        }
     }
 
     @Command

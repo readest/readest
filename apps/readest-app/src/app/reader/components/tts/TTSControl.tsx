@@ -38,9 +38,10 @@ const TTSControl = () => {
   const [timeoutTimestamp, setTimeoutTimestamp] = useState(0);
   const [timeoutFunc, setTimeoutFunc] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const popupWidth = useResponsiveSize(POPUP_WIDTH);
-  const popupHeight = useResponsiveSize(POPUP_HEIGHT);
   const popupPadding = useResponsiveSize(POPUP_PADDING);
+  const maxWidth = window.innerWidth - 2 * popupPadding;
+  const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
+  const popupHeight = useResponsiveSize(POPUP_HEIGHT);
 
   const iconRef = useRef<HTMLDivElement>(null);
   const ttsControllerRef = useRef<TTSController | null>(null);

@@ -12,7 +12,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { Book } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
-import { parseOpenWithFiles } from '@/helpers/cli';
+import { parseOpenWithFiles } from '@/helpers/openWith';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
@@ -135,7 +135,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     dismissBook(bookKey);
     if (bookKeys.filter((key) => key !== bookKey).length == 0) {
       const openWithFiles = (await parseOpenWithFiles()) || [];
-      if (openWithFiles.length > 0) {
+      if (openWithFiles.length > 0 && !appService?.isMobile) {
         tauriHandleClose();
       } else {
         saveSettingsAndGoToLibrary();

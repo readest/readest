@@ -175,16 +175,16 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<MdOutlineMenu size={iconSize18} />}
+            toggleButton={<PiDotsThreeCircle size={iconSize18} />}
           >
-            <SettingsMenu />
+            <SortMenu />
           </Dropdown>
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<PiDotsThreeCircle size={iconSize18} />}
+            toggleButton={<MdOutlineMenu size={iconSize18} />}
           >
-            <SortMenu />
+            <SettingsMenu />
           </Dropdown>
           {appService?.hasWindowBar && (
             <WindowButtons
