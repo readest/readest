@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { checkForAppUpdates } from '@/helpers/updater';
 import { parseWebViewVersion } from '@/utils/ua';
 import Dialog from './Dialog';
+import Link from './Link';
 
 export const setAboutDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('about_window');
@@ -75,27 +76,20 @@ export const AboutWindow = () => {
           </p>
           <p className='text-neutral-content mt-2 text-xs'>
             This software is licensed under the{' '}
-            <a
+            <Link
               href='https://www.gnu.org/licenses/agpl-3.0.html'
-              target='_blank'
-              rel='noopener noreferrer'
               className='text-blue-500 underline'
             >
               GNU Affero General Public License v3.0
-            </a>
+            </Link>
             . You are free to use, modify, and distribute this software under the terms of the AGPL
             v3 license. Please see the license for more details.
           </p>
           <p className='text-neutral-content my-2 text-xs'>
             Source code is available at{' '}
-            <a
-              href='https://github.com/readest/readest'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-blue-500 underline'
-            >
+            <Link href='https://github.com/readest/readest' className='text-blue-500 underline'>
               GitHub
-            </a>
+            </Link>
             .
           </p>
         </div>
