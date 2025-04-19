@@ -192,7 +192,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                         )
                     }
                     if (visible) {
-                        controller.show(WindowInsets.Type.systemBars())
+                        controller.show(WindowInsets.Type.statusBars())
                     } else {
                         controller.hide(WindowInsets.Type.systemBars())
                     }
