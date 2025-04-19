@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.36": {
+      "date": "2025-04-20",
+      "notes": [
+        "📥 New download and upload buttons in the book detail dialog for easier file management",
+        "📂 You can now open files directly in Readest from your file manager on Android and iOS",
+        "🛠️ Fixed an issue where files with quotation marks in the filename could not be opened",
+        "📖 Improved the immersive reading experience on the reader page for Android and iOS",
+        "🌐 Added GuanKiapTsingKhai-T to the list of available CJK fonts"
+      ]
+    },
     "0.9.35": {
       "date": "2025-04-15",
       "notes": [
