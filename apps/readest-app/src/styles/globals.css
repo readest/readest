@@ -220,7 +220,6 @@ foliate-view {
 
 .pull-indicator {
   position: fixed;
-  top: calc(64px + env(safe-area-inset-top));
   width: 100%;
   background-color: transparent;
   display: flex;

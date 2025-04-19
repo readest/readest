@@ -66,3 +66,14 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn set_system_ui_visibility(
+        &self,
+        payload: SetSystemUIVisibilityRequest,
+    ) -> crate::Result<SetSystemUIVisibilityResponse> {
+        self.0
+            .run_mobile_plugin("set_system_ui_visibility", payload)
+            .map_err(Into::into)
+    }
+}

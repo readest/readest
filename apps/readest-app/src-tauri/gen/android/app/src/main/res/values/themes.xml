@@ -2,8 +2,12 @@
   <!-- Base application theme. -->
   <style name="Theme.readest" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <!-- Customize your theme here. -->
+    <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:navigationBarColor">@android:color/transparent</item>
+    <item name="android:windowTranslucentStatus">false</item>
+    <item name="android:windowTranslucentNavigation">false</item>
+    <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    <item name="android:fitsSystemWindows">false</item>
     <item name="android:windowActionBar">false</item>
-    <item name="android:windowNoTitle">true</item>
-    <item name="android:windowFullscreen">true</item>
   </style>
 </resources>

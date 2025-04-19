@@ -13,6 +13,7 @@ import { IoArrowBack } from 'react-icons/io5';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/utils/supabase';
 import { useEnv } from '@/context/EnvContext';
+import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -73,6 +74,8 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
+
+  useTheme({ systemUIVisible: false });
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     if (process.env.NODE_ENV === 'production' || appService?.isMobile || USE_APPLE_SIGN_IN) {

@@ -42,7 +42,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     cleanupTrafficLightListeners,
   } = useTrafficLightStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { bookKeys, hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { bookKeys, hoveredBookKey, systemUIVisible, setHoveredBookKey } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const iconSize16 = useResponsiveSize(16);
 
@@ -89,20 +89,27 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           'bg-base-100 absolute left-0 right-0 top-0 z-10 h-[env(safe-area-inset-top)]',
           isVisible ? 'visible' : 'hidden',
         )}
+        style={{
+          height: systemUIVisible ? 'max(env(safe-area-inset-top), 24px)' : '',
+        }}
       />
       <div
         ref={headerRef}
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
-          `shadow-xs transition-opacity duration-300`,
+          `shadow-xs transition-[opacity,margin-top] duration-300`,
           isTrafficLightVisible && isTopLeft && !isSideBarVisible ? 'pl-16' : 'pl-4',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
-          appService?.hasSafeAreaInset && 'mt-[env(safe-area-inset-top)]',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
           isHoveredAnim && 'hover-bar-anim',
           isVisible ? 'pointer-events-auto visible' : 'pointer-events-none opacity-0',
           isDropdownOpen && 'header-bar-pinned',
         )}
+        style={{
+          marginTop: systemUIVisible
+            ? 'max(env(safe-area-inset-top), 24px)'
+            : 'env(safe-area-inset-top)',
+        }}
         onMouseLeave={() => !appService?.isMobile && setHoveredBookKey('')}
       >
         <div className='sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4'>
@@ -139,7 +146,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             showMaximize={
               bookKeys.length == 1 && !isTrafficLightVisible && appService?.appPlatform !== 'web'
             }
-            onClose={() => onCloseBook(bookKey)}
+            onClose={() => {
+              setHoveredBookKey(null);
+              onCloseBook(bookKey);
+            }}
           />
         </div>
       </div>

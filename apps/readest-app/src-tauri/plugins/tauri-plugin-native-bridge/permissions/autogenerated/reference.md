@@ -9,6 +9,7 @@ Default permissions for the plugin
 - `allow-copy-uri-to-path`
 - `allow-use-background-audio`
 - `allow-install-package`
+- `allow-set-system-ui-visibility`
 
 ## Permission Table
 
@@ -119,6 +120,32 @@ Enables the install_package command without any pre-configured scope.
 <td>
 
 Denies the install_package command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-set-system-ui-visibility`
+
+</td>
+<td>
+
+Enables the set_system_ui_visibility command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-set-system-ui-visibility`
+
+</td>
+<td>
+
+Denies the set_system_ui_visibility command without any pre-configured scope.
 
 </td>
 </tr>

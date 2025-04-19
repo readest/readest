@@ -32,7 +32,7 @@ yarn-error.log*
 /private_keys
 
 # plists
-*.plist
+Entitlements*.plist
 
 # local confs
 tauri.*.conf.json

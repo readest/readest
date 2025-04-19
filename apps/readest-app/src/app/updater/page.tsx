@@ -1,10 +1,13 @@
 'use client';
 
 import { Suspense } from 'react';
-import Spinner from '@/components/Spinner';
 import { UpdaterContent } from '@/components/UpdaterWindow';
+import { useTheme } from '@/hooks/useTheme';
+import Spinner from '@/components/Spinner';
 
 const UpdaterPage = () => {
+  useTheme();
+
   return (
     <Suspense
       fallback={

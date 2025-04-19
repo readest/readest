@@ -14,6 +14,11 @@ class UseBackgroundAudioRequestArgs: Decodable {
   let enabled: Bool
 }
 
+class SetSystemUIVisibilityRequestArgs: Decodable {
+  let visible: Bool
+  let darkMode: Bool
+}
+
 class NativeBridgePlugin: Plugin {
   private var authSession: ASWebAuthenticationSession?
 
@@ -65,6 +70,30 @@ class NativeBridgePlugin: Plugin {
 
     let started = authSession?.start() ?? false
     Logger.info("Auth session start result: \(started)")
+  }
+
+  @objc public func set_system_ui_visibility(_ invoke: Invoke) throws {
+    let args = try invoke.parseArgs(SetSystemUIVisibilityRequestArgs.self)
+    let visible = args.visible
+    let darkMode = args.darkMode
+
+    DispatchQueue.main.async {
+      UIApplication.shared.isIdleTimerDisabled = !visible
+      UIApplication.shared.setStatusBarHidden(!visible, with: .none)
+
+      let windows = UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap { $0.windows }
+
+      let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
+      if let keyWindow = keyWindow {
+        keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
+        keyWindow.layoutIfNeeded()
+      } else {
+        print("No key window found")
+      }
+    }
+    invoke.resolve(["success": true])
   }
 }
 

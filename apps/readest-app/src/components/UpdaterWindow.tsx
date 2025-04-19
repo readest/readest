@@ -9,7 +9,6 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { fetch } from '@tauri-apps/plugin-http';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
-import { useTheme } from '@/hooks/useTheme';
 import { tauriDownload } from '@/utils/transfer';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
 import packageJson from '../../package.json';
@@ -200,8 +199,6 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [update]);
-
-  useTheme();
 
   useEffect(() => {
     setIsMounted(true);

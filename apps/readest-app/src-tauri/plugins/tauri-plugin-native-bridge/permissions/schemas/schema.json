@@ -343,6 +343,18 @@
           "markdownDescription": "Denies the install_package command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_system_ui_visibility command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-system-ui-visibility",
+          "markdownDescription": "Enables the set_system_ui_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_system_ui_visibility command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-system-ui-visibility",
+          "markdownDescription": "Denies the set_system_ui_visibility command without any pre-configured scope."
+        },
+        {
           "description": "Enables the use_background_audio command without any pre-configured scope.",
           "type": "string",
           "const": "allow-use-background-audio",
@@ -355,10 +367,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`"
         }
       ]
     }

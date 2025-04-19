@@ -36,4 +36,11 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<InstallPackageResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn set_system_ui_visibility(
+        &self,
+        _payload: SetSystemUIVisibilityRequest,
+    ) -> crate::Result<SetSystemUIVisibilityResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

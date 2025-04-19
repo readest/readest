@@ -6,4 +6,5 @@ permissions = [
   "allow-copy-uri-to-path",
   "allow-use-background-audio",
   "allow-install-package",
+  "allow-set-system-ui-visibility",
 ]

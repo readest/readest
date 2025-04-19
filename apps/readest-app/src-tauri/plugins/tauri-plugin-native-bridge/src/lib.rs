@@ -42,6 +42,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::copy_uri_to_path,
             commands::use_background_audio,
             commands::install_package,
+            commands::set_system_ui_visibility,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

@@ -419,6 +419,8 @@ export const mountAdditionalFonts = (document: Document) => {
 };
 
 export const transformStylesheet = (css: string) => {
+  const isMobile = ['ios', 'android'].includes(getOSPlatform());
+  const fontScale = isMobile ? 1.25 : 1;
   // replace absolute font sizes with rem units
   // replace hardcoded colors
   return css
@@ -431,11 +433,11 @@ export const transformStylesheet = (css: string) => {
     .replace(/font-size\s*:\s*xx-large/gi, 'font-size: 2rem')
     .replace(/font-size\s*:\s*xxx-large/gi, 'font-size: 3rem')
     .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)px/gi, (_, px) => {
-      const rem = parseFloat(px) / 16;
+      const rem = parseFloat(px) / fontScale / 16;
       return `font-size: ${rem}rem`;
     })
     .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)pt/gi, (_, pt) => {
-      const rem = parseFloat(pt) / 12;
+      const rem = parseFloat(pt) / fontScale / 12;
       return `font-size: ${rem}rem`;
     })
     .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')

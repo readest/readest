@@ -4,6 +4,12 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.os.Build
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowManager
+import android.view.WindowInsetsController
+import android.graphics.Color
 import android.webkit.WebView
 import androidx.core.content.FileProvider
 import androidx.browser.customtabs.CustomTabsIntent
@@ -29,6 +35,12 @@ class CopyURIRequestArgs {
 @InvokeArg
 class InstallPackageRequestArgs {
   var path: String? = null
+}
+
+@InvokeArg
+class SetSystemUIVisibilityRequestArgs {
+  var visible: Boolean? = false
+  var darkMode: Boolean? = false
 }
 
 @TauriPlugin
@@ -139,6 +151,73 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 ret.put("success", false)
                 ret.put("error", "File does not exist")
             }
+        } catch (e: Exception) {
+            ret.put("success", false)
+            ret.put("error", e.message)
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun set_system_ui_visibility(invoke: Invoke) {
+        val args = invoke.parseArgs(SetSystemUIVisibilityRequestArgs::class.java)
+        val visible = args.visible ?: false
+        var isDarkMode = args.darkMode ?: false
+        val ret = JSObject()
+        try {
+            val window = activity.window
+            val decorView = window.decorView
+            if (!visible) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    window.attributes.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.setDecorFitsSystemWindows(false)
+                val controller = window.insetsController
+                if (controller != null) {
+                    controller.systemBarsBehavior =
+                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+                    if (isDarkMode) {
+                        controller.setSystemBarsAppearance(
+                            0,
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        )
+                    } else {
+                        controller.setSystemBarsAppearance(
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        )
+                    }
+                    if (visible) {
+                        controller.show(WindowInsets.Type.systemBars())
+                    } else {
+                        controller.hide(WindowInsets.Type.systemBars())
+                    }
+                }
+                window.statusBarColor = Color.TRANSPARENT
+                window.navigationBarColor = Color.TRANSPARENT
+            } else {
+                @Suppress("DEPRECATION")
+                decorView.systemUiVisibility = when {
+                    visible && !isDarkMode -> View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
+                                              View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                              View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    visible -> View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                               View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    else -> View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                            View.SYSTEM_UI_FLAG_FULLSCREEN
+                }
+                window.statusBarColor = Color.TRANSPARENT
+                window.navigationBarColor = Color.TRANSPARENT
+            }
+            ret.put("success", true)
         } catch (e: Exception) {
             ret.put("success", false)
             ret.put("error", e.message)

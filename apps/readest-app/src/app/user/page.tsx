@@ -34,7 +34,7 @@ const ProfilePage = () => {
 
   const headerRef = useRef<HTMLDivElement>(null);
 
-  useTheme();
+  useTheme({ systemUIVisible: false });
 
   useEffect(() => {
     if (!user || !token) return;

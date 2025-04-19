@@ -6,6 +6,12 @@
     <false/>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <false/>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+    <key>UIHomeIndicatorAutoHidden</key>
+    <true/>
+    <key>UIRequiresFullScreen</key>
+    <true/>
     <key>CFBundleDocumentTypes</key>
     <array>
       <dict>

@@ -43,3 +43,11 @@ pub(crate) async fn install_package<R: Runtime>(
 ) -> Result<InstallPackageResponse> {
     app.native_bridge().install_package(payload)
 }
+
+#[command]
+pub(crate) async fn set_system_ui_visibility<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetSystemUIVisibilityRequest,
+) -> Result<SetSystemUIVisibilityResponse> {
+    app.native_bridge().set_system_ui_visibility(payload)
+}

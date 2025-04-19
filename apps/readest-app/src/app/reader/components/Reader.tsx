@@ -7,10 +7,12 @@ import { useEffect, Suspense, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { Toast } from '@/components/Toast';
@@ -19,16 +21,16 @@ import ReaderContent from './ReaderContent';
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
+  const { isDarkMode } = useThemeStore();
+  const { hoveredBookKey, showSystemUI, dismissSystemUI } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const { getVisibleLibrary, setLibrary } = useLibraryStore();
   const isInitiating = useRef(false);
 
-  const { updateAppTheme } = useThemeStore();
-  useTheme();
+  useTheme({ systemUIVisible: false, appThemeColor: 'base-100' });
   useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {
-    updateAppTheme('base-100');
     if (isInitiating.current) return;
     isInitiating.current = true;
     const initLibrary = async () => {
@@ -41,6 +43,18 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     initLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!appService?.isMobile) return;
+    const systemUIVisible = !!hoveredBookKey;
+    setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
+    if (systemUIVisible) {
+      showSystemUI();
+    } else {
+      dismissSystemUI();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredBookKey]);
 
   return (
     getVisibleLibrary().length > 0 &&
