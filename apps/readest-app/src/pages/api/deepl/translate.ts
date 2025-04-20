@@ -52,12 +52,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const {
     text,
-    source_lang: sourceLang = 'auto',
-    target_lang: targetLang = 'en',
+    source_lang: sourceLang = 'AUTO',
+    target_lang: targetLang = 'EN',
   }: { text: string[]; source_lang: string; target_lang: string } = req.body;
   try {
     if (user && token) {
-      console.log('deeplApiUrl', deeplApiUrl);
+      const requestBody = {
+        text: deeplApiUrl.endsWith('/v2/translate') ? text : (text[0] ?? ''),
+        source_lang: sourceLang,
+        target_lang: targetLang,
+      };
       const response = await fetch(deeplApiUrl, {
         method: 'POST',
         headers: {
@@ -65,7 +69,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           'x-fingerprint': process.env['DEEPL_X_FINGERPRINT'] || '',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(requestBody),
       });
       res.status(response.status);
       res.json(await response.json());
