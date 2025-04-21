@@ -52,7 +52,7 @@ export const AboutWindow = () => {
           </div>
           <div className='flex select-text flex-col items-center'>
             <h2 className='text-2xl font-bold'>Readest</h2>
-            <p className='text-neutral-content text-sm'>
+            <p className='text-neutral-content text-center text-sm'>
               {_('Version {{version}}', { version: packageJson.version })} {`(${browserInfo})`}
             </p>
           </div>

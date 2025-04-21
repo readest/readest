@@ -63,6 +63,11 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   },
 };
 
+export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
+  sideBarWidth: '25%',
+  isSideBarPinned: false,
+};
+
 export const DEFAULT_BOOK_FONT: BookFont = {
   serifFont: 'Bitter',
   sansSerifFont: 'Roboto',

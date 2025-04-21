@@ -31,6 +31,7 @@ import {
   DEFAULT_MOBILE_VIEW_SETTINGS,
   DEFAULT_SYSTEM_SETTINGS,
   DEFAULT_CJK_VIEW_SETTINGS,
+  DEFAULT_MOBILE_READSETTINGS,
 } from './constants';
 import { getOSPlatform, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -99,7 +100,10 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_SYSTEM_SETTINGS,
         version: SYSTEM_SETTINGS_VERSION,
         localBooksDir: await this.getInitBooksDir(),
-        globalReadSettings: DEFAULT_READSETTINGS,
+        globalReadSettings: {
+          ...DEFAULT_READSETTINGS,
+          ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
+        },
         globalViewSettings: {
           ...DEFAULT_BOOK_LAYOUT,
           ...DEFAULT_BOOK_STYLE,

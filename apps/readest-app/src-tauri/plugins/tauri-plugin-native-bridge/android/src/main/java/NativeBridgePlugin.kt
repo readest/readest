@@ -177,8 +177,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 window.setDecorFitsSystemWindows(false)
                 val controller = window.insetsController
                 if (controller != null) {
-                    controller.systemBarsBehavior =
-                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    } else {
+                        controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
+                    }
 
                     if (isDarkMode) {
                         controller.setSystemBarsAppearance(
