@@ -20,6 +20,11 @@ const getUserAndToken = async (authHeader: string | undefined) => {
   return { user, token };
 };
 
+const LANG_V2_V1_MAP: Record<string, string> = {
+  'ZH-HANS': 'ZH',
+  'ZH-HANT': 'ZH-TW',
+};
+
 const getDeepLAPIKey = (keys: string | undefined) => {
   const keyArray = keys?.split(',') ?? [];
   return keyArray.length ? keyArray[Math.floor(Math.random() * keyArray.length)] : '';
@@ -57,10 +62,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }: { text: string[]; source_lang: string; target_lang: string } = req.body;
   try {
     if (user && token) {
+      const isV2Api = deeplApiUrl.endsWith('/v2/translate');
       const requestBody = {
-        text: deeplApiUrl.endsWith('/v2/translate') ? text : (text[0] ?? ''),
-        source_lang: sourceLang,
-        target_lang: targetLang,
+        text: isV2Api ? text : (text[0] ?? ''),
+        source_lang: isV2Api ? sourceLang : (LANG_V2_V1_MAP[sourceLang] ?? sourceLang),
+        target_lang: isV2Api ? targetLang : (LANG_V2_V1_MAP[targetLang] ?? targetLang),
       };
       const response = await fetch(deeplApiUrl, {
         method: 'POST',
