@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { useEffect, Suspense, useRef } from 'react';
+import { useEffect, Suspense, useRef, useState } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -24,7 +24,8 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { isDarkMode } = useThemeStore();
   const { hoveredBookKey, showSystemUI, dismissSystemUI } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
-  const { getVisibleLibrary, setLibrary } = useLibraryStore();
+  const { setLibrary } = useLibraryStore();
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
   const isInitiating = useRef(false);
 
   useTheme({ systemUIVisible: false, appThemeColor: 'base-100' });
@@ -38,6 +39,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       const settings = await appService.loadSettings();
       setSettings(settings);
       setLibrary(await appService.loadLibraryBooks());
+      setLibraryLoaded(true);
     };
 
     initLibrary();
@@ -57,7 +59,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, [hoveredBookKey]);
 
   return (
-    getVisibleLibrary().length > 0 &&
+    libraryLoaded &&
     settings.globalReadSettings && (
       <div
         className={clsx(
