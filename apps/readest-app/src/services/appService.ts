@@ -15,6 +15,7 @@ import {
   formatTitle,
   formatAuthors,
   getFilename,
+  getPrimaryLanguage,
 } from '@/utils/book';
 import { partialMD5 } from '@/utils/md5';
 import { BookDoc, DocumentLoader } from '@/libs/document';
@@ -198,6 +199,7 @@ export abstract class BaseAppService implements AppService {
         format,
         title: formatTitle(loadedBook.metadata.title),
         author: formatAuthors(loadedBook.metadata.author, loadedBook.metadata.language),
+        primaryLanguage: getPrimaryLanguage(loadedBook.metadata.language),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
         uploadedAt: existingBook ? existingBook.uploadedAt : null,
         deletedAt: transient ? Date.now() : null,
@@ -208,6 +210,7 @@ export abstract class BaseAppService implements AppService {
       if (existingBook) {
         existingBook.title = book.title;
         existingBook.author = book.author;
+        existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
       }
 
       if (!(await this.fs.exists(getDir(book), 'Books'))) {

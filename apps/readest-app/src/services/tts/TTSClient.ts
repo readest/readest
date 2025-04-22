@@ -21,6 +21,7 @@ export interface TTSClient {
   pause(): Promise<void>;
   resume(): Promise<void>;
   stop(): Promise<void>;
+  setPrimaryLang(lang: string): void;
   setRate(rate: number): Promise<void>;
   setPitch(pitch: number): Promise<void>;
   setVoice(voice: string): Promise<void>;

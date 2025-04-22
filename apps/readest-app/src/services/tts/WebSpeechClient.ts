@@ -173,6 +173,7 @@ async function* speakWithMarks(
 }
 
 export class WebSpeechClient implements TTSClient {
+  #primaryLang = 'en';
   #rate = 1.0;
   #pitch = 1.0;
   #voice: SpeechSynthesisVoice | null = null;
@@ -215,7 +216,10 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
-    const lang = parseSSMLLang(ssml) || 'en';
+    let lang = parseSSMLLang(ssml) || 'en';
+    if (lang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
+      lang = this.#primaryLang;
+    }
     if (!this.#voice || this.#currentVoiceLang !== lang) {
       const preferredVoiceId = TTSUtils.getPreferredVoice('web-speech', lang);
       const preferredVoice = this.#voices.find((v) => v.voiceURI === preferredVoiceId);
@@ -260,6 +264,10 @@ export class WebSpeechClient implements TTSClient {
 
   async stop() {
     this.#synth.cancel();
+  }
+
+  setPrimaryLang(lang: string) {
+    this.#primaryLang = lang;
   }
 
   async setRate(rate: number) {

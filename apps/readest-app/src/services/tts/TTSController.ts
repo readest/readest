@@ -219,6 +219,12 @@ export class TTSController extends EventTarget {
 
   async setLang(lang: string) {
     this.ttsLang = lang;
+    this.setPrimaryLang(lang);
+  }
+
+  async setPrimaryLang(lang: string) {
+    this.ttsEdgeClient.setPrimaryLang(lang);
+    this.ttsWebClient.setPrimaryLang(lang);
   }
 
   async setRate(rate: number) {

@@ -99,7 +99,7 @@ const TTSControl = () => {
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
     const bookData = getBookData(bookKey);
-    if (!view || !viewSettings || !bookData) return;
+    if (!view || !viewSettings || !bookData || !bookData.book) return;
     if (bookData.book?.format === 'PDF') {
       eventDispatcher.dispatch('toast', {
         message: _('TTS not supported for PDF'),
@@ -108,6 +108,7 @@ const TTSControl = () => {
       return;
     }
 
+    const primaryLang = bookData.book.primaryLanguage;
     setBookKey(bookKey);
 
     if (ttsControllerRef.current) {
@@ -128,9 +129,13 @@ const TTSControl = () => {
       await ttsController.initViewTTS();
       const ssml = view.tts?.from(range);
       if (ssml) {
-        const lang = parseSSMLLang(ssml) || 'en';
-        setTtsLang(lang);
+        let lang = parseSSMLLang(ssml) || 'en';
+        // We will not trust 'en' language from ssml, as it may be a fallback or hardcoded value
+        if (lang === 'en' && primaryLang && primaryLang !== 'en') {
+          lang = primaryLang.split('-')[0]!;
+        }
         setIsPlaying(true);
+        setTtsLang(lang);
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);

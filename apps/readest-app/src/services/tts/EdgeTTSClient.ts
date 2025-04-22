@@ -6,6 +6,7 @@ import { TTSGranularity } from '@/types/view';
 import { TTSUtils } from './TTSUtils';
 
 export class EdgeTTSClient implements TTSClient {
+  #primaryLang = 'en';
   #rate = 1.0;
   #pitch = 1.0;
   #voice: TTSVoice | null = null;
@@ -50,7 +51,10 @@ export class EdgeTTSClient implements TTSClient {
     preload = false,
   ): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
-    const lang = parseSSMLLang(ssml) || 'en';
+    let lang = parseSSMLLang(ssml) || 'en';
+    if (lang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
+      lang = this.#primaryLang;
+    }
     let voiceId = 'en-US-AriaNeural';
     if (!this.#voice || this.#currentVoiceLang !== lang) {
       const preferredVoiceId = TTSUtils.getPreferredVoice('edge-tts', lang);
@@ -205,6 +209,10 @@ export class EdgeTTSClient implements TTSClient {
       this.#audioElement.src = '';
       this.#audioElement = null;
     }
+  }
+
+  setPrimaryLang(lang: string) {
+    this.#primaryLang = lang;
   }
 
   async setRate(rate: number) {

@@ -588,3 +588,5 @@ export const TRANSLATED_LANGS = {
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
 };
+
+export const SUPPORTED_LANGS: Record<string, string> = { ...TRANSLATED_LANGS, zh: '中文' };

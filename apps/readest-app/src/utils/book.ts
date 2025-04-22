@@ -3,6 +3,7 @@ import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
 import { getUserLang, isContentURI, isValidURL, makeSafeFilename } from './misc';
 import { getStorageType } from './object';
 import { getDirFromLanguage } from './rtl';
+import { SUPPORTED_LANGS } from '@/services/constants';
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;
@@ -107,11 +108,17 @@ export const formatPublisher = (publisher: string | LanguageMap) => {
   return typeof publisher === 'string' ? publisher : formatLanguageMap(publisher);
 };
 
-export const formatLanguage = (lang: string | string[] | undefined) => {
-  return Array.isArray(lang) ? lang.join(', ') : lang;
+const langCodeToLangName = (langCode: string) => {
+  return SUPPORTED_LANGS[langCode] || langCode.toUpperCase();
 };
 
-export const primaryLanguage = (lang: string | string[] | undefined) => {
+export const formatLanguage = (lang: string | string[] | undefined): string => {
+  return Array.isArray(lang)
+    ? lang.map(langCodeToLangName).join(', ')
+    : langCodeToLangName(lang || '');
+};
+
+export const getPrimaryLanguage = (lang: string | string[] | undefined) => {
   return Array.isArray(lang) ? lang[0] : lang;
 };
 
@@ -159,6 +166,6 @@ export const getBookDirFromWritingMode = (writingMode: WritingMode) => {
 };
 
 export const getBookDirFromLanguage = (language: string | string[] | undefined) => {
-  const lang = primaryLanguage(language) || '';
+  const lang = getPrimaryLanguage(language) || '';
   return getDirFromLanguage(lang);
 };

@@ -8,6 +8,7 @@ import { updateTocCFI, updateTocID } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
+import { getPrimaryLanguage } from '@/utils/book';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -136,6 +137,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }, {});
           updateTocCFI(bookDoc, bookDoc.toc, sections);
         }
+        // Set the book's language for formerly imported books, newly imported books have this field set
+        book.primaryLanguage =
+          book.primaryLanguage ?? getPrimaryLanguage(bookDoc.metadata.language);
         useBookDataStore.setState((state) => ({
           booksData: {
             ...state.booksData,
