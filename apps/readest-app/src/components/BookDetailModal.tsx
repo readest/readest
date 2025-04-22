@@ -107,12 +107,12 @@ const BookDetailModal = ({
         isOpen={isOpen}
         onClose={handleClose}
         bgClassName='sm:bg-black/50'
-        boxClassName='sm:min-w-[480px] sm:max-w-[480px] sm:h-auto'
+        boxClassName='sm:min-w-[480px] sm:max-w-[480px] sm:h-auto sm:max-h-[90%]'
         contentClassName='!px-6 !py-2'
       >
         <div className='flex w-full select-text items-center justify-center'>
           <div className='relative w-full rounded-lg'>
-            <div className='mb-10 me-4 flex h-32 items-start'>
+            <div className='mb-6 me-4 flex h-32 items-start'>
               <div className='book-cover relative mr-10 aspect-[28/41] h-32 items-end shadow-lg'>
                 <Image
                   src={book.coverImageUrl!}
@@ -211,6 +211,12 @@ const BookDetailModal = ({
                     {book.format || _('Unknown')}
                   </p>
                 </div>
+              </div>
+              <div>
+                <span className='font-bold'>{_('Description:')}</span>
+                <p className='text-neutral-content text-sm'>
+                  {bookMeta.description || _('No description available')}
+                </p>
               </div>
             </div>
           </div>
