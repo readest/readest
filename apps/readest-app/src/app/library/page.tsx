@@ -30,7 +30,11 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { tauriHandleSetAlwaysOnTop, tauriQuitApp } from '@/utils/window';
+import {
+  tauriHandleSetAlwaysOnTop,
+  tauriHandleToggleFullScreen,
+  tauriQuitApp,
+} from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
@@ -85,6 +89,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useScreenWakeLock(settings.screenWakeLock);
 
   useShortcuts({
+    onToggleFullscreen: async () => {
+      if (isTauriAppPlatform()) {
+        await tauriHandleToggleFullScreen();
+      }
+    },
     onQuitApp: async () => {
       if (isTauriAppPlatform()) {
         await tauriQuitApp();

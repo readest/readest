@@ -6,7 +6,7 @@ import useBooksManager from './useBooksManager';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getStyles } from '@/utils/style';
-import { tauriQuitApp } from '@/utils/window';
+import { tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 
@@ -84,6 +84,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     window.location.reload();
   };
 
+  const toggleFullscreen = async () => {
+    if (isTauriAppPlatform()) {
+      await tauriHandleToggleFullScreen();
+    }
+  };
+
   const quitApp = async () => {
     // on web platform use browser's default shortcut to close the tab
     if (isTauriAppPlatform()) {
@@ -136,6 +142,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
       onReloadPage: reloadPage,
+      onToggleFullscreen: toggleFullscreen,
       onQuitApp: quitApp,
       onGoLeft: goLeft,
       onGoRight: goRight,

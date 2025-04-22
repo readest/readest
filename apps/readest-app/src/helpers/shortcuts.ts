@@ -7,6 +7,7 @@ export interface ShortcutConfig {
   onToggleSelectMode: string[];
   onOpenFontLayoutSettings: string[];
   onReloadPage: string[];
+  onToggleFullscreen: string[];
   onQuitApp: string[];
   onGoLeft: string[];
   onGoRight: string[];
@@ -32,6 +33,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onToggleSelectMode: ['shift+s'],
   onOpenFontLayoutSettings: ['shift+f'],
   onReloadPage: ['shift+r'],
+  onToggleFullscreen: ['F11'],
   onQuitApp: ['ctrl+q', 'cmd+q'],
   onGoLeft: ['ArrowLeft', 'PageUp', 'h'],
   onGoRight: ['ArrowRight', 'PageDown', 'l', ' '],
