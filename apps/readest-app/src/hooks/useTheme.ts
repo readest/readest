@@ -31,6 +31,7 @@ export const useTheme = ({
     customThemes.forEach((customTheme) => {
       applyCustomTheme(customTheme);
     });
+    localStorage.setItem('customThemes', JSON.stringify(customThemes));
   }, [settings]);
 
   useEffect(() => {
