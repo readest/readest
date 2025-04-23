@@ -10,6 +10,7 @@ Default permissions for the plugin
 - `allow-use-background-audio`
 - `allow-install-package`
 - `allow-set-system-ui-visibility`
+- `allow-get-status-bar-height`
 
 ## Permission Table
 
@@ -94,6 +95,32 @@ Enables the copy_uri_to_path command without any pre-configured scope.
 <td>
 
 Denies the copy_uri_to_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-status-bar-height`
+
+</td>
+<td>
+
+Enables the get_status_bar_height command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-status-bar-height`
+
+</td>
+<td>
+
+Denies the get_status_bar_height command without any pre-configured scope.
 
 </td>
 </tr>

@@ -28,6 +28,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useThemeStore } from '@/store/themeStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import {
@@ -65,6 +66,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const _ = useTranslation();
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { statusBarHeight } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -542,7 +544,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             )}
             style={{
               marginTop: appService?.hasSafeAreaInset
-                ? 'max(env(safe-area-inset-top), 24px)'
+                ? `max(env(safe-area-inset-top), ${statusBarHeight}px)`
                 : '48px',
             }}
           >

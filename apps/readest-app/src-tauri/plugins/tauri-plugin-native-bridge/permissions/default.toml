@@ -7,4 +7,5 @@ permissions = [
   "allow-use-background-audio",
   "allow-install-package",
   "allow-set-system-ui-visibility",
+  "allow-get-status-bar-height",
 ]

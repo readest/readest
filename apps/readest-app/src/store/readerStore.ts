@@ -30,13 +30,9 @@ interface ReaderStore {
   viewStates: { [key: string]: ViewState };
   bookKeys: string[];
   hoveredBookKey: string | null;
-  systemUIVisible: boolean;
   setBookKeys: (keys: string[]) => void;
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
-  showSystemUI: () => void;
-  dismissSystemUI: () => void;
-
   setProgress: (
     key: string,
     location: string,
@@ -67,12 +63,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
   viewStates: {},
   bookKeys: [],
   hoveredBookKey: null,
-  systemUIVisible: false,
   setBookKeys: (keys: string[]) => set({ bookKeys: keys }),
   setHoveredBookKey: (key: string | null) => set({ hoveredBookKey: key }),
-  showSystemUI: () => set({ systemUIVisible: true }),
-  dismissSystemUI: () => set({ systemUIVisible: false }),
-
   getView: (key: string | null) => (key && get().viewStates[key]?.view) || null,
   setView: (key: string, view) =>
     set((state) => ({

@@ -43,4 +43,8 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<SetSystemUIVisibilityResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn get_status_bar_height(&self) -> crate::Result<GetStatusBarHeightResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

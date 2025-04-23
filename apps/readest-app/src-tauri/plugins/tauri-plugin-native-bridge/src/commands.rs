@@ -51,3 +51,10 @@ pub(crate) async fn set_system_ui_visibility<R: Runtime>(
 ) -> Result<SetSystemUIVisibilityResponse> {
     app.native_bridge().set_system_ui_visibility(payload)
 }
+
+#[command]
+pub(crate) async fn get_status_bar_height<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetStatusBarHeightResponse> {
+    app.native_bridge().get_status_bar_height()
+}

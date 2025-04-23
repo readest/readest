@@ -331,6 +331,18 @@
           "markdownDescription": "Denies the copy_uri_to_path command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_status_bar_height command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-status-bar-height",
+          "markdownDescription": "Enables the get_status_bar_height command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_status_bar_height command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-status-bar-height",
+          "markdownDescription": "Denies the get_status_bar_height command without any pre-configured scope."
+        },
+        {
           "description": "Enables the install_package command without any pre-configured scope.",
           "type": "string",
           "const": "allow-install-package",
@@ -367,10 +379,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`"
         }
       ]
     }

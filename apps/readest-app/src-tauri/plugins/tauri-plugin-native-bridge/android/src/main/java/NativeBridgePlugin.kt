@@ -227,4 +227,22 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
         invoke.resolve(ret)
     }
+
+    @Command
+    fun get_status_bar_height(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            val resourceId = activity.resources.getIdentifier("status_bar_height", "dimen", "android")
+            val height = if (resourceId > 0) {
+                activity.resources.getDimensionPixelSize(resourceId)
+            } else {
+                0
+            }
+            ret.put("height", height)
+        } catch (e: Exception) {
+            ret.put("height", -1)
+            ret.put("error", e.message)
+        }
+        invoke.resolve(ret)
+    }
 }

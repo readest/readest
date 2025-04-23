@@ -77,3 +77,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn get_status_bar_height(&self) -> crate::Result<GetStatusBarHeightResponse> {
+        self.0
+            .run_mobile_plugin("get_status_bar_height", ())
+            .map_err(Into::into)
+    }
+}

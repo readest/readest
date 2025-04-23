@@ -9,6 +9,7 @@ import { MdOutlineMenu, MdArrowBackIosNew } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
@@ -36,6 +37,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
+  const { statusBarHeight } = useThemeStore();
   const {
     isTrafficLightVisible,
     initializeTrafficLightStore,
@@ -96,7 +98,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
       style={{
-        marginTop: appService?.hasSafeAreaInset ? 'max(env(safe-area-inset-top), 24px)' : '',
+        marginTop: appService?.hasSafeAreaInset
+          ? `max(env(safe-area-inset-top), ${statusBarHeight}px)`
+          : '',
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>

@@ -43,6 +43,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::use_background_audio,
             commands::install_package,
             commands::set_system_ui_visibility,
+            commands::get_status_bar_height,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

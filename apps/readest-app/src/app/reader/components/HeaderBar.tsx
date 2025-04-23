@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
@@ -42,7 +43,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     cleanupTrafficLightListeners,
   } = useTrafficLightStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { bookKeys, hoveredBookKey, systemUIVisible, setHoveredBookKey } = useReaderStore();
+  const { bookKeys, hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible } = useSidebarStore();
   const iconSize16 = useResponsiveSize(16);
 
@@ -90,7 +92,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           isVisible ? 'visible' : 'hidden',
         )}
         style={{
-          height: systemUIVisible ? 'max(env(safe-area-inset-top), 24px)' : '',
+          height: systemUIVisible ? `max(env(safe-area-inset-top), ${statusBarHeight}px)` : '',
         }}
       />
       <div
@@ -107,7 +109,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         )}
         style={{
           marginTop: systemUIVisible
-            ? 'max(env(safe-area-inset-top), 24px)'
+            ? `max(env(safe-area-inset-top), ${statusBarHeight}px)`
             : 'env(safe-area-inset-top)',
         }}
         onMouseLeave={() => !appService?.isMobile && setHoveredBookKey('')}

@@ -5,6 +5,7 @@ const COMMANDS: &[&str] = &[
     "use_background_audio",
     "install_package",
     "set_system_ui_visibility",
+    "get_status_bar_height",
 ];
 
 fn main() {

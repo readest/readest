@@ -21,8 +21,8 @@ import ReaderContent from './ReaderContent';
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
-  const { isDarkMode } = useThemeStore();
-  const { hoveredBookKey, showSystemUI, dismissSystemUI } = useReaderStore();
+  const { isDarkMode, showSystemUI, dismissSystemUI } = useThemeStore();
+  const { hoveredBookKey } = useReaderStore();
   const { isSideBarVisible } = useSidebarStore();
   const { setLibrary } = useLibraryStore();
   const [libraryLoaded, setLibraryLoaded] = useState(false);

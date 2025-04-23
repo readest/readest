@@ -58,3 +58,10 @@ pub struct SetSystemUIVisibilityResponse {
     pub success: bool,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetStatusBarHeightResponse {
+    pub height: u32,
+    pub error: Option<String>,
+}
