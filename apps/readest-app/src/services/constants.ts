@@ -38,6 +38,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   autoCheckUpdates: true,
   screenWakeLock: true,
   autoImportBooksOnOpen: false,
+  libraryViewMode: 'grid',
   librarySortBy: 'updated',
   librarySortAscending: false,
 

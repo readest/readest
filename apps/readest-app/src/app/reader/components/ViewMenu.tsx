@@ -117,7 +117,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       <MenuItem
         label={_('Scrolled Mode')}
         shortcut='Shift+J'
-        icon={isScrolledMode ? <MdCheck /> : undefined}
+        Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
       />
 
@@ -132,7 +132,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               ? _('Light Mode')
               : _('Auto Mode')
         }
-        icon={themeMode === 'dark' ? <BiMoon /> : themeMode === 'light' ? <BiSun /> : <TbSunMoon />}
+        Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
     </div>

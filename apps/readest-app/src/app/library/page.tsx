@@ -537,7 +537,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <div
             ref={containerRef}
             className={clsx(
-              'scroll-container drop-zone flex-grow overflow-y-auto px-4 sm:px-2',
+              'scroll-container drop-zone flex-grow overflow-y-auto',
               appService?.hasSafeAreaInset && 'pt-[52px]',
               appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom))]',
               isDragging && 'drag-over',

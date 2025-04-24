@@ -17,9 +17,10 @@ const Alert: React.FC<{
           'alert flex items-center justify-between',
           'bg-base-300 rounded-lg border-none p-4 shadow-2xl',
           'w-full max-w-[90vw] sm:max-w-[70vw] md:max-w-[50vw] lg:max-w-[40vw] xl:max-w-[40vw]',
+          'min-w-[70vw] flex-col sm:min-w-[40vw] sm:flex-row',
         )}
       >
-        <div className='flex items-center space-x-2'>
+        <div className='flex items-center space-x-2 self-start'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
             fill='none'
@@ -34,12 +35,12 @@ const Alert: React.FC<{
             ></path>
           </svg>
           <div className=''>
-            <h3 className='font-sm text-base'>{title}</h3>
+            <h3 className='font-sm text-start text-base sm:text-center'>{title}</h3>
             <div className='text-xs'>{message}</div>
           </div>
         </div>
-        <div className='flex max-w-[20vw] flex-wrap items-center justify-center gap-2'>
-          <button className='btn btn-sm' onClick={onCancel}>
+        <div className='flex flex-wrap items-center gap-2 self-end sm:max-w-[20vw]'>
+          <button className='btn btn-sm btn-neutral' onClick={onCancel}>
             {_('Cancel')}
           </button>
           <button className='btn btn-sm btn-warning' onClick={onConfirm}>

@@ -1,14 +1,16 @@
 import clsx from 'clsx';
 import Image from 'next/image';
 import { Book } from '@/types/book';
+import { LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
 
 interface BookCoverProps {
   book: Book;
   isPreview?: boolean;
+  mode?: LibraryViewModeType;
 }
 
-const BookCover: React.FC<BookCoverProps> = ({ book, isPreview }) => {
+const BookCover: React.FC<BookCoverProps> = ({ mode = 'grid', book, isPreview }) => {
   return (
     <div className='relative flex h-full w-full'>
       <Image
@@ -31,8 +33,8 @@ const BookCover: React.FC<BookCoverProps> = ({ book, isPreview }) => {
         <div className='flex h-1/2 items-center justify-center'>
           <span
             className={clsx(
-              isPreview ? 'line-clamp-2' : 'line-clamp-3',
-              isPreview ? 'text-[0.5em]' : 'text-lg',
+              isPreview ? 'line-clamp-2' : mode === 'grid' ? 'line-clamp-3' : 'line-clamp-2',
+              isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-sm',
             )}
           >
             {formatTitle(book.title)}
@@ -43,7 +45,7 @@ const BookCover: React.FC<BookCoverProps> = ({ book, isPreview }) => {
           <span
             className={clsx(
               'text-neutral-content/50 line-clamp-1',
-              isPreview ? 'text-[0.4em]' : 'text-base',
+              isPreview ? 'text-[0.4em]' : mode === 'grid' ? 'text-base' : 'text-xs',
             )}
           >
             {formatAuthors(book.author)}

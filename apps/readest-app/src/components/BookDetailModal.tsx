@@ -142,7 +142,7 @@ const BookDetailModal = ({
                     {formatTitle(book.title) || _('Untitled')}
                   </p>
                   <p className='text-neutral-content line-clamp-1'>
-                    {formatAuthors(book.author, bookMeta.language) || _('Unknown')}
+                    {formatAuthors(book.author, book.primaryLanguage) || _('Unknown')}
                   </p>
                 </div>
                 <div className='flex flex-wrap items-center gap-x-4'>

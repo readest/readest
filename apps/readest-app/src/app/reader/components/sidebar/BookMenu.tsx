@@ -62,13 +62,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             .map((book) => (
               <MenuItem
                 key={book.hash}
-                icon={
+                Icon={
                   <Image
                     src={book.coverImageUrl!}
                     alt={book.title}
                     width={56}
                     height={80}
-                    className='aspect-auto max-h-8 max-w-6 rounded-sm shadow-md'
+                    className='aspect-auto max-h-8 max-w-4 rounded-sm shadow-md'
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}

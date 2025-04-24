@@ -4,7 +4,7 @@ import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { LibrarySortByType } from '@/types/settings';
+import { LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import MenuItem from '@/components/MenuItem';
 
@@ -19,8 +19,14 @@ const SortMenu: React.FC<SortMenuProps> = ({ setIsDropdownOpen }) => {
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
 
+  const viewMode = settings.libraryViewMode;
   const sortBy = settings.librarySortBy;
   const isAscending = settings.librarySortAscending;
+
+  const viewOptions = [
+    { label: _('List'), value: 'list' },
+    { label: _('Grid'), value: 'grid' },
+  ];
 
   const sortByOptions = [
     { label: _('Title'), value: 'title' },
@@ -34,6 +40,17 @@ const SortMenu: React.FC<SortMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Ascending'), value: true },
     { label: _('Descending'), value: false },
   ];
+
+  const handleSetViewMode = (value: LibraryViewModeType) => {
+    settings.libraryViewMode = value;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsDropdownOpen?.(false);
+
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set('view', value);
+    navigateToLibrary(router, `${params.toString()}`);
+  };
 
   const handleSetSortBy = (value: LibrarySortByType) => {
     settings.librarySortBy = value;
@@ -62,6 +79,16 @@ const SortMenu: React.FC<SortMenuProps> = ({ setIsDropdownOpen }) => {
       tabIndex={0}
       className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
     >
+      {viewOptions.map((option) => (
+        <MenuItem
+          key={option.value}
+          label={option.label}
+          buttonClass='h-8'
+          Icon={viewMode === option.value ? MdCheck : undefined}
+          onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
+        />
+      ))}
+      <hr className='border-base-200 my-1' />
       <MenuItem
         label={_('Sort by...')}
         buttonClass='h-8'
@@ -73,7 +100,7 @@ const SortMenu: React.FC<SortMenuProps> = ({ setIsDropdownOpen }) => {
           key={option.value}
           label={option.label}
           buttonClass='h-8'
-          icon={sortBy === option.value ? <MdCheck className='text-base-content' /> : undefined}
+          Icon={sortBy === option.value ? MdCheck : undefined}
           onClick={() => handleSetSortBy(option.value as LibrarySortByType)}
         />
       ))}
@@ -83,9 +110,7 @@ const SortMenu: React.FC<SortMenuProps> = ({ setIsDropdownOpen }) => {
           key={option.value.toString()}
           label={option.label}
           buttonClass='h-8'
-          icon={
-            isAscending === option.value ? <MdCheck className='text-base-content' /> : undefined
-          }
+          Icon={isAscending === option.value ? MdCheck : undefined}
           onClick={() => handleSetSortAscending(option.value)}
         />
       ))}

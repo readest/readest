@@ -6,6 +6,7 @@ import { MdDelete, MdOpenInNew, MdOutlineCancel } from 'react-icons/md';
 import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
+import { LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -16,7 +17,7 @@ import { isMd5 } from '@/utils/md5';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
-import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
+import BookshelfItem, { generateGridItems, generateListItems } from './BookshelfItem';
 import GroupingModal from './GroupingModal';
 
 interface BookshelfProps {
@@ -55,12 +56,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [queryTerm, setQueryTerm] = useState<string | null>(null);
   const [navBooksGroup, setNavBooksGroup] = useState<BooksGroup | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
-  const [sortBy, setSortBy] = useState(searchParams?.get('sort') || 'updated');
-  const [sortOrder, setSortOrder] = useState(searchParams?.get('order') || 'desc');
+  const [viewMode, setViewMode] = useState(searchParams?.get('view') || settings.libraryViewMode);
+  const [sortBy, setSortBy] = useState(searchParams?.get('sort') || settings.librarySortBy);
+  const [sortOrder, setSortOrder] = useState(
+    searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc'),
+  );
   const isImportingBook = useRef(false);
 
   const { setLibrary } = useLibraryStore();
-  const allBookshelfItems = generateBookshelfItems(libraryBooks);
+  const allBookshelfItems =
+    viewMode === 'grid' ? generateGridItems(libraryBooks) : generateListItems(libraryBooks);
 
   useEffect(() => {
     if (isSelectMode) {
@@ -93,6 +98,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   useEffect(() => {
     const group = searchParams?.get('group') || '';
     const query = searchParams?.get('q') || '';
+    const view = searchParams?.get('view') || settings.libraryViewMode;
     const sort = searchParams?.get('sort') || settings.librarySortBy;
     const order = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
     const params = new URLSearchParams(searchParams?.toString());
@@ -115,9 +121,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     } else {
       params.delete('order');
     }
-    if (sort === 'updated' && order === 'desc') {
+    if (view) {
+      params.set('view', view);
+      setViewMode(view);
+    } else {
+      params.delete('view');
+    }
+    if (sort === 'updated' && order === 'desc' && view === 'grid') {
       params.delete('sort');
       params.delete('order');
+      params.delete('view');
     }
     if (group) {
       const booksGroup = allBookshelfItems.find(
@@ -229,13 +242,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     <div className='bookshelf'>
       <div
         className={clsx(
-          'transform-wrapper grid flex-1 gap-x-4 sm:gap-x-0',
-          'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
+          'transform-wrapper',
+          viewMode === 'grid' && 'grid flex-1 grid-cols-3 gap-x-4 px-4 sm:gap-x-0 sm:px-2',
+          viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
+          viewMode === 'list' && 'flex flex-col',
         )}
       >
         {filteredBookshelfItems.map((item, index) => (
           <BookshelfItem
             key={`library-item-${index}`}
+            mode={viewMode as LibraryViewModeType}
             item={item}
             isSelectMode={isSelectMode}
             selectedBooks={selectedBooks}
@@ -251,7 +267,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             }
           />
         ))}
-        {!navBooksGroup && allBookshelfItems.length > 0 && (
+        {viewMode === 'grid' && !navBooksGroup && allBookshelfItems.length > 0 && (
           <div
             className={clsx(
               'border-1 bg-base-100 hover:bg-base-300/50 flex items-center justify-center',

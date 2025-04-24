@@ -40,7 +40,9 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className }) => {
               ></div>
             )}
 
-            <div className={clsx('relative flex items-center justify-between p-2', className)}>
+            <div
+              className={clsx('relative flex items-center justify-between gap-4 p-2', className)}
+            >
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={quota.tooltip}>
                 <span className='truncate'>{quota.name}</span>
               </div>

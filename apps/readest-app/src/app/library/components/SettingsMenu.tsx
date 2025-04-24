@@ -132,7 +132,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <div
       tabIndex={0}
-      className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 w-72 shadow-2xl'
+      className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
     >
       {user ? (
         <MenuItem
@@ -142,7 +142,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
               : _('Logged in')
           }
           labelClass='!max-w-40'
-          icon={
+          Icon={
             avatarUrl ? (
               <Image
                 src={avatarUrl}
@@ -153,34 +153,34 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
                 height={20}
               />
             ) : (
-              <PiUserCircleCheck />
+              PiUserCircleCheck
             )
           }
         >
           <ul>
-            <Quota quotas={quotas} className='h-10 pl-4 pr-2' />
+            <Quota quotas={quotas} className='h-10 pl-3 pr-2' />
             <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
           </ul>
         </MenuItem>
       ) : (
-        <MenuItem label={_('Sign In')} icon={<PiUserCircle />} onClick={handleUserLogin}></MenuItem>
+        <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
       <MenuItem
         label={_('Auto Upload Books to Cloud')}
-        icon={isAutoUpload ? <MdCheck className='text-base-content' /> : undefined}
+        Icon={isAutoUpload ? MdCheck : undefined}
         onClick={toggleAutoUploadBooks}
       />
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}
-          icon={isAutoImportBooksOnOpen ? <MdCheck className='text-base-content' /> : undefined}
+          Icon={isAutoImportBooksOnOpen ? MdCheck : undefined}
           onClick={toggleAutoImportBooksOnOpen}
         />
       )}
       {appService?.hasUpdater && (
         <MenuItem
           label={_('Check Updates on Start')}
-          icon={isAutoCheckUpdates ? <MdCheck className='text-base-content' /> : undefined}
+          Icon={isAutoCheckUpdates ? MdCheck : undefined}
           onClick={toggleAutoCheckUpdates}
         />
       )}
@@ -189,13 +189,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       {appService?.hasWindow && (
         <MenuItem
           label={_('Always on Top')}
-          icon={isAlwaysOnTop ? <MdCheck className='text-base-content' /> : undefined}
+          Icon={isAlwaysOnTop ? MdCheck : undefined}
           onClick={toggleAlwaysOnTop}
         />
       )}
       <MenuItem
         label={_('Keep Screen Awake')}
-        icon={isScreenWakeLock ? <MdCheck className='text-base-content' /> : undefined}
+        Icon={isScreenWakeLock ? MdCheck : undefined}
         onClick={toggleScreenWakeLock}
       />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
