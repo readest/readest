@@ -220,10 +220,28 @@ pub fn run() {
                 });
             }
 
-            #[cfg(any(windows, target_os = "linux"))]
+            #[cfg(target_os = "windows")]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 app.deep_link().register_all()?;
+            }
+
+            #[cfg(target_os = "linux")]
+            {
+                fn has_xdg_mime() -> bool {
+                    std::process::Command::new("which")
+                        .arg("xdg-mime")
+                        .output()
+                        .map(|output| output.status.success())
+                        .unwrap_or(false)
+                }
+
+                if has_xdg_mime() {
+                    use tauri_plugin_deep_link::DeepLinkExt;
+                    app.deep_link().register_all()?;
+                } else {
+                    println!("xdg-mime not found; skipping deep link setup on Linux.");
+                }
             }
 
             app.handle().plugin(
