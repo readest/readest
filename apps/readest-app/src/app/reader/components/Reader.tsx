@@ -32,6 +32,20 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (appService?.isMobile && !document.hidden) {
+        dismissSystemUI();
+        setSystemUIVisibility({ visible: false, darkMode: isDarkMode });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService, isDarkMode]);
+
+  useEffect(() => {
     if (isInitiating.current) return;
     isInitiating.current = true;
     const initLibrary = async () => {
