@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.37": {
+      "date": "2025-04-25",
+      "notes": [
+        "Full-Screen Toggle: You can now press F11 to quickly toggle full-screen mode",
+        "List View: A new list layout is available for your bookshelf",
+        "Book Details: Book descriptions from metadata are now shown in the details view",
+        "Enhanced Android behavior: better navigation bar handling and status bar dismissal when resuming",
+        "TTS now defaults to the book’s metadata language when needed",
+        "Synced custom themes reliably across sessions"
+      ]
+    },
     "0.9.36": {
       "date": "2025-04-20",
       "notes": [
