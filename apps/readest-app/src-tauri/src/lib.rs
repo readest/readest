@@ -244,11 +244,13 @@ pub fn run() {
                 }
             }
 
-            app.handle().plugin(
+            if let Err(e) = app.handle().plugin(
                 tauri_plugin_log::Builder::default()
                     .level(log::LevelFilter::Info)
                     .build(),
-            )?;
+            ) {
+                eprintln!("Failed to initialize tauri_plugin_log: {}", e);
+            };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
 
