@@ -25,11 +25,17 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
   const [lightBackgroundColor, setLightBackgroundColor] = useState(
     customTheme?.colors.light.bg || template.light.bg,
   );
+  const [lightPrimaryColor, setLightPrimaryColor] = useState(
+    customTheme?.colors.light.primary || template.light.primary,
+  );
   const [darkTextColor, setDarkTextColor] = useState(
     customTheme?.colors.dark.fg || template.dark.fg,
   );
   const [darkBackgroundColor, setDarkBackgroundColor] = useState(
     customTheme?.colors.dark.bg || template.dark.bg,
+  );
+  const [darkPrimaryColor, setDarkPrimaryColor] = useState(
+    customTheme?.colors.dark.primary || template.dark.primary,
   );
 
   const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
@@ -37,8 +43,9 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
   const ThemePreview: React.FC<{
     textColor: string;
     backgroundColor: string;
+    primaryColor: string;
     label: string;
-  }> = ({ textColor, backgroundColor, label }) => (
+  }> = ({ textColor, backgroundColor, primaryColor, label }) => (
     <div className='mb-2 mt-4'>
       <label className='mb-1 block text-sm font-medium'>{label}</label>
       <div
@@ -52,6 +59,14 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           {_(
             "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}
+          <p
+            className='mt-4 cursor-pointer italic'
+            style={{
+              color: primaryColor,
+            }}
+          >
+            {_("(from 'As You Like It', Act II)")}
+          </p>
         </p>
       </div>
     </div>
@@ -65,12 +80,12 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
         light: {
           fg: lightTextColor,
           bg: lightBackgroundColor,
-          primary: '#3b82f6',
+          primary: lightPrimaryColor,
         },
         dark: {
           fg: darkTextColor,
           bg: darkBackgroundColor,
-          primary: '#60a5fa',
+          primary: darkPrimaryColor,
         },
       },
     };
@@ -89,17 +104,16 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
               {_('Save')}
             </button>
 
-            <button
-              className={clsx(
-                'btn btn-ghost btn-sm px-2',
-                !settings.globalReadSettings.customThemes.find(
-                  (theme) => theme.name === md5Fingerprint(themeName),
-                ) && 'btn-disabled',
-              )}
-              onClick={() => onDelete(getCustomTheme())}
-            >
-              {_('Delete')}
-            </button>
+            {settings.globalReadSettings.customThemes.find(
+              (theme) => theme.name === md5Fingerprint(themeName),
+            ) && (
+              <button
+                className={clsx('btn btn-ghost btn-sm px-2')}
+                onClick={() => onDelete(getCustomTheme())}
+              >
+                {_('Delete')}
+              </button>
+            )}
 
             <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
               {_('Cancel')}
@@ -129,9 +143,16 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
             onChange={setLightBackgroundColor}
           />
 
+          <ColorInput
+            label={_('Link Color')}
+            value={lightPrimaryColor}
+            onChange={setLightPrimaryColor}
+          />
+
           <ThemePreview
             textColor={lightTextColor}
             backgroundColor={lightBackgroundColor}
+            primaryColor={lightPrimaryColor}
             label={_('Preview')}
           />
         </div>
@@ -147,9 +168,16 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
             onChange={setDarkBackgroundColor}
           />
 
+          <ColorInput
+            label={_('Link Color')}
+            value={darkPrimaryColor}
+            onChange={setDarkPrimaryColor}
+          />
+
           <ThemePreview
             textColor={darkTextColor}
             backgroundColor={darkBackgroundColor}
+            primaryColor={darkPrimaryColor}
             label={_('Preview')}
           />
         </div>
