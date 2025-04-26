@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-get-sys-fonts-list"
+description = "Enables the get_sys_fonts_list command without any pre-configured scope."
+commands.allow = ["get_sys_fonts_list"]
+
+[[permission]]
+identifier = "deny-get-sys-fonts-list"
+description = "Denies the get_sys_fonts_list command without any pre-configured scope."
+commands.deny = ["get_sys_fonts_list"]

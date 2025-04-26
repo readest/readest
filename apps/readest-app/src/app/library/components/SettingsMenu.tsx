@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getStoragePlanData } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
@@ -37,6 +38,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
+  const iconSize = useResponsiveSize(16);
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -147,10 +149,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
               <Image
                 src={avatarUrl}
                 alt={_('User avatar')}
-                className='h-5 w-5 rounded-full'
+                className='rounded-full'
                 referrerPolicy='no-referrer'
-                width={20}
-                height={20}
+                width={iconSize}
+                height={iconSize}
               />
             ) : (
               PiUserCircleCheck

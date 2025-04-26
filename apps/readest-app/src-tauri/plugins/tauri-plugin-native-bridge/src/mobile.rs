@@ -85,3 +85,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn get_sys_fonts_list(&self) -> crate::Result<GetSysFontsListResponse> {
+        self.0
+            .run_mobile_plugin("get_sys_fonts_list", ())
+            .map_err(Into::into)
+    }
+}

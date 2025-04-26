@@ -58,3 +58,10 @@ pub(crate) async fn get_status_bar_height<R: Runtime>(
 ) -> Result<GetStatusBarHeightResponse> {
     app.native_bridge().get_status_bar_height()
 }
+
+#[command]
+pub(crate) async fn get_sys_fonts_list<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetSysFontsListResponse> {
+    app.native_bridge().get_sys_fonts_list()
+}

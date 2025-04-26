@@ -11,6 +11,7 @@ Default permissions for the plugin
 - `allow-install-package`
 - `allow-set-system-ui-visibility`
 - `allow-get-status-bar-height`
+- `allow-get-sys-fonts-list`
 
 ## Permission Table
 
@@ -121,6 +122,32 @@ Enables the get_status_bar_height command without any pre-configured scope.
 <td>
 
 Denies the get_status_bar_height command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-sys-fonts-list`
+
+</td>
+<td>
+
+Enables the get_sys_fonts_list command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-sys-fonts-list`
+
+</td>
+<td>
+
+Denies the get_sys_fonts_list command without any pre-configured scope.
 
 </td>
 </tr>

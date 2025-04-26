@@ -11,6 +11,8 @@ import android.view.WindowManager
 import android.view.WindowInsetsController
 import android.graphics.Color
 import android.webkit.WebView
+import android.graphics.fonts.SystemFonts
+import android.graphics.fonts.Font
 import androidx.core.view.WindowCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
@@ -22,6 +24,7 @@ import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
+import org.json.JSONArray
 import java.io.*
 
 @InvokeArg
@@ -243,6 +246,45 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("height", height)
         } catch (e: Exception) {
             ret.put("height", -1)
+            ret.put("error", e.message)
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun get_sys_fonts_list(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            val fontList = mutableListOf<String>()
+            val fontFileList = mutableListOf<String>()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val systemFonts = SystemFonts.getAvailableFonts()
+                for (font in systemFonts) {
+                    val file = font.getFile()?: continue
+                    if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
+                        fontFileList.add(file.name)
+                    }
+                }
+            } else {
+                val fontDirs = listOf("/system/fonts", "/system/font", "/data/fonts")
+                for (dirPath in fontDirs) {
+                  val dir = File(dirPath)
+                  if (dir.exists() && dir.isDirectory) {
+                      dir.listFiles()?.forEach { file ->
+                          if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
+                              fontFileList.add(file.name)
+                          }
+                      }
+                  }
+                }
+            }
+            for (fileFileName in fontFileList) {
+                var fontName = fileFileName
+                    .replace(Regex("\\.(ttf|otf)$", RegexOption.IGNORE_CASE), "")
+                    .trim()
+            }
+            ret.put("fonts", JSONArray(fontList))
+        } catch (e: Exception) {
             ret.put("error", e.message)
         }
         invoke.resolve(ret)

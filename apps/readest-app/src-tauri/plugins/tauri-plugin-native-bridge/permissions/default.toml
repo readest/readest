@@ -8,4 +8,5 @@ permissions = [
   "allow-install-package",
   "allow-set-system-ui-visibility",
   "allow-get-status-bar-height",
+  "allow-get-sys-fonts-list",
 ]

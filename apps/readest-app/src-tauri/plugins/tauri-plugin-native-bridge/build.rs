@@ -6,6 +6,7 @@ const COMMANDS: &[&str] = &[
     "install_package",
     "set_system_ui_visibility",
     "get_status_bar_height",
+    "get_sys_fonts_list",
 ];
 
 fn main() {

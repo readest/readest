@@ -65,3 +65,10 @@ pub struct GetStatusBarHeightResponse {
     pub height: u32,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSysFontsListResponse {
+    pub fonts: Vec<String>,
+    pub error: Option<String>,
+}

@@ -17,3 +17,6 @@ schemars = "0.8"
 [build-dependencies]
 tauri-plugin = { version = "2.0.4", features = ["build"] }
 schemars = "0.8"
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+font-enumeration = "0.9.0"

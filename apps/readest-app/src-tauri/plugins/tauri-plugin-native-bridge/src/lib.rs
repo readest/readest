@@ -44,6 +44,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::install_package,
             commands::set_system_ui_visibility,
             commands::get_status_bar_height,
+            commands::get_sys_fonts_list,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

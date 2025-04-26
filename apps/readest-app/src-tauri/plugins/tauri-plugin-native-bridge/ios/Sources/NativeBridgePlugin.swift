@@ -1,10 +1,26 @@
-import AuthenticationServices
 import AVFoundation
+import AuthenticationServices
+import CoreText
 import MediaPlayer
 import SwiftRs
 import Tauri
 import UIKit
 import WebKit
+
+func getLocalizedDisplayName(familyName: String) -> String? {
+  let fontDescriptor = CTFontDescriptorCreateWithAttributes(
+    [
+      kCTFontFamilyNameAttribute: familyName
+    ] as CFDictionary)
+
+  let font = CTFontCreateWithFontDescriptor(fontDescriptor, 0.0, nil)
+
+  var actualLanguage: Unmanaged<CFString>?
+  if let localizedName = CTFontCopyLocalizedName(font, kCTFontFamilyNameKey, &actualLanguage) {
+    return localizedName as String
+  }
+  return nil
+}
 
 class SafariAuthRequestArgs: Decodable {
   let authUrl: String
@@ -94,6 +110,25 @@ class NativeBridgePlugin: Plugin {
       }
     }
     invoke.resolve(["success": true])
+  }
+
+  @objc public func get_sys_fonts_list(_ invoke: Invoke) throws {
+    var fontList: [String] = []
+
+    for family in UIFont.familyNames.sorted() {
+      if let localized = getLocalizedDisplayName(familyName: family) {
+        fontList.append(localized)
+      } else {
+        let fontNames = UIFont.fontNames(forFamilyName: family)
+        if fontNames.isEmpty {
+          fontList.append(family)
+        } else {
+          fontList.append(contentsOf: fontNames)
+        }
+      }
+    }
+
+    invoke.resolve(["fonts": fontList])
   }
 }
 

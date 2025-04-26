@@ -58,7 +58,6 @@ export abstract class BaseAppService implements AppService {
   hasRoundedWindow = false;
   hasSafeAreaInset = false;
   hasHaptics = false;
-  hasSysFontsList = false;
   hasUpdater = false;
 
   abstract fs: FileSystem;

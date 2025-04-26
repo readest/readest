@@ -434,6 +434,10 @@ export const ANDROID_FONTS = [
 ];
 
 export const CJK_NAMES_PATTENS = /[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/;
+export const CJK_EXCLUDE_PATTENS = new RegExp(
+  ['AlBayan', 'STIX', 'Kailasa', 'ITCTT', 'Luminari', 'Myanmar'].join('|'),
+  'i',
+);
 export const CJK_FONTS_PATTENS = new RegExp(
   [
     'CJK',
@@ -461,7 +465,6 @@ export const CJK_FONTS_PATTENS = new RegExp(
     'Yu\\s?Gothic',
     'Yu\\s?Mincho',
     'Mincho',
-    'Gothic',
     'Nanum',
     'Malgun',
     'Gulim',

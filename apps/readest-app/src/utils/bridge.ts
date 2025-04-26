@@ -38,6 +38,11 @@ export interface GetStatusBarHeightResponse {
   error?: string;
 }
 
+export interface GetSystemFontsListResponse {
+  fonts: string[];
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -77,5 +82,18 @@ export async function getStatusBarHeight(): Promise<GetStatusBarHeightResponse> 
   const result = await invoke<GetStatusBarHeightResponse>(
     'plugin:native-bridge|get_status_bar_height',
   );
+  return result;
+}
+
+let cachedSysFontsResult: GetSystemFontsListResponse | null = null;
+
+export async function getSysFontsList(): Promise<GetSystemFontsListResponse> {
+  if (cachedSysFontsResult) {
+    return cachedSysFontsResult;
+  }
+  const result = await invoke<GetSystemFontsListResponse>(
+    'plugin:native-bridge|get_sys_fonts_list',
+  );
+  cachedSysFontsResult = result;
   return result;
 }

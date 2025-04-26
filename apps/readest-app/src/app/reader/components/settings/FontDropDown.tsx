@@ -3,7 +3,7 @@ import React from 'react';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface DropdownProps {
   family?: string;
@@ -24,33 +24,40 @@ const FontDropdown: React.FC<DropdownProps> = ({
 }) => {
   const _ = useTranslation();
   const iconSize16 = useResponsiveSize(16);
-  const defaultIconSize = useDefaultIconSize();
   const allOptions = [...options, ...(moreOptions ?? [])];
   const selectedOption = allOptions.find((option) => option.option === selected) ?? allOptions[0]!;
   return (
     <div className='dropdown dropdown-top'>
       <button
         tabIndex={0}
-        className='btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case'
+        className='btn btn-sm flex items-center px-[10px] font-normal normal-case sm:px-[20px]'
         onClick={(e) => e.currentTarget.focus()}
       >
-        <span style={{ fontFamily: onGetFontFamily(selectedOption.option, family ?? '') }}>
-          {selectedOption.label}
-        </span>
-        <FiChevronUp size={iconSize16} />
+        <div className='flex items-center gap-x-1'>
+          <span
+            className='text-ellipsis'
+            style={{
+              fontFamily: onGetFontFamily(selectedOption.option, family ?? ''),
+            }}
+          >
+            {selectedOption.label}
+          </span>
+          <FiChevronUp size={iconSize16} />
+        </div>
       </button>
       <ul
         tabIndex={0}
         className={clsx(
-          'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute right-[-32px] z-[1] mt-4 w-44 shadow sm:right-0',
+          'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow',
+          '!sm:px-2 right-[-32px] w-[46vw] !px-1 sm:right-0 sm:w-44',
           moreOptions?.length ? '' : 'inline max-h-80 overflow-y-scroll',
         )}
       >
         {options.map(({ option, label }) => (
           <li key={option} onClick={() => onSelect(option)}>
-            <div className='flex items-center px-0'>
-              <span style={{ minWidth: `${defaultIconSize}px` }}>
-                {selected === option && <MdCheck className='text-base-content' />}
+            <div className='flex w-full items-center overflow-hidden px-0 text-sm'>
+              <span style={{ minWidth: `${iconSize16}px` }}>
+                {selected === option && <MdCheck className='text-base-content' size={iconSize16} />}
               </span>
               <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
                 {label || option}
@@ -60,8 +67,8 @@ const FontDropdown: React.FC<DropdownProps> = ({
         ))}
         {moreOptions && moreOptions.length > 0 && (
           <li className='dropdown dropdown-left dropdown-top'>
-            <div className='flex items-center px-0'>
-              <span style={{ minWidth: `${defaultIconSize}px` }}>
+            <div className='flex items-center px-0 text-sm'>
+              <span style={{ minWidth: `${iconSize16}px` }}>
                 <FiChevronLeft size={iconSize16} />
               </span>
               <span>{_('System Fonts')}</span>
@@ -69,15 +76,17 @@ const FontDropdown: React.FC<DropdownProps> = ({
             <ul
               tabIndex={0}
               className={clsx(
-                'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] overflow-y-scroll shadow',
-                '!mr-5 mb-[-46px] inline max-h-80 w-[200px] overflow-y-scroll',
+                'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] shadow',
+                '!sm:px-2 !mr-4 mb-[-46px] inline max-h-80 w-[46vw] overflow-y-scroll !px-1 sm:w-[200px]',
               )}
             >
               {moreOptions.map((option, index) => (
                 <li key={`${index}-${option.option}`} onClick={() => onSelect(option.option)}>
-                  <div className='flex items-center px-2'>
-                    <span style={{ minWidth: `${defaultIconSize}px` }}>
-                      {selected === option.option && <MdCheck className='text-base-content' />}
+                  <div className='flex w-full items-center overflow-hidden px-0 text-sm'>
+                    <span style={{ minWidth: `${iconSize16}px` }}>
+                      {selected === option.option && (
+                        <MdCheck className='text-base-content' size={iconSize16} />
+                      )}
                     </span>
                     <span style={{ fontFamily: onGetFontFamily(option.option, family ?? '') }}>
                       {option.label || option.option}

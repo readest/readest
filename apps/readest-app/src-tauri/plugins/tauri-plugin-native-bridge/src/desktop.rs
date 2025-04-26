@@ -47,4 +47,13 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn get_status_bar_height(&self) -> crate::Result<GetStatusBarHeightResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn get_sys_fonts_list(&self) -> crate::Result<GetSysFontsListResponse> {
+        let font_collection = font_enumeration::Collection::new().unwrap();
+        let mut fonts = Vec::new();
+        for font in font_collection.all() {
+            fonts.push(font.font_name.clone());
+        }
+        Ok(GetSysFontsListResponse { fonts, error: None })
+    }
 }

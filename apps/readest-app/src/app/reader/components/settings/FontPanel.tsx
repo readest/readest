@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import {
   ANDROID_FONTS,
+  CJK_EXCLUDE_PATTENS,
   CJK_FONTS_PATTENS,
   CJK_NAMES_PATTENS,
   CJK_SANS_SERIF_FONTS,
@@ -19,12 +20,21 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import { getOSPlatform, isCJKEnv } from '@/utils/misc';
-import { getSysFontsList } from '@/utils/font';
+import { getSysFontsList } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 
+const genCJKFontsList = (sysFonts: string[]) => {
+  return Array.from(new Set([...sysFonts, ...CJK_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]))
+    .filter((font) => CJK_FONTS_PATTENS.test(font) || CJK_NAMES_PATTENS.test(font))
+    .filter((font) => !CJK_EXCLUDE_PATTENS.test(font))
+    .sort((a, b) => a.localeCompare(b));
+};
+
+const isSymbolicFontName = (font: string) =>
+  /emoji|icons|symbol|dingbats|ornaments|webdings|wingdings|miuiex/i.test(font);
 interface FontFaceProps {
   className?: string;
   family: string;
@@ -51,7 +61,7 @@ const FontFace = ({
   const _ = useTranslation();
   return (
     <div className={clsx('config-item', className)}>
-      <span className=''>{label}</span>
+      <span className='min-w-10'>{label}</span>
       <FontDropdown
         family={family}
         options={options.map((option) => ({ option, label: _(option) }))}
@@ -66,7 +76,7 @@ const FontFace = ({
 
 const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { envConfig, appService } = useEnv();
+  const { envConfig } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
   const view = getView(bookKey)!;
@@ -113,19 +123,28 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight!);
-  const [CJKFonts] = useState<string[]>(() => {
-    return Array.from(new Set([...sysFonts, ...CJK_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]))
-      .filter((font) => CJK_FONTS_PATTENS.test(font) || CJK_NAMES_PATTENS.test(font))
-      .sort((a, b) => a.localeCompare(b));
+  const [CJKFonts, setCJKFonts] = useState<string[]>(() => {
+    return genCJKFontsList(sysFonts);
   });
 
   useEffect(() => {
-    if (isTauriAppPlatform() && appService?.hasSysFontsList) {
-      getSysFontsList().then((fonts) => {
-        setSysFonts(fonts);
+    setCJKFonts((prev) => {
+      const newFonts = genCJKFontsList(sysFonts);
+      return prev.length !== newFonts.length ? newFonts : prev;
+    });
+  }, [sysFonts]);
+
+  useEffect(() => {
+    if (isTauriAppPlatform()) {
+      getSysFontsList().then((res) => {
+        if (res.error) {
+          console.error('Failed to get system fonts list:', res.error);
+          return;
+        }
+        const fonts = res.fonts.filter((font) => font && !isSymbolicFontName(font));
+        setSysFonts([...new Set(fonts)].sort((a, b) => a.localeCompare(b)));
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
