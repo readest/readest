@@ -311,7 +311,11 @@ export class WebSpeechClient implements TTSClient {
       return BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
     };
     const filteredVoices = this.#voices
-      .filter((voice) => voice.lang.startsWith(locale))
+      .filter(
+        (voice) =>
+          voice.lang.startsWith(locale) ||
+          (lang === 'en' && ['en-US', 'en-GB'].includes(voice.lang)),
+      )
       .filter((voice) => isValidVoice(voice.voiceURI || ''))
       .filter(isNotBlacklisted);
     const seenIds = new Set<string>();

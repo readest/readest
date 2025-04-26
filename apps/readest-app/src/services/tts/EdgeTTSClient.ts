@@ -245,7 +245,28 @@ export class EdgeTTSClient implements TTSClient {
     }
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
-    return voices.filter((v) => v.lang.startsWith(locale));
+    return voices
+      .filter(
+        (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
+      )
+      .sort((a, b) => {
+        const aRegion = a.lang.split('-')[1] || '';
+        const bRegion = b.lang.split('-')[1] || '';
+        if (aRegion === bRegion) {
+          return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+        }
+        if (aRegion === 'CN') return -1;
+        if (bRegion === 'CN') return 1;
+        if (aRegion === 'TW') return -1;
+        if (bRegion === 'TW') return 1;
+        if (aRegion === 'HK') return -1;
+        if (bRegion === 'HK') return 1;
+        if (aRegion === 'US') return -1;
+        if (bRegion === 'US') return 1;
+        if (aRegion === 'GB') return -1;
+        if (bRegion === 'GB') return 1;
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+      });
   }
 
   getGranularities(): TTSGranularity[] {
