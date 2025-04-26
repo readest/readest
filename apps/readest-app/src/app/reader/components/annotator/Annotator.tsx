@@ -53,6 +53,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const isTextSelected = useRef(false);
   const isUpToShowPopup = useRef(false);
   const isTouchstarted = useRef(false);
+  const selectionStartRef = useRef<number | null>(null);
+  const selectionAnchorRef = useRef<{ node: Node; offset: number } | null>(null);
   const [selection, setSelection] = useState<TextSelection | null>();
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
@@ -120,6 +122,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         }, 40);
       }, 0);
     };
+    const handleSelectstart = () => {
+      selectionAnchorRef.current = null;
+    };
     const handleSelectionchange = () => {
       // Available on iOS, Android and Desktop, fired when the selection is changed
       // Ideally the popup only shows when the selection is done,
@@ -130,6 +135,27 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const sel = doc.getSelection();
       if (isValidSelection(sel)) {
         if (osPlatform === 'android' && isTouchstarted.current) {
+          if (!selectionAnchorRef.current) {
+            const range = sel.getRangeAt(0);
+            selectionAnchorRef.current = {
+              node: range.startContainer,
+              offset: range.startOffset,
+            };
+          }
+          if (selectionAnchorRef.current) {
+            const currentRange = sel.getRangeAt(0);
+            if (
+              currentRange.startContainer !== selectionAnchorRef.current.node ||
+              currentRange.startOffset !== selectionAnchorRef.current.offset
+            ) {
+              const newRange = doc.createRange();
+              newRange.setStart(selectionAnchorRef.current.node, selectionAnchorRef.current.offset);
+              newRange.setEnd(currentRange.endContainer, currentRange.endOffset);
+
+              sel.removeAllRanges();
+              sel.addRange(newRange);
+            }
+          }
           makeSelection(sel, false);
         }
       } else if (!isUpToShowPopup.current) {
@@ -165,11 +191,26 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // Available on iOS, on Android fired after an additional touch event
       isTouchstarted.current = false;
     };
+    const handleScroll = () => {
+      // Prevent the container from scrolling when text is selected in paginated mode
+      // This is a workaround for the issue #873
+      // TODO: support text selection across pages
+      if (
+        !viewSettings?.scrolled &&
+        isTextSelected.current &&
+        view?.renderer?.containerPosition &&
+        selectionStartRef.current
+      ) {
+        view.renderer.containerPosition = selectionStartRef.current;
+      }
+    };
     if (bookData.book?.format !== 'PDF') {
+      view?.renderer?.addEventListener('scroll', handleScroll);
       detail.doc?.addEventListener('pointerup', handlePointerup);
       detail.doc?.addEventListener('touchstart', handleTouchstart);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
       detail.doc?.addEventListener('touchend', handleTouchend);
+      detail.doc?.addEventListener('selectstart', handleSelectstart);
       detail.doc?.addEventListener('selectionchange', handleSelectionchange);
 
       // Disable the default context menu on mobile devices,
@@ -240,6 +281,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     view?.deselect();
     isTextSelected.current = false;
   };
+
+  useEffect(() => {
+    if (isTextSelected.current && !selectionStartRef.current) {
+      selectionStartRef.current = view?.renderer?.start || null;
+    } else if (!isTextSelected.current) {
+      selectionStartRef.current = null;
+      selectionAnchorRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTextSelected.current]);
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
