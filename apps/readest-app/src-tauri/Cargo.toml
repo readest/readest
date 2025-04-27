@@ -30,8 +30,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
 ] }
-# FIXME: remove the devtools feature in production
-tauri = { version = "2.5.1", features = [ "protocol-asset", "devtools"] }
+tauri = { version = "2.5.1", features = [ "protocol-asset" ] }
 tauri-build = "2.3.0"
 tauri-plugin-log = "2.4.0"
 tauri-plugin-fs = "2.2.1"

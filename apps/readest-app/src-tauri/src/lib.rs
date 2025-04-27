@@ -105,6 +105,11 @@ async fn start_server(window: Window) -> Result<u16, String> {
     .map_err(|err| err.to_string())
 }
 
+#[tauri::command]
+fn get_environment_variable(name: &str) -> String {
+    std::env::var(String::from(name)).unwrap_or(String::from(""))
+}
+
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct Payload {
@@ -121,6 +126,7 @@ pub fn run() {
             start_server,
             download_file,
             upload_file,
+            get_environment_variable,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
@@ -220,28 +226,10 @@ pub fn run() {
                 });
             }
 
-            #[cfg(target_os = "windows")]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
-                app.deep_link().register_all()?;
-            }
-
-            #[cfg(target_os = "linux")]
-            {
-                fn has_xdg_mime() -> bool {
-                    std::process::Command::new("which")
-                        .arg("xdg-mime")
-                        .output()
-                        .map(|output| output.status.success())
-                        .unwrap_or(false)
-                }
-
-                if has_xdg_mime() {
-                    use tauri_plugin_deep_link::DeepLinkExt;
-                    app.deep_link().register_all()?;
-                } else {
-                    println!("xdg-mime not found; skipping deep link setup on Linux.");
-                }
+                let _ = app.deep_link().register_all();
             }
 
             if let Err(e) = app.handle().plugin(

@@ -22,6 +22,7 @@ import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
@@ -69,15 +70,22 @@ export default function AuthPage() {
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
-  const isOAuthServerRunning = useRef(false);
   const [isMounted, setIsMounted] = useState(false);
+  const isOAuthServerRunning = useRef(false);
+  const useCustomeOAuth = useRef(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: false });
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
-    if (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN) {
+    // For custom OAuth mode, use a local server to handle the OAuth callback
+    // This is useful for development or some sandboxed environments like Flatpak
+    // where custom URL schemes are not supported
+    if (
+      !useCustomeOAuth.current &&
+      (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN)
+    ) {
       if (appService?.isMobileApp) {
         return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
       }
@@ -171,7 +179,10 @@ export default function AuthPage() {
 
   const startTauriOAuth = async () => {
     try {
-      if (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN) {
+      if (
+        !useCustomeOAuth.current &&
+        (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN)
+      ) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const currentWindow = getCurrentWindow();
         currentWindow.listen('single-instance', ({ event, payload }) => {
@@ -279,6 +290,12 @@ export default function AuthPage() {
     if (!isTauriAppPlatform()) return;
     if (isOAuthServerRunning.current) return;
     isOAuthServerRunning.current = true;
+
+    invoke('get_environment_variable', { name: 'USE_CUSTOM_OAUTH' }).then((value) => {
+      if (value === 'true') {
+        useCustomeOAuth.current = true;
+      }
+    });
 
     startTauriOAuth();
     return () => {
