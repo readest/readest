@@ -10,10 +10,11 @@ import Link from './Link';
 
 export const setAboutDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('about_window');
-  if (visible) {
-    (dialog as HTMLDialogElement)?.showModal();
-  } else {
-    (dialog as HTMLDialogElement)?.close();
+  if (dialog) {
+    const event = new CustomEvent('setDialogVisibility', {
+      detail: { visible },
+    });
+    dialog.dispatchEvent(event);
   }
 };
 
@@ -22,16 +23,32 @@ export const AboutWindow = () => {
   const { appService } = useEnv();
   const [isUpdated, setIsUpdated] = useState(false);
   const [browserInfo, setBrowserInfo] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setBrowserInfo(parseWebViewVersion(appService));
+
+    const handleCustomEvent = (event: CustomEvent) => {
+      setIsOpen(event.detail.visible);
+    };
+
+    const el = document.getElementById('about_window');
+    if (el) {
+      el.addEventListener('setDialogVisibility', handleCustomEvent as EventListener);
+    }
+
+    return () => {
+      if (el) {
+        el.removeEventListener('setDialogVisibility', handleCustomEvent as EventListener);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCheckUpdate = async () => {
     const update = await checkForAppUpdates(_, false);
     if (update) {
-      setAboutDialogVisible(false);
+      setIsOpen(false);
     } else {
       setIsUpdated(true);
     }
@@ -40,9 +57,9 @@ export const AboutWindow = () => {
   return (
     <Dialog
       id='about_window'
-      isOpen={false}
+      isOpen={isOpen}
       title={_('About Readest')}
-      onClose={() => setAboutDialogVisible(false)}
+      onClose={() => setIsOpen(false)}
       boxClassName='sm:!w-96 sm:h-auto'
     >
       <div className='about-content flex h-full flex-col items-center justify-center'>

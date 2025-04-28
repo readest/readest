@@ -3,9 +3,11 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useDrag } from '@/hooks/useDrag';
+import { useDeviceControlStore } from '@/store/deviceStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { eventDispatcher } from '@/utils/event';
 
 const VELOCITY_THRESHOLD = 0.5;
 const SNAP_THRESHOLD = 0.2;
@@ -38,24 +40,40 @@ const Dialog: React.FC<DialogProps> = ({
   onClose,
 }) => {
   const { appService } = useEnv();
+  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = React.useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+  const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
+    if (event instanceof CustomEvent) {
+      if (event.detail.keyName === 'Back') {
+        onClose();
+        return true;
+      }
+    } else if (event.key === 'Escape') {
       onClose();
     }
+    return false;
   };
 
   useEffect(() => {
+    if (!isOpen) return;
     window.addEventListener('keydown', handleKeyDown);
+    if (appService?.isAndroidApp) {
+      acquireBackKeyInterception();
+      eventDispatcher.onSync('native-key-down', handleKeyDown);
+    }
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      if (appService?.isAndroidApp) {
+        releaseBackKeyInterception();
+        eventDispatcher.offSync('native-key-down', handleKeyDown);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isOpen]);
 
   const handleDragMove = (data: { clientY: number; deltaY: number }) => {
     if (!isMobile) return;

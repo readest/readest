@@ -10,10 +10,10 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import { tauriDownload } from '@/utils/transfer';
+import { installPackage } from '@/utils/bridge';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
 import packageJson from '../../package.json';
 import Dialog from '@/components/Dialog';
-import { installPackage } from '@/utils/bridge';
 
 interface ReleaseNotes {
   releases: Record<
@@ -333,36 +333,47 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
 };
 
 export const setUpdaterWindowVisible = (visible: boolean, newVersion?: string) => {
-  if (newVersion) {
-    localStorage.setItem('newVersion', newVersion);
-    window.dispatchEvent(new CustomEvent('new-version-detected'));
-  }
   const dialog = document.getElementById('updater_window');
-  if (visible) {
-    (dialog as HTMLDialogElement)?.showModal();
-  } else {
-    (dialog as HTMLDialogElement)?.close();
+  if (dialog) {
+    const event = new CustomEvent('setDialogVisibility', {
+      detail: { visible, newVersion },
+    });
+    dialog.dispatchEvent(event);
   }
 };
 
 export const UpdaterWindow = () => {
   const _ = useTranslation();
-  const [newVersion, setNewVersion] = useState(localStorage.getItem('newVersion') || '');
+  const [newVersion, setNewVersion] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const handler = () => {
-      setNewVersion(localStorage.getItem('newVersion') || '');
+    const handleCustomEvent = (event: CustomEvent) => {
+      const { visible, newVersion } = event.detail;
+      setIsOpen(visible);
+      if (newVersion) {
+        setNewVersion(newVersion);
+      }
     };
-    window.addEventListener('new-version-detected', handler);
-    return () => window.removeEventListener('new-version-detected', handler);
+
+    const el = document.getElementById('updater_window');
+    if (el) {
+      el.addEventListener('setDialogVisibility', handleCustomEvent as EventListener);
+    }
+
+    return () => {
+      if (el) {
+        el.removeEventListener('setDialogVisibility', handleCustomEvent as EventListener);
+      }
+    };
   }, []);
 
   return (
     <Dialog
       id='updater_window'
-      isOpen={false}
+      isOpen={isOpen}
       title={_('Software Update')}
-      onClose={() => setUpdaterWindowVisible(false)}
+      onClose={() => setIsOpen(false)}
       boxClassName='sm:!w-[80%] sm:h-auto'
     >
       <UpdaterContent version={newVersion ?? undefined} />

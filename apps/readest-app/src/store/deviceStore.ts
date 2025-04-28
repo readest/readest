@@ -13,7 +13,7 @@ const handleNativeKeyDown = (keyName: string) => {
     return eventDispatcher.dispatch('native-key-down', { keyName });
   }
   if (keyName === 'Back') {
-    return eventDispatcher.dispatch('native-key-down', { keyName });
+    return eventDispatcher.dispatchSync('native-key-down', { keyName });
   }
   return false;
 };
@@ -21,35 +21,57 @@ const handleNativeKeyDown = (keyName: string) => {
 type DeviceControlState = {
   volumeKeysIntercepted: boolean;
   backKeyIntercepted: boolean;
+  volumeKeysInterceptionCount: number;
+  backKeyInterceptionCount: number;
   acquireVolumeKeyInterception: () => void;
   releaseVolumeKeyInterception: () => void;
   acquireBackKeyInterception: () => void;
   releaseBackKeyInterception: () => void;
 };
 
-export const useDeviceControlStore = create<DeviceControlState>((set) => ({
+export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
   volumeKeysIntercepted: false,
   backKeyIntercepted: false,
+  volumeKeysInterceptionCount: 0,
+  backKeyInterceptionCount: 0,
 
   acquireVolumeKeyInterception: () => {
-    window.onNativeKeyDown = handleNativeKeyDown;
-    interceptKeys({ volumeKeys: true });
-    set({ volumeKeysIntercepted: true });
+    const { volumeKeysInterceptionCount } = get();
+    if (volumeKeysInterceptionCount == 0) {
+      window.onNativeKeyDown = handleNativeKeyDown;
+      interceptKeys({ volumeKeys: true });
+      set({ volumeKeysIntercepted: true });
+    }
+    set({ volumeKeysInterceptionCount: volumeKeysInterceptionCount + 1 });
   },
 
   releaseVolumeKeyInterception: () => {
-    interceptKeys({ volumeKeys: false });
-    set({ volumeKeysIntercepted: false });
+    const { volumeKeysInterceptionCount } = get();
+    if (volumeKeysInterceptionCount <= 1) {
+      interceptKeys({ volumeKeys: false });
+      set({ volumeKeysIntercepted: false, volumeKeysInterceptionCount: 0 });
+    } else {
+      set({ volumeKeysInterceptionCount: volumeKeysInterceptionCount - 1 });
+    }
   },
 
   acquireBackKeyInterception: () => {
-    window.onNativeKeyDown = handleNativeKeyDown;
-    interceptKeys({ backKey: true });
-    set({ backKeyIntercepted: true });
+    const { backKeyInterceptionCount } = get();
+    if (backKeyInterceptionCount == 0) {
+      window.onNativeKeyDown = handleNativeKeyDown;
+      interceptKeys({ backKey: true });
+      set({ backKeyIntercepted: true });
+    }
+    set({ backKeyInterceptionCount: backKeyInterceptionCount + 1 });
   },
 
   releaseBackKeyInterception: () => {
-    interceptKeys({ backKey: false });
-    set({ backKeyIntercepted: false });
+    const { backKeyInterceptionCount } = get();
+    if (backKeyInterceptionCount <= 1) {
+      interceptKeys({ backKey: false });
+      set({ backKeyIntercepted: false, backKeyInterceptionCount: 0 });
+    } else {
+      set({ backKeyInterceptionCount: backKeyInterceptionCount - 1 });
+    }
   },
 }));

@@ -10,8 +10,11 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useNotebookStore } from '@/store/notebookStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useDeviceControlStore } from '@/store/deviceStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { eventDispatcher } from '@/utils/event';
 import { setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
@@ -20,11 +23,13 @@ import ReaderContent from './ReaderContent';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { envConfig, appService } = useEnv();
-  const { settings, setSettings } = useSettingsStore();
-  const { isDarkMode, showSystemUI, dismissSystemUI } = useThemeStore();
-  const { hoveredBookKey } = useReaderStore();
-  const { isSideBarVisible } = useSidebarStore();
   const { setLibrary } = useLibraryStore();
+  const { hoveredBookKey } = useReaderStore();
+  const { settings, setSettings } = useSettingsStore();
+  const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
+  const { isNotebookVisible, setNotebookVisible } = useNotebookStore();
+  const { isDarkMode, showSystemUI, dismissSystemUI } = useThemeStore();
+  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const isInitiating = useRef(false);
 
@@ -33,7 +38,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (appService?.isMobile && !document.hidden) {
+      if (appService?.isMobileApp && !document.hidden) {
         dismissSystemUI();
         setSystemUIVisibility({ visible: false, darkMode: isDarkMode });
       }
@@ -44,6 +49,34 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, isDarkMode]);
+
+  const handleKeyDown = (event: CustomEvent) => {
+    if (event.detail.keyName === 'Back') {
+      setSideBarVisible(false);
+      setNotebookVisible(false);
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    if (isSideBarVisible || isNotebookVisible) {
+      acquireBackKeyInterception();
+      eventDispatcher.onSync('native-key-down', handleKeyDown);
+    }
+    if (!isSideBarVisible && !isNotebookVisible) {
+      releaseBackKeyInterception();
+      eventDispatcher.offSync('native-key-down', handleKeyDown);
+    }
+    return () => {
+      if (appService?.isAndroidApp) {
+        releaseBackKeyInterception();
+        eventDispatcher.offSync('native-key-down', handleKeyDown);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSideBarVisible, isNotebookVisible]);
 
   useEffect(() => {
     if (isInitiating.current) return;

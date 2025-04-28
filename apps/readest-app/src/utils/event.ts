@@ -1,5 +1,5 @@
 class EventDispatcher {
-  private syncListeners: Map<string, Set<(event: CustomEvent) => boolean>>;
+  private syncListeners: Map<string, Array<(event: CustomEvent) => boolean>>;
   private asyncListeners: Map<string, Set<(event: CustomEvent) => Promise<void> | void>>;
 
   constructor() {
@@ -30,20 +30,26 @@ class EventDispatcher {
 
   onSync(event: string, callback: (event: CustomEvent) => boolean): void {
     if (!this.syncListeners.has(event)) {
-      this.syncListeners.set(event, new Set());
+      this.syncListeners.set(event, []);
     }
-    this.syncListeners.get(event)!.add(callback);
+    this.syncListeners.get(event)!.push(callback);
   }
 
   offSync(event: string, callback: (event: CustomEvent) => boolean): void {
-    this.syncListeners.get(event)?.delete(callback);
+    const listeners = this.syncListeners.get(event);
+    if (listeners) {
+      this.syncListeners.set(
+        event,
+        listeners.filter((listener) => listener !== callback),
+      );
+    }
   }
 
   dispatchSync(event: string, detail?: unknown): boolean {
     const listeners = this.syncListeners.get(event);
     if (listeners) {
       const customEvent = new CustomEvent(event, { detail });
-      for (const listener of listeners) {
+      for (const listener of [...listeners].reverse()) {
         const consumed = listener(customEvent);
         if (consumed) {
           return true;
