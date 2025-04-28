@@ -43,6 +43,11 @@ export interface GetSystemFontsListResponse {
   error?: string;
 }
 
+export interface InterceptKeysRequest {
+  volumeKeys?: boolean;
+  backKey?: boolean;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -96,4 +101,10 @@ export async function getSysFontsList(): Promise<GetSystemFontsListResponse> {
   );
   cachedSysFontsResult = result;
   return result;
+}
+
+export async function interceptKeys(request: InterceptKeysRequest): Promise<void> {
+  await invoke('plugin:native-bridge|intercept_keys', {
+    payload: request,
+  });
 }

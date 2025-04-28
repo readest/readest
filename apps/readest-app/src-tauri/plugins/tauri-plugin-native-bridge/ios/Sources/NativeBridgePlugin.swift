@@ -2,6 +2,7 @@ import AVFoundation
 import AuthenticationServices
 import CoreText
 import MediaPlayer
+import ObjectiveC
 import SwiftRs
 import Tauri
 import UIKit
@@ -35,8 +36,140 @@ class SetSystemUIVisibilityRequestArgs: Decodable {
   let darkMode: Bool
 }
 
+class InterceptKeysRequestArgs: Decodable {
+  let backKey: Bool?
+  let volumeKeys: Bool?
+}
+
+class VolumeKeyHandler: NSObject {
+  private var audioSession: AVAudioSession?
+  private var originalVolume: Float = 0.0
+  private var volumeView: MPVolumeView?
+  private var isIntercepting = false
+  private var webView: WKWebView?
+  private var volumeSlider: UISlider?
+
+  func startInterception(webView: WKWebView) {
+    if isIntercepting {
+      return
+    }
+
+    self.webView = webView
+    isIntercepting = true
+
+    audioSession = AVAudioSession.sharedInstance()
+    do {
+      try audioSession?.setActive(true)
+    } catch {
+      print("Failed to activate audio session: \(error)")
+    }
+
+    originalVolume = audioSession?.outputVolume ?? 0.1
+
+    DispatchQueue.main.async { [weak self] in
+      self?.setupHiddenVolumeView()
+    }
+
+    audioSession?.addObserver(self, forKeyPath: "outputVolume", options: [.new], context: nil)
+  }
+
+  func stopInterception() {
+    if !isIntercepting {
+      return
+    }
+
+    isIntercepting = false
+    audioSession?.removeObserver(self, forKeyPath: "outputVolume")
+    DispatchQueue.main.async { [weak self] in
+      self?.setSystemVolume(self?.originalVolume ?? 0.1)
+      self?.volumeView?.removeFromSuperview()
+      self?.volumeView = nil
+      self?.volumeSlider = nil
+    }
+
+    do {
+      try audioSession?.setActive(false)
+    } catch {
+      print("Failed to deactivate audio session: \(error)")
+    }
+  }
+
+  private func setSystemVolume(_ volume: Float) {
+    DispatchQueue.main.async { [weak self] in
+      self?.volumeSlider?.value = volume
+    }
+  }
+
+  private func setupHiddenVolumeView() {
+    assert(Thread.isMainThread, "setupHiddenVolumeView must be called on main thread")
+
+    let frame = CGRect(x: -1000, y: -1000, width: 1, height: 1)
+    volumeView = MPVolumeView(frame: frame)
+    volumeSlider = volumeView?.subviews.first(where: { $0 is UISlider }) as? UISlider
+    if let window = UIApplication.shared.windows.first {
+      window.addSubview(volumeView!)
+    }
+    setSystemVolume(originalVolume)
+  }
+
+  override func observeValue(
+    forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?,
+    context: UnsafeMutableRawPointer?
+  ) {
+    if keyPath == "outputVolume", let audioSession = self.audioSession, isIntercepting {
+      let currentVolume = audioSession.outputVolume
+
+      if currentVolume > originalVolume {
+        DispatchQueue.main.async { [weak self] in
+          self?.webView?.evaluateJavaScript(
+            "window.onNativeKeyDown('VolumeUp');", completionHandler: nil)
+          self?.setSystemVolume(self?.originalVolume ?? 0.1)
+        }
+      } else if currentVolume < originalVolume {
+        DispatchQueue.main.async { [weak self] in
+          self?.webView?.evaluateJavaScript(
+            "window.onNativeKeyDown('VolumeDown');", completionHandler: nil)
+          self?.setSystemVolume(self?.originalVolume ?? 0.1)
+        }
+      }
+    }
+  }
+}
+
 class NativeBridgePlugin: Plugin {
   private var authSession: ASWebAuthenticationSession?
+  private var webView: WKWebView?
+
+  @objc public override func load(webview: WKWebView) {
+    self.webView = webview
+    print("NativeBridgePlugin loaded")
+  }
+
+  private struct AssociatedKeys {
+    static var volumeKeyHandler = "volumeKeyHandler"
+    static var interceptingVolumeKeys = "interceptingVolumeKeys"
+  }
+
+  private var volumeKeyHandler: VolumeKeyHandler? {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.volumeKeyHandler) as? VolumeKeyHandler
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.volumeKeyHandler, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  private var interceptingVolumeKeys: Bool {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.interceptingVolumeKeys) as? Bool
+        ?? false
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.interceptingVolumeKeys, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
 
   @objc public func use_background_audio(_ invoke: Invoke) {
     do {
@@ -129,6 +262,38 @@ class NativeBridgePlugin: Plugin {
     }
 
     invoke.resolve(["fonts": fontList])
+  }
+
+  private func interceptVolumeKeys(_ intercept: Bool) {
+    interceptingVolumeKeys = intercept
+
+    if intercept {
+      if volumeKeyHandler == nil {
+        volumeKeyHandler = VolumeKeyHandler()
+      }
+
+      if let webView = self.webView {
+        volumeKeyHandler?.startInterception(webView: webView)
+      }
+    } else {
+      volumeKeyHandler?.stopInterception()
+    }
+  }
+
+  @objc public func intercept_keys(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(InterceptKeysRequestArgs.self)
+
+      if let volumeKeys = args.volumeKeys {
+        DispatchQueue.main.async { [weak self] in
+          self?.interceptVolumeKeys(volumeKeys)
+        }
+      }
+
+      invoke.resolve()
+    } catch {
+      invoke.reject(error.localizedDescription)
+    }
   }
 }
 

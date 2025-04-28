@@ -27,7 +27,6 @@
   "Delete": "Xóa",
   "Delete Highlight": "Xóa văn bản được đánh dấu",
   "Dictionary": "Từ điển",
-  "Disable Click-to-Flip": "Tắt tính năng nhấp để lật trang",
   "Download Readest": "Tải Readest",
   "Edit": "Chỉnh sửa",
   "Enter your custom CSS here...": "Nhập CSS tùy chỉnh của bạn vào đây...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "Tự động nhập khi mở tệp",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "Hoán đổi khu vực nhấp để lật trang",
   "No chapters detected.": "Không phát hiện thấy chương nào.",
   "Failed to parse the EPUB file.": "Không thể phân tích tệp EPUB.",
   "This book format is not supported.": "Định dạng sách này không được hỗ trợ.",
@@ -298,5 +296,8 @@
   "List": "Danh sách",
   "Grid": "Lưới",
   "(from 'As You Like It', Act II)": "(từ 'Như bạn thích', Hành động II)",
-  "Link Color": "Màu liên kết"
+  "Link Color": "Màu liên kết",
+  "Volume Keys for Page Flip": "Phím âm lượng để lật trang",
+  "Clicks for Page Flip": "Nhấp để lật trang",
+  "Swap Clicks Area": "Đổi khu vực nhấp"
 }

@@ -56,4 +56,8 @@ impl<R: Runtime> NativeBridge<R> {
         }
         Ok(GetSysFontsListResponse { fonts, error: None })
     }
+
+    pub fn intercept_keys(&self, _payload: InterceptKeysRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

@@ -12,6 +12,7 @@ Default permissions for the plugin
 - `allow-set-system-ui-visibility`
 - `allow-get-status-bar-height`
 - `allow-get-sys-fonts-list`
+- `allow-intercept-keys`
 
 ## Permission Table
 
@@ -174,6 +175,32 @@ Enables the install_package command without any pre-configured scope.
 <td>
 
 Denies the install_package command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-intercept-keys`
+
+</td>
+<td>
+
+Enables the intercept_keys command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-intercept-keys`
+
+</td>
+<td>
+
+Denies the intercept_keys command without any pre-configured scope.
 
 </td>
 </tr>

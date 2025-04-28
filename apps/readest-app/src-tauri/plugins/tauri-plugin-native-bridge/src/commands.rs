@@ -65,3 +65,11 @@ pub(crate) async fn get_sys_fonts_list<R: Runtime>(
 ) -> Result<GetSysFontsListResponse> {
     app.native_bridge().get_sys_fonts_list()
 }
+
+#[command]
+pub(crate) async fn intercept_keys<R: Runtime>(
+    app: AppHandle<R>,
+    payload: InterceptKeysRequest,
+) -> Result<()> {
+    app.native_bridge().intercept_keys(payload)
+}

@@ -6,6 +6,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
+import { usePageFlip } from '../hooks/usePageFlip';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -138,8 +139,9 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  const { handlePageFlip } = usePageFlip(bookKey, viewRef, containerRef);
   useTouchEvent(bookKey, viewRef);
-  const { handleTurnPage } = useClickEvent(bookKey, viewRef, containerRef);
+  useClickEvent(bookKey, handlePageFlip);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
@@ -223,7 +225,7 @@ const FoliateViewer: React.FC<{
     <>
       <div
         className='foliate-viewer h-[100%] w-[100%]'
-        onClick={(event) => handleTurnPage(event)}
+        onClick={(event) => handlePageFlip(event)}
         ref={containerRef}
       />
     </>

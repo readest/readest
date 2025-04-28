@@ -36,6 +36,7 @@ export interface AppService {
   hasUpdater: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
+  isMobileApp: boolean;
   isAndroidApp: boolean;
   isIOSApp: boolean;
   isMacOSApp: boolean;

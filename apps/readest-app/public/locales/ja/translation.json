@@ -27,7 +27,6 @@
   "Delete": "削除",
   "Delete Highlight": "ハイライトを削除",
   "Dictionary": "辞書",
-  "Disable Click-to-Flip": "クリックめくりを無効化",
   "Download Readest": "Readestをダウンロード",
   "Edit": "編集",
   "Enter your custom CSS here...": "ここにカスタムCSSを入力...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "ファイルを開くと自動インポート",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "クリックめくりエリアを入れ替え",
   "No chapters detected.": "章が検出されません。",
   "Failed to parse the EPUB file.": "EPUBファイルの解析に失敗しました。",
   "This book format is not supported.": "この書籍形式はサポートされていません。",
@@ -298,5 +296,8 @@
   "List": "リスト",
   "Grid": "グリッド",
   "(from 'As You Like It', Act II)": "(「お気に召すまま」第2幕)",
-  "Link Color": "リンクカラー"
+  "Link Color": "リンクカラー",
+  "Volume Keys for Page Flip": "音量キーでページめくり",
+  "Clicks for Page Flip": "タップでページめくり",
+  "Swap Clicks Area": "タップ領域を入れ替え"
 }

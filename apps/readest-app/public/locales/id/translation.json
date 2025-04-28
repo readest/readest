@@ -27,7 +27,6 @@
   "Delete": "Hapus",
   "Delete Highlight": "Hapus Sorotan",
   "Dictionary": "Kamus",
-  "Disable Click-to-Flip": "Nonaktifkan Klik untuk Membalik",
   "Download Readest": "Unduh Readest",
   "Edit": "Edit",
   "Enter your custom CSS here...": "Masukkan CSS kustom Anda di sini...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "Impor Otomatis saat File Dibuka",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "Tukar Area Klik untuk Membalik",
   "No chapters detected.": "Tidak ada bab yang terdeteksi.",
   "Failed to parse the EPUB file.": "Gagal mengurai file EPUB.",
   "This book format is not supported.": "Format buku ini tidak didukung.",
@@ -298,5 +296,8 @@
   "List": "Daftar",
   "Grid": "Jala",
   "(from 'As You Like It', Act II)": "(dari 'Seperti yang Anda Inginkan', Bab II)",
-  "Link Color": "Warna Tautan"
+  "Link Color": "Warna Tautan",
+  "Volume Keys for Page Flip": "Volume Keys untuk Pembalikan Halaman",
+  "Clicks for Page Flip": "Klik untuk Pembalikan Halaman",
+  "Swap Clicks Area": "Area Klik Tukar"
 }

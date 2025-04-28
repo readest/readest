@@ -27,7 +27,6 @@
   "Delete": "हटाएं",
   "Delete Highlight": "हाइलाइट हटाएं",
   "Dictionary": "शब्दकोश",
-  "Disable Click-to-Flip": "क्लिक-टू-फ्लिप अक्षम करें",
   "Download Readest": "Readest डाउनलोड करें",
   "Edit": "संपादित करें",
   "Enter your custom CSS here...": "अपना कस्टम CSS यहां दर्ज करें...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "फ़ाइल खोलने पर स्वचालित आयात",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "क्लिक-टू-फ्लिप क्षेत्र स्वैप करें",
   "No chapters detected.": "कोई अध्याय नहीं मिला।",
   "Failed to parse the EPUB file.": "EPUB फ़ाइल को पार्स करने में विफल।",
   "This book format is not supported.": "यह पुस्तक प्रारूप समर्थित नहीं है।",
@@ -298,5 +296,8 @@
   "List": "सूची",
   "Grid": "ग्रिड",
   "(from 'As You Like It', Act II)": "('जैसा आप इसे पसंद करते हैं', अधिनियम II)",
-  "Link Color": "लिंक रंग"
+  "Link Color": "लिंक रंग",
+  "Volume Keys for Page Flip": "पृष्ठ फ़्लिप के लिए वॉल्यूम कुंजियाँ",
+  "Clicks for Page Flip": "पृष्ठ फ़्लिप के लिए क्लिक करें",
+  "Swap Clicks Area": "क्लिक क्षेत्र स्वैप करें"
 }

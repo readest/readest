@@ -27,7 +27,6 @@
   "Delete": "삭제",
   "Delete Highlight": "하이라이트 삭제",
   "Dictionary": "사전",
-  "Disable Click-to-Flip": "클릭 넘기기 비활성화",
   "Download Readest": "Readest 다운로드",
   "Edit": "편집",
   "Enter your custom CSS here...": "여기에 사용자 정의 CSS를 입력하세요...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "파일 열 때 자동 가져오기",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "클릭-뒤집기 영역 교환",
   "No chapters detected.": "장 발견되지 않음.",
   "Failed to parse the EPUB file.": "EPUB 파일 구문 분석 실패.",
   "This book format is not supported.": "이 책 형식은 지원되지 않습니다.",
@@ -298,5 +296,8 @@
   "List": "목록",
   "Grid": "격자",
   "(from 'As You Like It', Act II)": "(당신이 좋아하는 대로, 2막)",
-  "Link Color": "링크 색상"
+  "Link Color": "링크 색상",
+  "Volume Keys for Page Flip": "페이지 넘김을 위한 볼륨 키",
+  "Clicks for Page Flip": "페이지 넘김을 위한 클릭",
+  "Swap Clicks Area": "클릭 영역 교환"
 }

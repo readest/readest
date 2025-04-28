@@ -93,3 +93,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn intercept_keys(&self, payload: InterceptKeysRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("intercept_keys", payload)
+            .map_err(Into::into)
+    }
+}

@@ -27,7 +27,6 @@
   "Delete": "Eliminar",
   "Delete Highlight": "Eliminar resaltado",
   "Dictionary": "Diccionario",
-  "Disable Click-to-Flip": "Desactivar clic para voltear",
   "Download Readest": "Descargar Readest",
   "Edit": "Editar",
   "Enter your custom CSS here...": "Introduce tu CSS personalizado aquí...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "Importación automática al abrir archivo",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "Intercambiar área de clic para voltear",
   "No chapters detected.": "No se detectaron capítulos.",
   "Failed to parse the EPUB file.": "Error al analizar el archivo EPUB.",
   "This book format is not supported.": "Este formato de libro no es compatible.",
@@ -298,5 +296,8 @@
   "List": "Lista",
   "Grid": "Cuadrícula",
   "(from 'As You Like It', Act II)": "(de 'Como gustéis', Acto II)",
-  "Link Color": "Color del enlace"
+  "Link Color": "Color del enlace",
+  "Volume Keys for Page Flip": "Botones de volumen para pasar página",
+  "Clicks for Page Flip": "Toques para pasar página",
+  "Swap Clicks Area": "Invertir zonas de toque"
 }

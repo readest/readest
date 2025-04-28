@@ -18,6 +18,14 @@ export const EnvProvider = ({ children }: { children: ReactNode }) => {
 
   React.useEffect(() => {
     envConfig.getAppService().then((service) => setAppService(service));
+    window.addEventListener('error', (e) => {
+      if (e.message === 'ResizeObserver loop limit exceeded') {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        return true;
+      }
+      return false;
+    });
   }, [envConfig]);
 
   return <EnvContext.Provider value={{ envConfig, appService }}>{children}</EnvContext.Provider>;

@@ -71,6 +71,7 @@ export interface BookLayout {
   scrolled: boolean;
   disableClick: boolean;
   swapClickArea: boolean;
+  volumeKeysToFlip: boolean;
   continuousScroll: boolean;
   maxColumnCount: number;
   maxInlineSize: number;

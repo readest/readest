@@ -103,7 +103,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
   };
 
   const handleSetActionTab = (tab: string) => {
-    console.log('handleSetActionTab', tab);
     setActionTab(actionTab === tab ? '' : tab);
     if (tab === 'tts') {
       setHoveredBookKey('');
@@ -130,9 +129,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const isVisible = hoveredBookKey === bookKey;
   const progressInfo = bookFormat === 'PDF' ? section : pageinfo;
   const progressValid = !!progressInfo;
-  const progressFraction = progressValid
-    ? ((progressInfo!.next ?? progressInfo!.current) + 1) / progressInfo!.total
-    : 0;
+  const progressFraction =
+    progressValid && progressInfo?.total > 0
+      ? ((progressInfo!.next ?? progressInfo!.current) + 1) / progressInfo!.total || 0
+      : 0;
 
   return (
     <>

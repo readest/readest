@@ -27,7 +27,6 @@
   "Delete": "Sil",
   "Delete Highlight": "Vurguyu Sil",
   "Dictionary": "Sözlük",
-  "Disable Click-to-Flip": "Tıkla-Çevir'i Devre Dışı Bırak",
   "Download Readest": "Readest'i İndir",
   "Edit": "Düzenle",
   "Enter your custom CSS here...": "Özel CSS'nizi buraya girin...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "Dosya Açıldığında Otomatik İçe Aktar",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "Tıkla-Çevir Alanını Değiştir",
   "No chapters detected.": "Bölüm bulunamadı.",
   "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
   "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
@@ -298,5 +296,8 @@
   "List": "Liste",
   "Grid": "Izgara",
   "(from 'As You Like It', Act II)": "(As You Like It, 2. Perde)",
-  "Link Color": "Bağlantı Rengi"
+  "Link Color": "Bağlantı Rengi",
+  "Volume Keys for Page Flip": "Sayfa Çevirme için Ses Seviyesi Tuşları",
+  "Clicks for Page Flip": "Sayfa Çevirme için Tıklamalar",
+  "Swap Clicks Area": "Tıklama Alanını Değiştir"
 }

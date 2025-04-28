@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import android.os.Build
 import android.view.View
+import android.view.KeyEvent
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowInsetsController
@@ -47,6 +48,17 @@ class InstallPackageRequestArgs {
 class SetSystemUIVisibilityRequestArgs {
   var visible: Boolean? = false
   var darkMode: Boolean? = false
+}
+
+@InvokeArg
+class InterceptKeysRequestArgs {
+  var volumeKeys: Boolean? = null
+  var backKey: Boolean? = null
+}
+
+interface KeyDownInterceptor {
+    fun interceptVolumeKeys(enabled: Boolean)
+    fun interceptBackKey(enabled: Boolean)
 }
 
 @TauriPlugin
@@ -288,5 +300,25 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("error", e.message)
         }
         invoke.resolve(ret)
+    }
+
+    @Command
+    fun intercept_keys(invoke: Invoke) {
+        val args = invoke.parseArgs(InterceptKeysRequestArgs::class.java)
+        if (activity is KeyDownInterceptor) {
+          when (args.backKey) {
+              true -> (activity as KeyDownInterceptor).interceptBackKey(true)
+              false -> (activity as KeyDownInterceptor).interceptBackKey(false)
+              else -> {}
+          }
+          when (args.volumeKeys) {
+              true -> (activity as KeyDownInterceptor).interceptVolumeKeys(true)
+              false -> (activity as KeyDownInterceptor).interceptVolumeKeys(false)
+              else -> {}
+          }
+        } else {
+            Log.e("NativeBridgePlugin", "Activity does not implement KeyDownInterceptor")
+        }
+        invoke.resolve()
     }
 }

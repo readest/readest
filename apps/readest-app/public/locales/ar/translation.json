@@ -27,7 +27,6 @@
   "Delete": "حذف",
   "Delete Highlight": "حذف التمييز",
   "Dictionary": "القاموس",
-  "Disable Click-to-Flip": "تعطيل التقليب بالنقر",
   "Download Readest": "تحميل ريديست",
   "Edit": "تحرير",
   "Enter your custom CSS here...": "أدخل الـ CSS المخصص هنا...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "استيراد تلقائي عند فتح الملف",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "تبديل منطقة التقليب بالنقر",
   "No chapters detected.": "لم يتم التعرف على فصول.",
   "Failed to parse the EPUB file.": "فشل في تحليل ملف EPUB.",
   "This book format is not supported.": "هذا تنسيق الكتاب غير مدعوم.",
@@ -298,5 +296,8 @@
   "List": "قائمة",
   "Grid": "شبكة",
   "(from 'As You Like It', Act II)": "(من 'كما تحب'، الفصل الثاني)",
-  "Link Color": "لون الرابط"
+  "Link Color": "لون الرابط",
+  "Volume Keys for Page Flip": "مفاتيح الصوت لتقليب الصفحات",
+  "Clicks for Page Flip": "نقرات لتقليب الصفحات",
+  "Swap Clicks Area": "تبديل منطقة النقرات"
 }

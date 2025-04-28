@@ -51,6 +51,7 @@ export abstract class BaseAppService implements AppService {
   isAppDataSandbox = false;
   isAndroidApp = false;
   isIOSApp = false;
+  isMobileApp = false;
   hasTrafficLight = false;
   hasWindow = false;
   hasWindowBar = false;

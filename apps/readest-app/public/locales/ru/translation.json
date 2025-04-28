@@ -27,7 +27,6 @@
   "Delete": "Удалить",
   "Delete Highlight": "Удалить выделение",
   "Dictionary": "Словарь",
-  "Disable Click-to-Flip": "Отключить переворот по клику",
   "Download Readest": "Скачать Readest",
   "Edit": "Редактировать",
   "Enter your custom CSS here...": "Введите ваш пользовательский CSS здесь...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "Автоматический импорт при открытии файла",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "Swap Click-to-Flip Area": "Переключить область клика для переворота",
   "No chapters detected.": "Не обнаружено глав.",
   "Failed to parse the EPUB file.": "Не удалось разобрать файл EPUB.",
   "This book format is not supported.": "Этот формат книги не поддерживается.",
@@ -298,5 +296,8 @@
   "List": "Список",
   "Grid": "Сетка",
   "(from 'As You Like It', Act II)": "(из 'Как вам это понравится', Акт II)",
-  "Link Color": "Цвет ссылки"
+  "Link Color": "Цвет ссылки",
+  "Volume Keys for Page Flip": "Клавиши громкости для перелистывания страниц",
+  "Clicks for Page Flip": "Клики для перелистывания страниц",
+  "Swap Clicks Area": "Переключить область кликов"
 }

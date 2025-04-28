@@ -27,7 +27,6 @@
   "Delete": "删除",
   "Delete Highlight": "删除划线",
   "Dictionary": "词典",
-  "Disable Click-to-Flip": "禁用点击翻页",
   "Download Readest": "下载 Readest",
   "Edit": "编辑",
   "Enter your custom CSS here...": "在此处输入您的自定义 CSS...",
@@ -259,7 +258,6 @@
   "Auto Import on File Open": "打开文件时自动导入",
   "LXGW WenKai GB Screen": "霞鹜文楷",
   "LXGW WenKai TC": "霞鶩文楷",
-  "Swap Click-to-Flip Area": "交换点击翻页区域",
   "No chapters detected.": "未检测到章节。",
   "Failed to parse the EPUB file.": "无法解析 EPUB 文件。",
   "This book format is not supported.": "不支持此书籍格式。",
@@ -298,5 +296,8 @@
   "List": "列表",
   "Grid": "网格",
   "(from 'As You Like It', Act II)": "出自《皆大欢喜》，第二幕",
-  "Link Color": "链接颜色"
+  "Link Color": "链接颜色",
+  "Volume Keys for Page Flip": "音量键翻页",
+  "Clicks for Page Flip": "点击翻页",
+  "Swap Clicks Area": "交换点击区域"
 }
