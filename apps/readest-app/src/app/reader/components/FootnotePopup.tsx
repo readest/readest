@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
+import { getFootnoteStyles, getStyles, getThemeCode, mountAdditionalFonts } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
@@ -52,6 +52,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           console.warn(err);
           getView(bookKey)?.goTo(popupLinkDetail.href);
         });
+      });
+      view.addEventListener('load', (e: CustomEvent) => {
+        const { doc } = e.detail;
+        mountAdditionalFonts(doc);
       });
       footnoteViewRef.current = view;
       footnoteRef.current?.replaceChildren(view);
@@ -131,6 +135,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setGridRect(rect);
     setTrianglePosition(triangPos);
 
+    const { a: anchor } = detail as { a: HTMLAnchorElement };
+    const footnoteClasses = ['duokan-footnote', 'footnote-link', 'footnote'];
+    if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
+      detail['follow'] = true;
+    }
     footnoteHandler.handle(bookDoc, event)?.catch((err) => {
       console.warn(err);
       const detail = (event as CustomEvent).detail;
