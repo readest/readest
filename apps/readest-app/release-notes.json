@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.9.38": {
+      "date": "2025-04-29",
+      "notes": [
+        "Page Turning with Volume Keys: You can now turn pages using your device’s volume buttons",
+        "Expanded English Voices: More English voices are available across all en locales",
+        "Theme Editor: Added a primary color picker for easier customization",
+        "System Fonts: Retrieve system fonts on iOS and Android, with improved font weight and style detection",
+        "Popup Footnotes: Popup footnotes now inherit the book's font for consistent appearance",
+        "Better Text Selection: Preserves text selection anchors when spanning paginated content",
+        "Android Compatibility: Navigation bar auto-hides correctly on Android 10 and below",
+        "Popup Dialogs: Back key now properly dismisses popup dialogs on Android"
+      ]
+    },
     "0.9.37": {
       "date": "2025-04-25",
       "notes": [
