@@ -65,7 +65,8 @@
       "minSdkVersion": 26
     },
     "iOS": {
-      "developmentTeam": "J5W48D69VR"
+      "developmentTeam": "J5W48D69VR",
+      "minimumSystemVersion": "14.0"
     },
     "fileAssociations": [
       {

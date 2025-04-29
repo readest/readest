@@ -7,6 +7,9 @@ import SwiftRs
 import Tauri
 import UIKit
 import WebKit
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "NativeBridge")
 
 func getLocalizedDisplayName(familyName: String) -> String? {
   let fontDescriptor = CTFontDescriptorCreateWithAttributes(
@@ -44,14 +47,16 @@ class InterceptKeysRequestArgs: Decodable {
 class VolumeKeyHandler: NSObject {
   private var audioSession: AVAudioSession?
   private var originalVolume: Float = 0.0
+  private var referenceVolume: Float = 0.5
+  private var previousVolume: Float = 0.5
   private var volumeView: MPVolumeView?
-  private var isIntercepting = false
+  private(set) var isIntercepting = false
   private var webView: WKWebView?
   private var volumeSlider: UISlider?
 
   func startInterception(webView: WKWebView) {
     if isIntercepting {
-      return
+      stopInterception()
     }
 
     self.webView = webView
@@ -59,15 +64,20 @@ class VolumeKeyHandler: NSObject {
 
     audioSession = AVAudioSession.sharedInstance()
     do {
+      try audioSession?.setCategory(.playback, mode: .default, options: [])
       try audioSession?.setActive(true)
     } catch {
-      print("Failed to activate audio session: \(error)")
+      logger.error("Failed to activate audio session: \(error)")
     }
 
-    originalVolume = audioSession?.outputVolume ?? 0.1
-
-    DispatchQueue.main.async { [weak self] in
-      self?.setupHiddenVolumeView()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      guard let self = self else { return }
+      self.originalVolume = self.audioSession?.outputVolume ?? 0.1
+      self.referenceVolume = self.originalVolume > 0.0 ? self.originalVolume : 0.5
+      self.previousVolume = self.referenceVolume
+      self.setupHiddenVolumeView()
+      self.audioSession?.addObserver(
+        self, forKeyPath: "outputVolume", options: [.new], context: nil)
     }
 
     audioSession?.addObserver(self, forKeyPath: "outputVolume", options: [.new], context: nil)
@@ -90,7 +100,7 @@ class VolumeKeyHandler: NSObject {
     do {
       try audioSession?.setActive(false)
     } catch {
-      print("Failed to deactivate audio session: \(error)")
+      logger.error("Failed to deactivate audio session: \(error)")
     }
   }
 
@@ -109,7 +119,7 @@ class VolumeKeyHandler: NSObject {
     if let window = UIApplication.shared.windows.first {
       window.addSubview(volumeView!)
     }
-    setSystemVolume(originalVolume)
+    setSystemVolume(referenceVolume)
   }
 
   override func observeValue(
@@ -118,31 +128,76 @@ class VolumeKeyHandler: NSObject {
   ) {
     if keyPath == "outputVolume", let audioSession = self.audioSession, isIntercepting {
       let currentVolume = audioSession.outputVolume
-
-      if currentVolume > originalVolume {
+      if currentVolume > previousVolume {
         DispatchQueue.main.async { [weak self] in
           self?.webView?.evaluateJavaScript(
             "window.onNativeKeyDown('VolumeUp');", completionHandler: nil)
-          self?.setSystemVolume(self?.originalVolume ?? 0.1)
         }
-      } else if currentVolume < originalVolume {
+      } else if currentVolume < previousVolume {
         DispatchQueue.main.async { [weak self] in
           self?.webView?.evaluateJavaScript(
             "window.onNativeKeyDown('VolumeDown');", completionHandler: nil)
-          self?.setSystemVolume(self?.originalVolume ?? 0.1)
         }
+      }
+      previousVolume = currentVolume
+      DispatchQueue.main.async { [weak self] in
+        self?.setSystemVolume(self?.referenceVolume ?? 0.5)
       }
     }
   }
 }
 
 class NativeBridgePlugin: Plugin {
-  private var authSession: ASWebAuthenticationSession?
   private var webView: WKWebView?
+  private var authSession: ASWebAuthenticationSession?
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
-    print("NativeBridgePlugin loaded")
+    logger.log("NativeBridgePlugin loaded")
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(appDidBecomeActive),
+      name: UIApplication.didBecomeActiveNotification,
+      object: nil
+    )
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(appDidEnterBackground),
+      name: UIApplication.didEnterBackgroundNotification,
+      object: nil
+    )
+  }
+
+  @objc func appDidBecomeActive() {
+    if volumeKeyHandler != nil {
+      activateVolumeKeyInterception()
+    }
+  }
+
+  @objc func appDidEnterBackground() {
+    if let handler = volumeKeyHandler, handler.isIntercepting {
+      handler.stopInterception()
+    }
+  }
+
+  func activateVolumeKeyInterception() {
+    logger.log("Activating volume key interception")
+    if volumeKeyHandler == nil {
+      volumeKeyHandler = VolumeKeyHandler()
+    }
+
+    if let webView = self.webView {
+      volumeKeyHandler?.stopInterception()
+      volumeKeyHandler?.startInterception(webView: webView)
+    } else {
+      logger.warning("Cannot activate volume key interception: webView is nil")
+    }
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
   }
 
   private struct AssociatedKeys {
@@ -179,15 +234,15 @@ class NativeBridgePlugin: Plugin {
       if enabled {
         try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
         try session.setActive(true)
-        print("AVAudioSession activated")
+        logger.log("AVAudioSession activated")
       } else {
         try session.setActive(false)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        print("AVAudioSession deactivated")
+        logger.log("AVAudioSession deactivated")
       }
       invoke.resolve()
     } catch {
-      print("Failed to set up audio session:", error)
+      logger.error("Failed to set up audio session: \(error)")
     }
   }
 
@@ -200,13 +255,12 @@ class NativeBridgePlugin: Plugin {
       guard let strongSelf = self else { return }
 
       if let error = error {
-        Logger.error("Auth session error: \(error.localizedDescription)")
+        logger.error("Auth session error: \(error.localizedDescription)")
         invoke.reject(error.localizedDescription)
         return
       }
 
       if let callbackURL = callbackURL {
-        Logger.info("Auth session callback URL: \(callbackURL.absoluteString)")
         strongSelf.authSession?.cancel()
         strongSelf.authSession = nil
         invoke.resolve(["redirectUrl": callbackURL.absoluteString])
@@ -218,7 +272,7 @@ class NativeBridgePlugin: Plugin {
     }
 
     let started = authSession?.start() ?? false
-    Logger.info("Auth session start result: \(started)")
+    logger.log("Auth session start result: \(started)")
   }
 
   @objc public func set_system_ui_visibility(_ invoke: Invoke) throws {
@@ -239,7 +293,7 @@ class NativeBridgePlugin: Plugin {
         keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
         keyWindow.layoutIfNeeded()
       } else {
-        print("No key window found")
+        logger.error("No key window found")
       }
     }
     invoke.resolve(["success": true])
@@ -264,32 +318,20 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["fonts": fontList])
   }
 
-  private func interceptVolumeKeys(_ intercept: Bool) {
-    interceptingVolumeKeys = intercept
-
-    if intercept {
-      if volumeKeyHandler == nil {
-        volumeKeyHandler = VolumeKeyHandler()
-      }
-
-      if let webView = self.webView {
-        volumeKeyHandler?.startInterception(webView: webView)
-      }
-    } else {
-      volumeKeyHandler?.stopInterception()
-    }
-  }
-
   @objc public func intercept_keys(_ invoke: Invoke) {
     do {
       let args = try invoke.parseArgs(InterceptKeysRequestArgs.self)
 
       if let volumeKeys = args.volumeKeys {
+
         DispatchQueue.main.async { [weak self] in
-          self?.interceptVolumeKeys(volumeKeys)
+          if volumeKeys {
+            self?.activateVolumeKeyInterception()
+          } else {
+            self?.volumeKeyHandler?.stopInterception()
+          }
         }
       }
-
       invoke.resolve()
     } catch {
       invoke.reject(error.localizedDescription)
