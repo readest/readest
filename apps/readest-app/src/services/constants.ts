@@ -157,6 +157,8 @@ export const SERIF_FONTS = [
   'Times New Roman',
 ];
 
+export const NON_FREE_FONTS = ['Georgia', 'Times New Roman'];
+
 export const CJK_SERIF_FONTS = [
   _('LXGW WenKai GB Screen'),
   _('LXGW WenKai TC'),
