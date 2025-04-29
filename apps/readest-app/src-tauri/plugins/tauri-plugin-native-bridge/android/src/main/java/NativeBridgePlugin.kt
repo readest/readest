@@ -294,6 +294,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 var fontName = fileFileName
                     .replace(Regex("\\.(ttf|otf)$", RegexOption.IGNORE_CASE), "")
                     .trim()
+                fontList.add(fontName)
             }
             ret.put("fonts", JSONArray(fontList))
         } catch (e: Exception) {

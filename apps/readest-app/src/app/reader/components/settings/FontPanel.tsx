@@ -137,7 +137,7 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (isTauriAppPlatform()) {
       getSysFontsList().then((res) => {
-        if (res.error) {
+        if (res.error || res.fonts.length === 0) {
           console.error('Failed to get system fonts list:', res.error);
           return;
         }
