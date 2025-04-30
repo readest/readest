@@ -2,6 +2,7 @@ import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { AsyncQueue } from '@/utils/queue';
 import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
+import { isCJKStr } from '@/utils/lang';
 import { TTSGranularity } from '@/types/view';
 import { TTSUtils } from './TTSUtils';
 
@@ -123,7 +124,7 @@ async function* speakWithMarks(
   const isCJK = (lang: string | null) => {
     const cjkLangs = ['zh', 'ja', 'kr'];
     if (lang && cjkLangs.some((cjk) => lang.startsWith(cjk))) return true;
-    return /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(plainText);
+    return isCJKStr(plainText);
   };
 
   if (!isCJK(lang)) {

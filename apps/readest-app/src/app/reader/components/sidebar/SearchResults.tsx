@@ -32,7 +32,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     >
       <div className='line-clamp-3'>
         <span className=''>{excerpt.pre}</span>
-        <span className='font-semibold'>{excerpt.match}</span>
+        <span className='font-bold text-red-500'>{excerpt.match}</span>
         <span className=''>{excerpt.post}</span>
       </div>
     </li>

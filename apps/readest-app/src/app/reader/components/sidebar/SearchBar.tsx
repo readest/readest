@@ -9,6 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { isCJKStr } from '@/utils/lang';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
 
@@ -104,8 +105,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const exceedMinSearchTermLength = (searchTerm: string) => {
-    const isCJK = /[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]/.test(searchTerm);
-    const minLength = isCJK ? MINIMUM_SEARCH_TERM_LENGTH_CJK : MINIMUM_SEARCH_TERM_LENGTH_DEFAULT;
+    const minLength = isCJKStr(searchTerm)
+      ? MINIMUM_SEARCH_TERM_LENGTH_CJK
+      : MINIMUM_SEARCH_TERM_LENGTH_DEFAULT;
 
     return searchTerm.length >= minLength;
   };
