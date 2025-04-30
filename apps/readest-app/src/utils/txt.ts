@@ -88,8 +88,17 @@ export class TxtToEpubConverter {
     const segmentRegex = new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{4,}\r?\n`);
     let chapterRegex: RegExp;
     if (language === 'zh') {
-      chapterRegex =
-        /(?:^|\n|\s|《[^》]+》)(第?[一二三四五六七八九十百千万0-9]+[章卷节回讲篇](?:[：:、 　\(\)0-9]+[^\n-]*)?(?!\S)|(?:^|\n|\s|《[^》]+》)[一二三四五六七八九十百千万]+(?:[：:、 　][^\n-]+)(?!\S)|(?:楔子|前言|引言|序言|序章|总论|概论)(?:[：: 　][^\n-]*)?(?!\S))/g;
+      chapterRegex = new RegExp(
+        String.raw`(?:^|\n|\s)` +
+          '(' +
+          [
+            String.raw`第[一二三四五六七八九十0-9][一二三四五六七八九十百千万0-9]*(?:[章卷节回讲篇封])(?:[：:、 　\(\)0-9]*[^\n-]{0,24})(?!\S)`,
+            String.raw`(?:^|\n|\s|《[^》]+》)[一二三四五六七八九十][一二三四五六七八九十百千万]*(?:[：: 　][^\n-]{0,24})(?!\S)`,
+            String.raw`(?:楔子|前言|引言|序言|序章|总论|概论)(?:[：: 　][^\n-]{0,24})?(?!\S)`,
+          ].join('|') +
+          ')',
+        'gu',
+      );
     } else {
       chapterRegex =
         /(?:^|\n|\s)(Chapter [0-9]+(?:[: ][^\n]*)?(?!\S)|Part [0-9]+(?:[: ][^\n]*)?(?!\S)|Prologue(?:[: ][^\n]*)?(?!\S)|Introduction(?:[: ][^\n]*)?(?!\S))/g;
@@ -104,6 +113,24 @@ export class TxtToEpubConverter {
         .join('</p><p>');
     };
 
+    const joinAroundUndefined = (arr: (string | undefined)[]) =>
+      arr.reduce<string[]>((acc, curr, i, src) => {
+        if (
+          curr === undefined &&
+          i > 0 &&
+          i < src.length - 1 &&
+          src[i - 1] !== undefined &&
+          src[i + 1] !== undefined
+        ) {
+          acc[acc.length - 1] += src[i + 1]!;
+          return acc;
+        }
+        if (curr !== undefined && (i === 0 || src[i - 1] !== undefined)) {
+          acc.push(curr);
+        }
+        return acc;
+      }, []);
+
     const chapters: Chapter[] = [];
     const segments = txtContent.split(segmentRegex);
     for (const segment of segments) {
@@ -111,7 +138,7 @@ export class TxtToEpubConverter {
       if (!trimmedSegment) continue;
 
       const segmentChapters = [];
-      const matches = trimmedSegment.split(chapterRegex);
+      const matches = joinAroundUndefined(trimmedSegment.split(chapterRegex));
       for (let j = 1; j < matches.length; j += 2) {
         const title = matches[j]?.trim() || '';
         const content = matches[j + 1]?.trim() || '';
