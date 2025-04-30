@@ -143,6 +143,7 @@ export interface BookSearchConfig {
   matchDiacritics: boolean;
   index?: number;
   query?: string;
+  acceptNode?: (node: Node) => number;
 }
 
 export interface SearchExcerpt {

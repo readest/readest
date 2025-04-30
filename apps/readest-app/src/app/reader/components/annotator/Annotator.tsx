@@ -22,7 +22,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
-import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
+import {
+  getPopupPosition,
+  getPosition,
+  getTextFromRange,
+  Position,
+  TextSelection,
+} from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
 import { transformContent } from '@/services/transformService';
@@ -48,6 +54,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const bookData = getBookData(bookKey)!;
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
+  const primaryLang = bookData.book?.primaryLanguage || 'en';
 
   const isShowingPopup = useRef(false);
   const isTextSelected = useRef(false);
@@ -98,6 +105,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       transformers: ['punctuation'],
       reversePunctuationTransform: true,
     };
+    const getAnnotationText = (range: Range) => {
+      return getTextFromRange(range, primaryLang.startsWith('ja') ? ['rt'] : []);
+    };
     const makeSelection = async (sel: Selection, rebuildRange = false) => {
       isTextSelected.current = true;
       const range = sel.getRangeAt(0);
@@ -105,7 +115,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         sel.removeAllRanges();
         sel.addRange(range);
       }
-      transformCtx['content'] = sel.toString();
+      transformCtx['content'] = getAnnotationText(range);
       setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
     };
     // FIXME: extremely hacky way to dismiss system selection tools on iOS
@@ -117,7 +127,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         setTimeout(async () => {
           if (!isTextSelected.current) return;
           sel.addRange(range);
-          transformCtx['content'] = range.toString();
+          transformCtx['content'] = getAnnotationText(range);
           setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
         }, 40);
       }, 0);

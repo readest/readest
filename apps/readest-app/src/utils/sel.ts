@@ -159,3 +159,26 @@ export const getPopupPosition = (
 
   return { point: popupPoint, dir: position.dir } as Position;
 };
+
+export const getTextFromRange = (range: Range, rejects: string[] = []): string => {
+  const clonedRange = range.cloneRange();
+  const fragment = clonedRange.cloneContents();
+  const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      const parent = node.parentElement;
+      if (rejects.includes(parent?.tagName.toLowerCase() || '')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  let text = '';
+  let node: Text | null;
+
+  while ((node = walker.nextNode() as Text | null)) {
+    text += node.nodeValue ?? '';
+  }
+
+  return text;
+};
