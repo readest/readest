@@ -93,7 +93,7 @@ const getFontStyles = (
     /* https://github.com/whatwg/html/issues/5426 */
     @media (prefers-color-scheme: dark) {
       a:link {
-        ${overrideFont ? `color: lightblue;` : ''}
+        ${overrideFont ? `color: ${primary};` : `color: lightblue;`}
       }
     }
     /* override inline hardcoded text color */
