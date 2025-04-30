@@ -57,14 +57,24 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
 };
 
 export const parseSSMLLang = (ssml: string): string | null => {
+  let lang = null;
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
-  if (/[\p{Script=Han}]/u.test(ssml)) {
-    return 'zh';
-  } else if (match && match[1]) {
+  if (match && match[1]) {
     const parts = match[1].split('-');
-    return parts.length > 1
-      ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
-      : parts[0]!.toLowerCase();
+    lang =
+      parts.length > 1
+        ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
+        : parts[0]!.toLowerCase();
   }
-  return null;
+  if (!lang || lang.startsWith('en')) {
+    if (/[\p{Script=Hangul}]/u.test(ssml)) {
+      lang = 'ko';
+    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(ssml)) {
+      lang = 'ja';
+    } else if (/[\p{Script=Han}]/u.test(ssml)) {
+      lang = 'zh';
+    }
+  }
+
+  return lang;
 };
