@@ -36,11 +36,18 @@ export const CFI = epubcfi;
 
 export type DocumentFile = File;
 
+export type Location = {
+  current: number;
+  next: number;
+  total: number;
+};
+
 export interface TOCItem {
   id: number;
   label: string;
   href: string;
   cfi?: string;
+  location?: Location;
   subitems?: TOCItem[];
 }
 
@@ -48,6 +55,8 @@ export interface SectionItem {
   id: string;
   cfi: string;
   size: number;
+  linear: string;
+  location?: Location;
 }
 
 export interface BookDoc {

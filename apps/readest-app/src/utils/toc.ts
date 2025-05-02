@@ -37,31 +37,50 @@ export const findTocItemBS = (toc: TOCItem[], cfi: string): TOCItem | null => {
   return result;
 };
 
-export const updateTocID = (items: TOCItem[], index = 0): number => {
-  items.forEach((item) => {
-    item.id ??= index++;
-    if (item.subitems) {
-      index = updateTocID(item.subitems, index);
-    }
+export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionItem[]): void => {
+  const sizes = sections.map((s) => (s.linear != 'no' && s.size > 0 ? s.size : 0));
+  let cumulativeSize = 0;
+  const cumulativeSizes = sizes.reduce((acc: number[], size) => {
+    acc.push(cumulativeSize);
+    cumulativeSize += size;
+    return acc;
+  }, []);
+  const totalSize = cumulativeSizes[cumulativeSizes.length - 1] || 0;
+  const sizePerLoc = 1500;
+  sections.forEach((section, index) => {
+    section.location = {
+      current: Math.floor(cumulativeSizes[index]! / sizePerLoc),
+      next: Math.floor((cumulativeSizes[index]! + sizes[index]!) / sizePerLoc),
+      total: Math.floor(totalSize / sizePerLoc),
+    };
   });
-  return index;
+
+  const sectionsMap = sections.reduce((map: Record<string, SectionItem>, section) => {
+    map[section.id] = section;
+    return map;
+  }, {});
+  updateTocData(bookDoc, items, sectionsMap);
 };
 
-export const updateTocCFI = (
+const updateTocData = (
   bookDoc: BookDoc,
   items: TOCItem[],
   sections: { [id: string]: SectionItem },
-): void => {
+  index = 0,
+): number => {
   items.forEach((item) => {
+    item.id ??= index++;
     if (item.href) {
       const id = bookDoc.splitTOCHref(item.href)[0]!;
       const section = sections[id];
       if (section) {
         item.cfi = section.cfi;
+        item.location = section.location;
       }
     }
     if (item.subitems) {
-      updateTocCFI(bookDoc, item.subitems, sections);
+      index = updateTocData(bookDoc, item.subitems, sections, index);
     }
   });
+  return index;
 };

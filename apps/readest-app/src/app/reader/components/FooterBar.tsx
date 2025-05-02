@@ -131,7 +131,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const progressValid = !!progressInfo;
   const progressFraction =
     progressValid && progressInfo?.total > 0
-      ? ((progressInfo!.next ?? progressInfo!.current) + 1) / progressInfo!.total || 0
+      ? (progressInfo!.current + 1) / progressInfo!.total || 0
       : 0;
 
   return (

@@ -3,8 +3,8 @@ import { create } from 'zustand';
 import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
-import { BookDoc, DocumentLoader, SectionItem, TOCItem } from '@/libs/document';
-import { updateTocCFI, updateTocID } from '@/utils/toc';
+import { BookDoc, DocumentLoader, TOCItem } from '@/libs/document';
+import { updateToc } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
@@ -122,12 +122,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const { book: loadedBookDoc } = await new DocumentLoader(file).open();
         const bookDoc = loadedBookDoc as BookDoc;
         if (bookDoc.toc?.length && bookDoc.sections?.length) {
-          updateTocID(bookDoc.toc);
-          const sections = bookDoc.sections.reduce((map: Record<string, SectionItem>, section) => {
-            map[section.id] = section;
-            return map;
-          }, {});
-          updateTocCFI(bookDoc, bookDoc.toc, sections);
+          updateToc(bookDoc, bookDoc.toc, bookDoc.sections);
         }
         // Set the book's language for formerly imported books, newly imported books have this field set
         book.primaryLanguage =

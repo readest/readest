@@ -35,7 +35,7 @@ const PageInfoView: React.FC<PageInfoProps> = ({
       : ''
     : pageinfo
       ? _(isVertical ? '{{currentPage}} · {{totalPage}}' : 'Loc. {{currentPage}} / {{totalPage}}', {
-          currentPage: (pageinfo.next ?? pageinfo.current) + 1,
+          currentPage: pageinfo.current + 1,
           totalPage: pageinfo.total,
         })
       : '';
