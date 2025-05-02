@@ -153,7 +153,9 @@ const TTSControl = () => {
   };
 
   const handleTTSStop = async () => {
-    handleStop();
+    if (ttsControllerRef.current) {
+      handleStop();
+    }
   };
 
   const handleQueryIsSpeaking = () => {

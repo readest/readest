@@ -59,12 +59,13 @@ class VolumeKeyHandler: NSObject {
       stopInterception()
     }
 
+    logger.log("Starting volume key interception")
     self.webView = webView
     isIntercepting = true
 
     audioSession = AVAudioSession.sharedInstance()
     do {
-      try audioSession?.setCategory(.playback, mode: .default, options: [])
+      try audioSession?.setCategory(.playback, mode: .default, options: [.mixWithOthers])
       try audioSession?.setActive(true)
     } catch {
       logger.error("Failed to activate audio session: \(error)")
@@ -73,8 +74,16 @@ class VolumeKeyHandler: NSObject {
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
       guard let self = self else { return }
       self.originalVolume = self.audioSession?.outputVolume ?? 0.1
-      self.referenceVolume = self.originalVolume > 0.0 ? self.originalVolume : 0.5
+      if self.originalVolume > 0.9 {
+        self.referenceVolume = 0.9
+      } else if self.originalVolume < 0.1 {
+        self.referenceVolume = 0.1
+      } else {
+        self.referenceVolume = self.originalVolume
+      }
+      logger.log("Reference volume set to \(self.referenceVolume)")
       self.previousVolume = self.referenceVolume
+      self.setSessionVolume(self.referenceVolume)
       self.setupHiddenVolumeView()
       self.audioSession?.addObserver(
         self, forKeyPath: "outputVolume", options: [.new], context: nil)
@@ -88,23 +97,18 @@ class VolumeKeyHandler: NSObject {
       return
     }
 
+    logger.log("Stopping volume key interception")
     isIntercepting = false
     audioSession?.removeObserver(self, forKeyPath: "outputVolume")
     DispatchQueue.main.async { [weak self] in
-      self?.setSystemVolume(self?.originalVolume ?? 0.1)
+      self?.setSessionVolume(self?.originalVolume ?? 0.1)
       self?.volumeView?.removeFromSuperview()
       self?.volumeView = nil
       self?.volumeSlider = nil
     }
-
-    do {
-      try audioSession?.setActive(false)
-    } catch {
-      logger.error("Failed to deactivate audio session: \(error)")
-    }
   }
 
-  private func setSystemVolume(_ volume: Float) {
+  private func setSessionVolume(_ volume: Float) {
     DispatchQueue.main.async { [weak self] in
       self?.volumeSlider?.value = volume
     }
@@ -112,14 +116,12 @@ class VolumeKeyHandler: NSObject {
 
   private func setupHiddenVolumeView() {
     assert(Thread.isMainThread, "setupHiddenVolumeView must be called on main thread")
-
     let frame = CGRect(x: -1000, y: -1000, width: 1, height: 1)
     volumeView = MPVolumeView(frame: frame)
     volumeSlider = volumeView?.subviews.first(where: { $0 is UISlider }) as? UISlider
     if let window = UIApplication.shared.windows.first {
       window.addSubview(volumeView!)
     }
-    setSystemVolume(referenceVolume)
   }
 
   override func observeValue(
@@ -128,21 +130,19 @@ class VolumeKeyHandler: NSObject {
   ) {
     if keyPath == "outputVolume", let audioSession = self.audioSession, isIntercepting {
       let currentVolume = audioSession.outputVolume
-      if currentVolume > previousVolume {
+      if currentVolume > self.previousVolume {
         DispatchQueue.main.async { [weak self] in
           self?.webView?.evaluateJavaScript(
             "window.onNativeKeyDown('VolumeUp');", completionHandler: nil)
         }
-      } else if currentVolume < previousVolume {
+      } else if currentVolume < self.previousVolume {
         DispatchQueue.main.async { [weak self] in
           self?.webView?.evaluateJavaScript(
             "window.onNativeKeyDown('VolumeDown');", completionHandler: nil)
         }
       }
-      previousVolume = currentVolume
-      DispatchQueue.main.async { [weak self] in
-        self?.setSystemVolume(self?.referenceVolume ?? 0.5)
-      }
+      self.previousVolume = currentVolume
+      self.setSessionVolume(self.referenceVolume)
     }
   }
 }
@@ -183,7 +183,6 @@ class NativeBridgePlugin: Plugin {
   }
 
   func activateVolumeKeyInterception() {
-    logger.log("Activating volume key interception")
     if volumeKeyHandler == nil {
       volumeKeyHandler = VolumeKeyHandler()
     }
@@ -323,12 +322,12 @@ class NativeBridgePlugin: Plugin {
       let args = try invoke.parseArgs(InterceptKeysRequestArgs.self)
 
       if let volumeKeys = args.volumeKeys {
-
-        DispatchQueue.main.async { [weak self] in
-          if volumeKeys {
-            self?.activateVolumeKeyInterception()
-          } else {
-            self?.volumeKeyHandler?.stopInterception()
+        if volumeKeys {
+          self.activateVolumeKeyInterception()
+        } else {
+          self.volumeKeyHandler?.stopInterception()
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.volumeKeyHandler = nil
           }
         }
       }
