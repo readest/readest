@@ -114,18 +114,6 @@ const FoliateViewer: React.FC<{
     const detail = (event as CustomEvent).detail;
     if (detail.reason !== 'scroll' && detail.reason !== 'page') return;
 
-    if (detail.reason === 'scroll') {
-      const renderer = viewRef.current?.renderer;
-      const viewSettings = getViewSettings(bookKey)!;
-      if (renderer && viewSettings.continuousScroll) {
-        if (renderer.start <= 0) {
-          viewRef.current?.prev(1);
-          // sometimes viewSize has subpixel value that the end never reaches
-        } else if (renderer.end + 1 >= renderer.viewSize) {
-          viewRef.current?.next(1);
-        }
-      }
-    }
     const parallelViews = getParallels(bookKey);
     if (parallelViews && parallelViews.size > 0) {
       parallelViews.forEach((key) => {
@@ -140,7 +128,7 @@ const FoliateViewer: React.FC<{
   };
 
   const { handlePageFlip } = usePageFlip(bookKey, viewRef, containerRef);
-  useTouchEvent(bookKey, viewRef);
+  const { onTouchStart, onTouchMove, onTouchEnd } = useTouchEvent(bookKey, viewRef);
   useClickEvent(bookKey, handlePageFlip);
 
   useFoliateEvents(viewRef.current, {
@@ -226,6 +214,9 @@ const FoliateViewer: React.FC<{
       <div
         className='foliate-viewer h-[100%] w-[100%]'
         onClick={(event) => handlePageFlip(event)}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         ref={containerRef}
       />
     </>
