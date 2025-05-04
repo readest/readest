@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -69,7 +70,7 @@ pub struct GetStatusBarHeightResponse {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSysFontsListResponse {
-    pub fonts: Vec<String>,
+    pub fonts: HashMap<String, String>,
     pub error: Option<String>,
 }
 

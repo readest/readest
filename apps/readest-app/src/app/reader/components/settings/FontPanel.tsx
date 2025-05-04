@@ -142,12 +142,26 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (isTauriAppPlatform()) {
       getSysFontsList().then((res) => {
-        if (res.error || res.fonts.length === 0) {
+        if (res.error || Object.keys(res.fonts).length === 0) {
           console.error('Failed to get system fonts list:', res.error);
           return;
         }
-        const fonts = res.fonts.filter((font) => font && !isSymbolicFontName(font));
-        setSysFonts([...new Set(fonts)].sort((a, b) => a.localeCompare(b)));
+        const processedFonts: string[] = [];
+        Object.entries(res.fonts).forEach(([fontName, fontFamily]) => {
+          if (!fontName || isSymbolicFontName(fontName)) return;
+
+          const fontsInFamily = Object.entries(res.fonts).filter(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ([_, family]) => family === fontFamily,
+          );
+
+          if (fontsInFamily.length === 1) {
+            processedFonts.push(fontFamily);
+          } else {
+            processedFonts.push(fontName);
+          }
+        });
+        setSysFonts([...new Set(processedFonts)].sort((a, b) => a.localeCompare(b)));
       });
     }
   }, []);

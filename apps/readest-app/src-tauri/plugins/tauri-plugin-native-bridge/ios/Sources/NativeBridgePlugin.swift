@@ -299,22 +299,24 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc public func get_sys_fonts_list(_ invoke: Invoke) throws {
-    var fontList: [String] = []
+    var fontDict: [String: String] = [:]
 
     for family in UIFont.familyNames.sorted() {
       if let localized = getLocalizedDisplayName(familyName: family) {
-        fontList.append(localized)
+        fontDict[family] = localized
       } else {
         let fontNames = UIFont.fontNames(forFamilyName: family)
         if fontNames.isEmpty {
-          fontList.append(family)
+          fontDict[family] = family
         } else {
-          fontList.append(contentsOf: fontNames)
+          for fontName in fontNames {
+            fontDict[fontName] = family
+          }
         }
       }
     }
 
-    invoke.resolve(["fonts": fontList])
+    invoke.resolve(["fonts": fontDict])
   }
 
   @objc public func intercept_keys(_ invoke: Invoke) {

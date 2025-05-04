@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React from 'react';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
@@ -23,6 +24,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
   onGetFontFamily,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const iconSize16 = useResponsiveSize(16);
   const allOptions = [...options, ...(moreOptions ?? [])];
   const selectedOption = allOptions.find((option) => option.option === selected) ?? allOptions[0]!;
@@ -88,7 +90,13 @@ const FontDropdown: React.FC<DropdownProps> = ({
                         <MdCheck className='text-base-content' size={iconSize16} />
                       )}
                     </span>
-                    <span style={{ fontFamily: onGetFontFamily(option.option, family ?? '') }}>
+                    <span
+                      style={
+                        !appService?.isLinuxApp
+                          ? { fontFamily: onGetFontFamily(option.option, family ?? '') }
+                          : {}
+                      }
+                    >
                       {option.label || option.option}
                     </span>
                   </div>

@@ -1,4 +1,5 @@
 use serde::de::DeserializeOwned;
+use std::collections::HashMap;
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
 
 use crate::models::*;
@@ -50,9 +51,9 @@ impl<R: Runtime> NativeBridge<R> {
 
     pub fn get_sys_fonts_list(&self) -> crate::Result<GetSysFontsListResponse> {
         let font_collection = font_enumeration::Collection::new().unwrap();
-        let mut fonts = Vec::new();
+        let mut fonts = HashMap::new();
         for font in font_collection.all() {
-            fonts.push(font.font_name.clone());
+            fonts.insert(font.font_name.clone(), font.family_name.clone());
         }
         Ok(GetSysFontsListResponse { fonts, error: None })
     }

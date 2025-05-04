@@ -296,7 +296,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     .trim()
                 fontList.add(fontName)
             }
-            ret.put("fonts", JSONArray(fontList))
+            var fontDict = JSObject()
+            for (fontName in fontList) {
+                fontDict.put(fontName, fontName)
+            }
+            ret.put("fonts", fontDict)
         } catch (e: Exception) {
             ret.put("error", e.message)
         }

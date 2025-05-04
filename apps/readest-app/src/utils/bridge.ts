@@ -39,7 +39,7 @@ export interface GetStatusBarHeightResponse {
 }
 
 export interface GetSystemFontsListResponse {
-  fonts: string[];
+  fonts: Record<string, string>; // { fontName: fontFamily }
   error?: string;
 }
 

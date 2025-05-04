@@ -48,6 +48,7 @@ export abstract class BaseAppService implements AppService {
   localBooksDir = '';
   isMobile = false;
   isMacOSApp = false;
+  isLinuxApp = false;
   isAppDataSandbox = false;
   isAndroidApp = false;
   isIOSApp = false;
