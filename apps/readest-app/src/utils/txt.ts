@@ -35,6 +35,16 @@ const zipWriteOptions = {
   lastModDate: new Date(0),
 };
 
+const escapeXml = (str: string) => {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
 export class TxtToEpubConverter {
   public async convert(options: Txt2EpubOptions): Promise<ConversionResult> {
     const { file: txtFile, author: providedAuthor, language: providedLanguage } = options;
@@ -105,6 +115,7 @@ export class TxtToEpubConverter {
     }
 
     const formatSegment = (segment: string): string => {
+      segment = escapeXml(segment);
       return segment
         .replace(/-{4,}|_{4,}/g, '\n')
         .split(/\n+/)
@@ -153,7 +164,7 @@ export class TxtToEpubConverter {
         const headTitle = isVolume ? `<h1>${title}</h1>` : `<h2>${title}</h2>`;
         const formattedSegment = formatSegment(content);
         segmentChapters.push({
-          title,
+          title: escapeXml(title),
           content: `${headTitle}<p>${formattedSegment}</p>`,
         });
       }
@@ -166,7 +177,7 @@ export class TxtToEpubConverter {
           initialContent.slice(0, 16);
         const formattedSegment = formatSegment(initialContent);
         segmentChapters.unshift({
-          title: segmentTitle,
+          title: escapeXml(segmentTitle),
           content: `<h3></h3><p>${formattedSegment}</p>`,
         });
       }
@@ -221,10 +232,10 @@ export class TxtToEpubConverter {
         <meta name="dtb:maxPageNumber" content="0" />
       </head>
       <docTitle>
-        <text>${bookTitle}</text>
+        <text>${escapeXml(bookTitle)}</text>
       </docTitle>
       <docAuthor>
-        <text>${author}</text>
+        <text>${escapeXml(author)}</text>
       </docAuthor>
       <navMap>
         ${navPoints}
@@ -285,9 +296,9 @@ export class TxtToEpubConverter {
     const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
       <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="2.0">
         <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-          <dc:title>${bookTitle}</dc:title>
+          <dc:title>${escapeXml(bookTitle)}</dc:title>
           <dc:language>${language}</dc:language>
-          <dc:creator>${author}</dc:creator>
+          <dc:creator>${escapeXml(author)}</dc:creator>
           <dc:identifier id="book-id">${identifier}</dc:identifier>
         </metadata>
         <manifest>
