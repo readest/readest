@@ -1,16 +1,45 @@
 import { useEffect } from 'react';
-import { FoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
+import { throttle } from '@/utils/throttle';
+import { ScrollSource } from './usePagination';
 
-export const useClickEvent = (bookKey: string, handlePageFlip: (msg: MessageEvent) => void) => {
+export const useMouseEvent = (
+  bookKey: string,
+  handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
+  handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
+) => {
   const { hoveredBookKey } = useReaderStore();
+  const throttledScroll = throttle(handleContinuousScroll, 500, {
+    emitLast: false,
+  });
+  const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (msg instanceof MessageEvent) {
+      if (msg.data && msg.data.bookKey === bookKey) {
+        if (msg.data.type === 'iframe-wheel') {
+          throttledScroll('mouse', -msg.data.deltaY, 0);
+        }
+        handlePageFlip(msg);
+      }
+    } else if (msg.type === 'wheel') {
+      const event = msg as React.WheelEvent<HTMLDivElement>;
+      throttledScroll('mouse', -event.deltaY, 0);
+    } else {
+      handlePageFlip(msg);
+    }
+  };
 
   useEffect(() => {
-    window.addEventListener('message', handlePageFlip);
+    window.addEventListener('message', handleMouseEvent);
     return () => {
-      window.removeEventListener('message', handlePageFlip);
+      window.removeEventListener('message', handleMouseEvent);
     };
-  }, [bookKey, hoveredBookKey, handlePageFlip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, hoveredBookKey]);
+
+  return {
+    onClick: handlePageFlip,
+    onWheel: handleMouseEvent,
+  };
 };
 
 interface IframeTouch {
@@ -26,7 +55,7 @@ interface IframeTouchEvent {
 
 export const useTouchEvent = (
   bookKey: string,
-  viewRef: React.MutableRefObject<FoliateView | null>,
+  handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
   const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
 
@@ -88,34 +117,7 @@ export const useTouchEvent = (
           setHoveredBookKey(null);
         }
       }
-      const renderer = viewRef.current?.renderer;
-      if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
-        const SCROLL_THRESHOLD = 30;
-        const doScroll = () => {
-          // may have overscroll where the start is greater than 0
-          if (renderer.start <= deltaY && deltaY > SCROLL_THRESHOLD) {
-            setTimeout(() => {
-              viewRef.current?.prev(renderer.start + 1);
-            }, 100);
-            // sometimes viewSize has subpixel value that the end never reaches
-          } else if (
-            Math.ceil(renderer.end) - deltaY >= renderer.viewSize &&
-            deltaY < -SCROLL_THRESHOLD
-          ) {
-            setTimeout(() => {
-              viewRef.current?.next(renderer.viewSize - Math.floor(renderer.end) + 1);
-            }, 100);
-          }
-        };
-        if (renderer.size >= renderer.viewSize) {
-          doScroll();
-        } else {
-          const handleRelocate = () => {
-            doScroll();
-          };
-          renderer.addEventListener('relocate', handleRelocate, { once: true });
-        }
-      }
+      handleContinuousScroll('touch', deltaY, 30);
     }
 
     touchStart = null;
@@ -140,7 +142,7 @@ export const useTouchEvent = (
       window.removeEventListener('message', handleTouch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredBookKey, viewRef.current]);
+  }, [hoveredBookKey]);
 
   return {
     onTouchStart,

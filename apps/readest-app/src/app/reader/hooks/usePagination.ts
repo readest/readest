@@ -7,7 +7,9 @@ import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 
-export const usePageFlip = (
+export type ScrollSource = 'touch' | 'mouse';
+
+export const usePagination = (
   bookKey: string,
   viewRef: React.MutableRefObject<FoliateView | null>,
   containerRef: React.RefObject<HTMLDivElement>,
@@ -16,6 +18,7 @@ export const usePageFlip = (
   const { getViewSettings } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
+
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
@@ -103,14 +106,51 @@ export const usePageFlip = (
         }
       }
     } else {
-      const { clientX } = msg;
-      const width = window.innerWidth;
-      const leftThreshold = width * 0.5;
-      const rightThreshold = width * 0.5;
-      if (clientX < leftThreshold) {
-        viewRef.current?.goLeft();
-      } else if (clientX > rightThreshold) {
-        viewRef.current?.goRight();
+      if (msg.type === 'click') {
+        const { clientX } = msg;
+        const width = window.innerWidth;
+        const leftThreshold = width * 0.5;
+        const rightThreshold = width * 0.5;
+        if (clientX < leftThreshold) {
+          viewRef.current?.goLeft();
+        } else if (clientX > rightThreshold) {
+          viewRef.current?.goRight();
+        }
+      }
+    }
+  };
+
+  const handleContinuousScroll = (mode: ScrollSource, scrollDelta: number, threshold: number) => {
+    const renderer = viewRef.current?.renderer;
+    const viewSettings = getViewSettings(bookKey)!;
+    if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
+      const doScroll = () => {
+        // may have overscroll where the start is greater than 0
+        if (renderer.start <= scrollDelta && scrollDelta > threshold) {
+          setTimeout(() => {
+            viewRef.current?.prev(renderer.start + 1);
+          }, 100);
+          // sometimes viewSize has subpixel value that the end never reaches
+        } else if (
+          Math.ceil(renderer.end) - scrollDelta >= renderer.viewSize &&
+          scrollDelta < -threshold
+        ) {
+          setTimeout(() => {
+            viewRef.current?.next(renderer.viewSize - Math.floor(renderer.end) + 1);
+          }, 100);
+        }
+      };
+      if (mode === 'mouse') {
+        // we can always get mouse wheel events
+        doScroll();
+      } else if (mode === 'touch') {
+        // when the document height is less than the viewport height, we can't get the relocate event
+        if (renderer.size >= renderer.viewSize) {
+          doScroll();
+        } else {
+          // scroll after the relocate event
+          renderer.addEventListener('relocate', () => doScroll(), { once: true });
+        }
       }
     }
   };
@@ -135,5 +175,6 @@ export const usePageFlip = (
 
   return {
     handlePageFlip,
+    handleContinuousScroll,
   };
 };

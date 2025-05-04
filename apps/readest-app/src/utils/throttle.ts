@@ -1,6 +1,11 @@
+export interface ThrottleOptions {
+  emitLast?: boolean;
+}
+
 export const throttle = <T extends (...args: Parameters<T>) => void | Promise<void>>(
   func: T,
   delay: number,
+  options: ThrottleOptions = { emitLast: true },
 ): ((...args: Parameters<T>) => void) => {
   let lastCall = 0;
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -27,7 +32,7 @@ export const throttle = <T extends (...args: Parameters<T>) => void | Promise<vo
       if (!timeout) {
         timeout = setTimeout(() => {
           timeout = null;
-          if (lastArgs) {
+          if (lastArgs && options.emitLast) {
             func(...(lastArgs as Parameters<T>));
             lastArgs = null;
           }

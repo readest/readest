@@ -5,8 +5,8 @@ import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useClickEvent, useTouchEvent } from '../hooks/useIframeEvents';
-import { usePageFlip } from '../hooks/usePageFlip';
+import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
+import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -97,6 +97,9 @@ const FoliateViewer: React.FC<{
       mountAdditionalFonts(detail.doc);
 
       if (!detail.doc.isEventListenersAdded) {
+        // listened events in iframes are posted to the main window
+        // and then used by useMouseEvent and useTouchEvent
+        // and more gesture events can be detected in the iframeEventHandlers
         detail.doc.isEventListenersAdded = true;
         detail.doc.addEventListener('keydown', handleKeydown.bind(null, bookKey));
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
@@ -127,9 +130,9 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  const { handlePageFlip } = usePageFlip(bookKey, viewRef, containerRef);
-  const { onTouchStart, onTouchMove, onTouchEnd } = useTouchEvent(bookKey, viewRef);
-  useClickEvent(bookKey, handlePageFlip);
+  const { handlePageFlip, handleContinuousScroll } = usePagination(bookKey, viewRef, containerRef);
+  const mouseHandlers = useMouseEvent(bookKey, handlePageFlip, handleContinuousScroll);
+  const touchHandlers = useTouchEvent(bookKey, handleContinuousScroll);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
@@ -212,12 +215,10 @@ const FoliateViewer: React.FC<{
   return (
     <>
       <div
-        className='foliate-viewer h-[100%] w-[100%]'
-        onClick={(event) => handlePageFlip(event)}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
         ref={containerRef}
+        className='foliate-viewer h-[100%] w-[100%]'
+        {...mouseHandlers}
+        {...touchHandlers}
       />
     </>
   );
