@@ -20,7 +20,6 @@ export const useDrag = (
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault();
       isDragging.current = true;
 
       if ('touches' in e) {

@@ -16,11 +16,23 @@ export const useTheme = ({
 }: UseThemeProps = {}) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { themeColor, isDarkMode, updateAppTheme, setStatusBarHeight } = useThemeStore();
+  const {
+    themeColor,
+    isDarkMode,
+    showSystemUI,
+    dismissSystemUI,
+    updateAppTheme,
+    setStatusBarHeight,
+  } = useThemeStore();
 
   useEffect(() => {
     updateAppTheme(appThemeColor);
     if (appService?.isMobile) {
+      if (systemUIVisible) {
+        showSystemUI();
+      } else {
+        dismissSystemUI();
+      }
       setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
     }
     if (appService?.isAndroidApp) {
