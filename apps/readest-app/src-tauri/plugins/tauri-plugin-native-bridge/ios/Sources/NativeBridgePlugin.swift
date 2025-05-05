@@ -44,6 +44,10 @@ class InterceptKeysRequestArgs: Decodable {
   let volumeKeys: Bool?
 }
 
+class LockScreenOrientationRequestArgs: Decodable {
+  let orientation: String?
+}
+
 class VolumeKeyHandler: NSObject {
   private var audioSession: AVAudioSession?
   private var originalVolume: Float = 0.0
@@ -150,6 +154,9 @@ class VolumeKeyHandler: NSObject {
 class NativeBridgePlugin: Plugin {
   private var webView: WKWebView?
   private var authSession: ASWebAuthenticationSession?
+  private var isOrientationLocked = false
+  private var currentOrientationMask: UIInterfaceOrientationMask = .all
+  private var orientationObserver: NSObjectProtocol?
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
@@ -173,6 +180,10 @@ class NativeBridgePlugin: Plugin {
   @objc func appDidBecomeActive() {
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
+    }
+
+    if orientationObserver != nil {
+      self.setupOrientationObserver()
     }
   }
 
@@ -336,6 +347,75 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve()
     } catch {
       invoke.reject(error.localizedDescription)
+    }
+  }
+
+  @objc public func lock_screen_orientation(_ invoke: Invoke) throws {
+    guard let args = try? invoke.parseArgs(LockScreenOrientationRequestArgs.self) else {
+      return invoke.reject("Invalid arguments")
+    }
+
+    DispatchQueue.main.async {
+      UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+      let orientation = args.orientation ?? "auto"
+      switch orientation.lowercased() {
+      case "portrait":
+        self.isOrientationLocked = true
+        self.currentOrientationMask = .portrait
+        self.forceOrientation(.portrait)
+        self.setupOrientationObserver()
+      case "landscape":
+        self.isOrientationLocked = true
+        self.currentOrientationMask = .landscape
+        self.forceOrientation(.landscapeRight)
+        self.setupOrientationObserver()
+      case "auto":
+        self.isOrientationLocked = false
+        self.currentOrientationMask = .all
+      default:
+        invoke.reject("Invalid orientation mode")
+        return
+      }
+
+      invoke.resolve()
+    }
+  }
+
+  private func forceOrientation(_ orientation: UIInterfaceOrientation) {
+    if #available(iOS 16.0, *) {
+      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+        let orientationMask: UIInterfaceOrientationMask =
+          orientation.isPortrait ? .portrait : .landscape
+
+        for window in windowScene.windows {
+          if let rootVC = window.rootViewController {
+            rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
+          }
+        }
+
+        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientationMask)) { error in
+          print("Orientation update error: \(error.localizedDescription)")
+        }
+      }
+    } else {
+      UIDevice.current.setValue(orientation.rawValue, forKey: "orientation")
+      UIViewController.attemptRotationToDeviceOrientation()
+    }
+  }
+
+  private func setupOrientationObserver() {
+    orientationObserver = NotificationCenter.default.addObserver(
+      forName: UIDevice.orientationDidChangeNotification,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      guard let self = self, self.isOrientationLocked else { return }
+
+      if self.currentOrientationMask == .portrait {
+        self.forceOrientation(.portrait)
+      } else if self.currentOrientationMask == .landscape {
+        self.forceOrientation(.landscapeRight)
+      }
     }
   }
 }

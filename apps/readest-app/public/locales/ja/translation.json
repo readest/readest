@@ -299,5 +299,9 @@
   "Link Color": "リンクカラー",
   "Volume Keys for Page Flip": "音量キーでページめくり",
   "Clicks for Page Flip": "タップでページめくり",
-  "Swap Clicks Area": "タップ領域を入れ替え"
+  "Swap Clicks Area": "タップ領域を入れ替え",
+  "Screen": "画面",
+  "Orientation": "向き",
+  "Portrait": "縦",
+  "Landscape": "横"
 }

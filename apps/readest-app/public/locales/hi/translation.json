@@ -299,5 +299,9 @@
   "Link Color": "लिंक रंग",
   "Volume Keys for Page Flip": "पृष्ठ फ़्लिप के लिए वॉल्यूम कुंजियाँ",
   "Clicks for Page Flip": "पृष्ठ फ़्लिप के लिए क्लिक करें",
-  "Swap Clicks Area": "क्लिक क्षेत्र स्वैप करें"
+  "Swap Clicks Area": "क्लिक क्षेत्र स्वैप करें",
+  "Screen": "स्क्रीन",
+  "Orientation": "अवयव",
+  "Portrait": "पोर्ट्रेट",
+  "Landscape": "लैंडस्केप"
 }

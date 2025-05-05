@@ -299,5 +299,9 @@
   "Link Color": "Color del enlace",
   "Volume Keys for Page Flip": "Botones de volumen para pasar página",
   "Clicks for Page Flip": "Toques para pasar página",
-  "Swap Clicks Area": "Invertir zonas de toque"
+  "Swap Clicks Area": "Invertir zonas de toque",
+  "Screen": "Pantalla",
+  "Orientation": "Orientación",
+  "Portrait": "Vertical",
+  "Landscape": "Horizontal"
 }

@@ -299,5 +299,9 @@
   "Link Color": "Linkfarbe",
   "Volume Keys for Page Flip": "Volumen-Tasten für Seitenwechsel",
   "Clicks for Page Flip": "Tippen zum Blättern",
-  "Swap Clicks Area": "Tippbereiche tauschen"
+  "Swap Clicks Area": "Tippbereiche tauschen",
+  "Screen": "Bildschirm",
+  "Orientation": "Orientierung",
+  "Portrait": "Hochformat",
+  "Landscape": "Querformat"
 }

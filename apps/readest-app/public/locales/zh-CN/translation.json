@@ -299,5 +299,9 @@
   "Link Color": "链接颜色",
   "Volume Keys for Page Flip": "音量键翻页",
   "Clicks for Page Flip": "点击翻页",
-  "Swap Clicks Area": "交换点击区域"
+  "Swap Clicks Area": "交换点击区域",
+  "Screen": "屏幕",
+  "Orientation": "屏幕方向",
+  "Portrait": "竖屏",
+  "Landscape": "横屏"
 }

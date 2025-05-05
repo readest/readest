@@ -4,6 +4,7 @@ import {
   BookSearchConfig,
   BookStyle,
   HighlightColor,
+  ScreenConfig,
   TTSConfig,
   ViewConfig,
   ViewSettings,
@@ -137,6 +138,10 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsRate: 1.3,
   ttsVoice: '',
+};
+
+export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
+  screenOrientation: 'auto',
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {

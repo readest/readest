@@ -13,6 +13,7 @@ Default permissions for the plugin
 - `allow-get-status-bar-height`
 - `allow-get-sys-fonts-list`
 - `allow-intercept-keys`
+- `allow-lock-screen-orientation`
 
 ## Permission Table
 
@@ -201,6 +202,32 @@ Enables the intercept_keys command without any pre-configured scope.
 <td>
 
 Denies the intercept_keys command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-lock-screen-orientation`
+
+</td>
+<td>
+
+Enables the lock_screen_orientation command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-lock-screen-orientation`
+
+</td>
+<td>
+
+Denies the lock_screen_orientation command without any pre-configured scope.
 
 </td>
 </tr>

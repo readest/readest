@@ -80,3 +80,9 @@ pub struct InterceptKeysRequest {
     pub volume_keys: Option<bool>,
     pub back_key: Option<bool>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LockScreenOrientationRequest {
+    pub orientation: String,
+}

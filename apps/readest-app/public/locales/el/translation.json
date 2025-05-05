@@ -299,5 +299,9 @@
   "Link Color": "Χρώμα συνδέσμου",
   "Volume Keys for Page Flip": "Πλήκτρα έντασης για ανατροπή σελίδας",
   "Clicks for Page Flip": "Κλικ για ανατροπή σελίδας",
-  "Swap Clicks Area": "Ανταλλαγή περιοχής κλικ"
+  "Swap Clicks Area": "Ανταλλαγή περιοχής κλικ",
+  "Screen": "Οθόνη",
+  "Orientation": "Προσανατολισμός",
+  "Portrait": "Πορτραίτο",
+  "Landscape": "Τοπίο"
 }

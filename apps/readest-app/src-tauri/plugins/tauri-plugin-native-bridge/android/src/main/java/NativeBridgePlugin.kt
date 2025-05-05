@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.view.WindowInsetsController
 import android.graphics.Color
 import android.webkit.WebView
+import android.content.pm.ActivityInfo
 import android.graphics.fonts.SystemFonts
 import android.graphics.fonts.Font
 import androidx.core.view.WindowCompat
@@ -54,6 +55,11 @@ class SetSystemUIVisibilityRequestArgs {
 class InterceptKeysRequestArgs {
   var volumeKeys: Boolean? = null
   var backKey: Boolean? = null
+}
+
+@InvokeArg
+class LockScreenOrientationRequestArgs {
+  var orientation: String? = null
 }
 
 interface KeyDownInterceptor {
@@ -325,5 +331,21 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             Log.e("NativeBridgePlugin", "Activity does not implement KeyDownInterceptor")
         }
         invoke.resolve()
+    }
+
+    @Command
+    fun lock_screen_orientation(invoke: Invoke) {
+      val args = invoke.parseArgs(LockScreenOrientationRequestArgs::class.java)
+      val orientation = args.orientation ?: "auto"
+      when (orientation) {
+          "portrait" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+          "landscape" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+          "auto" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+          else -> {
+              invoke.reject("Invalid orientation mode")
+              return
+          }
+      }
+      invoke.resolve()
     }
 }

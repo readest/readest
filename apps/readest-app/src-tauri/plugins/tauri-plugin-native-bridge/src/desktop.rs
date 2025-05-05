@@ -61,4 +61,11 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn intercept_keys(&self, _payload: InterceptKeysRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn lock_screen_orientation(
+        &self,
+        _payload: LockScreenOrientationRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

@@ -299,5 +299,9 @@
   "Link Color": "لون الرابط",
   "Volume Keys for Page Flip": "مفاتيح الصوت لتقليب الصفحات",
   "Clicks for Page Flip": "نقرات لتقليب الصفحات",
-  "Swap Clicks Area": "تبديل منطقة النقرات"
+  "Swap Clicks Area": "تبديل منطقة النقرات",
+  "Screen": "الشاشة",
+  "Orientation": "الاتجاه",
+  "Portrait": "العمودي",
+  "Landscape": "الأفقي"
 }

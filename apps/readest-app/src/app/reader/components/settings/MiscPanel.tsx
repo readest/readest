@@ -1,12 +1,15 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import i18n from 'i18next';
+import { IoPhoneLandscapeOutline, IoPhonePortraitOutline } from 'react-icons/io5';
+import { MdOutlineScreenRotation } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { getStyles } from '@/utils/style';
+import { lockScreenOrientation } from '@/utils/bridge';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import cssbeautify from 'cssbeautify';
@@ -28,6 +31,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll!);
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
+  const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
   const [error, setError] = useState<string | null>(null);
 
   const [inputFocusInAndroid, setInputFocusInAndroid] = useState(false);
@@ -160,6 +164,14 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isContinuousScroll]);
 
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'screenOrientation', screenOrientation, false, false);
+    if (appService?.isMobileApp) {
+      lockScreenOrientation({ orientation: screenOrientation });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenOrientation]);
+
   return (
     <div
       className={clsx(
@@ -195,6 +207,45 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 checked={animated}
                 onChange={() => setAnimated(!animated)}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Screen')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Orientation')}</span>
+              <div className='flex gap-4'>
+                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
+                  <button
+                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                    onClick={() => setScreenOrientation('auto')}
+                  >
+                    <MdOutlineScreenRotation />
+                  </button>
+                </div>
+
+                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
+                  <button
+                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
+                    onClick={() => setScreenOrientation('portrait')}
+                  >
+                    <IoPhonePortraitOutline />
+                  </button>
+                </div>
+
+                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
+                  <button
+                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
+                    onClick={() => setScreenOrientation('landscape')}
+                  >
+                    <IoPhoneLandscapeOutline />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

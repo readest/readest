@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
+import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
@@ -26,12 +27,14 @@ import {
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { transformContent } from '@/services/transformService';
+import { lockScreenOrientation } from '@/utils/bridge';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
   config: BookConfig;
 }> = ({ bookKey, bookDoc, config }) => {
+  const { appService } = useEnv();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<FoliateView | null>(null);
   const isViewCreated = useRef(false);
@@ -188,6 +191,10 @@ const FoliateViewer: React.FC<{
       const maxColumnCount = viewSettings.maxColumnCount!;
       const maxInlineSize = getMaxInlineSize(viewSettings);
       const maxBlockSize = viewSettings.maxBlockSize!;
+      const screenOrientation = viewSettings.screenOrientation!;
+      if (appService?.isMobileApp) {
+        await lockScreenOrientation({ orientation: screenOrientation });
+      }
       if (animated) {
         view.renderer.setAttribute('animated', '');
       } else {

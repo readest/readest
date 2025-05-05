@@ -101,3 +101,14 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn lock_screen_orientation(
+        &self,
+        payload: LockScreenOrientationRequest,
+    ) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("lock_screen_orientation", payload)
+            .map_err(Into::into)
+    }
+}

@@ -299,5 +299,9 @@
   "Link Color": "Цвет ссылки",
   "Volume Keys for Page Flip": "Клавиши громкости для перелистывания страниц",
   "Clicks for Page Flip": "Клики для перелистывания страниц",
-  "Swap Clicks Area": "Переключить область кликов"
+  "Swap Clicks Area": "Переключить область кликов",
+  "Screen": "Экран",
+  "Orientation": "Ориентация",
+  "Portrait": "Портрет",
+  "Landscape": "Ландшафт"
 }

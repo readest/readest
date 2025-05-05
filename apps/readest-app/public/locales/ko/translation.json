@@ -299,5 +299,9 @@
   "Link Color": "링크 색상",
   "Volume Keys for Page Flip": "페이지 넘김을 위한 볼륨 키",
   "Clicks for Page Flip": "페이지 넘김을 위한 클릭",
-  "Swap Clicks Area": "클릭 영역 교환"
+  "Swap Clicks Area": "클릭 영역 교환",
+  "Screen": "화면",
+  "Orientation": "방향",
+  "Portrait": "세로",
+  "Landscape": "가로"
 }

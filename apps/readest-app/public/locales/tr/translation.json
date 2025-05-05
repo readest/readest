@@ -299,5 +299,9 @@
   "Link Color": "Bağlantı Rengi",
   "Volume Keys for Page Flip": "Sayfa Çevirme için Ses Seviyesi Tuşları",
   "Clicks for Page Flip": "Sayfa Çevirme için Tıklamalar",
-  "Swap Clicks Area": "Tıklama Alanını Değiştir"
+  "Swap Clicks Area": "Tıklama Alanını Değiştir",
+  "Screen": "Ekran",
+  "Orientation": "Yönlendirme",
+  "Portrait": "Portre",
+  "Landscape": "Yatay"
 }

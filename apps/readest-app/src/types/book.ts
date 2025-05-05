@@ -124,7 +124,17 @@ export interface TTSConfig {
   ttsVoice: string;
 }
 
-export interface ViewSettings extends BookLayout, BookStyle, BookFont, ViewConfig, TTSConfig {}
+export interface ScreenConfig {
+  screenOrientation: 'auto' | 'portrait' | 'landscape';
+}
+
+export interface ViewSettings
+  extends BookLayout,
+    BookStyle,
+    BookFont,
+    ViewConfig,
+    TTSConfig,
+    ScreenConfig {}
 
 export interface BookProgress {
   location: string;

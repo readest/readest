@@ -299,5 +299,9 @@
   "Link Color": "Kolor linku",
   "Volume Keys for Page Flip": "Klucze głośności do przewracania stron",
   "Clicks for Page Flip": "Kliknięcia do przewracania stron",
-  "Swap Clicks Area": "Zamień obszar kliknięcia"
+  "Swap Clicks Area": "Zamień obszar kliknięcia",
+  "Screen": "Ekran",
+  "Orientation": "Orientacja",
+  "Portrait": "Portret",
+  "Landscape": "Krajobraz"
 }

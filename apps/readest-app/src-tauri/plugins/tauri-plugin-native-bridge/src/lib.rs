@@ -46,6 +46,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_status_bar_height,
             commands::get_sys_fonts_list,
             commands::intercept_keys,
+            commands::lock_screen_orientation,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

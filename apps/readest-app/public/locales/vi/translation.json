@@ -299,5 +299,9 @@
   "Link Color": "Màu liên kết",
   "Volume Keys for Page Flip": "Phím âm lượng để lật trang",
   "Clicks for Page Flip": "Nhấp để lật trang",
-  "Swap Clicks Area": "Đổi khu vực nhấp"
+  "Swap Clicks Area": "Đổi khu vực nhấp",
+  "Screen": "Màn hình",
+  "Orientation": "Định hướng",
+  "Portrait": "Chân dung",
+  "Landscape": "Phong cảnh"
 }

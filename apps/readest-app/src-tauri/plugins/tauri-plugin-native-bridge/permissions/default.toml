@@ -10,4 +10,5 @@ permissions = [
   "allow-get-status-bar-height",
   "allow-get-sys-fonts-list",
   "allow-intercept-keys",
+  "allow-lock-screen-orientation",
 ]

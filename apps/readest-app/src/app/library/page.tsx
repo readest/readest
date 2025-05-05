@@ -31,6 +31,7 @@ import { useBooksSync } from './hooks/useBooksSync';
 import { useThemeStore } from '@/store/themeStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
+import { lockScreenOrientation } from '@/utils/bridge';
 import {
   tauriHandleSetAlwaysOnTop,
   tauriHandleToggleFullScreen,
@@ -115,6 +116,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
+
+  useEffect(() => {
+    if (appService?.isMobileApp) {
+      lockScreenOrientation({ orientation: 'portrait' });
+    }
+  }, [appService]);
 
   const handleDropedFiles = async (files: File[] | string[]) => {
     if (files.length === 0) return;

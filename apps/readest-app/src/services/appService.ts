@@ -33,6 +33,7 @@ import {
   DEFAULT_SYSTEM_SETTINGS,
   DEFAULT_CJK_VIEW_SETTINGS,
   DEFAULT_MOBILE_READSETTINGS,
+  DEFAULT_SCREEN_CONFIG,
 } from './constants';
 import { getOSPlatform, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -95,6 +96,7 @@ export abstract class BaseAppService implements AppService {
         ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
         ...DEFAULT_VIEW_CONFIG,
         ...DEFAULT_TTS_CONFIG,
+        ...DEFAULT_SCREEN_CONFIG,
         ...settings.globalViewSettings,
       };
     } catch {
@@ -114,6 +116,7 @@ export abstract class BaseAppService implements AppService {
           ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
           ...DEFAULT_VIEW_CONFIG,
           ...DEFAULT_TTS_CONFIG,
+          ...DEFAULT_SCREEN_CONFIG,
         },
       } as SystemSettings;
 
