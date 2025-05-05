@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
 import { PiUserCircleCheck } from 'react-icons/pi';
@@ -17,6 +16,7 @@ import { getStoragePlanData } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { QuotaType } from '@/types/user';
+import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
 
@@ -146,14 +146,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           labelClass='!max-w-40'
           Icon={
             avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={_('User avatar')}
-                className='rounded-full'
-                referrerPolicy='no-referrer'
-                width={iconSize}
-                height={iconSize}
-              />
+              <UserAvatar url={avatarUrl} size={iconSize} DefaultIcon={PiUserCircleCheck} />
             ) : (
               PiUserCircleCheck
             )

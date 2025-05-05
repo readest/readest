@@ -2,7 +2,6 @@
 
 import clsx from 'clsx';
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { IoArrowBack } from 'react-icons/io5';
 import { PiUserCircle } from 'react-icons/pi';
@@ -20,6 +19,7 @@ import { eventDispatcher } from '@/utils/event';
 import { Toast } from '@/components/Toast';
 import WindowButtons from '@/components/WindowButtons';
 import Quota from '@/components/Quota';
+import UserAvatar from '@/components/UserAvatar';
 
 const ProfilePage = () => {
   const _ = useTranslation();
@@ -191,14 +191,12 @@ const ProfilePage = () => {
             <div className='mb-8 flex flex-col items-center gap-x-6 gap-y-4 md:flex-row md:items-start'>
               <div className='flex-shrink-0'>
                 {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt={_('User avatar')}
-                    className='border-base-100 h-16 w-16 rounded-full border-4 md:h-24 md:w-24'
-                    referrerPolicy='no-referrer'
-                    width={128}
-                    height={128}
-                    priority
+                  <UserAvatar
+                    url={avatarUrl}
+                    size={128}
+                    DefaultIcon={PiUserCircle}
+                    className='h-16 w-16 md:h-24 md:w-24'
+                    borderClassName='border-base-100 border-4'
                   />
                 ) : (
                   <PiUserCircle className='h-16 w-16 md:h-24 md:w-24' />
