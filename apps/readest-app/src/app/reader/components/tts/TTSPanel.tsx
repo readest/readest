@@ -232,7 +232,10 @@ const TTSPanel = ({
           <MdFastForward size={iconSize32} />
         </button>
         <div className='dropdown dropdown-top'>
-          <button className='flex flex-col items-center justify-center rounded-full p-1'>
+          <button
+            tabIndex={0}
+            className='flex flex-col items-center justify-center rounded-full p-1'
+          >
             <MdAlarm size={iconSize32} />
             {timeoutCountdown && (
               <span
