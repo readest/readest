@@ -223,11 +223,11 @@ const getLayoutStyles = (
   svg, img {
     background-color: transparent !important;
   }
-  p, li, blockquote, dd {
+  p:not(.poem):not(.poetry), li, blockquote, dd  {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
-    text-indent: ${vertical ? textIndent * 1.2 : textIndent}em;
+    text-indent: ${vertical ? textIndent * 1.2 : textIndent}em ${overrideLayout ? '!important' : ''};
     text-align: ${overrideLayout ? 'var(--default-text-align)' : 'inherit'};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};

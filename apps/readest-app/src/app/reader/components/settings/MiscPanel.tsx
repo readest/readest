@@ -212,44 +212,46 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         </div>
       </div>
 
-      <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Screen')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Orientation')}</span>
-              <div className='flex gap-4'>
-                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
-                  <button
-                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
-                    onClick={() => setScreenOrientation('auto')}
-                  >
-                    <MdOutlineScreenRotation />
-                  </button>
-                </div>
+      {appService?.isMobileApp && (
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Screen')}</h2>
+          <div className='card border-base-200 bg-base-100 border shadow'>
+            <div className='divide-base-200 divide-y'>
+              <div className='config-item'>
+                <span className=''>{_('Orientation')}</span>
+                <div className='flex gap-4'>
+                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
+                    <button
+                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                      onClick={() => setScreenOrientation('auto')}
+                    >
+                      <MdOutlineScreenRotation />
+                    </button>
+                  </div>
 
-                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
-                  <button
-                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
-                    onClick={() => setScreenOrientation('portrait')}
-                  >
-                    <IoPhonePortraitOutline />
-                  </button>
-                </div>
+                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
+                    <button
+                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
+                      onClick={() => setScreenOrientation('portrait')}
+                    >
+                      <IoPhonePortraitOutline />
+                    </button>
+                  </div>
 
-                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
-                  <button
-                    className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
-                    onClick={() => setScreenOrientation('landscape')}
-                  >
-                    <IoPhoneLandscapeOutline />
-                  </button>
+                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
+                    <button
+                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
+                      onClick={() => setScreenOrientation('landscape')}
+                    >
+                      <IoPhoneLandscapeOutline />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
