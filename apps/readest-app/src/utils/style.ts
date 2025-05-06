@@ -87,12 +87,12 @@ const getFontStyles = (
     body * {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
-    a:any-link {
+    a:any-link * {
       ${overrideFont ? `color: ${primary};` : ''}
     }
     /* https://github.com/whatwg/html/issues/5426 */
     @media (prefers-color-scheme: dark) {
-      a:link {
+      a:link * {
         ${overrideFont ? `color: ${primary};` : `color: lightblue;`}
       }
     }
@@ -213,7 +213,7 @@ const getLayoutStyles = (
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
-  body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(img):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
+  body.pbg, body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(img):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
     ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
   }
   body {
@@ -223,7 +223,7 @@ const getLayoutStyles = (
   svg, img {
     background-color: transparent !important;
   }
-  p:not(.poem):not(.poetry), li, blockquote, dd  {
+  p:not(.poem):not(.poetry):not(.lh):not(:has(> :is(img, video, font, b, h1, h2, h3, h4, h5, table))), li, blockquote, dd  {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -243,7 +243,7 @@ const getLayoutStyles = (
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
   }
-  li, p:has(> :is(img, video, font, h1, h2, h3, h4, h5, table)) {
+  li, p:has(> :is(img, video, font, b, h1, h2, h3, h4, h5, table)) {
     text-indent: 0 !important;
   }
   /* prevent the above from overriding the align attribute */
