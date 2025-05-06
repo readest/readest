@@ -68,6 +68,8 @@ export type WritingMode = 'auto' | 'horizontal-tb' | 'horizontal-rl' | 'vertical
 export interface BookLayout {
   marginPx: number;
   gapPercent: number;
+  compactMarginPx: number;
+  compactGapPercent: number;
   scrolled: boolean;
   disableClick: boolean;
   swapClickArea: boolean;

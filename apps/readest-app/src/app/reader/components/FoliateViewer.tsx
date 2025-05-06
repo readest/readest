@@ -192,8 +192,11 @@ const FoliateViewer: React.FC<{
       view.renderer.setStyles?.(getStyles(viewSettings));
 
       const isScrolled = viewSettings.scrolled!;
-      const marginPx = viewSettings.marginPx!;
-      const gapPercent = viewSettings.gapPercent!;
+      const showHeader = viewSettings.showHeader!;
+      const showFooter = viewSettings.showFooter!;
+      const isCompact = !showHeader && !showFooter;
+      const marginPx = isCompact ? viewSettings.compactMarginPx : viewSettings.marginPx;
+      const gapPercent = isCompact ? viewSettings.compactGapPercent : viewSettings.gapPercent;
       const animated = viewSettings.animated!;
       const maxColumnCount = viewSettings.maxColumnCount!;
       const maxInlineSize = getMaxInlineSize(viewSettings);
