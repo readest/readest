@@ -74,7 +74,14 @@ const TOCItemView: React.FC<{
         }`}
       >
         {item.subitems && (
-          <span onClick={handleToggleExpand} className='inline-block cursor-pointer'>
+          <span
+            onClick={handleToggleExpand}
+            className='inline-block cursor-pointer'
+            style={{
+              padding: '12px',
+              margin: '-12px',
+            }}
+          >
             {createExpanderIcon(isExpanded)}
           </span>
         )}
