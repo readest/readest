@@ -53,7 +53,12 @@ impl<R: Runtime> NativeBridge<R> {
         let font_collection = font_enumeration::Collection::new().unwrap();
         let mut fonts = HashMap::new();
         for font in font_collection.all() {
-            fonts.insert(font.font_name.clone(), font.family_name.clone());
+            if cfg!(target_os = "windows") {
+                // FIXME: temporarily disable font name with style for windows
+                fonts.insert(font.family_name.clone(), font.family_name.clone());
+            } else {
+                fonts.insert(font.font_name.clone(), font.family_name.clone());
+            }
         }
         Ok(GetSysFontsListResponse { fonts, error: None })
     }
