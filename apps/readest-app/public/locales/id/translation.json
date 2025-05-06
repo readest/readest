@@ -111,7 +111,6 @@
   "Unknown": "Tidak Diketahui",
   "Untitled": "Tanpa Judul",
   "Updated:": "Diperbarui:",
-  "User avatar": "Avatar Pengguna",
   "Version {{version}}": "Versi {{version}}",
   "Vertical Direction": "Arah Vertikal",
   "Welcome to your library. You can import your books here and read them anytime.": "Selamat datang di perpustakaan Anda. Anda dapat mengimpor buku-buku Anda di sini dan membacanya kapan saja.",
@@ -303,5 +302,6 @@
   "Screen": "Screen",
   "Orientation": "Orientasi",
   "Portrait": "Potret",
-  "Landscape": "Lanskap"
+  "Landscape": "Lanskap",
+  "Open Last Book on Start": "Buka Buku Terakhir saat Memulai"
 }

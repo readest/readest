@@ -111,7 +111,6 @@
   "Unknown": "غير معروف",
   "Untitled": "بدون عنوان",
   "Updated:": "تم التحديث:",
-  "User avatar": "صورة المستخدم",
   "Version {{version}}": "الإصدار {{version}}",
   "Vertical Direction": "الاتجاه العمودي",
   "Welcome to your library. You can import your books here and read them anytime.": "مرحبًا بكم في مكتبتكم. يمكنكم استيراد كتبكم هنا وقراءتها في أي وقت.",
@@ -303,5 +302,6 @@
   "Screen": "الشاشة",
   "Orientation": "الاتجاه",
   "Portrait": "العمودي",
-  "Landscape": "الأفقي"
+  "Landscape": "الأفقي",
+  "Open Last Book on Start": "فتح آخر كتاب عند البدء"
 }

@@ -77,6 +77,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }, []);
 
   useEffect(() => {
+    if (bookKeys && bookKeys.length > 0) {
+      const settings = useSettingsStore.getState().settings;
+      settings.lastOpenBooks = bookKeys.map((key) => key.split('-')[0]!);
+      saveSettings(envConfig, settings);
+    }
+
     if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
     window.addEventListener('beforeunload', handleCloseBooks);
     eventDispatcher.on('quit-app', handleCloseBooks);

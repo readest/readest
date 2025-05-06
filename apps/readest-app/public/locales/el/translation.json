@@ -111,7 +111,6 @@
   "Unknown": "Άγνωστο",
   "Untitled": "Χωρίς τίτλο",
   "Updated:": "Ενημερώθηκε:",
-  "User avatar": "Εικόνα χρήστη",
   "Version {{version}}": "Έκδοση {{version}}",
   "Vertical Direction": "Κάθετη κατεύθυνση",
   "Welcome to your library. You can import your books here and read them anytime.": "Καλώς ήρθατε στη βιβλιοθήκη σας. Μπορείτε να εισάγετε τα βιβλία σας εδώ και να τα διαβάσετε οποιαδήποτε στιγμή.",
@@ -303,5 +302,6 @@
   "Screen": "Οθόνη",
   "Orientation": "Προσανατολισμός",
   "Portrait": "Πορτραίτο",
-  "Landscape": "Τοπίο"
+  "Landscape": "Τοπίο",
+  "Open Last Book on Start": "Άνοιγμα τελευταίου βιβλίου κατά την εκκίνηση"
 }

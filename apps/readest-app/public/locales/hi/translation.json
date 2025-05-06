@@ -111,7 +111,6 @@
   "Unknown": "अज्ञात",
   "Untitled": "शीर्षकहीन",
   "Updated:": "अपडेट किया गया:",
-  "User avatar": "उपयोगकर्ता अवतार",
   "Version {{version}}": "संस्करण {{version}}",
   "Vertical Direction": "ऊर्ध्वाधर दिशा",
   "Welcome to your library. You can import your books here and read them anytime.": "आपकी लाइब्रेरी में आपका स्वागत है। आप यहां अपनी पुस्तकें आयात कर सकते हैं और कभी भी पढ़ सकते हैं।",
@@ -303,5 +302,6 @@
   "Screen": "स्क्रीन",
   "Orientation": "अवयव",
   "Portrait": "पोर्ट्रेट",
-  "Landscape": "लैंडस्केप"
+  "Landscape": "लैंडस्केप",
+  "Open Last Book on Start": "शुरू में अंतिम पुस्तक खोलें"
 }

@@ -111,7 +111,6 @@
   "Unknown": "不明",
   "Untitled": "無題",
   "Updated:": "更新日：",
-  "User avatar": "ユーザーアバター",
   "Version {{version}}": "バージョン {{version}}",
   "Vertical Direction": "縦書",
   "Welcome to your library. You can import your books here and read them anytime.": "ライブラリーへようこそ。ここに書籍をインポートして、いつでも読むことができます。",
@@ -303,5 +302,6 @@
   "Screen": "画面",
   "Orientation": "向き",
   "Portrait": "縦",
-  "Landscape": "横"
+  "Landscape": "横",
+  "Open Last Book on Start": "開始時に最後の書籍を開く"
 }

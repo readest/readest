@@ -111,7 +111,6 @@
   "Unknown": "Неизвестно",
   "Untitled": "Без названия",
   "Updated:": "Обновлено:",
-  "User avatar": "Аватар пользователя",
   "Version {{version}}": "Версия {{version}}",
   "Vertical Direction": "Вертикальное направление",
   "Welcome to your library. You can import your books here and read them anytime.": "Добро пожаловать в вашу библиотеку. Вы можете импортировать сюда книги и читать их в любое время.",
@@ -303,5 +302,6 @@
   "Screen": "Экран",
   "Orientation": "Ориентация",
   "Portrait": "Портрет",
-  "Landscape": "Ландшафт"
+  "Landscape": "Ландшафт",
+  "Open Last Book on Start": "Открыть последнюю книгу при запуске"
 }

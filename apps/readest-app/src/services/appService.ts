@@ -414,6 +414,20 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
+  async isBookAvailable(book: Book): Promise<boolean> {
+    const fp = getLocalBookFilename(book);
+    if (await this.fs.exists(fp, 'Books')) {
+      return true;
+    }
+    if (book.filePath) {
+      return await this.fs.exists(book.filePath, 'None');
+    }
+    if (book.url) {
+      return isValidURL(book.url);
+    }
+    return false;
+  }
+
   async loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent> {
     let file: File;
     const fp = getLocalBookFilename(book);

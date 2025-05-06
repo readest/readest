@@ -111,7 +111,6 @@
   "Unknown": "Không xác định",
   "Untitled": "Không có tiêu đề",
   "Updated:": "Cập nhật:",
-  "User avatar": "Ảnh đại diện",
   "Version {{version}}": "Phiên bản {{version}}",
   "Vertical Direction": "Hướng dọc",
   "Welcome to your library. You can import your books here and read them anytime.": "Chào mừng đến với thư viện của bạn. Bạn có thể nhập sách vào đây và đọc bất cứ lúc nào.",
@@ -303,5 +302,6 @@
   "Screen": "Màn hình",
   "Orientation": "Định hướng",
   "Portrait": "Chân dung",
-  "Landscape": "Phong cảnh"
+  "Landscape": "Phong cảnh",
+  "Open Last Book on Start": "Mở sách cuối cùng khi khởi động"
 }

@@ -111,7 +111,6 @@
   "Unknown": "Bilinmiyor",
   "Untitled": "Başlıksız",
   "Updated:": "Güncellendi:",
-  "User avatar": "Kullanıcı avatarı",
   "Version {{version}}": "Sürüm {{version}}",
   "Vertical Direction": "Dikey Yön",
   "Welcome to your library. You can import your books here and read them anytime.": "Kütüphanenize hoş geldiniz. Buradan kitaplarınızı içe aktarabilir ve istediğiniz zaman okuyabilirsiniz.",
@@ -303,5 +302,6 @@
   "Screen": "Ekran",
   "Orientation": "Yönlendirme",
   "Portrait": "Portre",
-  "Landscape": "Yatay"
+  "Landscape": "Yatay",
+  "Open Last Book on Start": "Açılışta Son Kitabı Aç"
 }

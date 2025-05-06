@@ -35,6 +35,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
+  const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
@@ -110,6 +111,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsScreenWakeLock(settings.screenWakeLock);
   };
 
+  const toggleOpenLastBooks = () => {
+    settings.openLastBooks = !settings.openLastBooks;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsOpenLastBooks(settings.openLastBooks);
+  };
+
   useEffect(() => {
     if (!user || !token) return;
     const storagPlan = getStoragePlanData(token);
@@ -172,6 +180,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={toggleAutoImportBooksOnOpen}
         />
       )}
+      <MenuItem
+        label={_('Open Last Book on Start')}
+        Icon={isOpenLastBooks ? MdCheck : undefined}
+        onClick={toggleOpenLastBooks}
+      />
       {appService?.hasUpdater && (
         <MenuItem
           label={_('Check Updates on Start')}

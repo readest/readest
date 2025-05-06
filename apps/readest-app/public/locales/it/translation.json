@@ -111,7 +111,6 @@
   "Unknown": "Sconosciuto",
   "Untitled": "Senza titolo",
   "Updated:": "Aggiornato:",
-  "User avatar": "Avatar utente",
   "Version {{version}}": "Versione {{version}}",
   "Vertical Direction": "Direzione verticale",
   "Welcome to your library. You can import your books here and read them anytime.": "Benvenuto nella tua biblioteca. Puoi importare i tuoi libri qui e leggerli in qualsiasi momento.",
@@ -303,5 +302,6 @@
   "Screen": "Schermo",
   "Orientation": "Orientamento",
   "Portrait": "Ritratto",
-  "Landscape": "Paesaggio"
+  "Landscape": "Paesaggio",
+  "Open Last Book on Start": "Apri ultimo libro all'avvio"
 }
