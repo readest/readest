@@ -59,27 +59,30 @@ const FoliateViewer: React.FC<{
     setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
   };
 
-  const docTransformHandler = (event: Event) => {
-    const { detail } = event as CustomEvent;
-    detail.data = Promise.resolve(detail.data)
-      .then((data) => {
-        const viewSettings = getViewSettings(bookKey);
-        if (detail.type === 'text/css') return transformStylesheet(data);
-        if (viewSettings && detail.type === 'application/xhtml+xml') {
-          const ctx = {
-            bookKey,
-            viewSettings,
-            content: data,
-            transformers: ['punctuation'],
-          };
-          return Promise.resolve(transformContent(ctx));
-        }
-        return data;
-      })
-      .catch((e) => {
-        console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
-        return '';
-      });
+  const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
+    return (event: Event) => {
+      const { detail } = event as CustomEvent;
+      detail.data = Promise.resolve(detail.data)
+        .then((data) => {
+          const viewSettings = getViewSettings(bookKey);
+          if (viewSettings && detail.type === 'text/css')
+            return transformStylesheet(viewSettings, width, height, data);
+          if (viewSettings && detail.type === 'application/xhtml+xml') {
+            const ctx = {
+              bookKey,
+              viewSettings,
+              content: data,
+              transformers: ['punctuation'],
+            };
+            return Promise.resolve(transformContent(ctx));
+          }
+          return data;
+        })
+        .catch((e) => {
+          console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
+          return '';
+        });
+    };
   };
 
   const docLoadHandler = (event: Event) => {
@@ -163,6 +166,10 @@ const FoliateViewer: React.FC<{
       document.body.append(view);
       containerRef.current?.appendChild(view);
 
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const width = containerRect?.width || window.innerWidth;
+      const height = containerRect?.height || window.innerHeight;
+
       const writingMode = viewSettings.writingMode;
       if (writingMode) {
         const settingsDir = getBookDirFromWritingMode(writingMode);
@@ -181,7 +188,7 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
-      book.transformTarget?.addEventListener('data', docTransformHandler);
+      book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
 
       const isScrolled = viewSettings.scrolled!;

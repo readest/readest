@@ -274,12 +274,16 @@ const getLayoutStyles = (
     display: none;
   }
 
+  /* Now begins really dirty hacks to fix some badly designed epubs */
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
   }
 
-  /* Now begins really dirty hacks to fix some badly designed epubs */
+  .duokan-image-single {
+    height: 100vh !important;
+  }
+
   .calibre {
     color: unset;
   }
@@ -420,10 +424,18 @@ export const mountAdditionalFonts = (document: Document) => {
   document.head.appendChild(style);
 };
 
-export const transformStylesheet = (css: string) => {
+export const transformStylesheet = (
+  viewSettings: ViewSettings,
+  width: number,
+  height: number,
+  css: string,
+) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
+  const w = width * (1 - viewSettings.gapPercent / 100);
+  const h = height - viewSettings.marginPx * 2;
   // replace absolute font sizes with rem units
+  // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
   return css
     .replace(/font-size\s*:\s*xx-small/gi, 'font-size: 0.6rem')
@@ -442,6 +454,8 @@ export const transformStylesheet = (css: string) => {
       const rem = parseFloat(pt) / fontScale / 12;
       return `font-size: ${rem}rem`;
     })
+    .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * w) / 100 + 'px')
+    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px')
     .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
