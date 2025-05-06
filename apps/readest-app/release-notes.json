@@ -1,5 +1,21 @@
 {
   "releases": {
+    "0.9.39": {
+      "date": "2025-05-07",
+      "notes": [
+        "Enhanced Navigation: Added location information to the table of contents",
+        "Enhanced Navigation: Larger touch targets for table of contents expansion icons",
+        "Screen Orientation Lock: You can now lock your device's screen orientation when reading",
+        "Quick Access to Recent Books: Option to automatically open your last read book when starting the app",
+        "Better Language Support: Improved handling of CJK characters in search",
+        "Enhanced Text-to-Speech: More accurate language detection for TTS",
+        "Enhanced Text-to-Speech: Text-to-Speech now maintains your position in scroll mode",
+        "Enhanced Annotations: Better handling of annotations with ruby elements in Japanese books",
+        "Smoother Scrolling: We've made continuous scrolling more reliable for a seamless reading experience",
+        "Compact View: Reading view is more compact when header and footer are hidden",
+        "TXT Parsing: More robust handling of TXT book format"
+      ]
+    },
     "0.9.38": {
       "date": "2025-04-29",
       "notes": [
