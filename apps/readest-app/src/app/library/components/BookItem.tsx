@@ -9,7 +9,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryViewModeType } from '@/types/settings';
 import { formatAuthors } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
-import BookCover from './BookCover';
+import BookCover from '@/components/BookCover';
 
 interface BookItemProps {
   mode: LibraryViewModeType;

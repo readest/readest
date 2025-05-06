@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { BooksGroup } from '@/types/book';
-import BookCover from './BookCover';
+import BookCover from '@/components/BookCover';
 
 interface GroupItemProps {
   group: BooksGroup;

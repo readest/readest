@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { MdDelete, MdCloudDownload, MdCloudUpload } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -17,8 +16,9 @@ import {
   formatTitle,
 } from '@/utils/book';
 import Alert from '@/components/Alert';
-import Spinner from './Spinner';
 import Dialog from './Dialog';
+import Spinner from './Spinner';
+import BookCover from './BookCover';
 
 interface BookDetailModalProps {
   book: Book;
@@ -113,29 +113,9 @@ const BookDetailModal = ({
         <div className='flex w-full select-text items-center justify-center'>
           <div className='relative w-full rounded-lg'>
             <div className='mb-6 me-4 flex h-32 items-start'>
-              <div className='book-cover relative mr-10 aspect-[28/41] h-32 items-end shadow-lg'>
-                <Image
-                  src={book.coverImageUrl!}
-                  alt={formatTitle(book.title)}
-                  fill={true}
-                  className='w-10 object-cover'
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove(
-                      'invisible',
-                    );
-                  }}
-                />
-                <div
-                  className={clsx(
-                    'invisible absolute inset-0 flex items-center justify-center p-1',
-                    'text-neutral-content rounded-none text-center font-serif text-base font-medium',
-                  )}
-                >
-                  {formatTitle(book.title)}
-                </div>
+              <div className='me-10 aspect-[28/41] h-32 shadow-lg'>
+                <BookCover mode='list' book={book} />
               </div>
-
               <div className='title-author flex h-32 flex-col justify-between'>
                 <div>
                   <p className='text-base-content mb-2 line-clamp-2 break-all text-lg font-bold'>

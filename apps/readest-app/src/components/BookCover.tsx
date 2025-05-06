@@ -12,7 +12,7 @@ interface BookCoverProps {
 
 const BookCover: React.FC<BookCoverProps> = ({ mode = 'grid', book, isPreview }) => {
   return (
-    <div className='relative flex h-full w-full'>
+    <div className={clsx('relative flex h-full w-full')}>
       <Image
         src={book.coverImageUrl!}
         alt={book.title}
