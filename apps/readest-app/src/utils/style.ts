@@ -210,6 +210,8 @@ const getLayoutStyles = (
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     text-align: var(--default-text-align);
     max-height: unset;
+  }
+  html {
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
@@ -223,7 +225,7 @@ const getLayoutStyles = (
   svg, img {
     background-color: transparent !important;
   }
-  p:not(.poem):not(.poetry):not(.lh):not(:has(> :is(img, video, font, b, h1, h2, h3, h4, h5, table))), li, blockquote, dd  {
+  p, li, blockquote, dd  {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
