@@ -123,7 +123,7 @@ const TOCView: React.FC<{
   toc: TOCItem[];
 }> = ({ bookKey, toc }) => {
   const { getProgress } = useReaderStore();
-  const { sideBarBookKey } = useSidebarStore();
+  const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const progress = getProgress(bookKey);
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -146,9 +146,6 @@ const TOCView: React.FC<{
       }
       (currentItem as HTMLElement).setAttribute('aria-current', 'page');
     }
-    if (currentHref) {
-      expandParents(toc, currentHref);
-    }
   };
 
   useEffect(() => {
@@ -165,13 +162,19 @@ const TOCView: React.FC<{
     }
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewRef]);
+  }, [viewRef.current]);
 
   useEffect(() => {
     if (!progress || eventDispatcher.dispatchSync('tts-is-speaking')) return;
+    if (sideBarBookKey !== bookKey) return;
+    if (!isSideBarVisible) return;
+    const { sectionHref: currentHref } = progress;
+    if (currentHref) {
+      expandParents(toc, currentHref);
+    }
     scrollToProgress(progress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toc, progress, sideBarBookKey]);
+  }, [toc, progress, sideBarBookKey, isSideBarVisible]);
 
   return (
     <div className='rounded pt-2'>
