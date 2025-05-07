@@ -43,7 +43,7 @@ const Dialog: React.FC<DialogProps> = ({
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
-  const [isFullHeightInMobile, setIsFullHeightInMobile] = React.useState(!snapHeight);
+  const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
@@ -62,6 +62,7 @@ const Dialog: React.FC<DialogProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setIsFullHeightInMobile(!snapHeight);
     window.addEventListener('keydown', handleKeyDown);
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception();
