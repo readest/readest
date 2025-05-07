@@ -262,6 +262,11 @@ const getLayoutStyles = (
     display: none;
   }
 
+  img {
+    height: auto;
+    width: auto;
+  }
+
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
@@ -278,10 +283,6 @@ const getLayoutStyles = (
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
-  }
-
-  .duokan-image-single {
-    height: 100vh !important;
   }
 
   .calibre {
