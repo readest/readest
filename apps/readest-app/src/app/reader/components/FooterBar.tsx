@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import { RiArrowLeftWideLine, RiArrowRightWideLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
@@ -121,6 +121,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
       }
     }
   };
+
+  useEffect(() => {
+    if (hoveredBookKey !== bookKey) {
+      setActionTab('');
+    }
+  }, [hoveredBookKey, bookKey]);
 
   const getMarginProgressValue = (marginPx: number, gapPercent: number) => {
     return (marginPx / 88 + gapPercent / 10) * 50;

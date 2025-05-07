@@ -1,5 +1,6 @@
-import React from 'react';
 import clsx from 'clsx';
+import React from 'react';
+import { useEnv } from '@/context/EnvContext';
 
 interface ButtonProps {
   icon: React.ReactNode;
@@ -18,6 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   tooltipDirection = 'top',
   className,
 }) => {
+  const { appService } = useEnv();
   return (
     <div
       className={clsx(
@@ -32,6 +34,7 @@ const Button: React.FC<ButtonProps> = ({
       <button
         className={clsx(
           'btn btn-ghost h-8 min-h-8 w-8 p-0',
+          appService?.isMobileApp && 'hover:bg-transparent',
           disabled && 'btn-disabled !bg-transparent',
           className,
         )}
