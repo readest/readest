@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.40": {
+      "date": "2025-05-08",
+      "notes": [
+        "Prevented oversized images from causing layout issues",
+        "Resolved issue with transient navigation bar on Android 9",
+        "Action bar now closes properly when the footbar is dismissed",
+        "Smoother experience when expanding Table of Contents sections",
+        "Reverted unintended style overrides"
+      ]
+    },
     "0.9.39": {
       "date": "2025-05-07",
       "notes": [
