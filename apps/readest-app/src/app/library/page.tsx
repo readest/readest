@@ -121,7 +121,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useEffect(() => {
     if (appService?.isMobileApp) {
-      lockScreenOrientation({ orientation: 'portrait' });
+      lockScreenOrientation({ orientation: 'auto' });
     }
   }, [appService]);
 
