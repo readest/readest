@@ -87,12 +87,12 @@ const getFontStyles = (
     body * {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
-    a:any-link * {
+    a:any-link, a:any-link * {
       ${overrideFont ? `color: ${primary};` : ''}
     }
     /* https://github.com/whatwg/html/issues/5426 */
     @media (prefers-color-scheme: dark) {
-      a:link * {
+      a:any-link, a:any-link * {
         ${overrideFont ? `color: ${primary};` : `color: lightblue;`}
       }
     }
