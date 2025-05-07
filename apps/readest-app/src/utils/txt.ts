@@ -95,7 +95,7 @@ export class TxtToEpubConverter {
   ): Chapter[] {
     const { language } = metadata;
     const { linesBetweenSegments } = option;
-    const segmentRegex = new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{4,}\r?\n`);
+    const segmentRegex = new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{8,}\r?\n`);
     let chapterRegex: RegExp;
     if (language === 'zh') {
       chapterRegex = new RegExp(
@@ -117,7 +117,7 @@ export class TxtToEpubConverter {
     const formatSegment = (segment: string): string => {
       segment = escapeXml(segment);
       return segment
-        .replace(/-{4,}|_{4,}/g, '\n')
+        .replace(/-{8,}|_{8,}/g, '\n')
         .split(/\n+/)
         .map((line) => line.trim())
         .filter((line) => line)
@@ -156,7 +156,7 @@ export class TxtToEpubConverter {
 
         let isVolume = false;
         if (language === 'zh') {
-          isVolume = /第[一二三四五六七八九十百千万0-9]+卷/.test(title);
+          isVolume = /第[零〇一二三四五六七八九十百千万0-9]+卷/.test(title);
         } else {
           isVolume = /\b(Part|Volume|Book)\b/i.test(title);
         }
