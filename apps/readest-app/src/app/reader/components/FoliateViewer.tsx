@@ -72,7 +72,7 @@ const FoliateViewer: React.FC<{
               bookKey,
               viewSettings,
               content: data,
-              transformers: ['punctuation'],
+              transformers: ['punctuation', 'footnote'],
             };
             return Promise.resolve(transformContent(ctx));
           }
