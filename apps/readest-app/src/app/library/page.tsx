@@ -285,16 +285,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const settings = await appService.loadSettings();
       setSettings(settings);
 
-      const libraryBooks = await appService.loadLibraryBooks();
+      // Reuse the library from the store when we return from the reader
+      const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
       if (checkOpenWithBooks) {
-        await handleOpenWithBooks(appService, libraryBooks);
+        await handleOpenWithBooks(appService, library);
       } else {
         setCheckOpenWithBooks(false);
-        setLibrary(libraryBooks);
+        setLibrary(library);
       }
 
       if (checkLastOpenBooks && settings.openLastBooks) {
-        await handleOpenLastBooks(appService, settings.lastOpenBooks, libraryBooks);
+        await handleOpenLastBooks(appService, settings.lastOpenBooks, library);
       } else {
         setCheckLastOpenBooks(false);
       }
@@ -304,14 +305,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       setLoading(false);
     };
 
-    const handleOpenWithBooks = async (appService: AppService, libraryBooks: Book[]) => {
+    const handleOpenWithBooks = async (appService: AppService, library: Book[]) => {
       const openWithFiles = (await parseOpenWithFiles()) || [];
 
       if (openWithFiles.length > 0) {
-        await processOpenWithFiles(appService, openWithFiles, libraryBooks);
+        await processOpenWithFiles(appService, openWithFiles, library);
       } else {
         setCheckOpenWithBooks(false);
-        setLibrary(libraryBooks);
+        setLibrary(library);
       }
     };
 
