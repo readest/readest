@@ -78,6 +78,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
     [key: string]: number | null;
   }>({});
+  const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -231,10 +232,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
       console.log('Opening books:', bookIds);
       if (bookIds.length > 0) {
-        setTimeout(() => {
-          navigateToReader(router, bookIds);
-        }, 0);
+        setPendingNavigationBookIds(bookIds);
+        return true;
       }
+      return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -245,21 +246,31 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     lastBookIds: string[],
     libraryBooks: Book[],
   ) => {
-    if (lastBookIds.length === 0) return;
+    if (lastBookIds.length === 0) return false;
     const bookIds: string[] = [];
     for (const bookId of lastBookIds) {
       const book = libraryBooks.find((b) => b.hash === bookId);
       if (book && (await appService.isBookAvailable(book))) {
         bookIds.push(book.hash);
       }
-      console.log('Opening last books:', bookIds);
+    }
+    console.log('Opening last books:', bookIds);
+    if (bookIds.length > 0) {
+      setPendingNavigationBookIds(bookIds);
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (pendingNavigationBookIds) {
+      const bookIds = pendingNavigationBookIds;
+      setPendingNavigationBookIds(null);
       if (bookIds.length > 0) {
-        setTimeout(() => {
-          navigateToReader(router, bookIds);
-        }, 0);
+        navigateToReader(router, bookIds);
       }
     }
-  };
+  }, [pendingNavigationBookIds, router]);
 
   useEffect(() => {
     if (isInitiating.current) return;
@@ -287,19 +298,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
       // Reuse the library from the store when we return from the reader
       const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
-      if (checkOpenWithBooks) {
-        await handleOpenWithBooks(appService, library);
-      } else {
-        setCheckOpenWithBooks(false);
-        setLibrary(library);
-      }
+      setCheckOpenWithBooks(checkOpenWithBooks && (await handleOpenWithBooks(appService, library)));
+      setCheckLastOpenBooks(
+        checkLastOpenBooks &&
+          settings.openLastBooks &&
+          (await handleOpenLastBooks(appService, settings.lastOpenBooks, library)),
+      );
 
-      if (checkLastOpenBooks && settings.openLastBooks) {
-        await handleOpenLastBooks(appService, settings.lastOpenBooks, library);
-      } else {
-        setCheckLastOpenBooks(false);
-      }
-
+      setLibrary(library);
       setLibraryLoaded(true);
       if (loadingTimeout) clearTimeout(loadingTimeout);
       setLoading(false);
@@ -309,11 +315,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const openWithFiles = (await parseOpenWithFiles()) || [];
 
       if (openWithFiles.length > 0) {
-        await processOpenWithFiles(appService, openWithFiles, library);
-      } else {
-        setCheckOpenWithBooks(false);
-        setLibrary(library);
+        return await processOpenWithFiles(appService, openWithFiles, library);
       }
+      return false;
     };
 
     initLogin();
