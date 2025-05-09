@@ -431,13 +431,17 @@ export const transformStylesheet = (
   const h = height - viewSettings.marginPx * 2;
   const ruleRegex = /([^{]+)({[^}]+})/g;
   css = css.replace(ruleRegex, (match, selector, block) => {
-    const hasTextAlignCenter = /text-align\s*:\s*center\s*;/.test(block);
+    const hasTextAlignCenter =
+      /text-align\s*:\s*center\s*;/.test(block) || /text-align\s*:\s*center\s*$/.test(block);
     const hasTextIndentZero =
       /text-indent\s*:\s*0\s*;/.test(block) || /text-indent\s*:\s*0\s*$/.test(block);
 
-    if (hasTextAlignCenter && hasTextIndentZero) {
-      const updatedBlock = block.replace(/(text-indent\s*:\s*0)(\s*;|\s*$)/g, '$1 !important$2');
-      return selector + updatedBlock;
+    if (hasTextAlignCenter) {
+      block = block.replace(/(text-align\s*:\s*center)(\s*;|\s*$)/g, '$1 !important$2');
+      if (hasTextIndentZero) {
+        block = block.replace(/(text-indent\s*:\s*0)(\s*;|\s*$)/g, '$1 !important$2');
+      }
+      return selector + block;
     }
     return match;
   });
