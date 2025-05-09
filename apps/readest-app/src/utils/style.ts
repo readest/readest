@@ -223,6 +223,8 @@ const getLayoutStyles = (
     zoom: ${zoomLevel};
   }
   svg, img {
+    height: auto;
+    width: auto;
     background-color: transparent !important;
   }
   p, li, blockquote, dd  {
@@ -230,7 +232,7 @@ const getLayoutStyles = (
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
     text-indent: ${vertical ? textIndent * 1.2 : textIndent}em ${overrideLayout ? '!important' : ''};
-    text-align: ${overrideLayout ? 'var(--default-text-align)' : 'inherit'};
+    text-align: ${justify ? 'justify' : 'inherit'} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
@@ -245,9 +247,6 @@ const getLayoutStyles = (
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
   }
-  li, p:has(> :is(img, video, font, b, h1, h2, h3, h4, h5, table)) {
-    text-indent: 0 !important;
-  }
   /* prevent the above from overriding the align attribute */
   [align="left"] { text-align: left; }
   [align="right"] { text-align: right; }
@@ -257,6 +256,8 @@ const getLayoutStyles = (
   pre {
     white-space: pre-wrap !important;
   }
+
+  .epubtype-footnote,
   aside[epub|type~="endnote"],
   aside[epub|type~="footnote"],
   aside[epub|type~="note"],
@@ -264,11 +265,7 @@ const getLayoutStyles = (
     display: none;
   }
 
-  img {
-    height: auto;
-    width: auto;
-  }
-
+  /* Now begins really dirty hacks to fix some badly designed epubs */
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
@@ -277,11 +274,6 @@ const getLayoutStyles = (
     ${vertical ? `vertical-align: unset;` : ''}
   }
 
-  aside[epub|type~="footnote"] {
-    display: none;
-  }
-
-  /* Now begins really dirty hacks to fix some badly designed epubs */
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
@@ -437,6 +429,18 @@ export const transformStylesheet = (
   const fontScale = isMobile ? 1.25 : 1;
   const w = width * (1 - viewSettings.gapPercent / 100);
   const h = height - viewSettings.marginPx * 2;
+  const ruleRegex = /([^{]+)({[^}]+})/g;
+  css = css.replace(ruleRegex, (match, selector, block) => {
+    const hasTextAlignCenter = /text-align\s*:\s*center\s*;/.test(block);
+    const hasTextIndentZero =
+      /text-indent\s*:\s*0\s*;/.test(block) || /text-indent\s*:\s*0\s*$/.test(block);
+
+    if (hasTextAlignCenter && hasTextIndentZero) {
+      const updatedBlock = block.replace(/(text-indent\s*:\s*0)(\s*;|\s*$)/g, '$1 !important$2');
+      return selector + updatedBlock;
+    }
+    return match;
+  });
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
