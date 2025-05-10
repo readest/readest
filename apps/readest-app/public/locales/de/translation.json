@@ -134,7 +134,7 @@
   "Book downloaded: {{title}}": "Buch heruntergeladen: {{title}}",
   "Failed to download book: {{title}}": "Fehler beim Herunterladen des Buches: {{title}}",
   "Upload Book": "Buch hochladen",
-  "Auto Upload Books to Cloud": "Bücher automatisch in die Cloud hochladen",
+  "Auto Upload Books to Cloud": "Bücher automatisch hochladen",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% des Cloud-Speichers verwendet.",
   "Storage": "Speicher",
   "Book deleted: {{title}}": "Buch gelöscht: {{title}}",
@@ -305,5 +305,7 @@
   "Landscape": "Querformat",
   "Open Last Book on Start": "Letztes Buch beim Start öffnen",
   "Checking for updates...": "Auf Updates prüfen...",
-  "Error checking for updates": "Fehler beim Überprüfen auf Updates"
+  "Error checking for updates": "Fehler beim Überprüfen auf Updates",
+  "Details": "Details",
+  "Cancel Selection": "Auswahl abbrechen"
 }

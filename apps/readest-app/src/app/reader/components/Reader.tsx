@@ -94,7 +94,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, []);
 
   useEffect(() => {
-    if (!appService?.isMobile) return;
+    if (!appService?.isMobileApp) return;
     const systemUIVisible = !!hoveredBookKey;
     setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
     if (systemUIVisible) {

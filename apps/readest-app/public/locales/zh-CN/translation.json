@@ -305,5 +305,7 @@
   "Landscape": "横屏",
   "Open Last Book on Start": "启动时打开上次阅读的书籍",
   "Checking for updates...": "检查更新中...",
-  "Error checking for updates": "检查更新时出错"
+  "Error checking for updates": "检查更新时出错",
+  "Details": "详情",
+  "Cancel Selection": "取消选择"
 }

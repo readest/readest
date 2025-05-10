@@ -305,5 +305,7 @@
   "Landscape": "Krajobraz",
   "Open Last Book on Start": "Otwórz ostatnią książkę przy starcie",
   "Checking for updates...": "Sprawdzanie aktualizacji...",
-  "Error checking for updates": "Błąd podczas sprawdzania aktualizacji"
+  "Error checking for updates": "Błąd podczas sprawdzania aktualizacji",
+  "Details": "Szczegóły",
+  "Cancel Selection": "Anuluj zaznaczenie"
 }

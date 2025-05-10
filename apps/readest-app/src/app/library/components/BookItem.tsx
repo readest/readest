@@ -100,7 +100,7 @@ const BookItem: React.FC<BookItemProps> = ({
             {transferProgress !== null ? (
               transferProgress === 100 ? null : (
                 <div
-                  className='radial-progress opacity-0 group-hover:opacity-100'
+                  className='radial-progress sm:opacity-0 sm:group-hover:opacity-100'
                   style={
                     {
                       '--value': transferProgress,
@@ -113,7 +113,7 @@ const BookItem: React.FC<BookItemProps> = ({
               )
             ) : (
               <button
-                className='show-detail-button opacity-0 group-hover:opacity-100'
+                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
                 onPointerDown={(e) => stopEvent(e)}
                 onPointerUp={(e) => stopEvent(e)}
                 onPointerMove={(e) => stopEvent(e)}
@@ -133,17 +133,19 @@ const BookItem: React.FC<BookItemProps> = ({
                 )}
               </button>
             )}
-            <button
-              className='show-detail-button opacity-0 group-hover:opacity-100'
-              onPointerDown={(e) => stopEvent(e)}
-              onPointerUp={(e) => stopEvent(e)}
-              onPointerMove={(e) => stopEvent(e)}
-              onPointerCancel={(e) => stopEvent(e)}
-              onPointerLeave={(e) => stopEvent(e)}
-              onClick={() => showBookDetailsModal(book)}
-            >
-              <CiCircleMore size={iconSize15} />
-            </button>
+            {!appService?.isMobile && (
+              <button
+                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
+                onPointerDown={(e) => stopEvent(e)}
+                onPointerUp={(e) => stopEvent(e)}
+                onPointerMove={(e) => stopEvent(e)}
+                onPointerCancel={(e) => stopEvent(e)}
+                onPointerLeave={(e) => stopEvent(e)}
+                onClick={() => showBookDetailsModal(book)}
+              >
+                <CiCircleMore size={iconSize15} />
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { MdDelete, MdOpenInNew, MdOutlineCancel } from 'react-icons/md';
+import { MdDelete, MdOpenInNew, MdOutlineCancel, MdInfoOutline } from 'react-icons/md';
 import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
@@ -162,6 +162,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     navigateToReader(router, selectedBooks);
   };
 
+  const openBookDetails = () => {
+    const book = libraryBooks.find((book) => book.hash === selectedBooks[0]);
+    if (book) {
+      handleShowDetailsBook(book);
+    }
+  };
+
   const confirmDelete = async () => {
     selectedBooks.forEach((id) => {
       for (const book of libraryBooks.filter((book) => book.hash === id || book.groupId === id)) {
@@ -290,14 +297,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <div
             className={clsx(
               'flex items-center justify-center shadow-lg',
-              'text-base-content bg-base-300 text-sm',
+              'bg-gray-600 text-xs text-white',
               'mx-auto w-fit space-x-6 rounded-lg p-4',
             )}
           >
             <button
               onClick={openSelectedBooks}
               className={clsx(
-                'flex flex-col items-center justify-center',
+                'flex flex-col items-center justify-center gap-1',
                 (!selectedBooks.length || !selectedBooks.every((id) => isMd5(id))) &&
                   'btn-disabled opacity-50',
               )}
@@ -308,7 +315,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             <button
               onClick={groupSelectedBooks}
               className={clsx(
-                'flex flex-col items-center justify-center',
+                'flex flex-col items-center justify-center gap-1',
                 !selectedBooks.length && 'btn-disabled opacity-50',
               )}
             >
@@ -316,22 +323,35 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               <div>{_('Group')}</div>
             </button>
             <button
+              onClick={openBookDetails}
+              className={clsx(
+                'flex flex-col items-center justify-center gap-1',
+                (selectedBooks.length !== 1 || !selectedBooks.every((id) => isMd5(id))) &&
+                  'btn-disabled opacity-50',
+              )}
+            >
+              <MdInfoOutline />
+              <div>{_('Details')}</div>
+            </button>
+            <button
               onClick={deleteSelectedBooks}
               className={clsx(
-                'flex flex-col items-center justify-center',
+                'flex flex-col items-center justify-center gap-1',
                 !selectedBooks.length && 'btn-disabled opacity-50',
               )}
             >
               <MdDelete className='fill-red-500' />
               <div className='text-red-500'>{_('Delete')}</div>
             </button>
-            <button
-              onClick={() => handleSetSelectMode(false)}
-              className={clsx('flex flex-col items-center justify-center')}
-            >
-              <MdOutlineCancel />
-              <div>{_('Cancel')}</div>
-            </button>
+            {!appService?.isMobile && (
+              <button
+                onClick={() => handleSetSelectMode(false)}
+                className={clsx('flex flex-col items-center justify-center gap-1')}
+              >
+                <MdOutlineCancel />
+                <div>{_('Cancel')}</div>
+              </button>
+            )}
           </div>
         )}
       </div>

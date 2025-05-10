@@ -174,22 +174,21 @@ const Dialog: React.FC<DialogProps> = ({
             appService?.hasSafeAreaInset && isFullHeightInMobile
               ? `max(env(safe-area-inset-top), ${systemUIVisible ? statusBarHeight : 0}px)`
               : '0px',
-          height: snapHeight ? `${snapHeight * 100}%` : '100%',
-          bottom: 0,
+          ...(appService?.isMobile
+            ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 }
+            : {}),
         }}
       >
-        {window.innerWidth < 640 && (
-          <div
-            className={clsx(
-              'drag-handle flex h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center',
-              'transition-padding-top duration-300 ease-out',
-            )}
-            onMouseDown={handleDragStart}
-            onTouchStart={handleDragStart}
-          >
-            <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
-          </div>
-        )}
+        <div
+          className={clsx(
+            'drag-handle h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center',
+            'transition-padding-top flex duration-300 ease-out sm:hidden',
+          )}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+        >
+          <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
+        </div>
         <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-4'>
           {header ? (
             header

@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
@@ -142,7 +143,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <div
       tabIndex={0}
-      className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
+      className={clsx(
+        'settings-menu dropdown-content no-triangle border-base-100',
+        'z-20 mt-2 max-w-[90vw] shadow-2xl',
+      )}
     >
       {user ? (
         <MenuItem

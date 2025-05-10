@@ -27,7 +27,7 @@ export const useTheme = ({
 
   useEffect(() => {
     updateAppTheme(appThemeColor);
-    if (appService?.isMobile) {
+    if (appService?.isMobileApp) {
       if (systemUIVisible) {
         showSystemUI();
       } else {

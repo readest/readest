@@ -142,7 +142,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   setSearchQuery('');
                   throttledUpdateQueryParam('');
                 }}
-                className='text-gray-400 hover:text-gray-600'
+                className='pe-1 text-gray-400 hover:text-gray-600'
                 aria-label={_('Clear Search')}
               >
                 <IoMdCloseCircle className='h-4 w-4' />
@@ -150,7 +150,10 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             )}
             <span className='bg-base-content/50 mx-2 h-4 w-[0.5px]'></span>
             <Dropdown
-              className='exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center'
+              className={clsx(
+                'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
+                appService?.isMobile ? 'dropdown-end' : 'dropdown-center',
+              )}
               buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
               toggleButton={
                 <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import Books')}>
@@ -160,47 +163,61 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             >
               <ImportMenu onImportBooks={onImportBooks} />
             </Dropdown>
-            <button
-              onClick={onToggleSelectMode}
-              aria-label={_('Select Multiple Books')}
-              className='h-6'
-            >
-              <div
-                className='lg:tooltip lg:tooltip-bottom cursor-pointer'
-                data-tip={_('Select Books')}
+            {appService?.isMobile ? null : (
+              <button
+                onClick={onToggleSelectMode}
+                aria-label={_('Select Multiple Books')}
+                className='h-6'
               >
-                <PiSelectionAllDuotone
-                  role='button'
-                  className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}
-                />
-              </div>
-            </button>
+                <div
+                  className='lg:tooltip lg:tooltip-bottom cursor-pointer'
+                  data-tip={_('Select Books')}
+                >
+                  <PiSelectionAllDuotone
+                    role='button'
+                    className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}
+                  />
+                </div>
+              </button>
+            )}
           </div>
         </div>
-        <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
-          <Dropdown
-            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<PiDotsThreeCircle size={iconSize18} />}
-          >
-            <SortMenu />
-          </Dropdown>
-          <Dropdown
-            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<MdOutlineMenu size={iconSize18} />}
-          >
-            <SettingsMenu />
-          </Dropdown>
-          {appService?.hasWindowBar && (
-            <WindowButtons
-              headerRef={headerRef}
-              showMinimize={windowButtonVisible}
-              showMaximize={windowButtonVisible}
-              showClose={windowButtonVisible}
-            />
-          )}
-        </div>
+        {appService?.isMobile && isSelectMode ? (
+          <div className='w-max-[72px] w-min-[72px] flex h-full items-center'>
+            <button
+              onClick={onToggleSelectMode}
+              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0'
+              aria-label={_('Cancel Selection')}
+            >
+              {_('Cancel')}
+            </button>
+          </div>
+        ) : (
+          <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
+            <Dropdown
+              className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+              toggleButton={<PiDotsThreeCircle size={iconSize18} />}
+            >
+              <SortMenu />
+            </Dropdown>
+            <Dropdown
+              className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+              toggleButton={<MdOutlineMenu size={iconSize18} />}
+            >
+              <SettingsMenu />
+            </Dropdown>
+            {appService?.hasWindowBar && (
+              <WindowButtons
+                headerRef={headerRef}
+                showMinimize={windowButtonVisible}
+                showMaximize={windowButtonVisible}
+                showClose={windowButtonVisible}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

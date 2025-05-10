@@ -78,8 +78,8 @@ export default function AuthPage() {
   useTheme({ systemUIVisible: false });
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
-    if (process.env.NODE_ENV === 'production' || appService?.isMobile || USE_APPLE_SIGN_IN) {
-      if (appService?.isMobile) {
+    if (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN) {
+      if (appService?.isMobileApp) {
         return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
       }
       return DEEPLINK_CALLBACK;
@@ -172,7 +172,7 @@ export default function AuthPage() {
 
   const startTauriOAuth = async () => {
     try {
-      if (process.env.NODE_ENV === 'production' || appService?.isMobile || USE_APPLE_SIGN_IN) {
+      if (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const currentWindow = getCurrentWindow();
         currentWindow.listen('single-instance', ({ event, payload }) => {
