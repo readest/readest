@@ -167,19 +167,16 @@ const Dialog: React.FC<DialogProps> = ({
           window.innerWidth < window.innerHeight
             ? 'sm:h-[50%] sm:w-3/4'
             : 'sm:h-[65%] sm:w-1/2 sm:max-w-[600px]',
-          appService?.hasSafeAreaInset &&
-            isFullHeightInMobile &&
-            'pt-[env(safe-area-inset-top)] sm:pt-0',
           boxClassName,
         )}
-        style={
-          snapHeight
-            ? {
-                height: `${snapHeight * 100}%`,
-                bottom: 0,
-              }
-            : {}
-        }
+        style={{
+          paddingTop:
+            appService?.hasSafeAreaInset && isFullHeightInMobile
+              ? `max(env(safe-area-inset-top), ${systemUIVisible ? statusBarHeight : 0}px)`
+              : '0px',
+          height: snapHeight ? `${snapHeight * 100}%` : '100%',
+          bottom: 0,
+        }}
       >
         {window.innerWidth < 640 && (
           <div
@@ -187,12 +184,6 @@ const Dialog: React.FC<DialogProps> = ({
               'drag-handle flex h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center',
               'transition-padding-top duration-300 ease-out',
             )}
-            style={{
-              paddingTop:
-                appService?.isAndroidApp && systemUIVisible && isFullHeightInMobile
-                  ? statusBarHeight
-                  : 0,
-            }}
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
           >
