@@ -50,7 +50,6 @@
   "Highlight": "Επισήμανση",
   "Horizontal Direction": "Οριζόντια κατεύθυνση",
   "Hyphenation": "Συλλαβισμός",
-  "Identifier:": "Αναγνωριστικό:",
   "Import Books": "Εισαγωγή βιβλίων",
   "Language:": "Γλώσσα:",
   "Layout": "Διάταξη",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Έλεγχος για ενημερώσεις...",
   "Error checking for updates": "Σφάλμα κατά τον έλεγχο για ενημερώσεις",
   "Details": "Πληρ.",
-  "Cancel Selection": "Ακύρωση επιλογής"
+  "Cancel Selection": "Ακύρωση επιλογής",
+  "File Size:": "Μέγεθος αρχείου:"
 }

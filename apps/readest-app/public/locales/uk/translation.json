@@ -50,7 +50,6 @@
   "Highlight": "Виділення",
   "Horizontal Direction": "Горизонтальний напрямок",
   "Hyphenation": "Перенесення слів",
-  "Identifier:": "Ідентифікатор:",
   "Import Books": "Імпортувати книги",
   "Language:": "Мова:",
   "Layout": "Макет",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Перевірка наявності оновлень...",
   "Error checking for updates": "Помилка перевірки наявності оновлень",
   "Details": "Деталі",
-  "Cancel Selection": "Скасувати вибір"
+  "Cancel Selection": "Скасувати вибір",
+  "File Size:": "Розмір файлу:"
 }

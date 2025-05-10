@@ -50,7 +50,6 @@
   "Highlight": "Đánh dấu",
   "Horizontal Direction": "Hướng ngang",
   "Hyphenation": "Gạch nối từ",
-  "Identifier:": "Định danh:",
   "Import Books": "Nhập sách",
   "Language:": "Ngôn ngữ:",
   "Layout": "Bố cục",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Đang kiểm tra cập nhật...",
   "Error checking for updates": "Lỗi khi kiểm tra cập nhật",
   "Details": "Chi tiết",
-  "Cancel Selection": "Hủy chọn"
+  "Cancel Selection": "Hủy chọn",
+  "File Size:": "Kích thước tệp:"
 }

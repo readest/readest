@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
   formatAuthors,
   formatDate,
+  formatFileSize,
   formatLanguage,
   formatPublisher,
   formatSubject,
@@ -41,6 +42,7 @@ const BookDetailModal = ({
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
 
@@ -50,7 +52,9 @@ const BookDetailModal = ({
       const appService = await envConfig.getAppService();
       try {
         const details = await appService.fetchBookDetails(book, settings);
+        const size = await appService.getBookFileSize(book);
         setBookMeta(details);
+        setFileSize(size);
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
         setLoading(false);
@@ -174,12 +178,6 @@ const BookDetailModal = ({
                   </p>
                 </div>
                 <div className='overflow-hidden'>
-                  <span className='font-bold'>{_('Identifier:')}</span>
-                  <p className='text-neutral-content line-clamp-1 text-sm'>
-                    {bookMeta.identifier || 'N/A'}
-                  </p>
-                </div>
-                <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Subjects:')}</span>
                   <p className='text-neutral-content line-clamp-1 text-sm'>
                     {formatSubject(bookMeta.subject) || _('Unknown')}
@@ -189,6 +187,12 @@ const BookDetailModal = ({
                   <span className='font-bold'>{_('Format:')}</span>
                   <p className='text-neutral-content line-clamp-1 text-sm'>
                     {book.format || _('Unknown')}
+                  </p>
+                </div>
+                <div className='overflow-hidden'>
+                  <span className='font-bold'>{_('File Size:')}</span>
+                  <p className='text-neutral-content line-clamp-1 text-sm'>
+                    {formatFileSize(fileSize) || _('Unknown')}
                   </p>
                 </div>
               </div>

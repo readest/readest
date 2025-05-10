@@ -47,6 +47,7 @@ export const getBaseFilename = (filename: string) => {
   const baseName = normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || '';
   return baseName;
 };
+
 export const INIT_BOOK_CONFIG: BookConfig = {
   updatedAt: 0,
 };
@@ -139,6 +140,18 @@ export const formatDate = (date: string | number | Date | null | undefined) => {
 export const formatSubject = (subject: string | string[] | undefined) => {
   if (!subject) return '';
   return Array.isArray(subject) ? subject.join(', ') : subject;
+};
+
+export const formatFileSize = (size: number | null) => {
+  if (size === null) return '';
+  const formatter = new Intl.NumberFormat('en', {
+    style: 'unit',
+    unit: 'byte',
+    unitDisplay: 'narrow',
+    notation: 'compact',
+    compactDisplay: 'short',
+  });
+  return formatter.format(size);
 };
 
 export const getCurrentPage = (book: Book, progress: BookProgress) => {

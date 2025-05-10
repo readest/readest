@@ -50,7 +50,6 @@
   "Highlight": "划线",
   "Horizontal Direction": "横排",
   "Hyphenation": "断字",
-  "Identifier:": "识别码",
   "Import Books": "导入书籍",
   "Language:": "语言",
   "Layout": "布局",
@@ -307,5 +306,6 @@
   "Checking for updates...": "检查更新中...",
   "Error checking for updates": "检查更新时出错",
   "Details": "详情",
-  "Cancel Selection": "取消选择"
+  "Cancel Selection": "取消选择",
+  "File Size:": "文件大小"
 }

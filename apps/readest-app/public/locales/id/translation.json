@@ -50,7 +50,6 @@
   "Highlight": "Sorot",
   "Horizontal Direction": "Arah Horizontal",
   "Hyphenation": "Pemenggalan Kata",
-  "Identifier:": "Pengenal:",
   "Import Books": "Impor Buku",
   "Language:": "Bahasa:",
   "Layout": "Tata Letak",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Memeriksa pembaruan...",
   "Error checking for updates": "Kesalahan saat memeriksa pembaruan",
   "Details": "Detail",
-  "Cancel Selection": "Batalkan Pilihan"
+  "Cancel Selection": "Batalkan Pilihan",
+  "File Size:": "Ukuran File:"
 }

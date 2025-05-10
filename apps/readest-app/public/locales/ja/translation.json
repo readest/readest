@@ -50,7 +50,6 @@
   "Highlight": "ハイライト",
   "Horizontal Direction": "横書",
   "Hyphenation": "ハイフネーション",
-  "Identifier:": "識別子：",
   "Import Books": "書籍をインポート",
   "Language:": "言語：",
   "Layout": "レイアウト",
@@ -307,5 +306,6 @@
   "Checking for updates...": "更新を確認中...",
   "Error checking for updates": "更新の確認中にエラーが発生しました",
   "Details": "詳細",
-  "Cancel Selection": "選択をキャンセル"
+  "Cancel Selection": "選択をキャンセル",
+  "File Size:": "ファイルサイズ："
 }

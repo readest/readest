@@ -50,7 +50,6 @@
   "Highlight": "Hervorheben",
   "Horizontal Direction": "Horizontale Richtung",
   "Hyphenation": "Silbentrennung",
-  "Identifier:": "Kennung:",
   "Import Books": "Bücher importieren",
   "Language:": "Sprache:",
   "Layout": "Layout",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Auf Updates prüfen...",
   "Error checking for updates": "Fehler beim Überprüfen auf Updates",
   "Details": "Details",
-  "Cancel Selection": "Auswahl abbrechen"
+  "Cancel Selection": "Auswahl abbrechen",
+  "File Size:": "Dateigröße:"
 }

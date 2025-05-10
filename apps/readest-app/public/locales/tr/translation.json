@@ -50,7 +50,6 @@
   "Highlight": "Vurgula",
   "Horizontal Direction": "Yatay Yön",
   "Hyphenation": "Heceleme",
-  "Identifier:": "Tanımlayıcı:",
   "Import Books": "Kitapları İçe Aktar",
   "Language:": "Dil:",
   "Layout": "Düzen",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Yenilikler kontrol ediliyor...",
   "Error checking for updates": "Güncellemeleri kontrol ederken hata oluştu",
   "Details": "Detaylar",
-  "Cancel Selection": "Işaretlemeyi İptal Et"
+  "Cancel Selection": "Işaretlemeyi İptal Et",
+  "File Size:": "Dosya Boyutu:"
 }

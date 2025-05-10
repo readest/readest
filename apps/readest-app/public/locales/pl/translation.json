@@ -50,7 +50,6 @@
   "Highlight": "Zaznacz",
   "Horizontal Direction": "Kierunek poziomy",
   "Hyphenation": "Dzielenie wyrazów",
-  "Identifier:": "Identyfikator:",
   "Import Books": "Importuj książki",
   "Language:": "Język:",
   "Layout": "Układ",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Sprawdzanie aktualizacji...",
   "Error checking for updates": "Błąd podczas sprawdzania aktualizacji",
   "Details": "Szczegóły",
-  "Cancel Selection": "Anuluj zaznaczenie"
+  "Cancel Selection": "Anuluj zaznaczenie",
+  "File Size:": "Rozmiar pliku:"
 }

@@ -58,6 +58,7 @@ export interface AppService {
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
   downloadBook(book: Book, onlyCover?: boolean, onProgress?: ProgressHandler): Promise<void>;
   isBookAvailable(book: Book): Promise<boolean>;
+  getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
   fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookDoc['metadata']>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;

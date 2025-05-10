@@ -50,7 +50,6 @@
   "Highlight": "Выделить",
   "Horizontal Direction": "Горизонтальное направление",
   "Hyphenation": "Перенос слов",
-  "Identifier:": "Идентификатор:",
   "Import Books": "Импорт книг",
   "Language:": "Язык:",
   "Layout": "Макет",
@@ -307,5 +306,6 @@
   "Checking for updates...": "Проверка обновлений...",
   "Error checking for updates": "Ошибка при проверке обновлений",
   "Details": "Инфо",
-  "Cancel Selection": "Отменить выбор"
+  "Cancel Selection": "Отменить выбор",
+  "File Size:": "Размер файла:"
 }

@@ -50,7 +50,6 @@
   "Highlight": "تمييز",
   "Horizontal Direction": "الاتجاه الأفقي",
   "Hyphenation": "الواصلة",
-  "Identifier:": "المعرف:",
   "Import Books": "استيراد الكتب",
   "Language:": "اللغة:",
   "Layout": "التخطيط",
@@ -307,5 +306,6 @@
   "Checking for updates...": "جارٍ التحقق من التحديثات...",
   "Error checking for updates": "خطأ في التحقق من التحديثات",
   "Details": "التفاصيل",
-  "Cancel Selection": "إلغاء التحديد"
+  "Cancel Selection": "إلغاء التحديد",
+  "File Size:": "حجم الملف:"
 }

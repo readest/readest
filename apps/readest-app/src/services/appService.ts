@@ -428,6 +428,20 @@ export abstract class BaseAppService implements AppService {
     return false;
   }
 
+  async getBookFileSize(book: Book): Promise<number | null> {
+    const fp = getLocalBookFilename(book);
+    if (await this.fs.exists(fp, 'Books')) {
+      const file = await this.fs.openFile(fp, 'Books');
+      const size = file.size;
+      const f = file as ClosableFile;
+      if (f && f.close) {
+        await f.close();
+      }
+      return size;
+    }
+    return null;
+  }
+
   async loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent> {
     let file: File;
     const fp = getLocalBookFilename(book);

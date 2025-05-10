@@ -50,7 +50,6 @@
   "Highlight": "हाइलाइट",
   "Horizontal Direction": "क्षैतिज दिशा",
   "Hyphenation": "हाइफ़नेशन",
-  "Identifier:": "पहचानकर्ता:",
   "Import Books": "पुस्तकें आयात करें",
   "Language:": "भाषा:",
   "Layout": "लेआउट",
@@ -307,5 +306,6 @@
   "Checking for updates...": "अपडेट की जांच कर रहा है...",
   "Error checking for updates": "अपडेट की जांच करते समय त्रुटि",
   "Details": "विवरण",
-  "Cancel Selection": "चयन रद्द करें"
+  "Cancel Selection": "चयन रद्द करें",
+  "File Size:": "फ़ाइल आकार:"
 }

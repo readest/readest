@@ -50,7 +50,6 @@
   "Highlight": "하이라이트",
   "Horizontal Direction": "수평 방향",
   "Hyphenation": "하이픈 넣기",
-  "Identifier:": "식별자:",
   "Import Books": "책 가져오기",
   "Language:": "언어:",
   "Layout": "레이아웃",
@@ -307,5 +306,6 @@
   "Checking for updates...": "업데이트 확인 중...",
   "Error checking for updates": "업데이트 확인 중 오류 발생",
   "Details": "세부정보",
-  "Cancel Selection": "선택 취소"
+  "Cancel Selection": "선택 취소",
+  "File Size:": "파일 크기:"
 }
