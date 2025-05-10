@@ -303,5 +303,7 @@
   "Orientation": "Προσανατολισμός",
   "Portrait": "Πορτραίτο",
   "Landscape": "Τοπίο",
-  "Open Last Book on Start": "Άνοιγμα τελευταίου βιβλίου κατά την εκκίνηση"
+  "Open Last Book on Start": "Άνοιγμα τελευταίου βιβλίου κατά την εκκίνηση",
+  "Checking for updates...": "Έλεγχος για ενημερώσεις...",
+  "Error checking for updates": "Σφάλμα κατά τον έλεγχο για ενημερώσεις"
 }

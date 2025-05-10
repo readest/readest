@@ -303,5 +303,7 @@
   "Orientation": "Orientierung",
   "Portrait": "Hochformat",
   "Landscape": "Querformat",
-  "Open Last Book on Start": "Letztes Buch beim Start öffnen"
+  "Open Last Book on Start": "Letztes Buch beim Start öffnen",
+  "Checking for updates...": "Auf Updates prüfen...",
+  "Error checking for updates": "Fehler beim Überprüfen auf Updates"
 }

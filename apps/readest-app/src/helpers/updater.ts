@@ -47,7 +47,7 @@ export const checkForAppUpdates = async (
     return !!update;
   } else if (OS_TYPE === 'android') {
     try {
-      const response = await fetch(READEST_UPDATER_FILE);
+      const response = await fetch(READEST_UPDATER_FILE, { connectTimeout: 5000 });
       const data = await response.json();
       const isNewer = semver.gt(data.version, packageJson.version);
       if (isNewer && ('android-arm64' in data.platforms || 'android-universal' in data.platforms)) {
@@ -56,7 +56,7 @@ export const checkForAppUpdates = async (
       return isNewer;
     } catch (err) {
       console.warn('Failed to fetch Android update info', err);
-      return false;
+      throw new Error('Failed to fetch Android update info');
     }
   }
 

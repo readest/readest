@@ -303,5 +303,7 @@
   "Orientation": "Định hướng",
   "Portrait": "Chân dung",
   "Landscape": "Phong cảnh",
-  "Open Last Book on Start": "Mở sách cuối cùng khi khởi động"
+  "Open Last Book on Start": "Mở sách cuối cùng khi khởi động",
+  "Checking for updates...": "Đang kiểm tra cập nhật...",
+  "Error checking for updates": "Lỗi khi kiểm tra cập nhật"
 }

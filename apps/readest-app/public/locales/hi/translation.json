@@ -303,5 +303,7 @@
   "Orientation": "अवयव",
   "Portrait": "पोर्ट्रेट",
   "Landscape": "लैंडस्केप",
-  "Open Last Book on Start": "शुरू में अंतिम पुस्तक खोलें"
+  "Open Last Book on Start": "शुरू में अंतिम पुस्तक खोलें",
+  "Checking for updates...": "अपडेट की जांच कर रहा है...",
+  "Error checking for updates": "अपडेट की जांच करते समय त्रुटि"
 }

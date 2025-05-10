@@ -303,5 +303,7 @@
   "Orientation": "Yönlendirme",
   "Portrait": "Portre",
   "Landscape": "Yatay",
-  "Open Last Book on Start": "Açılışta Son Kitabı Aç"
+  "Open Last Book on Start": "Açılışta Son Kitabı Aç",
+  "Checking for updates...": "Yenilikler kontrol ediliyor...",
+  "Error checking for updates": "Güncellemeleri kontrol ederken hata oluştu"
 }

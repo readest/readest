@@ -303,5 +303,7 @@
   "Orientation": "向き",
   "Portrait": "縦",
   "Landscape": "横",
-  "Open Last Book on Start": "開始時に最後の書籍を開く"
+  "Open Last Book on Start": "開始時に最後の書籍を開く",
+  "Checking for updates...": "更新を確認中...",
+  "Error checking for updates": "更新の確認中にエラーが発生しました"
 }

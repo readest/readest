@@ -18,10 +18,12 @@ export const setAboutDialogVisible = (visible: boolean) => {
   }
 };
 
+type UpdateStatus = 'checking' | 'updating' | 'updated' | 'error';
+
 export const AboutWindow = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const [isUpdated, setIsUpdated] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [browserInfo, setBrowserInfo] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,12 +48,23 @@ export const AboutWindow = () => {
   }, []);
 
   const handleCheckUpdate = async () => {
-    const update = await checkForAppUpdates(_, false);
-    if (update) {
-      setIsOpen(false);
-    } else {
-      setIsUpdated(true);
+    setUpdateStatus('checking');
+    try {
+      const update = await checkForAppUpdates(_, false);
+      if (update) {
+        setIsOpen(false);
+      } else {
+        setUpdateStatus('updated');
+      }
+    } catch (error) {
+      console.info('Error checking for updates:', error);
+      setUpdateStatus('error');
     }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setUpdateStatus(null);
   };
 
   return (
@@ -59,7 +72,7 @@ export const AboutWindow = () => {
       id='about_window'
       isOpen={isOpen}
       title={_('About Readest')}
-      onClose={() => setIsOpen(false)}
+      onClose={handleClose}
       boxClassName='sm:!w-96 sm:h-auto'
     >
       <div className='about-content flex h-full flex-col items-center justify-center'>
@@ -74,13 +87,22 @@ export const AboutWindow = () => {
             </p>
           </div>
           <div className='h-5'>
-            {appService?.hasUpdater && !isUpdated && (
-              <span className='badge badge-primary mt-2 cursor-pointer' onClick={handleCheckUpdate}>
+            {appService?.hasUpdater && !updateStatus && (
+              <span
+                className='badge badge-primary mt-2 cursor-pointer p-1'
+                onClick={handleCheckUpdate}
+              >
                 {_('Check Update')}
               </span>
             )}
-            {isUpdated && (
+            {updateStatus === 'updated' && (
               <p className='text-neutral-content mt-2 text-xs'>{_('Already the latest version')}</p>
+            )}
+            {updateStatus === 'checking' && (
+              <p className='text-neutral-content mt-2 text-xs'>{_('Checking for updates...')}</p>
+            )}
+            {updateStatus === 'error' && (
+              <p className='text-error mt-2 text-xs'>{_('Error checking for updates')}</p>
             )}
           </div>
         </div>

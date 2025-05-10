@@ -303,5 +303,7 @@
   "Orientation": "Orientation",
   "Portrait": "Portrait",
   "Landscape": "Paysage",
-  "Open Last Book on Start": "Ouvrir le dernier livre au démarrage"
+  "Open Last Book on Start": "Ouvrir le dernier livre au démarrage",
+  "Checking for updates...": "Vérification des mises à jour...",
+  "Error checking for updates": "Erreur lors de la vérification des mises à jour"
 }

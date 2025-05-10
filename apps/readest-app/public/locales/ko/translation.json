@@ -303,5 +303,7 @@
   "Orientation": "방향",
   "Portrait": "세로",
   "Landscape": "가로",
-  "Open Last Book on Start": "시작 시 마지막 책 열기"
+  "Open Last Book on Start": "시작 시 마지막 책 열기",
+  "Checking for updates...": "업데이트 확인 중...",
+  "Error checking for updates": "업데이트 확인 중 오류 발생"
 }

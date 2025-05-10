@@ -303,5 +303,7 @@
   "Orientation": "Орієнтація",
   "Portrait": "Портрет",
   "Landscape": "Ландшафт",
-  "Open Last Book on Start": "Відкрити останню книгу при запуску"
+  "Open Last Book on Start": "Відкрити останню книгу при запуску",
+  "Checking for updates...": "Перевірка наявності оновлень...",
+  "Error checking for updates": "Помилка перевірки наявності оновлень"
 }

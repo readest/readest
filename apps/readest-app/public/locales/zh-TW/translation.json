@@ -303,5 +303,7 @@
   "Orientation": "螢幕方向",
   "Portrait": "豎屏",
   "Landscape": "橫屏",
-  "Open Last Book on Start": "啟動時打開上次閱讀的書籍"
+  "Open Last Book on Start": "啟動時打開上次閱讀的書籍",
+  "Checking for updates...": "檢查更新中...",
+  "Error checking for updates": "檢查更新時出錯"
 }

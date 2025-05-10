@@ -303,5 +303,7 @@
   "Orientation": "الاتجاه",
   "Portrait": "العمودي",
   "Landscape": "الأفقي",
-  "Open Last Book on Start": "فتح آخر كتاب عند البدء"
+  "Open Last Book on Start": "فتح آخر كتاب عند البدء",
+  "Checking for updates...": "جارٍ التحقق من التحديثات...",
+  "Error checking for updates": "خطأ في التحقق من التحديثات"
 }
