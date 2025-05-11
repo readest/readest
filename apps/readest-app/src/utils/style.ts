@@ -216,7 +216,7 @@ const getLayoutStyles = (
     background: var(--background-set, none);
   }
   body.pbg, body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(img):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
-    ${bg === '#ffffff' ? '' : `background-color: ${bg} !important;`}
+    ${isDarkMode ? `background-color: ${bg} !important;` : ''}
   }
   body {
     overflow: unset;
