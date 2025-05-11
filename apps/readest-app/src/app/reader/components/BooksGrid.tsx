@@ -18,6 +18,7 @@ import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import DoubleBorder from './DoubleBorder';
+import TTSControl from './tts/TTSControl';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -42,7 +43,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
 
   return (
     <div
-      className={clsx('grid h-full flex-grow')}
+      className={clsx('relative grid h-full flex-grow')}
       style={{
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,
@@ -161,6 +162,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
           </div>
         );
       })}
+      <TTSControl />
     </div>
   );
 };

@@ -38,6 +38,7 @@ const TTSControl = () => {
   const [timeoutTimestamp, setTimeoutTimestamp] = useState(0);
   const [timeoutFunc, setTimeoutFunc] = useState<ReturnType<typeof setTimeout> | null>(null);
 
+  const viewSettings = getViewSettings(bookKey);
   const popupPadding = useResponsiveSize(POPUP_PADDING);
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
@@ -286,16 +287,18 @@ const TTSControl = () => {
   const updatePanelPosition = () => {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect();
-      const windowRect = document.documentElement.getBoundingClientRect();
+      const parentRect =
+        iconRef.current.parentElement?.getBoundingClientRect() ||
+        document.documentElement.getBoundingClientRect();
 
       const trianglePos = {
         dir: 'up',
-        point: { x: rect.left + rect.width / 2, y: rect.top - 12 },
+        point: { x: rect.left + rect.width / 2 - parentRect.left, y: rect.top - 12 },
       } as Position;
 
       const popupPos = getPopupPosition(
         trianglePos,
-        windowRect,
+        parentRect,
         popupWidth,
         popupHeight,
         popupPadding,
@@ -315,8 +318,23 @@ const TTSControl = () => {
     setShowPanel(false);
   };
 
+  useEffect(() => {
+    if (!iconRef.current || !showPanel) return;
+    const parentElement = iconRef.current.parentElement;
+    if (!parentElement) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      updatePanelPosition();
+    });
+    resizeObserver.observe(parentElement);
+    return () => {
+      resizeObserver.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPanel]);
+
   return (
-    <div>
+    <>
       {showPanel && (
         <div
           className='fixed inset-0'
@@ -328,7 +346,8 @@ const TTSControl = () => {
         <div
           ref={iconRef}
           className={clsx(
-            'fixed right-6 h-12 w-12',
+            'absolute h-12 w-12',
+            viewSettings?.rtl ? 'left-6' : 'right-6',
             appService?.hasSafeAreaInset
               ? 'bottom-[calc(env(safe-area-inset-bottom)+70px)]'
               : 'bottom-[70px] sm:bottom-14',
@@ -343,7 +362,7 @@ const TTSControl = () => {
           height={popupHeight}
           position={panelPosition}
           trianglePosition={trianglePosition}
-          className='bg-base-200 absolute flex shadow-lg'
+          className='bg-base-200 flex shadow-lg'
         >
           <TTSPanel
             bookKey={bookKey}
@@ -362,7 +381,7 @@ const TTSControl = () => {
           />
         </Popup>
       )}
-    </div>
+    </>
   );
 };
 

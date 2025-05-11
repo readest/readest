@@ -16,11 +16,11 @@ const NotebookHeader: React.FC<{
   const iconSize14 = useResponsiveSize(14);
   return (
     <div className='notebook-header relative flex h-11 items-center px-3' dir='ltr'>
-      <div className='absolute inset-0 flex items-center justify-center space-x-2'>
+      <div className='absolute inset-0 z-[-1] flex items-center justify-center space-x-2'>
         <LuNotebookPen />
         <div className='notebook-title hidden text-sm font-medium sm:flex'>{_('Notebook')}</div>
       </div>
-      <div className='z-10 flex items-center gap-x-4'>
+      <div className='flex w-full items-center gap-x-4'>
         <button
           onClick={handleTogglePin}
           className={clsx(
@@ -36,6 +36,8 @@ const NotebookHeader: React.FC<{
         >
           <MdArrowBackIosNew />
         </button>
+      </div>
+      <div className='flex items-center justify-end gap-x-4'>
         <button className='btn btn-ghost left-0 h-8 min-h-8 w-8 p-0'>
           <FiSearch />
         </button>
