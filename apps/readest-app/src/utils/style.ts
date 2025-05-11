@@ -448,7 +448,7 @@ export const transformStylesheet = (
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
-  return css
+  css = css
     .replace(/font-size\s*:\s*xx-small/gi, 'font-size: 0.6rem')
     .replace(/font-size\s*:\s*x-small/gi, 'font-size: 0.75rem')
     .replace(/font-size\s*:\s*small/gi, 'font-size: 0.875rem')
@@ -466,8 +466,13 @@ export const transformStylesheet = (
       return `font-size: ${rem}rem`;
     })
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * w) / 100 + 'px')
-    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px')
-    .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
-    .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
-    .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
+    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px');
+
+  if (viewSettings.overrideFont) {
+    css = css
+      .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
+      .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
+      .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
+  }
+  return css;
 };
