@@ -355,7 +355,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
       when (orientation) {
           "portrait" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
           "landscape" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-          "auto" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+          "auto" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
           else -> {
               invoke.reject("Invalid orientation mode")
               return
