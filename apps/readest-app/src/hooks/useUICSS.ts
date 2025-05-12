@@ -1,9 +1,11 @@
-import { ViewSettings } from '@/types/book';
 import { useEffect, useState } from 'react';
+import { useReaderStore } from '@/store/readerStore';
 
 // This hook allows you to inject custom CSS into the reader UI.
 // Note that the book content is rendered in an iframe, so UI CSS won't affect book rendering.
-export const useUICSS = (bookKey: string, viewSettings: ViewSettings) => {
+export const useUICSS = (bookKey: string) => {
+  const { getViewSettings } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey);
   const [styleElement, setStyleElement] = useState<HTMLStyleElement | null>(null);
 
   useEffect(() => {

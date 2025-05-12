@@ -42,7 +42,6 @@ const FoliateViewer: React.FC<{
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { themeCode, isDarkMode } = useThemeStore();
-  const viewSettings = getViewSettings(bookKey)!;
 
   const [toastMessage, setToastMessage] = useState('');
   useEffect(() => {
@@ -50,7 +49,7 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  useUICSS(bookKey, viewSettings);
+  useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
 
@@ -170,6 +169,7 @@ const FoliateViewer: React.FC<{
       const width = containerRect?.width || window.innerWidth;
       const height = containerRect?.height || window.innerHeight;
 
+      const viewSettings = getViewSettings(bookKey)!;
       const writingMode = viewSettings.writingMode;
       if (writingMode) {
         const settingsDir = getBookDirFromWritingMode(writingMode);

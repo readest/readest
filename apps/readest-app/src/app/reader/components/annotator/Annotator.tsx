@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
@@ -22,16 +22,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
-import {
-  getPopupPosition,
-  getPosition,
-  getTextFromRange,
-  Position,
-  TextSelection,
-} from '@/utils/sel';
+import { useTextSelector } from '../../hooks/useTextSelector';
+import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
-import { transformContent } from '@/services/transformService';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -54,15 +48,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const bookData = getBookData(bookKey)!;
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
-  const primaryLang = bookData.book?.primaryLanguage || 'en';
 
-  const isShowingPopup = useRef(false);
-  const isTextSelected = useRef(false);
-  const isUpToShowPopup = useRef(false);
-  const isTouchstarted = useRef(false);
-  const selectionStartRef = useRef<number | null>(null);
-  const selectionAnchorRef = useRef<{ node: Node; offset: number } | null>(null);
-  const [selection, setSelection] = useState<TextSelection | null>();
+  const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
   const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
@@ -91,137 +78,41 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
+  const handleDismissPopup = () => {
+    setSelection(null);
+    setShowAnnotPopup(false);
+    setShowWiktionaryPopup(false);
+    setShowWikipediaPopup(false);
+    setShowDeepLPopup(false);
+  };
+
+  const handleDismissPopupAndSelection = () => {
+    handleDismissPopup();
+    view?.deselect();
+  };
+
+  const {
+    handleScroll,
+    handlePointerup,
+    handleSelectionchange,
+    handleAnnotPopup,
+    handleShowAnnotation,
+  } = useTextSelector(bookKey, setSelection, handleDismissPopup);
+
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { doc, index } = detail;
 
-    const isValidSelection = (sel: Selection) => {
-      return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
-    };
-    const transformCtx = {
-      bookKey,
-      viewSettings: getViewSettings(bookKey)!,
-      content: '',
-      transformers: ['punctuation'],
-      reversePunctuationTransform: true,
-    };
-    const getAnnotationText = (range: Range) => {
-      return getTextFromRange(range, primaryLang.startsWith('ja') ? ['rt'] : []);
-    };
-    const makeSelection = async (sel: Selection, rebuildRange = false) => {
-      isTextSelected.current = true;
-      const range = sel.getRangeAt(0);
-      if (rebuildRange) {
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-      transformCtx['content'] = getAnnotationText(range);
-      setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
-    };
-    // FIXME: extremely hacky way to dismiss system selection tools on iOS
-    const makeSelectionOnIOS = async (sel: Selection) => {
-      isTextSelected.current = true;
-      const range = sel.getRangeAt(0);
-      setTimeout(() => {
-        sel.removeAllRanges();
-        setTimeout(async () => {
-          if (!isTextSelected.current) return;
-          sel.addRange(range);
-          transformCtx['content'] = getAnnotationText(range);
-          setSelection({ key: bookKey, text: await transformContent(transformCtx), range, index });
-        }, 40);
-      }, 0);
-    };
-    const handleSelectstart = () => {
-      selectionAnchorRef.current = null;
-    };
-    const handleSelectionchange = () => {
-      // Available on iOS, Android and Desktop, fired when the selection is changed
-      // Ideally the popup only shows when the selection is done,
-      // but on Android no proper events are fired to notify selection done or I didn't find it,
-      // we make the popup show when the selection is changed
-      if (osPlatform === 'ios' || appService?.isIOSApp) return;
-
-      const sel = doc.getSelection();
-      if (isValidSelection(sel)) {
-        if (osPlatform === 'android' && isTouchstarted.current) {
-          if (!selectionAnchorRef.current) {
-            const range = sel.getRangeAt(0);
-            selectionAnchorRef.current = {
-              node: range.startContainer,
-              offset: range.startOffset,
-            };
-          }
-          if (selectionAnchorRef.current) {
-            const currentRange = sel.getRangeAt(0);
-            if (
-              currentRange.startContainer !== selectionAnchorRef.current.node ||
-              currentRange.startOffset !== selectionAnchorRef.current.offset
-            ) {
-              const newRange = doc.createRange();
-              newRange.setStart(selectionAnchorRef.current.node, selectionAnchorRef.current.offset);
-              newRange.setEnd(currentRange.endContainer, currentRange.endOffset);
-
-              sel.removeAllRanges();
-              sel.addRange(newRange);
-            }
-          }
-          makeSelection(sel, false);
-        }
-      } else if (!isUpToShowPopup.current) {
-        isTextSelected.current = false;
-        setShowAnnotPopup(false);
-        setShowWiktionaryPopup(false);
-        setShowWikipediaPopup(false);
-        setShowDeepLPopup(false);
-      }
-    };
-    const handlePointerup = () => {
-      // Available on iOS and Desktop, fired when release the long press
-      // Note that on Android, pointerup event is fired after an additional touch event
-      const sel = doc.getSelection();
-      if (isValidSelection(sel)) {
-        if (osPlatform === 'ios' || appService?.isIOSApp) {
-          makeSelectionOnIOS(sel);
-        } else {
-          makeSelection(sel, true);
-        }
-      }
-    };
-    const handleTouchstart = () => {
-      // Available on iOS and Android for the initial touch event
-      isTouchstarted.current = true;
-    };
     const handleTouchmove = () => {
       // Available on iOS, on Android not fired
       // To make the popup not to follow the selection
       setShowAnnotPopup(false);
     };
-    const handleTouchend = () => {
-      // Available on iOS, on Android fired after an additional touch event
-      isTouchstarted.current = false;
-    };
-    const handleScroll = () => {
-      // Prevent the container from scrolling when text is selected in paginated mode
-      // This is a workaround for the issue #873
-      // TODO: support text selection across pages
-      if (
-        !viewSettings?.scrolled &&
-        isTextSelected.current &&
-        view?.renderer?.containerPosition &&
-        selectionStartRef.current
-      ) {
-        view.renderer.containerPosition = selectionStartRef.current;
-      }
-    };
     if (bookData.book?.format !== 'PDF') {
       view?.renderer?.addEventListener('scroll', handleScroll);
-      detail.doc?.addEventListener('pointerup', handlePointerup);
-      detail.doc?.addEventListener('touchstart', handleTouchstart);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
-      detail.doc?.addEventListener('touchend', handleTouchend);
-      detail.doc?.addEventListener('selectstart', handleSelectstart);
-      detail.doc?.addEventListener('selectionchange', handleSelectionchange);
+      detail.doc?.addEventListener('pointerup', () => handlePointerup(doc, index));
+      detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
 
       // Disable the default context menu on mobile devices,
       // although it should but doesn't work on iOS
@@ -269,60 +160,22 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const annotation = annotations.find((annotation) => annotation.cfi === cfi);
     if (!annotation) return;
     const selection = { key: bookKey, annotated: true, text: annotation.text ?? '', range, index };
-    isUpToShowPopup.current = true;
     setSelectedStyle(annotation.style!);
     setSelectedColor(annotation.color!);
     setSelection(selection);
+    handleShowAnnotation();
   };
 
   useFoliateEvents(view, { onLoad, onDrawAnnotation, onShowAnnotation });
 
-  const handleDismissPopup = () => {
-    setSelection(null);
-    setShowAnnotPopup(false);
-    setShowWiktionaryPopup(false);
-    setShowWikipediaPopup(false);
-    setShowDeepLPopup(false);
-    isShowingPopup.current = false;
-  };
-
-  const handleDismissPopupAndSelection = () => {
-    handleDismissPopup();
-    view?.deselect();
-    isTextSelected.current = false;
-  };
-
   useEffect(() => {
-    if (isTextSelected.current && !selectionStartRef.current) {
-      selectionStartRef.current = view?.renderer?.start || null;
-    } else if (!isTextSelected.current) {
-      selectionStartRef.current = null;
-      selectionAnchorRef.current = null;
-    }
+    handleAnnotPopup(showAnnotPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTextSelected.current]);
+  }, [showAnnotPopup]);
 
   useEffect(() => {
-    const handleSingleClick = (): boolean => {
-      if (isUpToShowPopup.current) {
-        isUpToShowPopup.current = false;
-        return true;
-      }
-      if (isTextSelected.current) {
-        handleDismissPopupAndSelection();
-        return true;
-      }
-      if (showAnnotPopup || isShowingPopup.current) {
-        handleDismissPopup();
-        return true;
-      }
-      return false;
-    };
-
-    eventDispatcher.onSync('iframe-single-click', handleSingleClick);
     eventDispatcher.on('export-annotations', handleExportMarkdown);
     return () => {
-      eventDispatcher.offSync('iframe-single-click', handleSingleClick);
       eventDispatcher.off('export-annotations', handleExportMarkdown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,7 +195,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
         popupPadding,
       );
-      if (isTextSelected.current && annotPopupPos.dir === 'down' && osPlatform === 'android') {
+      if (annotPopupPos.dir === 'down' && osPlatform === 'android') {
         triangPos.point.y += androidSelectionHandlerHeight;
         annotPopupPos.point.y += androidSelectionHandlerHeight;
       }
@@ -366,7 +219,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setDictPopupPosition(dictPopupPos);
       setTranslatorPopupPosition(transPopupPos);
       setTrianglePosition(triangPos);
-      isShowingPopup.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection, bookKey]);
