@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.9.41": {
+      "date": "2025-05-13",
+      "notes": [
+        "Improved UI and layout on mobile devices",
+        "Avatar images are now cached for offline use",
+        "Book file size is now displayed in the book details view",
+        "Update status is now correctly shown in the About window",
+        "TTS control positioning improved for notebook and RTL modes",
+        "TXT files are segmented by paragraph count if no chapter titles are found",
+        "Android: App now respects system auto-rotation settings",
+        "Linux: Updater is disabled on Linux when not using AppImage",
+        "Linux: Added support for Linux ARMHF builds",
+        "CSS: Resolved layout and color issues caused by hardcoded CSS"
+      ]
+    },
     "0.9.40": {
       "date": "2025-05-08",
       "notes": [
