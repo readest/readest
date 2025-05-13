@@ -67,6 +67,11 @@ jobs:
             release: linux
             arch: aarch64
             rust_target: aarch64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            release: linux
+            arch: armhf
+            rust_target: armv7-unknown-linux-gnueabihf
+            args: '--target armv7-unknown-linux-gnueabihf'
           - os: macos-latest
             release: macos
             arch: aarch64
