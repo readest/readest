@@ -7,6 +7,8 @@
     "tauri": "pnpm --filter @readest/readest-app tauri"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.9.1",
     "@sindresorhus/tsconfig": "^6.0.0",
     "eslint": "^9",
     "eslint-config-prettier": "^9.1.0",

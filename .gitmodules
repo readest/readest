@@ -3,4 +3,4 @@
 	url = https://github.com/readest/foliate-js.git
 [submodule "packages/tauri"]
 	path = packages/tauri
-	url = https://github.com/tauri-apps/tauri.git
+	url = https://github.com/readest/tauri.git
