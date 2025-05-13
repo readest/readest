@@ -191,9 +191,8 @@ pub fn run() {
 
                 let app_handle = app.handle().clone();
                 app.listen("window-ready", move |_| {
-                    app_handle
-                        .get_webview_window("main")
-                        .unwrap()
+                    let webview = app_handle.get_webview_window("main").unwrap();
+                    webview
                         .eval("window.__READEST_CLI_ACCESS = true;")
                         .expect("Failed to set cli access config");
 
@@ -203,6 +202,19 @@ pub fn run() {
                         <= tauri_plugin_os::Version::from_string("10.0.19045")
                     {
                         set_rounded_window(&app_handle, false);
+                    }
+                    #[cfg(target_os = "linux")]
+                    {
+                        let is_appimage = std::env::var("APPIMAGE").is_ok()
+                            || std::env::current_exe()
+                                .map(|path| path.to_string_lossy().contains("/tmp/.mount_"))
+                                .unwrap_or(false);
+
+                        let script =
+                            format!("window.__READEST_UPDATER_DISABLED = {};", !is_appimage);
+                        webview
+                            .eval(&script)
+                            .expect("Failed to set updater disabled config");
                     }
                 });
             }

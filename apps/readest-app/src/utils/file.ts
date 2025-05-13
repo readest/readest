@@ -187,11 +187,11 @@ export class NativeFile extends File implements ClosableFile {
     return new DeferredBlob(dataPromise, contentType);
   }
 
-  override stream(): ReadableStream<Uint8Array> {
+  override stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
     const CHUNK_SIZE = 1024 * 1024;
     let offset = 0;
 
-    return new ReadableStream<Uint8Array>({
+    return new ReadableStream<Uint8Array<ArrayBuffer>>({
       pull: async (controller) => {
         if (!this.#handle) {
           controller.error(new Error('File handle is not open'));

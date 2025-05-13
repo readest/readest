@@ -30,6 +30,7 @@ import { LOCAL_BOOKS_SUBDIR } from './constants';
 declare global {
   interface Window {
     IS_ROUNDED?: boolean;
+    __READEST_UPDATER_DISABLED?: boolean;
   }
 }
 
@@ -222,7 +223,10 @@ export class NativeAppService extends BaseAppService {
   override hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  override hasUpdater = OS_TYPE !== 'ios' && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'];
+  override hasUpdater =
+    OS_TYPE !== 'ios' &&
+    !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
+    !window.__READEST_UPDATER_DISABLED;
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

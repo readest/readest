@@ -135,7 +135,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const isWebApp = isWebAppPlatform();
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
@@ -184,11 +183,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={toggleAutoImportBooksOnOpen}
         />
       )}
-      <MenuItem
-        label={_('Open Last Book on Start')}
-        Icon={isOpenLastBooks ? MdCheck : undefined}
-        onClick={toggleOpenLastBooks}
-      />
+      {isTauriAppPlatform() && (
+        <MenuItem
+          label={_('Open Last Book on Start')}
+          Icon={isOpenLastBooks ? MdCheck : undefined}
+          onClick={toggleOpenLastBooks}
+        />
+      )}
       {appService?.hasUpdater && (
         <MenuItem
           label={_('Check Updates on Start')}
@@ -212,7 +213,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
-      {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
+      {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
     </div>
   );
