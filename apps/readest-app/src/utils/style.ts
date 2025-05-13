@@ -227,7 +227,7 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
-  p, li, blockquote, dd  {
+  p, div, li, blockquote, dd  {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -241,7 +241,7 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
-  p {
+  p, div {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}

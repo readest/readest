@@ -75,7 +75,10 @@ const Slider: React.FC<SliderProps> = ({
         <div
           className='bg-base-300 absolute h-full rounded-full'
           style={{
-            width: percentage > 0 ? `calc(${percentage}% + ${heightPx / 2}px)` : '0px',
+            width:
+              percentage > 0
+                ? `max(calc(${percentage}% + ${heightPx / 2}px), ${heightPx}px)`
+                : '0px',
             [isRtl ? 'right' : 'left']: 0,
           }}
         ></div>
@@ -94,7 +97,7 @@ const Slider: React.FC<SliderProps> = ({
           }}
         >
           <div
-            className={`bg-base-200 flex h-full items-center justify-center rounded-full text-sm shadow-md ${bubbleClassName}`}
+            className={`bg-base-200 flex h-full items-center justify-center rounded-full text-xs shadow-md ${bubbleClassName}`}
             style={{ width: `${heightPx}px` }}
           >
             {bubbleElement || bubbleLabel}
