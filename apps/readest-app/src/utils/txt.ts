@@ -21,6 +21,7 @@ interface Txt2EpubOptions {
 
 interface ExtractChapterOptions {
   linesBetweenSegments: number;
+  paragraphsPerChapter?: number;
 }
 
 interface ConversionResult {
@@ -78,6 +79,12 @@ export class TxtToEpubConverter {
         break;
       }
     }
+    if (chapters.length === 1) {
+      chapters = this.extractChapters(txtContent, metadata, {
+        linesBetweenSegments: 4,
+        paragraphsPerChapter: 100,
+      });
+    }
 
     const blob = await this.createEpub(chapters, metadata);
     return {
@@ -94,7 +101,7 @@ export class TxtToEpubConverter {
     option: ExtractChapterOptions,
   ): Chapter[] {
     const { language } = metadata;
-    const { linesBetweenSegments } = option;
+    const { linesBetweenSegments, paragraphsPerChapter } = option;
     const segmentRegex = new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{8,}\r?\n`);
     let chapterRegex: RegExp;
     if (language === 'zh') {
@@ -111,7 +118,7 @@ export class TxtToEpubConverter {
       );
     } else {
       chapterRegex =
-        /(?:^|\n|\s)(Chapter [0-9]+(?:[: ][^\n]*)?(?!\S)|Part [0-9]+(?:[: ][^\n]*)?(?!\S)|Prologue(?:[: ][^\n]*)?(?!\S)|Introduction(?:[: ][^\n]*)?(?!\S))/g;
+        /(?:^|\n|\s)(?:(Chapter|Part)\s+(\d+|[IVXLCDM]+)(?:[:.\-–—]?\s+[^\n]*)?|(?:Prologue|Epilogue|Introduction|Foreword)(?:[:.\-–—]?\s+[^\n]*)?)(?=\s|$)/gi;
     }
 
     const formatSegment = (segment: string): string => {
@@ -147,6 +154,19 @@ export class TxtToEpubConverter {
     for (const segment of segments) {
       const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
       if (!trimmedSegment) continue;
+
+      if (paragraphsPerChapter && paragraphsPerChapter > 0) {
+        const paragraphs = trimmedSegment.split(/\n+/);
+        const totalParagraphs = paragraphs.length;
+        for (let i = 0; i < totalParagraphs; i += paragraphsPerChapter) {
+          const chunks = paragraphs.slice(i, i + paragraphsPerChapter);
+          const formattedSegment = formatSegment(chunks.join('\n'));
+          const title = `${chapters.length + 1}`;
+          const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
+          chapters.push({ title, content });
+        }
+        continue;
+      }
 
       const segmentChapters = [];
       const matches = joinAroundUndefined(trimmedSegment.split(chapterRegex));
