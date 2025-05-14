@@ -5,6 +5,7 @@ import { eventDispatcher } from '@/utils/event';
 interface SectionInfoProps {
   bookKey: string;
   showDoubleBorder: boolean;
+  isScrolled: boolean;
   isVertical: boolean;
   horizontalGap: number;
   verticalMargin: number;
@@ -13,6 +14,7 @@ interface SectionInfoProps {
 const HintInfo: React.FC<SectionInfoProps> = ({
   bookKey,
   showDoubleBorder,
+  isScrolled,
   isVertical,
   horizontalGap,
   verticalMargin,
@@ -57,7 +59,14 @@ const HintInfo: React.FC<SectionInfoProps> = ({
           'hintinfo absolute flex items-center justify-end overflow-hidden ps-2',
           'mt-[env(safe-area-inset-top)]',
           hintMessage ? 'bg-base-100' : 'bg-transparent',
-          isVertical ? 'writing-vertical-rl max-h-[50%]' : 'top-0 h-[44px] max-w-[50%]',
+          isVertical ? 'writing-vertical-rl' : 'top-0 h-[44px]',
+          isScrolled
+            ? isVertical
+              ? 'h-full'
+              : 'w-full'
+            : isVertical
+              ? 'max-h-[50%]'
+              : 'max-w-[50%]',
         )}
         style={
           isVertical

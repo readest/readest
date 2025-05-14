@@ -133,6 +133,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             <HintInfo
               bookKey={bookKey}
               showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
+              isScrolled={viewSettings.scrolled}
               isVertical={viewSettings.vertical}
               horizontalGap={horizontalGapPercent}
               verticalMargin={verticalMarginPixels}
