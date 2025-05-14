@@ -89,6 +89,7 @@ const getFontStyles = (
     }
     a:any-link, a:any-link * {
       ${overrideFont ? `color: ${primary};` : ''}
+      text-decoration: none;
     }
     /* https://github.com/whatwg/html/issues/5426 */
     @media (prefers-color-scheme: dark) {
@@ -179,7 +180,6 @@ const getLayoutStyles = (
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
     color-scheme: ${isDarkMode ? 'dark' : 'light'};
-    color: ${fg};
   }
   html {
     --theme-bg-color: ${bg};
@@ -211,7 +211,7 @@ const getLayoutStyles = (
     text-align: var(--default-text-align);
     max-height: unset;
   }
-  html {
+  html, body {
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
@@ -227,7 +227,7 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
-  p, div, li, blockquote, dd  {
+  p, li, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -247,11 +247,6 @@ const getLayoutStyles = (
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
   }
-  /* prevent the above from overriding the align attribute */
-  [align="left"] { text-align: left; }
-  [align="right"] { text-align: right; }
-  [align="center"] { text-align: center; }
-  [align="justify"] { text-align: justify; }
 
   pre {
     white-space: pre-wrap !important;
@@ -281,6 +276,30 @@ const getLayoutStyles = (
 
   .calibre {
     color: unset;
+  }
+
+  /* inline images without dimension */
+  p img, span img, sup img, a img {
+    height: 1em;
+  }
+
+  /* hardcoded inline font size */
+  p[style*="font-size"], span[style*="font-size"] {
+    font-size: unset !important;
+  }
+
+  /* workaround for some badly designed epubs */
+  div.left *, p.left * { text-align: left; }
+  div.right *, p.right * { text-align: right; }
+  div.center *, p.center * { text-align: center; }
+  div.justify *, p.justify * { text-align: justify; }
+
+  /* for the Gutenberg eBooks */
+  #pg-header * {
+    color: inherit !important;
+  }
+  .x-ebookmaker-cover {
+    background-color: unset !important;
   }
 
   .chapterHeader {
