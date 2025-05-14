@@ -37,7 +37,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   autoUpload: true,
   alwaysOnTop: false,
   autoCheckUpdates: true,
-  screenWakeLock: true,
+  screenWakeLock: false,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
