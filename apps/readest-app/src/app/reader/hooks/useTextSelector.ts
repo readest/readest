@@ -19,9 +19,9 @@ export const useTextSelector = (
   const primaryLang = bookData.book?.primaryLanguage || 'en';
   const osPlatform = getOSPlatform();
 
+  const isPopuped = useRef(false);
+  const isUpToPopup = useRef(false);
   const isTextSelected = useRef(false);
-  const isAnnotPopuped = useRef(false);
-  const isAnnotUpToPopup = useRef(false);
   const selectionPosition = useRef<number | null>(null);
 
   const isValidSelection = (sel: Selection) => {
@@ -67,9 +67,12 @@ export const useTextSelector = (
     const sel = doc.getSelection() as Selection;
     if (osPlatform === 'ios') return;
     if (!isValidSelection(sel)) {
-      if (!isAnnotUpToPopup.current) {
+      if (!isUpToPopup.current) {
         handleDismissPopup();
         isTextSelected.current = false;
+      }
+      if (isPopuped.current) {
+        isUpToPopup.current = false;
       }
       return;
     }
@@ -79,6 +82,7 @@ export const useTextSelector = (
     if (osPlatform === 'android') {
       makeSelection(sel, index, false);
     }
+    isUpToPopup.current = true;
   };
   const handlePointerup = (doc: Document, index: number) => {
     // Available on iOS and Desktop, fired at touchend or mouseup
@@ -101,17 +105,20 @@ export const useTextSelector = (
     }
   };
 
-  const handleAnnotPopup = (showAnnotPopup: boolean) => {
+  const handleShowPopup = (showPopup: boolean) => {
     setTimeout(
       () => {
-        isAnnotPopuped.current = showAnnotPopup;
+        if (showPopup && !isPopuped.current) {
+          isUpToPopup.current = false;
+        }
+        isPopuped.current = showPopup;
       },
       ['android', 'ios'].includes(osPlatform) ? 0 : 500,
     );
   };
 
-  const handleShowAnnotation = () => {
-    isAnnotUpToPopup.current = true;
+  const handleUpToPopup = () => {
+    isUpToPopup.current = true;
   };
 
   useEffect(() => {
@@ -125,16 +132,17 @@ export const useTextSelector = (
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
-      if (isAnnotUpToPopup.current) {
-        isAnnotUpToPopup.current = false;
+      if (isUpToPopup.current) {
+        isUpToPopup.current = false;
         return true;
       }
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
+        view?.deselect();
         return true;
       }
-      if (isAnnotPopuped.current) {
+      if (isPopuped.current) {
         handleDismissPopup();
         return true;
       }
@@ -152,7 +160,7 @@ export const useTextSelector = (
     handleScroll,
     handlePointerup,
     handleSelectionchange,
-    handleAnnotPopup,
-    handleShowAnnotation,
+    handleShowPopup,
+    handleUpToPopup,
   };
 };

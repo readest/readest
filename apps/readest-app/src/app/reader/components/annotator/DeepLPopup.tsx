@@ -1,32 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
-import { getAPIBaseUrl } from '@/services/environment';
+import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuth } from '@/context/AuthContext';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { getAPIBaseUrl } from '@/services/environment';
+import { TRANSLATED_LANGS } from '@/services/constants';
 
-const LANGUAGES = {
-  AUTO: 'Auto Detect',
-  EN: 'English',
-  DE: 'German',
-  FR: 'French',
-  ES: 'Spanish',
-  IT: 'Italian',
-  EL: 'Greek',
-  PT: 'Portuguese',
-  NL: 'Dutch',
-  PL: 'Polish',
-  UK: 'Ukrainian',
-  RU: 'Russian',
-  AR: 'Arabic',
-  TR: 'Turkish',
-  ID: 'Indonesian',
-  KO: 'Korean',
-  JA: 'Japanese',
-  'ZH-HANS': 'Chinese (Simplified)',
-  'ZH-HANT': 'Chinese (Traditional)',
+const notSupportedLangs = ['hi', 'vi'];
+
+const generateTranslatorLangs = () => {
+  const langs = { ...TRANSLATED_LANGS };
+  const result: Record<string, string> = {};
+  for (const [code, name] of Object.entries(langs)) {
+    if (notSupportedLangs.includes(code)) continue;
+    let newCode = code.toUpperCase();
+    if (newCode === 'ZH-CN') {
+      newCode = 'ZH-HANS';
+    } else if (newCode === 'ZH-TW') {
+      newCode = 'ZH-HANT';
+    }
+    result[newCode] = name;
+  }
+  return result;
 };
+
+const TRANSLATOR_LANGS = generateTranslatorLangs();
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
@@ -51,7 +51,9 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   const [sourceLang, setSourceLang] = useState('AUTO');
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
   const [translation, setTranslation] = useState<string | null>(null);
-  const [detectedSourceLang, setDetectedSourceLang] = useState<keyof typeof LANGUAGES | null>(null);
+  const [detectedSourceLang, setDetectedSourceLang] = useState<
+    keyof typeof TRANSLATOR_LANGS | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,47 +119,59 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang]);
 
+  const popupPadding = useResponsiveSize(10);
+  const maxHeight = window.innerHeight - 2 * popupPadding;
+  const popupMaxHeight = Math.min(360, maxHeight);
+
   return (
     <div>
       <Popup
         trianglePosition={trianglePosition}
         width={popupWidth}
-        height={popupHeight}
+        minHeight={popupHeight}
+        maxHeight={popupMaxHeight}
         position={position}
-        className='select-text'
+        className='grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600 text-white'
+        triangleClassName='text-gray-600'
       >
-        <div className='text-neutral-content relative h-[50%] overflow-y-auto border-b border-neutral-400/75 p-4 font-sans'>
+        <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h1 className='text-base font-semibold'>{_('Original Text')}</h1>
+            <h1 className='text-sm font-normal'>{_('Original Text')}</h1>
             <select
               value={sourceLang}
               onChange={handleSourceLangChange}
-              className='select text-neutral-content h-8 min-h-8 rounded-md border-none bg-neutral-200/50 text-sm focus:outline-none focus:ring-0'
+              className='select h-8 min-h-8 rounded-md border-none bg-gray-600 text-sm text-white/75 focus:outline-none focus:ring-0'
             >
-              {Object.entries(LANGUAGES).map(([code, name]) => {
+              {[
+                ['AUTO', _('Auto Detect')],
+                ...Object.entries(TRANSLATOR_LANGS).sort((a, b) => a[1].localeCompare(b[1])),
+              ].map(([code, name]) => {
                 return (
                   <option key={code} value={code}>
                     {detectedSourceLang && sourceLang === 'AUTO' && code === 'AUTO'
-                      ? `${LANGUAGES[detectedSourceLang] || detectedSourceLang} ` + _('(detected)')
+                      ? `${TRANSLATOR_LANGS[detectedSourceLang] || detectedSourceLang} ` +
+                        _('(detected)')
                       : name}
                   </option>
                 );
               })}
             </select>
           </div>
-          <p className='text-base'>{text}</p>
+          <p className='text-base text-white/90'>{text}</p>
         </div>
 
-        <div className='text-neutral-content relative h-[50%] overflow-y-auto p-4 font-sans'>
+        <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
+
+        <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h2 className='text-base font-semibold'>{_('Translated Text')}</h2>
+            <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <select
               value={targetLang}
               onChange={handleTargetLangChange}
-              className='select text-neutral-content h-8 min-h-8 rounded-md border-none bg-neutral-200/50 text-sm focus:outline-none focus:ring-0'
+              className='select h-8 min-h-8 rounded-md border-none bg-gray-600 text-sm text-white/75 focus:outline-none focus:ring-0'
             >
-              {Object.entries(LANGUAGES)
-                .filter(([code]) => code !== 'AUTO')
+              {Object.entries(TRANSLATOR_LANGS)
+                .sort((a, b) => a[1].localeCompare(b[1]))
                 .map(([code, name]) => (
                   <option key={code} value={code}>
                     {name}
@@ -172,7 +186,9 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
             <p className='text-base text-red-600'>{error}</p>
           ) : (
             <div>
-              <p className='text-base'>{translation || 'No translation available.'}</p>
+              <p className='text-base text-white/90'>
+                {translation || 'No translation available.'}
+              </p>
               <div className='pt-4 text-sm opacity-60'>Translated by DeepL.</div>
             </div>
           )}

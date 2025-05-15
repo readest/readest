@@ -73,7 +73,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const dictPopupWidth = Math.min(480, maxWidth);
   const dictPopupHeight = Math.min(300, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
-  const transPopupHeight = Math.min(360, maxHeight);
+  const transPopupHeight = Math.min(265, maxHeight);
   const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
@@ -91,13 +91,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     view?.deselect();
   };
 
-  const {
-    handleScroll,
-    handlePointerup,
-    handleSelectionchange,
-    handleAnnotPopup,
-    handleShowAnnotation,
-  } = useTextSelector(bookKey, setSelection, handleDismissPopup);
+  const { handleScroll, handlePointerup, handleSelectionchange, handleShowPopup, handleUpToPopup } =
+    useTextSelector(bookKey, setSelection, handleDismissPopup);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -163,15 +158,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setSelectedStyle(annotation.style!);
     setSelectedColor(annotation.color!);
     setSelection(selection);
-    handleShowAnnotation();
+    handleUpToPopup();
   };
 
   useFoliateEvents(view, { onLoad, onDrawAnnotation, onShowAnnotation });
 
   useEffect(() => {
-    handleAnnotPopup(showAnnotPopup);
+    handleShowPopup(showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnnotPopup]);
+  }, [showAnnotPopup, showWiktionaryPopup, showWikipediaPopup, showDeepLPopup]);
 
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
@@ -214,11 +209,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         popupPadding,
       );
       if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
-      setShowAnnotPopup(true);
       setAnnotPopupPosition(annotPopupPos);
       setDictPopupPosition(dictPopupPos);
       setTranslatorPopupPosition(transPopupPos);
       setTrianglePosition(triangPos);
+      handleShowAnnotPopup();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection, bookKey]);
@@ -244,6 +239,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
+
+  const handleShowAnnotPopup = () => {
+    setShowAnnotPopup(true);
+    setShowDeepLPopup(false);
+    setShowWiktionaryPopup(false);
+    setShowWikipediaPopup(false);
+  };
 
   const handleCopy = () => {
     if (!selection || !selection.text) return;
