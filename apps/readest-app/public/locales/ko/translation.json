@@ -307,5 +307,6 @@
   "Error checking for updates": "업데이트 확인 중 오류 발생",
   "Details": "세부정보",
   "Cancel Selection": "선택 취소",
-  "File Size:": "파일 크기:"
+  "File Size:": "파일 크기:",
+  "Auto Detect": "자동 감지"
 }

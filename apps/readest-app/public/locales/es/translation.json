@@ -307,5 +307,6 @@
   "Error checking for updates": "Error al comprobar actualizaciones",
   "Details": "Detalles",
   "Cancel Selection": "Cancelar selección",
-  "File Size:": "Peso del archivo:"
+  "File Size:": "Peso del archivo:",
+  "Auto Detect": "Detección automática"
 }

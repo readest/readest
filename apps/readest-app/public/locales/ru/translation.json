@@ -307,5 +307,6 @@
   "Error checking for updates": "Ошибка при проверке обновлений",
   "Details": "Инфо",
   "Cancel Selection": "Отменить выбор",
-  "File Size:": "Размер файла:"
+  "File Size:": "Размер файла:",
+  "Auto Detect": "Автоопределение"
 }

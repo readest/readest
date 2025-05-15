@@ -307,5 +307,6 @@
   "Error checking for updates": "检查更新时出错",
   "Details": "详情",
   "Cancel Selection": "取消选择",
-  "File Size:": "文件大小"
+  "File Size:": "文件大小",
+  "Auto Detect": "自动检测"
 }

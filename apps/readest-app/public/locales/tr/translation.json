@@ -307,5 +307,6 @@
   "Error checking for updates": "Güncellemeleri kontrol ederken hata oluştu",
   "Details": "Detaylar",
   "Cancel Selection": "Işaretlemeyi İptal Et",
-  "File Size:": "Dosya Boyutu:"
+  "File Size:": "Dosya Boyutu:",
+  "Auto Detect": "Algıla"
 }

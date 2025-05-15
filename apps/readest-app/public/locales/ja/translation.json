@@ -307,5 +307,6 @@
   "Error checking for updates": "更新の確認中にエラーが発生しました",
   "Details": "詳細",
   "Cancel Selection": "選択をキャンセル",
-  "File Size:": "ファイルサイズ："
+  "File Size:": "ファイルサイズ：",
+  "Auto Detect": "自動検出"
 }

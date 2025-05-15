@@ -587,6 +587,7 @@ export const TRANSLATED_LANGS = {
   en: 'English',
   fr: 'Français',
   de: 'Deutsch',
+  nl: 'Nederlands',
   it: 'Italiano',
   ja: '日本語',
   ko: '한국어',
