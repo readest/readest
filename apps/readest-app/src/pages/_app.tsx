@@ -3,7 +3,6 @@ import Head from 'next/head';
 import Providers from '@/components/Providers';
 
 import '../styles/globals.css';
-import '../styles/fonts.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (

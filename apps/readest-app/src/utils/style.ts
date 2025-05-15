@@ -15,7 +15,6 @@ import {
   generateDarkPalette,
 } from '@/styles/themes';
 
-import fontfacesCSS from '!!raw-loader!../styles/fonts.css';
 import { getOSPlatform } from './misc';
 
 const getFontStyles = (
@@ -108,14 +107,30 @@ const getFontStyles = (
   return fontStyles;
 };
 
+const googleFontsData = [
+  { family: 'Bitter', weights: 'ital,wght@0,100..900;1,100..900' },
+  { family: 'Fira Code', weights: 'wght@300..700' },
+  { family: 'Literata', weights: 'ital,opsz,wght@0,7..72,200..900;1,7..72,200..900' },
+  { family: 'Merriweather', weights: 'ital,opsz,wght@0,18..144,300..900;1,18..144,300..900' },
+  { family: 'Noto Sans', weights: 'ital,wght@0,100..900;1,100..900' },
+  { family: 'Roboto', weights: 'ital,wght@0,100..900;1,100..900' },
+  { family: 'Vollkorn', weights: 'ital,wght@0,400..900;1,400..900' },
+  { family: 'LXGW WenKai TC' },
+  { family: 'Noto Sans SC' },
+  { family: 'Noto Sans TC' },
+  { family: 'Noto Serif JP' },
+];
+
 const getAdditionalFontLinks = () => `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous">
   <link rel='stylesheet' href='https://fontsapi.zeoseven.com/431/main/result.css' crossorigin="anonymous"/>
-  <link rel='stylesheet' href="https://fonts.googleapis.com/css2?family=Vollkorn&display=swap" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Sans+TC&display=swap" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${googleFontsData
+    .map(
+      ({ family, weights }) =>
+        `family=${encodeURIComponent(family)}${weights ? `:${weights}` : ''}`,
+    )
+    .join('&')}&display=swap" crossorigin="anonymous">
 `;
 
 const getAdditionalFontFaces = () => `
@@ -413,7 +428,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     themeCode,
   );
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${layoutStyles}\n${fontStyles}\n${fontfacesCSS}\n${userStylesheet}`;
+  return `${layoutStyles}\n${fontStyles}\n${userStylesheet}`;
 };
 
 export const mountAdditionalFonts = (document: Document) => {
