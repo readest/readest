@@ -59,14 +59,15 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           {_(
             "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}
-          <p
+          {'\n\n'}
+          <span
             className='mt-4 cursor-pointer italic'
             style={{
               color: primaryColor,
             }}
           >
             {_("(from 'As You Like It', Act II)")}
-          </p>
+          </span>
         </p>
       </div>
     </div>

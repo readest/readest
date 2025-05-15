@@ -42,6 +42,7 @@ const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
         <input
           type='text'
           value={value}
+          spellCheck={false}
           onChange={(e) => onChange(e.target.value)}
           className='bg-base-100 text-base-content border-base-200 min-w-4 max-w-36 flex-1 rounded border p-1 font-mono text-sm'
         />
