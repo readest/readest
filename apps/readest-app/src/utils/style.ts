@@ -317,8 +317,10 @@ const getLayoutStyles = (
     background-color: unset !important;
   }
 
-  .chapterHeader {
+  /* for the Feedbooks eBooks */
+  .chapterHeader, .chapterHeader * {
     border-color: unset;
+    background-color: ${bg} !important;
   }
 `;
   return layoutStyle;
