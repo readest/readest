@@ -230,9 +230,6 @@ const getLayoutStyles = (
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
-  body.pbg, body *:not(a):not(#b1):not(#b1 *):not(#b2):not(#b2 *):not(img):not(.bg):not(.bg *):not(.vol):not(.vol *):not(.background):not(.background *) {
-    ${isDarkMode ? `background-color: ${bg} !important;` : ''}
-  }
   body {
     overflow: unset;
     zoom: ${zoomLevel};
@@ -276,6 +273,9 @@ const getLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
+  body.pbg {
+    ${isDarkMode ? `background-color: ${bg} !important;` : ''}
+  }
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
@@ -294,13 +294,18 @@ const getLayoutStyles = (
   }
 
   /* inline images without dimension */
-  p img, span img, sup img, a img {
+  p img, span img, sup img {
     height: 1em;
+    mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    ${isDarkMode ? 'filter: invert(100%);' : ''}
+  }
+  p:has(img), span:has(img) {
+    background-color: ${bg};
   }
 
   /* hardcoded inline font size */
-  p[style*="font-size"], span[style*="font-size"] {
-    font-size: unset !important;
+  [style*="font-size: 16px"], [style*="font-size:16px"] {
+    font-size: 1rem !important;
   }
 
   /* workaround for some badly designed epubs */

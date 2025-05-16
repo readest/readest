@@ -122,11 +122,15 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
       if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
         return;
       }
-      if (element.classList.contains('js_readerFooterNote')) {
+      if (
+        element.classList.contains('js_readerFooterNote') ||
+        element.classList.contains('zhangyue-footnote')
+      ) {
         eventDispatcher.dispatch('footnote-popup', {
           bookKey,
           element,
-          footnote: element.getAttribute('data-wr-footernote') || '',
+          footnote:
+            element.getAttribute('data-wr-footernote') || element.getAttribute('zy-footnote') || '',
         });
         return;
       }

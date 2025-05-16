@@ -48,8 +48,8 @@ const Popup = ({
   }, []);
 
   useEffect(() => {
-    if (!containerRef.current || !position || !trianglePosition) return;
-    if (position.dir !== 'up') {
+    if (!containerRef.current) return;
+    if (!position || !trianglePosition || position.dir !== 'up') {
       setAdjustedPosition(position);
       return;
     }
