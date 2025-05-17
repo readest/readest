@@ -12,13 +12,20 @@ export const useMouseEvent = (
   const throttledScroll = throttle(handleContinuousScroll, 500, {
     emitLast: false,
   });
+  const throttledFlip = throttle(handlePageFlip, 1000, {
+    emitLast: false,
+  });
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         if (msg.data.type === 'iframe-wheel') {
           throttledScroll('mouse', -msg.data.deltaY, 0);
         }
-        handlePageFlip(msg);
+        if (msg.data.type === 'iframe-wheel') {
+          throttledFlip(msg);
+        } else {
+          handlePageFlip(msg);
+        }
       }
     } else if (msg.type === 'wheel') {
       const event = msg as React.WheelEvent<HTMLDivElement>;
