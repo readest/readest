@@ -1,12 +1,18 @@
 import clsx from 'clsx';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
-import { CiCircleMore } from 'react-icons/ci';
-import { LiaCloudUploadAltSolid, LiaCloudDownloadAltSolid } from 'react-icons/lia';
+import {
+  LiaCloudUploadAltSolid,
+  LiaCloudDownloadAltSolid,
+  LiaInfoCircleSolid,
+} from 'react-icons/lia';
 
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryViewModeType } from '@/types/settings';
+import { navigateToLogin } from '@/utils/nav';
 import { formatAuthors } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
@@ -32,8 +38,10 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
 }) => {
-  const iconSize15 = useResponsiveSize(15);
+  const router = useRouter();
+  const { user } = useAuth();
   const { appService } = useEnv();
+  const iconSize15 = useResponsiveSize(15);
 
   const stopEvent = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -96,11 +104,26 @@ const BookItem: React.FC<BookItemProps> = ({
           className={clsx('flex items-center', book.progress ? 'justify-between' : 'justify-end')}
         >
           {book.progress && <ReadingProgress book={book} />}
-          <div className='flex items-center gap-x-1'>
+          <div className='flex items-center justify-center gap-x-2'>
+            {!appService?.isMobile && (
+              <button
+                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
+                onPointerDown={(e) => stopEvent(e)}
+                onPointerUp={(e) => stopEvent(e)}
+                onPointerMove={(e) => stopEvent(e)}
+                onPointerCancel={(e) => stopEvent(e)}
+                onPointerLeave={(e) => stopEvent(e)}
+                onClick={() => showBookDetailsModal(book)}
+              >
+                <div className='pt-[1px]'>
+                  <LiaInfoCircleSolid size={iconSize15} />
+                </div>
+              </button>
+            )}
             {transferProgress !== null ? (
               transferProgress === 100 ? null : (
                 <div
-                  className='radial-progress sm:opacity-0 sm:group-hover:opacity-100'
+                  className='radial-progress'
                   style={
                     {
                       '--value': transferProgress,
@@ -112,39 +135,32 @@ const BookItem: React.FC<BookItemProps> = ({
                 ></div>
               )
             ) : (
-              <button
-                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
-                onPointerDown={(e) => stopEvent(e)}
-                onPointerUp={(e) => stopEvent(e)}
-                onPointerMove={(e) => stopEvent(e)}
-                onPointerCancel={(e) => stopEvent(e)}
-                onPointerLeave={(e) => stopEvent(e)}
-                onClick={() => {
-                  if (!book.uploadedAt) {
-                    handleBookUpload(book);
-                  } else if (!book.downloadedAt) {
-                    handleBookDownload(book);
-                  }
-                }}
-              >
-                {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
-                {book.uploadedAt && !book.downloadedAt && (
-                  <LiaCloudDownloadAltSolid size={iconSize15} />
-                )}
-              </button>
-            )}
-            {!appService?.isMobile && (
-              <button
-                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
-                onPointerDown={(e) => stopEvent(e)}
-                onPointerUp={(e) => stopEvent(e)}
-                onPointerMove={(e) => stopEvent(e)}
-                onPointerCancel={(e) => stopEvent(e)}
-                onPointerLeave={(e) => stopEvent(e)}
-                onClick={() => showBookDetailsModal(book)}
-              >
-                <CiCircleMore size={iconSize15} />
-              </button>
+              (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
+                <button
+                  className='show-cloud-button -m-2 p-2'
+                  onPointerDown={(e) => stopEvent(e)}
+                  onPointerUp={(e) => stopEvent(e)}
+                  onPointerMove={(e) => stopEvent(e)}
+                  onPointerCancel={(e) => stopEvent(e)}
+                  onPointerLeave={(e) => stopEvent(e)}
+                  onClick={() => {
+                    if (!user) {
+                      navigateToLogin(router);
+                      return;
+                    }
+                    if (!book.uploadedAt) {
+                      handleBookUpload(book);
+                    } else if (!book.downloadedAt) {
+                      handleBookDownload(book);
+                    }
+                  }}
+                >
+                  {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
+                  {book.uploadedAt && !book.downloadedAt && (
+                    <LiaCloudDownloadAltSolid size={iconSize15} />
+                  )}
+                </button>
+              )
             )}
           </div>
         </div>

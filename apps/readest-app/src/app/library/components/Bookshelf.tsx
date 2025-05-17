@@ -343,15 +343,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               <MdDelete className='fill-red-500' />
               <div className='text-red-500'>{_('Delete')}</div>
             </button>
-            {!appService?.isMobile && (
-              <button
-                onClick={() => handleSetSelectMode(false)}
-                className={clsx('flex flex-col items-center justify-center gap-1')}
-              >
-                <MdOutlineCancel />
-                <div>{_('Cancel')}</div>
-              </button>
-            )}
+            <button
+              onClick={() => handleSetSelectMode(false)}
+              className={clsx('flex flex-col items-center justify-center gap-1')}
+            >
+              <MdOutlineCancel />
+              <div>{_('Cancel')}</div>
+            </button>
           </div>
         )}
       </div>
