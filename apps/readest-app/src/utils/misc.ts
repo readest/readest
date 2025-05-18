@@ -31,8 +31,12 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   return safeName.trim();
 };
 
+export const getLocale = () => {
+  return localStorage?.getItem('i18nextLng') || navigator?.language || '';
+};
+
 export const getUserLang = () => {
-  const locale = localStorage?.getItem('i18nextLng') || navigator?.language || '';
+  const locale = getLocale();
   return locale.split('-')[0] || 'en';
 };
 

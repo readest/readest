@@ -4,7 +4,7 @@ import { Position } from '@/utils/sel';
 import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getAPIBaseUrl } from '@/services/environment';
+import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
 
 const notSupportedLangs = ['hi', 'vi'];
@@ -26,8 +26,6 @@ const generateTranslatorLangs = () => {
 };
 
 const TRANSLATOR_LANGS = generateTranslatorLangs();
-
-const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
 interface DeepLPopupProps {
   text: string;
@@ -53,8 +51,13 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   const [detectedSourceLang, setDetectedSourceLang] = useState<
     keyof typeof TRANSLATOR_LANGS | null
   >(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { translate } = useTranslator({
+    sourceLang,
+    targetLang,
+  });
 
   const handleSourceLangChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSourceLang(event.target.value);
@@ -73,35 +76,18 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
       setTranslation(null);
 
       try {
-        const response = await fetch(DEEPL_API_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token ?? ''}`,
-          },
-          body: JSON.stringify({
-            text: [text],
-            target_lang: targetLang.toUpperCase(),
-            source_lang: sourceLang === 'AUTO' ? undefined : sourceLang.toUpperCase(),
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch translation');
-        }
-        const data = await response.json();
-        const translatedText = data.translations[0]?.text;
-        const detectedSource = data.translations[0]?.detected_source_language;
+        const result = await translate([text]);
+        const translatedText = result[0];
+        const detectedSource = null;
 
         if (!translatedText) {
           throw new Error('No translation found');
         }
 
+        setTranslation(translatedText);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
-
-        setTranslation(translatedText);
       } catch (err) {
         console.error(err);
         if (!token) {

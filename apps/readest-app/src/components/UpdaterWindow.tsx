@@ -7,10 +7,12 @@ import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { fetch } from '@tauri-apps/plugin-http';
+import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import { tauriDownload } from '@/utils/transfer';
 import { installPackage } from '@/utils/bridge';
+import { getLocale } from '@/utils/misc';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
 import packageJson from '../../package.json';
 import Dialog from '@/components/Dialog';
@@ -58,6 +60,11 @@ interface GenericUpdate {
 
 export const UpdaterContent = ({ version }: { version?: string }) => {
   const _ = useTranslation();
+  const [targetLang, setTargetLang] = useState('EN');
+  const { translate } = useTranslator({
+    sourceLang: 'AUTO',
+    targetLang,
+  });
   const { appService } = useEnv();
   const searchParams = useSearchParams();
   const currentVersion = packageJson.version;
@@ -70,6 +77,17 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   const [contentLength, setContentLength] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
+
+  useEffect(() => {
+    const locale = getLocale();
+    let userLang = locale.split('-')[0] || 'en';
+    if (locale === 'zh-CN') {
+      userLang = 'zh-Hans';
+    } else if (locale.startsWith('zh')) {
+      userLang = 'zh-Hant';
+    }
+    setTargetLang(userLang.toUpperCase());
+  }, []);
 
   useEffect(() => {
     const checkDesktopUpdate = async () => {
@@ -181,18 +199,25 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     };
     const updateChangelogs = async (update: GenericUpdate) => {
       setNewVersion(update.version);
-      const changelogs = await fetchChangelogs(currentVersion, update.version);
-      if (changelogs.length > 0) {
-        setChangelogs(changelogs);
-      } else {
-        setChangelogs([
+      let changelogs = await fetchChangelogs(currentVersion, update.version);
+      if (changelogs.length === 0) {
+        changelogs = [
           {
             version: update.version,
             date: new Date(update.date!).toDateString(),
             notes: parseNumberedList(update.body ?? ''),
           },
-        ]);
+        ];
       }
+      for (const entry of changelogs) {
+        try {
+          entry.notes = await translate(entry.notes, { useCache: true });
+        } catch (error) {
+          console.log('Failed to translate changelog:', error);
+        }
+      }
+
+      setChangelogs(changelogs);
     };
     if (update) {
       updateChangelogs(update);
