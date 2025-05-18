@@ -4,7 +4,6 @@ import { Position } from '@/utils/sel';
 import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getAPIBaseUrl } from '@/services/environment';
 import { TRANSLATED_LANGS } from '@/services/constants';
 
@@ -119,17 +118,13 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang]);
 
-  const popupPadding = useResponsiveSize(10);
-  const maxHeight = window.innerHeight - 2 * popupPadding;
-  const popupMaxHeight = Math.min(360, maxHeight);
-
   return (
     <div>
       <Popup
         trianglePosition={trianglePosition}
         width={popupWidth}
         minHeight={popupHeight}
-        maxHeight={popupMaxHeight}
+        maxHeight={720}
         position={position}
         className='grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600 text-white'
         triangleClassName='text-gray-600'

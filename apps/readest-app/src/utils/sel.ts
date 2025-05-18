@@ -122,6 +122,11 @@ export const getPosition = (
   return start.point.y > window.innerHeight - end.point.y ? start : end;
 };
 
+// The popup will be positioned based on the triangle position and the direction
+// up: above the triangle
+// down: below the triangle
+// left: to the left of the triangle
+// right: to the right of the triangle
 export const getPopupPosition = (
   position: Position,
   boundingReact: Rect,

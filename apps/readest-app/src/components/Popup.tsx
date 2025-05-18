@@ -1,5 +1,7 @@
+import clsx from 'clsx';
 import { Position } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const Popup = ({
   width,
@@ -27,6 +29,18 @@ const Popup = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
   const [childrenHeight, setChildrenHeight] = useState(height || minHeight || 0);
+
+  const popupPadding = useResponsiveSize(10);
+  let availableHeight = window.innerHeight - 2 * popupPadding;
+  if (trianglePosition?.dir === 'up') {
+    availableHeight = trianglePosition.point.y - popupPadding;
+  } else if (trianglePosition?.dir === 'down') {
+    availableHeight = window.innerHeight - trianglePosition.point.y - popupPadding;
+  }
+  maxHeight = Math.min(maxHeight || availableHeight, availableHeight);
+  if (minHeight) {
+    minHeight = Math.min(minHeight, availableHeight);
+  }
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -69,7 +83,7 @@ const Popup = ({
       <div
         id='popup-container'
         ref={containerRef}
-        className={`bg-base-300 absolute rounded-lg font-sans shadow-xl ${className}`}
+        className={clsx('bg-base-300 absolute rounded-lg font-sans shadow-xl', className)}
         style={{
           width: `${width}px`,
           height: height ? `${height}px` : 'auto',
