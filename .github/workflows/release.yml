@@ -81,7 +81,7 @@ jobs:
             release: windows
             arch: x86_64
             rust_target: x86_64-pc-windows-msvc
-            args: '--target x86_64-pc-windows-msvc'
+            args: '--target x86_64-pc-windows-msvc --bundles nsis'
           - os: windows-latest
             release: windows
             arch: aarch64
