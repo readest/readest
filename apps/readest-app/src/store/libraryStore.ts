@@ -28,7 +28,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (bookIndex !== -1) {
       library[bookIndex] = book;
     }
-    set({ library });
+    set({ library: [...library] });
     appService.saveLibraryBooks(library);
   },
 }));
