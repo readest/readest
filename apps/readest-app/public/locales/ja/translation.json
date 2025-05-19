@@ -308,5 +308,7 @@
   "Details": "詳細",
   "Cancel Selection": "選択をキャンセル",
   "File Size:": "ファイルサイズ：",
-  "Auto Detect": "自動検出"
+  "Auto Detect": "自動検出",
+  "Touch": "タッチ",
+  "Scrolling Overlap (px)": "スクロール重複（px）"
 }

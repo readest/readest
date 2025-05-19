@@ -308,5 +308,7 @@
   "Details": "التفاصيل",
   "Cancel Selection": "إلغاء التحديد",
   "File Size:": "حجم الملف:",
-  "Auto Detect": "الكشف التلقائي"
+  "Auto Detect": "الكشف التلقائي",
+  "Touch": "اللمس",
+  "Scrolling Overlap (px)": "تداخل التمرير (بكسل)"
 }

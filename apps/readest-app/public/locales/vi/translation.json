@@ -308,5 +308,7 @@
   "Details": "Chi tiết",
   "Cancel Selection": "Hủy chọn",
   "File Size:": "Kích thước tệp:",
-  "Auto Detect": "Phát hiện tự động"
+  "Auto Detect": "Phát hiện tự động",
+  "Touch": "Chạm",
+  "Scrolling Overlap (px)": "Chồng chéo cuộn (px)"
 }

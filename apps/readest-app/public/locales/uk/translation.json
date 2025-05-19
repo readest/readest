@@ -308,5 +308,7 @@
   "Details": "Деталі",
   "Cancel Selection": "Скасувати вибір",
   "File Size:": "Розмір файлу:",
-  "Auto Detect": "Авто виявлення"
+  "Auto Detect": "Авто виявлення",
+  "Touch": "Дотик",
+  "Scrolling Overlap (px)": "Прокрутка перекриття (px)"
 }

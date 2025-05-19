@@ -308,5 +308,7 @@
   "Details": "세부정보",
   "Cancel Selection": "선택 취소",
   "File Size:": "파일 크기:",
-  "Auto Detect": "자동 감지"
+  "Auto Detect": "자동 감지",
+  "Touch": "터치",
+  "Scrolling Overlap (px)": "스크롤 겹침 (px)"
 }

@@ -308,5 +308,7 @@
   "Details": "Detail",
   "Cancel Selection": "Batalkan Pilihan",
   "File Size:": "Ukuran File:",
-  "Auto Detect": "Deteksi Otomatis"
+  "Auto Detect": "Deteksi Otomatis",
+  "Touch": "Sentuh",
+  "Scrolling Overlap (px)": "Overlapping Gulir (px)"
 }

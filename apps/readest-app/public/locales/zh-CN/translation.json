@@ -308,5 +308,7 @@
   "Details": "详情",
   "Cancel Selection": "取消选择",
   "File Size:": "文件大小",
-  "Auto Detect": "自动检测"
+  "Auto Detect": "自动检测",
+  "Touch": "触控",
+  "Scrolling Overlap (px)": "滚动重叠（px）"
 }

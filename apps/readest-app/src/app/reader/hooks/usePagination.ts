@@ -24,7 +24,8 @@ export const viewPagination = (
     const { size } = renderer;
     const showHeader = viewSettings.showHeader && viewSettings.showBarsOnScroll;
     const showFooter = viewSettings.showFooter && viewSettings.showBarsOnScroll;
-    const distance = size - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
+    const scrollingOverlap = viewSettings.scrollingOverlap;
+    const distance = size - scrollingOverlap - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
     return side === 'left' ? view.prev(distance) : view.next(distance);
   } else {
     return side === 'left' ? view.goLeft() : view.goRight();

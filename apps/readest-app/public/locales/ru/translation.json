@@ -308,5 +308,7 @@
   "Details": "Инфо",
   "Cancel Selection": "Отменить выбор",
   "File Size:": "Размер файла:",
-  "Auto Detect": "Автоопределение"
+  "Auto Detect": "Автоопределение",
+  "Touch": "Сенсорный экран",
+  "Scrolling Overlap (px)": "Перекрытие прокрутки (px)"
 }

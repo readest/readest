@@ -308,5 +308,7 @@
   "Details": "Detaylar",
   "Cancel Selection": "Işaretlemeyi İptal Et",
   "File Size:": "Dosya Boyutu:",
-  "Auto Detect": "Algıla"
+  "Auto Detect": "Algıla",
+  "Touch": "Dokunmatik",
+  "Scrolling Overlap (px)": "Kaydırma Üst Üste Binen (px)"
 }

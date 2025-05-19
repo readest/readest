@@ -308,5 +308,7 @@
   "Details": "विवरण",
   "Cancel Selection": "चयन रद्द करें",
   "File Size:": "फ़ाइल आकार:",
-  "Auto Detect": "स्वचालित पहचान"
+  "Auto Detect": "स्वचालित पहचान",
+  "Touch": "स्पर्श",
+  "Scrolling Overlap (px)": "स्क्रॉलिंग ओवरलैप (px)"
 }

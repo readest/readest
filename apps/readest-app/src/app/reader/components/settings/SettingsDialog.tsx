@@ -8,6 +8,7 @@ import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
+import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 import { getDirFromUILanguage } from '@/utils/rtl';
@@ -17,9 +18,10 @@ import ColorPanel from './ColorPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
 import DialogMenu from './DialogMenu';
+import ControlPanel from './ControlPanel';
 import MiscPanel from './MiscPanel';
 
-type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Misc';
+type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Misc';
 
 type TabConfig = {
   tab: SettingsPanelType;
@@ -55,6 +57,11 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       label: _('Color'),
     },
     {
+      tab: 'Control',
+      icon: LiaHandPointerSolid,
+      label: _('Behavior'),
+    },
+    {
       tab: 'Misc',
       icon: IoAccessibilityOutline,
       label: _('Misc'),
@@ -75,7 +82,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     if (!container) return;
 
     const checkButtonWidths = () => {
-      const threshold = (container.clientWidth - 64) * 0.3;
+      const threshold = (container.clientWidth - 64) * 0.25;
       const hideLabel = Array.from(container.querySelectorAll('button')).some((button) => {
         const labelSpan = button.querySelector('span');
         const labelText = labelSpan?.textContent || '';
@@ -135,7 +142,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
               ref={tabsRef}
               className={clsx(
                 'dialog-tabs flex h-10 w-full items-center',
-                showTabLabels ? 'gap-2 sm:gap-1' : 'gap-4',
+                showTabLabels ? 'gap-4 sm:gap-2' : 'gap-4',
               )}
             >
               {tabConfig.map(({ tab, icon: Icon, label }) => (
@@ -143,7 +150,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                   key={tab}
                   data-tab={tab}
                   className={clsx(
-                    'btn btn-ghost text-base-content btn-sm',
+                    'btn btn-ghost text-base-content btn-sm px-1',
                     activePanel === tab ? 'btn-active' : '',
                   )}
                   onClick={() => handleSetActivePanel(tab)}
@@ -186,6 +193,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
         {activePanel === 'Font' && <FontPanel bookKey={bookKey} />}
         {activePanel === 'Layout' && <LayoutPanel bookKey={bookKey} />}
         {activePanel === 'Color' && <ColorPanel bookKey={bookKey} />}
+        {activePanel === 'Control' && <ControlPanel bookKey={bookKey} />}
         {activePanel === 'Misc' && <MiscPanel bookKey={bookKey} />}
       </Dialog>
     </>

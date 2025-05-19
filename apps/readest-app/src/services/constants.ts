@@ -105,6 +105,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   showHeader: true,
   showFooter: true,
   showBarsOnScroll: false,
+  scrollingOverlap: 0,
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

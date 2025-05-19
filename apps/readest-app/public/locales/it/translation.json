@@ -308,5 +308,7 @@
   "Details": "Dettagli",
   "Cancel Selection": "Annulla selezione",
   "File Size:": "Dimensione file:",
-  "Auto Detect": "Rilevamento automatico"
+  "Auto Detect": "Rilevamento automatico",
+  "Touch": "Touch",
+  "Scrolling Overlap (px)": "Overlap scorrimento (px)"
 }

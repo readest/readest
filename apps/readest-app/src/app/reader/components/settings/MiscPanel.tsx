@@ -7,7 +7,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useDeviceControlStore } from '@/store/deviceStore';
 import { getStyles } from '@/utils/style';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
@@ -20,15 +19,10 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
-  const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
   const [animated, setAnimated] = useState(viewSettings.animated!);
-  const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
-  const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
-  const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip!);
-  const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll!);
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
@@ -138,33 +132,6 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [animated]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDisableClick]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swapClickArea]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'volumeKeysToFlip', volumeKeysToFlip, false, false);
-    if (appService?.isMobileApp) {
-      if (volumeKeysToFlip) {
-        acquireVolumeKeyInterception();
-      } else {
-        releaseVolumeKeyInterception();
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [volumeKeysToFlip]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isContinuousScroll]);
-
-  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'screenOrientation', screenOrientation, false, false);
     if (appService?.isMobileApp) {
       lockScreenOrientation({ orientation: screenOrientation });
@@ -252,53 +219,6 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           </div>
         </div>
       )}
-
-      <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Behavior')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Continuous Scroll')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={isContinuousScroll}
-                onChange={() => setIsContinuousScroll(!isContinuousScroll)}
-              />
-            </div>
-            {appService?.isMobileApp && (
-              <div className='config-item'>
-                <span className=''>{_('Volume Keys for Page Flip')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={volumeKeysToFlip}
-                  onChange={() => setVolumeKeysToFlip(!volumeKeysToFlip)}
-                />
-              </div>
-            )}
-            <div className='config-item'>
-              <span className=''>{_('Clicks for Page Flip')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={!isDisableClick}
-                onChange={() => setIsDisableClick(!isDisableClick)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Swap Clicks Area')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={swapClickArea}
-                disabled={isDisableClick}
-                onChange={() => setSwapClickArea(!swapClickArea)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Custom CSS')}</h2>

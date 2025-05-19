@@ -40,7 +40,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize!);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode!);
   const [overrideLayout, setOverrideLayout] = useState(viewSettings.overrideLayout!);
-  const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
   const [doubleBorder, setDoubleBorder] = useState(viewSettings.doubleBorder!);
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor!);
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader!);
@@ -168,18 +167,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [overrideLayout]);
 
   useEffect(() => {
-    if (isScrolledMode === viewSettings.scrolled) return;
-    saveViewSettings(envConfig, bookKey, 'scrolled', isScrolledMode);
-    getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
-    getView(bookKey)?.renderer.setAttribute(
-      'max-inline-size',
-      `${getMaxInlineSize(viewSettings)}px`,
-    );
-    getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isScrolledMode]);
-
-  useEffect(() => {
     if (doubleBorder === viewSettings.doubleBorder) return;
     if (doubleBorder && viewSettings.vertical) {
       viewSettings.gapPercent = Math.max(
@@ -259,18 +246,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='w-full'>
-        <div className='flex items-center justify-between'>
-          <h2 className='font-medium'>{_('Scrolled Mode')}</h2>
-          <input
-            type='checkbox'
-            className='toggle'
-            checked={isScrolledMode}
-            onChange={() => setScrolledMode(!isScrolledMode)}
-          />
-        </div>
-      </div>
-
       {mightBeRTLBook && (
         <div className='w-full'>
           <div className='flex items-center justify-between'>

@@ -24,7 +24,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
       className='dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl'
     >
       <button
-        className='hover:bg-base-200 text-base-content flex w-full items-center justify-between rounded-md p-2'
+        className='hover:bg-base-200 text-base-content flex w-full items-center justify-between rounded-md p-1'
         onClick={handleToggleGlobal}
       >
         <div className='flex items-center'>
