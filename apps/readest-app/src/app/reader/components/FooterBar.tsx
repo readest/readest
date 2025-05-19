@@ -17,6 +17,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
+import { viewPagination } from '../hooks/usePagination';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
 import { PageInfo } from '@/types/book';
 import Button from '@/components/Button';
@@ -77,11 +78,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
   };
 
   const handleGoPrev = () => {
-    view?.goLeft();
+    viewPagination(view, viewSettings, 'left');
   };
 
   const handleGoNext = () => {
-    view?.goRight();
+    viewPagination(view, viewSettings, 'right');
   };
 
   const handleGoBack = () => {

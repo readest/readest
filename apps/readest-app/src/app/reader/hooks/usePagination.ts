@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
+import { ViewSettings } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
@@ -8,6 +9,27 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 
 export type ScrollSource = 'touch' | 'mouse';
+
+export const viewPagination = (
+  view: FoliateView | null,
+  viewSettings: ViewSettings | null | undefined,
+  side: 'left' | 'right',
+) => {
+  if (!view || !viewSettings) return;
+  const renderer = view.renderer;
+  if (renderer.scrolled) {
+    if (view.book.dir === 'rtl') {
+      side = side === 'left' ? 'right' : 'left';
+    }
+    const { size } = renderer;
+    const showHeader = viewSettings.showHeader && viewSettings.showBarsOnScroll;
+    const showFooter = viewSettings.showFooter && viewSettings.showBarsOnScroll;
+    const distance = size - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
+    return side === 'left' ? view.prev(distance) : view.next(distance);
+  } else {
+    return side === 'left' ? view.goLeft() : view.goRight();
+  }
+};
 
 export const usePagination = (
   bookKey: string,
@@ -64,15 +86,15 @@ export const usePagination = (
                 }
                 if (!viewSettings.disableClick! && screenX >= viewCenterX) {
                   if (viewSettings.swapClickArea) {
-                    viewRef.current?.goLeft();
+                    viewPagination(viewRef.current, viewSettings, 'left');
                   } else {
-                    viewRef.current?.goRight();
+                    viewPagination(viewRef.current, viewSettings, 'right');
                   }
                 } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
                   if (viewSettings.swapClickArea) {
-                    viewRef.current?.goRight();
+                    viewPagination(viewRef.current, viewSettings, 'right');
                   } else {
-                    viewRef.current?.goLeft();
+                    viewPagination(viewRef.current, viewSettings, 'left');
                   }
                 }
               }
@@ -100,9 +122,9 @@ export const usePagination = (
       if (viewSettings?.volumeKeysToFlip) {
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
-          viewRef.current?.goLeft();
+          viewPagination(viewRef.current, viewSettings, 'left');
         } else if (keyName === 'VolumeDown') {
-          viewRef.current?.goRight();
+          viewPagination(viewRef.current, viewSettings, 'right');
         }
       }
     } else {
@@ -111,10 +133,11 @@ export const usePagination = (
         const width = window.innerWidth;
         const leftThreshold = width * 0.5;
         const rightThreshold = width * 0.5;
+        const viewSettings = getViewSettings(bookKey);
         if (clientX < leftThreshold) {
-          viewRef.current?.goLeft();
+          viewPagination(viewRef.current, viewSettings, 'left');
         } else if (clientX > rightThreshold) {
-          viewRef.current?.goRight();
+          viewPagination(viewRef.current, viewSettings, 'right');
         }
       }
     }

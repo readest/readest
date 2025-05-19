@@ -9,6 +9,7 @@ import { getStyles } from '@/utils/style';
 import { tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
+import { viewPagination } from './usePagination';
 
 interface UseBookShortcutsProps {
   sideBarBookKey: string | null;
@@ -41,11 +42,13 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const goLeft = () => {
-    getView(sideBarBookKey)?.goLeft();
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'left');
   };
 
   const goRight = () => {
-    getView(sideBarBookKey)?.goRight();
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'right');
   };
 
   const goPrev = () => {
