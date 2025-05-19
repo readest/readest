@@ -42,8 +42,6 @@
   "Global Settings": "الإعدادات العامة",
   "Go Back": "العودة",
   "Go Forward": "التقدم",
-  "Go Left": "الذهاب لليسار",
-  "Go Right": "الذهاب لليمين",
   "Grass": "عشبي",
   "Gray": "رمادي",
   "Gruvbox": "چروفبوكس",
@@ -310,5 +308,9 @@
   "File Size:": "حجم الملف:",
   "Auto Detect": "الكشف التلقائي",
   "Touch": "اللمس",
-  "Scrolling Overlap (px)": "تداخل التمرير (بكسل)"
+  "Scrolling Overlap (px)": "تداخل التمرير (بكسل)",
+  "Next Section": "القسم التالي",
+  "Previous Section": "القسم السابق",
+  "Next Page": "الصفحة التالية",
+  "Previous Page": "الصفحة السابقة"
 }

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
-import { RiArrowLeftWideLine, RiArrowRightWideLine } from 'react-icons/ri';
+import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
+import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { FaHeadphones } from 'react-icons/fa6';
 import { IoIosList as TOCIcon } from 'react-icons/io';
 import { PiNotePencil as NoteIcon } from 'react-icons/pi';
@@ -77,12 +78,24 @@ const FooterBar: React.FC<FooterBarProps> = ({
     saveViewSettings(envConfig, bookKey, 'lineHeight', value / 10);
   };
 
-  const handleGoPrev = () => {
+  const handleGoPrevPage = () => {
     viewPagination(view, viewSettings, 'left');
   };
 
-  const handleGoNext = () => {
+  const handleGoNextPage = () => {
     viewPagination(view, viewSettings, 'right');
+  };
+
+  const handleGoPrevSection = () => {
+    if (view?.renderer.prevSection) {
+      view?.renderer.prevSection();
+    }
+  };
+
+  const handleGoNextSection = () => {
+    if (view?.renderer.nextSection) {
+      view?.renderer.nextSection();
+    }
   };
 
   const handleGoBack = () => {
@@ -174,7 +187,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         {/* Mobile footer bar */}
         <div
           className={clsx(
-            'bg-base-200 absolute bottom-16 flex w-full items-center gap-x-2 px-4 transition-all sm:hidden',
+            'bg-base-200 absolute bottom-16 flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
             actionTab === 'progress'
               ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
@@ -185,34 +198,48 @@ const FooterBar: React.FC<FooterBarProps> = ({
               : '64px',
           }}
         >
-          <Button
-            icon={viewSettings?.rtl ? <RiArrowRightWideLine /> : <RiArrowLeftWideLine />}
-            onClick={viewSettings?.rtl ? handleGoNext : handleGoPrev}
-            tooltip={viewSettings?.rtl ? _('Go Right') : _('Go Left')}
-          />
-          <Button
-            icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
-            onClick={handleGoBack}
-            tooltip={_('Go Back')}
-            disabled={!view?.history.canGoBack}
-          />
-          <Button
-            icon={viewSettings?.rtl ? <RiArrowGoBackLine /> : <RiArrowGoForwardLine />}
-            onClick={handleGoForward}
-            tooltip={_('Go Forward')}
-            disabled={!view?.history.canGoForward}
-          />
-          <Slider
-            heightPx={sliderHeight}
-            bubbleLabel={`${Math.round(progressFraction * 100)}%`}
-            initialValue={progressValid ? progressFraction * 100 : 0}
-            onChange={(e) => handleProgressChange(e)}
-          />
-          <Button
-            icon={viewSettings?.rtl ? <RiArrowLeftWideLine /> : <RiArrowRightWideLine />}
-            onClick={viewSettings?.rtl ? handleGoPrev : handleGoNext}
-            tooltip={viewSettings?.rtl ? _('Go Left') : _('Go Right')}
-          />
+          <div className='flex w-full items-center justify-between gap-x-6'>
+            <Slider
+              heightPx={sliderHeight}
+              bubbleLabel={`${Math.round(progressFraction * 100)}%`}
+              initialValue={progressValid ? progressFraction * 100 : 0}
+              onChange={(e) => handleProgressChange(e)}
+            />
+          </div>
+          <div className='flex w-full items-center justify-between gap-x-6'>
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowRightDoubleLine /> : <RiArrowLeftDoubleLine />}
+              onClick={viewSettings?.rtl ? handleGoNextSection : handleGoPrevSection}
+              tooltip={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
+            />
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowRightSLine /> : <RiArrowLeftSLine />}
+              onClick={viewSettings?.rtl ? handleGoNextPage : handleGoPrevPage}
+              tooltip={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
+            />
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
+              onClick={handleGoBack}
+              tooltip={_('Go Back')}
+              disabled={!view?.history.canGoBack}
+            />
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowGoBackLine /> : <RiArrowGoForwardLine />}
+              onClick={handleGoForward}
+              tooltip={_('Go Forward')}
+              disabled={!view?.history.canGoForward}
+            />
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
+              onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}
+              tooltip={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
+            />
+            <Button
+              icon={viewSettings?.rtl ? <RiArrowLeftDoubleLine /> : <RiArrowRightDoubleLine />}
+              onClick={viewSettings?.rtl ? handleGoPrevSection : handleGoNextSection}
+              tooltip={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
+            />
+          </div>
         </div>
         <div
           className={clsx(
@@ -290,9 +317,14 @@ const FooterBar: React.FC<FooterBarProps> = ({
         {/* Desktop footer bar */}
         <div className='hidden w-full items-center gap-x-4 px-4 sm:flex'>
           <Button
-            icon={viewSettings?.rtl ? <RiArrowRightWideLine /> : <RiArrowLeftWideLine />}
-            onClick={viewSettings?.rtl ? handleGoNext : handleGoPrev}
-            tooltip={viewSettings?.rtl ? _('Go Right') : _('Go Left')}
+            icon={viewSettings?.rtl ? <RiArrowRightDoubleLine /> : <RiArrowLeftDoubleLine />}
+            onClick={viewSettings?.rtl ? handleGoNextSection : handleGoPrevSection}
+            tooltip={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
+          />
+          <Button
+            icon={viewSettings?.rtl ? <RiArrowRightSLine /> : <RiArrowLeftSLine />}
+            onClick={viewSettings?.rtl ? handleGoNextPage : handleGoPrevPage}
+            tooltip={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
@@ -321,9 +353,14 @@ const FooterBar: React.FC<FooterBarProps> = ({
           />
           <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />
           <Button
-            icon={viewSettings?.rtl ? <RiArrowLeftWideLine /> : <RiArrowRightWideLine />}
-            onClick={viewSettings?.rtl ? handleGoPrev : handleGoNext}
-            tooltip={viewSettings?.rtl ? _('Go Left') : _('Go Right')}
+            icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
+            onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}
+            tooltip={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
+          />
+          <Button
+            icon={viewSettings?.rtl ? <RiArrowLeftDoubleLine /> : <RiArrowRightDoubleLine />}
+            onClick={viewSettings?.rtl ? handleGoPrevSection : handleGoNextSection}
+            tooltip={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
           />
         </div>
       </div>

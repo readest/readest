@@ -42,8 +42,6 @@
   "Global Settings": "Pengaturan Global",
   "Go Back": "Kembali",
   "Go Forward": "Maju",
-  "Go Left": "Ke Kiri",
-  "Go Right": "Ke Kanan",
   "Grass": "Rumput",
   "Gray": "Abu-abu",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Ukuran File:",
   "Auto Detect": "Deteksi Otomatis",
   "Touch": "Sentuh",
-  "Scrolling Overlap (px)": "Overlapping Gulir (px)"
+  "Scrolling Overlap (px)": "Overlapping Gulir (px)",
+  "Next Section": "Bagian Selanjutnya",
+  "Previous Section": "Bagian Sebelumnya",
+  "Next Page": "Halaman Berikutnya",
+  "Previous Page": "Halaman Sebelumnya"
 }

@@ -42,8 +42,6 @@
   "Global Settings": "Общие настройки",
   "Go Back": "Назад",
   "Go Forward": "Вперёд",
-  "Go Left": "Влево",
-  "Go Right": "Вправо",
   "Grass": "Трава",
   "Gray": "Серый",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Размер файла:",
   "Auto Detect": "Автоопределение",
   "Touch": "Сенсорный экран",
-  "Scrolling Overlap (px)": "Перекрытие прокрутки (px)"
+  "Scrolling Overlap (px)": "Перекрытие прокрутки (px)",
+  "Next Section": "Следующий раздел",
+  "Previous Section": "Предыдущий раздел",
+  "Next Page": "Следующая страница",
+  "Previous Page": "Предыдущая страница"
 }

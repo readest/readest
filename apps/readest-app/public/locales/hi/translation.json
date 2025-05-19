@@ -42,8 +42,6 @@
   "Global Settings": "वैश्विक सेटिंग्स",
   "Go Back": "वापस जाएं",
   "Go Forward": "आगे जाएं",
-  "Go Left": "बाएं जाएं",
-  "Go Right": "दाएं जाएं",
   "Grass": "घास",
   "Gray": "ग्रे",
   "Gruvbox": "ग्रूवबॉक्स",
@@ -310,5 +308,9 @@
   "File Size:": "फ़ाइल आकार:",
   "Auto Detect": "स्वचालित पहचान",
   "Touch": "स्पर्श",
-  "Scrolling Overlap (px)": "स्क्रॉलिंग ओवरलैप (px)"
+  "Scrolling Overlap (px)": "स्क्रॉलिंग ओवरलैप (px)",
+  "Next Section": "अगला अनुभाग",
+  "Previous Section": "पिछला अनुभाग",
+  "Next Page": "अगला पृष्ठ",
+  "Previous Page": "पिछला पृष्ठ"
 }

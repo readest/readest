@@ -42,8 +42,6 @@
   "Global Settings": "Глобальні налаштування",
   "Go Back": "Назад",
   "Go Forward": "Вперед",
-  "Go Left": "Вліво",
-  "Go Right": "Вправо",
   "Grass": "Трав'яний",
   "Gray": "Сірий",
   "Gruvbox": "Теплий помаранчевий",
@@ -310,5 +308,9 @@
   "File Size:": "Розмір файлу:",
   "Auto Detect": "Авто виявлення",
   "Touch": "Дотик",
-  "Scrolling Overlap (px)": "Прокрутка перекриття (px)"
+  "Scrolling Overlap (px)": "Прокрутка перекриття (px)",
+  "Next Section": "Наступний розділ",
+  "Previous Section": "Попередній розділ",
+  "Next Page": "Наступна сторінка",
+  "Previous Page": "Попередня сторінка"
 }

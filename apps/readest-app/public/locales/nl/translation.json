@@ -123,8 +123,6 @@
   "Translated Text": "Vertaalde tekst",
   "Loading...": "Laden...",
   "Bookmark": "Bladwijzer",
-  "Go Right": "Naar rechts",
-  "Go Left": "Naar links",
   "Go Forward": "Vooruit",
   "Small": "Klein",
   "Large": "Groot",
@@ -310,5 +308,9 @@
   "Don’t have an account? Sign up": "Nog geen account? Registreer u",
   "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "De hele wereld is een toneel,\nEn alle mannen en vrouwen slechts spelers;\nZij hebben hun uitgangen en hun entrees,\nEn één man speelt in zijn tijd vele rollen,\nZijn daden zijnde zeven leeftijden.\n\n— William Shakespeare",
   "Touch": "Raak",
-  "Scrolling Overlap (px)": "Scroll-overlap (px)"
+  "Scrolling Overlap (px)": "Scroll-overlap (px)",
+  "Next Section": "Volgende sectie",
+  "Previous Section": "Vorige sectie",
+  "Next Page": "Volgende pagina",
+  "Previous Page": "Vorige pagina"
 }

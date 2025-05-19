@@ -42,8 +42,6 @@
   "Global Settings": "Configurações Globais",
   "Go Back": "Voltar",
   "Go Forward": "Avançar",
-  "Go Left": "Ir para Esquerda",
-  "Go Right": "Ir para Direita",
   "Grass": "Grama",
   "Gray": "Cinza",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Tamanho do arquivo:",
   "Auto Detect": "Detectar Automaticamente",
   "Touch": "Toque",
-  "Scrolling Overlap (px)": "Sobreposição de Rolagem (px)"
+  "Scrolling Overlap (px)": "Sobreposição de Rolagem (px)",
+  "Next Section": "Próxima seção",
+  "Previous Section": "Seção anterior",
+  "Next Page": "Próxima página",
+  "Previous Page": "Página anterior"
 }

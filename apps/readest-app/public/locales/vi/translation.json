@@ -42,8 +42,6 @@
   "Global Settings": "Cài đặt chung",
   "Go Back": "Quay lại",
   "Go Forward": "Tiến tới",
-  "Go Left": "Sang trái",
-  "Go Right": "Sang phải",
   "Grass": "Xanh cỏ",
   "Gray": "Xám",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Kích thước tệp:",
   "Auto Detect": "Phát hiện tự động",
   "Touch": "Chạm",
-  "Scrolling Overlap (px)": "Chồng chéo cuộn (px)"
+  "Scrolling Overlap (px)": "Chồng chéo cuộn (px)",
+  "Next Section": "Phần tiếp theo",
+  "Previous Section": "Phần trước",
+  "Next Page": "Trang tiếp theo",
+  "Previous Page": "Trang trước"
 }

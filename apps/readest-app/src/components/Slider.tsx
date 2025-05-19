@@ -65,7 +65,7 @@ const Slider: React.FC<SliderProps> = ({
   return (
     <div
       ref={sliderRef}
-      className={`slider bg-base-200 mx-auto w-full max-w-md rounded-xl ${className}`}
+      className={`slider bg-base-200 mx-auto w-full rounded-xl ${className}`}
       dir={isRtl ? 'rtl' : undefined}
     >
       <div className='relative' style={{ height: `${heightPx}px` }}>

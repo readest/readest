@@ -42,8 +42,6 @@
   "Global Settings": "전역 설정",
   "Go Back": "뒤로",
   "Go Forward": "앞으로",
-  "Go Left": "왼쪽으로",
-  "Go Right": "오른쪽으로",
   "Grass": "잔디색",
   "Gray": "회색",
   "Gruvbox": "그러브박스",
@@ -310,5 +308,9 @@
   "File Size:": "파일 크기:",
   "Auto Detect": "자동 감지",
   "Touch": "터치",
-  "Scrolling Overlap (px)": "스크롤 겹침 (px)"
+  "Scrolling Overlap (px)": "스크롤 겹침 (px)",
+  "Next Section": "다음 섹션",
+  "Previous Section": "이전 섹션",
+  "Next Page": "다음 페이지",
+  "Previous Page": "이전 페이지"
 }

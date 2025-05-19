@@ -42,8 +42,6 @@
   "Global Settings": "全局设置",
   "Go Back": "返回",
   "Go Forward": "前进",
-  "Go Left": "向左",
-  "Go Right": "向右",
   "Grass": "青草",
   "Gray": "素雅",
   "Gruvbox": "暖橘",
@@ -310,5 +308,9 @@
   "File Size:": "文件大小",
   "Auto Detect": "自动检测",
   "Touch": "触控",
-  "Scrolling Overlap (px)": "滚动重叠（px）"
+  "Scrolling Overlap (px)": "滚动重叠（px）",
+  "Next Section": "下一章",
+  "Previous Section": "上一章",
+  "Next Page": "下一页",
+  "Previous Page": "上一页"
 }

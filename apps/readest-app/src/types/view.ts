@@ -45,6 +45,8 @@ export interface FoliateView extends HTMLElement {
     removeAttribute: (name: string) => void;
     next: () => Promise<void>;
     prev: () => Promise<void>;
+    nextSection?: () => Promise<void>;
+    prevSection?: () => Promise<void>;
     goTo?: (params: { index: number; anchor: number }) => void;
     setStyles?: (css: string) => void;
     getContents: () => { doc: Document; index?: number }[];

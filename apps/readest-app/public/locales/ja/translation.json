@@ -42,8 +42,6 @@
   "Global Settings": "全体設定",
   "Go Back": "戻る",
   "Go Forward": "進む",
-  "Go Left": "左へ",
-  "Go Right": "右へ",
   "Grass": "グリーン",
   "Gray": "グレー",
   "Gruvbox": "グルーブボックス",
@@ -310,5 +308,9 @@
   "File Size:": "ファイルサイズ：",
   "Auto Detect": "自動検出",
   "Touch": "タッチ",
-  "Scrolling Overlap (px)": "スクロール重複（px）"
+  "Scrolling Overlap (px)": "スクロール重複（px）",
+  "Next Section": "次のセクション",
+  "Previous Section": "前のセクション",
+  "Next Page": "次のページ",
+  "Previous Page": "前のページ"
 }

@@ -42,8 +42,6 @@
   "Global Settings": "Γενικές ρυθμίσεις",
   "Go Back": "Πίσω",
   "Go Forward": "Μπροστά",
-  "Go Left": "Αριστερά",
-  "Go Right": "Δεξιά",
   "Grass": "Γρασίδι",
   "Gray": "Γκρι",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Μέγεθος αρχείου:",
   "Auto Detect": "Αυτόματη ανίχνευση",
   "Touch": "Αφή",
-  "Scrolling Overlap (px)": "Επικάλυψη κύλισης (px)"
+  "Scrolling Overlap (px)": "Επικάλυψη κύλισης (px)",
+  "Next Section": "Επόμενη ενότητα",
+  "Previous Section": "Προηγούμενη ενότητα",
+  "Next Page": "Επόμενη σελίδα",
+  "Previous Page": "Προηγούμενη σελίδα"
 }

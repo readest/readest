@@ -42,8 +42,6 @@
   "Global Settings": "Genel Ayarlar",
   "Go Back": "Geri Git",
   "Go Forward": "İleri Git",
-  "Go Left": "Sola Git",
-  "Go Right": "Sağa Git",
   "Grass": "Çimen",
   "Gray": "Gri",
   "Gruvbox": "Gruvbox",
@@ -310,5 +308,9 @@
   "File Size:": "Dosya Boyutu:",
   "Auto Detect": "Algıla",
   "Touch": "Dokunmatik",
-  "Scrolling Overlap (px)": "Kaydırma Üst Üste Binen (px)"
+  "Scrolling Overlap (px)": "Kaydırma Üst Üste Binen (px)",
+  "Next Section": "Sonraki Bölüm",
+  "Previous Section": "Önceki Bölüm",
+  "Next Page": "Sonraki Sayfa",
+  "Previous Page": "Önceki Sayfa"
 }
