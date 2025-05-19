@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.43": {
+      "date": "2025-05-19",
+      "notes": [
+        "Enhanced compatibility with Gutenberg and Feedbooks ebooks for better styling",
+        "Reduced sensitivity of trackpad and mouse during page flips",
+        "Cloud backup status is now visible for each book on mobile and desktop",
+        "New option to control scroll overlap when paginating in scroll mode",
+        "Added Dutch language translations",
+        "Added more font weight options for built-in fonts",
+        "Added previous and next section buttons in the footer bar for easier navigation"
+      ]
+    },
     "0.9.41": {
       "date": "2025-05-13",
       "notes": [
