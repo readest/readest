@@ -32,6 +32,7 @@
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
     "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler dev",
     "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler deploy",
+    "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
