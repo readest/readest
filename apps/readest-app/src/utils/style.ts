@@ -226,7 +226,7 @@ const getLayoutStyles = (
     text-align: var(--default-text-align);
     max-height: unset;
   }
-  html, body {
+  html {
     background-color: var(--theme-bg-color, transparent);
     background: var(--background-set, none);
   }
@@ -318,7 +318,7 @@ const getLayoutStyles = (
   #pg-header * {
     color: inherit !important;
   }
-  .x-ebookmaker-cover {
+  .x-ebookmaker, .x-ebookmaker-cover, .x-ebookmaker-coverpage {
     background-color: unset !important;
   }
 
@@ -507,13 +507,9 @@ export const transformStylesheet = (
       return `font-size: ${rem}rem`;
     })
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * w) / 100 + 'px')
-    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px');
-
-  if (viewSettings.overrideFont) {
-    css = css
-      .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
-      .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
-      .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
-  }
+    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px')
+    .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
+    .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
+    .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
   return css;
 };
