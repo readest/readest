@@ -17,6 +17,7 @@ import { isMd5 } from '@/utils/md5';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
+import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateGridItems, generateListItems } from './BookshelfItem';
 import GroupingModal from './GroupingModal';
 
@@ -354,7 +355,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         )}
       </div>
       {showGroupingModal && (
-        <div>
+        <ModalPortal>
           <GroupingModal
             libraryBooks={libraryBooks}
             selectedBooks={selectedBooks}
@@ -367,7 +368,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               handleSetSelectMode(false);
             }}
           />
-        </div>
+        </ModalPortal>
       )}
       {showDeleteAlert && (
         <div

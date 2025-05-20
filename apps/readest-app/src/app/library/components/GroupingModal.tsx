@@ -140,7 +140,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   }, [selectedBooks]);
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
+    <div className='fixed inset-0 flex items-center justify-center'>
       <div
         className={clsx(
           'modal-box bg-base-100 overflow-y-auto rounded-2xl shadow-xl',
