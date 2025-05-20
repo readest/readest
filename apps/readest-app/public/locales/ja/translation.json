@@ -5,7 +5,6 @@
   "Animation": "アニメーション",
   "Annotate": "注釈",
   "Apply": "適用",
-  "Are you sure to delete the selected books?": "選択した書籍を削除してもよろしいですか？",
   "Auto Mode": "自動モード",
   "Behavior": "動作",
   "Book": "書籍",
@@ -304,7 +303,6 @@
   "Checking for updates...": "更新を確認中...",
   "Error checking for updates": "更新の確認中にエラーが発生しました",
   "Details": "詳細",
-  "Cancel Selection": "選択をキャンセル",
   "File Size:": "ファイルサイズ：",
   "Auto Detect": "自動検出",
   "Touch": "タッチ",
@@ -312,5 +310,9 @@
   "Next Section": "次のセクション",
   "Previous Section": "前のセクション",
   "Next Page": "次のページ",
-  "Previous Page": "前のページ"
+  "Previous Page": "前のページ",
+  "Are you sure to delete {{count}} selected book(s)?_other": "選択した{{count}}冊の本を削除してもよろしいですか？",
+  "Are you sure to delete the selected book?": "選択した本を削除してもよろしいですか？",
+  "Deselect": "解除",
+  "Select All": "全選択"
 }

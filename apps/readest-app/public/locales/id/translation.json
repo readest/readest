@@ -5,7 +5,6 @@
   "Animation": "Animasi",
   "Annotate": "Anotasi",
   "Apply": "Terapkan",
-  "Are you sure to delete the selected books?": "Apakah Anda yakin ingin menghapus buku yang dipilih?",
   "Auto Mode": "Mode Otomatis",
   "Behavior": "Perilaku",
   "Book": "Buku",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Memeriksa pembaruan...",
   "Error checking for updates": "Kesalahan saat memeriksa pembaruan",
   "Details": "Detail",
-  "Cancel Selection": "Batalkan Pilihan",
   "File Size:": "Ukuran File:",
   "Auto Detect": "Deteksi Otomatis",
   "Touch": "Sentuh",
@@ -312,5 +310,9 @@
   "Next Section": "Bagian Selanjutnya",
   "Previous Section": "Bagian Sebelumnya",
   "Next Page": "Halaman Berikutnya",
-  "Previous Page": "Halaman Sebelumnya"
+  "Previous Page": "Halaman Sebelumnya",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Apakah Anda yakin ingin menghapus {{count}} buku yang dipilih?",
+  "Are you sure to delete the selected book?": "Apakah Anda yakin ingin menghapus buku yang dipilih?",
+  "Deselect": "Batal",
+  "Select All": "Pilih Semua"
 }

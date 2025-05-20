@@ -5,7 +5,6 @@
   "Animation": "Анімація",
   "Annotate": "Анотація",
   "Apply": "Застосувати",
-  "Are you sure to delete the selected books?": "Ви впевнені, що хочете видалити вибрані книги?",
   "Auto Mode": "Автоматичний режим",
   "Behavior": "Поведінка",
   "Book": "Книга",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Перевірка наявності оновлень...",
   "Error checking for updates": "Помилка перевірки наявності оновлень",
   "Details": "Деталі",
-  "Cancel Selection": "Скасувати вибір",
   "File Size:": "Розмір файлу:",
   "Auto Detect": "Авто виявлення",
   "Touch": "Дотик",
@@ -312,5 +310,12 @@
   "Next Section": "Наступний розділ",
   "Previous Section": "Попередній розділ",
   "Next Page": "Наступна сторінка",
-  "Previous Page": "Попередня сторінка"
+  "Previous Page": "Попередня сторінка",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Ви впевнені, що хочете видалити {{count}} вибрану книгу?",
+  "Are you sure to delete {{count}} selected book(s)?_few": "Ви впевнені, що хочете видалити {{count}} вибрані книги?",
+  "Are you sure to delete {{count}} selected book(s)?_many": "Ви впевнені, що хочете видалити {{count}} вибраних книг?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Ви впевнені, що хочете видалити {{count}} вибраних книг?",
+  "Are you sure to delete the selected book?": "Ви впевнені, що хочете видалити вибрану книгу?",
+  "Deselect": "Зняти",
+  "Select All": "Усі"
 }

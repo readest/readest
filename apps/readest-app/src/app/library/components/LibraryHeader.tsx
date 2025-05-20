@@ -24,14 +24,20 @@ import SortMenu from './SortMenu';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
+  isSelectAll: boolean;
   onImportBooks: () => void;
   onToggleSelectMode: () => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   isSelectMode,
+  isSelectAll,
   onImportBooks,
   onToggleSelectMode,
+  onSelectAll,
+  onDeselectAll,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -182,14 +188,21 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             )}
           </div>
         </div>
-        {appService?.isMobile && isSelectMode ? (
-          <div className='w-max-[72px] w-min-[72px] flex h-full items-center'>
+        {isSelectMode ? (
+          <div
+            className={clsx(
+              'flex h-full items-center',
+              'w-max-[72px] w-min-[72px] sm:w-max-[80px] sm:w-min-[80px]',
+            )}
+          >
             <button
-              onClick={onToggleSelectMode}
-              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0'
-              aria-label={_('Cancel Selection')}
+              onClick={isSelectAll ? onDeselectAll : onSelectAll}
+              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 sm:w-[80px]'
+              aria-label={isSelectAll ? _('Deselect') : _('Select All')}
             >
-              {_('Cancel')}
+              <span className='font-sans text-base font-normal sm:text-sm'>
+                {isSelectAll ? _('Deselect') : _('Select All')}
+              </span>
             </button>
           </div>
         ) : (

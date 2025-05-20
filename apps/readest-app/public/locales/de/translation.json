@@ -5,7 +5,6 @@
   "Animation": "Animation",
   "Annotate": "Annotieren",
   "Apply": "Anwenden",
-  "Are you sure to delete the selected books?": "Möchten Sie die ausgewählten Bücher wirklich löschen?",
   "Auto Mode": "Automatischer Modus",
   "Behavior": "Verhalten",
   "Book": "Buch",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Auf Updates prüfen...",
   "Error checking for updates": "Fehler beim Überprüfen auf Updates",
   "Details": "Details",
-  "Cancel Selection": "Auswahl abbrechen",
   "File Size:": "Dateigröße:",
   "Auto Detect": "Automatisch erkennen",
   "Touch": "Berührung",
@@ -312,5 +310,10 @@
   "Next Section": "Nächster Abschnitt",
   "Previous Section": "Vorheriger Abschnitt",
   "Next Page": "Nächste Seite",
-  "Previous Page": "Vorherige Seite"
+  "Previous Page": "Vorherige Seite",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Möchtest du das ausgewählte Buch wirklich löschen?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Möchtest du die {{count}} ausgewählten Bücher wirklich löschen?",
+  "Are you sure to delete the selected book?": "Möchtest du das ausgewählte Buch wirklich löschen?",
+  "Deselect": "Aufheben",
+  "Select All": "Alle"
 }

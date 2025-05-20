@@ -5,7 +5,6 @@
   "Animation": "Animasyon",
   "Annotate": "Not Ekle",
   "Apply": "Uygula",
-  "Are you sure to delete the selected books?": "Seçili kitapları silmek istediğinizden emin misiniz?",
   "Auto Mode": "Otomatik Mod",
   "Behavior": "Davranış",
   "Book": "Kitap",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Yenilikler kontrol ediliyor...",
   "Error checking for updates": "Güncellemeleri kontrol ederken hata oluştu",
   "Details": "Detaylar",
-  "Cancel Selection": "Işaretlemeyi İptal Et",
   "File Size:": "Dosya Boyutu:",
   "Auto Detect": "Algıla",
   "Touch": "Dokunmatik",
@@ -312,5 +310,10 @@
   "Next Section": "Sonraki Bölüm",
   "Previous Section": "Önceki Bölüm",
   "Next Page": "Sonraki Sayfa",
-  "Previous Page": "Önceki Sayfa"
+  "Previous Page": "Önceki Sayfa",
+  "Are you sure to delete {{count}} selected book(s)?_one": "{{count}} seçili kitabı silmek istediğinize emin misiniz?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "{{count}} seçili kitabı silmek istediğinize emin misiniz?",
+  "Are you sure to delete the selected book?": "Seçili kitabı silmek istediğinize emin misiniz?",
+  "Deselect": "Kaldır",
+  "Select All": "Hepsi"
 }

@@ -215,7 +215,7 @@ const BookDetailModal = ({
         >
           <Alert
             title={_('Confirm Deletion')}
-            message={_('Are you sure to delete the selected books?')}
+            message={_('Are you sure to delete the selected book?')}
             onCancel={() => {
               setShowDeleteAlert(false);
             }}

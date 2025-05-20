@@ -5,7 +5,6 @@
   "Animation": "Анимация",
   "Annotate": "Аннотация",
   "Apply": "Применить",
-  "Are you sure to delete the selected books?": "Вы уверены, что хотите удалить выбранные книги?",
   "Auto Mode": "Автоматический режим",
   "Behavior": "Поведение",
   "Book": "Книга",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Проверка обновлений...",
   "Error checking for updates": "Ошибка при проверке обновлений",
   "Details": "Инфо",
-  "Cancel Selection": "Отменить выбор",
   "File Size:": "Размер файла:",
   "Auto Detect": "Автоопределение",
   "Touch": "Сенсорный экран",
@@ -312,5 +310,12 @@
   "Next Section": "Следующий раздел",
   "Previous Section": "Предыдущий раздел",
   "Next Page": "Следующая страница",
-  "Previous Page": "Предыдущая страница"
+  "Previous Page": "Предыдущая страница",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Вы уверены, что хотите удалить {{count}} выбранную книгу?",
+  "Are you sure to delete {{count}} selected book(s)?_few": "Вы уверены, что хотите удалить {{count}} выбранные книги?",
+  "Are you sure to delete {{count}} selected book(s)?_many": "Вы уверены, что хотите удалить {{count}} выбранных книг?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Вы уверены, что хотите удалить {{count}} выбранных книг?",
+  "Are you sure to delete the selected book?": "Вы уверены, что хотите удалить выбранную книгу?",
+  "Deselect": "Снять",
+  "Select All": "Выбрать все"
 }

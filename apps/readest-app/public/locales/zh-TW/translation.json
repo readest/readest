@@ -5,7 +5,6 @@
   "Animation": "動畫",
   "Annotate": "筆記",
   "Apply": "應用",
-  "Are you sure to delete the selected books?": "您確定要刪除所選書籍嗎？",
   "Auto Mode": "自動主題",
   "Behavior": "行為",
   "Book": "書籍",
@@ -304,7 +303,6 @@
   "Checking for updates...": "檢查更新中...",
   "Error checking for updates": "檢查更新時出錯",
   "Details": "詳情",
-  "Cancel Selection": "取消選擇",
   "File Size:": "檔案大小",
   "Auto Detect": "自動檢測",
   "Touch": "觸控",
@@ -312,5 +310,9 @@
   "Next Section": "下一章",
   "Previous Section": "上一章",
   "Next Page": "下一頁",
-  "Previous Page": "上一頁"
+  "Previous Page": "上一頁",
+  "Are you sure to delete {{count}} selected book(s)?_other": "確定要刪除已選擇的 {{count}} 本書嗎？",
+  "Are you sure to delete the selected book?": "確定要刪除已選擇的書籍嗎？",
+  "Deselect": "取消選取",
+  "Select All": "全選"
 }

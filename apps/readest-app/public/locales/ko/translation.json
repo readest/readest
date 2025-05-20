@@ -5,7 +5,6 @@
   "Animation": "애니메이션",
   "Annotate": "주석",
   "Apply": "적용",
-  "Are you sure to delete the selected books?": "선택한 책을 삭제하시겠습니까?",
   "Auto Mode": "자동 모드",
   "Behavior": "동작",
   "Book": "책",
@@ -304,7 +303,6 @@
   "Checking for updates...": "업데이트 확인 중...",
   "Error checking for updates": "업데이트 확인 중 오류 발생",
   "Details": "세부정보",
-  "Cancel Selection": "선택 취소",
   "File Size:": "파일 크기:",
   "Auto Detect": "자동 감지",
   "Touch": "터치",
@@ -312,5 +310,9 @@
   "Next Section": "다음 섹션",
   "Previous Section": "이전 섹션",
   "Next Page": "다음 페이지",
-  "Previous Page": "이전 페이지"
+  "Previous Page": "이전 페이지",
+  "Are you sure to delete {{count}} selected book(s)?_other": "선택한 {{count}}권의 책을 삭제하시겠습니까?",
+  "Are you sure to delete the selected book?": "선택한 책을 삭제하시겠습니까?",
+  "Deselect": "해제",
+  "Select All": "전체선택"
 }

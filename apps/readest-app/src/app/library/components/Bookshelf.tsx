@@ -24,6 +24,8 @@ import GroupingModal from './GroupingModal';
 interface BookshelfProps {
   libraryBooks: Book[];
   isSelectMode: boolean;
+  isSelectAll: boolean;
+  isSelectNone: boolean;
   handleImportBooks: () => void;
   handleBookUpload: (book: Book) => Promise<boolean>;
   handleBookDownload: (book: Book) => Promise<boolean>;
@@ -36,6 +38,8 @@ interface BookshelfProps {
 const Bookshelf: React.FC<BookshelfProps> = ({
   libraryBooks,
   isSelectMode,
+  isSelectAll,
+  isSelectNone,
   handleImportBooks,
   handleBookUpload,
   handleBookDownload,
@@ -68,14 +72,24 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const allBookshelfItems =
     viewMode === 'grid' ? generateGridItems(libraryBooks) : generateListItems(libraryBooks);
 
+  const currentBookshelfItems = navBooksGroup ? navBooksGroup.books : allBookshelfItems;
+
   useEffect(() => {
     if (isSelectMode) {
       setShowSelectModeActions(true);
+      if (isSelectAll) {
+        setSelectedBooks(
+          currentBookshelfItems.map((item) => ('hash' in item ? item.hash : item.id)),
+        );
+      } else if (isSelectNone) {
+        setSelectedBooks([]);
+      }
     } else {
       setSelectedBooks([]);
       setShowSelectModeActions(false);
     }
-  }, [isSelectMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSelectMode, isSelectAll, isSelectNone]);
 
   useEffect(() => {
     if (isImportingBook.current) return;
@@ -170,14 +184,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
-  const confirmDelete = async () => {
+  const getBooksToDelete = () => {
+    const booksToDelete: Book[] = [];
     selectedBooks.forEach((id) => {
       for (const book of libraryBooks.filter((book) => book.hash === id || book.groupId === id)) {
         if (book && !book.deletedAt) {
-          handleBookDelete(book);
+          booksToDelete.push(book);
         }
       }
     });
+    return booksToDelete;
+  };
+
+  const confirmDelete = async () => {
+    for (const book of getBooksToDelete()) {
+      handleBookDelete(book);
+    }
     setSelectedBooks([]);
     setShowDeleteAlert(false);
     setShowSelectModeActions(true);
@@ -193,7 +215,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowGroupingModal(true);
   };
 
-  const currentBookshelfItems = navBooksGroup ? navBooksGroup.books : allBookshelfItems;
   const bookFilter = (item: Book, queryTerm: string) => {
     if (item.deletedAt) return false;
     const searchTerm = new RegExp(queryTerm, 'i');
@@ -379,7 +400,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         >
           <Alert
             title={_('Confirm Deletion')}
-            message={_('Are you sure to delete the selected books?')}
+            message={_('Are you sure to delete {{count}} selected book(s)?', {
+              count: getBooksToDelete().length,
+            })}
             onCancel={() => {
               setShowDeleteAlert(false);
               setShowSelectModeActions(true);

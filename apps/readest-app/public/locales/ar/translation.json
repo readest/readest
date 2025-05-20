@@ -5,7 +5,6 @@
   "Animation": "الرسوم المتحركة",
   "Annotate": "إضافة ملاحظة",
   "Apply": "تطبيق",
-  "Are you sure to delete the selected books?": "هل أنت متأكد من رغبتك في حذف الكتب المحددة؟",
   "Auto Mode": "الوضع التلقائي",
   "Behavior": "السلوك",
   "Book": "الكتاب",
@@ -304,7 +303,6 @@
   "Checking for updates...": "جارٍ التحقق من التحديثات...",
   "Error checking for updates": "خطأ في التحقق من التحديثات",
   "Details": "التفاصيل",
-  "Cancel Selection": "إلغاء التحديد",
   "File Size:": "حجم الملف:",
   "Auto Detect": "الكشف التلقائي",
   "Touch": "اللمس",
@@ -312,5 +310,14 @@
   "Next Section": "القسم التالي",
   "Previous Section": "القسم السابق",
   "Next Page": "الصفحة التالية",
-  "Previous Page": "الصفحة السابقة"
+  "Previous Page": "الصفحة السابقة",
+  "Are you sure to delete {{count}} selected book(s)?_zero": "هل أنت متأكد من حذف الكتب المحددة؟",
+  "Are you sure to delete {{count}} selected book(s)?_one": "هل أنت متأكد من حذف الكتاب المحدد؟",
+  "Are you sure to delete {{count}} selected book(s)?_two": "هل أنت متأكد من حذف الكتابين المحددين؟",
+  "Are you sure to delete {{count}} selected book(s)?_few": "هل أنت متأكد من حذف {{count}} كتب محددة؟",
+  "Are you sure to delete {{count}} selected book(s)?_many": "هل أنت متأكد من حذف {{count}} كتابًا محددًا؟",
+  "Are you sure to delete {{count}} selected book(s)?_other": "هل أنت متأكد من حذف {{count}} من الكتب المحددة؟",
+  "Are you sure to delete the selected book?": "هل أنت متأكد من حذف الكتاب المحدد؟",
+  "Deselect": "إلغاء",
+  "Select All": "الكل"
 }

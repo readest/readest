@@ -20,7 +20,7 @@ const Alert: React.FC<{
           'min-w-[70vw] flex-col sm:min-w-[40vw] sm:flex-row',
         )}
       >
-        <div className='flex items-center space-x-2 self-start'>
+        <div className='labels flex items-center space-x-2 self-start sm:space-x-4 sm:self-center'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
             fill='none'
@@ -34,12 +34,12 @@ const Alert: React.FC<{
               d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
             ></path>
           </svg>
-          <div className=''>
-            <h3 className='font-sm text-start text-base sm:text-center'>{title}</h3>
-            <div className='text-xs'>{message}</div>
+          <div className='flex flex-col gap-y-2'>
+            <h3 className='text-start text-sm sm:text-center'>{title}</h3>
+            <div className='text-start text-xs sm:text-center'>{message}</div>
           </div>
         </div>
-        <div className='flex flex-wrap items-center gap-2 self-end sm:max-w-[20vw]'>
+        <div className='buttons flex flex-wrap items-center justify-end gap-2 self-end sm:max-w-[20vw] sm:self-center'>
           <button className='btn btn-sm btn-neutral' onClick={onCancel}>
             {_('Cancel')}
           </button>

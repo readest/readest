@@ -37,7 +37,6 @@
   "Delete": "Verwijderen",
   "Cancel": "Annuleren",
   "Confirm Deletion": "Verwijdering bevestigen",
-  "Are you sure to delete the selected books?": "Weet u zeker dat u de geselecteerde boeken wilt verwijderen?",
   "Deselect Book": "Boek deselecteren",
   "Select Book": "Boek selecteren",
   "Show Book Details": "Boekdetails weergeven",
@@ -58,7 +57,6 @@
   "Import Books": "Boeken importeren",
   "Select Multiple Books": "Meerdere boeken selecteren",
   "Select Books": "Boeken selecteren",
-  "Cancel Selection": "Selectie annuleren",
   "Storage": "Opslag",
   "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% van cloudopslag gebruikt.",
   "Logged in as {{userDisplayName}}": "Ingelogd als {{userDisplayName}}",
@@ -312,5 +310,10 @@
   "Next Section": "Volgende sectie",
   "Previous Section": "Vorige sectie",
   "Next Page": "Volgende pagina",
-  "Previous Page": "Vorige pagina"
+  "Previous Page": "Vorige pagina",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Weet je zeker dat je {{count}} geselecteerd boek wilt verwijderen?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Weet je zeker dat je {{count}} geselecteerde boeken wilt verwijderen?",
+  "Are you sure to delete the selected book?": "Weet je zeker dat je het geselecteerde boek wilt verwijderen?",
+  "Deselect": "Deselecteer",
+  "Select All": "Alles"
 }

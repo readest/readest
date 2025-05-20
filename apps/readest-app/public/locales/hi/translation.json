@@ -5,7 +5,6 @@
   "Animation": "एनीमेशन",
   "Annotate": "टिप्पणी",
   "Apply": "लागू करें",
-  "Are you sure to delete the selected books?": "क्या आप चयनित पुस्तकों को हटाना चाहते हैं?",
   "Auto Mode": "स्वचालित मोड",
   "Behavior": "व्यवहार",
   "Book": "पुस्तक",
@@ -304,7 +303,6 @@
   "Checking for updates...": "अपडेट की जांच कर रहा है...",
   "Error checking for updates": "अपडेट की जांच करते समय त्रुटि",
   "Details": "विवरण",
-  "Cancel Selection": "चयन रद्द करें",
   "File Size:": "फ़ाइल आकार:",
   "Auto Detect": "स्वचालित पहचान",
   "Touch": "स्पर्श",
@@ -312,5 +310,10 @@
   "Next Section": "अगला अनुभाग",
   "Previous Section": "पिछला अनुभाग",
   "Next Page": "अगला पृष्ठ",
-  "Previous Page": "पिछला पृष्ठ"
+  "Previous Page": "पिछला पृष्ठ",
+  "Are you sure to delete {{count}} selected book(s)?_one": "क्या आप चयनित पुस्तक हटाना चाहते हैं?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "क्या आप चयनित {{count}} पुस्तकें हटाना चाहते हैं?",
+  "Are you sure to delete the selected book?": "क्या आप चयनित पुस्तक हटाना चाहते हैं?",
+  "Deselect": "रद्द करें",
+  "Select All": "सब चुनें"
 }

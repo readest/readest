@@ -5,7 +5,6 @@
   "Animation": "Hiệu ứng động",
   "Annotate": "Chú thích",
   "Apply": "Áp dụng",
-  "Are you sure to delete the selected books?": "Bạn có chắc chắn muốn xóa các sách đã chọn?",
   "Auto Mode": "Chế độ tự động",
   "Behavior": "Hành vi",
   "Book": "Sách",
@@ -304,7 +303,6 @@
   "Checking for updates...": "Đang kiểm tra cập nhật...",
   "Error checking for updates": "Lỗi khi kiểm tra cập nhật",
   "Details": "Chi tiết",
-  "Cancel Selection": "Hủy chọn",
   "File Size:": "Kích thước tệp:",
   "Auto Detect": "Phát hiện tự động",
   "Touch": "Chạm",
@@ -312,5 +310,9 @@
   "Next Section": "Phần tiếp theo",
   "Previous Section": "Phần trước",
   "Next Page": "Trang tiếp theo",
-  "Previous Page": "Trang trước"
+  "Previous Page": "Trang trước",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Bạn có chắc muốn xóa {{count}} cuốn sách đã chọn không?",
+  "Are you sure to delete the selected book?": "Bạn có chắc muốn xóa cuốn sách đã chọn không?",
+  "Deselect": "Bỏ chọn",
+  "Select All": "Chọn tất"
 }
