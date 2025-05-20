@@ -195,6 +195,7 @@ export abstract class BaseAppService implements AppService {
         if (!transient) {
           existingBook.deletedAt = null;
         }
+        existingBook.createdAt = Date.now();
         existingBook.updatedAt = Date.now();
       }
 
