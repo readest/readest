@@ -315,5 +315,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Είστε σίγουροι ότι θέλετε να διαγράψετε τα {{count}} επιλεγμένα βιβλία;",
   "Are you sure to delete the selected book?": "Είστε σίγουροι ότι θέλετε να διαγράψετε το επιλεγμένο βιβλίο;",
   "Deselect": "Άρση",
-  "Select All": "Όλα"
+  "Select All": "Όλα",
+  "No translation available.": "Δεν είναι διαθέσιμη καμία μετάφραση.",
+  "Translated by {{provider}}.": "Μεταφρασμένο από {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Μετάφραση Google",
+  "Azure Translator": "Μεταφραστής Azure"
 }

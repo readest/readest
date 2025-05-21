@@ -314,5 +314,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "您确定要删除 {{count}} 本选中的书籍吗？",
   "Are you sure to delete the selected book?": "您确定要删除选中的书籍吗？",
   "Deselect": "取消选择",
-  "Select All": "全选"
+  "Select All": "全选",
+  "No translation available.": "暂无可用的翻译",
+  "Translated by {{provider}}.": "由 {{provider}} 提供翻译",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Translate",
+  "Azure Translator": "Azure Translator"
 }

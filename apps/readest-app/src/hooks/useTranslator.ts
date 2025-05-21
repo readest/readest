@@ -1,23 +1,25 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import {
-  deeplProvider,
-  getFromCache,
-  storeInCache,
-  UseTranslatorOptions,
-} from '@/services/translators';
+import { getTranslator, getTranslators } from '@/services/translators';
+import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
 
 export function useTranslator({
-  provider = deeplProvider,
+  provider = 'deepl',
   sourceLang = 'AUTO',
   targetLang = 'EN',
 }: UseTranslatorOptions = {}) {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [translator, setTransltor] = useState(() => getTranslator(provider));
+  const [translators] = useState(() => getTranslators());
 
   useEffect(() => {
     setLoading(false);
-  }, [provider.name, sourceLang, targetLang]);
+  }, [provider, sourceLang, targetLang]);
+
+  useEffect(() => {
+    setTransltor(getTranslator(provider));
+  }, [provider]);
 
   const translate = useCallback(
     async (
@@ -44,7 +46,7 @@ export function useTranslator({
             text,
             sourceLanguage,
             targetLanguage,
-            provider.name,
+            provider,
           );
           if (cachedTranslation) return;
 
@@ -56,7 +58,7 @@ export function useTranslator({
       if (textsNeedingTranslation.length === 0) {
         const results = await Promise.all(
           textsToTranslate.map((text) =>
-            getFromCache(text, sourceLanguage, targetLanguage, provider.name).then(
+            getFromCache(text, sourceLanguage, targetLanguage, provider).then(
               (cached) => cached || text,
             ),
           ),
@@ -68,7 +70,11 @@ export function useTranslator({
       setLoading(true);
 
       try {
-        const translatedTexts = await provider.translate(
+        const translator = translators.find((t) => t.name === provider);
+        if (!translator) {
+          throw new Error(`No translator found for provider: ${provider}`);
+        }
+        const translatedTexts = await translator.translate(
           textsNeedingTranslation,
           sourceLanguage,
           targetLanguage,
@@ -83,7 +89,7 @@ export function useTranslator({
               translatedTexts[index] || '',
               sourceLanguage,
               targetLanguage,
-              provider.name,
+              provider,
             );
           }),
         );
@@ -103,7 +109,7 @@ export function useTranslator({
                 originalText,
                 sourceLanguage,
                 targetLanguage,
-                provider.name,
+                provider,
               );
 
               if (cachedTranslation) {
@@ -121,11 +127,13 @@ export function useTranslator({
         throw err instanceof Error ? err : new Error(String(err));
       }
     },
-    [provider, sourceLang, targetLang, token],
+    [provider, sourceLang, targetLang, translator, token],
   );
 
   return {
     translate,
+    translator,
+    translators,
     loading,
   };
 }

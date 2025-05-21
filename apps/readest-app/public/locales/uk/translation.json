@@ -317,5 +317,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Ви впевнені, що хочете видалити {{count}} вибраних книг?",
   "Are you sure to delete the selected book?": "Ви впевнені, що хочете видалити вибрану книгу?",
   "Deselect": "Зняти",
-  "Select All": "Усі"
+  "Select All": "Усі",
+  "No translation available.": "Переклад недоступний.",
+  "Translated by {{provider}}.": "Перекладено {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Translate",
+  "Azure Translator": "Azure Translator"
 }

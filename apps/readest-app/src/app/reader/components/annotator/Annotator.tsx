@@ -30,7 +30,7 @@ import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
-import DeepLPopup from './DeepLPopup';
+import TranslatorPopup from './TranslatorPopup';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -499,7 +499,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         />
       )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
-        <DeepLPopup
+        <TranslatorPopup
           text={selection?.text as string}
           position={translatorPopupPosition}
           trianglePosition={trianglePosition}

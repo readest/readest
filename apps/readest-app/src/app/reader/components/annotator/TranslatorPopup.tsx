@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
@@ -6,6 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
+import { TranslatorName } from '@/services/translators';
 
 const notSupportedLangs = ['hi', 'vi'];
 
@@ -27,7 +29,7 @@ const generateTranslatorLangs = () => {
 
 const TRANSLATOR_LANGS = generateTranslatorLangs();
 
-interface DeepLPopupProps {
+interface TranslatorPopupProps {
   text: string;
   position: Position;
   trianglePosition: Position;
@@ -35,7 +37,12 @@ interface DeepLPopupProps {
   popupHeight: number;
 }
 
-const DeepLPopup: React.FC<DeepLPopupProps> = ({
+interface TranslatorType {
+  name: string;
+  label: string;
+}
+
+const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   text,
   position,
   trianglePosition,
@@ -45,6 +52,10 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   const _ = useTranslation();
   const { token } = useAuth();
   const { settings, setSettings } = useSettingsStore();
+  const [providers, setProviders] = useState<TranslatorType[]>([]);
+  const [provider, setProvider] = useState<TranslatorName>(
+    settings.globalReadSettings.translationProvider as TranslatorName,
+  );
   const [sourceLang, setSourceLang] = useState('AUTO');
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
   const [translation, setTranslation] = useState<string | null>(null);
@@ -54,7 +65,8 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { translate } = useTranslator({
+  const { translate, translators } = useTranslator({
+    provider,
     sourceLang,
     targetLang,
   });
@@ -69,9 +81,25 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
     setTargetLang(event.target.value);
   };
 
+  const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTranslator = translators.find((t) => t.name === event.target.value);
+    if (selectedTranslator) {
+      settings.globalReadSettings.translationProvider = selectedTranslator.name;
+      setSettings(settings);
+      setProvider(selectedTranslator.name as TranslatorName);
+    }
+  };
+
   useEffect(() => {
+    const availableProviders = translators.map((t) => {
+      return { name: t.name, label: t.label };
+    });
+    setProviders(availableProviders);
+  }, [translators]);
+
+  useEffect(() => {
+    setLoading(true);
     const fetchTranslation = async () => {
-      setLoading(true);
       setError(null);
       setTranslation(null);
 
@@ -103,7 +131,7 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
 
     fetchTranslation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, token, sourceLang, targetLang]);
+  }, [text, token, sourceLang, targetLang, provider]);
 
   return (
     <div>
@@ -122,7 +150,10 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
             <select
               value={sourceLang}
               onChange={handleSourceLangChange}
-              className='select h-8 min-h-8 rounded-md border-none bg-gray-600 text-sm text-white/75 focus:outline-none focus:ring-0'
+              className={clsx(
+                'select h-8 min-h-8 rounded-md border-none text-end text-sm',
+                'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
+              )}
             >
               {[
                 ['AUTO', _('Auto Detect')],
@@ -144,13 +175,16 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
 
         <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
 
-        <div className='overflow-y-auto p-4 font-sans'>
+        <div className='overflow-y-auto px-4 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <select
               value={targetLang}
               onChange={handleTargetLangChange}
-              className='select h-8 min-h-8 rounded-md border-none bg-gray-600 text-sm text-white/75 focus:outline-none focus:ring-0'
+              className={clsx(
+                'select h-8 min-h-8 rounded-md border-none text-end text-sm',
+                'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
+              )}
             >
               {Object.entries(TRANSLATOR_LANGS)
                 .sort((a, b) => a[1].localeCompare(b[1]))
@@ -164,14 +198,40 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
 
           {loading ? (
             <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
-          ) : error ? (
-            <p className='text-base text-red-600'>{error}</p>
           ) : (
             <div>
-              <p className='text-base text-white/90'>
-                {translation || 'No translation available.'}
-              </p>
-              <div className='pt-4 text-sm opacity-60'>Translated by DeepL.</div>
+              {error ? (
+                <p className='text-base text-red-600'>{error}</p>
+              ) : (
+                <p className='text-base text-white/90'>
+                  {translation || _('No translation available.')}
+                </p>
+              )}
+              <div className='flex h-10 items-center justify-between pt-4'>
+                {provider && (
+                  <div className='text-xs opacity-60'>
+                    {error
+                      ? ''
+                      : _('Translated by {{provider}}.', {
+                          provider: providers.find((p) => p.name === provider)?.label,
+                        })}
+                  </div>
+                )}
+                <select
+                  value={provider}
+                  onChange={handleProviderChange}
+                  className={clsx(
+                    'select h-8 min-h-8 rounded-md border-none text-end text-sm',
+                    'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
+                  )}
+                >
+                  {providers.map(({ name, label }) => (
+                    <option key={name} value={name}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -180,4 +240,4 @@ const DeepLPopup: React.FC<DeepLPopupProps> = ({
   );
 };
 
-export default DeepLPopup;
+export default TranslatorPopup;

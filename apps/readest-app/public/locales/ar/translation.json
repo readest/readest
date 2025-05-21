@@ -319,5 +319,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "هل أنت متأكد من حذف {{count}} من الكتب المحددة؟",
   "Are you sure to delete the selected book?": "هل أنت متأكد من حذف الكتاب المحدد؟",
   "Deselect": "إلغاء",
-  "Select All": "الكل"
+  "Select All": "الكل",
+  "No translation available.": "لا توجد ترجمة متاحة.",
+  "Translated by {{provider}}.": "ترجم بواسطة {{provider}}.",
+  "DeepL": "ديب إل",
+  "Google Translate": "ترجمة جوجل",
+  "Azure Translator": "مترجم أزور"
 }

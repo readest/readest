@@ -1,10 +1,12 @@
 import { getAPIBaseUrl } from '@/services/environment';
+import { stubTranslation as _ } from '@/utils/misc';
 import { TranslationProvider } from '../types';
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
 export const deeplProvider: TranslationProvider = {
   name: 'deepl',
+  label: _('DeepL'),
   translate: async (
     text: string[],
     sourceLang: string,

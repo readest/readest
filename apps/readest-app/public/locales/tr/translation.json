@@ -315,5 +315,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "{{count}} seçili kitabı silmek istediğinize emin misiniz?",
   "Are you sure to delete the selected book?": "Seçili kitabı silmek istediğinize emin misiniz?",
   "Deselect": "Kaldır",
-  "Select All": "Hepsi"
+  "Select All": "Hepsi",
+  "No translation available.": "Çeviri mevcut değil.",
+  "Translated by {{provider}}.": "{{provider}} tarafından çevrildi.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Çeviri",
+  "Azure Translator": "Azure Çevirmen"
 }

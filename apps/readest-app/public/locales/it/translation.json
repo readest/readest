@@ -316,5 +316,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Sei sicuro di voler eliminare {{count}} libri selezionati?",
   "Are you sure to delete the selected book?": "Sei sicuro di voler eliminare il libro selezionato?",
   "Deselect": "Annulla",
-  "Select All": "Tutti"
+  "Select All": "Tutti",
+  "No translation available.": "Nessuna traduzione disponibile.",
+  "Translated by {{provider}}.": "Tradotto da {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Translate",
+  "Azure Translator": "Traduttore Azure"
 }

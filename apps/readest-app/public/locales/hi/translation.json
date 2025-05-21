@@ -315,5 +315,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "क्या आप चयनित {{count}} पुस्तकें हटाना चाहते हैं?",
   "Are you sure to delete the selected book?": "क्या आप चयनित पुस्तक हटाना चाहते हैं?",
   "Deselect": "रद्द करें",
-  "Select All": "सब चुनें"
+  "Select All": "सब चुनें",
+  "No translation available.": "कोई अनुवाद उपलब्ध नहीं है।",
+  "Translated by {{provider}}.": "{{provider}} द्वारा अनुवादित।",
+  "DeepL": "डीपएल",
+  "Google Translate": "गूगल अनुवाद",
+  "Azure Translator": "एज़्योर अनुवादक"
 }

@@ -316,5 +316,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Tem certeza que deseja excluir {{count}} livros selecionados?",
   "Are you sure to delete the selected book?": "Tem certeza que deseja excluir o livro selecionado?",
   "Deselect": "Desmarcar",
-  "Select All": "Marcar tudo"
+  "Select All": "Marcar tudo",
+  "No translation available.": "Sem tradução disponível.",
+  "Translated by {{provider}}.": "Traduzido por {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Tradutor",
+  "Azure Translator": "Tradutor Azure"
 }

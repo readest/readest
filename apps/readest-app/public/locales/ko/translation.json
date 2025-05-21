@@ -314,5 +314,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "선택한 {{count}}권의 책을 삭제하시겠습니까?",
   "Are you sure to delete the selected book?": "선택한 책을 삭제하시겠습니까?",
   "Deselect": "해제",
-  "Select All": "전체선택"
+  "Select All": "전체선택",
+  "No translation available.": "번역이 없습니다.",
+  "Translated by {{provider}}.": "{{provider}}에 의해 번역됨.",
+  "DeepL": "DeepL",
+  "Google Translate": "구글 번역",
+  "Azure Translator": "Azure 번역기"
 }

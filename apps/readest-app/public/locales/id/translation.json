@@ -314,5 +314,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Apakah Anda yakin ingin menghapus {{count}} buku yang dipilih?",
   "Are you sure to delete the selected book?": "Apakah Anda yakin ingin menghapus buku yang dipilih?",
   "Deselect": "Batal",
-  "Select All": "Pilih Semua"
+  "Select All": "Pilih Semua",
+  "No translation available.": "Tidak ada terjemahan yang tersedia.",
+  "Translated by {{provider}}.": "Terjemahan oleh {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Translate",
+  "Azure Translator": "Azure Translator"
 }

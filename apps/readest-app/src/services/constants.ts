@@ -56,6 +56,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   notebookWidth: '25%',
   isNotebookPinned: false,
   autohideCursor: true,
+  translationProvider: 'deepl',
   translateTargetLang: 'EN',
 
   customThemes: [],

@@ -1,5 +1,8 @@
+import { TranslatorName } from './providers';
+
 export interface TranslationProvider {
   name: string;
+  label: string;
   translate: (
     texts: string[],
     sourceLang: string,
@@ -14,7 +17,7 @@ export interface TranslationCache {
 }
 
 export interface UseTranslatorOptions {
-  provider?: TranslationProvider;
+  provider?: TranslatorName;
   sourceLang?: string;
   targetLang?: string;
 }

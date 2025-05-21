@@ -314,5 +314,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Bạn có chắc muốn xóa {{count}} cuốn sách đã chọn không?",
   "Are you sure to delete the selected book?": "Bạn có chắc muốn xóa cuốn sách đã chọn không?",
   "Deselect": "Bỏ chọn",
-  "Select All": "Chọn tất"
+  "Select All": "Chọn tất",
+  "No translation available.": "Không có bản dịch nào.",
+  "Translated by {{provider}}.": "Được dịch bởi {{provider}}.",
+  "DeepL": "DeepL",
+  "Google Translate": "Google Dịch",
+  "Azure Translator": "Azure Translator"
 }

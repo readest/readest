@@ -11,6 +11,7 @@ export interface ReadSettings {
   notebookWidth: string;
   isNotebookPinned: boolean;
   autohideCursor: boolean;
+  translationProvider: string;
   translateTargetLang: string;
 
   highlightStyle: HighlightStyle;

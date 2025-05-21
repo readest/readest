@@ -314,5 +314,10 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "選択した{{count}}冊の本を削除してもよろしいですか？",
   "Are you sure to delete the selected book?": "選択した本を削除してもよろしいですか？",
   "Deselect": "解除",
-  "Select All": "全選択"
+  "Select All": "全選択",
+  "No translation available.": "翻訳はありません。",
+  "Translated by {{provider}}.": "{{provider}}によって翻訳されました。",
+  "DeepL": "DeepL",
+  "Google Translate": "Google翻訳",
+  "Azure Translator": "Azure翻訳"
 }

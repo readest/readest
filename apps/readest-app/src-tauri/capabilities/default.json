@@ -61,6 +61,15 @@
         },
         {
           "url": "https://*.cloudflarestorage.com"
+        },
+        {
+          "url": "https://edge.microsoft.com"
+        },
+        {
+          "url": "https://*.microsofttranslator.com"
+        },
+        {
+          "url": "https://translate.googleapis.com"
         }
       ]
     },
