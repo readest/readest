@@ -130,8 +130,11 @@ async function callDeepLAPI(
 ) {
   const isV2Api = apiUrl.endsWith('/v2/translate');
 
+  // TODO: this should be processed in the client, but for now, we need to do it here
+  // please remove this when most clients are updated
+  const input = text.replaceAll('\n', ' ').trim();
   const requestBody = {
-    text: isV2Api ? [text] : text,
+    text: isV2Api ? [input] : input,
     source_lang: isV2Api ? sourceLang : (LANG_V2_V1_MAP[sourceLang] ?? sourceLang),
     target_lang: isV2Api ? targetLang : (LANG_V2_V1_MAP[targetLang] ?? targetLang),
   };

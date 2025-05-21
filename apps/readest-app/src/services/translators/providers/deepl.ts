@@ -12,46 +12,37 @@ export const deeplProvider: TranslationProvider = {
     token?: string | null,
     useCache: boolean = false,
   ): Promise<string[]> => {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
 
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(DEEPL_API_ENDPOINT, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          text: text,
-          source_lang: sourceLang,
-          target_lang: targetLang,
-          use_cache: useCache,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Translation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      const result = [...text];
-      let translationIndex = 0;
-
-      for (let i = 0; i < text.length; i++) {
-        if (text[i]!.trim().length > 0) {
-          result[i] = data.translations?.[translationIndex]?.text || text[i];
-          translationIndex++;
-        }
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Translation error:', error);
-      return text;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
+
+    const body = JSON.stringify({
+      text: text,
+      source_lang: sourceLang,
+      target_lang: targetLang,
+      use_cache: useCache,
+    });
+
+    const response = await fetch(DEEPL_API_ENDPOINT, { method: 'POST', headers, body });
+
+    if (!response.ok) {
+      throw new Error(`Translation failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data || !data.translations) {
+      throw new Error('Invalid response from translation service');
+    }
+
+    return text.map((line, i) => {
+      if (!line?.trim().length) {
+        return line;
+      }
+      return data.translations?.[i]?.text || line;
+    });
   },
 };
