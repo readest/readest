@@ -75,7 +75,11 @@ const updateTocData = (
       const section = sections[id];
       if (section) {
         item.cfi = section.cfi;
-        item.location = section.location;
+        // Add location only when toc item is at the same level as the section
+        // otherwise the location will not be accurate
+        if (id === item.href) {
+          item.location = section.location;
+        }
       }
     }
     if (item.subitems) {
