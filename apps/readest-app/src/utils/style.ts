@@ -345,6 +345,12 @@ export const getFootnoteStyles = () => `
     text-decoration: none;
   }
 
+  @media (prefers-color-scheme: dark) {
+    a:any-link, a:any-link * {
+      color: unset;
+    }
+  }
+
   ol {
     margin: 0;
     padding: 0;
