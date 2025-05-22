@@ -78,9 +78,9 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 ![Annotations](./data/screenshots/annotations.png)
 
-![DeepL](./data/screenshots/deepl.png)
-
 ![TTS](./data/screenshots/tts_speak_aloud.png)
+
+![DeepL](./data/screenshots/deepl.png)
 
 ![Footnote](./data/screenshots/footnote_popover.png)
 
