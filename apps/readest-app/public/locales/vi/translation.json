@@ -319,5 +319,6 @@
   "Translated by {{provider}}.": "Được dịch bởi {{provider}}.",
   "DeepL": "DeepL",
   "Google Translate": "Google Dịch",
-  "Azure Translator": "Azure Translator"
+  "Azure Translator": "Azure Translator",
+  "Invert Image In Dark Mode": "Đảo ảnh chế độ tối"
 }

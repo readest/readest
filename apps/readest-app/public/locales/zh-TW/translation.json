@@ -319,5 +319,6 @@
   "Translated by {{provider}}.": "由 {{provider}} 提供翻譯",
   "DeepL": "DeepL",
   "Google Translate": "Google Translate",
-  "Azure Translator": "Azure Translator"
+  "Azure Translator": "Azure Translator",
+  "Invert Image In Dark Mode": "深色主題下圖片反相"
 }

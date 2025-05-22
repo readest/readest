@@ -324,5 +324,6 @@
   "Translated by {{provider}}.": "ترجم بواسطة {{provider}}.",
   "DeepL": "ديب إل",
   "Google Translate": "ترجمة جوجل",
-  "Azure Translator": "مترجم أزور"
+  "Azure Translator": "مترجم أزور",
+  "Invert Image In Dark Mode": "عكس الصورة في الوضع المظلم"
 }

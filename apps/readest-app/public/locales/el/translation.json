@@ -320,5 +320,6 @@
   "Translated by {{provider}}.": "Μεταφρασμένο από {{provider}}.",
   "DeepL": "DeepL",
   "Google Translate": "Μετάφραση Google",
-  "Azure Translator": "Μεταφραστής Azure"
+  "Azure Translator": "Μεταφραστής Azure",
+  "Invert Image In Dark Mode": "Αντιστροφή σε σκούρο"
 }

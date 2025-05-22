@@ -118,7 +118,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   textIndent: 0,
   fullJustification: true,
   hyphenation: true,
-  invert: false,
+  invertImgColorInDark: false,
   theme: 'light',
   overrideFont: false,
   overrideLayout: false,

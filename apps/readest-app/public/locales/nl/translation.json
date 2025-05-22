@@ -320,5 +320,6 @@
   "Translated by {{provider}}.": "Vertaald door {{provider}}.",
   "DeepL": "DeepL",
   "Google Translate": "Google Vertalen",
-  "Azure Translator": "Azure Vertaler"
+  "Azure Translator": "Azure Vertaler",
+  "Invert Image In Dark Mode": "Inverteer afbeelding in het donker"
 }

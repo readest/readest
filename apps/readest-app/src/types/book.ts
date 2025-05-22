@@ -99,7 +99,7 @@ export interface BookStyle {
   textIndent: number;
   fullJustification: boolean;
   hyphenation: boolean;
-  invert: boolean;
+  invertImgColorInDark: boolean;
   theme: string;
   overrideFont: boolean;
   overrideLayout: boolean;

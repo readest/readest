@@ -319,5 +319,6 @@
   "Translated by {{provider}}.": "{{provider}}에 의해 번역됨.",
   "DeepL": "DeepL",
   "Google Translate": "구글 번역",
-  "Azure Translator": "Azure 번역기"
+  "Azure Translator": "Azure 번역기",
+  "Invert Image In Dark Mode": "어두운 곳에서 이미지 반전"
 }

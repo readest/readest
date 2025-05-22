@@ -13,23 +13,37 @@ import {
   themes,
 } from '@/styles/themes';
 import { useEnv } from '@/context/EnvContext';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import ThemeEditor from './ThemeEditor';
 
-const ColorPanel: React.FC<{ bookKey: string }> = ({}) => {
+const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor, saveCustomTheme } =
     useThemeStore();
   const { envConfig } = useEnv();
   const { settings, setSettings } = useSettingsStore();
+  const { getViewSettings } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey)!;
+  const [invertImgColorInDark, setInvertImgColorInDark] = useState(
+    viewSettings.invertImgColorInDark,
+  );
+
   const iconSize16 = useResponsiveSize(16);
   const iconSize24 = useResponsiveSize(24);
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThems, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
+
+  useEffect(() => {
+    if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
+    saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invertImgColorInDark]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
@@ -110,6 +124,17 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({}) => {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className='flex items-center justify-between'>
+            <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
+            <input
+              type='checkbox'
+              className='toggle'
+              checked={invertImgColorInDark}
+              disabled={!isDarkMode}
+              onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
+            />
           </div>
 
           <div>

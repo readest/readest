@@ -319,5 +319,6 @@
   "Translated by {{provider}}.": "{{provider}}によって翻訳されました。",
   "DeepL": "DeepL",
   "Google Translate": "Google翻訳",
-  "Azure Translator": "Azure翻訳"
+  "Azure Translator": "Azure翻訳",
+  "Invert Image In Dark Mode": "ダークモードで画像を反転"
 }

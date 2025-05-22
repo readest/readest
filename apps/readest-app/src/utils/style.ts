@@ -29,7 +29,7 @@ const getFontStyles = (
   overrideFont: boolean,
   themeCode: ThemeCode,
 ) => {
-  const { fg, primary } = themeCode;
+  const { fg, primary, isDarkMode } = themeCode;
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
@@ -87,14 +87,8 @@ const getFontStyles = (
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
     a:any-link, a:any-link * {
-      ${overrideFont ? `color: ${primary};` : ''}
+      ${overrideFont ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: none;
-    }
-    /* https://github.com/whatwg/html/issues/5426 */
-    @media (prefers-color-scheme: dark) {
-      a:any-link, a:any-link * {
-        ${overrideFont ? `color: ${primary};` : `color: lightblue;`}
-      }
     }
     /* override inline hardcoded text color */
     *[style*="color: rgb(0,0,0)"], *[style*="color: rgb(0, 0, 0)"],
@@ -188,6 +182,7 @@ const getLayoutStyles = (
   zoomLevel: number,
   writingMode: string,
   vertical: boolean,
+  invertImgColorInDark: boolean,
   themeCode: ThemeCode,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
@@ -293,11 +288,13 @@ const getLayoutStyles = (
     color: unset;
   }
 
+  img {
+    ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+  }
   /* inline images without dimension */
   p img, span img, sup img {
     height: 1em;
     mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
-    ${isDarkMode ? 'filter: invert(100%);' : ''}
   }
   p:has(img), span:has(img) {
     background-color: ${bg};
@@ -343,12 +340,6 @@ export const getFootnoteStyles = () => `
 
   a:any-link {
     text-decoration: none;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    a:any-link, a:any-link * {
-      color: unset;
-    }
   }
 
   ol {
@@ -423,6 +414,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.zoomLevel! / 100.0,
     viewSettings.writingMode!,
     viewSettings.vertical!,
+    viewSettings.invertImgColorInDark!,
     themeCode,
   );
   // scale the font size on-the-fly so that we can sync the same font size on different devices

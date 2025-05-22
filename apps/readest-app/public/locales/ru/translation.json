@@ -322,5 +322,6 @@
   "Translated by {{provider}}.": "Переведено {{provider}}.",
   "DeepL": "DeepL",
   "Google Translate": "Google Translate",
-  "Azure Translator": "Azure Translator"
+  "Azure Translator": "Azure Translator",
+  "Invert Image In Dark Mode": "Инвертировать в тёмной теме"
 }

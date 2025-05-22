@@ -320,5 +320,6 @@
   "Translated by {{provider}}.": "{{provider}} tarafından çevrildi.",
   "DeepL": "DeepL",
   "Google Translate": "Google Çeviri",
-  "Azure Translator": "Azure Çevirmen"
+  "Azure Translator": "Azure Çevirmen",
+  "Invert Image In Dark Mode": "Karartılmış Görüntüyü Ters Çevir"
 }

@@ -162,6 +162,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [writingMode]);
 
   useEffect(() => {
+    if (overrideLayout === viewSettings.overrideLayout) return;
     saveViewSettings(envConfig, bookKey, 'overrideLayout', overrideLayout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);

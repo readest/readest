@@ -320,5 +320,6 @@
   "Translated by {{provider}}.": "{{provider}} द्वारा अनुवादित।",
   "DeepL": "डीपएल",
   "Google Translate": "गूगल अनुवाद",
-  "Azure Translator": "एज़्योर अनुवादक"
+  "Azure Translator": "एज़्योर अनुवादक",
+  "Invert Image In Dark Mode": "अंधेरे में छवि को उलटें"
 }

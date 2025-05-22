@@ -321,5 +321,6 @@
   "Translated by {{provider}}.": "Tradotto da {{provider}}.",
   "DeepL": "DeepL",
   "Google Translate": "Google Translate",
-  "Azure Translator": "Traduttore Azure"
+  "Azure Translator": "Traduttore Azure",
+  "Invert Image In Dark Mode": "Inverti immagine in scuro"
 }
