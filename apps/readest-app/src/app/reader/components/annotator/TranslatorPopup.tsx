@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
@@ -8,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import { TranslatorName } from '@/services/translators';
+import Select from '@/components/Select';
 
 const notSupportedLangs = ['hi', 'vi'];
 
@@ -147,28 +147,23 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h1 className='text-sm font-normal'>{_('Original Text')}</h1>
-            <select
+            <Select
               value={sourceLang}
               onChange={handleSourceLangChange}
-              className={clsx(
-                'select h-8 min-h-8 rounded-md border-none text-end text-sm',
-                'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
-              )}
-            >
-              {[
-                ['AUTO', _('Auto Detect')],
-                ...Object.entries(TRANSLATOR_LANGS).sort((a, b) => a[1].localeCompare(b[1])),
-              ].map(([code, name]) => {
-                return (
-                  <option key={code} value={code}>
-                    {detectedSourceLang && sourceLang === 'AUTO' && code === 'AUTO'
-                      ? `${TRANSLATOR_LANGS[detectedSourceLang] || detectedSourceLang} ` +
-                        _('(detected)')
-                      : name}
-                  </option>
-                );
-              })}
-            </select>
+              options={[
+                { value: 'AUTO', label: _('Auto Detect') },
+                ...Object.entries(TRANSLATOR_LANGS)
+                  .sort((a, b) => a[1].localeCompare(b[1]))
+                  .map(([code, name]) => {
+                    const label =
+                      detectedSourceLang && sourceLang === 'AUTO' && code === 'AUTO'
+                        ? `${TRANSLATOR_LANGS[detectedSourceLang] || detectedSourceLang} ` +
+                          _('(detected)')
+                        : name;
+                    return { value: code, label };
+                  }),
+              ]}
+            />
           </div>
           <p className='text-base text-white/90'>{text}</p>
         </div>
@@ -178,22 +173,13 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         <div className='overflow-y-auto px-4 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
-            <select
+            <Select
               value={targetLang}
               onChange={handleTargetLangChange}
-              className={clsx(
-                'select h-8 min-h-8 rounded-md border-none text-end text-sm',
-                'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
-              )}
-            >
-              {Object.entries(TRANSLATOR_LANGS)
+              options={Object.entries(TRANSLATOR_LANGS)
                 .sort((a, b) => a[1].localeCompare(b[1]))
-                .map(([code, name]) => (
-                  <option key={code} value={code}>
-                    {name}
-                  </option>
-                ))}
-            </select>
+                .map(([code, name]) => ({ value: code, label: name }))}
+            />
           </div>
 
           {loading ? (
@@ -217,20 +203,11 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                         })}
                   </div>
                 )}
-                <select
+                <Select
                   value={provider}
                   onChange={handleProviderChange}
-                  className={clsx(
-                    'select h-8 min-h-8 rounded-md border-none text-end text-sm',
-                    'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
-                  )}
-                >
-                  {providers.map(({ name, label }) => (
-                    <option key={name} value={name}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                  options={providers.map(({ name: value, label }) => ({ value, label }))}
+                />
               </div>
             </div>
           )}
