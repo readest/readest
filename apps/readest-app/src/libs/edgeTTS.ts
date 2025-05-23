@@ -174,11 +174,12 @@ export class EdgeSpeechTTS {
     });
 
     const genSSML = (lang: string, text: string, voice: string, rate: number) => {
+      const cleanedText = text.replace(/^<break\b[^>]*>/i, '');
       return `
         <speak version="1.0" xml:lang="${lang}">
           <voice name="${voice}">
             <prosody rate="${rate}">
-              ${text}
+              ${cleanedText}
             </prosody>
           </voice>
         </speak>
@@ -252,6 +253,12 @@ export class EdgeSpeechTTS {
             merged.set(new Uint8Array(newBody), audioData.byteLength);
             audioData = merged.buffer;
           }
+        }
+      });
+
+      ws.addEventListener('close', () => {
+        if (!audioData.byteLength) {
+          reject(new Error('No audio data received.'));
         }
       });
 

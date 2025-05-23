@@ -10,7 +10,6 @@ export class EdgeTTSClient implements TTSClient {
   #rate = 1.0;
   #pitch = 1.0;
   #voice: TTSVoice | null = null;
-  #currentVoiceLang = '';
   #voices: TTSVoice[] = [];
   #edgeTTS: EdgeSpeechTTS;
 
@@ -45,25 +44,26 @@ export class EdgeTTSClient implements TTSClient {
     return { lang, text, voice: voiceId, rate: this.#rate, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
+  getVoiceIdFromLang = async (lang: string) => {
+    let voiceId = 'en-US-AriaNeural';
+    const preferredVoiceId = TTSUtils.getPreferredVoice('edge-tts', lang);
+    const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
+    this.#voice = preferredVoice ? preferredVoice : (await this.getVoices(lang))[0] || null;
+    if (this.#voice) {
+      voiceId = this.#voice.id;
+    }
+    return voiceId;
+  };
+
   async *speak(
     ssml: string,
     signal: AbortSignal,
     preload = false,
   ): AsyncGenerator<TTSMessageEvent> {
     const { marks } = parseSSMLMarks(ssml);
-    let lang = parseSSMLLang(ssml) || 'en';
-    if (lang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
-      lang = this.#primaryLang;
-    }
-    let voiceId = 'en-US-AriaNeural';
-    if (!this.#voice || this.#currentVoiceLang !== lang) {
-      const preferredVoiceId = TTSUtils.getPreferredVoice('edge-tts', lang);
-      const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
-      this.#voice = preferredVoice ? preferredVoice : (await this.getVoices(lang))[0] || null;
-      this.#currentVoiceLang = lang;
-    }
-    if (this.#voice) {
-      voiceId = this.#voice.id;
+    let defaultLang = parseSSMLLang(ssml) || 'en';
+    if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
+      defaultLang = this.#primaryLang;
     }
 
     if (preload) {
@@ -71,16 +71,24 @@ export class EdgeTTSClient implements TTSClient {
       const maxImmediate = 2;
       for (let i = 0; i < Math.min(maxImmediate, marks.length); i++) {
         const mark = marks[i]!;
-        await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId)).catch((err) => {
-          console.warn('Error preloading mark', i, err);
-        });
+        const { language } = mark;
+        const voiceLang = language || defaultLang;
+        const voiceId = await this.getVoiceIdFromLang(voiceLang);
+        await this.#edgeTTS
+          .createAudio(this.getPayload(voiceLang, mark.text, voiceId))
+          .catch((err) => {
+            console.warn('Error preloading mark', i, err);
+          });
       }
       if (marks.length > maxImmediate) {
         (async () => {
           for (let i = maxImmediate; i < marks.length; i++) {
             const mark = marks[i]!;
             try {
-              await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId));
+              const { language } = mark;
+              const voiceLang = language || defaultLang;
+              const voiceId = await this.getVoiceIdFromLang(voiceLang);
+              await this.#edgeTTS.createAudio(this.getPayload(voiceLang, mark.text, voiceId));
             } catch (err) {
               console.warn('Error preloading mark (bg)', i, err);
             }
@@ -107,7 +115,12 @@ export class EdgeTTSClient implements TTSClient {
         break;
       }
       try {
-        const blob = await this.#edgeTTS.createAudio(this.getPayload(lang, mark.text, voiceId));
+        const { language } = mark;
+        const voiceLang = language || defaultLang;
+        const voiceId = await this.getVoiceIdFromLang(voiceLang);
+        const blob = await this.#edgeTTS.createAudio(
+          this.getPayload(voiceLang, mark.text, voiceId),
+        );
         const url = URL.createObjectURL(blob);
         this.#audioElement = new Audio(url);
         const audio = this.#audioElement;
@@ -240,9 +253,6 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async getVoices(lang: string): Promise<TTSVoice[]> {
-    if (this.#currentVoiceLang) {
-      lang = this.#currentVoiceLang;
-    }
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
     return voices

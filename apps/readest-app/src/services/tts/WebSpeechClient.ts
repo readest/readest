@@ -1,8 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
-import { AsyncQueue } from '@/utils/queue';
-import { findSSMLMark, parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
-import { isCJKStr } from '@/utils/lang';
+import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
 import { TTSUtils } from './TTSUtils';
 
@@ -46,105 +44,30 @@ interface TTSBoundaryEvent {
   error?: string;
 }
 
-async function* speakWithBoundary(
-  ssml: string,
-  getRate: () => number,
-  getPitch: () => number,
-  getVoice: () => SpeechSynthesisVoice | null,
-) {
-  const lang = parseSSMLLang(ssml);
-  const { plainText, marks } = parseSSMLMarks(ssml);
-  // console.log('ssml', ssml, marks);
-  // console.log('text', plainText);
-
-  const synth = window.speechSynthesis;
-  const utterance = new SpeechSynthesisUtterance(plainText);
-
-  utterance.rate = getRate();
-  utterance.pitch = getPitch();
-  const voice = getVoice();
-  if (voice) {
-    utterance.voice = voice;
-  }
-  if (lang) {
-    utterance.lang = lang;
-  }
-
-  const queue = new AsyncQueue<TTSBoundaryEvent>();
-
-  utterance.onboundary = (event: SpeechSynthesisEvent) => {
-    utterance.rate = getRate();
-    utterance.pitch = getPitch();
-    const voice = getVoice();
-    if (voice) {
-      utterance.voice = voice;
-    }
-    const mark = findSSMLMark(event.charIndex, marks);
-    // console.log('boundary', event.charIndex, mark);
-    queue.enqueue({
-      type: 'boundary',
-      speaking: true,
-      name: event.name,
-      mark: mark?.name ?? '',
-      charIndex: event.charIndex,
-      charLength: event.charLength,
-    });
-  };
-
-  utterance.onend = () => {
-    queue.enqueue({ type: 'end', speaking: false });
-    queue.finish();
-  };
-
-  utterance.onerror = (event) => {
-    queue.enqueue({ type: 'error', speaking: false, error: event.error });
-    queue.finish();
-  };
-
-  synth.speak(utterance);
-
-  while (true) {
-    const ev = await queue.dequeue();
-    if (ev === null) {
-      break;
-    }
-    yield ev;
-  }
-}
-
 async function* speakWithMarks(
   ssml: string,
+  defaultLang: string,
   getRate: () => number,
   getPitch: () => number,
-  getVoice: () => SpeechSynthesisVoice | null,
+  getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
 ) {
-  const { plainText, marks } = parseSSMLMarks(ssml);
-  const lang = parseSSMLLang(ssml);
-
-  const isCJK = (lang: string | null) => {
-    const cjkLangs = ['zh', 'ja', 'kr'];
-    if (lang && cjkLangs.some((cjk) => lang.startsWith(cjk))) return true;
-    return isCJKStr(plainText);
-  };
-
-  if (!isCJK(lang)) {
-    yield* speakWithBoundary(ssml, getRate, getPitch, getVoice);
-    return;
-  }
+  const { marks } = parseSSMLMarks(ssml);
 
   const synth = window.speechSynthesis;
 
   const utterance = new SpeechSynthesisUtterance();
   for (const mark of marks) {
+    const { language } = mark;
+    const voiceLang = language || defaultLang;
     utterance.text = mark.text;
     utterance.rate = getRate();
     utterance.pitch = getPitch();
-    const voice = getVoice();
+    const voice = await getVoice(voiceLang);
     if (voice) {
       utterance.voice = voice;
     }
-    if (lang) {
-      utterance.lang = lang;
+    if (voiceLang) {
+      utterance.lang = voiceLang;
     }
 
     yield {
@@ -178,7 +101,6 @@ export class WebSpeechClient implements TTSClient {
   #rate = 1.0;
   #pitch = 1.0;
   #voice: SpeechSynthesisVoice | null = null;
-  #currentVoiceLang = '';
   #voices: SpeechSynthesisVoice[] = [];
   #synth = window.speechSynthesis;
   available = true;
@@ -209,6 +131,18 @@ export class WebSpeechClient implements TTSClient {
     return this.available;
   }
 
+  getVoiceFromLang = async (lang: string) => {
+    const preferredVoiceId = TTSUtils.getPreferredVoice('web-speech', lang);
+    const preferredVoice = this.#voices.find((v) => v.voiceURI === preferredVoiceId);
+    if (preferredVoice) {
+      this.#voice = preferredVoice;
+    } else {
+      const voiceId = (await this.getVoices(lang))[0]?.id ?? '';
+      this.#voice = this.#voices.find((v) => v.voiceURI === voiceId) || null;
+    }
+    return this.#voice;
+  };
+
   async *speak(
     ssml: string,
     signal: AbortSignal,
@@ -217,24 +151,17 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
-    let lang = parseSSMLLang(ssml) || 'en';
-    if (lang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
-      lang = this.#primaryLang;
+    let defaultLang = parseSSMLLang(ssml) || 'en';
+    if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
+      defaultLang = this.#primaryLang;
     }
-    if (!this.#voice || this.#currentVoiceLang !== lang) {
-      const preferredVoiceId = TTSUtils.getPreferredVoice('web-speech', lang);
-      const preferredVoice = this.#voices.find((v) => v.voiceURI === preferredVoiceId);
-      const voiceId = (await this.getVoices(lang))[0]?.id ?? '';
-      this.#voice = preferredVoice
-        ? preferredVoice
-        : this.#voices.find((v) => v.voiceURI === voiceId) || null;
-      this.#currentVoiceLang = lang;
-    }
+
     for await (const ev of speakWithMarks(
       ssml,
+      defaultLang,
       () => this.#rate,
       () => this.#pitch,
-      () => this.#voice,
+      this.getVoiceFromLang,
     )) {
       if (signal.aborted) {
         console.log('TTS aborted');
@@ -301,9 +228,6 @@ export class WebSpeechClient implements TTSClient {
   }
 
   async getVoices(lang: string) {
-    if (this.#currentVoiceLang) {
-      lang = this.#currentVoiceLang;
-    }
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const isValidVoice = (id: string) => {
       return !id.includes('com.apple') || id.includes('com.apple.voice.compact');

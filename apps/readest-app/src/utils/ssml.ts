@@ -2,35 +2,65 @@ type TTSMark = {
   offset: number;
   name: string;
   text: string;
+  language?: string;
 };
 
-export const parseSSMLMarks = (ssml: string) => {
-  ssml = ssml.replace(/<speak[^>]*>/i, '');
-  ssml = ssml.replace(/<\/speak>/i, '');
+const cleanTextContent = (text: string) =>
+  text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();
 
-  const markRegex = /<mark\s+name="([^"]+)"\s*\/>/g;
+export const parseSSMLMarks = (ssml: string) => {
+  const speakMatch = ssml.match(/<speak[^>]*xml:lang="([^"]+)"[^>]*>/i);
+  const defaultLang = speakMatch?.[1] ?? 'en';
+  ssml = ssml.replace(/<speak[^>]*>/i, '').replace(/<\/speak>/i, '');
+
   let plainText = '';
   const marks: TTSMark[] = [];
 
-  let match;
-  while ((match = markRegex.exec(ssml)) !== null) {
-    const markTagEndIndex = markRegex.lastIndex;
-    const nextMarkIndex = ssml.indexOf('<mark', markTagEndIndex);
-    const nextChunk = ssml.slice(
-      markTagEndIndex,
-      nextMarkIndex !== -1 ? nextMarkIndex : ssml.length,
-    );
-    const cleanedChunk = nextChunk
-      .replace(/<[^>]+>/g, '')
-      .replace(/\r\n/g, '  ')
-      .replace(/\r/g, ' ')
-      .replace(/\n/g, ' ')
-      .trimStart();
-    plainText += cleanedChunk;
+  let activeMark: string | null = null;
+  let currentLang = defaultLang;
+  const langStack: string[] = [];
 
-    const offset = plainText.length - cleanedChunk.length;
-    const markName = match[1]!;
-    marks.push({ offset, name: markName, text: cleanedChunk });
+  const tagRegex = /<(\/?)(\w+)([^>]*)>|([^<]+)/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = tagRegex.exec(ssml)) !== null) {
+    if (match[4]) {
+      const rawText = match[4];
+      const text = cleanTextContent(rawText);
+      if (text && activeMark) {
+        const offset = plainText.length;
+        plainText += text;
+        marks.push({
+          offset,
+          name: activeMark,
+          text,
+          language: currentLang,
+        });
+      } else {
+        plainText += cleanTextContent(rawText);
+      }
+    } else {
+      const isEnd = match[1] === '/';
+      const tagName = match[2];
+      const attr = match[3];
+
+      if (tagName === 'mark' && !isEnd) {
+        const nameMatch = attr?.match(/name="([^"]+)"/);
+        if (nameMatch) {
+          activeMark = nameMatch[1]!;
+        }
+      } else if (tagName === 'lang') {
+        if (!isEnd) {
+          langStack.push(currentLang);
+          const langMatch = attr?.match(/xml:lang="([^"]+)"/);
+          if (langMatch) {
+            currentLang = langMatch[1]!;
+          }
+        } else {
+          currentLang = langStack.pop() ?? defaultLang;
+        }
+      }
+    }
   }
 
   return { plainText, marks };
