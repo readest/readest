@@ -34,7 +34,7 @@ export const parseSSMLMarks = (ssml: string) => {
           offset,
           name: activeMark,
           text,
-          language: currentLang,
+          language: inferLangFromScript(text, currentLang) || currentLang,
         });
       } else {
         plainText += cleanTextContent(rawText);
@@ -86,6 +86,19 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
   return result;
 };
 
+const inferLangFromScript = (text: string, lang: string | null): string | null => {
+  if (!lang || lang.startsWith('en')) {
+    if (/[\p{Script=Hangul}]/u.test(text)) {
+      return 'ko';
+    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
+      return 'ja';
+    } else if (/[\p{Script=Han}]/u.test(text)) {
+      return 'zh';
+    }
+  }
+  return lang;
+};
+
 export const parseSSMLLang = (ssml: string): string | null => {
   let lang = null;
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
@@ -96,15 +109,5 @@ export const parseSSMLLang = (ssml: string): string | null => {
         ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
         : parts[0]!.toLowerCase();
   }
-  if (!lang || lang.startsWith('en')) {
-    if (/[\p{Script=Hangul}]/u.test(ssml)) {
-      lang = 'ko';
-    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(ssml)) {
-      lang = 'ja';
-    } else if (/[\p{Script=Han}]/u.test(ssml)) {
-      lang = 'zh';
-    }
-  }
-
-  return lang;
+  return inferLangFromScript(ssml, lang);
 };
