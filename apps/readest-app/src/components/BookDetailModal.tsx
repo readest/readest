@@ -153,13 +153,13 @@ const BookDetailModal = ({
               <div className='mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3'>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Publisher:')}</span>
-                  <p className='text-neutral-content line-clamp-1 text-sm'>
+                  <p className='text-neutral-content text-sm'>
                     {formatPublisher(bookMeta.publisher || '') || _('Unknown')}
                   </p>
                 </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Published:')}</span>
-                  <p className='text-neutral-content max-w-28 text-ellipsis text-sm'>
+                  <p className='text-neutral-content text-sm'>
                     {formatDate(bookMeta.published) || _('Unknown')}
                   </p>
                 </div>
@@ -179,19 +179,17 @@ const BookDetailModal = ({
                 </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Subjects:')}</span>
-                  <p className='text-neutral-content line-clamp-1 text-sm'>
+                  <p className='text-neutral-content line-clamp-3 text-sm'>
                     {formatSubject(bookMeta.subject) || _('Unknown')}
                   </p>
                 </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('Format:')}</span>
-                  <p className='text-neutral-content line-clamp-1 text-sm'>
-                    {book.format || _('Unknown')}
-                  </p>
+                  <p className='text-neutral-content text-sm'>{book.format || _('Unknown')}</p>
                 </div>
                 <div className='overflow-hidden'>
                   <span className='font-bold'>{_('File Size:')}</span>
-                  <p className='text-neutral-content line-clamp-1 text-sm'>
+                  <p className='text-neutral-content text-sm'>
                     {formatFileSize(fileSize) || _('Unknown')}
                   </p>
                 </div>
