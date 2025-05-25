@@ -170,7 +170,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
         <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
 
-        <div className='overflow-y-auto px-4 pt-4 font-sans'>
+        <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <Select
@@ -181,7 +181,6 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                 .map(([code, name]) => ({ value: code, label: name }))}
             />
           </div>
-
           {loading ? (
             <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
           ) : (
@@ -193,24 +192,26 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                   {translation || _('No translation available.')}
                 </p>
               )}
-              <div className='flex h-10 items-center justify-between pt-4'>
-                {provider && (
-                  <div className='text-xs opacity-60'>
-                    {error
-                      ? ''
-                      : _('Translated by {{provider}}.', {
-                          provider: providers.find((p) => p.name === provider)?.label,
-                        })}
-                  </div>
-                )}
-                <Select
-                  value={provider}
-                  onChange={handleProviderChange}
-                  options={providers.map(({ name: value, label }) => ({ value, label }))}
-                />
-              </div>
             </div>
           )}
+        </div>
+        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between bg-gray-600 px-4'>
+          {provider && !loading && (
+            <div className='text-xs opacity-60'>
+              {error
+                ? ''
+                : _('Translated by {{provider}}.', {
+                    provider: providers.find((p) => p.name === provider)?.label,
+                  })}
+            </div>
+          )}
+          <div className='ml-auto'>
+            <Select
+              value={provider}
+              onChange={handleProviderChange}
+              options={providers.map(({ name: value, label }) => ({ value, label }))}
+            />
+          </div>
         </div>
       </Popup>
     </div>
