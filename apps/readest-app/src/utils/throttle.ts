@@ -1,4 +1,4 @@
-export interface ThrottleOptions {
+interface ThrottleOptions {
   emitLast?: boolean;
 }
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useReaderStore } from '@/store/readerStore';
-import { throttle } from '@/utils/throttle';
+import { debounce } from '@/utils/debounce';
 import { ScrollSource } from './usePagination';
 
 export const useMouseEvent = (
@@ -9,27 +9,23 @@ export const useMouseEvent = (
   handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
   const { hoveredBookKey } = useReaderStore();
-  const throttledScroll = throttle(handleContinuousScroll, 500, {
-    emitLast: false,
-  });
-  const throttledFlip = throttle(handlePageFlip, 1000, {
-    emitLast: false,
-  });
+  const debounceScroll = debounce(handleContinuousScroll, 500);
+  const debounceFlip = debounce(handlePageFlip, 100);
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         if (msg.data.type === 'iframe-wheel') {
-          throttledScroll('mouse', -msg.data.deltaY, 0);
+          debounceScroll('mouse', -msg.data.deltaY, 0);
         }
         if (msg.data.type === 'iframe-wheel') {
-          throttledFlip(msg);
+          debounceFlip(msg);
         } else {
           handlePageFlip(msg);
         }
       }
     } else if (msg.type === 'wheel') {
       const event = msg as React.WheelEvent<HTMLDivElement>;
-      throttledScroll('mouse', -event.deltaY, 0);
+      debounceScroll('mouse', -event.deltaY, 0);
     } else {
       handlePageFlip(msg);
     }
