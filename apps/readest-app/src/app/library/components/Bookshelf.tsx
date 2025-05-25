@@ -75,23 +75,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const currentBookshelfItems = navBooksGroup ? navBooksGroup.books : allBookshelfItems;
 
   useEffect(() => {
-    if (isSelectMode) {
-      setShowSelectModeActions(true);
-      if (isSelectAll) {
-        setSelectedBooks(
-          currentBookshelfItems.map((item) => ('hash' in item ? item.hash : item.id)),
-        );
-      } else if (isSelectNone) {
-        setSelectedBooks([]);
-      }
-    } else {
-      setSelectedBooks([]);
-      setShowSelectModeActions(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectMode, isSelectAll, isSelectNone]);
-
-  useEffect(() => {
     if (isImportingBook.current) return;
     isImportingBook.current = true;
 
@@ -266,6 +249,23 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         return 0;
       }
     });
+
+  useEffect(() => {
+    if (isSelectMode) {
+      setShowSelectModeActions(true);
+      if (isSelectAll) {
+        setSelectedBooks(
+          filteredBookshelfItems.map((item) => ('hash' in item ? item.hash : item.id)),
+        );
+      } else if (isSelectNone) {
+        setSelectedBooks([]);
+      }
+    } else {
+      setSelectedBooks([]);
+      setShowSelectModeActions(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSelectMode, isSelectAll, isSelectNone]);
 
   return (
     <div className='bookshelf'>
