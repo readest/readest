@@ -306,7 +306,6 @@
   "File Size:": "Dateigröße:",
   "Auto Detect": "Automatisch erkennen",
   "Touch": "Berührung",
-  "Scrolling Overlap (px)": "Scroll-Überlappung (px)",
   "Next Section": "Nächster Abschnitt",
   "Previous Section": "Vorheriger Abschnitt",
   "Next Page": "Nächste Seite",
@@ -323,5 +322,12 @@
   "Azure Translator": "Azure Übersetzer",
   "Invert Image In Dark Mode": "Invertiere Bild im Dunkeln",
   "Help improve Readest": "Readest verbessern helfen",
-  "Sharing anonymized statistics": "Anonymisierte Statistiken teilen"
+  "Sharing anonymized statistics": "Anonymisierte Statistiken teilen",
+  "Interface Language": "Benutzeroberflächensprache",
+  "Translation": "Übersetzung",
+  "Enable Translation": "Übersetzung aktivieren",
+  "Translation Service": "Übersetzungsdienst",
+  "Translate To": "Übersetzen nach",
+  "Disable Translation": "Übersetzung deaktivieren",
+  "Overlap Margin": "Überlappungsrand"
 }

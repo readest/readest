@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { getTranslators } from '@/services/translators';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import cssbeautify from 'cssbeautify';
 import cssValidate from '@/utils/css';
@@ -26,8 +27,11 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [draftStylesheet, setDraftStylesheet] = useState(viewSettings.userStylesheet!);
   const [draftStylesheetSaved, setDraftStylesheetSaved] = useState(true);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
-  const [error, setError] = useState<string | null>(null);
+  const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
+  const [translationProvider, setTranslationProvider] = useState(viewSettings.translationProvider!);
+  const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang!);
 
+  const [error, setError] = useState<string | null>(null);
   const [inputFocusInAndroid, setInputFocusInAndroid] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -108,7 +112,7 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     };
   };
 
-  const getUILangOptions = () => {
+  const getLangOptions = () => {
     const langs = TRANSLATED_LANGS as Record<string, string>;
     const options = Object.entries(langs).map(([option, label]) => ({ option, label }));
     options.sort((a, b) => a.label.localeCompare(b.label));
@@ -119,6 +123,40 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSelectUILang = (option: string) => {
     saveViewSettings(envConfig, bookKey, 'uiLanguage', option, false, false);
     i18n.changeLanguage(option ? option : navigator.language);
+  };
+
+  const getTranslationProviderOptions = () => {
+    const translators = getTranslators();
+    const availableProviders = translators.map((t) => {
+      return { option: t.name, label: t.label };
+    });
+    return availableProviders;
+  };
+
+  const getCurrentTranslationProviderOption = () => {
+    const option = translationProvider;
+    const availableProviders = getTranslationProviderOptions();
+    return availableProviders.find((p) => p.option === option) || availableProviders[0]!;
+  };
+
+  const handleSelectTranslationProvider = (option: string) => {
+    setTranslationProvider(option);
+    saveViewSettings(envConfig, bookKey, 'translationProvider', option, false, false);
+    viewSettings.translationProvider = option;
+    setViewSettings(bookKey, { ...viewSettings });
+  };
+
+  const getCurrentTargetLangOption = () => {
+    const option = translateTargetLang;
+    const availableOptions = getLangOptions();
+    return availableOptions.find((o) => o.option === option) || availableOptions[0]!;
+  };
+
+  const handleSelectTargetLang = (option: string) => {
+    setTranslateTargetLang(option);
+    saveViewSettings(envConfig, bookKey, 'translateTargetLang', option, false, false);
+    viewSettings.translateTargetLang = option;
+    setViewSettings(bookKey, { ...viewSettings });
   };
 
   useEffect(() => {
@@ -139,6 +177,14 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenOrientation]);
 
+  useEffect(() => {
+    if (translationEnabled === viewSettings.translationEnabled) return;
+    saveViewSettings(envConfig, bookKey, 'translationEnabled', translationEnabled, true, false);
+    viewSettings.translationEnabled = translationEnabled;
+    setViewSettings(bookKey, { ...viewSettings });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationEnabled]);
+
   return (
     <div
       className={clsx(
@@ -151,11 +197,51 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
             <div className='config-item'>
-              <span className=''>{_('Language')}</span>
+              <span className=''>{_('Interface Language')}</span>
               <DropDown
+                options={getLangOptions()}
                 selected={getCurrentUILangOption()}
-                options={getUILangOptions()}
                 onSelect={handleSelectUILang}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Translation')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200'>
+            <div className='config-item'>
+              <span className=''>{_('Enable Translation')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={translationEnabled}
+                onChange={() => setTranslationEnabled(!translationEnabled)}
+              />
+            </div>
+
+            <div className='config-item'>
+              <span className=''>{_('Translation Service')}</span>
+              <DropDown
+                selected={getCurrentTranslationProviderOption()}
+                options={getTranslationProviderOptions()}
+                onSelect={handleSelectTranslationProvider}
+                disabled={!translationEnabled}
+                className='dropdown-top'
+              />
+            </div>
+
+            <div className='config-item'>
+              <span className=''>{_('Translate To')}</span>
+              <DropDown
+                options={getLangOptions()}
+                selected={getCurrentTargetLangOption()}
+                onSelect={handleSelectTargetLang}
+                disabled={!translationEnabled}
+                className='dropdown-top'
+                listClassName='!max-h-60'
               />
             </div>
           </div>

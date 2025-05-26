@@ -306,7 +306,6 @@
   "File Size:": "Kích thước tệp:",
   "Auto Detect": "Phát hiện tự động",
   "Touch": "Chạm",
-  "Scrolling Overlap (px)": "Chồng chéo cuộn (px)",
   "Next Section": "Phần tiếp theo",
   "Previous Section": "Phần trước",
   "Next Page": "Trang tiếp theo",
@@ -322,5 +321,12 @@
   "Azure Translator": "Azure Translator",
   "Invert Image In Dark Mode": "Đảo ảnh chế độ tối",
   "Help improve Readest": "Giúp cải thiện Readest",
-  "Sharing anonymized statistics": "Chia sẻ thống kê ẩn danh"
+  "Sharing anonymized statistics": "Chia sẻ thống kê ẩn danh",
+  "Interface Language": "Ngôn ngữ giao diện",
+  "Translation": "Dịch",
+  "Enable Translation": "Bật dịch",
+  "Translation Service": "Dịch vụ dịch thuật",
+  "Translate To": "Dịch sang",
+  "Disable Translation": "Tắt dịch",
+  "Overlap Margin": "Độ chồng lề"
 }

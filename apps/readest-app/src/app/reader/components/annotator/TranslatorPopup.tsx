@@ -6,7 +6,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
-import { TranslatorName } from '@/services/translators';
+import { UseTranslatorOptions } from '@/services/translators';
+import { localeToLang } from '@/utils/lang';
 import Select from '@/components/Select';
 
 const notSupportedLangs = ['hi', 'vi'];
@@ -16,12 +17,7 @@ const generateTranslatorLangs = () => {
   const result: Record<string, string> = {};
   for (const [code, name] of Object.entries(langs)) {
     if (notSupportedLangs.includes(code)) continue;
-    let newCode = code.toUpperCase();
-    if (newCode === 'ZH-CN') {
-      newCode = 'ZH-HANS';
-    } else if (newCode === 'ZH-TW') {
-      newCode = 'ZH-HANT';
-    }
+    const newCode = localeToLang(code).toUpperCase();
     result[newCode] = name;
   }
   return result;
@@ -53,11 +49,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   const { token } = useAuth();
   const { settings, setSettings } = useSettingsStore();
   const [providers, setProviders] = useState<TranslatorType[]>([]);
-  const [provider, setProvider] = useState<TranslatorName>(
-    settings.globalReadSettings.translationProvider as TranslatorName,
-  );
   const [sourceLang, setSourceLang] = useState('AUTO');
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
+  const [provider, setProvider] = useState(settings.globalReadSettings.translationProvider);
   const [translation, setTranslation] = useState<string | null>(null);
   const [detectedSourceLang, setDetectedSourceLang] = useState<
     keyof typeof TRANSLATOR_LANGS | null
@@ -69,7 +63,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     provider,
     sourceLang,
     targetLang,
-  });
+  } as UseTranslatorOptions);
 
   const handleSourceLangChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSourceLang(event.target.value);
@@ -86,7 +80,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     if (selectedTranslator) {
       settings.globalReadSettings.translationProvider = selectedTranslator.name;
       setSettings(settings);
-      setProvider(selectedTranslator.name as TranslatorName);
+      setProvider(selectedTranslator.name);
     }
   };
 

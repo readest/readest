@@ -26,3 +26,16 @@ export const langToDefaultLocale = (langCode: string): string => {
 
   return mapping[langCode] || langCode;
 };
+
+export const localeToLang = (locale: string): string => {
+  const mapping: Record<string, string> = {
+    'zh-CN': 'zh-Hans',
+    'zh-TW': 'zh-Hant',
+    'zh-HK': 'zh-Hant',
+  };
+
+  if (locale.startsWith('zh')) {
+    return mapping[locale] || 'zh-Hans';
+  }
+  return mapping[locale] || locale.split('-')[0]!.toLowerCase();
+};

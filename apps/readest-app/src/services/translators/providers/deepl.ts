@@ -24,8 +24,8 @@ export const deeplProvider: TranslationProvider = {
 
     const body = JSON.stringify({
       text: text,
-      source_lang: sourceLang,
-      target_lang: targetLang,
+      source_lang: sourceLang.toUpperCase(),
+      target_lang: targetLang.toUpperCase(),
       use_cache: useCache,
     });
 

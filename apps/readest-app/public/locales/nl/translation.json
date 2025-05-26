@@ -306,7 +306,6 @@
   "Don’t have an account? Sign up": "Nog geen account? Registreer u",
   "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "De hele wereld is een toneel,\nEn alle mannen en vrouwen slechts spelers;\nZij hebben hun uitgangen en hun entrees,\nEn één man speelt in zijn tijd vele rollen,\nZijn daden zijnde zeven leeftijden.\n\n— William Shakespeare",
   "Touch": "Raak",
-  "Scrolling Overlap (px)": "Scroll-overlap (px)",
   "Next Section": "Volgende sectie",
   "Previous Section": "Vorige sectie",
   "Next Page": "Volgende pagina",
@@ -323,5 +322,12 @@
   "Azure Translator": "Azure Vertaler",
   "Invert Image In Dark Mode": "Inverteer afbeelding in het donker",
   "Help improve Readest": "Help Readest verbeteren",
-  "Sharing anonymized statistics": "Anonieme statistieken delen"
+  "Sharing anonymized statistics": "Anonieme statistieken delen",
+  "Interface Language": "Interface-taal",
+  "Translation": "Vertaling",
+  "Enable Translation": "Vertaling inschakelen",
+  "Translation Service": "Vertaalservice",
+  "Translate To": "Vertalen naar",
+  "Disable Translation": "Vertaling uitschakelen",
+  "Overlap Margin": "Overlap marge"
 }

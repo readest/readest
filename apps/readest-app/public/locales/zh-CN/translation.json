@@ -306,7 +306,6 @@
   "File Size:": "文件大小",
   "Auto Detect": "自动检测",
   "Touch": "触控",
-  "Scrolling Overlap (px)": "滚动重叠（px）",
   "Next Section": "下一章",
   "Previous Section": "上一章",
   "Next Page": "下一页",
@@ -322,5 +321,12 @@
   "Azure Translator": "Azure Translator",
   "Invert Image In Dark Mode": "深色主题下图片反色",
   "Help improve Readest": "帮助改进 Readest",
-  "Sharing anonymized statistics": "分享匿名统计数据"
+  "Sharing anonymized statistics": "分享匿名统计数据",
+  "Interface Language": "界面语言",
+  "Translation": "翻译",
+  "Enable Translation": "启用翻译",
+  "Translation Service": "翻译服务",
+  "Translate To": "翻译到",
+  "Disable Translation": "禁用翻译",
+  "Overlap Margin": "重叠边距"
 }

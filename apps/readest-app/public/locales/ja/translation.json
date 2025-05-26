@@ -306,7 +306,6 @@
   "File Size:": "ファイルサイズ：",
   "Auto Detect": "自動検出",
   "Touch": "タッチ",
-  "Scrolling Overlap (px)": "スクロール重複（px）",
   "Next Section": "次のセクション",
   "Previous Section": "前のセクション",
   "Next Page": "次のページ",
@@ -322,5 +321,12 @@
   "Azure Translator": "Azure翻訳",
   "Invert Image In Dark Mode": "ダークモードで画像を反転",
   "Help improve Readest": "Readestを改善する手助け",
-  "Sharing anonymized statistics": "匿名化された統計情報を共有"
+  "Sharing anonymized statistics": "匿名化された統計情報を共有",
+  "Interface Language": "インターフェースの言語",
+  "Translation": "翻訳",
+  "Enable Translation": "翻訳を有効にする",
+  "Translation Service": "翻訳サービス",
+  "Translate To": "翻訳先",
+  "Disable Translation": "翻訳を無効にする",
+  "Overlap Margin": "オーバーラップマージン"
 }

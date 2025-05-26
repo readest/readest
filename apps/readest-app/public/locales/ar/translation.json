@@ -306,7 +306,6 @@
   "File Size:": "حجم الملف:",
   "Auto Detect": "الكشف التلقائي",
   "Touch": "اللمس",
-  "Scrolling Overlap (px)": "تداخل التمرير (بكسل)",
   "Next Section": "القسم التالي",
   "Previous Section": "القسم السابق",
   "Next Page": "الصفحة التالية",
@@ -327,5 +326,12 @@
   "Azure Translator": "مترجم أزور",
   "Invert Image In Dark Mode": "عكس الصورة في الوضع المظلم",
   "Help improve Readest": "ساعد في تحسين ريديست",
-  "Sharing anonymized statistics": "مشاركة إحصائيات مجهولة الهوية"
+  "Sharing anonymized statistics": "مشاركة إحصائيات مجهولة الهوية",
+  "Interface Language": "لغة الواجهة",
+  "Translation": "الترجمة",
+  "Enable Translation": "تمكين الترجمة",
+  "Translation Service": "خدمة الترجمة",
+  "Translate To": "ترجمة إلى",
+  "Disable Translation": "تعطيل الترجمة",
+  "Overlap Margin": "هامش التداخل"
 }

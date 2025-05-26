@@ -8,17 +8,30 @@ interface DropDownProps {
   selected: { option: string; label: string };
   options: { option: string; label: string }[];
   onSelect: (option: string) => void;
+  disabled?: boolean;
+  className?: string;
+  listClassName?: string;
 }
 
-const DropDown: React.FC<DropDownProps> = ({ selected, options, onSelect }) => {
+const DropDown: React.FC<DropDownProps> = ({
+  selected,
+  options,
+  onSelect,
+  className,
+  listClassName,
+  disabled = false,
+}) => {
   const iconSize16 = useResponsiveSize(16);
   const defaultIconSize = useDefaultIconSize();
 
   return (
-    <div className='dropdown dropdown-bottom'>
+    <div className={clsx('dropdown dropdown-bottom', className)}>
       <button
         tabIndex={0}
-        className='btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case'
+        className={clsx(
+          'btn btn-sm flex items-center gap-1 px-[20px] font-normal normal-case',
+          disabled && 'btn-disabled',
+        )}
         onClick={(e) => e.currentTarget.focus()}
       >
         <span>{selected.label}</span>
@@ -29,6 +42,7 @@ const DropDown: React.FC<DropDownProps> = ({ selected, options, onSelect }) => {
         className={clsx(
           'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] shadow',
           'menu-vertical right-[-32px] mt-2 inline max-h-80 w-44 overflow-y-scroll sm:right-0',
+          listClassName,
         )}
       >
         {options.map(({ option, label }) => (

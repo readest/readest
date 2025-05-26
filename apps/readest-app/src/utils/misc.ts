@@ -40,6 +40,14 @@ export const getUserLang = () => {
   return locale.split('-')[0] || 'en';
 };
 
+export const getTargetLang = () => {
+  const locale = getLocale();
+  if (locale.startsWith('zh')) {
+    return locale === 'zh-Hant' || locale === 'zh-HK' || locale === 'zh-TW' ? 'zh-Hant' : 'zh-Hans';
+  }
+  return locale.split('-')[0] || 'en';
+};
+
 export const isCJKEnv = () => {
   const browserLanguage = navigator.language || '';
   const uiLanguage = localStorage?.getItem('i18nextLng') || '';

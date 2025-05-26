@@ -28,6 +28,7 @@ import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
+import { useTextTranslation } from '../hooks/useTextTranslation';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -52,6 +53,7 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
+  useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;

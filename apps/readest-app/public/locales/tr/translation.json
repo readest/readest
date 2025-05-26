@@ -306,7 +306,6 @@
   "File Size:": "Dosya Boyutu:",
   "Auto Detect": "Algıla",
   "Touch": "Dokunmatik",
-  "Scrolling Overlap (px)": "Kaydırma Üst Üste Binen (px)",
   "Next Section": "Sonraki Bölüm",
   "Previous Section": "Önceki Bölüm",
   "Next Page": "Sonraki Sayfa",
@@ -323,5 +322,12 @@
   "Azure Translator": "Azure Çevirmen",
   "Invert Image In Dark Mode": "Karartılmış Görüntüyü Ters Çevir",
   "Help improve Readest": "Readest’i geliştirin",
-  "Sharing anonymized statistics": "Anonim verileri paylaş"
+  "Sharing anonymized statistics": "Anonim verileri paylaş",
+  "Interface Language": "Arayüz Dili",
+  "Translation": "Çeviri",
+  "Enable Translation": "Çeviriyi Etkinleştir",
+  "Translation Service": "Çeviri Hizmeti",
+  "Translate To": "Şuna Çevir",
+  "Disable Translation": "Çeviriyi Devre Dışı Bırak",
+  "Overlap Margin": "Çakışma Kenar Boşluğu"
 }

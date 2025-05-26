@@ -127,6 +127,12 @@ export interface TTSConfig {
   ttsVoice: string;
 }
 
+export interface TranslatorConfig {
+  translationEnabled: boolean;
+  translationProvider: string;
+  translateTargetLang: string;
+}
+
 export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
@@ -137,6 +143,7 @@ export interface ViewSettings
     BookFont,
     ViewConfig,
     TTSConfig,
+    TranslatorConfig,
     ScreenConfig {}
 
 export interface BookProgress {

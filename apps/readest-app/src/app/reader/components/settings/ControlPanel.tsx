@@ -92,7 +92,7 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               />
             </div>
             <NumberInput
-              label={_('Scrolling Overlap (px)')}
+              label={_('Overlap Margin')}
               value={scrollingOverlap}
               onChange={setScrollingOverlap}
               disabled={!viewSettings.scrolled}

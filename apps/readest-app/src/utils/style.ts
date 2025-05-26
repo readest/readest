@@ -353,6 +353,16 @@ export const getFootnoteStyles = () => `
   }
 `;
 
+const getTranslationStyles = () => `
+  .translation-block-wrapper {
+    display: inline-block !important;
+    margin: 0.5em 0 !important;
+  }
+  .translation-target.hidden {
+    display: none !important;
+  }
+`;
+
 export interface ThemeCode {
   bg: string;
   fg: string;
@@ -432,8 +442,9 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.overrideFont!,
     themeCode,
   );
+  const translationStyles = getTranslationStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${layoutStyles}\n${fontStyles}\n${userStylesheet}`;
+  return `${layoutStyles}\n${fontStyles}\n${translationStyles}\n${userStylesheet}`;
 };
 
 export const mountAdditionalFonts = (document: Document) => {

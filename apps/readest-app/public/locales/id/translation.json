@@ -306,7 +306,6 @@
   "File Size:": "Ukuran File:",
   "Auto Detect": "Deteksi Otomatis",
   "Touch": "Sentuh",
-  "Scrolling Overlap (px)": "Overlapping Gulir (px)",
   "Next Section": "Bagian Selanjutnya",
   "Previous Section": "Bagian Sebelumnya",
   "Next Page": "Halaman Berikutnya",
@@ -322,5 +321,12 @@
   "Azure Translator": "Azure Translator",
   "Invert Image In Dark Mode": "Inversi Gambar di Gelap",
   "Help improve Readest": "Bantu tingkatkan Readest",
-  "Sharing anonymized statistics": "Berbagi statistik anonim"
+  "Sharing anonymized statistics": "Berbagi statistik anonim",
+  "Interface Language": "Bahasa Antarmuka",
+  "Translation": "Terjemahan",
+  "Enable Translation": "Aktifkan Terjemahan",
+  "Translation Service": "Layanan Terjemahan",
+  "Translate To": "Terjemahkan Ke",
+  "Disable Translation": "Nonaktifkan Terjemahan",
+  "Overlap Margin": "Margin Tumpang Tindih"
 }

@@ -306,7 +306,6 @@
   "File Size:": "फ़ाइल आकार:",
   "Auto Detect": "स्वचालित पहचान",
   "Touch": "स्पर्श",
-  "Scrolling Overlap (px)": "स्क्रॉलिंग ओवरलैप (px)",
   "Next Section": "अगला अनुभाग",
   "Previous Section": "पिछला अनुभाग",
   "Next Page": "अगला पृष्ठ",
@@ -323,5 +322,12 @@
   "Azure Translator": "एज़्योर अनुवादक",
   "Invert Image In Dark Mode": "अंधेरे में छवि को उलटें",
   "Help improve Readest": "Readest में सुधार करने में मदद करें",
-  "Sharing anonymized statistics": "सांख्यिकी साझा करना"
+  "Sharing anonymized statistics": "सांख्यिकी साझा करना",
+  "Interface Language": "इंटरफ़ेस भाषा",
+  "Translation": "अनुवाद",
+  "Enable Translation": "अनुवाद सक्षम करें",
+  "Translation Service": "अनुवाद सेवा",
+  "Translate To": "अनुवाद करें",
+  "Disable Translation": "अनुवाद अक्षम करें",
+  "Overlap Margin": "ओवरलैप मार्जिन"
 }

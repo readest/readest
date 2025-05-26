@@ -306,7 +306,6 @@
   "File Size:": "파일 크기:",
   "Auto Detect": "자동 감지",
   "Touch": "터치",
-  "Scrolling Overlap (px)": "스크롤 겹침 (px)",
   "Next Section": "다음 섹션",
   "Previous Section": "이전 섹션",
   "Next Page": "다음 페이지",
@@ -322,5 +321,12 @@
   "Azure Translator": "Azure 번역기",
   "Invert Image In Dark Mode": "어두운 곳에서 이미지 반전",
   "Help improve Readest": "Readest 개선에 도움을 주세요",
-  "Sharing anonymized statistics": "익명화된 통계 공유"
+  "Sharing anonymized statistics": "익명화된 통계 공유",
+  "Interface Language": "인터페이스 언어",
+  "Translation": "번역",
+  "Enable Translation": "번역 활성화",
+  "Translation Service": "번역 서비스",
+  "Translate To": "번역 대상 언어",
+  "Disable Translation": "번역 비활성화",
+  "Overlap Margin": "겹침 여백"
 }

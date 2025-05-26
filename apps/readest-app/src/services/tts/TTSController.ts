@@ -81,6 +81,7 @@ export class TTSController extends EventTarget {
   #preprocessSSML(ssml?: string) {
     if (!ssml) return;
     ssml = ssml
+      .replace(/<emphasis[^>]*>([^<]+)<\/emphasis>/g, '$1')
       .replace(/[–—]/g, ',')
       .replace('<break/>', ' ')
       .replace(/\.{3,}/g, '   ')

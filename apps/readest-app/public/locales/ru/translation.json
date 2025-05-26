@@ -306,7 +306,6 @@
   "File Size:": "Размер файла:",
   "Auto Detect": "Автоопределение",
   "Touch": "Сенсорный экран",
-  "Scrolling Overlap (px)": "Перекрытие прокрутки (px)",
   "Next Section": "Следующий раздел",
   "Previous Section": "Предыдущий раздел",
   "Next Page": "Следующая страница",
@@ -325,5 +324,12 @@
   "Azure Translator": "Azure Translator",
   "Invert Image In Dark Mode": "Инвертировать в тёмной теме",
   "Help improve Readest": "Помогите улучшить Readest",
-  "Sharing anonymized statistics": "Отправка анонимной статистики"
+  "Sharing anonymized statistics": "Отправка анонимной статистики",
+  "Interface Language": "Язык интерфейса",
+  "Translation": "Перевод",
+  "Enable Translation": "Включить перевод",
+  "Translation Service": "Сервис перевода",
+  "Translate To": "Перевести на",
+  "Disable Translation": "Отключить перевод",
+  "Overlap Margin": "Поле перекрытия"
 }

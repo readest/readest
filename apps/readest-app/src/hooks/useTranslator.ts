@@ -127,6 +127,7 @@ export function useTranslator({
         throw err instanceof Error ? err : new Error(String(err));
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [provider, sourceLang, targetLang, translator, token],
   );
 

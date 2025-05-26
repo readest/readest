@@ -141,8 +141,8 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
             <div
               ref={tabsRef}
               className={clsx(
-                'dialog-tabs flex h-10 w-full items-center',
-                showTabLabels ? 'gap-4 sm:gap-2' : 'gap-4',
+                'dialog-tabs ms-2 flex h-10 w-full items-center',
+                showTabLabels ? 'gap-2' : 'gap-4',
               )}
             >
               {tabConfig.map(({ tab, icon: Icon, label }) => (

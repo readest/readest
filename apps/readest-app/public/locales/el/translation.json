@@ -306,7 +306,6 @@
   "File Size:": "Μέγεθος αρχείου:",
   "Auto Detect": "Αυτόματη ανίχνευση",
   "Touch": "Αφή",
-  "Scrolling Overlap (px)": "Επικάλυψη κύλισης (px)",
   "Next Section": "Επόμενη ενότητα",
   "Previous Section": "Προηγούμενη ενότητα",
   "Next Page": "Επόμενη σελίδα",
@@ -323,5 +322,12 @@
   "Azure Translator": "Μεταφραστής Azure",
   "Invert Image In Dark Mode": "Αντιστροφή σε σκούρο",
   "Help improve Readest": "Βοηθήστε στη βελτίωση του Readest",
-  "Sharing anonymized statistics": "Μοιράζομαι ανώνυμες στατιστικές"
+  "Sharing anonymized statistics": "Μοιράζομαι ανώνυμες στατιστικές",
+  "Interface Language": "Γλώσσα διεπαφής",
+  "Translation": "Μετάφραση",
+  "Enable Translation": "Ενεργοποίηση μετάφρασης",
+  "Translation Service": "Υπηρεσία μετάφρασης",
+  "Translate To": "Μετάφραση σε",
+  "Disable Translation": "Απενεργοποίηση μετάφρασης",
+  "Overlap Margin": "Περιθώριο επικάλυψης"
 }

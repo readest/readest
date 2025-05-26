@@ -34,8 +34,9 @@ import {
   DEFAULT_CJK_VIEW_SETTINGS,
   DEFAULT_MOBILE_READSETTINGS,
   DEFAULT_SCREEN_CONFIG,
+  DEFAULT_TRANSLATOR_CONFIG,
 } from './constants';
-import { getOSPlatform, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
+import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
 import { ClosableFile } from '@/utils/file';
@@ -97,6 +98,7 @@ export abstract class BaseAppService implements AppService {
         ...DEFAULT_VIEW_CONFIG,
         ...DEFAULT_TTS_CONFIG,
         ...DEFAULT_SCREEN_CONFIG,
+        ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
         ...settings.globalViewSettings,
       };
     } catch {
@@ -117,6 +119,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_VIEW_CONFIG,
           ...DEFAULT_TTS_CONFIG,
           ...DEFAULT_SCREEN_CONFIG,
+          ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
         },
       } as SystemSettings;
 
