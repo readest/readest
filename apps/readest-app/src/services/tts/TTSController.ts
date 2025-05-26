@@ -1,5 +1,6 @@
 import { FoliateView, TTSGranularity } from '@/types/view';
 import { TTSClient, TTSMessageCode, TTSVoice } from './TTSClient';
+import { parseSSMLMarks } from '@/utils/ssml';
 import { WebSpeechClient } from './WebSpeechClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
@@ -106,7 +107,7 @@ export class TTSController extends EventTarget {
           // FIXME: in case we are at the end of the book, need a better way to handle this
           if (this.#nossmlCnt < 10 && this.state === 'playing') {
             resolve();
-            await this.view.next(1);
+            await this.view.next();
             await this.forward();
           }
           return;
@@ -114,6 +115,11 @@ export class TTSController extends EventTarget {
           this.#nossmlCnt = 0;
         }
 
+        const { plainText, marks } = parseSSMLMarks(ssml);
+        if (!plainText || marks.length === 0) {
+          resolve();
+          return await this.forward();
+        }
         const iter = await this.ttsClient.speak(ssml, signal);
         let lastCode: TTSMessageCode = 'boundary';
         for await (const { code, mark } of iter) {

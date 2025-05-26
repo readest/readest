@@ -248,6 +248,10 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  p:has(> img:only-child) {
+    text-indent: unset !important;
+    text-align: unset !important;
+  }
   p, div {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
