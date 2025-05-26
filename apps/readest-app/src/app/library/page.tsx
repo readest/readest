@@ -362,10 +362,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ['Failed to parse EPUB.', _('Failed to parse the EPUB file.')],
       ['Unsupported format.', _('This book format is not supported.')],
     ];
+    const { library } = useLibraryStore.getState();
     for (const file of files) {
       try {
-        const book = await appService?.importBook(file, libraryBooks);
-        setLibrary(libraryBooks);
+        const book = await appService?.importBook(file, library);
+        setLibrary(library);
         if (user && book && !book.uploadedAt && settings.autoUpload) {
           console.log('Uploading book:', book.title);
           handleBookUpload(book);
@@ -388,7 +389,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         console.error('Failed to import book:', filename, error);
       }
     }
-    appService?.saveLibraryBooks(libraryBooks);
+    appService?.saveLibraryBooks(library);
     setLoading(false);
   };
 
