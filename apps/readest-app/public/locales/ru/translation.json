@@ -59,7 +59,6 @@
   "Match Whole Words": "Только целые слова",
   "Maximum Number of Columns": "Максимальное количество колонок",
   "Minimum Font Size": "Минимальный размер шрифта",
-  "Misc": "Разное",
   "Monospace Font": "Моноширинный шрифт",
   "More Info": "Подробнее",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Инфо",
   "File Size:": "Размер файла:",
   "Auto Detect": "Автоопределение",
-  "Touch": "Сенсорный экран",
   "Next Section": "Следующий раздел",
   "Previous Section": "Предыдущий раздел",
   "Next Page": "Следующая страница",
@@ -331,5 +329,8 @@
   "Translation Service": "Сервис перевода",
   "Translate To": "Перевести на",
   "Disable Translation": "Отключить перевод",
-  "Overlap Margin": "Поле перекрытия"
+  "Scroll": "Прокрутка",
+  "Overlap Pixels": "Перекрывающиеся пиксели",
+  "Click": "Клик",
+  "System Language": "Системный язык"
 }

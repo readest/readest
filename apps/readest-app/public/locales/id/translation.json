@@ -59,7 +59,6 @@
   "Match Whole Words": "Cocokkan Kata Utuh",
   "Maximum Number of Columns": "Jumlah Kolom Maksimum",
   "Minimum Font Size": "Ukuran Font Minimum",
-  "Misc": "Lain-lain",
   "Monospace Font": "Font Monospace",
   "More Info": "Info Lebih Lanjut",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Detail",
   "File Size:": "Ukuran File:",
   "Auto Detect": "Deteksi Otomatis",
-  "Touch": "Sentuh",
   "Next Section": "Bagian Selanjutnya",
   "Previous Section": "Bagian Sebelumnya",
   "Next Page": "Halaman Berikutnya",
@@ -328,5 +326,8 @@
   "Translation Service": "Layanan Terjemahan",
   "Translate To": "Terjemahkan Ke",
   "Disable Translation": "Nonaktifkan Terjemahan",
-  "Overlap Margin": "Margin Tumpang Tindih"
+  "Scroll": "Scroll",
+  "Overlap Pixels": "Overlap Piksel",
+  "Click": "Klik",
+  "System Language": "Bahasa Sistem"
 }

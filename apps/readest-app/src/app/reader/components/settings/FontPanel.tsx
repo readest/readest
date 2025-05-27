@@ -226,6 +226,16 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div className='my-4 w-full space-y-6'>
+      <div className='flex items-center justify-between'>
+        <h2 className=''>{_('Override Book Font')}</h2>
+        <input
+          type='checkbox'
+          className='toggle'
+          checked={overrideFont}
+          onChange={() => setOverrideFont(!overrideFont)}
+        />
+      </div>
+
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Font Size')}</h2>
         <div className='card border-base-200 border shadow'>
@@ -288,16 +298,6 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 onSelect={setDefaultCJKFont}
               />
             )}
-
-            <div className='config-item'>
-              <span className=''>{_('Override Book Font')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={overrideFont}
-                onChange={() => setOverrideFont(!overrideFont)}
-              />
-            </div>
           </div>
         </div>
       </div>

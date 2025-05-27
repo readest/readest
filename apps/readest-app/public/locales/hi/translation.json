@@ -59,7 +59,6 @@
   "Match Whole Words": "पूरे शब्द मैच करें",
   "Maximum Number of Columns": "कॉलम की अधिकतम संख्या",
   "Minimum Font Size": "न्यूनतम फ़ॉन्ट साइज़",
-  "Misc": "विविध",
   "Monospace Font": "मोनोस्पेस फ़ॉन्ट",
   "More Info": "अधिक जानकारी",
   "Nord": "नॉर्ड",
@@ -305,7 +304,6 @@
   "Details": "विवरण",
   "File Size:": "फ़ाइल आकार:",
   "Auto Detect": "स्वचालित पहचान",
-  "Touch": "स्पर्श",
   "Next Section": "अगला अनुभाग",
   "Previous Section": "पिछला अनुभाग",
   "Next Page": "अगला पृष्ठ",
@@ -329,5 +327,8 @@
   "Translation Service": "अनुवाद सेवा",
   "Translate To": "अनुवाद करें",
   "Disable Translation": "अनुवाद अक्षम करें",
-  "Overlap Margin": "ओवरलैप मार्जिन"
+  "Scroll": "स्क्रॉल",
+  "Overlap Pixels": "ओवरलैप पिक्सेल",
+  "Click": "क्लिक करें",
+  "System Language": "सिस्टम भाषा"
 }

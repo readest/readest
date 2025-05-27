@@ -59,7 +59,6 @@
   "Match Whole Words": "単語全体を一致",
   "Maximum Number of Columns": "最大列数",
   "Minimum Font Size": "最小フォントサイズ",
-  "Misc": "その他",
   "Monospace Font": "等幅フォント",
   "More Info": "詳細情報",
   "Nord": "ノルド",
@@ -305,7 +304,6 @@
   "Details": "詳細",
   "File Size:": "ファイルサイズ：",
   "Auto Detect": "自動検出",
-  "Touch": "タッチ",
   "Next Section": "次のセクション",
   "Previous Section": "前のセクション",
   "Next Page": "次のページ",
@@ -328,5 +326,8 @@
   "Translation Service": "翻訳サービス",
   "Translate To": "翻訳先",
   "Disable Translation": "翻訳を無効にする",
-  "Overlap Margin": "オーバーラップマージン"
+  "Scroll": "スクロール",
+  "Overlap Pixels": "重なりピクセル",
+  "Click": "クリック",
+  "System Language": "システム言語"
 }

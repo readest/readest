@@ -59,7 +59,6 @@
   "Match Whole Words": "Tam Kelimeleri Eşleştir",
   "Maximum Number of Columns": "Maksimum Sütun Sayısı",
   "Minimum Font Size": "Minimum Yazı Boyutu",
-  "Misc": "Diğer",
   "Monospace Font": "Eş Aralıklı Yazı Tipi",
   "More Info": "Daha Fazla Bilgi",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Detaylar",
   "File Size:": "Dosya Boyutu:",
   "Auto Detect": "Algıla",
-  "Touch": "Dokunmatik",
   "Next Section": "Sonraki Bölüm",
   "Previous Section": "Önceki Bölüm",
   "Next Page": "Sonraki Sayfa",
@@ -329,5 +327,8 @@
   "Translation Service": "Çeviri Hizmeti",
   "Translate To": "Şuna Çevir",
   "Disable Translation": "Çeviriyi Devre Dışı Bırak",
-  "Overlap Margin": "Çakışma Kenar Boşluğu"
+  "Scroll": "Kaydır",
+  "Overlap Pixels": "Örtüşen Pikseller",
+  "Click": "Klik",
+  "System Language": "System Dili"
 }

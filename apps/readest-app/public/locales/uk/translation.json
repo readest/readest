@@ -59,7 +59,6 @@
   "Match Whole Words": "Шукати цілі слова",
   "Maximum Number of Columns": "Максимальна кількість колонок",
   "Minimum Font Size": "Мінімальний розмір шрифту",
-  "Misc": "Різне",
   "Monospace Font": "Моноширинний шрифт",
   "More Info": "Більше інформації",
   "Nord": "Північний",
@@ -305,7 +304,6 @@
   "Details": "Деталі",
   "File Size:": "Розмір файлу:",
   "Auto Detect": "Авто виявлення",
-  "Touch": "Дотик",
   "Next Section": "Наступний розділ",
   "Previous Section": "Попередній розділ",
   "Next Page": "Наступна сторінка",
@@ -331,5 +329,8 @@
   "Translation Service": "Служба перекладу",
   "Translate To": "Перекласти на",
   "Disable Translation": "Вимкнути переклад",
-  "Overlap Margin": "Відступ перекриття"
+  "Scroll": "Прокрутка",
+  "Overlap Pixels": "Пікселі перекриття",
+  "Click": "Клацнути",
+  "System Language": "Системна мова"
 }

@@ -59,7 +59,6 @@
   "Match Whole Words": "匹配整個單詞",
   "Maximum Number of Columns": "分欄數",
   "Minimum Font Size": "最小字號",
-  "Misc": "雜項",
   "Monospace Font": "等寬字體",
   "More Info": "更多信息",
   "Nord": "極光",
@@ -305,7 +304,6 @@
   "Details": "詳情",
   "File Size:": "檔案大小",
   "Auto Detect": "自動檢測",
-  "Touch": "觸控",
   "Next Section": "下一章",
   "Previous Section": "上一章",
   "Next Page": "下一頁",
@@ -328,5 +326,8 @@
   "Translation Service": "翻譯服務",
   "Translate To": "翻譯至",
   "Disable Translation": "停用翻譯",
-  "Overlap Margin": "重疊邊距"
+  "Scroll": "滾動",
+  "Overlap Pixels": "重疊像素",
+  "Click": "點擊",
+  "System Language": "系統語言"
 }

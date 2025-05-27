@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -21,7 +22,10 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
   return (
     <div
       tabIndex={0}
-      className='dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl'
+      className={clsx(
+        'dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl',
+        'text-base sm:text-sm',
+      )}
     >
       <button
         className='hover:bg-base-200 text-base-content flex w-full items-center justify-between rounded-md p-1'

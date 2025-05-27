@@ -59,7 +59,6 @@
   "Match Whole Words": "مطابقة الكلمات الكاملة",
   "Maximum Number of Columns": "العدد الأقصى للأعمدة",
   "Minimum Font Size": "الحد الأدنى لحجم الخط",
-  "Misc": "أخرى",
   "Monospace Font": "خط أحادي المسافة (Monospace)",
   "More Info": "مزيد من المعلومات",
   "Nord": "نورد",
@@ -305,7 +304,6 @@
   "Details": "التفاصيل",
   "File Size:": "حجم الملف:",
   "Auto Detect": "الكشف التلقائي",
-  "Touch": "اللمس",
   "Next Section": "القسم التالي",
   "Previous Section": "القسم السابق",
   "Next Page": "الصفحة التالية",
@@ -333,5 +331,8 @@
   "Translation Service": "خدمة الترجمة",
   "Translate To": "ترجمة إلى",
   "Disable Translation": "تعطيل الترجمة",
-  "Overlap Margin": "هامش التداخل"
+  "Scroll": "تمرير",
+  "Overlap Pixels": "تداخل البكسلات",
+  "Click": "نقر",
+  "System Language": "لغة النظام"
 }

@@ -59,7 +59,6 @@
   "Match Whole Words": "Parole intere",
   "Maximum Number of Columns": "Numero massimo di colonne",
   "Minimum Font Size": "Dimensione minima font",
-  "Misc": "Varie",
   "Monospace Font": "Font monospazio",
   "More Info": "Maggiori informazioni",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Dettagli",
   "File Size:": "Dimensione file:",
   "Auto Detect": "Rilevamento automatico",
-  "Touch": "Touch",
   "Next Section": "Sezione successiva",
   "Previous Section": "Sezione precedente",
   "Next Page": "Pagina successiva",
@@ -330,5 +328,8 @@
   "Translation Service": "Servizio di traduzione",
   "Translate To": "Traduci in",
   "Disable Translation": "Disabilita traduzione",
-  "Overlap Margin": "Margine di sovrapposizione"
+  "Scroll": "Scorri",
+  "Overlap Pixels": "Pixel di sovrapposizione",
+  "Click": "Fai clic",
+  "System Language": "Lingua di sistema"
 }

@@ -39,3 +39,15 @@ export const localeToLang = (locale: string): string => {
   }
   return mapping[locale] || locale.split('-')[0]!.toLowerCase();
 };
+
+export const normalizedLangCode = (lang: string | null | undefined): string => {
+  if (!lang) return '';
+  return lang.split('-')[0]!.toLowerCase();
+};
+
+export const isSameLang = (lang1?: string | null, lang2?: string | null): boolean => {
+  if (!lang1 || !lang2) return false;
+  const normalizedLang1 = normalizedLangCode(lang1);
+  const normalizedLang2 = normalizedLangCode(lang2);
+  return normalizedLang1 === normalizedLang2;
+};

@@ -59,7 +59,6 @@
   "Match Whole Words": "Ταίριασμα ολόκληρων λέξεων",
   "Maximum Number of Columns": "Μέγιστος αριθμός στηλών",
   "Minimum Font Size": "Ελάχιστο μέγεθος γραμματοσειράς",
-  "Misc": "Διάφορα",
   "Monospace Font": "Γραμματοσειρά σταθερού πλάτους",
   "More Info": "Περισσότερες πληροφορίες",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Πληρ.",
   "File Size:": "Μέγεθος αρχείου:",
   "Auto Detect": "Αυτόματη ανίχνευση",
-  "Touch": "Αφή",
   "Next Section": "Επόμενη ενότητα",
   "Previous Section": "Προηγούμενη ενότητα",
   "Next Page": "Επόμενη σελίδα",
@@ -329,5 +327,8 @@
   "Translation Service": "Υπηρεσία μετάφρασης",
   "Translate To": "Μετάφραση σε",
   "Disable Translation": "Απενεργοποίηση μετάφρασης",
-  "Overlap Margin": "Περιθώριο επικάλυψης"
+  "Scroll": "Κύλιση",
+  "Overlap Pixels": "Επικάλυψη εικονοστοιχείων",
+  "Click": "Κλικ",
+  "System Language": "Γλώσσα συστήματος"
 }

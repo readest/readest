@@ -21,6 +21,7 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
+  const [animated, setAnimated] = useState(viewSettings.animated!);
 
   useEffect(() => {
     if (isScrolledMode === viewSettings.scrolled) return;
@@ -67,10 +68,20 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapClickArea]);
 
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'animated', animated, false, false);
+    if (animated) {
+      getView(bookKey)?.renderer.setAttribute('animated', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('animated');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animated]);
+
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Touch')}</h2>
+        <h2 className='mb-2 font-medium'>{_('Scroll')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
             <div className='config-item'>
@@ -92,7 +103,7 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               />
             </div>
             <NumberInput
-              label={_('Overlap Margin')}
+              label={_('Overlap Pixels')}
               value={scrollingOverlap}
               onChange={setScrollingOverlap}
               disabled={!viewSettings.scrolled}
@@ -100,17 +111,14 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               max={200}
               step={10}
             />
-            {appService?.isMobileApp && (
-              <div className='config-item'>
-                <span className=''>{_('Volume Keys for Page Flip')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={volumeKeysToFlip}
-                  onChange={() => setVolumeKeysToFlip(!volumeKeysToFlip)}
-                />
-              </div>
-            )}
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Click')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200'>
             <div className='config-item'>
               <span className=''>{_('Clicks for Page Flip')}</span>
               <input
@@ -128,6 +136,34 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 checked={swapClickArea}
                 disabled={isDisableClick}
                 onChange={() => setSwapClickArea(!swapClickArea)}
+              />
+            </div>
+            {appService?.isMobileApp && (
+              <div className='config-item'>
+                <span className=''>{_('Volume Keys for Page Flip')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={volumeKeysToFlip}
+                  onChange={() => setVolumeKeysToFlip(!volumeKeysToFlip)}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Paging Animation')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={animated}
+                onChange={() => setAnimated(!animated)}
               />
             </div>
           </div>

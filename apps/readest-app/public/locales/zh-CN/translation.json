@@ -59,7 +59,6 @@
   "Match Whole Words": "匹配整个单词",
   "Maximum Number of Columns": "分栏数",
   "Minimum Font Size": "最小字号",
-  "Misc": "杂项",
   "Monospace Font": "等宽字体",
   "More Info": "更多信息",
   "Nord": "极光",
@@ -305,7 +304,6 @@
   "Details": "详情",
   "File Size:": "文件大小",
   "Auto Detect": "自动检测",
-  "Touch": "触控",
   "Next Section": "下一章",
   "Previous Section": "上一章",
   "Next Page": "下一页",
@@ -328,5 +326,8 @@
   "Translation Service": "翻译服务",
   "Translate To": "翻译到",
   "Disable Translation": "禁用翻译",
-  "Overlap Margin": "重叠边距"
+  "Scroll": "滚动",
+  "Overlap Pixels": "重叠像素",
+  "Click": "点击",
+  "System Language": "系统语言"
 }

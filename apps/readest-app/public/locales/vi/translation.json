@@ -59,7 +59,6 @@
   "Match Whole Words": "Khớp toàn bộ từ",
   "Maximum Number of Columns": "Số cột tối đa",
   "Minimum Font Size": "Cỡ chữ tối thiểu",
-  "Misc": "Khác",
   "Monospace Font": "Phông chữ đơn cách",
   "More Info": "Thông tin thêm",
   "Nord": "Nord",
@@ -305,7 +304,6 @@
   "Details": "Chi tiết",
   "File Size:": "Kích thước tệp:",
   "Auto Detect": "Phát hiện tự động",
-  "Touch": "Chạm",
   "Next Section": "Phần tiếp theo",
   "Previous Section": "Phần trước",
   "Next Page": "Trang tiếp theo",
@@ -328,5 +326,8 @@
   "Translation Service": "Dịch vụ dịch thuật",
   "Translate To": "Dịch sang",
   "Disable Translation": "Tắt dịch",
-  "Overlap Margin": "Độ chồng lề"
+  "Scroll": "Cuộn",
+  "Overlap Pixels": "Chồng lấn pixel",
+  "Click": "Nhấp",
+  "System Language": "Ngôn ngữ hệ thống"
 }
