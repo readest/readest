@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getTranslator, getTranslators } from '@/services/translators';
-import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
+import { getFromCache, storeInCache, polish, UseTranslatorOptions } from '@/services/translators';
 
 export function useTranslator({
   provider = 'deepl',
   sourceLang = 'AUTO',
   targetLang = 'EN',
+  enablePolishing = true,
 }: UseTranslatorOptions = {}) {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -120,7 +121,7 @@ export function useTranslator({
         );
 
         setLoading(false);
-        return results;
+        return enablePolishing ? polish(results, targetLanguage) : results;
       } catch (err) {
         console.error('Translation error:', err);
         setLoading(false);

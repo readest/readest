@@ -57,16 +57,46 @@ export function useTextTranslation(bookKey: string, view: FoliateView | null) {
   const createTranslationObserver = () => {
     return new IntersectionObserver(
       (entries) => {
+        let beforeIntersectedElement: HTMLElement | null = null;
+        let lastIntersectedElement: HTMLElement | null = null;
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          translateElement(entry.target as HTMLElement);
+          if (!entry.isIntersecting) {
+            if (!lastIntersectedElement) {
+              beforeIntersectedElement = entry.target as HTMLElement;
+            }
+            continue;
+          }
+          const currentElement = entry.target as HTMLElement;
+          translateElement(currentElement);
+          lastIntersectedElement = currentElement;
+        }
+        if (beforeIntersectedElement) {
+          translateElement(beforeIntersectedElement);
+        }
+        if (lastIntersectedElement) {
+          preTranslateNextElements(lastIntersectedElement, 2);
         }
       },
       {
-        rootMargin: '2560px',
-        threshold: 0.01,
+        rootMargin: '1280px',
+        threshold: 0,
       },
     );
+  };
+
+  const preTranslateNextElements = (currentElement: HTMLElement, count: number) => {
+    if (!allTextNodes.current || count <= 0) return;
+    const currentIndex = allTextNodes.current.indexOf(currentElement);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const nextElements = allTextNodes.current.slice(currentIndex + 1, currentIndex + 1 + count);
+    nextElements.forEach((element, index) => {
+      setTimeout(() => {
+        translateElement(element);
+      }, index * 500);
+    });
   };
 
   const recreateTranslationObserver = () => {

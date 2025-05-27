@@ -20,4 +20,5 @@ export interface UseTranslatorOptions {
   provider?: TranslatorName;
   sourceLang?: string;
   targetLang?: string;
+  enablePolishing?: boolean;
 }

@@ -359,7 +359,7 @@ export const getFootnoteStyles = () => `
 
 const getTranslationStyles = () => `
   .translation-block-wrapper {
-    display: inline-block !important;
+    display: block !important;
     margin: 0.5em 0 !important;
   }
   .translation-target.hidden {
