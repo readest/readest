@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.49": {
+      "date": "2025-05-27",
+      "notes": [
+        "Select All in Library: You can now select all books at once when in selection mode",
+        "More Translation Options: Added support for Azure and Google Translate services",
+        "Dark Mode Enhancement: New option to invert image colors for better visibility in dark mode",
+        "Bilingual TTS: Enjoy bilingual text-to-speech for books with content in two languages",
+        "Full Book Translation: Translate books in any language into bilingual ebooks",
+        "Privacy Settings: Added a new option to opt-out of telemetry"
+      ]
+    },
     "0.9.43": {
       "date": "2025-05-19",
       "notes": [
