@@ -21,7 +21,7 @@ type TTSPanelProps = {
   onForward: () => void;
   onSetRate: (rate: number) => void;
   onGetVoices: (lang: string) => Promise<TTSVoice[]>;
-  onSetVoice: (voice: string) => void;
+  onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
   onSelectTimeout: (value: number) => void;
 };
@@ -144,8 +144,8 @@ const TTSPanel = ({
     saveSettings(envConfig, settings);
   };
 
-  const handleSelectVoice = (voice: string) => {
-    onSetVoice(voice);
+  const handleSelectVoice = (voice: string, lang: string) => {
+    onSetVoice(voice, lang);
     setSelectedVoice(voice);
     const viewSettings = getViewSettings(bookKey)!;
     viewSettings.ttsVoice = voice;
@@ -282,7 +282,7 @@ const TTSPanel = ({
             {voices.map((voice, index) => (
               <li
                 key={`${index}-${voice.id}`}
-                onClick={() => !voice.disabled && handleSelectVoice(voice.id)}
+                onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}
               >
                 <div className='flex items-center px-2'>
                   <span style={{ minWidth: `${defaultIconSize}px` }}>

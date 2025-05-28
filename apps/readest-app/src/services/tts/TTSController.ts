@@ -247,7 +247,7 @@ export class TTSController extends EventTarget {
     return [...ttsEdgeVoices, ...ttsWebVoices];
   }
 
-  async setVoice(voiceId: string) {
+  async setVoice(voiceId: string, lang: string) {
     this.state = 'setvoice-paused';
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
@@ -255,17 +255,21 @@ export class TTSController extends EventTarget {
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
-      TTSUtils.setPreferredVoice('edge-tts', this.ttsLang, voiceId);
+      TTSUtils.setPreferredVoice('edge-tts', lang, voiceId);
     } else {
       this.ttsClient = this.ttsWebClient;
       await this.ttsClient.setRate(this.ttsRate);
-      TTSUtils.setPreferredVoice('web-speech', this.ttsLang, voiceId);
+      TTSUtils.setPreferredVoice('web-speech', lang, voiceId);
     }
     await this.ttsClient.setVoice(voiceId);
   }
 
   getVoiceId() {
     return this.ttsClient.getVoiceId();
+  }
+
+  getSpeakingLang() {
+    return this.ttsClient.getSpeakingLang();
   }
 
   error(e: unknown) {

@@ -29,4 +29,5 @@ export interface TTSClient {
   getVoices(lang: string): Promise<TTSVoice[]>;
   getGranularities(): TTSGranularity[];
   getVoiceId(): string;
+  getSpeakingLang(): string;
 }

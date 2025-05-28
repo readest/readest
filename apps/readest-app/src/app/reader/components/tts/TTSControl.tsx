@@ -140,7 +140,6 @@ const TTSControl = () => {
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
-        ttsController.setVoice(viewSettings.ttsVoice);
         ttsController.speak(ssml);
         ttsControllerRef.current = ttsController;
       }
@@ -236,15 +235,15 @@ const TTSControl = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSetVoice = useCallback(
-    throttle(async (voice: string) => {
+    throttle(async (voice: string, lang: string) => {
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
         if (ttsController.state === 'playing') {
           await ttsController.stop();
-          await ttsController.setVoice(voice);
+          await ttsController.setVoice(voice, lang);
           await ttsController.start();
         } else {
-          await ttsController.setVoice(voice);
+          await ttsController.setVoice(voice, lang);
         }
       }
     }, 3000),
@@ -311,6 +310,10 @@ const TTSControl = () => {
 
   const togglePopup = () => {
     updatePanelPosition();
+    if (!showPanel && ttsControllerRef.current) {
+      const speakingLang = ttsControllerRef.current.getSpeakingLang() || ttsLang;
+      setTtsLang(speakingLang);
+    }
     setShowPanel((prev) => !prev);
   };
 

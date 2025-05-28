@@ -50,6 +50,7 @@ async function* speakWithMarks(
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
+  setSpeakingLang: (lang: string) => void = () => {},
 ) {
   const { marks } = parseSSMLMarks(ssml);
 
@@ -59,6 +60,7 @@ async function* speakWithMarks(
   for (const mark of marks) {
     const { language } = mark;
     const voiceLang = language || defaultLang;
+    setSpeakingLang(voiceLang);
     utterance.text = mark.text;
     utterance.rate = getRate();
     utterance.pitch = getPitch();
@@ -98,6 +100,7 @@ async function* speakWithMarks(
 
 export class WebSpeechClient implements TTSClient {
   #primaryLang = 'en';
+  #speakingLang = '';
   #rate = 1.0;
   #pitch = 1.0;
   #voice: SpeechSynthesisVoice | null = null;
@@ -162,6 +165,7 @@ export class WebSpeechClient implements TTSClient {
       () => this.#rate,
       () => this.#pitch,
       this.getVoiceFromLang,
+      (lang) => (this.#speakingLang = lang),
     )) {
       if (signal.aborted) {
         console.log('TTS aborted');
@@ -274,5 +278,9 @@ export class WebSpeechClient implements TTSClient {
 
   getVoiceId(): string {
     return this.#voice?.voiceURI ?? '';
+  }
+
+  getSpeakingLang(): string {
+    return this.#speakingLang;
   }
 }

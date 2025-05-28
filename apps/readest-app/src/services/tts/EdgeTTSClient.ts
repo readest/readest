@@ -7,6 +7,7 @@ import { TTSUtils } from './TTSUtils';
 
 export class EdgeTTSClient implements TTSClient {
   #primaryLang = 'en';
+  #speakingLang = '';
   #rate = 1.0;
   #pitch = 1.0;
   #voice: TTSVoice | null = null;
@@ -118,6 +119,7 @@ export class EdgeTTSClient implements TTSClient {
         const { language } = mark;
         const voiceLang = language || defaultLang;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
+        this.#speakingLang = voiceLang;
         const blob = await this.#edgeTTS.createAudio(
           this.getPayload(voiceLang, mark.text, voiceId),
         );
@@ -285,5 +287,9 @@ export class EdgeTTSClient implements TTSClient {
 
   getVoiceId(): string {
     return this.#voice?.id || '';
+  }
+
+  getSpeakingLang(): string {
+    return this.#speakingLang;
   }
 }

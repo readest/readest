@@ -48,12 +48,12 @@
 | **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience.                       | ✅         |
 | **Excerpt Text for Note-Taking**        | Easily excerpt text from books for detailed notes and analysis.                                | ✅         |
 | **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                | ✅         |
-| **Translate with DeepL**                | Translate selected text instantly using DeepL for accurate translations.                       | ✅         |
 | **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                             | ✅         |
 | **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.               | ✅         |
 | **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                             | ✅         |
 | **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms. | ✅         |
-| **Text-to-Speech (TTS) Support**        | Enable text-to-speech functionality for a more accessible reading experience.                  | ✅         |
+| **Translate with DeepL**                | From a single sentence to the entire book—translate instantly with DeepL.                      | ✅         |
+| **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                | ✅         |
 | **Library Management**                  | Organize, sort, and manage your entire ebook library.                                          | ✅         |
 
 ## Planned Features
