@@ -138,64 +138,73 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       boxClassName={clsx('sm:min-w-[520px]', appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4')}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={
-        <div className='flex w-full items-center justify-between'>
-          <button
-            tabIndex={-1}
-            onClick={handleClose}
-            className={
-              'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
-            }
-          >
-            {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}
-          </button>
-          <div
-            ref={tabsRef}
-            className={clsx(
-              'dialog-tabs ms-2 flex h-10 w-full items-center sm:ms-0',
-              showAllTabLabels ? 'gap-1' : 'gap-2',
-            )}
-          >
-            {tabConfig.map(({ tab, icon: Icon, label }) => (
-              <button
-                key={tab}
-                data-tab={tab}
-                className={clsx(
-                  'btn btn-ghost text-base-content btn-sm',
-                  showAllTabLabels ? 'gap-0 px-1.5' : 'gap-1 px-2',
-                  activePanel === tab ? 'btn-active' : '',
-                )}
-                onClick={() => handleSetActivePanel(tab)}
-              >
-                <Icon className='mr-0' />
-                <span
-                  className={clsx('label', !(showAllTabLabels || activePanel === tab) && 'hidden')}
-                >
-                  {label}
-                </span>
-              </button>
-            ))}
+        <div className='flex w-full flex-col items-center'>
+          <div className='tab-title flex pb-2 text-base font-semibold sm:hidden'>
+            {tabConfig.find((tab) => tab.tab === activePanel)?.label || ''}
           </div>
-          <div className='flex h-full items-center justify-end gap-x-2'>
-            <Dropdown
-              className='dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
-              toggleButton={<PiDotsThreeVerticalBold />}
-            >
-              <DialogMenu />
-            </Dropdown>
+          <div className='flex w-full flex-row items-center justify-between'>
             <button
+              tabIndex={-1}
               onClick={handleClose}
               className={
-                'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'
+                'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
               }
             >
-              <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
-                <path
-                  fill='currentColor'
-                  d='M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z'
-                />
-              </svg>
+              {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}
             </button>
+            <div
+              ref={tabsRef}
+              className={clsx('dialog-tabs ms-1 flex h-10 w-full items-center gap-1 sm:ms-0')}
+            >
+              {tabConfig.map(({ tab, icon: Icon, label }) => (
+                <button
+                  key={tab}
+                  data-tab={tab}
+                  className={clsx(
+                    'btn btn-ghost text-base-content btn-sm gap-1 px-2',
+                    activePanel === tab ? 'btn-active' : '',
+                  )}
+                  onClick={() => handleSetActivePanel(tab)}
+                >
+                  <Icon className='mr-0' />
+                  <span
+                    className={clsx(
+                      window.innerWidth < 640 && 'hidden',
+                      !(showAllTabLabels || activePanel === tab) && 'hidden',
+                    )}
+                  >
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className='flex h-full items-center justify-end gap-x-2'>
+              <Dropdown
+                className='dropdown-bottom dropdown-end'
+                buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
+                toggleButton={<PiDotsThreeVerticalBold />}
+              >
+                <DialogMenu />
+              </Dropdown>
+              <button
+                onClick={handleClose}
+                className={
+                  'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'
+                }
+              >
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='1em'
+                  height='1em'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    fill='currentColor'
+                    d='M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z'
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       }
