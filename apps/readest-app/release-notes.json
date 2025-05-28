@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.50": {
+      "date": "2025-05-28",
+      "notes": [
+        "Bilingual TTS: You can now choose voices for each language in bilingual text-to-speech mode",
+        "Settings Layout: Improved header layout in the settings dialog for different screen sizes",
+        "CSS Fixes: Corrected anchor text color and fixed image dimensions within paragraphs"
+      ]
+    },
     "0.9.49": {
       "date": "2025-05-27",
       "notes": [
