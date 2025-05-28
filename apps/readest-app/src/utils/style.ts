@@ -86,7 +86,7 @@ const getFontStyles = (
     body * {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
-    a:any-link, a:any-link * {
+    a:any-link {
       ${overrideFont ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: none;
     }
@@ -248,9 +248,9 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
-  p:has(> img:only-child) {
+  p:has(> img:only-child), p:has(> span:only-child > img:only-child),
+  div[style*="text-align"] {
     text-indent: unset !important;
-    text-align: unset !important;
   }
   p, div {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
@@ -299,6 +299,9 @@ const getLayoutStyles = (
   p img, span img, sup img {
     height: 1em;
     mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+  }
+  p:has(> img:only-child) img, span:has(> img:only-child) img {
+    height: auto;
   }
   p:has(img), span:has(img) {
     background-color: ${bg};
@@ -485,15 +488,16 @@ export const transformStylesheet = (
   const h = height - viewSettings.marginPx * 2;
   const ruleRegex = /([^{]+)({[^}]+})/g;
   css = css.replace(ruleRegex, (match, selector, block) => {
-    const hasTextAlignCenter =
-      /text-align\s*:\s*center\s*;/.test(block) || /text-align\s*:\s*center\s*$/.test(block);
-    const hasTextIndentZero =
-      /text-indent\s*:\s*0\s*;/.test(block) || /text-indent\s*:\s*0\s*$/.test(block);
+    const hasTextAlignCenter = /text-align\s*:\s*center\s*[;$]/.test(block);
+    const hasTextIndentZero = /text-indent\s*:\s*0(?:\.0+)?(?:px|em|rem|%)?\s*[;$]/.test(block);
 
     if (hasTextAlignCenter) {
       block = block.replace(/(text-align\s*:\s*center)(\s*;|\s*$)/g, '$1 !important$2');
       if (hasTextIndentZero) {
-        block = block.replace(/(text-indent\s*:\s*0)(\s*;|\s*$)/g, '$1 !important$2');
+        block = block.replace(
+          /(text-indent\s*:\s*0(?:\.0+)?(?:px|em|rem|%)?)(\s*;|\s*$)/g,
+          '$1 !important$2',
+        );
       }
       return selector + block;
     }
