@@ -11,7 +11,7 @@ import Button from '@/components/Button';
 
 const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getViewSettings, setViewSettings, setHoveredBookKey } = useReaderStore();
 
@@ -21,7 +21,9 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;
-    setHoveredBookKey('');
+    if (appService?.isMobile) {
+      setHoveredBookKey('');
+    }
     saveViewSettings(envConfig, bookKey, 'translationEnabled', translationEnabled, true, false);
     viewSettings.translationEnabled = translationEnabled;
     setViewSettings(bookKey, { ...viewSettings });
