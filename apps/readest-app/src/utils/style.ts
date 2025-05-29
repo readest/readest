@@ -239,7 +239,7 @@ const getLayoutStyles = (
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
     text-indent: ${vertical ? textIndent * 1.2 : textIndent}em ${overrideLayout ? '!important' : ''};
-    text-align: ${justify ? 'justify' : 'inherit'} ${overrideLayout ? '!important' : ''};
+    text-align: ${justify ? 'justify' : ''} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
@@ -248,8 +248,7 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
-  p:has(> img:only-child), p:has(> span:only-child > img:only-child),
-  div[style*="text-align"] {
+  p:has(> img:only-child), p:has(> span:only-child > img:only-child) {
     text-indent: unset !important;
   }
   p, div {
@@ -317,6 +316,10 @@ const getLayoutStyles = (
   div.right *, p.right * { text-align: right; }
   div.center *, p.center * { text-align: center; }
   div.justify *, p.justify * { text-align: justify; }
+
+  .nonindent, .noindent {
+    text-indent: unset !important;
+  }
 
   /* for the Gutenberg eBooks */
   #pg-header * {
