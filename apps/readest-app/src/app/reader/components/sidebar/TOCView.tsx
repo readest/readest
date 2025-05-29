@@ -8,6 +8,7 @@ import { findParentPath } from '@/utils/toc';
 import { getContentMd5 } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { BookProgress } from '@/types/book';
+import { useTextTranslation } from '../../hooks/useTextTranslation';
 
 const createExpanderIcon = (isExpanded: boolean) => {
   return (
@@ -128,6 +129,8 @@ const TOCView: React.FC<{
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const viewRef = useRef<HTMLUListElement | null>(null);
+
+  useTextTranslation(bookKey, viewRef.current);
 
   const expandParents = (toc: TOCItem[], href: string) => {
     const parentPath = findParentPath(toc, href).map((item) => item.href);

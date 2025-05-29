@@ -7,7 +7,7 @@ import { walkTextNodes } from '@/utils/walk';
 import { localeToLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
 
-export function useTextTranslation(bookKey: string, view: FoliateView | null) {
+export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElement | null) {
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
@@ -136,6 +136,9 @@ export function useTextTranslation(bookKey: string, view: FoliateView | null) {
       blockWrapper.appendChild(inner);
       wrapper.appendChild(blockWrapper);
 
+      if (el.querySelector('.translation-target')) {
+        return;
+      }
       el.appendChild(wrapper);
       translatedElements.current.push(el);
     } catch (err) {
@@ -176,7 +179,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | null) {
   useEffect(() => {
     if (!view) return;
 
-    const onLoad = () => {
+    const observeTextNodes = () => {
       const observer = createTranslationObserver();
       observerRef.current = observer;
       const nodes = walkTextNodes(view);
@@ -184,18 +187,18 @@ export function useTextTranslation(bookKey: string, view: FoliateView | null) {
       nodes.forEach((el) => observer.observe(el));
     };
 
-    view.addEventListener('load', onLoad);
+    if ('renderer' in view) {
+      view.addEventListener('load', observeTextNodes);
+    } else {
+      observeTextNodes();
+    }
     return () => {
-      view.removeEventListener('load', onLoad);
-      observerRef.current?.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
-
-  useEffect(() => {
-    return () => {
+      if ('renderer' in view) {
+        view.removeEventListener('load', observeTextNodes);
+      }
       observerRef.current?.disconnect();
       translatedElements.current = [];
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 }

@@ -120,6 +120,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             <SidebarToggler bookKey={bookKey} />
           </div>
           <BookmarkToggler bookKey={bookKey} />
+          <TranslationToggler bookKey={bookKey} />
         </div>
 
         <div className='header-title z-15 bg-base-100 pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
@@ -129,7 +130,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4'>
-          <TranslationToggler bookKey={bookKey} />
           <SettingsToggler />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown

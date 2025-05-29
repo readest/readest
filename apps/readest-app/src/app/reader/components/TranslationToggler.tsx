@@ -34,7 +34,9 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
         <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
       }
       disabled={
-        !bookData || isSameLang(bookData.book?.primaryLanguage, viewSettings.translateTargetLang!)
+        !bookData ||
+        bookData.book?.format === 'PDF' ||
+        isSameLang(bookData.book?.primaryLanguage, viewSettings.translateTargetLang!)
       }
       onClick={() => setTranslationEnabled(!translationEnabled)}
       tooltip={translationEnabled ? _('Disable Translation') : _('Enable Translation')}

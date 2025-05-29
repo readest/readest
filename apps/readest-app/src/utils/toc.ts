@@ -60,6 +60,12 @@ export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionI
     return map;
   }, {});
   updateTocData(bookDoc, items, sectionsMap);
+  items.sort((a, b) => {
+    if (a.location && b.location) {
+      return a.location.current - b.location.current;
+    }
+    return 0;
+  });
 };
 
 const updateTocData = (
