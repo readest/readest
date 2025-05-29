@@ -11,7 +11,7 @@ import {
   ViewSettings,
 } from '@/types/book';
 import { ReadSettings, SystemSettings } from '@/types/settings';
-import { UserStorageQuota } from '@/types/user';
+import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/user';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -525,6 +525,12 @@ export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
   plus: 2 * 1024 * 1024 * 1024,
   pro: 10 * 1024 * 1024 * 1024,
+};
+
+export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
+  free: 100 * 1024,
+  plus: 1 * 1024 * 1024,
+  pro: 10 * 1024 * 1024,
 };
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;

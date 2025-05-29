@@ -65,7 +65,7 @@ export function useTranslator({
           ),
         );
 
-        return results;
+        return enablePolishing ? polish(results, targetLanguage) : results;
       }
 
       setLoading(true);

@@ -1,10 +1,12 @@
-export type UserStorageQuota = {
+export interface UserQuota {
   free: number;
   plus: number;
   pro: number;
-};
+}
 
-export type UserPlan = keyof UserStorageQuota;
+export type UserPlan = keyof UserQuota;
+export type UserStorageQuota = UserQuota;
+export type UserDailyTranslationQuota = UserQuota;
 
 export type QuotaType = {
   name: string;

@@ -2,10 +2,17 @@ import crypto from 'crypto';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { supabase } from '@/utils/supabase';
-import { getUserPlan } from '@/utils/access';
+import { getDailyTranslationPlanData, getUserPlan } from '@/utils/access';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
+
+const ErrorCodes = {
+  UNAUTHORIZED: 'Unauthorized',
+  DEEPL_API_ERROR: 'DeepL API Error',
+  DAILY_QUOTA_EXCEEDED: 'Daily Quota Exceeded',
+  INTERNAL_SERVER_ERROR: 'Internal Server Error',
+};
 
 interface KVNamespace {
   get(key: string): Promise<string | null>;
@@ -101,7 +108,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           }
         }
 
+        // if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
+
         return await callDeepLAPI(
+          user?.id,
+          token,
           singleText,
           sourceLang,
           targetLang,
@@ -115,11 +126,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(200).json({ translations });
   } catch (error) {
     console.error('Error proxying DeepL request:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    if (error instanceof Error && error.message.includes(ErrorCodes.DAILY_QUOTA_EXCEEDED)) {
+      return res.status(429).json({ error: ErrorCodes.DAILY_QUOTA_EXCEEDED });
+    }
+    return res.status(500).json({ error: ErrorCodes.INTERNAL_SERVER_ERROR });
   }
 };
 
 async function callDeepLAPI(
+  userId: string | undefined,
+  token: string | undefined,
   text: string,
   sourceLang: string,
   targetLang: string,
@@ -128,11 +144,22 @@ async function callDeepLAPI(
   translationsKV: KVNamespace | undefined,
   useCache: boolean,
 ) {
+  let dailyUsageKey = '';
+  if (userId && token) {
+    const { quota: dailyQuota } = getDailyTranslationPlanData(token);
+    const currentDate = new Date().toISOString().split('T')[0]!;
+    dailyUsageKey = `daily_usage:${currentDate}:${userId}`;
+    const dailyUsage = (await translationsKV?.get(dailyUsageKey)) || '0';
+    if (dailyQuota <= parseInt(dailyUsage) + text.length) {
+      throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
+    }
+  }
+
   const isV2Api = apiUrl.endsWith('/v2/translate');
 
   // TODO: this should be processed in the client, but for now, we need to do it here
   // please remove this when most clients are updated
-  const input = text.replaceAll('\n', ' ').trim();
+  const input = text.replaceAll('\n', '').trim();
   const requestBody = {
     text: isV2Api ? [input] : input,
     source_lang: isV2Api ? sourceLang : (LANG_V2_V1_MAP[sourceLang] ?? sourceLang),
@@ -166,6 +193,20 @@ async function callDeepLAPI(
     translatedText = data.data;
   }
 
+  let newDailyUsage = 0;
+  if (dailyUsageKey && translationsKV) {
+    try {
+      const usage = translatedText.length + text.length;
+      const dailyUsage = (await translationsKV.get(dailyUsageKey)) || '0';
+      newDailyUsage = parseInt(dailyUsage) + usage;
+      await translationsKV.put(dailyUsageKey, newDailyUsage.toString(), {
+        expirationTtl: 86400 * 30,
+      });
+    } catch (cacheError) {
+      console.error('Cache storage error:', cacheError);
+    }
+  }
+
   if (useCache && translationsKV && translatedText) {
     try {
       const cacheKey = generateCacheKey(text, sourceLang, targetLang);
@@ -177,6 +218,7 @@ async function callDeepLAPI(
 
   return {
     text: translatedText,
+    daily_usage: newDailyUsage,
     detected_source_language: detectedSourceLanguage,
   };
 }

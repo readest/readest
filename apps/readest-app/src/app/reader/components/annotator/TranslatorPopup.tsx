@@ -98,7 +98,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
       setTranslation(null);
 
       try {
-        const input = text.replaceAll('\n', ' ').trim();
+        const input = text.replaceAll('\n', '').trim();
         const result = await translate([input]);
         const translatedText = result[0];
         const detectedSource = null;
