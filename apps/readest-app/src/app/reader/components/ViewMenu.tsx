@@ -10,7 +10,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { ThemeMode } from '@/styles/themes';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
@@ -51,8 +50,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   const cycleThemeMode = () => {
-    const nextMode: ThemeMode =
-      themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
+    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
     setThemeMode(nextMode);
   };
 

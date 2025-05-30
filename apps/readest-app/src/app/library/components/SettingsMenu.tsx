@@ -4,12 +4,15 @@ import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
 import { PiUserCircleCheck } from 'react-icons/pi';
 import { MdCheck } from 'react-icons/md';
+import { TbSunMoon } from 'react-icons/tb';
+import { BiMoon, BiSun } from 'react-icons/bi';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -31,6 +34,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
+  const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -48,6 +52,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setAboutDialogVisible(true);
     setIsDropdownOpen?.(false);
   };
+
   const downloadReadest = () => {
     window.open(DOWNLOAD_READEST_URL, '_blank');
     setIsDropdownOpen?.(false);
@@ -61,6 +66,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const handleUserProfile = () => {
     navigateToProfile(router);
     setIsDropdownOpen?.(false);
+  };
+
+  const cycleThemeMode = () => {
+    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
+    setThemeMode(nextMode);
   };
 
   const handleReloadPage = () => {
@@ -224,6 +234,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         label={_('Keep Screen Awake')}
         Icon={isScreenWakeLock ? MdCheck : undefined}
         onClick={toggleScreenWakeLock}
+      />
+      <MenuItem
+        label={
+          themeMode === 'dark'
+            ? _('Dark Mode')
+            : themeMode === 'light'
+              ? _('Light Mode')
+              : _('Auto Mode')
+        }
+        Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
+        onClick={cycleThemeMode}
       />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
