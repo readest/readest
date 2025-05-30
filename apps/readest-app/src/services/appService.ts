@@ -401,7 +401,7 @@ export abstract class BaseAppService implements AppService {
       }
     } catch (error) {
       // don't throw error here since some books may not have cover images at all
-      console.log('Failed to download cover file:', error);
+      console.log(`Failed to download cover file for book: '${book.title}'`, error);
     }
 
     if (needDownBook) {

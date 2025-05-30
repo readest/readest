@@ -86,6 +86,7 @@ export class TTSController extends EventTarget {
       .replace(/[–—]/g, ',')
       .replace('<break/>', ' ')
       .replace(/\.{3,}/g, '   ')
+      .replace(/……/g, '  ')
       .replace(/·/g, ' ');
 
     return ssml;

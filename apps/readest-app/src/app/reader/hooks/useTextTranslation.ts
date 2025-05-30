@@ -9,11 +9,11 @@ import { getLocale } from '@/utils/misc';
 
 export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElement | null) {
   const { getViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
+  const viewSettings = getViewSettings(bookKey);
 
-  const enabled = useRef(viewSettings.translationEnabled);
-  const [provider, setProvider] = useState(viewSettings.translationProvider);
-  const [targetLang, setTargetLang] = useState(viewSettings.translateTargetLang);
+  const enabled = useRef(viewSettings?.translationEnabled);
+  const [provider, setProvider] = useState(viewSettings?.translationProvider);
+  const [targetLang, setTargetLang] = useState(viewSettings?.translateTargetLang);
 
   const { translate } = useTranslator({
     provider,
@@ -42,6 +42,16 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
     translateRef.current = translate;
   }, [translate]);
 
+  const observeTextNodes = () => {
+    if (!view || !enabled.current) return;
+    const observer = createTranslationObserver();
+    observerRef.current = observer;
+    const nodes = walkTextNodes(view);
+    console.log('Observing text nodes for translation:', nodes.length);
+    allTextNodes.current = nodes;
+    nodes.forEach((el) => observer.observe(el));
+  };
+
   const updateTranslation = () => {
     translatedElements.current.forEach((element) => {
       const translationTargets = element.querySelectorAll('.translation-target');
@@ -49,7 +59,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
     });
 
     translatedElements.current = [];
-    if (viewSettings.translationEnabled && view) {
+    if (viewSettings?.translationEnabled && view) {
       recreateTranslationObserver();
     }
   };
@@ -168,7 +178,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
     if (enabledChanged) {
       toggleTranslationVisibility(viewSettings.translationEnabled);
       if (enabled.current) {
-        recreateTranslationObserver();
+        observeTextNodes();
       }
     } else if (providerChanged || targetLangChanged) {
       updateTranslation();
@@ -177,15 +187,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
   }, [bookKey, viewSettings, provider, targetLang]);
 
   useEffect(() => {
-    if (!view) return;
-
-    const observeTextNodes = () => {
-      const observer = createTranslationObserver();
-      observerRef.current = observer;
-      const nodes = walkTextNodes(view);
-      allTextNodes.current = nodes;
-      nodes.forEach((el) => observer.observe(el));
-    };
+    if (!view || !enabled.current) return;
 
     if ('renderer' in view) {
       view.addEventListener('load', observeTextNodes);

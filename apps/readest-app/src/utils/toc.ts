@@ -59,7 +59,7 @@ export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionI
     map[section.id] = section;
     return map;
   }, {});
-  updateTocData(bookDoc, items, sectionsMap);
+  updateTocData(bookDoc, items, sections, sectionsMap);
   items.sort((a, b) => {
     if (a.location && b.location) {
       return a.location.current - b.location.current;
@@ -71,25 +71,26 @@ export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionI
 const updateTocData = (
   bookDoc: BookDoc,
   items: TOCItem[],
-  sections: { [id: string]: SectionItem },
+  sections: SectionItem[],
+  sectionsMap: { [id: string]: SectionItem },
   index = 0,
 ): number => {
   items.forEach((item) => {
     item.id ??= index++;
     if (item.href) {
       const id = bookDoc.splitTOCHref(item.href)[0]!;
-      const section = sections[id];
+      const section = sectionsMap[id];
       if (section) {
         item.cfi = section.cfi;
         // Add location only when toc item is at the same level as the section
         // otherwise the location will not be accurate
-        if (id === item.href) {
+        if (id === item.href || items.length <= sections.length) {
           item.location = section.location;
         }
       }
     }
     if (item.subitems) {
-      index = updateTocData(bookDoc, item.subitems, sections, index);
+      index = updateTocData(bookDoc, item.subitems, sections, sectionsMap, index);
     }
   });
   return index;
