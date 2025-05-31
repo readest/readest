@@ -8,6 +8,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
 import { isSameLang } from '@/utils/lang';
 import Button from '@/components/Button';
+import { getLocale } from '@/utils/misc';
 
 const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const _ = useTranslation();
@@ -18,6 +19,9 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
+
+  const primaryLanguage = bookData?.book?.primaryLanguage;
+  const targetLanguage = viewSettings.translateTargetLang;
 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;
@@ -38,7 +42,8 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
       disabled={
         !bookData ||
         bookData.book?.format === 'PDF' ||
-        isSameLang(bookData.book?.primaryLanguage, viewSettings.translateTargetLang!)
+        isSameLang(primaryLanguage, targetLanguage) ||
+        (!targetLanguage && isSameLang(primaryLanguage, getLocale()))
       }
       onClick={() => setTranslationEnabled(!translationEnabled)}
       tooltip={translationEnabled ? _('Disable Translation') : _('Enable Translation')}
