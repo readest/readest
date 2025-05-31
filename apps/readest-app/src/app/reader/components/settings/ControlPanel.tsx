@@ -3,6 +3,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
@@ -12,7 +13,9 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
+  const { getBookData } = useBookDataStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
+  const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
 
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
@@ -22,6 +25,7 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
   const [animated, setAnimated] = useState(viewSettings.animated!);
+  const [allowScript, setAllowScript] = useState(viewSettings.allowScript!);
 
   useEffect(() => {
     if (isScrolledMode === viewSettings.scrolled) return;
@@ -77,6 +81,13 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    if (viewSettings.allowScript === allowScript) return;
+    saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false);
+    setTimeout(() => window.location.reload(), 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowScript]);
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -164,6 +175,27 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='toggle'
                 checked={animated}
                 onChange={() => setAnimated(!animated)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Security')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item !h-16'>
+              <div className='flex flex-col gap-1'>
+                <span className=''>{_('Allow JavaScript')}</span>
+                <span className='text-xs'>{_('Enable only if you trust the file.')}</span>
+              </div>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={allowScript}
+                disabled={bookData.book?.format !== 'EPUB'}
+                onChange={() => setAllowScript(!allowScript)}
               />
             </div>
           </div>

@@ -329,5 +329,8 @@
   "Scroll": "滾動",
   "Overlap Pixels": "重疊像素",
   "Click": "點擊",
-  "System Language": "系統語言"
+  "System Language": "系統語言",
+  "Security": "安全",
+  "Allow JavaScript": "允許 JavaScript",
+  "Enable only if you trust the file.": "僅在您信任該文件時啟用"
 }

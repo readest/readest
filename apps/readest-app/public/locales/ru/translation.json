@@ -332,5 +332,8 @@
   "Scroll": "Прокрутка",
   "Overlap Pixels": "Перекрывающиеся пиксели",
   "Click": "Клик",
-  "System Language": "Системный язык"
+  "System Language": "Системный язык",
+  "Security": "Безопасность",
+  "Allow JavaScript": "Разрешить JavaScript",
+  "Enable only if you trust the file.": "Включите только если доверяете файлу."
 }

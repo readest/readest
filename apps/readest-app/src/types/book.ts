@@ -88,6 +88,7 @@ export interface BookLayout {
   showFooter: boolean;
   showBarsOnScroll: boolean;
   scrollingOverlap: number;
+  allowScript: boolean;
 }
 
 export interface BookStyle {

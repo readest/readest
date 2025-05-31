@@ -329,5 +329,8 @@
   "Scroll": "Scroll",
   "Overlap Pixels": "Overlap Piksel",
   "Click": "Klik",
-  "System Language": "Bahasa Sistem"
+  "System Language": "Bahasa Sistem",
+  "Security": "Keamanan",
+  "Allow JavaScript": "Izinkan JavaScript",
+  "Enable only if you trust the file.": "Aktifkan hanya jika Anda mempercayai file tersebut."
 }

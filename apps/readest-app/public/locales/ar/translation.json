@@ -334,5 +334,8 @@
   "Scroll": "تمرير",
   "Overlap Pixels": "تداخل البكسلات",
   "Click": "نقر",
-  "System Language": "لغة النظام"
+  "System Language": "لغة النظام",
+  "Security": "الأمان",
+  "Allow JavaScript": "السماح بـ JavaScript",
+  "Enable only if you trust the file.": "تمكين فقط إذا كنت تثق في الملف."
 }

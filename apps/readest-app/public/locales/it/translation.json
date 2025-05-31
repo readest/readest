@@ -331,5 +331,8 @@
   "Scroll": "Scorri",
   "Overlap Pixels": "Pixel di sovrapposizione",
   "Click": "Fai clic",
-  "System Language": "Lingua di sistema"
+  "System Language": "Lingua di sistema",
+  "Security": "Security",
+  "Allow JavaScript": "Consenti JavaScript",
+  "Enable only if you trust the file.": "Abilita solo se ti fidi del file."
 }

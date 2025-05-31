@@ -109,6 +109,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   showFooter: true,
   showBarsOnScroll: false,
   scrollingOverlap: 0,
+  allowScript: false,
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

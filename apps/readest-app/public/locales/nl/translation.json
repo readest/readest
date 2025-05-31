@@ -330,5 +330,8 @@
   "Scroll": "Scrollen",
   "Overlap Pixels": "Overlap pixels",
   "Click": "Klik",
-  "System Language": "Systemtaal"
+  "System Language": "Systemtaal",
+  "Security": "Beveiliging",
+  "Allow JavaScript": "JavaScript toestaan",
+  "Enable only if you trust the file.": "Schakel alleen in als u het bestand vertrouwt."
 }

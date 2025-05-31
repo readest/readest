@@ -329,5 +329,8 @@
   "Scroll": "スクロール",
   "Overlap Pixels": "重なりピクセル",
   "Click": "クリック",
-  "System Language": "システム言語"
+  "System Language": "システム言語",
+  "Security": "セキュリティ",
+  "Allow JavaScript": "JavaScriptを許可",
+  "Enable only if you trust the file.": "ファイルを信頼する場合にのみ有効にしてください。"
 }

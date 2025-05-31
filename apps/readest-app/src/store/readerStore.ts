@@ -122,7 +122,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const content = (await appService.loadBookContent(book, settings)) as BookContent;
         const { file, config } = content;
         console.log('Loading book', key);
-        const { book: loadedBookDoc } = await new DocumentLoader(file).open();
+        const { book: loadedBookDoc } = await new DocumentLoader(file).open({
+          allowScript: config.viewSettings?.allowScript,
+        });
         const bookDoc = loadedBookDoc as BookDoc;
         if (bookDoc.toc?.length && bookDoc.sections?.length) {
           updateToc(bookDoc, bookDoc.toc, bookDoc.sections);

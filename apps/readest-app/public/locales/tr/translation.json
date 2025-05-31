@@ -330,5 +330,8 @@
   "Scroll": "Kaydır",
   "Overlap Pixels": "Örtüşen Pikseller",
   "Click": "Klik",
-  "System Language": "System Dili"
+  "System Language": "System Dili",
+  "Security": "Security",
+  "Allow JavaScript": "JavaScript'e İzin Ver",
+  "Enable only if you trust the file.": "Yalnızca dosyaya güveniyorsanız etkinleştirin."
 }

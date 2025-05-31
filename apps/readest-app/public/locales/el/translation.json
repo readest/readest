@@ -330,5 +330,8 @@
   "Scroll": "Κύλιση",
   "Overlap Pixels": "Επικάλυψη εικονοστοιχείων",
   "Click": "Κλικ",
-  "System Language": "Γλώσσα συστήματος"
+  "System Language": "Γλώσσα συστήματος",
+  "Security": "Ασφάλεια",
+  "Allow JavaScript": "Επιτρέψτε JavaScript",
+  "Enable only if you trust the file.": "Ενεργοποιήστε μόνο εάν εμπιστεύεστε το αρχείο."
 }

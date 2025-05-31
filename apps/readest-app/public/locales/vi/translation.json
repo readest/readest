@@ -329,5 +329,8 @@
   "Scroll": "Cuộn",
   "Overlap Pixels": "Chồng lấn pixel",
   "Click": "Nhấp",
-  "System Language": "Ngôn ngữ hệ thống"
+  "System Language": "Ngôn ngữ hệ thống",
+  "Security": "An ninh",
+  "Allow JavaScript": "Cho phép JavaScript",
+  "Enable only if you trust the file.": "Chỉ bật nếu bạn tin tưởng tệp."
 }
