@@ -130,7 +130,8 @@ export class TTSController extends EventTarget {
             return;
           }
           if (mark && this.state === 'playing') {
-            this.view.tts?.setMark(mark);
+            const range = this.view.tts?.setMark(mark);
+            this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: range }));
           }
           lastCode = code;
         }

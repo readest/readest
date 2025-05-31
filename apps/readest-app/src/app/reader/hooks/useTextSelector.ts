@@ -12,7 +12,7 @@ export const useTextSelector = (
   handleDismissPopup: () => void,
 ) => {
   const { getBookData } = useBookDataStore();
-  const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
@@ -83,14 +83,6 @@ export const useTextSelector = (
     // note that selection may be initiated by a tts speak
     if (isTouchStarted.current && osPlatform === 'android') {
       makeSelection(sel, index, false);
-    }
-    if (!isTouchStarted.current && getViewState(bookKey)?.ttsEnabled) {
-      const viewSettings = getViewSettings(bookKey)!;
-      const cfi = view?.getCFI(index, sel.getRangeAt(0));
-      if (cfi) {
-        viewSettings.ttsLocation = cfi || '';
-        setViewSettings(bookKey, viewSettings);
-      }
     }
     isUpToPopup.current = true;
   };

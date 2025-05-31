@@ -25,7 +25,8 @@ const TTSControl = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
-  const { getView, getProgress, getViewSettings, setTTSEnabled } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const { setViewSettings, setTTSEnabled } = useReaderStore();
   const [bookKey, setBookKey] = useState<string>('');
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -118,9 +119,27 @@ const TTSControl = () => {
       }
     };
 
+    const handleHighlightMark = (e: Event) => {
+      const range = (e as CustomEvent<Range>).detail;
+      const view = getView(bookKey);
+      const progress = getProgress(bookKey);
+      const viewSettings = getViewSettings(bookKey);
+      if (!range || !view || !progress || !viewSettings) return;
+
+      const { location } = progress;
+      const { index } = view.resolveCFI(location);
+      const cfi = view?.getCFI(index, range);
+      if (cfi) {
+        viewSettings.ttsLocation = cfi || '';
+        setViewSettings(bookKey, viewSettings);
+      }
+    };
+
     ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
+    ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
     return () => {
       ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
+      ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
