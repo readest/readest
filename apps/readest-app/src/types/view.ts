@@ -15,6 +15,7 @@ export interface FoliateView extends HTMLElement {
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
+  resolveCFI: (cfi: string) => { index: number; anchor: (doc: Document) => Range };
   addAnnotation: (note: BookNote, remove?: boolean) => { index: number; label: string };
   search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
   clearSearch: () => void;

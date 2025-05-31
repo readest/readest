@@ -109,11 +109,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const handleSpeakText = async () => {
     if (!view || !progress) return;
-    const { range } = progress;
     if (eventDispatcher.dispatchSync('tts-is-speaking')) {
       eventDispatcher.dispatch('tts-stop', { bookKey });
     } else {
-      eventDispatcher.dispatch('tts-speak', { bookKey, range });
+      eventDispatcher.dispatch('tts-speak', { bookKey });
     }
   };
 

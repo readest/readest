@@ -12,6 +12,7 @@ import { parseSSMLLang } from '@/utils/ssml';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
+import { CFI } from '@/libs/document';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -107,7 +108,7 @@ const TTSControl = () => {
       const progress = getProgress(bookKey);
       const { sectionLabel } = progress || {};
       const mark = (e as CustomEvent<TTSMark>).detail;
-      if ('mediaSession' in navigator) {
+      if (appService?.isMobileApp && 'mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: mark.text,
           artist: sectionLabel || title,
@@ -127,15 +128,31 @@ const TTSControl = () => {
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey, range } = event.detail;
     const view = getView(bookKey);
+    const progress = getProgress(bookKey);
     const viewSettings = getViewSettings(bookKey);
     const bookData = getBookData(bookKey);
-    if (!view || !viewSettings || !bookData || !bookData.book) return;
+    if (!view || !progress || !viewSettings || !bookData || !bookData.book) return;
     if (bookData.book?.format === 'PDF') {
       eventDispatcher.dispatch('toast', {
         message: _('TTS not supported for PDF'),
         type: 'warning',
       });
       return;
+    }
+
+    let ttsFromRange = range || progress.range;
+    if (viewSettings.ttsLocation) {
+      const { location } = progress;
+      const ttsCfi = viewSettings.ttsLocation;
+      const start = CFI.collapse(location);
+      const end = CFI.collapse(location, true);
+      if (CFI.compare(start, ttsCfi) * CFI.compare(end, ttsCfi) <= 0) {
+        const { index, anchor } = view.resolveCFI(ttsCfi);
+        const { doc } = view.renderer.getContents().find((x) => (x.index = index)) || {};
+        if (doc) {
+          ttsFromRange = anchor(doc) || ttsFromRange;
+        }
+      }
     }
 
     const primaryLang = bookData.book.primaryLanguage;
@@ -160,7 +177,7 @@ const TTSControl = () => {
       const ttsController = new TTSController(view);
       await ttsController.init();
       await ttsController.initViewTTS();
-      const ssml = view.tts?.from(range);
+      const ssml = view.tts?.from(ttsFromRange);
       if (ssml) {
         let lang = parseSSMLLang(ssml) || 'en';
         // We will not trust 'en' language from ssml, as it may be a fallback or hardcoded value

@@ -125,6 +125,7 @@ export interface ViewConfig {
 export interface TTSConfig {
   ttsRate: number;
   ttsVoice: string;
+  ttsLocation: string;
 }
 
 export interface TranslatorConfig {
