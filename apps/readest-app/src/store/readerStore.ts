@@ -19,6 +19,7 @@ interface ViewState {
   error: string | null;
   progress: BookProgress | null;
   ribbonVisible: boolean;
+  ttsEnabled: boolean;
   /* View settings for the view: 
     generally view settings have a hierarchy of global settings < book settings < view settings
     view settings for primary view are saved to book config which is persisted to config file
@@ -33,6 +34,7 @@ interface ReaderStore {
   setBookKeys: (keys: string[]) => void;
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
+  setTTSEnabled: (key: string, enabled: boolean) => void;
   setProgress: (
     key: string,
     location: string,
@@ -103,6 +105,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           error: null,
           progress: null,
           ribbonVisible: false,
+          ttsEnabled: false,
           viewSettings: null,
         },
       },
@@ -149,6 +152,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             error: null,
             progress: null,
             ribbonVisible: false,
+            ttsEnabled: false,
             viewSettings: JSON.parse(JSON.stringify(configViewSettings)) as ViewSettings,
           },
         },
@@ -167,6 +171,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             error: 'Failed to load book.',
             progress: null,
             ribbonVisible: false,
+            ttsEnabled: false,
             viewSettings: null,
           },
         },
@@ -279,6 +284,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ribbonVisible: visible,
+        },
+      },
+    })),
+
+  setTTSEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ttsEnabled: enabled,
         },
       },
     })),

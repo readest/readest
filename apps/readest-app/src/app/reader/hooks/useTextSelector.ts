@@ -22,6 +22,7 @@ export const useTextSelector = (
   const isPopuped = useRef(false);
   const isUpToPopup = useRef(false);
   const isTextSelected = useRef(false);
+  const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
 
   const isValidSelection = (sel: Selection) => {
@@ -79,7 +80,8 @@ export const useTextSelector = (
 
     // On Android no proper events are fired to notify selection done,
     // we make the popup show when the selection is changed
-    if (osPlatform === 'android') {
+    // note that selection may be initiated by a tts speak
+    if (osPlatform === 'android' && isTouchStarted.current) {
       makeSelection(sel, index, false);
     }
     isUpToPopup.current = true;
@@ -95,6 +97,12 @@ export const useTextSelector = (
         makeSelection(sel, index, true);
       }
     }
+  };
+  const handleTouchStart = () => {
+    isTouchStarted.current = true;
+  };
+  const handleTouchEnd = () => {
+    isTouchStarted.current = false;
   };
   const handleScroll = () => {
     // Prevent the container from scrolling when text is selected in paginated mode
@@ -158,6 +166,8 @@ export const useTextSelector = (
 
   return {
     handleScroll,
+    handleTouchStart,
+    handleTouchEnd,
     handlePointerup,
     handleSelectionchange,
     handleShowPopup,

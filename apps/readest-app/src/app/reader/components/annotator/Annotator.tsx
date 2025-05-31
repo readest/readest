@@ -91,8 +91,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     view?.deselect();
   };
 
-  const { handleScroll, handlePointerup, handleSelectionchange, handleShowPopup, handleUpToPopup } =
-    useTextSelector(bookKey, setSelection, handleDismissPopup);
+  const {
+    handleScroll,
+    handleTouchStart,
+    handleTouchEnd,
+    handlePointerup,
+    handleSelectionchange,
+    handleShowPopup,
+    handleUpToPopup,
+  } = useTextSelector(bookKey, setSelection, handleDismissPopup);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -105,7 +112,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     };
     if (bookData.book?.format !== 'PDF') {
       view?.renderer?.addEventListener('scroll', handleScroll);
+      detail.doc?.addEventListener('touchstart', handleTouchStart);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
+      detail.doc?.addEventListener('touchend', handleTouchEnd);
       detail.doc?.addEventListener('pointerup', () => handlePointerup(doc, index));
       detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
 

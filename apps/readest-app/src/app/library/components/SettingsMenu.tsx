@@ -235,6 +235,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={isScreenWakeLock ? MdCheck : undefined}
         onClick={toggleScreenWakeLock}
       />
+      <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <MenuItem
         label={
           themeMode === 'dark'
@@ -246,7 +247,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
-      <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />

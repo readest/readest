@@ -3,9 +3,11 @@ import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
+import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
 
 export class EdgeTTSClient implements TTSClient {
+  controller?: TTSController;
   #primaryLang = 'en';
   #speakingLang = '';
   #rate = 1.0;
@@ -20,7 +22,8 @@ export class EdgeTTSClient implements TTSClient {
   #startedAt = 0;
   available = true;
 
-  constructor() {
+  constructor(controller?: TTSController) {
+    this.controller = controller;
     this.#edgeTTS = new EdgeSpeechTTS();
   }
 
@@ -128,6 +131,8 @@ export class EdgeTTSClient implements TTSClient {
         const audio = this.#audioElement;
         audio.setAttribute('x-webkit-airplay', 'deny');
         audio.preload = 'auto';
+
+        this.controller?.dispatchSpeakMark(mark);
 
         yield {
           code: 'boundary',

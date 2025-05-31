@@ -4,6 +4,7 @@ import { parseSSMLMarks } from '@/utils/ssml';
 import { WebSpeechClient } from './WebSpeechClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
+import { TTSMark } from './types';
 
 type TTSState =
   | 'stopped'
@@ -31,8 +32,8 @@ export class TTSController extends EventTarget {
 
   constructor(view: FoliateView) {
     super();
-    this.ttsWebClient = new WebSpeechClient();
-    this.ttsEdgeClient = new EdgeTTSClient();
+    this.ttsWebClient = new WebSpeechClient(this);
+    this.ttsEdgeClient = new EdgeTTSClient(this);
     this.ttsClient = this.ttsWebClient;
     this.view = view;
   }
@@ -271,6 +272,10 @@ export class TTSController extends EventTarget {
 
   getSpeakingLang() {
     return this.ttsClient.getSpeakingLang();
+  }
+
+  dispatchSpeakMark(mark: TTSMark) {
+    this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark }));
   }
 
   error(e: unknown) {

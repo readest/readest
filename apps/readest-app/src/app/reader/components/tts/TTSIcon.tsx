@@ -1,20 +1,28 @@
+import clsx from 'clsx';
 import React from 'react';
 
 type TTSIconProps = {
   isPlaying: boolean;
+  ttsInited: boolean;
   onClick: () => void;
 };
 
-const TTSIcon: React.FC<TTSIconProps> = ({ isPlaying, onClick }) => {
+const TTSIcon: React.FC<TTSIconProps> = ({ isPlaying, ttsInited, onClick }) => {
   const bars = [1, 2, 3, 4];
 
   return (
-    <div className='relative h-full w-full cursor-pointer' onClick={onClick}>
+    <div
+      className={clsx(
+        'relative h-full w-full',
+        ttsInited ? 'cursor-pointer' : 'cursor-not-allowed',
+      )}
+      onClick={onClick}
+    >
       <div className='absolute inset-0 overflow-hidden rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500'>
         <div
           className='absolute -inset-full bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500'
           style={{
-            animation: isPlaying ? 'moveGradient 2s alternate infinite' : 'none',
+            animation: isPlaying && ttsInited ? 'moveGradient 2s alternate infinite' : 'none',
           }}
         />
       </div>

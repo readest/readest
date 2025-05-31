@@ -41,8 +41,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { hoveredBookKey, setHoveredBookKey, getView, getProgress, getViewSettings } =
-    useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
   const [actionTab, setActionTab] = React.useState('');
   const sliderHeight = useResponsiveSize(28);
@@ -53,6 +53,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const view = getView(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
+  const viewState = getViewState(bookKey);
 
   const handleProgressChange = (value: number) => {
     view?.goToFraction(value / 100.0);
@@ -147,6 +148,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   };
 
   const isVisible = hoveredBookKey === bookKey;
+  const ttsEnabled = viewState?.ttsEnabled;
   const progressInfo = bookFormat === 'PDF' ? section : pageinfo;
   const progressValid = !!progressInfo;
   const progressFraction =
@@ -312,7 +314,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
             }
             onClick={() => handleSetActionTab('font')}
           />
-          <Button icon={<TTSIcon className='' />} onClick={() => handleSetActionTab('tts')} />
+          <Button
+            icon={<TTSIcon className={ttsEnabled ? 'text-blue-500' : ''} />}
+            onClick={() => handleSetActionTab('tts')}
+          />
         </div>
         {/* Desktop footer bar */}
         <div className='hidden w-full items-center gap-x-4 px-4 sm:flex'>
@@ -351,7 +356,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
               handleProgressChange(parseInt((e.target as HTMLInputElement).value, 10))
             }
           />
-          <Button icon={<FaHeadphones />} onClick={handleSpeakText} tooltip={_('Speak')} />
+          <Button
+            icon={<FaHeadphones className={ttsEnabled ? 'text-blue-500' : ''} />}
+            onClick={handleSpeakText}
+            tooltip={_('Speak')}
+          />
           <Button
             icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
             onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}

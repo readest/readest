@@ -5,7 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { TTSController, SILENCE_DATA } from '@/services/tts';
+import { TTSController, SILENCE_DATA, TTSMark } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
@@ -24,7 +24,7 @@ const TTSControl = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings, setTTSEnabled } = useReaderStore();
   const [bookKey, setBookKey] = useState<string>('');
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -45,8 +45,10 @@ const TTSControl = () => {
   const popupHeight = useResponsiveSize(POPUP_HEIGHT);
 
   const iconRef = useRef<HTMLDivElement>(null);
-  const ttsControllerRef = useRef<TTSController | null>(null);
   const unblockerAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsControllerRef = useRef<TTSController | null>(null);
+  const [ttsController, setTtsController] = useState<TTSController | null>(null);
+  const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
 
   // this enables WebAudio to play even when the mute toggle switch is ON
   const unblockAudio = () => {
@@ -95,6 +97,33 @@ const TTSControl = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!ttsController || !bookKey) return;
+    const bookData = getBookData(bookKey);
+    if (!bookData || !bookData.book) return;
+    const { title, author, coverImageUrl } = bookData.book;
+
+    const handleSpeakMark = (e: Event) => {
+      const progress = getProgress(bookKey);
+      const { sectionLabel } = progress || {};
+      const mark = (e as CustomEvent<TTSMark>).detail;
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: mark.text,
+          artist: sectionLabel || title,
+          album: author,
+          artwork: [{ src: coverImageUrl || '/icon.png', sizes: '512x512', type: 'image/png' }],
+        });
+      }
+    };
+
+    ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
+    return () => {
+      ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsController, bookKey]);
+
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey, range } = event.detail;
     const view = getView(bookKey);
@@ -116,6 +145,8 @@ const TTSControl = () => {
       ttsControllerRef.current.stop();
       ttsControllerRef.current = null;
     }
+
+    setTTSEnabled(bookKey, true);
     setShowIndicator(true);
 
     try {
@@ -125,6 +156,7 @@ const TTSControl = () => {
       if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
         unblockAudio();
       }
+      setTtsClientsInitialized(false);
       const ttsController = new TTSController(view);
       await ttsController.init();
       await ttsController.initViewTTS();
@@ -142,7 +174,9 @@ const TTSControl = () => {
         ttsController.setRate(viewSettings.ttsRate);
         ttsController.speak(ssml);
         ttsControllerRef.current = ttsController;
+        setTtsController(ttsController);
       }
+      setTtsClientsInitialized(true);
     } catch (error) {
       eventDispatcher.dispatch('toast', {
         message: _('TTS not supported in this device'),
@@ -152,9 +186,10 @@ const TTSControl = () => {
     }
   };
 
-  const handleTTSStop = async () => {
+  const handleTTSStop = async (event: CustomEvent) => {
+    const { bookKey } = event.detail;
     if (ttsControllerRef.current) {
-      handleStop();
+      handleStop(bookKey);
     }
   };
 
@@ -197,11 +232,12 @@ const TTSControl = () => {
     }
   };
 
-  const handleStop = async () => {
+  const handleStop = async (bookKey: string) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       await ttsController.stop();
       ttsControllerRef.current = null;
+      setTtsController(null);
       getView(bookKey)?.deselect();
       setIsPlaying(false);
       setShowPanel(false);
@@ -213,6 +249,7 @@ const TTSControl = () => {
     if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
       releaseUnblockAudio();
     }
+    setTTSEnabled(bookKey, false);
   };
 
   // rate range: 0.5 - 3, 1.0 is normal speed
@@ -266,7 +303,7 @@ const TTSControl = () => {
     return '';
   };
 
-  const handleSelectTimeout = (value: number) => {
+  const handleSelectTimeout = (bookKey: string, value: number) => {
     setTimeoutOption(value);
     if (timeoutFunc) {
       clearTimeout(timeoutFunc);
@@ -274,7 +311,7 @@ const TTSControl = () => {
     if (value > 0) {
       setTimeoutFunc(
         setTimeout(() => {
-          handleStop();
+          handleStop(bookKey);
         }, value * 1000),
       );
       setTimeoutTimestamp(Date.now() + value * 1000);
@@ -356,10 +393,10 @@ const TTSControl = () => {
               : 'bottom-[70px] sm:bottom-14',
           )}
         >
-          <TTSIcon isPlaying={isPlaying} onClick={togglePopup} />
+          <TTSIcon isPlaying={isPlaying} ttsInited={ttsClientsInited} onClick={togglePopup} />
         </div>
       )}
-      {showPanel && panelPosition && trianglePosition && (
+      {showPanel && panelPosition && trianglePosition && ttsClientsInited && (
         <Popup
           width={popupWidth}
           height={popupHeight}

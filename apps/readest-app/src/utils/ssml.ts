@@ -1,9 +1,4 @@
-type TTSMark = {
-  offset: number;
-  name: string;
-  text: string;
-  language?: string;
-};
+import { TTSMark } from '@/services/tts/types';
 
 const cleanTextContent = (text: string) =>
   text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();

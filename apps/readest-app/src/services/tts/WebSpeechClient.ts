@@ -2,7 +2,9 @@ import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity } from '@/types/view';
+import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { TTSMark } from './types';
 
 const BLACKLISTED_VOICES = [
   'Albert',
@@ -50,7 +52,8 @@ async function* speakWithMarks(
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
-  setSpeakingLang: (lang: string) => void = () => {},
+  setSpeakingLang: (lang: string) => void,
+  dispatchSpeakMark: (mark: TTSMark) => void,
 ) {
   const { marks } = parseSSMLMarks(ssml);
 
@@ -61,6 +64,7 @@ async function* speakWithMarks(
     const { language } = mark;
     const voiceLang = language || defaultLang;
     setSpeakingLang(voiceLang);
+    dispatchSpeakMark(mark);
     utterance.text = mark.text;
     utterance.rate = getRate();
     utterance.pitch = getPitch();
@@ -99,6 +103,7 @@ async function* speakWithMarks(
 }
 
 export class WebSpeechClient implements TTSClient {
+  controller?: TTSController;
   #primaryLang = 'en';
   #speakingLang = '';
   #rate = 1.0;
@@ -107,6 +112,10 @@ export class WebSpeechClient implements TTSClient {
   #voices: SpeechSynthesisVoice[] = [];
   #synth = window.speechSynthesis;
   available = true;
+
+  constructor(controller?: TTSController) {
+    this.controller = controller;
+  }
 
   async init() {
     if (!this.#synth) {
@@ -166,6 +175,7 @@ export class WebSpeechClient implements TTSClient {
       () => this.#pitch,
       this.getVoiceFromLang,
       (lang) => (this.#speakingLang = lang),
+      (mark) => this.controller?.dispatchSpeakMark(mark),
     )) {
       if (signal.aborted) {
         console.log('TTS aborted');

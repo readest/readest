@@ -23,7 +23,7 @@ type TTSPanelProps = {
   onGetVoices: (lang: string) => Promise<TTSVoice[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
-  onSelectTimeout: (value: number) => void;
+  onSelectTimeout: (bookKey: string, value: number) => void;
 };
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
@@ -155,7 +155,7 @@ const TTSPanel = ({
   const updateTimeout = (timeout: number) => {
     const now = Date.now();
     if (timeout > 0 && timeout < now) {
-      onSelectTimeout(0);
+      onSelectTimeout(bookKey, 0);
       setTimeoutCountdown('');
     } else if (timeout > 0) {
       setTimeoutCountdown(getCountdownTime(timeout));
@@ -256,7 +256,10 @@ const TTSPanel = ({
             )}
           >
             {timeoutOptions.map((option, index) => (
-              <li key={`${index}-${option.value}`} onClick={() => onSelectTimeout(option.value)}>
+              <li
+                key={`${index}-${option.value}`}
+                onClick={() => onSelectTimeout(bookKey, option.value)}
+              >
                 <div className='flex items-center px-2'>
                   <span style={{ minWidth: `${defaultIconSize}px` }}>
                     {timeoutOption === option.value && <MdCheck className='text-base-content' />}
