@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.51": {
+      "date": "2025-06-01",
+      "notes": [
+        "Translator: Table of contents is now included in translations",
+        "Library Theme: Added light, dark, and system theme options to the library page",
+        "TTS: Now shows the current sentence and chapter in the media session",
+        "TTS: Text-to-speech continues from the last read sentence",
+        "Pagination Fix: Taking notes no longer breaks page turning",
+        "EPUB Scripts: Added a setting to allow JavaScript in EPUB files"
+      ]
+    },
     "0.9.50": {
       "date": "2025-05-28",
       "notes": [
