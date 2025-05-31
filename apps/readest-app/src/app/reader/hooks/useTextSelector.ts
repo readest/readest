@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
@@ -15,7 +15,6 @@ export const useTextSelector = (
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const bookData = getBookData(bookKey)!;
-  const viewSettings = getViewSettings(bookKey)!;
   const primaryLang = bookData.book?.primaryLanguage || 'en';
   const osPlatform = getOSPlatform();
 
@@ -24,6 +23,7 @@ export const useTextSelector = (
   const isTextSelected = useRef(false);
   const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
+  const [textSelected, setTextSelected] = useState(false);
 
   const isValidSelection = (sel: Selection) => {
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
@@ -42,6 +42,7 @@ export const useTextSelector = (
   };
   const makeSelection = async (sel: Selection, index: number, rebuildRange = false) => {
     isTextSelected.current = true;
+    setTextSelected(true);
     const range = sel.getRangeAt(0);
     if (rebuildRange) {
       sel.removeAllRanges();
@@ -52,6 +53,7 @@ export const useTextSelector = (
   // FIXME: extremely hacky way to dismiss system selection tools on iOS
   const makeSelectionOnIOS = async (sel: Selection, index: number) => {
     isTextSelected.current = true;
+    setTextSelected(true);
     const range = sel.getRangeAt(0);
     setTimeout(() => {
       sel.removeAllRanges();
@@ -71,6 +73,7 @@ export const useTextSelector = (
       if (!isUpToPopup.current) {
         handleDismissPopup();
         isTextSelected.current = false;
+        setTextSelected(false);
       }
       if (isPopuped.current) {
         isUpToPopup.current = false;
@@ -108,7 +111,9 @@ export const useTextSelector = (
     // Prevent the container from scrolling when text is selected in paginated mode
     // This is a workaround for the issue #873
     // TODO: support text selection across pages
+    const viewSettings = getViewSettings(bookKey);
     if (!viewSettings?.scrolled && view?.renderer?.containerPosition && selectionPosition.current) {
+      console.warn('Keep container position', selectionPosition.current);
       view.renderer.containerPosition = selectionPosition.current;
     }
   };
@@ -136,7 +141,7 @@ export const useTextSelector = (
       selectionPosition.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTextSelected.current]);
+  }, [textSelected]);
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
@@ -147,6 +152,7 @@ export const useTextSelector = (
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
+        setTextSelected(false);
         view?.deselect();
         return true;
       }
