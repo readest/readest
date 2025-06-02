@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
@@ -11,6 +12,7 @@ export const useTextSelector = (
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>,
   handleDismissPopup: () => void,
 ) => {
+  const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
@@ -109,10 +111,15 @@ export const useTextSelector = (
   };
   const handleScroll = () => {
     // Prevent the container from scrolling when text is selected in paginated mode
-    // This is a workaround for the issue #873
+    // FIXME: this is a workaround for issue #873
     // TODO: support text selection across pages
     const viewSettings = getViewSettings(bookKey);
-    if (!viewSettings?.scrolled && view?.renderer?.containerPosition && selectionPosition.current) {
+    if (
+      appService?.isAndroidApp &&
+      !viewSettings?.scrolled &&
+      view?.renderer?.containerPosition &&
+      selectionPosition.current
+    ) {
       console.warn('Keep container position', selectionPosition.current);
       view.renderer.containerPosition = selectionPosition.current;
     }

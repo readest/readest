@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 
+import { marked } from 'marked';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -8,8 +9,9 @@ import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import useScrollToItem from '../../hooks/useScrollToItem';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
+import useScrollToItem from '../../hooks/useScrollToItem';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -23,6 +25,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
+  const separatorWidth = useResponsiveSize(3);
 
   const { text, cfi, note } = item;
   const progress = getProgress(bookKey);
@@ -82,15 +85,21 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
         }
       >
         {item.note && (
-          <span className='content font-size-sm font-normal' dir='auto'>
-            {item.note}
-          </span>
+          <div className='content prose prose-sm'
+            dir='auto'
+            dangerouslySetInnerHTML={{ __html: marked.parse(item.note) }}>
+          </div>
         )}
         <div className='flex items-start'>
           {item.note && (
-            <div className='my-1 me-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
+            <div
+              className='me-2 mt-2.5 min-h-full self-stretch rounded-xl bg-gray-300'
+              style={{
+                minWidth: `${separatorWidth}px`,
+              }}
+            ></div>
           )}
-          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'my-2')}>
+          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'mt-2')}>
             <span
               className={clsx(
                 'inline',

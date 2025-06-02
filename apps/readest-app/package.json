@@ -67,6 +67,7 @@
     "i18next-http-backend": "^3.0.1",
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
+    "marked": "^15.0.12",
     "next": "15.2.4",
     "posthog-js": "^1.246.0",
     "react": "19.0.0",
@@ -81,6 +82,7 @@
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^0.5.12",
+    "@tailwindcss/typography": "^0.5.16",
     "@tauri-apps/cli": "2.5.0",
     "@types/cors": "^2.8.17",
     "@types/cssbeautify": "^0.3.5",

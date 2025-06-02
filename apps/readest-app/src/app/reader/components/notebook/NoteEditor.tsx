@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { TextSelection } from '@/utils/sel';
 import { md5Fingerprint } from '@/utils/md5';
 import { BookNote } from '@/types/book';
@@ -24,6 +25,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
   } = useNotebookStore();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [note, setNote] = React.useState('');
+  const separatorWidth = useResponsiveSize(3);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -125,10 +127,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
           ></textarea>
         </div>
       </div>
-      <div className='flex items-start pt-2'>
-        <div className='mr-2 min-h-full self-stretch border-l-2 border-gray-300'></div>
-        <div className='content font-size-sm line-clamp-3 py-2'>
-          <span className='content font-size-xs inline text-gray-500'>{getAnnotationText()}</span>
+      <div className='flex items-center pt-2'>
+        <div
+          className='me-2 mt-0.5 min-h-full self-stretch rounded-xl bg-gray-300'
+          style={{
+            minWidth: `${separatorWidth}px`,
+          }}
+        ></div>
+        <div className='content font-size-sm line-clamp-3'>
+          <span className='content font-size-xs text-gray-500'>{getAnnotationText()}</span>
         </div>
       </div>
       <div className='flex justify-end p-2' dir='ltr'>

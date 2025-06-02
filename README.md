@@ -253,6 +253,7 @@ The following libraries and frameworks are used in this software:
 - [fflate](https://github.com/101arrowz/fflate), which is MIT licensed.
 - [PDF.js](https://github.com/mozilla/pdf.js), which is licensed under Apache License 2.0.
 - [daisyUI](https://github.com/saadeghi/daisyui), which is MIT licensed.
+- [marked](https://github.com/markedjs/marked), which is MIT licensed.
 - [next.js](https://github.com/vercel/next.js), which is MIT licensed.
 - [react-icons](https://github.com/react-icons/react-icons), which has various open-source licenses.
 - [react](https://github.com/facebook/react), which is MIT licensed.
