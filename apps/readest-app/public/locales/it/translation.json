@@ -338,5 +338,7 @@
   "Sort TOC by Page": "Ordina sommario per pagina",
   "Search in {{count}} Book(s)..._one": "Cerca in {{count}} libro...",
   "Search in {{count}} Book(s)..._many": "Cerca in {{count}} libri...",
-  "Search in {{count}} Book(s)..._other": "Cerca in {{count}} libri..."
+  "Search in {{count}} Book(s)..._other": "Cerca in {{count}} libri...",
+  "No notes match your search": "Nessuna nota trovata",
+  "Search notes and excerpts...": "Cerca nelle note..."
 }

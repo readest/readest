@@ -9,9 +9,11 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const NotebookHeader: React.FC<{
   isPinned: boolean;
+  isSearchBarVisible: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
-}> = ({ isPinned, handleClose, handleTogglePin }) => {
+  handleToggleSearchBar: () => void;
+}> = ({ isPinned, isSearchBarVisible, handleClose, handleTogglePin, handleToggleSearchBar }) => {
   const _ = useTranslation();
   const iconSize14 = useResponsiveSize(14);
   return (
@@ -38,7 +40,10 @@ const NotebookHeader: React.FC<{
         </button>
       </div>
       <div className='flex items-center justify-end gap-x-4'>
-        <button className='btn btn-ghost left-0 h-8 min-h-8 w-8 p-0'>
+        <button
+          onClick={handleToggleSearchBar}
+          className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0', isSearchBarVisible && 'bg-base-300')}
+        >
           <FiSearch />
         </button>
       </div>

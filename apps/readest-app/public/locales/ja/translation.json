@@ -334,5 +334,7 @@
   "Allow JavaScript": "JavaScriptを許可",
   "Enable only if you trust the file.": "ファイルを信頼する場合にのみ有効にしてください。",
   "Sort TOC by Page": "目次をページで並べ替え",
-  "Search in {{count}} Book(s)..._other": "{{count}}冊の本を検索..."
+  "Search in {{count}} Book(s)..._other": "{{count}}冊の本を検索...",
+  "No notes match your search": "ノートが見つかりません",
+  "Search notes and excerpts...": "ノートを検索..."
 }

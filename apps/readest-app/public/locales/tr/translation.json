@@ -336,5 +336,7 @@
   "Enable only if you trust the file.": "Yalnızca dosyaya güveniyorsanız etkinleştirin.",
   "Sort TOC by Page": "İçindekileri Sayfaya Göre Sırala",
   "Search in {{count}} Book(s)..._one": "{{count}} kitapta ara...",
-  "Search in {{count}} Book(s)..._other": "{{count}} kitapta ara..."
+  "Search in {{count}} Book(s)..._other": "{{count}} kitapta ara...",
+  "No notes match your search": "Eşleşen not bulunamadı",
+  "Search notes and excerpts...": "Notlarda ara..."
 }

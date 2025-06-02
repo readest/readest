@@ -334,5 +334,7 @@
   "Allow JavaScript": "JavaScript 허용",
   "Enable only if you trust the file.": "파일을 신뢰하는 경우에만 활성화하세요.",
   "Sort TOC by Page": "목차를 페이지별로 정렬",
-  "Search in {{count}} Book(s)..._other": "{{count}}권의 책에서 검색..."
+  "Search in {{count}} Book(s)..._other": "{{count}}권의 책에서 검색...",
+  "No notes match your search": "일치하는 노트가 없습니다",
+  "Search notes and excerpts...": "노트 검색..."
 }

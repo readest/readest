@@ -334,5 +334,7 @@
   "Allow JavaScript": "允许 JavaScript",
   "Enable only if you trust the file.": "建议仅在您信任该文件时启用",
   "Sort TOC by Page": "按页码排序目录",
-  "Search in {{count}} Book(s)..._other": "在 {{count}} 本书籍中搜索..."
+  "Search in {{count}} Book(s)..._other": "在 {{count}} 本书籍中搜索...",
+  "No notes match your search": "未找到匹配的笔记",
+  "Search notes and excerpts...": "搜索笔记..."
 }

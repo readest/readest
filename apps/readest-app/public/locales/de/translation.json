@@ -336,5 +336,7 @@
   "Enable only if you trust the file.": "Nur aktivieren, wenn Sie der Datei vertrauen.",
   "Sort TOC by Page": "TOC nach Seite sortieren",
   "Search in {{count}} Book(s)..._one": "Suche in {{count}} Buch...",
-  "Search in {{count}} Book(s)..._other": "Suche in {{count}} Büchern..."
+  "Search in {{count}} Book(s)..._other": "Suche in {{count}} Büchern...",
+  "No notes match your search": "Noch keine Notizen gefunden",
+  "Search notes and excerpts...": "Notizen und Auszüge suchen..."
 }

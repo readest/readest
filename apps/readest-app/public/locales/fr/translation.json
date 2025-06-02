@@ -338,5 +338,7 @@
   "Sort TOC by Page": "Tris la table des matières par page",
   "Search in {{count}} Book(s)..._one": "Rechercher dans {{count}} Livre...",
   "Search in {{count}} Book(s)..._many": "Rechercher dans {{count}} Livres...",
-  "Search in {{count}} Book(s)..._other": "Rechercher dans {{count}} Livres..."
+  "Search in {{count}} Book(s)..._other": "Rechercher dans {{count}} Livres...",
+  "No notes match your search": "Aucune note trouvée",
+  "Search notes and excerpts...": "Rechercher des notes..."
 }

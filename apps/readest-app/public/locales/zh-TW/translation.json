@@ -334,5 +334,7 @@
   "Allow JavaScript": "允許 JavaScript",
   "Enable only if you trust the file.": "建議僅在您信任該檔案時啟用",
   "Sort TOC by Page": "依頁碼排序目錄",
-  "Search in {{count}} Book(s)..._other": "在 {{count}} 本書中搜索..."
+  "Search in {{count}} Book(s)..._other": "在 {{count}} 本書中搜索...",
+  "No notes match your search": "找不到符合的筆記",
+  "Search notes and excerpts...": "搜尋筆記..."
 }

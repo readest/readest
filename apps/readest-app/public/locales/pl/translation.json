@@ -340,5 +340,7 @@
   "Search in {{count}} Book(s)..._one": "Szukaj w {{count}} książce...",
   "Search in {{count}} Book(s)..._few": "Szukaj w {{count}} książkach...",
   "Search in {{count}} Book(s)..._many": "Szukaj w {{count}} książkach...",
-  "Search in {{count}} Book(s)..._other": "Szukaj w {{count}} książkach..."
+  "Search in {{count}} Book(s)..._other": "Szukaj w {{count}} książkach...",
+  "No notes match your search": "Nie znaleziono notatek",
+  "Search notes and excerpts...": "Szukaj notatek..."
 }

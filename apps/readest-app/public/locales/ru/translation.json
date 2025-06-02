@@ -340,5 +340,7 @@
   "Search in {{count}} Book(s)..._one": "Поиск в {{count}} книге...",
   "Search in {{count}} Book(s)..._few": "Поиск в {{count}} книгах...",
   "Search in {{count}} Book(s)..._many": "Поиск в {{count}} книгах...",
-  "Search in {{count}} Book(s)..._other": "Поиск в {{count}} книгах..."
+  "Search in {{count}} Book(s)..._other": "Поиск в {{count}} книгах...",
+  "No notes match your search": "Записи не найдены",
+  "Search notes and excerpts...": "Искать записи..."
 }

@@ -344,5 +344,7 @@
   "Search in {{count}} Book(s)..._two": "بحث في كتابين...",
   "Search in {{count}} Book(s)..._few": "بحث في {{count}} كتب...",
   "Search in {{count}} Book(s)..._many": "بحث في {{count}} كتابًا...",
-  "Search in {{count}} Book(s)..._other": "بحث في {{count}} من الكتب..."
+  "Search in {{count}} Book(s)..._other": "بحث في {{count}} من الكتب...",
+  "No notes match your search": "لا توجد ملاحظات تطابق بحثك",
+  "Search notes and excerpts...": "بحث في الملاحظات والمقتطفات..."
 }
