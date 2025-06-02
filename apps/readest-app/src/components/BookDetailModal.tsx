@@ -196,8 +196,8 @@ const BookDetailModal = ({
               </div>
               <div>
                 <span className='font-bold'>{_('Description:')}</span>
-                <p className='text-neutral-content text-sm'>
-                  {bookMeta.description || _('No description available')}
+                <p className='text-neutral-content text-sm prose prose-sm'
+                  dangerouslySetInnerHTML={{ __html: bookMeta.description || _('No description available') }}>
                 </p>
               </div>
             </div>
