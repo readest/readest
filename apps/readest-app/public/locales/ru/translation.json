@@ -336,5 +336,9 @@
   "Security": "Безопасность",
   "Allow JavaScript": "Разрешить JavaScript",
   "Enable only if you trust the file.": "Включите только если доверяете файлу.",
-  "Sort TOC by Page": "Сортировать содержание по странице"
+  "Sort TOC by Page": "Сортировать содержание по странице",
+  "Search in {{count}} Book(s)..._one": "Поиск в {{count}} книге...",
+  "Search in {{count}} Book(s)..._few": "Поиск в {{count}} книгах...",
+  "Search in {{count}} Book(s)..._many": "Поиск в {{count}} книгах...",
+  "Search in {{count}} Book(s)..._other": "Поиск в {{count}} книгах..."
 }

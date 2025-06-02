@@ -334,5 +334,7 @@
   "Security": "Security",
   "Allow JavaScript": "JavaScript'e İzin Ver",
   "Enable only if you trust the file.": "Yalnızca dosyaya güveniyorsanız etkinleştirin.",
-  "Sort TOC by Page": "İçindekileri Sayfaya Göre Sırala"
+  "Sort TOC by Page": "İçindekileri Sayfaya Göre Sırala",
+  "Search in {{count}} Book(s)..._one": "{{count}} kitapta ara...",
+  "Search in {{count}} Book(s)..._other": "{{count}} kitapta ara..."
 }

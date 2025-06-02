@@ -338,5 +338,11 @@
   "Security": "الأمان",
   "Allow JavaScript": "السماح بـ JavaScript",
   "Enable only if you trust the file.": "تمكين فقط إذا كنت تثق في الملف.",
-  "Sort TOC by Page": "ترتيب جدول المحتويات حسب الصفحة"
+  "Sort TOC by Page": "ترتيب جدول المحتويات حسب الصفحة",
+  "Search in {{count}} Book(s)..._zero": "بحث في الكتب...",
+  "Search in {{count}} Book(s)..._one": "بحث في كتاب...",
+  "Search in {{count}} Book(s)..._two": "بحث في كتابين...",
+  "Search in {{count}} Book(s)..._few": "بحث في {{count}} كتب...",
+  "Search in {{count}} Book(s)..._many": "بحث في {{count}} كتابًا...",
+  "Search in {{count}} Book(s)..._other": "بحث في {{count}} من الكتب..."
 }

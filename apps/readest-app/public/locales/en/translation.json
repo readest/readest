@@ -1,4 +1,8 @@
 {
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
-  "LXGW WenKai TC": "LXGW WenKai TC"
+  "LXGW WenKai TC": "LXGW WenKai TC",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Are you sure to delete {{count}} selected book?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Are you sure to delete {{count}} selected books?",
+  "Search in {{count}} Book(s)..._one": "Search in {{count}} book...",
+  "Search in {{count}} Book(s)..._other": "Search in {{count}} books..."
 }

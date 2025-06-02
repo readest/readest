@@ -335,5 +335,8 @@
   "Security": "Seguridad",
   "Allow JavaScript": "Permitir JavaScript",
   "Enable only if you trust the file.": "Permitir solo si confías en el archivo.",
-  "Sort TOC by Page": "Ordenar TOC por página"
+  "Sort TOC by Page": "Ordenar TOC por página",
+  "Search in {{count}} Book(s)..._one": "Buscar en {{count}} libro...",
+  "Search in {{count}} Book(s)..._many": "Buscar en {{count}} libros...",
+  "Search in {{count}} Book(s)..._other": "Buscar en {{count}} libros..."
 }

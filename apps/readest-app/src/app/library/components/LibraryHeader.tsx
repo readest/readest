@@ -11,10 +11,11 @@ import { IoMdCloseCircle } from 'react-icons/io';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
-import { throttle } from '@/utils/throttle';
+import { debounce } from '@/utils/debounce';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -44,6 +45,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { statusBarHeight } = useThemeStore();
+  const { currentBookshelf } = useLibraryStore();
   const {
     isTrafficLightVisible,
     initializeTrafficLightStore,
@@ -62,8 +64,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const throttledUpdateQueryParam = useCallback(
-    throttle((value: string) => {
+  const debouncedUpdateQueryParam = useCallback(
+    debounce((value: string) => {
       const params = new URLSearchParams(searchParams?.toString());
       if (value) {
         params.set('q', value);
@@ -71,14 +73,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         params.delete('q');
       }
       router.push(`?${params.toString()}`);
-    }, 1000),
+    }, 500),
     [searchParams],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setSearchQuery(newQuery);
-    throttledUpdateQueryParam(newQuery);
+    debouncedUpdateQueryParam(newQuery);
   };
 
   useEffect(() => {
@@ -95,6 +97,10 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const isInGroupView = !!searchParams?.get('group');
+  const currentBooksCount = currentBookshelf.reduce(
+    (acc, item) => acc + ('books' in item ? item.books.length : 1),
+    0,
+  );
 
   return (
     <div
@@ -130,7 +136,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <input
               type='text'
               value={searchQuery}
-              placeholder={_('Search Books...')}
+              placeholder={
+                currentBooksCount > 1
+                  ? _('Search in {{count}} Book(s)...', {
+                      count: currentBooksCount,
+                    })
+                  : _('Search Books...')
+              }
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
@@ -146,7 +158,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 type='button'
                 onClick={() => {
                   setSearchQuery('');
-                  throttledUpdateQueryParam('');
+                  debouncedUpdateQueryParam('');
                 }}
                 className='pe-1 text-gray-400 hover:text-gray-600'
                 aria-label={_('Clear Search')}

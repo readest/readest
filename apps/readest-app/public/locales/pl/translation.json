@@ -336,5 +336,9 @@
   "Security": "Bezpieczeństwo",
   "Allow JavaScript": "Zezwól na JavaScript",
   "Enable only if you trust the file.": "Zezwól tylko wtedy, gdy ufasz plikowi.",
-  "Sort TOC by Page": "Sortuj spis treści według strony"
+  "Sort TOC by Page": "Sortuj spis treści według strony",
+  "Search in {{count}} Book(s)..._one": "Szukaj w {{count}} książce...",
+  "Search in {{count}} Book(s)..._few": "Szukaj w {{count}} książkach...",
+  "Search in {{count}} Book(s)..._many": "Szukaj w {{count}} książkach...",
+  "Search in {{count}} Book(s)..._other": "Szukaj w {{count}} książkach..."
 }

@@ -333,5 +333,6 @@
   "Security": "An ninh",
   "Allow JavaScript": "Cho phép JavaScript",
   "Enable only if you trust the file.": "Chỉ bật nếu bạn tin tưởng tệp.",
-  "Sort TOC by Page": "Sort Mục lục theo Trang"
+  "Sort TOC by Page": "Sort Mục lục theo Trang",
+  "Search in {{count}} Book(s)..._other": "Tìm kiếm trong {{count}} cuốn sách..."
 }

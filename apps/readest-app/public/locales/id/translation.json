@@ -333,5 +333,6 @@
   "Security": "Keamanan",
   "Allow JavaScript": "Izinkan JavaScript",
   "Enable only if you trust the file.": "Aktifkan hanya jika Anda mempercayai file tersebut.",
-  "Sort TOC by Page": "Urutkan TOC berdasarkan Halaman"
+  "Sort TOC by Page": "Urutkan TOC berdasarkan Halaman",
+  "Search in {{count}} Book(s)..._other": "Cari di {{count}} Buku..."
 }
