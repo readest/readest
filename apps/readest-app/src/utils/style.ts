@@ -251,11 +251,17 @@ const getLayoutStyles = (
   p:has(> img:only-child), p:has(> span:only-child > img:only-child) {
     text-indent: unset !important;
   }
-  p, div {
+  p {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+  }
+  div {
+    ${vertical && overrideLayout ? `margin-left: ${paragraphMargin}em !important;` : ''}
+    ${vertical && overrideLayout ? `margin-right: ${paragraphMargin}em !important;` : ''}
+    ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
+    ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
   }
 
   pre {
