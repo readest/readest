@@ -337,5 +337,6 @@
   "System Language": "لغة النظام",
   "Security": "الأمان",
   "Allow JavaScript": "السماح بـ JavaScript",
-  "Enable only if you trust the file.": "تمكين فقط إذا كنت تثق في الملف."
+  "Enable only if you trust the file.": "تمكين فقط إذا كنت تثق في الملف.",
+  "Sort TOC by Page": "ترتيب جدول المحتويات حسب الصفحة"
 }

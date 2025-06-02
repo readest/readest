@@ -333,5 +333,6 @@
   "System Language": "Systemtaal",
   "Security": "Beveiliging",
   "Allow JavaScript": "JavaScript toestaan",
-  "Enable only if you trust the file.": "Schakel alleen in als u het bestand vertrouwt."
+  "Enable only if you trust the file.": "Schakel alleen in als u het bestand vertrouwt.",
+  "Sort TOC by Page": "__STRING_NOT_TRANSLATED__"
 }

@@ -334,5 +334,6 @@
   "System Language": "Langue du système",
   "Security": "Sécurité",
   "Allow JavaScript": "Autoriser JavaScript",
-  "Enable only if you trust the file.": "Activer uniquement si vous faites confiance au fichier."
+  "Enable only if you trust the file.": "Activer uniquement si vous faites confiance au fichier.",
+  "Sort TOC by Page": "Tris la table des matières par page"
 }

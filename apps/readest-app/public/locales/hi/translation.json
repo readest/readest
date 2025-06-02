@@ -333,5 +333,6 @@
   "System Language": "सिस्टम भाषा",
   "Security": "सुरक्षा",
   "Allow JavaScript": "जावास्क्रिप्ट की अनुमति दें",
-  "Enable only if you trust the file.": "केवल तभी सक्षम करें जब आप फ़ाइल पर भरोसा करते हों।"
+  "Enable only if you trust the file.": "केवल तभी सक्षम करें जब आप फ़ाइल पर भरोसा करते हों।",
+  "Sort TOC by Page": "सामग्री को पृष्ठ द्वारा क्रमबद्ध करें"
 }

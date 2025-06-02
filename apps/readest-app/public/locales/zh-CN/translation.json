@@ -332,5 +332,6 @@
   "System Language": "系统语言",
   "Security": "安全",
   "Allow JavaScript": "允许 JavaScript",
-  "Enable only if you trust the file.": "建议仅在您信任该文件时启用"
+  "Enable only if you trust the file.": "建议仅在您信任该文件时启用",
+  "Sort TOC by Page": "按页码排序目录"
 }

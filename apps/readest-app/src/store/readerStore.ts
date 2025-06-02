@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
-import { BookDoc, DocumentLoader, TOCItem } from '@/libs/document';
+import { DocumentLoader, TOCItem } from '@/libs/document';
 import { updateToc } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
@@ -122,13 +122,10 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const content = (await appService.loadBookContent(book, settings)) as BookContent;
         const { file, config } = content;
         console.log('Loading book', key);
-        const { book: loadedBookDoc } = await new DocumentLoader(file).open({
+        const { book: bookDoc } = await new DocumentLoader(file).open({
           allowScript: config.viewSettings?.allowScript,
         });
-        const bookDoc = loadedBookDoc as BookDoc;
-        if (bookDoc.toc?.length && bookDoc.sections?.length) {
-          updateToc(bookDoc, bookDoc.toc, bookDoc.sections);
-        }
+        updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
         // Set the book's language for formerly imported books, newly imported books have this field set
         book.primaryLanguage =
           book.primaryLanguage ?? getPrimaryLanguage(bookDoc.metadata.language);

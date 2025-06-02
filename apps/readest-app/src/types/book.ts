@@ -121,6 +121,7 @@ export interface BookFont {
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
+  sortedTOC: boolean;
 }
 
 export interface TTSConfig {

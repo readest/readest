@@ -37,7 +37,11 @@ export const findTocItemBS = (toc: TOCItem[], cfi: string): TOCItem | null => {
   return result;
 };
 
-export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionItem[]): void => {
+export const updateToc = (bookDoc: BookDoc, sortedTOC: boolean): void => {
+  const items = bookDoc?.toc || [];
+  const sections = bookDoc?.sections || [];
+  if (!items.length || !sections.length) return;
+
   const sizes = sections.map((s) => (s.linear != 'no' && s.size > 0 ? s.size : 0));
   let cumulativeSize = 0;
   const cumulativeSizes = sizes.reduce((acc: number[], size) => {
@@ -59,13 +63,12 @@ export const updateToc = (bookDoc: BookDoc, items: TOCItem[], sections: SectionI
     map[section.id] = section;
     return map;
   }, {});
+
   updateTocData(bookDoc, items, sections, sectionsMap);
-  items.sort((a, b) => {
-    if (a.location && b.location) {
-      return a.location.current - b.location.current;
-    }
-    return 0;
-  });
+
+  if (sortedTOC) {
+    sortTocItems(items);
+  }
 };
 
 const updateTocData = (
@@ -94,4 +97,13 @@ const updateTocData = (
     }
   });
   return index;
+};
+
+const sortTocItems = (items: TOCItem[]): void => {
+  items.sort((a, b) => {
+    if (a.location && b.location) {
+      return a.location.current - b.location.current;
+    }
+    return 0;
+  });
 };

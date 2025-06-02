@@ -142,6 +142,7 @@ export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
   uiLanguage: '',
+  sortedTOC: false,
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {

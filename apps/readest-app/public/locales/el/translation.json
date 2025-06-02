@@ -333,5 +333,6 @@
   "System Language": "Γλώσσα συστήματος",
   "Security": "Ασφάλεια",
   "Allow JavaScript": "Επιτρέψτε JavaScript",
-  "Enable only if you trust the file.": "Ενεργοποιήστε μόνο εάν εμπιστεύεστε το αρχείο."
+  "Enable only if you trust the file.": "Ενεργοποιήστε μόνο εάν εμπιστεύεστε το αρχείο.",
+  "Sort TOC by Page": "Ταξινόμηση TOC κατά σελίδα"
 }

@@ -2,8 +2,9 @@ import clsx from 'clsx';
 import React from 'react';
 import Image from 'next/image';
 
-import MenuItem from '@/components/MenuItem';
+import { MdCheck } from 'react-icons/md';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -11,6 +12,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
+import MenuItem from '@/components/MenuItem';
 
 interface BookMenuProps {
   menuClassName?: string;
@@ -19,9 +21,13 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
+  const { getViewSettings, setViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
+  const viewSettings = getViewSettings(sideBarBookKey!);
+
+  const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
 
   const handleParallelView = (id: string) => {
     openParallelView(id);
@@ -43,18 +49,25 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('export-annotations', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const handleToggleSortTOC = () => {
+    setIsSortedTOC((prev) => !prev);
+    setIsDropdownOpen?.(false);
+    if (sideBarBookKey) {
+      const viewSettings = getViewSettings(sideBarBookKey)!;
+      viewSettings.sortedTOC = !isSortedTOC;
+      setViewSettings(sideBarBookKey, viewSettings);
+    }
+    setTimeout(() => window.location.reload(), 100);
+  };
 
   const isWebApp = isWebAppPlatform();
 
   return (
     <div
       tabIndex={0}
-      className={clsx(
-        'book-menu dropdown-content border-base-100 z-20 w-60 shadow-2xl',
-        menuClassName,
-      )}
+      className={clsx('book-menu dropdown-content border-base-100 z-20 shadow-2xl', menuClassName)}
     >
-      <MenuItem label={_('Parallel Read')} noIcon>
+      <MenuItem label={_('Parallel Read')}>
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
             .filter((book) => book.format !== 'PDF' && book.format !== 'CBZ')
@@ -81,11 +94,16 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             ))}
         </ul>
       </MenuItem>
-      <MenuItem label={_('Export Annotations')} noIcon onClick={handleExportAnnotations} />
-      <MenuItem label={_('Reload Page')} noIcon shortcut='Shift+R' onClick={handleReloadPage} />
+      <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
+      <MenuItem
+        label={_('Sort TOC by Page')}
+        Icon={isSortedTOC ? MdCheck : undefined}
+        onClick={handleToggleSortTOC}
+      />
+      <MenuItem label={_('Reload Page')} shortcut='Shift+R' onClick={handleReloadPage} />
       <hr className='border-base-200 my-1' />
-      {isWebApp && <MenuItem label={_('Download Readest')} noIcon onClick={downloadReadest} />}
-      <MenuItem label={_('About Readest')} noIcon onClick={showAboutReadest} />
+      {isWebApp && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
+      <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
     </div>
   );
 };

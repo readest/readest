@@ -335,5 +335,6 @@
   "System Language": "Системный язык",
   "Security": "Безопасность",
   "Allow JavaScript": "Разрешить JavaScript",
-  "Enable only if you trust the file.": "Включите только если доверяете файлу."
+  "Enable only if you trust the file.": "Включите только если доверяете файлу.",
+  "Sort TOC by Page": "Сортировать содержание по странице"
 }
