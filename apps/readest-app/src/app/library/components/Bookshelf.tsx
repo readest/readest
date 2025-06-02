@@ -92,6 +92,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, [importBookUrl, appService]);
 
   useEffect(() => {
+    if (navBooksGroup) {
+      setCurrentBookshelf(navBooksGroup.books);
+    } else {
+      setCurrentBookshelf(allBookshelfItems);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libraryBooks, navBooksGroup]);
+
+  useEffect(() => {
     const group = searchParams?.get('group') || '';
     const query = searchParams?.get('q') || '';
     const view = searchParams?.get('view') || settings.libraryViewMode;
@@ -134,7 +143,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       ) as BooksGroup;
       if (booksGroup) {
         setNavBooksGroup(booksGroup);
-        setCurrentBookshelf(booksGroup.books);
         params.set('group', group);
       } else {
         params.delete('group');
@@ -142,7 +150,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       }
     } else {
       setNavBooksGroup(null);
-      setCurrentBookshelf(allBookshelfItems);
       params.delete('group');
       navigateToLibrary(router, `${params.toString()}`);
     }
