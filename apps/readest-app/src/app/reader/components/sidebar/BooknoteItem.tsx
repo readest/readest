@@ -85,10 +85,11 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
         }
       >
         {item.note && (
-          <div className='content prose prose-sm'
+          <div
+            className='content prose prose-sm font-size-sm'
             dir='auto'
-            dangerouslySetInnerHTML={{ __html: marked.parse(item.note) }}>
-          </div>
+            dangerouslySetInnerHTML={{ __html: marked.parse(item.note) }}
+          ></div>
         )}
         <div className='flex items-start'>
           {item.note && (

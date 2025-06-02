@@ -266,10 +266,13 @@ const Notebook: React.FC = ({}) => {
                   className='collapse-arrow border-base-300 bg-base-100 collapse border'
                 >
                   <div
-                    className='collapse-title font-size-sm h-9 min-h-9 p-2 pe-8 font-medium'
+                    className={clsx(
+                      'collapse-title pe-8 text-sm font-medium',
+                      'h-[2.5rem] min-h-[2.5rem] p-[0.6rem]',
+                    )}
                     style={
                       {
-                        '--top-override': '1.2rem',
+                        '--top-override': '1.25rem',
                         '--end-override': '0.7rem',
                       } as React.CSSProperties
                     }
