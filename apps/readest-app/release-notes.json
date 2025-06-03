@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.52": {
+      "date": "2025-06-03",
+      "notes": [
+        "Library: The search bar now shows the number of books currently displayed",
+        "Book Details: Book descriptions now support rich HTML formatting",
+        "Notebook: Added support for writing notes using Markdown",
+        "Notebook: You can now search within your notes",
+        "Sync: A sync status item has been added to the View menu",
+        "TOC: You can now sort the table of contents by page number",
+        "Reader: Option added to show remaining time in the current chapter"
+      ]
+    },
     "0.9.51": {
       "date": "2025-06-01",
       "notes": [
