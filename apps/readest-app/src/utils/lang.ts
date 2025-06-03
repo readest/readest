@@ -2,6 +2,12 @@ export const isCJKStr = (str: string) => {
   return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(str ?? '');
 };
 
+export const isCJKLang = (lang: string | null | undefined): boolean => {
+  if (!lang) return false;
+  const normalizedLang = lang.split('-')[0]!.toLowerCase();
+  return ['zh', 'ja', 'ko'].includes(normalizedLang);
+};
+
 export const langToDefaultLocale = (langCode: string): string => {
   const mapping: Record<string, string> = {
     en: 'en-US',

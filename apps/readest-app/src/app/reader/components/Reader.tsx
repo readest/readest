@@ -15,8 +15,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { eventDispatcher } from '@/utils/event';
-import { interceptGlobalOpen } from '@/utils/open';
-import { mountAdditionalFonts } from '@/utils/style';
+import { interceptWindowOpen } from '@/utils/open';
+import { mountAdditionalFonts } from '@/utils/font';
 import { setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
@@ -40,7 +40,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   useEffect(() => {
     mountAdditionalFonts(document);
-    interceptGlobalOpen();
+    interceptWindowOpen();
   }, []);
 
   useEffect(() => {

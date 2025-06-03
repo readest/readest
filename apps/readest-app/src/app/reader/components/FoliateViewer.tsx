@@ -5,13 +5,15 @@ import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { getStyles, mountAdditionalFonts, transformStylesheet } from '@/utils/style';
+import { getStyles, transformStylesheet } from '@/utils/style';
+import { mountAdditionalFonts } from '@/utils/font';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
@@ -26,6 +28,7 @@ import {
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { isCJKLang } from '@/utils/lang';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
@@ -42,6 +45,7 @@ const FoliateViewer: React.FC<{
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
+  const { getBookData } = useBookDataStore();
   const { themeCode, isDarkMode } = useThemeStore();
 
   const [toastMessage, setToastMessage] = useState('');
@@ -92,6 +96,7 @@ const FoliateViewer: React.FC<{
     if (detail.doc) {
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
+      const bookData = getBookData(bookKey)!;
       viewSettings.vertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
       viewSettings.rtl =
@@ -101,7 +106,7 @@ const FoliateViewer: React.FC<{
         false;
       setViewSettings(bookKey, { ...viewSettings });
 
-      mountAdditionalFonts(detail.doc);
+      mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window

@@ -1,7 +1,7 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { isTauriAppPlatform } from '@/services/environment';
 
-export const interceptGlobalOpen = () => {
+export const interceptWindowOpen = () => {
   const windowOpen = window.open;
   globalThis.open = function (
     url?: string | URL,

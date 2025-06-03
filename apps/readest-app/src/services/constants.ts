@@ -189,7 +189,7 @@ export const CJK_SERIF_FONTS = [
 
 export const CJK_SANS_SERIF_FONTS = ['Noto Sans SC', 'Noto Sans TC'];
 
-export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica', 'Arial'];
+export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica'];
 
 export const MONOSPACE_FONTS = ['Fira Code', 'Lucida Console', 'Consolas', 'Courier New'];
 

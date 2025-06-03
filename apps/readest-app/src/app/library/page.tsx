@@ -32,7 +32,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { lockScreenOrientation } from '@/utils/bridge';
-import { mountAdditionalFonts } from '@/utils/style';
+import { mountAdditionalFonts } from '@/utils/font';
 import {
   tauriHandleSetAlwaysOnTop,
   tauriHandleToggleFullScreen,

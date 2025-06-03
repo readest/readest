@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { getFootnoteStyles, getStyles, getThemeCode, mountAdditionalFonts } from '@/utils/style';
+import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
+import { FootnoteHandler } from 'foliate-js/footnotes.js';
+import { mountAdditionalFonts } from '@/utils/font';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
-import { FootnoteHandler } from 'foliate-js/footnotes.js';
+import { isCJKLang } from '@/utils/lang';
 import Popup from '@/components/Popup';
 
 interface FootnotePopupProps {
@@ -26,6 +29,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
 
+  const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
@@ -55,7 +59,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       });
       view.addEventListener('load', (e: CustomEvent) => {
         const { doc } = e.detail;
-        mountAdditionalFonts(doc);
+        const bookData = getBookData(bookKey)!;
+        mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
       });
       footnoteViewRef.current = view;
       footnoteRef.current?.replaceChildren(view);
