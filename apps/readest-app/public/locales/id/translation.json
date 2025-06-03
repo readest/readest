@@ -336,5 +336,8 @@
   "Sort TOC by Page": "Urutkan TOC berdasarkan Halaman",
   "Search in {{count}} Book(s)..._other": "Cari di {{count}} Buku...",
   "No notes match your search": "Tidak ada catatan ditemukan",
-  "Search notes and excerpts...": "Cari catatan..."
+  "Search notes and excerpts...": "Cari catatan...",
+  "Sign in to Sync": "Masuk untuk Sinkronisasi",
+  "Synced at {{time}}": "Disinkronkan pada {{time}}",
+  "Never synced": "Belum pernah disinkronkan"
 }

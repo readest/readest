@@ -338,5 +338,8 @@
   "Search in {{count}} Book(s)..._one": "{{count}} kitapta ara...",
   "Search in {{count}} Book(s)..._other": "{{count}} kitapta ara...",
   "No notes match your search": "Eşleşen not bulunamadı",
-  "Search notes and excerpts...": "Notlarda ara..."
+  "Search notes and excerpts...": "Notlarda ara...",
+  "Sign in to Sync": "Giriş yap",
+  "Synced at {{time}}": "{{time}}'de eşzlendi",
+  "Never synced": "Hiç eşzlenmedi"
 }

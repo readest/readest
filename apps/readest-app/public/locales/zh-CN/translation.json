@@ -336,5 +336,8 @@
   "Sort TOC by Page": "按页码排序目录",
   "Search in {{count}} Book(s)..._other": "在 {{count}} 本书籍中搜索...",
   "No notes match your search": "未找到匹配的笔记",
-  "Search notes and excerpts...": "搜索笔记..."
+  "Search notes and excerpts...": "搜索笔记...",
+  "Sign in to Sync": "登录后同步",
+  "Synced at {{time}}": "同步于：{{time}}",
+  "Never synced": "从未同步"
 }

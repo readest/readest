@@ -338,5 +338,8 @@
   "Search in {{count}} Book(s)..._one": "Zoeken in {{count}} Boek...",
   "Search in {{count}} Book(s)..._other": "Zoeken in {{count}} Boeken...",
   "No notes match your search": "Geen notities gevonden",
-  "Search notes and excerpts...": "Zoek notities..."
+  "Search notes and excerpts...": "Zoek notities...",
+  "Sign in to Sync": "Meld je aan om te synchroniseren",
+  "Synced at {{time}}": "Gesynchroniseerd om {{time}}",
+  "Never synced": "Nooit gesynchroniseerd"
 }

@@ -342,5 +342,8 @@
   "Search in {{count}} Book(s)..._many": "Поиск в {{count}} книгах...",
   "Search in {{count}} Book(s)..._other": "Поиск в {{count}} книгах...",
   "No notes match your search": "Записи не найдены",
-  "Search notes and excerpts...": "Искать записи..."
+  "Search notes and excerpts...": "Искать записи...",
+  "Sign in to Sync": "Войти",
+  "Synced at {{time}}": "Синхр. в {{time}}",
+  "Never synced": "Не синхр."
 }

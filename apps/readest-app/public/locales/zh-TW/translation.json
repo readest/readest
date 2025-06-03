@@ -336,5 +336,8 @@
   "Sort TOC by Page": "依頁碼排序目錄",
   "Search in {{count}} Book(s)..._other": "在 {{count}} 本書中搜索...",
   "No notes match your search": "找不到符合的筆記",
-  "Search notes and excerpts...": "搜尋筆記..."
+  "Search notes and excerpts...": "搜尋筆記...",
+  "Sign in to Sync": "登入以同步",
+  "Synced at {{time}}": "同步於：{{time}}",
+  "Never synced": "從未同步"
 }

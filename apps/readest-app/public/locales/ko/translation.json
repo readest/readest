@@ -336,5 +336,8 @@
   "Sort TOC by Page": "목차를 페이지별로 정렬",
   "Search in {{count}} Book(s)..._other": "{{count}}권의 책에서 검색...",
   "No notes match your search": "일치하는 노트가 없습니다",
-  "Search notes and excerpts...": "노트 검색..."
+  "Search notes and excerpts...": "노트 검색...",
+  "Sign in to Sync": "동기화를 위해 로그인하세요",
+  "Synced at {{time}}": "{{time}}에 동기화됨",
+  "Never synced": "동기화된 적 없음"
 }

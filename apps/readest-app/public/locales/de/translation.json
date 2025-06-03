@@ -338,5 +338,8 @@
   "Search in {{count}} Book(s)..._one": "Suche in {{count}} Buch...",
   "Search in {{count}} Book(s)..._other": "Suche in {{count}} Büchern...",
   "No notes match your search": "Noch keine Notizen gefunden",
-  "Search notes and excerpts...": "Notizen und Auszüge suchen..."
+  "Search notes and excerpts...": "Notizen und Auszüge suchen...",
+  "Sign in to Sync": "Anmelden zum Synchronisieren",
+  "Synced at {{time}}": "Synchronisiert um {{time}}",
+  "Never synced": "Nie synchronisiert"
 }

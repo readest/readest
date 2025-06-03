@@ -340,5 +340,8 @@
   "Search in {{count}} Book(s)..._many": "Rechercher dans {{count}} Livres...",
   "Search in {{count}} Book(s)..._other": "Rechercher dans {{count}} Livres...",
   "No notes match your search": "Aucune note trouvée",
-  "Search notes and excerpts...": "Rechercher des notes..."
+  "Search notes and excerpts...": "Rechercher des notes...",
+  "Sign in to Sync": "Connectez-vous pour synchroniser",
+  "Synced at {{time}}": "Synchronisé à {{time}}",
+  "Never synced": "Jamais synchronisé"
 }

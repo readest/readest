@@ -338,5 +338,8 @@
   "Search in {{count}} Book(s)..._one": "Αναζήτηση σε {{count}} Βιβλίο...",
   "Search in {{count}} Book(s)..._other": "Αναζήτηση σε {{count}} Βιβλία...",
   "No notes match your search": "Καμία σημείωση δεν βρέθηκε",
-  "Search notes and excerpts...": "Αναζήτηση σημειώσεων..."
+  "Search notes and excerpts...": "Αναζήτηση σημειώσεων...",
+  "Sign in to Sync": "Σύνδεση για συγχρονισμό",
+  "Synced at {{time}}": "Συγχρονίστηκε στις {{time}}",
+  "Never synced": "Ποτέ δεν συγχρονίστηκε"
 }

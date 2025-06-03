@@ -346,5 +346,8 @@
   "Search in {{count}} Book(s)..._many": "بحث في {{count}} كتابًا...",
   "Search in {{count}} Book(s)..._other": "بحث في {{count}} من الكتب...",
   "No notes match your search": "لا توجد ملاحظات تطابق بحثك",
-  "Search notes and excerpts...": "بحث في الملاحظات والمقتطفات..."
+  "Search notes and excerpts...": "بحث في الملاحظات والمقتطفات...",
+  "Sign in to Sync": "سجّل للمزامنة",
+  "Synced at {{time}}": "تمت عند {{time}}",
+  "Never synced": "لم تُزامَن"
 }

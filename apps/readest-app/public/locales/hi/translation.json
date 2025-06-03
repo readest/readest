@@ -338,5 +338,8 @@
   "Search in {{count}} Book(s)..._one": "{{count}} पुस्तक में खोजें...",
   "Search in {{count}} Book(s)..._other": "{{count}} पुस्तकों में खोजें...",
   "No notes match your search": "कोई नोट्स नहीं मिले",
-  "Search notes and excerpts...": "नोट्स खोजें..."
+  "Search notes and excerpts...": "नोट्स खोजें...",
+  "Sign in to Sync": "सिंक करने के लिए साइन इन करें",
+  "Synced at {{time}}": "{{time}} पर सिंक किया गया",
+  "Never synced": "कभी सिंक नहीं किया गया"
 }

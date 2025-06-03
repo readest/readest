@@ -336,5 +336,8 @@
   "Sort TOC by Page": "目次をページで並べ替え",
   "Search in {{count}} Book(s)..._other": "{{count}}冊の本を検索...",
   "No notes match your search": "ノートが見つかりません",
-  "Search notes and excerpts...": "ノートを検索..."
+  "Search notes and excerpts...": "ノートを検索...",
+  "Sign in to Sync": "同期するにはサインイン",
+  "Synced at {{time}}": "{{time}} に同期済み",
+  "Never synced": "まだ同期されていません"
 }

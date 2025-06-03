@@ -1,16 +1,22 @@
 import clsx from 'clsx';
 import React, { useEffect } from 'react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
+import { MdSync, MdSyncProblem } from 'react-icons/md';
 
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
+import { navigateToLogin } from '@/utils/nav';
+import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
@@ -28,8 +34,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   onSetSettingsDialogOpen,
 }) => {
   const _ = useTranslation();
+  const router = useRouter();
+  const { user } = useAuth();
   const { envConfig, appService } = useEnv();
+  const { getConfig } = useBookDataStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
+  const config = getConfig(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
 
   const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
@@ -59,6 +69,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setIsDropdownOpen?.(false);
   };
 
+  const handleSync = () => {
+    if (!user) {
+      navigateToLogin(router);
+      setIsDropdownOpen?.(false);
+    } else {
+      eventDispatcher.dispatch('sync-book-progress', { bookKey });
+    }
+  };
+
   useEffect(() => {
     if (isScrolledMode === viewSettings!.scrolled) return;
     viewSettings!.scrolled = isScrolledMode;
@@ -83,10 +102,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
 
+  const lastSyncTime = Math.max(config?.lastSyncedAtConfig || 0, config?.lastSyncedAtNotes || 0);
+
   return (
     <div
       tabIndex={0}
-      className='view-menu dropdown-content bgcolor-base-200 dropdown-right no-triangle border-base-200 z-20 mt-1 w-72 border shadow-2xl'
+      className='view-menu dropdown-content bgcolor-base-200 dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl'
     >
       <div className={clsx('flex items-center justify-between rounded-md')}>
         <button
@@ -126,6 +147,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         shortcut='Shift+J'
         Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
+      />
+
+      <hr className='border-base-300 my-1' />
+
+      <MenuItem
+        label={
+          !user
+            ? _('Sign in to Sync')
+            : lastSyncTime
+              ? _('Synced at {{time}}', {
+                  time: new Date(lastSyncTime).toLocaleString(),
+                })
+              : _('Never synced')
+        }
+        Icon={user ? MdSync : MdSyncProblem}
+        onClick={handleSync}
       />
 
       <hr className='border-base-300 my-1' />

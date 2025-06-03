@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig } from '@/types/book';
@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { serializeConfig } from '@/utils/serializer';
 import { CFI } from '@/libs/document';
+import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 
@@ -21,9 +22,9 @@ export const useProgressSync = (bookKey: string) => {
   const view = getView(bookKey);
   const config = getConfig(bookKey);
   const progress = getProgress(bookKey);
-  // flag to prevent accidental sync without first pulling the config
-  const configSynced = useRef(false);
-  const firstPulled = useRef(false);
+
+  const configPulled = useRef(false);
+  const hasPulledConfigOnce = useRef(false);
 
   const pushConfig = (bookKey: string, config: BookConfig | null) => {
     if (!config || !user) return;
@@ -41,9 +42,10 @@ export const useProgressSync = (bookKey: string) => {
     syncConfigs([], bookHash, 'pull');
   };
   const syncConfig = () => {
-    if (!configSynced.current) {
+    if (!configPulled.current) {
       pullConfig(bookKey);
     } else {
+      const config = getConfig(bookKey);
       if (config && config.progress && config.progress[0] > 0) {
         pushConfig(bookKey, config);
       }
@@ -57,6 +59,7 @@ export const useProgressSync = (bookKey: string) => {
     }
   };
 
+  // Push: ad-hoc push when the book is closed
   useEffect(() => {
     eventDispatcher.on('sync-book-progress', handleSyncBookProgress);
     return () => {
@@ -65,45 +68,33 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
 
-  useEffect(() => {
-    if (!progress || firstPulled.current) return;
-    firstPulled.current = true;
-    pullConfig(bookKey);
-
-    return () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedAutoSync = useCallback(
+    debounce(() => {
       syncConfig();
-    };
+    }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
+    [],
+  );
+
+  // Push: auto-push progress when progress changes with a debounce
+  useEffect(() => {
+    if (!progress?.location || !user) return;
+    debouncedAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
-  const lastProgressSyncTime = useRef<number>(0);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Pull: pull progress once when the book is opened
   useEffect(() => {
-    if (!config?.location || !user) return;
-
-    const now = Date.now();
-    const timeSinceLastSync = now - lastProgressSyncTime.current;
-    if (timeSinceLastSync > SYNC_PROGRESS_INTERVAL_SEC * 1000) {
-      lastProgressSyncTime.current = now;
-      syncConfig();
-    } else {
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-      syncTimeoutRef.current = setTimeout(
-        () => {
-          lastProgressSyncTime.current = Date.now();
-          syncTimeoutRef.current = null;
-          syncConfig();
-        },
-        SYNC_PROGRESS_INTERVAL_SEC * 1000 - timeSinceLastSync,
-      );
-    }
+    if (!progress || hasPulledConfigOnce.current) return;
+    hasPulledConfigOnce.current = true;
+    pullConfig(bookKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]);
+  }, [progress]);
 
-  // sync progress once when the book is opened
+  // Pull: proccess the pulled progress
   useEffect(() => {
-    if (!configSynced.current && syncedConfigs) {
-      configSynced.current = true;
+    if (!configPulled.current && syncedConfigs) {
+      configPulled.current = true;
       const syncedConfig = syncedConfigs.filter((c) => c.bookHash === bookKey.split('-')[0])[0];
       if (syncedConfig) {
         const configCFI = config?.location;

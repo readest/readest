@@ -515,7 +515,7 @@ export const READEST_UPDATER_FILE = `${GITHUB_LATEST_DOWNLOAD}/latest.json`;
 
 export const READEST_CHANGELOG_FILE = `${GITHUB_LATEST_DOWNLOAD}/release-notes.json`;
 
-export const SYNC_PROGRESS_INTERVAL_SEC = 60;
+export const SYNC_PROGRESS_INTERVAL_SEC = 3;
 export const SYNC_NOTES_INTERVAL_SEC = 10;
 export const SYNC_BOOKS_INTERVAL_SEC = 10;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
