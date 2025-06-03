@@ -61,7 +61,15 @@ const FoliateViewer: React.FC<{
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    setProgress(bookKey, detail.cfi, detail.tocItem, detail.section, detail.location, detail.range);
+    setProgress(
+      bookKey,
+      detail.cfi,
+      detail.tocItem,
+      detail.section,
+      detail.location,
+      detail.time,
+      detail.range,
+    );
   };
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {

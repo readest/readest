@@ -339,5 +339,8 @@
   "Search notes and excerpts...": "ノートを検索...",
   "Sign in to Sync": "同期するにはサインイン",
   "Synced at {{time}}": "{{time}} に同期済み",
-  "Never synced": "まだ同期されていません"
+  "Never synced": "まだ同期されていません",
+  "Show Remaining Time": "残り時間を表示",
+  "Show Page Number": "ページ番号を表示",
+  "{{time}} min left in chapter": "{{time}}分残り"
 }

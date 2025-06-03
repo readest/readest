@@ -341,5 +341,8 @@
   "Search notes and excerpts...": "Αναζήτηση σημειώσεων...",
   "Sign in to Sync": "Σύνδεση για συγχρονισμό",
   "Synced at {{time}}": "Συγχρονίστηκε στις {{time}}",
-  "Never synced": "Ποτέ δεν συγχρονίστηκε"
+  "Never synced": "Ποτέ δεν συγχρονίστηκε",
+  "Show Remaining Time": "Εμφάνιση υπολειπόμενου χρόνου",
+  "Show Page Number": "Εμφάνιση αριθμού σελίδας",
+  "{{time}} min left in chapter": "{{time}} λεπτά απομένουν στο κεφάλαιο"
 }

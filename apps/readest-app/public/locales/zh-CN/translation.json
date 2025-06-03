@@ -339,5 +339,8 @@
   "Search notes and excerpts...": "搜索笔记...",
   "Sign in to Sync": "登录后同步",
   "Synced at {{time}}": "同步于：{{time}}",
-  "Never synced": "从未同步"
+  "Never synced": "从未同步",
+  "Show Remaining Time": "显示剩余时间",
+  "Show Page Number": "显示页码",
+  "{{time}} min left in chapter": "本章剩余 {{time}} 分钟"
 }

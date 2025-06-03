@@ -345,5 +345,8 @@
   "Search notes and excerpts...": "Шукати нотатки...",
   "Sign in to Sync": "Увійти",
   "Synced at {{time}}": "Синхр. о {{time}}",
-  "Never synced": "Ніколи не синхр."
+  "Never synced": "Ніколи не синхр.",
+  "Show Remaining Time": "Показати залишок часу",
+  "Show Page Number": "Показати номер сторінки",
+  "{{time}} min left in chapter": "{{time}} хв до кінця розділу"
 }

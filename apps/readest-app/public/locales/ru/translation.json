@@ -345,5 +345,8 @@
   "Search notes and excerpts...": "Искать записи...",
   "Sign in to Sync": "Войти",
   "Synced at {{time}}": "Синхр. в {{time}}",
-  "Never synced": "Не синхр."
+  "Never synced": "Не синхр.",
+  "Show Remaining Time": "Показать оставшееся время",
+  "Show Page Number": "Показать номер страницы",
+  "{{time}} min left in chapter": "{{time}} мин осталось в главе"
 }

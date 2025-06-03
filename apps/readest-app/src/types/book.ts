@@ -41,6 +41,12 @@ export interface PageInfo {
   total: number;
 }
 
+// Remaining time of the book in minutes
+export interface TimeInfo {
+  section: number;
+  total: number;
+}
+
 export interface BookNote {
   bookHash?: string;
   id: string;
@@ -82,11 +88,6 @@ export interface BookLayout {
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
-  doubleBorder: boolean;
-  borderColor: string;
-  showHeader: boolean;
-  showFooter: boolean;
-  showBarsOnScroll: boolean;
   scrollingOverlap: number;
   allowScript: boolean;
 }
@@ -122,6 +123,15 @@ export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
   sortedTOC: boolean;
+
+  doubleBorder: boolean;
+  borderColor: string;
+
+  showHeader: boolean;
+  showFooter: boolean;
+  showRemainingTime: boolean;
+  showPageNumber: boolean;
+  showBarsOnScroll: boolean;
 }
 
 export interface TTSConfig {
@@ -156,6 +166,7 @@ export interface BookProgress {
   sectionLabel: string;
   section: PageInfo;
   pageinfo: PageInfo;
+  timeinfo: TimeInfo;
   range: Range;
 }
 

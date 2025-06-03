@@ -11,7 +11,7 @@ import getGridTemplate from '@/utils/grid';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import FooterBar from './FooterBar';
-import PageInfoView from './PageInfo';
+import ProgressInfoView from './ProgressInfo';
 import Ribbon from './Ribbon';
 import SettingsDialog from './settings/SettingsDialog';
 import Annotator from './annotator/Annotator';
@@ -57,7 +57,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         const { book, bookDoc } = bookData || {};
         if (!book || !config || !bookDoc || !viewSettings) return null;
 
-        const { section, pageinfo, sectionLabel } = progress || {};
+        const { section, pageinfo, timeinfo, sectionLabel } = progress || {};
         const isBookmarked = getViewState(bookKey)?.ribbonVisible;
         const horizontalGapPercent = viewSettings.gapPercent;
         const verticalMarginPixels = viewSettings.marginPx;
@@ -139,13 +139,12 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               verticalMargin={verticalMarginPixels}
             />
             {showFooter && (
-              <PageInfoView
+              <ProgressInfoView
+                bookKey={bookKey}
                 bookFormat={book.format}
                 section={section}
                 pageinfo={pageinfo}
-                showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
-                isScrolled={viewSettings.scrolled}
-                isVertical={viewSettings.vertical}
+                timeinfo={timeinfo}
                 horizontalGap={horizontalGapPercent}
                 verticalMargin={verticalMarginPixels}
               />

@@ -45,6 +45,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader!);
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter!);
   const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll!);
+  const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime!);
+  const [showPageNumber, setShowPageNumber] = useState(viewSettings.showPageNumber!);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'paragraphMargin', paragraphMargin);
@@ -190,6 +192,16 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     saveViewSettings(envConfig, bookKey, 'showBarsOnScroll', showBarsOnScroll, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBarsOnScroll]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showRemainingTime', showRemainingTime, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRemainingTime]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showPageNumber', showPageNumber, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPageNumber]);
 
   const applyMarginAndGap = () => {
     const isCompact = !showHeader && !showFooter;
@@ -473,6 +485,26 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 className='toggle'
                 checked={showFooter}
                 onChange={() => setShowFooter(!showFooter)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Remaining Time')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showRemainingTime}
+                disabled={!showFooter}
+                onChange={() => setShowRemainingTime(!showRemainingTime)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Page Number')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showPageNumber}
+                disabled={!showFooter}
+                onChange={() => setShowPageNumber(!showPageNumber)}
               />
             </div>
             <div className='config-item'>

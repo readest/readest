@@ -339,5 +339,8 @@
   "Search notes and excerpts...": "Cari catatan...",
   "Sign in to Sync": "Masuk untuk Sinkronisasi",
   "Synced at {{time}}": "Disinkronkan pada {{time}}",
-  "Never synced": "Belum pernah disinkronkan"
+  "Never synced": "Belum pernah disinkronkan",
+  "Show Remaining Time": "__STRING_NOT_TRANSLATED__",
+  "Show Page Number": "__STRING_NOT_TRANSLATED__",
+  "{{time}} min left in chapter": "{{time}} menit tersisa di bab"
 }

@@ -343,5 +343,8 @@
   "Search notes and excerpts...": "Rechercher des notes...",
   "Sign in to Sync": "Connectez-vous pour synchroniser",
   "Synced at {{time}}": "Synchronisé à {{time}}",
-  "Never synced": "Jamais synchronisé"
+  "Never synced": "Jamais synchronisé",
+  "Show Remaining Time": "Afficher le temps restant",
+  "Show Page Number": "Afficher le numéro de page",
+  "{{time}} min left in chapter": "{{time}} min restant dans le chapitre"
 }

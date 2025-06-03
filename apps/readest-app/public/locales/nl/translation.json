@@ -341,5 +341,8 @@
   "Search notes and excerpts...": "Zoek notities...",
   "Sign in to Sync": "Meld je aan om te synchroniseren",
   "Synced at {{time}}": "Gesynchroniseerd om {{time}}",
-  "Never synced": "Nooit gesynchroniseerd"
+  "Never synced": "Nooit gesynchroniseerd",
+  "Show Remaining Time": "Toon resterende tijd",
+  "Show Page Number": "Toon paginanummer",
+  "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk"
 }

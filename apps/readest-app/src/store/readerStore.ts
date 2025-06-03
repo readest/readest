@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 
-import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings } from '@/types/book';
+import {
+  BookContent,
+  BookConfig,
+  PageInfo,
+  BookProgress,
+  ViewSettings,
+  TimeInfo,
+} from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { DocumentLoader, TOCItem } from '@/libs/document';
@@ -41,6 +48,7 @@ interface ReaderStore {
     tocItem: TOCItem,
     section: PageInfo,
     pageinfo: PageInfo,
+    timeinfo: TimeInfo,
     range: Range,
   ) => void;
   getProgress: (key: string) => BookProgress | null;
@@ -215,6 +223,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     tocItem: TOCItem,
     section: PageInfo,
     pageinfo: PageInfo,
+    timeinfo: TimeInfo,
     range: Range,
   ) =>
     set((state) => {
@@ -270,6 +279,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               sectionId: tocItem?.id,
               section,
               pageinfo,
+              timeinfo,
               range,
             },
           },

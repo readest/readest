@@ -103,11 +103,6 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   writingMode: 'auto',
   vertical: false,
   rtl: false,
-  doubleBorder: false,
-  borderColor: 'red',
-  showHeader: true,
-  showFooter: true,
-  showBarsOnScroll: false,
   scrollingOverlap: 0,
   allowScript: false,
 };
@@ -143,6 +138,15 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
   uiLanguage: '',
   sortedTOC: false,
+
+  doubleBorder: false,
+  borderColor: 'red',
+
+  showHeader: true,
+  showFooter: true,
+  showBarsOnScroll: false,
+  showRemainingTime: false,
+  showPageNumber: true,
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {

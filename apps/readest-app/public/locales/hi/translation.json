@@ -341,5 +341,8 @@
   "Search notes and excerpts...": "नोट्स खोजें...",
   "Sign in to Sync": "सिंक करने के लिए साइन इन करें",
   "Synced at {{time}}": "{{time}} पर सिंक किया गया",
-  "Never synced": "कभी सिंक नहीं किया गया"
+  "Never synced": "कभी सिंक नहीं किया गया",
+  "Show Remaining Time": "शेष समय दिखाएं",
+  "Show Page Number": "पृष्ठ संख्या दिखाएं",
+  "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में"
 }

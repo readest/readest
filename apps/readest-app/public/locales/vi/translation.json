@@ -339,5 +339,8 @@
   "Search notes and excerpts...": "Tìm ghi chú...",
   "Sign in to Sync": "Đăng nhập",
   "Synced at {{time}}": "Đã đồng bộ lúc {{time}}",
-  "Never synced": "Chưa từng đồng bộ"
+  "Never synced": "Chưa từng đồng bộ",
+  "Show Remaining Time": "Hiển thị thời gian còn lại",
+  "Show Page Number": "Hiển thị số trang",
+  "{{time}} min left in chapter": "{{time}} phút còn lại trong chương"
 }

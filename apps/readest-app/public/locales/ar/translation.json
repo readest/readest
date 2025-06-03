@@ -349,5 +349,8 @@
   "Search notes and excerpts...": "بحث في الملاحظات والمقتطفات...",
   "Sign in to Sync": "سجّل للمزامنة",
   "Synced at {{time}}": "تمت عند {{time}}",
-  "Never synced": "لم تُزامَن"
+  "Never synced": "لم تُزامَن",
+  "Show Remaining Time": "إظهار الوقت المتبقي",
+  "Show Page Number": "إظهار رقم الصفحة",
+  "{{time}} min left in chapter": "{{time}} دقيقة متبقية في الفصل"
 }

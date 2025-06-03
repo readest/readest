@@ -345,5 +345,8 @@
   "Search notes and excerpts...": "Szukaj notatek...",
   "Sign in to Sync": "Zaloguj się",
   "Synced at {{time}}": "Sync: {{time}}",
-  "Never synced": "Brak synchronizacji"
+  "Never synced": "Brak synchronizacji",
+  "Show Remaining Time": "Pokazuj pozostały czas",
+  "Show Page Number": "Pokaż numer strony",
+  "{{time}} min left in chapter": "{{time}} min pozostało do końca rozdziału"
 }
