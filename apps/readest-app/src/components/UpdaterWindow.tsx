@@ -62,6 +62,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   const _ = useTranslation();
   const [targetLang, setTargetLang] = useState('EN');
   const { translate } = useTranslator({
+    provider: 'azure',
     sourceLang: 'AUTO',
     targetLang,
   });
@@ -79,14 +80,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   const [downloaded, setDownloaded] = useState<number | null>(null);
 
   useEffect(() => {
-    const locale = getLocale();
-    let userLang = locale.split('-')[0] || 'en';
-    if (locale === 'zh-CN') {
-      userLang = 'zh-Hans';
-    } else if (locale.startsWith('zh')) {
-      userLang = 'zh-Hant';
-    }
-    setTargetLang(userLang.toUpperCase());
+    setTargetLang(getLocale());
   }, []);
 
   useEffect(() => {

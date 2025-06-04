@@ -366,7 +366,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     for (const file of files) {
       try {
         const book = await appService?.importBook(file, library);
-        setLibrary(library);
+        setLibrary([...library]);
         if (user && book && !book.uploadedAt && settings.autoUpload) {
           console.log('Uploading book:', book.title);
           handleBookUpload(book);
