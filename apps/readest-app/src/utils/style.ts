@@ -269,7 +269,7 @@ const getLayoutStyles = (
   p img, span img, sup img {
     height: 1em;
   }
-  p:has(> img:only-child) img, span:has(> img:only-child) img {
+  p:has(> a:only-child) img, p:has(> img:only-child) img, span:has(> img:only-child) img {
     height: auto;
   }
 
