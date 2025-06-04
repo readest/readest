@@ -57,6 +57,16 @@ const TTSControl = () => {
     if (unblockerAudioRef.current) return;
     unblockerAudioRef.current = document.createElement('audio');
     unblockerAudioRef.current.setAttribute('x-webkit-airplay', 'deny');
+    unblockerAudioRef.current.addEventListener('play', () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('stop', null);
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
+      }
+    });
     unblockerAudioRef.current.preload = 'auto';
     unblockerAudioRef.current.loop = true;
     unblockerAudioRef.current.src = SILENCE_DATA;
