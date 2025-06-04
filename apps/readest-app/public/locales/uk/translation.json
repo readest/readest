@@ -348,5 +348,6 @@
   "Never synced": "Ніколи не синхр.",
   "Show Remaining Time": "Показати залишок часу",
   "Show Page Number": "Показати номер сторінки",
-  "{{time}} min left in chapter": "{{time}} хв до кінця розділу"
+  "{{time}} min left in chapter": "{{time}} хв до кінця розділу",
+  "Override Book Color": "Перевизначити колір книги"
 }

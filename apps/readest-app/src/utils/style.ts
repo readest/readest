@@ -26,9 +26,7 @@ const getFontStyles = (
   minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
-  themeCode: ThemeCode,
 ) => {
-  const { fg, primary, isDarkMode } = themeCode;
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
@@ -82,12 +80,53 @@ const getFontStyles = (
     font[size="7"] {
       font-size: ${fontSize * 3}px;
     }
+    /* hardcoded inline font size */
+    [style*="font-size: 16px"], [style*="font-size:16px"] {
+      font-size: 1rem !important;
+    }
     body * {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
+    
+  `;
+  return fontStyles;
+};
+
+const getColorStyles = (
+  overrideColor: boolean,
+  invertImgColorInDark: boolean,
+  themeCode: ThemeCode,
+) => {
+  const { bg, fg, primary, isDarkMode } = themeCode;
+  const colorStyles = `
+    html {
+      --theme-bg-color: ${bg};
+      --theme-fg-color: ${fg};
+      --theme-primary-color: ${primary};
+      color-scheme: ${isDarkMode ? 'dark' : 'light'};
+    }
+    html, body {
+      color: ${fg};
+    }
+    div, p, span, pre {
+      ${overrideColor ? `background-color: ${bg} !important;` : ''}
+    }
     a:any-link {
-      ${overrideFont ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
+      ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: none;
+    }
+    p:has(img), span:has(img) {
+      background-color: ${bg};
+    }
+    body.pbg {
+      ${isDarkMode ? `background-color: ${bg} !important;` : ''}
+    }
+    img {
+      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+    }
+    /* inline images */
+    p img, span img, sup img {
+      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     /* override inline hardcoded text color */
     *[style*="color: rgb(0,0,0)"], *[style*="color: rgb(0, 0, 0)"],
@@ -96,8 +135,20 @@ const getFontStyles = (
     *[style*="color:#000"], *[style*="color:#000000"], *[style*="color:black"] {
       color: ${fg} !important;
     }
+    /* for the Gutenberg eBooks */
+    #pg-header * {
+      color: inherit !important;
+    }
+    .x-ebookmaker, .x-ebookmaker-cover, .x-ebookmaker-coverpage {
+      background-color: unset !important;
+    }
+    /* for the Feedbooks eBooks */
+    .chapterHeader, .chapterHeader * {
+      border-color: unset;
+      background-color: ${bg} !important;
+    }
   `;
-  return fontStyles;
+  return colorStyles;
 };
 
 const getLayoutStyles = (
@@ -112,19 +163,10 @@ const getLayoutStyles = (
   zoomLevel: number,
   writingMode: string,
   vertical: boolean,
-  invertImgColorInDark: boolean,
-  themeCode: ThemeCode,
 ) => {
-  const { bg, fg, primary, isDarkMode } = themeCode;
   const layoutStyle = `
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
-    color-scheme: ${isDarkMode ? 'dark' : 'light'};
-  }
-  html {
-    --theme-bg-color: ${bg};
-    --theme-fg-color: ${fg};
-    --theme-primary-color: ${primary};
     --default-text-align: ${justify ? 'justify' : 'start'};
     hanging-punctuation: allow-end last;
     orphans: 2;
@@ -146,7 +188,6 @@ const getLayoutStyles = (
     --background-set: var(--theme-bg-color);
   }
   html, body {
-    color: ${fg};
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     text-align: var(--default-text-align);
     max-height: unset;
@@ -207,9 +248,6 @@ const getLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
-  body.pbg {
-    ${isDarkMode ? `background-color: ${bg} !important;` : ''}
-  }
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
@@ -227,24 +265,12 @@ const getLayoutStyles = (
     color: unset;
   }
 
-  img {
-    ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-  }
   /* inline images without dimension */
   p img, span img, sup img {
     height: 1em;
-    mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
   }
   p:has(> img:only-child) img, span:has(> img:only-child) img {
     height: auto;
-  }
-  p:has(img), span:has(img) {
-    background-color: ${bg};
-  }
-
-  /* hardcoded inline font size */
-  [style*="font-size: 16px"], [style*="font-size:16px"] {
-    font-size: 1rem !important;
   }
 
   /* workaround for some badly designed epubs */
@@ -255,20 +281,6 @@ const getLayoutStyles = (
 
   .nonindent, .noindent {
     text-indent: unset !important;
-  }
-
-  /* for the Gutenberg eBooks */
-  #pg-header * {
-    color: inherit !important;
-  }
-  .x-ebookmaker, .x-ebookmaker-cover, .x-ebookmaker-coverpage {
-    background-color: unset !important;
-  }
-
-  /* for the Feedbooks eBooks */
-  .chapterHeader, .chapterHeader * {
-    border-color: unset;
-    background-color: ${bg} !important;
   }
 `;
   return layoutStyle;
@@ -370,8 +382,6 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.zoomLevel! / 100.0,
     viewSettings.writingMode!,
     viewSettings.vertical!,
-    viewSettings.invertImgColorInDark!,
-    themeCode,
   );
   // scale the font size on-the-fly so that we can sync the same font size on different devices
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
@@ -386,11 +396,15 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
+  );
+  const colorStyles = getColorStyles(
+    viewSettings.overrideColor!,
+    viewSettings.invertImgColorInDark!,
     themeCode,
   );
   const translationStyles = getTranslationStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${layoutStyles}\n${fontStyles}\n${translationStyles}\n${userStylesheet}`;
+  return `${layoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
 };
 
 export const transformStylesheet = (
@@ -442,6 +456,7 @@ export const transformStylesheet = (
     })
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * w) / 100 + 'px')
     .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px')
+    .replace(/[\s;]color\s*:\s*black/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');

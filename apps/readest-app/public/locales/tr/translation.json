@@ -344,5 +344,6 @@
   "Never synced": "Hiç eşzlenmedi",
   "Show Remaining Time": "Kalan Süreyi Göster",
   "Show Page Number": "Sayfa Numarasını Göster",
-  "{{time}} min left in chapter": "{{time}} dakika bölümde kaldı"
+  "{{time}} min left in chapter": "{{time}} dakika bölümde kaldı",
+  "Override Book Color": "Kitap Rengini Geçersiz Kıl"
 }

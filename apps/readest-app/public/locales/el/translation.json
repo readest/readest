@@ -344,5 +344,6 @@
   "Never synced": "Ποτέ δεν συγχρονίστηκε",
   "Show Remaining Time": "Εμφάνιση υπολειπόμενου χρόνου",
   "Show Page Number": "Εμφάνιση αριθμού σελίδας",
-  "{{time}} min left in chapter": "{{time}} λεπτά απομένουν στο κεφάλαιο"
+  "{{time}} min left in chapter": "{{time}} λεπτά απομένουν στο κεφάλαιο",
+  "Override Book Color": "Παράκαμψη χρώματος βιβλίου"
 }

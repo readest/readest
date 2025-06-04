@@ -342,5 +342,6 @@
   "Never synced": "Chưa từng đồng bộ",
   "Show Remaining Time": "Hiển thị thời gian còn lại",
   "Show Page Number": "Hiển thị số trang",
-  "{{time}} min left in chapter": "{{time}} phút còn lại trong chương"
+  "{{time}} min left in chapter": "{{time}} phút còn lại trong chương",
+  "Override Book Color": "Đổi màu sách"
 }

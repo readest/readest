@@ -105,6 +105,7 @@ export interface BookStyle {
   theme: string;
   overrideFont: boolean;
   overrideLayout: boolean;
+  overrideColor: boolean;
   userStylesheet: string;
 }
 

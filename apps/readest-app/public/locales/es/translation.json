@@ -346,5 +346,6 @@
   "Never synced": "Nunca sincronizado",
   "Show Remaining Time": "Mostrar tiempo restante",
   "Show Page Number": "Mostrar número de página",
-  "{{time}} min left in chapter": "{{time}} min restantes en el capítulo"
+  "{{time}} min left in chapter": "{{time}} min restantes en el capítulo",
+  "Override Book Color": "Sobre escribir color del libro"
 }

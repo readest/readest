@@ -342,5 +342,6 @@
   "Never synced": "從未同步",
   "Show Remaining Time": "顯示剩餘時間",
   "Show Page Number": "顯示頁碼",
-  "{{time}} min left in chapter": "本章剩餘 {{time}} 分鐘"
+  "{{time}} min left in chapter": "本章剩餘 {{time}} 分鐘",
+  "Override Book Color": "覆蓋書籍顏色"
 }

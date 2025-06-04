@@ -352,5 +352,6 @@
   "Never synced": "لم تُزامَن",
   "Show Remaining Time": "إظهار الوقت المتبقي",
   "Show Page Number": "إظهار رقم الصفحة",
-  "{{time}} min left in chapter": "{{time}} دقيقة متبقية في الفصل"
+  "{{time}} min left in chapter": "{{time}} دقيقة متبقية في الفصل",
+  "Override Book Color": "تجاوز لون الكتاب"
 }

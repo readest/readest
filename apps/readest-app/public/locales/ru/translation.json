@@ -348,5 +348,6 @@
   "Never synced": "Не синхр.",
   "Show Remaining Time": "Показать оставшееся время",
   "Show Page Number": "Показать номер страницы",
-  "{{time}} min left in chapter": "{{time}} мин осталось в главе"
+  "{{time}} min left in chapter": "{{time}} мин осталось в главе",
+  "Override Book Color": "Переопределить цвет книги"
 }

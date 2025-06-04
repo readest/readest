@@ -342,5 +342,6 @@
   "Never synced": "まだ同期されていません",
   "Show Remaining Time": "残り時間を表示",
   "Show Page Number": "ページ番号を表示",
-  "{{time}} min left in chapter": "{{time}}分残り"
+  "{{time}} min left in chapter": "{{time}}分残り",
+  "Override Book Color": "書籍の色を上書き"
 }

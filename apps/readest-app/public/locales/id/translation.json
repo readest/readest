@@ -340,7 +340,8 @@
   "Sign in to Sync": "Masuk untuk Sinkronisasi",
   "Synced at {{time}}": "Disinkronkan pada {{time}}",
   "Never synced": "Belum pernah disinkronkan",
-  "Show Remaining Time": "__STRING_NOT_TRANSLATED__",
-  "Show Page Number": "__STRING_NOT_TRANSLATED__",
-  "{{time}} min left in chapter": "{{time}} menit tersisa di bab"
+  "Show Remaining Time": "Perlihatkan Waktu Tersisa",
+  "Show Page Number": "Perlihatkan Nomor Halaman",
+  "{{time}} min left in chapter": "{{time}} menit tersisa di bab",
+  "Override Book Color": "Ubah Warna Buku"
 }

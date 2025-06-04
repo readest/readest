@@ -120,6 +120,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   theme: 'light',
   overrideFont: false,
   overrideLayout: false,
+  overrideColor: false,
   userStylesheet: '',
 };
 

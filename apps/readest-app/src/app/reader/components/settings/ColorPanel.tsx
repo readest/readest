@@ -38,12 +38,19 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThems, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
+  const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor!);
 
   useEffect(() => {
     if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (overrideColor === viewSettings.overrideColor) return;
+    saveViewSettings(envConfig, bookKey, 'overrideColor', overrideColor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overrideColor]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
@@ -134,6 +141,16 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               checked={invertImgColorInDark}
               disabled={!isDarkMode}
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
+            />
+          </div>
+
+          <div className='flex items-center justify-between'>
+            <h2 className=''>{_('Override Book Color')}</h2>
+            <input
+              type='checkbox'
+              className='toggle'
+              checked={overrideColor}
+              onChange={() => setOverrideColor(!overrideColor)}
             />
           </div>
 

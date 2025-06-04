@@ -344,5 +344,6 @@
   "Never synced": "कभी सिंक नहीं किया गया",
   "Show Remaining Time": "शेष समय दिखाएं",
   "Show Page Number": "पृष्ठ संख्या दिखाएं",
-  "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में"
+  "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में",
+  "Override Book Color": "पुस्तक रंग ओवरराइड करें"
 }

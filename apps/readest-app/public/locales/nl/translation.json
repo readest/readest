@@ -344,5 +344,6 @@
   "Never synced": "Nooit gesynchroniseerd",
   "Show Remaining Time": "Toon resterende tijd",
   "Show Page Number": "Toon paginanummer",
-  "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk"
+  "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk",
+  "Override Book Color": "Boekkleur overschrijven"
 }
