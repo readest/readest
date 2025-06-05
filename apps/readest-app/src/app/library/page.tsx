@@ -218,6 +218,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageRef.current]);
 
+  useEffect(() => {
+    if (!libraryBooks.some((book) => !book.deletedAt)) {
+      handleSetSelectMode(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libraryBooks]);
+
   const processOpenWithFiles = React.useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
       const settings = await appService.loadSettings();
