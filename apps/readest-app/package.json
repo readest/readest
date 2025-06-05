@@ -30,9 +30,10 @@
     "build-ios-appstore": "dotenv -e .env.ios-appstore.local -- tauri ios build --export-method app-store-connect",
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh",
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
-    "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler dev",
-    "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare && wrangler deploy",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
+    "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "@aws-sdk/s3-request-presigner": "^3.735.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@fabianlars/tauri-plugin-oauth": "2",
+    "@opennextjs/cloudflare": "^1.1.0",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.47.7",
@@ -81,7 +83,6 @@
     "zustand": "5.0.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^0.5.12",
     "@tailwindcss/typography": "^0.5.16",
     "@tauri-apps/cli": "2.5.0",
     "@types/cors": "^2.8.17",
@@ -107,6 +108,6 @@
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "wrangler": "^4.4.0"
+    "wrangler": "^4.19.1"
   }
 }

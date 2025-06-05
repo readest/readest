@@ -1,7 +1,8 @@
 import crypto from 'crypto';
+import { supabase } from '@/utils/supabase';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { supabase } from '@/utils/supabase';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDailyTranslationPlanData, getUserPlan } from '@/utils/access';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
@@ -60,7 +61,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const env = (req.env || {}) as CloudflareEnv;
+  const env = (getCloudflareContext().env || {}) as CloudflareEnv;
   const hasKVCache = !!env['TRANSLATIONS_KV'];
 
   const { user, token } = await getUserAndToken(req.headers['authorization']);
@@ -181,14 +182,17 @@ async function callDeepLAPI(
     throw new Error(`DeepL API error (${response.status}): ${errorText}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    translations?: { text: string; detected_source_language?: string }[];
+    data?: string;
+  };
 
   let translatedText = '';
   let detectedSourceLanguage = '';
 
   if (data.translations && data.translations.length > 0) {
-    translatedText = data.translations[0].text;
-    detectedSourceLanguage = data.translations[0].detected_source_language || '';
+    translatedText = data.translations[0]!.text;
+    detectedSourceLanguage = data.translations[0]!.detected_source_language || '';
   } else if (data.data) {
     translatedText = data.data;
   }
