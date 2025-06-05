@@ -228,7 +228,6 @@
   "Slow": "Langzaam",
   "Fast": "Snel",
   "Reading Progress Synced": "Leesvoortgang gesynchroniseerd",
-  "Cloud Storage": "Cloudopslag",
   "Failed to delete user. Please try again later.": "Gebruiker verwijderen mislukt. Probeer het later opnieuw.",
   "Free Tier": "Gratis niveau",
   "Community Support": "Community-ondersteuning",
@@ -345,5 +344,9 @@
   "Show Remaining Time": "Toon resterende tijd",
   "Show Page Number": "Toon paginanummer",
   "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk",
-  "Override Book Color": "Boekkleur overschrijven"
+  "Override Book Color": "Boekkleur overschrijven",
+  "Login Required": "Inloggen vereist",
+  "Quota Exceeded": "Limiet overschreden",
+  "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% van de dagelijkse vertaaltekens gebruikt.",
+  "Translation Characters": "Vertaaltekens"
 }

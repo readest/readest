@@ -1,8 +1,9 @@
 import { jwtDecode } from 'jwt-decode';
+import { supabase } from '@/utils/supabase';
 import { UserPlan } from '@/types/user';
 import { DEFAULT_DAILY_TRANSLATION_QUOTA, DEFAULT_STORAGE_QUOTA } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
-import { supabase } from '@/utils/supabase';
+import { getDailyUsage } from '@/services/translators/utils';
 
 interface Token {
   plan: UserPlan;
@@ -21,6 +22,19 @@ export const getStoragePlanData = (token: string) => {
   const usage = data['storage_usage_bytes'] || 0;
   const fixedQuota = parseInt(process.env['NEXT_PUBLIC_STORAGE_FIXED_QUOTA'] || '0');
   const quota = fixedQuota || DEFAULT_STORAGE_QUOTA[plan] || DEFAULT_STORAGE_QUOTA['free'];
+
+  return {
+    plan,
+    usage,
+    quota,
+  };
+};
+
+export const getTranslationPlanData = (token: string) => {
+  const data = jwtDecode<Token>(token) || {};
+  const plan: UserPlan = data['plan'] || 'free';
+  const usage = getDailyUsage() || 0;
+  const quota = DEFAULT_DAILY_TRANSLATION_QUOTA[plan];
 
   return {
     plan,

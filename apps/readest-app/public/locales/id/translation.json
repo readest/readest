@@ -186,7 +186,6 @@
   "Sign in with Apple": "Masuk dengan Apple",
   "Sign in with GitHub": "Masuk dengan GitHub",
   "Account": "Akun",
-  "Cloud Storage": "Penyimpanan Cloud",
   "Failed to delete user. Please try again later.": "Gagal menghapus pengguna. Silakan coba lagi nanti.",
   "Unlimited Offline/Online Reading": "Membaca Offline/Online Tanpa Batas",
   "Unlimited Cloud Sync Devices": "Perangkat Sinkronisasi Cloud Tanpa Batas",
@@ -343,5 +342,9 @@
   "Show Remaining Time": "Perlihatkan Waktu Tersisa",
   "Show Page Number": "Perlihatkan Nomor Halaman",
   "{{time}} min left in chapter": "{{time}} menit tersisa di bab",
-  "Override Book Color": "Ubah Warna Buku"
+  "Override Book Color": "Ubah Warna Buku",
+  "Login Required": "Perlu masuk",
+  "Quota Exceeded": "Kuota terlampaui",
+  "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% dari Karakter Terjemahan Harian Digunakan.",
+  "Translation Characters": "Karakter Terjemahan"
 }

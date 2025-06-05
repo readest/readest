@@ -186,7 +186,6 @@
   "Sign in with Apple": "Увійти через Apple",
   "Sign in with GitHub": "Увійти через GitHub",
   "Account": "Обліковий запис",
-  "Cloud Storage": "Хмарне сховище",
   "Failed to delete user. Please try again later.": "Не вдалося видалити користувача. Будь ласка, спробуйте пізніше.",
   "Unlimited Offline/Online Reading": "Необмежене читання офлайн/онлайн",
   "Unlimited Cloud Sync Devices": "Необмежена кількість пристроїв для хмарної синхронізації",
@@ -349,5 +348,9 @@
   "Show Remaining Time": "Показати залишок часу",
   "Show Page Number": "Показати номер сторінки",
   "{{time}} min left in chapter": "{{time}} хв до кінця розділу",
-  "Override Book Color": "Перевизначити колір книги"
+  "Override Book Color": "Перевизначити колір книги",
+  "Login Required": "Потрібен вхід",
+  "Quota Exceeded": "Перевищено ліміт",
+  "{{percentage}}% of Daily Translation Characters Used.": "Використано {{percentage}}% символів перекладу за день.",
+  "Translation Characters": "Символи перекладу"
 }

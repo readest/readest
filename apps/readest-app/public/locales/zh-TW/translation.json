@@ -186,7 +186,6 @@
   "Sign in with Apple": "使用 Apple 登入",
   "Sign in with GitHub": "使用 GitHub 登入",
   "Account": "帳戶",
-  "Cloud Storage": "雲端儲存空間",
   "Failed to delete user. Please try again later.": "刪除使用者失敗。請稍後再試。",
   "Unlimited Offline/Online Reading": "無限離線/線上閱讀",
   "Unlimited Cloud Sync Devices": "無限雲端同步裝置",
@@ -343,5 +342,9 @@
   "Show Remaining Time": "顯示剩餘時間",
   "Show Page Number": "顯示頁碼",
   "{{time}} min left in chapter": "本章剩餘 {{time}} 分鐘",
-  "Override Book Color": "覆蓋書籍顏色"
+  "Override Book Color": "覆蓋書籍顏色",
+  "Login Required": "需登入",
+  "Quota Exceeded": "額度不足",
+  "{{percentage}}% of Daily Translation Characters Used.": "已使用 {{percentage}}% 的每日翻譯字數",
+  "Translation Characters": "翻譯字數"
 }

@@ -186,7 +186,6 @@
   "Sign in with Apple": "Apple के साथ साइन इन करें",
   "Sign in with GitHub": "GitHub के साथ साइन इन करें",
   "Account": "खाता",
-  "Cloud Storage": "क्लाउड स्टोरेज",
   "Failed to delete user. Please try again later.": "उपयोगकर्ता को हटाने में विफल। कृपया बाद में पुनः प्रयास करें।",
   "Unlimited Offline/Online Reading": "असीमित ऑफलाइन/ऑनलाइन पढ़ना",
   "Unlimited Cloud Sync Devices": "असीमित क्लाउड सिंक उपकरण",
@@ -345,5 +344,9 @@
   "Show Remaining Time": "शेष समय दिखाएं",
   "Show Page Number": "पृष्ठ संख्या दिखाएं",
   "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में",
-  "Override Book Color": "पुस्तक रंग ओवरराइड करें"
+  "Override Book Color": "पुस्तक रंग ओवरराइड करें",
+  "Login Required": "लॉगिन ज़रूरी",
+  "Quota Exceeded": "सीमा पार",
+  "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% दैनिक अनुवाद वर्णों का उपयोग किया गया है।",
+  "Translation Characters": "अनुवाद वर्ण"
 }

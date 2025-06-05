@@ -186,7 +186,6 @@
   "Sign in with Apple": "使用 Apple 登录",
   "Sign in with GitHub": "使用 GitHub 登录",
   "Account": "账户",
-  "Cloud Storage": "云存储",
   "Failed to delete user. Please try again later.": "删除用户失败。请稍后重试。",
   "Unlimited Offline/Online Reading": "无限离线和在线阅读",
   "Unlimited Cloud Sync Devices": "无限云同步设备个数",
@@ -343,5 +342,9 @@
   "Show Remaining Time": "显示剩余时间",
   "Show Page Number": "显示页码",
   "{{time}} min left in chapter": "本章剩余 {{time}} 分钟",
-  "Override Book Color": "覆盖书籍颜色"
+  "Override Book Color": "覆盖书籍颜色",
+  "Login Required": "需登录",
+  "Quota Exceeded": "额度不足",
+  "{{percentage}}% of Daily Translation Characters Used.": "已使用 {{percentage}}% 的每日翻译字符数",
+  "Translation Characters": "翻译字数"
 }

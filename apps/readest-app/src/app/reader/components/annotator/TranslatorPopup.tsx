@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
-import { UseTranslatorOptions } from '@/services/translators';
+import { UseTranslatorOptions, getTranslators } from '@/services/translators';
 import { localeToLang } from '@/utils/lang';
 import Select from '@/components/Select';
 
@@ -76,7 +76,12 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   };
 
   const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedTranslator = translators.find((t) => t.name === event.target.value);
+    const requestedProvider = event.target.value;
+    const availableTranslators = getTranslators().filter(
+      (t) => (t.authRequired ? !!token : true) && !t.quotaExceeded,
+    );
+    const selectedTranslator =
+      availableTranslators.find((t) => t.name === requestedProvider) || availableTranslators[0]!;
     if (selectedTranslator) {
       settings.globalReadSettings.translationProvider = selectedTranslator.name;
       setSettings(settings);
@@ -86,9 +91,16 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
   useEffect(() => {
     const availableProviders = translators.map((t) => {
-      return { name: t.name, label: t.label };
+      let label = t.label;
+      if (t.authRequired && !token) {
+        label = `${label} (${_('Login Required')})`;
+      } else if (t.quotaExceeded) {
+        label = `${label} (${_('Quota Exceeded')})`;
+      }
+      return { name: t.name, label };
     });
     setProviders(availableProviders);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translators]);
 
   useEffect(() => {

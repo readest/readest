@@ -1,18 +1,18 @@
 'use client';
 
 import clsx from 'clsx';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoArrowBack } from 'react-icons/io5';
 import { PiUserCircle } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { QuotaType, UserPlan } from '@/types/user';
-import { getStoragePlanData, getUserPlan } from '@/utils/access';
+import { UserPlan } from '@/types/user';
 import { navigateToLibrary } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
@@ -28,36 +28,13 @@ const ProfilePage = () => {
   const { token, user, logout } = useAuth();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const [userPlan, setUserPlan] = useState<UserPlan>('free');
-  const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: false });
 
-  useEffect(() => {
-    if (!user || !token) return;
-
-    try {
-      const userPlan = getUserPlan(token);
-      const storagePlan = getStoragePlanData(token);
-      const storageQuota = {
-        name: _('Cloud Storage'),
-        tooltip: _('{{percentage}}% of Cloud Storage Used.', {
-          percentage: Math.round((storagePlan.usage / storagePlan.quota) * 100),
-        }),
-        used: Math.round(storagePlan.usage / 1024 / 1024),
-        total: Math.round(storagePlan.quota / 1024 / 1024),
-        unit: 'MB',
-      };
-      setUserPlan(userPlan);
-      setQuotas([storageQuota]);
-    } catch (error) {
-      console.error('Error loading user plan data:', error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  const { quotas, userPlan } = useQuotaStats();
 
   const handleGoBack = () => {
     navigateToLibrary(router);
@@ -240,10 +217,15 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className='bg-base-300 mb-8 rounded-lg'>
+            <div className='mb-8 rounded-lg'>
               <div className='p-0'>
                 {quotas && quotas.length > 0 ? (
-                  <Quota quotas={quotas} showProgress className='h-10 pl-4 pr-2' />
+                  <Quota
+                    quotas={quotas}
+                    showProgress
+                    className='space-y-4'
+                    labelClassName='pl-4 pr-2'
+                  />
                 ) : (
                   <div className='h-10 animate-pulse'></div>
                 )}

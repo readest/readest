@@ -186,7 +186,6 @@
   "Sign in with Apple": "تسجيل الدخول عبر Apple",
   "Sign in with GitHub": "تسجيل الدخول عبر GitHub",
   "Account": "الحساب",
-  "Cloud Storage": "التخزين السحابي",
   "Failed to delete user. Please try again later.": "فشل حذف المستخدم. يرجى المحاولة مرة أخرى لاحقًا.",
   "Unlimited Offline/Online Reading": "قراءة غير محدودة بدون اتصال/متصلة بالإنترنت",
   "Unlimited Cloud Sync Devices": "أجهزة مزامنة سحابية غير محدودة",
@@ -353,5 +352,9 @@
   "Show Remaining Time": "إظهار الوقت المتبقي",
   "Show Page Number": "إظهار رقم الصفحة",
   "{{time}} min left in chapter": "{{time}} دقيقة متبقية في الفصل",
-  "Override Book Color": "تجاوز لون الكتاب"
+  "Override Book Color": "تجاوز لون الكتاب",
+  "Login Required": "يلزم الدخول",
+  "Quota Exceeded": "تجاوز السعة",
+  "{{percentage}}% of Daily Translation Characters Used.": "تم استخدام {{percentage}}% من أحرف الترجمة اليومية.",
+  "Translation Characters": "أحرف الترجمة"
 }

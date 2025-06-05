@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import i18n from 'i18next';
 import React, { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
@@ -11,6 +12,7 @@ import Select from '@/components/Select';
 
 const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
+  const { token } = useAuth();
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
@@ -47,15 +49,27 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const getTranslationProviderOptions = () => {
     const translators = getTranslators();
     const availableProviders = translators.map((t) => {
-      return { value: t.name, label: t.label };
+      let label = t.label;
+      if (t.authRequired && !token) {
+        label = `${label} (${_('Login Required')})`;
+      } else if (t.quotaExceeded) {
+        label = `${label} (${_('Quota Exceeded')})`;
+      }
+      return { value: t.name, label };
     });
     return availableProviders;
   };
 
   const getCurrentTranslationProviderOption = () => {
     const value = translationProvider;
-    const availableProviders = getTranslationProviderOptions();
-    return availableProviders.find((p) => p.value === value) || availableProviders[0]!;
+    const allProviders = getTranslationProviderOptions();
+    const availableTranslators = getTranslators().filter(
+      (t) => (t.authRequired ? !!token : true) && !t.quotaExceeded,
+    );
+    const currentProvider = availableTranslators.find((t) => t.name === value)
+      ? value
+      : availableTranslators[0]?.name;
+    return allProviders.find((p) => p.value === currentProvider) || allProviders[0]!;
   };
 
   const handleSelectTranslationProvider = (event: React.ChangeEvent<HTMLSelectElement>) => {

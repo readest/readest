@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
 import { PiUserCircleCheck } from 'react-icons/pi';
@@ -13,14 +13,13 @@ import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { getStoragePlanData } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
-import { QuotaType } from '@/types/user';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -33,10 +32,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const [quotas, setQuotas] = React.useState<QuotaType[]>([]);
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
@@ -47,6 +45,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   );
   const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
   const iconSize = useResponsiveSize(16);
+
+  const { quotas } = useQuotaStats();
 
   const showAboutReadest = () => {
     setAboutDialogVisible(true);
@@ -143,22 +143,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsTelemetryEnabled(settings.telemetryEnabled);
   };
 
-  useEffect(() => {
-    if (!user || !token) return;
-    const storagPlan = getStoragePlanData(token);
-    const storageQuota: QuotaType = {
-      name: _('Storage'),
-      tooltip: _('{{percentage}}% of Cloud Storage Used.', {
-        percentage: Math.round((storagPlan.usage / storagPlan.quota) * 100),
-      }),
-      used: Math.round(storagPlan.usage / 1024 / 1024),
-      total: Math.round(storagPlan.quota / 1024 / 1024),
-      unit: 'MB',
-    };
-    setQuotas([storageQuota]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
-
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
@@ -188,7 +172,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           }
         >
           <ul>
-            <Quota quotas={quotas} className='h-10 pl-3 pr-2' />
+            <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
             <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
           </ul>
         </MenuItem>

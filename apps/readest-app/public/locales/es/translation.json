@@ -186,7 +186,6 @@
   "Sign in with Apple": "Iniciar sesión con Apple",
   "Sign in with GitHub": "Iniciar sesión con GitHub",
   "Account": "Cuenta",
-  "Cloud Storage": "Almacenamiento en la nube",
   "Failed to delete user. Please try again later.": "Error al eliminar usuario. Por favor, inténtelo de nuevo más tarde.",
   "Unlimited Offline/Online Reading": "Lectura sin límites en línea/sin conexión",
   "Unlimited Cloud Sync Devices": "Sincronización ilimitada de dispositivos en la nube",
@@ -347,5 +346,9 @@
   "Show Remaining Time": "Mostrar tiempo restante",
   "Show Page Number": "Mostrar número de página",
   "{{time}} min left in chapter": "{{time}} min restantes en el capítulo",
-  "Override Book Color": "Sobre escribir color del libro"
+  "Override Book Color": "Sobre escribir color del libro",
+  "Login Required": "Iniciar sesión",
+  "Quota Exceeded": "Límite superado",
+  "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% de caracteres de traducción diarios utilizados.",
+  "Translation Characters": "Caracteres de traducción"
 }

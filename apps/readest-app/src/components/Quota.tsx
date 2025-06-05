@@ -10,12 +10,13 @@ type QuotaProps = {
     unit: string;
   }[];
   className?: string;
+  labelClassName?: string;
   showProgress?: boolean;
 };
 
-const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className }) => {
+const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelClassName }) => {
   return (
-    <div className={clsx('text-base-content w-full space-y-2 rounded-md text-base sm:text-sm')}>
+    <div className={clsx('text-base-content w-full rounded-md text-base sm:text-sm', className)}>
       {quotas.map((quota) => {
         const usagePercentage = (quota.used / quota.total) * 100;
         let bgColor = 'bg-green-500';
@@ -30,7 +31,7 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className }) => {
             key={quota.name}
             className={clsx(
               'relative w-full overflow-hidden rounded-md',
-              showProgress && 'border-base-300 border',
+              showProgress && 'bg-base-300',
             )}
           >
             {showProgress && (
@@ -41,9 +42,12 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className }) => {
             )}
 
             <div
-              className={clsx('relative flex items-center justify-between gap-4 p-2', className)}
+              className={clsx(
+                'relative flex items-center justify-between gap-4 p-2',
+                labelClassName,
+              )}
             >
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={quota.tooltip}>
+              <div className='lg:tooltip lg:tooltip-right' data-tip={quota.tooltip}>
                 <span className='truncate'>{quota.name}</span>
               </div>
               <div className='text-right text-xs'>

@@ -4,16 +4,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDailyTranslationPlanData, getUserPlan } from '@/utils/access';
+import { ErrorCodes } from '@/services/translators';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
-
-const ErrorCodes = {
-  UNAUTHORIZED: 'Unauthorized',
-  DEEPL_API_ERROR: 'DeepL API Error',
-  DAILY_QUOTA_EXCEEDED: 'Daily Quota Exceeded',
-  INTERNAL_SERVER_ERROR: 'Internal Server Error',
-};
 
 interface KVNamespace {
   get(key: string): Promise<string | null>;
@@ -109,7 +103,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           }
         }
 
-        // if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
+        if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
 
         return await callDeepLAPI(
           user?.id,

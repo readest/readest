@@ -186,7 +186,6 @@
   "Sign in with Apple": "Appleでサインイン",
   "Sign in with GitHub": "GitHubでサインイン",
   "Account": "アカウント",
-  "Cloud Storage": "クラウドストレージ",
   "Failed to delete user. Please try again later.": "ユーザーの削除に失敗しました。後ほど再試行してください。",
   "Unlimited Offline/Online Reading": "無制限のオフライン/オンライン読書",
   "Unlimited Cloud Sync Devices": "無制限のクラウド同期デバイス",
@@ -343,5 +342,9 @@
   "Show Remaining Time": "残り時間を表示",
   "Show Page Number": "ページ番号を表示",
   "{{time}} min left in chapter": "{{time}}分残り",
-  "Override Book Color": "書籍の色を上書き"
+  "Override Book Color": "書籍の色を上書き",
+  "Login Required": "ログイン必須",
+  "Quota Exceeded": "上限超過",
+  "{{percentage}}% of Daily Translation Characters Used.": "日次翻訳文字数の使用量は{{percentage}}%です。",
+  "Translation Characters": "翻訳文字数"
 }
