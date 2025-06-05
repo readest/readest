@@ -10,19 +10,27 @@ type SelectProps = {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: Option[];
+  disabled?: boolean;
   className?: string;
 };
 
-export default function Select({ value, onChange, options, className }: SelectProps) {
+export default function Select({
+  value,
+  onChange,
+  options,
+  className,
+  disabled = false,
+}: SelectProps) {
   return (
     <select
       value={value}
       onChange={onChange}
       className={clsx(
         'select h-8 min-h-8 rounded-md border-none text-end text-sm',
-        'bg-gray-600 text-white/75 focus:outline-none focus:ring-0',
+        'focus:outline-none focus:ring-0',
         className,
       )}
+      disabled={disabled}
       style={{
         textAlignLast: 'end',
       }}

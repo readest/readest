@@ -142,6 +142,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           <div className='mb-2 flex items-center justify-between'>
             <h1 className='text-sm font-normal'>{_('Original Text')}</h1>
             <Select
+              className='bg-gray-600 text-white/75'
               value={sourceLang}
               onChange={handleSourceLangChange}
               options={[
@@ -168,6 +169,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <Select
+              className='bg-gray-600 text-white/75'
               value={targetLang}
               onChange={handleTargetLangChange}
               options={Object.entries(TRANSLATOR_LANGS)
@@ -201,6 +203,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           )}
           <div className='ml-auto'>
             <Select
+              className='bg-gray-600 text-white/75'
               value={provider}
               onChange={handleProviderChange}
               options={providers.map(({ name: value, label }) => ({ value, label }))}

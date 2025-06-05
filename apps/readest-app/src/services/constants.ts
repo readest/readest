@@ -624,7 +624,7 @@ export const TRANSLATED_LANGS = {
   pl: 'Polski',
   tr: 'Türkçe',
   hi: 'हिन्दी',
-  id: 'Bahasa Indonesia',
+  id: 'Indonesia',
   vi: 'Tiếng Việt',
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',

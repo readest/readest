@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { getTranslators } from '@/services/translators';
 import { TRANSLATED_LANGS } from '@/services/constants';
-import DropDown from './DropDown';
+import Select from '@/components/Select';
 
 const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -22,7 +22,7 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const getCurrentUILangOption = () => {
     const uiLanguage = viewSettings.uiLanguage;
     return {
-      option: uiLanguage,
+      value: uiLanguage,
       label:
         uiLanguage === ''
           ? _('Auto')
@@ -32,13 +32,14 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const getLangOptions = () => {
     const langs = TRANSLATED_LANGS as Record<string, string>;
-    const options = Object.entries(langs).map(([option, label]) => ({ option, label }));
+    const options = Object.entries(langs).map(([value, label]) => ({ value, label }));
     options.sort((a, b) => a.label.localeCompare(b.label));
-    options.unshift({ option: '', label: _('System Language') });
+    options.unshift({ value: '', label: _('System Language') });
     return options;
   };
 
-  const handleSelectUILang = (option: string) => {
+  const handleSelectUILang = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value;
     saveViewSettings(envConfig, bookKey, 'uiLanguage', option, false, false);
     i18n.changeLanguage(option ? option : navigator.language);
   };
@@ -46,18 +47,19 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const getTranslationProviderOptions = () => {
     const translators = getTranslators();
     const availableProviders = translators.map((t) => {
-      return { option: t.name, label: t.label };
+      return { value: t.name, label: t.label };
     });
     return availableProviders;
   };
 
   const getCurrentTranslationProviderOption = () => {
-    const option = translationProvider;
+    const value = translationProvider;
     const availableProviders = getTranslationProviderOptions();
-    return availableProviders.find((p) => p.option === option) || availableProviders[0]!;
+    return availableProviders.find((p) => p.value === value) || availableProviders[0]!;
   };
 
-  const handleSelectTranslationProvider = (option: string) => {
+  const handleSelectTranslationProvider = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value;
     setTranslationProvider(option);
     saveViewSettings(envConfig, bookKey, 'translationProvider', option, false, false);
     viewSettings.translationProvider = option;
@@ -65,12 +67,13 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const getCurrentTargetLangOption = () => {
-    const option = translateTargetLang;
+    const value = translateTargetLang;
     const availableOptions = getLangOptions();
-    return availableOptions.find((o) => o.option === option) || availableOptions[0]!;
+    return availableOptions.find((o) => o.value === value) || availableOptions[0]!;
   };
 
-  const handleSelectTargetLang = (option: string) => {
+  const handleSelectTargetLang = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value;
     setTranslateTargetLang(option);
     saveViewSettings(envConfig, bookKey, 'translateTargetLang', option, false, false);
     viewSettings.translateTargetLang = option;
@@ -93,12 +96,10 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='divide-base-200 divide-y'>
             <div className='config-item'>
               <span className=''>{_('Interface Language')}</span>
-              <DropDown
+              <Select
+                value={getCurrentUILangOption().value}
+                onChange={handleSelectUILang}
                 options={getLangOptions()}
-                selected={getCurrentUILangOption()}
-                onSelect={handleSelectUILang}
-                className='dropdown-bottom'
-                listClassName='!max-h-60'
               />
             </div>
           </div>
@@ -121,24 +122,21 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
             <div className='config-item'>
               <span className=''>{_('Translation Service')}</span>
-              <DropDown
-                selected={getCurrentTranslationProviderOption()}
+              <Select
+                value={getCurrentTranslationProviderOption().value}
+                onChange={handleSelectTranslationProvider}
                 options={getTranslationProviderOptions()}
-                onSelect={handleSelectTranslationProvider}
                 disabled={!translationEnabled}
-                className='dropdown-top'
               />
             </div>
 
             <div className='config-item'>
               <span className=''>{_('Translate To')}</span>
-              <DropDown
+              <Select
+                value={getCurrentTargetLangOption().value}
+                onChange={handleSelectTargetLang}
                 options={getLangOptions()}
-                selected={getCurrentTargetLangOption()}
-                onSelect={handleSelectTargetLang}
                 disabled={!translationEnabled}
-                className='dropdown-top'
-                listClassName='!max-h-60'
               />
             </div>
           </div>
