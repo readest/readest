@@ -266,7 +266,7 @@ const getLayoutStyles = (
   }
 
   /* inline images without dimension */
-  p img, span img, sup img {
+  p > img, span > img, sup img {
     height: 1em;
   }
   p:has(> a:only-child) img, p:has(> img:only-child) img, span:has(> img:only-child) img {
