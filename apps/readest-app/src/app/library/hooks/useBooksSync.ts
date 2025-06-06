@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
 import { useLibraryStore } from '@/store/libraryStore';
-import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { Book } from '@/types/book';
+import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
+import { debounce } from '@/utils/debounce';
 
 export interface UseBooksSyncProps {
   onSyncStart?: () => void;
@@ -38,9 +39,6 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const lastSyncTime = useRef<number>(0);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const getNewBooks = () => {
     if (!user) return [];
     const newBooks = library.filter(
@@ -49,26 +47,18 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
     return newBooks;
   };
 
-  useEffect(() => {
-    if (!user) return;
-    const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTime.current;
-    if (timeSinceLastSync > SYNC_BOOKS_INTERVAL_SEC * 1000) {
-      lastSyncTime.current = now;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAutoSync = useCallback(
+    debounce(() => {
       const newBooks = getNewBooks();
       syncBooks(newBooks, 'both');
-    } else {
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-      syncTimeoutRef.current = setTimeout(
-        () => {
-          lastSyncTime.current = Date.now();
-          const newBooks = getNewBooks();
-          syncBooks(newBooks, 'both');
-          syncTimeoutRef.current = null;
-        },
-        SYNC_BOOKS_INTERVAL_SEC * 1000 - timeSinceLastSync,
-      );
-    }
+    }, SYNC_BOOKS_INTERVAL_SEC * 1000),
+    [library, lastSyncedAtBooks],
+  );
+
+  useEffect(() => {
+    if (!user) return;
+    handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library]);
 

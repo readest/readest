@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookNote } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
+import { debounce } from '@/utils/debounce';
 
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
@@ -13,10 +14,8 @@ export const useNotesSync = (bookKey: string) => {
   const config = getConfig(bookKey);
   const bookHash = bookKey.split('-')[0]!;
 
-  const lastSyncTime = useRef<number>(0);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const getNewNotes = () => {
+    const config = getConfig(bookKey);
     if (!config?.location || !user) return [];
     const bookNotes = config.booknotes ?? [];
     const newNotes = bookNotes.filter(
@@ -28,35 +27,31 @@ export const useNotesSync = (bookKey: string) => {
     return newNotes;
   };
 
-  useEffect(() => {
-    if (!config?.location || !user) return;
-    const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTime.current;
-    if (timeSinceLastSync > SYNC_NOTES_INTERVAL_SEC * 1000) {
-      lastSyncTime.current = now;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAutoSync = useCallback(
+    debounce(() => {
       const newNotes = getNewNotes();
       syncNotes(newNotes, bookHash, 'both');
-    } else {
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-      syncTimeoutRef.current = setTimeout(
-        () => {
-          lastSyncTime.current = Date.now();
-          const newNotes = getNewNotes();
-          syncNotes(newNotes, bookHash, 'both');
-          syncTimeoutRef.current = null;
-        },
-        SYNC_NOTES_INTERVAL_SEC * 1000 - timeSinceLastSync,
-      );
-    }
+    }, SYNC_NOTES_INTERVAL_SEC * 1000),
+    [lastSyncedAtNotes],
+  );
+
+  useEffect(() => {
+    if (!config?.location || !user) return;
+    handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {
+      const config = getConfig(bookKey);
       const oldNotes = config?.booknotes ?? [];
       const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
       if (existingNote) {
-        if (existingNote.updatedAt < note.updatedAt) {
+        if (
+          existingNote.updatedAt < note.updatedAt ||
+          (existingNote.deletedAt ?? 0) < (note.deletedAt ?? 0)
+        ) {
           return { ...existingNote, ...note };
         } else {
           return { ...note, ...existingNote };

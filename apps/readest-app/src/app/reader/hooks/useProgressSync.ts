@@ -69,7 +69,7 @@ export const useProgressSync = (bookKey: string) => {
   }, [bookKey]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedAutoSync = useCallback(
+  const handleAutoSync = useCallback(
     debounce(() => {
       syncConfig();
     }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
@@ -79,7 +79,7 @@ export const useProgressSync = (bookKey: string) => {
   // Push: auto-push progress when progress changes with a debounce
   useEffect(() => {
     if (!progress?.location || !user) return;
-    debouncedAutoSync();
+    handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
