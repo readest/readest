@@ -44,7 +44,7 @@
     "@opennextjs/cloudflare": "^1.1.0",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
-    "@supabase/supabase-js": "^2.47.7",
+    "@supabase/supabase-js": "^2.49.10",
     "@tauri-apps/api": "2.5.0",
     "@tauri-apps/plugin-cli": "^2.2.0",
     "@tauri-apps/plugin-deep-link": "^2.2.1",
