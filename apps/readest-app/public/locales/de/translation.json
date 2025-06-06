@@ -348,5 +348,6 @@
   "Login Required": "Anmeldung nötig",
   "Quota Exceeded": "Limit überschritten",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% der täglichen Übersetzungszeichen verwendet.",
-  "Translation Characters": "Übersetzungszeichen"
+  "Translation Characters": "Übersetzungszeichen",
+  "Daily translation quota reached. Select another translate service to proceed.": "Das tägliche Übersetzungslimit wurde erreicht. Wählen Sie einen anderen Übersetzungsdienst, um fortzufahren."
 }

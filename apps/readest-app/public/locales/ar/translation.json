@@ -356,5 +356,6 @@
   "Login Required": "يلزم الدخول",
   "Quota Exceeded": "تجاوز السعة",
   "{{percentage}}% of Daily Translation Characters Used.": "تم استخدام {{percentage}}% من أحرف الترجمة اليومية.",
-  "Translation Characters": "أحرف الترجمة"
+  "Translation Characters": "أحرف الترجمة",
+  "Daily translation quota reached. Select another translate service to proceed.": "تم الوصول إلى حصة الترجمة اليومية. اختر خدمة ترجمة أخرى للمتابعة."
 }

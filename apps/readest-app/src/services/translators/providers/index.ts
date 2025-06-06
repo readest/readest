@@ -12,7 +12,7 @@ function createTranslator<T extends string>(
       `Translator name "${name}" does not match implementation name "${implementation.name}"`,
     );
   }
-  return { ...implementation, name };
+  return implementation as TranslationProvider & { name: T };
 }
 
 const deeplTranslator = createTranslator('deepl', deeplProvider);

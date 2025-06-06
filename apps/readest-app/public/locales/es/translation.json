@@ -350,5 +350,6 @@
   "Login Required": "Iniciar sesión",
   "Quota Exceeded": "Límite superado",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% de caracteres de traducción diarios utilizados.",
-  "Translation Characters": "Caracteres de traducción"
+  "Translation Characters": "Caracteres de traducción",
+  "Daily translation quota reached. Select another translate service to proceed.": "Cuota diaria de traducción alcanzada. Selecciona otro servicio de traducción para continuar."
 }

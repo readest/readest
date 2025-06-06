@@ -346,5 +346,6 @@
   "Login Required": "Cần đăng nhập",
   "Quota Exceeded": "Vượt hạn mức",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% số ký tự dịch hàng ngày đã sử dụng.",
-  "Translation Characters": "Những ký tự dịch"
+  "Translation Characters": "Những ký tự dịch",
+  "Daily translation quota reached. Select another translate service to proceed.": "Đã đạt hạn mức dịch hàng ngày. Chọn dịch vụ dịch khác để tiếp tục."
 }

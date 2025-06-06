@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getTranslator, getTranslators, TranslatorName } from '@/services/translators';
+import { ErrorCodes, getTranslator, getTranslators, TranslatorName } from '@/services/translators';
 import { getFromCache, storeInCache, polish, UseTranslatorOptions } from '@/services/translators';
+import { eventDispatcher } from '@/utils/event';
+import { useTranslation } from './useTranslation';
 
 export function useTranslator({
   provider = 'deepl',
@@ -9,6 +11,7 @@ export function useTranslator({
   targetLang = 'EN',
   enablePolishing = true,
 }: UseTranslatorOptions = {}) {
+  const _ = useTranslation();
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(provider);
@@ -132,7 +135,15 @@ export function useTranslator({
         setLoading(false);
         return enablePolishing ? polish(results, targetLanguage) : results;
       } catch (err) {
-        console.error('Translation error:', err);
+        if (err instanceof Error && err.message.includes(ErrorCodes.DAILY_QUOTA_EXCEEDED)) {
+          eventDispatcher.dispatch('toast', {
+            message: _(
+              'Daily translation quota reached. Select another translate service to proceed.',
+            ),
+            type: 'error',
+          });
+          setSelectedProvider('azure');
+        }
         setLoading(false);
         throw err instanceof Error ? err : new Error(String(err));
       }

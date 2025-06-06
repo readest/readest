@@ -350,5 +350,6 @@
   "Login Required": "Connexion requise",
   "Quota Exceeded": "Quota dépassé",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% des caractères de traduction quotidiens utilisés.",
-  "Translation Characters": "Caractères de traduction"
+  "Translation Characters": "Caractères de traduction",
+  "Daily translation quota reached. Select another translate service to proceed.": "Quota de traduction quotidien atteint. Sélectionnez un autre service de traduction pour continuer."
 }

@@ -352,5 +352,6 @@
   "Login Required": "Потрібен вхід",
   "Quota Exceeded": "Перевищено ліміт",
   "{{percentage}}% of Daily Translation Characters Used.": "Використано {{percentage}}% символів перекладу за день.",
-  "Translation Characters": "Символи перекладу"
+  "Translation Characters": "Символи перекладу",
+  "Daily translation quota reached. Select another translate service to proceed.": "Досягнуто добового ліміту перекладу. Виберіть іншу службу перекладу для продовження."
 }

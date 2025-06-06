@@ -348,5 +348,6 @@
   "Login Required": "Inloggen vereist",
   "Quota Exceeded": "Limiet overschreden",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% van de dagelijkse vertaaltekens gebruikt.",
-  "Translation Characters": "Vertaaltekens"
+  "Translation Characters": "Vertaaltekens",
+  "Daily translation quota reached. Select another translate service to proceed.": "Dagelijkse vertaalquotum bereikt. Selecteer een andere vertaalservice om door te gaan."
 }

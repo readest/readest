@@ -352,5 +352,6 @@
   "Login Required": "Требуется вход",
   "Quota Exceeded": "Лимит превышен",
   "{{percentage}}% of Daily Translation Characters Used.": "Использовано {{percentage}}% от суточного лимита символов перевода.",
-  "Translation Characters": "Символы перевода"
+  "Translation Characters": "Символы перевода",
+  "Daily translation quota reached. Select another translate service to proceed.": "Достигнут суточный лимит символов перевода. Выберите другой сервис перевода для продолжения."
 }

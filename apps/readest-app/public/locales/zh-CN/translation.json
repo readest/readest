@@ -346,5 +346,6 @@
   "Login Required": "需登录",
   "Quota Exceeded": "额度不足",
   "{{percentage}}% of Daily Translation Characters Used.": "已使用 {{percentage}}% 的每日翻译字符数",
-  "Translation Characters": "翻译字数"
+  "Translation Characters": "翻译字数",
+  "Daily translation quota reached. Select another translate service to proceed.": "已达到每日翻译配额，请选择其他翻译服务继续。"
 }

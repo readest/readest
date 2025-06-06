@@ -346,5 +346,6 @@
   "Login Required": "ログイン必須",
   "Quota Exceeded": "上限超過",
   "{{percentage}}% of Daily Translation Characters Used.": "日次翻訳文字数の使用量は{{percentage}}%です。",
-  "Translation Characters": "翻訳文字数"
+  "Translation Characters": "翻訳文字数",
+  "Daily translation quota reached. Select another translate service to proceed.": "日次翻訳クォータに達しました。続行するには別の翻訳サービスを選択してください。"
 }

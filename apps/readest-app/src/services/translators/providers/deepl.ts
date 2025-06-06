@@ -48,6 +48,12 @@ export const deeplProvider: TranslationProvider = {
       const response = await fetch(DEEPL_API_ENDPOINT, { method: 'POST', headers, body });
 
       if (!response.ok) {
+        const data = await response.json();
+        if (data && data.error && data.error === ErrorCodes.DAILY_QUOTA_EXCEEDED) {
+          saveDailyUsage(quota);
+          deeplProvider.quotaExceeded = true;
+          throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
+        }
         throw new Error(`Translation failed with status ${response.status}`);
       }
 
@@ -68,10 +74,6 @@ export const deeplProvider: TranslationProvider = {
         return translation?.text || line;
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes(ErrorCodes.DAILY_QUOTA_EXCEEDED)) {
-        saveDailyUsage(quota);
-        deeplProvider.quotaExceeded = true;
-      }
       throw error;
     }
   },

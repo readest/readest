@@ -348,5 +348,6 @@
   "Login Required": "Giriş gerekli",
   "Quota Exceeded": "Kota aşıldı",
   "{{percentage}}% of Daily Translation Characters Used.": "Çeviri için günlük karakterlerin %{{percentage}}'si kullanıldı.",
-  "Translation Characters": "Çeviri Karakterleri"
+  "Translation Characters": "Çeviri Karakterleri",
+  "Daily translation quota reached. Select another translate service to proceed.": "Günlük çeviri kotası aşıldı. Devam etmek için başka bir çeviri hizmeti seçin."
 }

@@ -348,5 +348,6 @@
   "Login Required": "Απαιτείται σύνδεση",
   "Quota Exceeded": "Υπέρβαση ορίου",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% των ημερήσιων χαρακτήρων μετάφρασης χρησιμοποιήθηκαν.",
-  "Translation Characters": "Χαρακτήρες μετάφρασης"
+  "Translation Characters": "Χαρακτήρες μετάφρασης",
+  "Daily translation quota reached. Select another translate service to proceed.": "Έχετε φτάσει το ημερήσιο όριο χαρακτήρων μετάφρασης. Επιλέξτε άλλη υπηρεσία μετάφρασης για να συνεχίσετε."
 }
