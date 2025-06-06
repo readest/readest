@@ -210,7 +210,8 @@ const getLayoutStyles = (
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
     text-indent: ${vertical ? textIndent * 1.2 : textIndent}em ${overrideLayout ? '!important' : ''};
-    text-align: ${justify ? 'justify' : ''} ${overrideLayout ? '!important' : ''};
+    ${justify ? `text-align: justify ${overrideLayout ? '!important' : ''};` : ''}
+    ${!justify && overrideLayout ? 'text-align: unset !important;' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
