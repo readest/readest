@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useDrag } from '@/hooks/useDrag';
@@ -45,6 +45,7 @@ const Dialog: React.FC<DialogProps> = ({
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640;
 
@@ -79,10 +80,10 @@ const Dialog: React.FC<DialogProps> = ({
   }, [isOpen]);
 
   const handleDragMove = (data: { clientY: number; deltaY: number }) => {
-    if (!isMobile) return;
+    if (!isMobile || !dialogRef.current) return;
 
-    const modal = document.querySelector('.modal-box') as HTMLElement;
-    const overlay = document.querySelector('.overlay') as HTMLElement;
+    const modal = dialogRef.current.querySelector('.modal-box') as HTMLElement;
+    const overlay = dialogRef.current.querySelector('.overlay') as HTMLElement;
 
     const heightFraction = data.clientY / window.innerHeight;
     const newTop = Math.max(0.0, Math.min(1, heightFraction));
@@ -98,8 +99,9 @@ const Dialog: React.FC<DialogProps> = ({
   };
 
   const handleDragEnd = (data: { velocity: number; clientY: number }) => {
-    const modal = document.querySelector('.modal-box') as HTMLElement;
-    const overlay = document.querySelector('.overlay') as HTMLElement;
+    if (!isMobile || !dialogRef.current) return;
+    const modal = dialogRef.current.querySelector('.modal-box') as HTMLElement;
+    const overlay = dialogRef.current.querySelector('.overlay') as HTMLElement;
     if (!modal || !overlay) return;
 
     const snapUpper = snapHeight ? 1 - snapHeight - SNAP_THRESHOLD : 0.5;
@@ -148,6 +150,7 @@ const Dialog: React.FC<DialogProps> = ({
 
   return (
     <dialog
+      ref={dialogRef}
       id={id ?? 'dialog'}
       open={isOpen}
       className={clsx(

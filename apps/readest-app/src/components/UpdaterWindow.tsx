@@ -260,7 +260,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     }
   };
 
-  if (!isMounted || !update) {
+  if (!isMounted || !newVersion) {
     return null;
   }
 
