@@ -1,5 +1,14 @@
 {
   "releases": {
+    "0.9.55": {
+      "date": "2025-06-07",
+      "notes": [
+        "Sync: Notes deleted on other devices now correctly sync across all platforms",
+        "Layout: Now text justification can be unset in the layout settings",
+        "Translation: Added notification when daily translation quota is exceeded",
+        "Performance: Reduced unnecessary animations on Android to improve efficiency"
+      ]
+    },
     "0.9.53": {
       "date": "2025-06-05",
       "notes": [
