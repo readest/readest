@@ -70,14 +70,14 @@ const SidebarContent: React.FC<{
     <>
       <div
         className={clsx(
-          'sidebar-content flex min-h-0 flex-grow flex-col shadow-inner',
+          'sidebar-content flex h-full min-h-0 flex-grow flex-col shadow-inner',
           'font-sans text-base font-normal sm:text-sm',
         )}
       >
         <div
           ref={scrollContainerRef}
           className={clsx(
-            'scroll-container overflow-y-auto transition-opacity duration-300 ease-in-out',
+            'scroll-container min-h-0 flex-1 overflow-y-auto transition-opacity duration-300 ease-in-out',
             { 'opacity-0': fade, 'opacity-100': !fade },
           )}
         >
