@@ -46,6 +46,7 @@ tauri-plugin-deep-link = "2.2.1"
 tauri-plugin-sign-in-with-apple = "1.0.2"
 tauri-plugin-haptics = "2.2.4"
 tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
+tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }
 
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"

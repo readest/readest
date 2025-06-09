@@ -1,0 +1,18 @@
+[default]
+description = "Default permissions for the plugin"
+permissions = [
+  "allow-init", 
+  "allow-speak",
+  "allow-stop",
+  "allow-pause",
+  "allow-resume",
+  "allow-set-rate",
+  "allow-set-pitch",
+  "allow-set-voice",
+  "allow-set-primary-lang",
+  "allow-get-voices",
+  "allow-get-voice-id",
+  "allow-get-all-voices",
+  "allow-get-granularities",
+  "allow-get-speaking-lang",
+]

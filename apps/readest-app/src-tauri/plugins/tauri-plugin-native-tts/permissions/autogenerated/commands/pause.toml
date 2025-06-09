@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-pause"
+description = "Enables the pause command without any pre-configured scope."
+commands.allow = ["pause"]
+
+[[permission]]
+identifier = "deny-pause"
+description = "Denies the pause command without any pre-configured scope."
+commands.deny = ["pause"]

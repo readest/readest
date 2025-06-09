@@ -112,6 +112,7 @@ export class TTSController extends EventTarget {
             await this.view.next();
             await this.forward();
           }
+          console.log('no SSML, skipping for', this.#nossmlCnt);
           return;
         } else {
           this.#nossmlCnt = 0;

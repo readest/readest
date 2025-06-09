@@ -9,7 +9,6 @@ import { TTSController, SILENCE_DATA, TTSMark } from '@/services/tts';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
-import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { CFI } from '@/libs/document';
@@ -199,7 +198,7 @@ const TTSControl = () => {
       if (appService?.isIOSApp) {
         await invokeUseBackgroundAudio({ enabled: true });
       }
-      if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
+      if (appService?.isMobile) {
         unblockAudio();
       }
       setTtsClientsInitialized(false);
@@ -292,7 +291,7 @@ const TTSControl = () => {
     if (appService?.isIOSApp) {
       await invokeUseBackgroundAudio({ enabled: false });
     }
-    if (getOSPlatform() === 'ios' || appService?.isIOSApp) {
+    if (appService?.isMobile) {
       releaseUnblockAudio();
     }
     setTTSEnabled(bookKey, false);
