@@ -203,6 +203,12 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
+      book.transformTarget?.addEventListener('load', (event: Event) => {
+        const { detail } = event as CustomEvent;
+        if (detail.isScript) {
+          detail.allowScript = viewSettings.allowScript ?? false;
+        }
+      });
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
 

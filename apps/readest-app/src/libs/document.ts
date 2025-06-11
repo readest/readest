@@ -178,7 +178,7 @@ export class DocumentLoader {
     );
   }
 
-  public async open({ allowScript = false } = {}): Promise<{ book: BookDoc; format: BookFormat }> {
+  public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
     let book = null;
     let format: BookFormat = 'EPUB';
     if (!this.file.size) {
@@ -200,7 +200,7 @@ export class DocumentLoader {
         format = 'FBZ';
       } else {
         const { EPUB } = await import('foliate-js/epub.js');
-        book = await new EPUB(loader).init({ allowScript });
+        book = await new EPUB(loader).init();
         format = 'EPUB';
       }
     } else if (await this.isPDF()) {

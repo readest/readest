@@ -130,9 +130,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const content = (await appService.loadBookContent(book, settings)) as BookContent;
         const { file, config } = content;
         console.log('Loading book', key);
-        const { book: bookDoc } = await new DocumentLoader(file).open({
-          allowScript: config.viewSettings?.allowScript,
-        });
+        const { book: bookDoc } = await new DocumentLoader(file).open();
         updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
         // Set the book's language for formerly imported books, newly imported books have this field set
         book.primaryLanguage =
