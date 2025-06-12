@@ -36,7 +36,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const iconSize16 = useResponsiveSize(16);
   const iconSize24 = useResponsiveSize(24);
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
-  const [customThems, setCustomThemes] = useState<Theme[]>([]);
+  const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
   const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor!);
 
@@ -157,7 +157,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div>
             <h2 className='mb-2 font-medium'>{_('Theme Color')}</h2>
             <div className='grid grid-cols-3 gap-4'>
-              {themes.concat(customThems).map(({ name, label, colors, isCustomizale }) => (
+              {themes.concat(customThemes).map(({ name, label, colors, isCustomizale }) => (
                 <label
                   key={name}
                   className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg p-4 shadow-md ${
