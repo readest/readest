@@ -349,5 +349,7 @@
   "Quota Exceeded": "सीमा पार",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% दैनिक अनुवाद वर्णों का उपयोग किया गया है।",
   "Translation Characters": "अनुवाद वर्ण",
-  "Daily translation quota reached. Select another translate service to proceed.": "दैनिक अनुवाद कोटा पूरा हो गया है। आगे बढ़ने के लिए कोई अन्य अनुवाद सेवा चुनें।"
+  "Daily translation quota reached. Select another translate service to proceed.": "दैनिक अनुवाद कोटा पूरा हो गया है। आगे बढ़ने के लिए कोई अन्य अनुवाद सेवा चुनें।",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} आवाज़",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} आवाज़ें"
 }

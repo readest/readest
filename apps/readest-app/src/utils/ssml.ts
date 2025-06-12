@@ -3,6 +3,19 @@ import { TTSMark } from '@/services/tts/types';
 const cleanTextContent = (text: string) =>
   text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();
 
+export const genSSML = (lang: string, text: string, voice: string, rate: number) => {
+  const cleanedText = text.replace(/^<break\b[^>]*>/i, '');
+  return `
+    <speak version="1.0" xml:lang="${lang}">
+      <voice name="${voice}">
+        <prosody rate="${rate}" >
+            ${cleanedText}
+        </prosody>
+      </voice>
+    </speak>
+  `;
+};
+
 export const parseSSMLMarks = (ssml: string) => {
   const speakMatch = ssml.match(/<speak[^>]*xml:lang="([^"]+)"[^>]*>/i);
   const defaultLang = speakMatch?.[1] ?? 'en';

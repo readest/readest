@@ -353,5 +353,9 @@
   "Quota Exceeded": "Перевищено ліміт",
   "{{percentage}}% of Daily Translation Characters Used.": "Використано {{percentage}}% символів перекладу за день.",
   "Translation Characters": "Символи перекладу",
-  "Daily translation quota reached. Select another translate service to proceed.": "Досягнуто добового ліміту перекладу. Виберіть іншу службу перекладу для продовження."
+  "Daily translation quota reached. Select another translate service to proceed.": "Досягнуто добового ліміту перекладу. Виберіть іншу службу перекладу для продовження.",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} голос",
+  "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} голоси",
+  "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} голосів",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} голоси"
 }

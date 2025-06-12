@@ -307,54 +307,6 @@
           "markdownDescription": "Denies the get_all_voices command without any pre-configured scope."
         },
         {
-          "description": "Enables the get_granularities command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-get-granularities",
-          "markdownDescription": "Enables the get_granularities command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the get_granularities command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-get-granularities",
-          "markdownDescription": "Denies the get_granularities command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the get_speaking_lang command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-get-speaking-lang",
-          "markdownDescription": "Enables the get_speaking_lang command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the get_speaking_lang command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-get-speaking-lang",
-          "markdownDescription": "Denies the get_speaking_lang command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the get_voice_id command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-get-voice-id",
-          "markdownDescription": "Enables the get_voice_id command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the get_voice_id command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-get-voice-id",
-          "markdownDescription": "Denies the get_voice_id command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the get_voices command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-get-voices",
-          "markdownDescription": "Enables the get_voices command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the get_voices command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-get-voices",
-          "markdownDescription": "Denies the get_voices command without any pre-configured scope."
-        },
-        {
           "description": "Enables the init command without any pre-configured scope.",
           "type": "string",
           "const": "allow-init",
@@ -379,6 +331,30 @@
           "markdownDescription": "Denies the pause command without any pre-configured scope."
         },
         {
+          "description": "Enables the registerListener command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-registerListener",
+          "markdownDescription": "Enables the registerListener command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the registerListener command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-registerListener",
+          "markdownDescription": "Denies the registerListener command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the remove_listener command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-remove-listener",
+          "markdownDescription": "Enables the remove_listener command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the remove_listener command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-remove-listener",
+          "markdownDescription": "Denies the remove_listener command without any pre-configured scope."
+        },
+        {
           "description": "Enables the resume command without any pre-configured scope.",
           "type": "string",
           "const": "allow-resume",
@@ -401,18 +377,6 @@
           "type": "string",
           "const": "deny-set-pitch",
           "markdownDescription": "Denies the set_pitch command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the set_primary_lang command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-set-primary-lang",
-          "markdownDescription": "Enables the set_primary_lang command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the set_primary_lang command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-set-primary-lang",
-          "markdownDescription": "Denies the set_primary_lang command without any pre-configured scope."
         },
         {
           "description": "Enables the set_rate command without any pre-configured scope.",
@@ -463,10 +427,10 @@
           "markdownDescription": "Denies the stop command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-set-primary-lang`\n- `allow-get-voices`\n- `allow-get-voice-id`\n- `allow-get-all-voices`\n- `allow-get-granularities`\n- `allow-get-speaking-lang`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-registerListener`\n- `allow-remove-listener`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-set-primary-lang`\n- `allow-get-voices`\n- `allow-get-voice-id`\n- `allow-get-all-voices`\n- `allow-get-granularities`\n- `allow-get-speaking-lang`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-registerListener`\n- `allow-remove-listener`"
         }
       ]
     }

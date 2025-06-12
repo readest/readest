@@ -349,5 +349,7 @@
   "Quota Exceeded": "Limiet overschreden",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% van de dagelijkse vertaaltekens gebruikt.",
   "Translation Characters": "Vertaaltekens",
-  "Daily translation quota reached. Select another translate service to proceed.": "Dagelijkse vertaalquotum bereikt. Selecteer een andere vertaalservice om door te gaan."
+  "Daily translation quota reached. Select another translate service to proceed.": "Dagelijkse vertaalquotum bereikt. Selecteer een andere vertaalservice om door te gaan.",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} stem",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} stemmen"
 }

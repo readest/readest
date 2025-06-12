@@ -1,26 +1,28 @@
 import { getUserLocale } from '@/utils/misc';
-import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
+import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
-import { TTSGranularity } from '@/types/view';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
 
 export class EdgeTTSClient implements TTSClient {
+  name = 'edge-tts';
+  initialized = false;
   controller?: TTSController;
+
+  #voices: TTSVoice[] = [];
   #primaryLang = 'en';
   #speakingLang = '';
+  #currentVoiceId = '';
   #rate = 1.0;
   #pitch = 1.0;
-  #voice: TTSVoice | null = null;
-  #voices: TTSVoice[] = [];
-  #edgeTTS: EdgeSpeechTTS;
 
+  #edgeTTS: EdgeSpeechTTS;
   #audioElement: HTMLAudioElement | null = null;
   #isPlaying = false;
   #pausedAt = 0;
   #startedAt = 0;
-  available = true;
 
   constructor(controller?: TTSController) {
     this.controller = controller;
@@ -37,11 +39,11 @@ export class EdgeTTSClient implements TTSClient {
         rate: 1.0,
         pitch: 1.0,
       });
-      this.available = true;
+      this.initialized = true;
     } catch {
-      this.available = false;
+      this.initialized = false;
     }
-    return this.available;
+    return this.initialized;
   }
 
   getPayload = (lang: string, text: string, voiceId: string) => {
@@ -49,21 +51,15 @@ export class EdgeTTSClient implements TTSClient {
   };
 
   getVoiceIdFromLang = async (lang: string) => {
-    let voiceId = 'en-US-AriaNeural';
-    const preferredVoiceId = TTSUtils.getPreferredVoice('edge-tts', lang);
+    const preferredVoiceId = TTSUtils.getPreferredVoice(this.name, lang);
     const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
-    this.#voice = preferredVoice ? preferredVoice : (await this.getVoices(lang))[0] || null;
-    if (this.#voice) {
-      voiceId = this.#voice.id;
-    }
-    return voiceId;
+    const defaultVoice = preferredVoice
+      ? preferredVoice
+      : (await this.getVoices(lang))[0]?.voices[0] || null;
+    return defaultVoice?.id || this.#currentVoiceId || 'en-US-AriaNeural';
   };
 
-  async *speak(
-    ssml: string,
-    signal: AbortSignal,
-    preload = false,
-  ): AsyncGenerator<TTSMessageEvent> {
+  async *speak(ssml: string, signal: AbortSignal, preload = false) {
     const { marks } = parseSSMLMarks(ssml);
     let defaultLang = parseSSMLLang(ssml) || 'en';
     if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
@@ -78,6 +74,7 @@ export class EdgeTTSClient implements TTSClient {
         const { language } = mark;
         const voiceLang = language || defaultLang;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
+        this.#currentVoiceId = voiceId;
         await this.#edgeTTS
           .createAudio(this.getPayload(voiceLang, mark.text, voiceId))
           .catch((err) => {
@@ -103,7 +100,7 @@ export class EdgeTTSClient implements TTSClient {
       yield {
         code: 'end',
         message: 'Preload finished',
-      };
+      } as TTSMessageEvent;
 
       return;
     } else {
@@ -115,7 +112,7 @@ export class EdgeTTSClient implements TTSClient {
         yield {
           code: 'error',
           message: 'Aborted',
-        };
+        } as TTSMessageEvent;
         break;
       }
       try {
@@ -138,7 +135,7 @@ export class EdgeTTSClient implements TTSClient {
           code: 'boundary',
           message: `Start chunk: ${mark.name}`,
           mark: mark.name,
-        };
+        } as TTSMessageEvent;
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
           const cleanUp = () => {
@@ -180,14 +177,14 @@ export class EdgeTTSClient implements TTSClient {
           yield {
             code: 'end',
             message: `Chunk finished: ${mark.name}`,
-          };
+          } as TTSMessageEvent;
           continue;
         }
         console.log('Error:', error);
         yield {
           code: 'error',
           message: error instanceof Error ? error.message : String(error),
-        };
+        } as TTSMessageEvent;
         break;
       }
 
@@ -196,17 +193,19 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async pause() {
-    if (!this.#isPlaying || !this.#audioElement) return;
+    if (!this.#isPlaying || !this.#audioElement) return true;
     this.#pausedAt = this.#audioElement.currentTime - this.#startedAt;
     await this.#audioElement.pause();
     this.#isPlaying = false;
+    return true;
   }
 
   async resume() {
-    if (this.#isPlaying || !this.#audioElement) return;
+    if (this.#isPlaying || !this.#audioElement) return true;
     await this.#audioElement.play();
     this.#isPlaying = true;
     this.#startedAt = this.#audioElement.currentTime - this.#pausedAt;
+    return true;
   }
 
   async stop() {
@@ -231,10 +230,6 @@ export class EdgeTTSClient implements TTSClient {
     }
   }
 
-  setPrimaryLang(lang: string) {
-    this.#primaryLang = lang;
-  }
-
   async setRate(rate: number) {
     // The Edge TTS API uses rate in [0.5 .. 2.0].
     this.#rate = rate;
@@ -248,42 +243,36 @@ export class EdgeTTSClient implements TTSClient {
   async setVoice(voice: string) {
     const selectedVoice = this.#voices.find((v) => v.id === voice);
     if (selectedVoice) {
-      this.#voice = selectedVoice;
+      this.#currentVoiceId = selectedVoice.id;
     }
   }
 
   async getAllVoices(): Promise<TTSVoice[]> {
     this.#voices.forEach((voice) => {
-      voice.disabled = !this.available;
+      voice.disabled = !this.initialized;
     });
     return this.#voices;
   }
 
-  async getVoices(lang: string): Promise<TTSVoice[]> {
+  async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
-    return voices
-      .filter(
-        (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
-      )
-      .sort((a, b) => {
-        const aRegion = a.lang.split('-')[1] || '';
-        const bRegion = b.lang.split('-')[1] || '';
-        if (aRegion === bRegion) {
-          return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-        }
-        if (aRegion === 'CN') return -1;
-        if (bRegion === 'CN') return 1;
-        if (aRegion === 'TW') return -1;
-        if (bRegion === 'TW') return 1;
-        if (aRegion === 'HK') return -1;
-        if (bRegion === 'HK') return 1;
-        if (aRegion === 'US') return -1;
-        if (bRegion === 'US') return 1;
-        if (aRegion === 'GB') return -1;
-        if (bRegion === 'GB') return 1;
-        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-      });
+    const filteredVoices = voices.filter(
+      (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
+    );
+
+    const voicesGroup: TTSVoicesGroup = {
+      id: 'edge-tts',
+      name: 'Edge TTS',
+      voices: filteredVoices,
+      disabled: !this.initialized || filteredVoices.length === 0,
+    };
+
+    return [voicesGroup];
+  }
+
+  setPrimaryLang(lang: string) {
+    this.#primaryLang = lang;
   }
 
   getGranularities(): TTSGranularity[] {
@@ -291,10 +280,16 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   getVoiceId(): string {
-    return this.#voice?.id || '';
+    return this.#currentVoiceId;
   }
 
   getSpeakingLang(): string {
     return this.#speakingLang;
+  }
+
+  async shutdown(): Promise<void> {
+    this.initialized = false;
+    this.#audioElement = null;
+    this.#voices = [];
   }
 }

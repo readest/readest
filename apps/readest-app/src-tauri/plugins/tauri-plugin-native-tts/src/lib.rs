@@ -44,12 +44,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::set_rate,
             commands::set_pitch,
             commands::set_voice,
-            commands::set_primary_lang,
-            commands::get_voices,
-            commands::get_voice_id,
             commands::get_all_voices,
-            commands::get_granularities,
-            commands::get_speaking_lang
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

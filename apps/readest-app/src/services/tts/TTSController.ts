@@ -1,50 +1,77 @@
-import { FoliateView, TTSGranularity } from '@/types/view';
-import { TTSClient, TTSMessageCode, TTSVoice } from './TTSClient';
+import { FoliateView } from '@/types/view';
+import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
+import { TTSGranularity, TTSMark, TTSVoice } from './types';
 import { WebSpeechClient } from './WebSpeechClient';
+import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
-import { TTSMark } from './types';
+import { TTSClient } from './TTSClient';
 
 type TTSState =
   | 'stopped'
   | 'playing'
   | 'paused'
+  | 'stop-paused'
   | 'backward-paused'
   | 'forward-paused'
   | 'setrate-paused'
   | 'setvoice-paused';
 
 export class TTSController extends EventTarget {
-  state: TTSState = 'stopped';
+  appService: AppService | null = null;
   view: FoliateView;
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
 
+  state: TTSState = 'stopped';
   ttsLang: string = '';
   ttsRate: number = 1.0;
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
   ttsEdgeClient: TTSClient;
+  ttsNativeClient: TTSClient | null = null;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
+  ttsNativeVoices: TTSVoice[] = [];
 
-  constructor(view: FoliateView) {
+  constructor(appService: AppService | null, view: FoliateView) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this);
+    // TODO: implement native TTS client for iOS and PC
+    if (appService?.isAndroidApp) {
+      this.ttsNativeClient = new NativeTTSClient(this);
+    }
     this.ttsClient = this.ttsWebClient;
+    this.appService = appService;
     this.view = view;
   }
 
   async init() {
-    await this.ttsWebClient.init();
-    const success = await this.ttsEdgeClient.init();
-    if (success) {
-      this.ttsClient = this.ttsEdgeClient;
-    } else {
-      this.ttsClient = this.ttsWebClient;
+    const availableClients = [];
+    if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
+      availableClients.push(this.ttsNativeClient);
+      this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
+    }
+    if (await this.ttsEdgeClient.init()) {
+      availableClients.push(this.ttsEdgeClient);
+    }
+    if (await this.ttsWebClient.init()) {
+      availableClients.push(this.ttsWebClient);
+    }
+    const preferredClientName = TTSUtils.getPreferredClient();
+    if (preferredClientName) {
+      const preferredClient = availableClients.find(
+        (client) => client.name === preferredClientName,
+      );
+      if (preferredClient) {
+        this.ttsClient = preferredClient;
+      }
+    }
+    if (!this.ttsClient) {
+      this.ttsClient = availableClients[0] || this.ttsWebClient;
     }
     this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
@@ -124,7 +151,7 @@ export class TTSController extends EventTarget {
           return await this.forward();
         }
         const iter = await this.ttsClient.speak(ssml, signal);
-        let lastCode: TTSMessageCode = 'boundary';
+        let lastCode;
         for await (const { code, mark } of iter) {
           if (signal.aborted) {
             resolve();
@@ -182,7 +209,10 @@ export class TTSController extends EventTarget {
 
   async pause() {
     this.state = 'paused';
-    await this.ttsClient.pause().catch((e) => this.error(e));
+    if (!(await this.ttsClient.pause().catch((e) => this.error(e)))) {
+      await this.stop();
+      this.state = 'stop-paused';
+    }
   }
 
   async resume() {
@@ -197,12 +227,18 @@ export class TTSController extends EventTarget {
     await this.ttsClient.stop().catch((e) => this.error(e));
 
     if (this.#currentSpeakPromise) {
-      await this.#currentSpeakPromise.catch((e) => this.error(e));
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Stop operation timed out')), 3000),
+      );
+      await Promise.race([this.#currentSpeakPromise.catch((e) => this.error(e)), timeout]).catch(
+        (e) => this.error(e),
+      );
+      this.#currentSpeakPromise = null;
     }
     this.state = 'stopped';
   }
 
-  // goto previous sentence
+  // goto previous paragraph
   async backward() {
     await this.initViewTTS();
     if (this.state === 'playing') {
@@ -215,7 +251,7 @@ export class TTSController extends EventTarget {
     }
   }
 
-  // goto next sentence
+  // goto next paragraph
   async forward() {
     await this.initViewTTS();
     if (this.state === 'playing') {
@@ -235,8 +271,9 @@ export class TTSController extends EventTarget {
   }
 
   async setPrimaryLang(lang: string) {
-    this.ttsEdgeClient.setPrimaryLang(lang);
-    this.ttsWebClient.setPrimaryLang(lang);
+    if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
+    if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
+    if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
   }
 
   async setRate(rate: number) {
@@ -248,7 +285,30 @@ export class TTSController extends EventTarget {
   async getVoices(lang: string) {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
-    return [...ttsEdgeVoices, ...ttsWebVoices];
+    const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
+
+    const voicesGroups = [...ttsNativeVoices, ...ttsEdgeVoices, ...ttsWebVoices];
+    voicesGroups.forEach((group) => {
+      group.voices = group.voices.sort((a, b) => {
+        const aRegion = a.lang.split('-')[1] || '';
+        const bRegion = b.lang.split('-')[1] || '';
+        if (aRegion === bRegion) {
+          return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+        }
+        if (aRegion === 'CN') return -1;
+        if (bRegion === 'CN') return 1;
+        if (aRegion === 'TW') return -1;
+        if (bRegion === 'TW') return 1;
+        if (aRegion === 'HK') return -1;
+        if (bRegion === 'HK') return 1;
+        if (aRegion === 'US') return -1;
+        if (bRegion === 'US') return 1;
+        if (aRegion === 'GB') return -1;
+        if (bRegion === 'GB') return 1;
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+      });
+    });
+    return voicesGroups;
   }
 
   async setVoice(voiceId: string, lang: string) {
@@ -256,15 +316,24 @@ export class TTSController extends EventTarget {
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
+    const useNativeTTS = !!this.ttsNativeVoices.find(
+      (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
+    );
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
-      TTSUtils.setPreferredVoice('edge-tts', lang, voiceId);
+    } else if (useNativeTTS) {
+      if (!this.ttsNativeClient) {
+        throw new Error('Native TTS client is not available');
+      }
+      this.ttsClient = this.ttsNativeClient;
+      await this.ttsClient.setRate(this.ttsRate);
     } else {
       this.ttsClient = this.ttsWebClient;
       await this.ttsClient.setRate(this.ttsRate);
-      TTSUtils.setPreferredVoice('web-speech', lang, voiceId);
     }
+    TTSUtils.setPreferredClient(this.ttsClient.name);
+    TTSUtils.setPreferredVoice(this.ttsClient.name, lang, voiceId);
     await this.ttsClient.setVoice(voiceId);
   }
 
@@ -285,7 +354,16 @@ export class TTSController extends EventTarget {
     this.state = 'stopped';
   }
 
-  async kill() {
+  async shutdown() {
     await this.stop();
+    if (this.ttsWebClient.initialized) {
+      await this.ttsWebClient.shutdown();
+    }
+    if (this.ttsEdgeClient.initialized) {
+      await this.ttsEdgeClient.shutdown();
+    }
+    if (this.ttsNativeClient?.initialized) {
+      await this.ttsNativeClient.shutdown();
+    }
   }
 }

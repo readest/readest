@@ -351,5 +351,8 @@
   "Quota Exceeded": "Limite excedido",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% dos caracteres de tradução diários usados.",
   "Translation Characters": "Caracteres de Tradução",
-  "Daily translation quota reached. Select another translate service to proceed.": "Quota diária de tradução atingida. Selecione outro serviço de tradução para continuar."
+  "Daily translation quota reached. Select another translate service to proceed.": "Quota diária de tradução atingida. Selecione outro serviço de tradução para continuar.",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} voz",
+  "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} vozes",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} vozes"
 }

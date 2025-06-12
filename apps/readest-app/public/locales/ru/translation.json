@@ -353,5 +353,9 @@
   "Quota Exceeded": "Лимит превышен",
   "{{percentage}}% of Daily Translation Characters Used.": "Использовано {{percentage}}% от суточного лимита символов перевода.",
   "Translation Characters": "Символы перевода",
-  "Daily translation quota reached. Select another translate service to proceed.": "Достигнут суточный лимит символов перевода. Выберите другой сервис перевода для продолжения."
+  "Daily translation quota reached. Select another translate service to proceed.": "Достигнут суточный лимит символов перевода. Выберите другой сервис перевода для продолжения.",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} голос",
+  "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} голоса",
+  "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} голосов",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} голоса"
 }

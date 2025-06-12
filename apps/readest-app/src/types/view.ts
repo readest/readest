@@ -1,8 +1,7 @@
 import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
+import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
-
-export type TTSGranularity = 'sentence' | 'word';
 
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;

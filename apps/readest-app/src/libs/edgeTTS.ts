@@ -1,6 +1,7 @@
 import { md5 } from 'js-md5';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
+import { genSSML } from '@/utils/ssml';
 
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
@@ -172,19 +173,6 @@ export class EdgeSpeechTTS {
         },
       },
     });
-
-    const genSSML = (lang: string, text: string, voice: string, rate: number) => {
-      const cleanedText = text.replace(/^<break\b[^>]*>/i, '');
-      return `
-        <speak version="1.0" xml:lang="${lang}">
-          <voice name="${voice}">
-            <prosody rate="${rate}">
-              ${cleanedText}
-            </prosody>
-          </voice>
-        </speak>
-      `;
-    };
 
     const genSendContent = (headerObj: Record<string, string>, content: string) => {
       let header = '';

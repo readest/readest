@@ -5,74 +5,49 @@ use crate::NativeTtsExt;
 use crate::Result;
 
 #[command]
-pub async fn init<R: Runtime>(app: AppHandle<R>) -> Result<bool> {
+pub(crate) async fn init<R: Runtime>(app: AppHandle<R>) -> Result<InitResponse> {
     app.native_tts().init()
 }
 
 #[command]
-pub async fn speak<R: Runtime>(app: AppHandle<R>, args: SpeakArgs) -> Result<String> {
-    app.native_tts().speak(args)
+pub(crate) async fn speak<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SpeakArgs,
+) -> Result<SpeakResponse> {
+    app.native_tts().speak(payload)
 }
 
 #[command]
-pub async fn pause<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+pub(crate) async fn pause<R: Runtime>(app: AppHandle<R>) -> Result<()> {
     app.native_tts().pause()
 }
 
 #[command]
-pub async fn resume<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+pub(crate) async fn resume<R: Runtime>(app: AppHandle<R>) -> Result<()> {
     app.native_tts().resume()
 }
 
 #[command]
-pub async fn stop<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+pub(crate) async fn stop<R: Runtime>(app: AppHandle<R>) -> Result<()> {
     app.native_tts().stop()
 }
 
 #[command]
-pub async fn set_primary_lang<R: Runtime>(app: AppHandle<R>, args: SetLangArgs) -> Result<()> {
-    app.native_tts().set_primary_lang(args)
+pub(crate) async fn set_rate<R: Runtime>(app: AppHandle<R>, payload: SetRateArgs) -> Result<()> {
+    app.native_tts().set_rate(payload)
 }
 
 #[command]
-pub async fn set_rate<R: Runtime>(app: AppHandle<R>, args: SetRateArgs) -> Result<()> {
-    app.native_tts().set_rate(args)
+pub(crate) async fn set_pitch<R: Runtime>(app: AppHandle<R>, payload: SetPitchArgs) -> Result<()> {
+    app.native_tts().set_pitch(payload)
 }
 
 #[command]
-pub async fn set_pitch<R: Runtime>(app: AppHandle<R>, args: SetPitchArgs) -> Result<()> {
-    app.native_tts().set_pitch(args)
+pub(crate) async fn set_voice<R: Runtime>(app: AppHandle<R>, payload: SetVoiceArgs) -> Result<()> {
+    app.native_tts().set_voice(payload)
 }
 
 #[command]
-pub async fn set_voice<R: Runtime>(app: AppHandle<R>, args: SetVoiceArgs) -> Result<()> {
-    app.native_tts().set_voice(args)
-}
-
-#[command]
-pub async fn get_all_voices<R: Runtime>(app: AppHandle<R>) -> Result<Vec<TTSVoice>> {
+pub(crate) async fn get_all_voices<R: Runtime>(app: AppHandle<R>) -> Result<GetVoicesResponse> {
     app.native_tts().get_all_voices()
-}
-
-#[command]
-pub async fn get_voices<R: Runtime>(
-    app: AppHandle<R>,
-    args: GetVoicesArgs,
-) -> Result<Vec<TTSVoice>> {
-    app.native_tts().get_voices(args)
-}
-
-#[command]
-pub async fn get_granularities<R: Runtime>(app: AppHandle<R>) -> Result<Vec<TTSGranularity>> {
-    app.native_tts().get_granularities()
-}
-
-#[command]
-pub async fn get_voice_id<R: Runtime>(app: AppHandle<R>) -> Result<String> {
-    app.native_tts().get_voice_id()
-}
-
-#[command]
-pub async fn get_speaking_lang<R: Runtime>(app: AppHandle<R>) -> Result<String> {
-    app.native_tts().get_speaking_lang()
 }
