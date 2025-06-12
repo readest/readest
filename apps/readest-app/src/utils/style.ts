@@ -99,6 +99,12 @@ const getColorStyles = (
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const colorStyles = `
+    * {
+      ${overrideColor ? `background-color: transparent !important;` : ''}
+    }
+    p, h1, h2, h3, h4, h5, h6 {
+      ${overrideColor ? `color: ${fg} !important;` : ''}
+    }
     html {
       --theme-bg-color: ${bg};
       --theme-fg-color: ${fg};
@@ -107,9 +113,6 @@ const getColorStyles = (
     }
     html, body {
       color: ${fg};
-    }
-    div, p, span, pre {
-      ${overrideColor ? `background-color: ${bg} !important;` : ''}
     }
     a:any-link {
       ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
