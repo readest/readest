@@ -32,7 +32,7 @@ import { isCJKLang } from '@/utils/lang';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
-import hljs from 'highlight.js';
+import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -54,6 +54,25 @@ const FoliateViewer: React.FC<{
     const timer = setTimeout(() => setToastMessage(''), 2000);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // manage syntax highlighting toggle
+  useEffect(() => {
+    // Wait for the view to be ready
+    if (!viewRef.current?.renderer) return;
+
+    const viewSettings = getViewSettings(bookKey);
+    const docs = viewRef.current.renderer.getContents();
+    if (!viewSettings || !docs) return;
+    // Apply or remove highlighting in all current documents based on the setting
+    for (const { doc } of docs) {
+      manageSyntaxHighlighting(doc, viewSettings, isDarkMode);
+    }
+  }, [
+    getViewSettings(bookKey)?.overrideCodeHighlighting,
+    getViewSettings(bookKey)?.overrideCodeLanguage,
+    isDarkMode,
+    bookKey,
+  ]);
 
   useUICSS(bookKey);
   useProgressSync(bookKey);
@@ -117,7 +136,7 @@ const FoliateViewer: React.FC<{
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
-      applySyntaxHighlighting(detail.doc);
+      manageSyntaxHighlighting(detail.doc, viewSettings, isDarkMode); // add code syntax highlighting
 
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window
@@ -252,26 +271,6 @@ const FoliateViewer: React.FC<{
     openBook();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const applySyntaxHighlighting = (doc: Document) => {
-    // Find all <pre> elements in the chapter's content
-    const codeBlocks = doc.querySelectorAll('pre');
-
-    if (codeBlocks.length > 0) {
-      console.log(`Found ${codeBlocks.length} code blocks to highlight.`);
-    }
-
-    codeBlocks.forEach((block) => {
-      // 1. Clear any existing language classes to avoid conflicts.
-      block.className = '';
-
-      // // 2. Hardcode the language by adding the specific class highlight.js needs.
-      block.classList.add('language-rust');
-
-      // 3. Run the highlighter. It will now use the 'language-rust' class.
-      hljs.highlightElement(block as HTMLElement);
-    });
-  };
 
   return (
     <>
