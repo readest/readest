@@ -64,6 +64,7 @@
     "cors": "^2.8.5",
     "cssbeautify": "^0.3.1",
     "foliate-js": "workspace:*",
+    "highlight.js": "^11.11.1",
     "i18next": "^24.2.0",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.1",
