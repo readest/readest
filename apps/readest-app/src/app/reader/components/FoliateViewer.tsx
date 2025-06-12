@@ -32,6 +32,7 @@ import { isCJKLang } from '@/utils/lang';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
+import hljs from 'highlight.js';
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -115,6 +116,8 @@ const FoliateViewer: React.FC<{
       setViewSettings(bookKey, { ...viewSettings });
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+
+      applySyntaxHighlighting(detail.doc);
 
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window
@@ -249,6 +252,26 @@ const FoliateViewer: React.FC<{
     openBook();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const applySyntaxHighlighting = (doc: Document) => {
+    // Find all <pre> elements in the chapter's content
+    const codeBlocks = doc.querySelectorAll('pre');
+
+    if (codeBlocks.length > 0) {
+      console.log(`Found ${codeBlocks.length} code blocks to highlight.`);
+    }
+
+    codeBlocks.forEach((block) => {
+      // 1. Clear any existing language classes to avoid conflicts.
+      block.className = '';
+
+      // // 2. Hardcode the language by adding the specific class highlight.js needs.
+      block.classList.add('language-rust');
+
+      // 3. Run the highlighter. It will now use the 'language-rust' class.
+      hljs.highlightElement(block as HTMLElement);
+    });
+  };
 
   return (
     <>
