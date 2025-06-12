@@ -7,12 +7,9 @@ const COMMANDS: &[&str] = &[
     "set_rate",
     "set_pitch",
     "set_voice",
-    "set_primary_lang",
-    "get_voices",
-    "get_voice_id",
     "get_all_voices",
-    "get_granularities",
-    "get_speaking_lang",
+    "registerListener",
+    "remove_listener",
 ];
 
 fn main() {

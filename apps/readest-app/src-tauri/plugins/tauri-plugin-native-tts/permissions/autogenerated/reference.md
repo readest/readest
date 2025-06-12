@@ -12,12 +12,9 @@ Default permissions for the plugin
 - `allow-set-rate`
 - `allow-set-pitch`
 - `allow-set-voice`
-- `allow-set-primary-lang`
-- `allow-get-voices`
-- `allow-get-voice-id`
 - `allow-get-all-voices`
-- `allow-get-granularities`
-- `allow-get-speaking-lang`
+- `allow-registerListener`
+- `allow-remove-listener`
 
 ## Permission Table
 
@@ -50,110 +47,6 @@ Enables the get_all_voices command without any pre-configured scope.
 <td>
 
 Denies the get_all_voices command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:allow-get-granularities`
-
-</td>
-<td>
-
-Enables the get_granularities command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:deny-get-granularities`
-
-</td>
-<td>
-
-Denies the get_granularities command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:allow-get-speaking-lang`
-
-</td>
-<td>
-
-Enables the get_speaking_lang command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:deny-get-speaking-lang`
-
-</td>
-<td>
-
-Denies the get_speaking_lang command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:allow-get-voice-id`
-
-</td>
-<td>
-
-Enables the get_voice_id command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:deny-get-voice-id`
-
-</td>
-<td>
-
-Denies the get_voice_id command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:allow-get-voices`
-
-</td>
-<td>
-
-Enables the get_voices command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:deny-get-voices`
-
-</td>
-<td>
-
-Denies the get_voices command without any pre-configured scope.
 
 </td>
 </tr>
@@ -213,6 +106,58 @@ Denies the pause command without any pre-configured scope.
 <tr>
 <td>
 
+`native-tts:allow-registerListener`
+
+</td>
+<td>
+
+Enables the registerListener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-registerListener`
+
+</td>
+<td>
+
+Denies the registerListener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-remove-listener`
+
+</td>
+<td>
+
+Enables the remove_listener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-remove-listener`
+
+</td>
+<td>
+
+Denies the remove_listener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-tts:allow-resume`
 
 </td>
@@ -258,32 +203,6 @@ Enables the set_pitch command without any pre-configured scope.
 <td>
 
 Denies the set_pitch command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:allow-set-primary-lang`
-
-</td>
-<td>
-
-Enables the set_primary_lang command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`native-tts:deny-set-primary-lang`
-
-</td>
-<td>
-
-Denies the set_primary_lang command without any pre-configured scope.
 
 </td>
 </tr>

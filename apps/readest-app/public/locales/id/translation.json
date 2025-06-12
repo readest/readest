@@ -347,5 +347,6 @@
   "Quota Exceeded": "Kuota terlampaui",
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% dari Karakter Terjemahan Harian Digunakan.",
   "Translation Characters": "Karakter Terjemahan",
-  "Daily translation quota reached. Select another translate service to proceed.": "Kuota terjemahan harian tercapai. Pilih layanan terjemahan lain untuk melanjutkan."
+  "Daily translation quota reached. Select another translate service to proceed.": "Kuota terjemahan harian tercapai. Pilih layanan terjemahan lain untuk melanjutkan.",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} suara"
 }

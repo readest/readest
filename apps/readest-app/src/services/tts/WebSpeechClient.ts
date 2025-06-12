@@ -1,40 +1,10 @@
 import { getUserLocale } from '@/utils/misc';
-import { TTSClient, TTSMessageEvent, TTSVoice } from './TTSClient';
+import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
-import { TTSGranularity } from '@/types/view';
+import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
+import { WEB_SPEECH_BLACKLISTED_VOICES } from './TTSData';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
-import { TTSMark } from './types';
-
-const BLACKLISTED_VOICES = [
-  'Albert',
-  'Bad News',
-  'Bahh',
-  'Bells',
-  'Boing',
-  'Bubbles',
-  'Cellos',
-  'Eddy',
-  'Flo',
-  'Fred',
-  'Good News',
-  'Grandma',
-  'Grandpa',
-  'Jester',
-  'Junior',
-  'Kathy',
-  'Organ',
-  'Ralph',
-  'Reed',
-  'Rocko',
-  'Sandy',
-  'Shelley',
-  'Superstar',
-  'Trinoids',
-  'Whisper',
-  'Wobble',
-  'Zarvox',
-];
 
 interface TTSBoundaryEvent {
   type: 'boundary' | 'end' | 'error';
@@ -52,6 +22,7 @@ async function* speakWithMarks(
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
+  setCurrentVoice: (voiceId: string) => void,
   setSpeakingLang: (lang: string) => void,
   dispatchSpeakMark: (mark: TTSMark) => void,
 ) {
@@ -63,7 +34,6 @@ async function* speakWithMarks(
   for (const mark of marks) {
     const { language } = mark;
     const voiceLang = language || defaultLang;
-    setSpeakingLang(voiceLang);
     dispatchSpeakMark(mark);
     utterance.text = mark.text;
     utterance.rate = getRate();
@@ -71,9 +41,11 @@ async function* speakWithMarks(
     const voice = await getVoice(voiceLang);
     if (voice) {
       utterance.voice = voice;
+      setCurrentVoice(voice.voiceURI);
     }
     if (voiceLang) {
       utterance.lang = voiceLang;
+      setSpeakingLang(voiceLang);
     }
 
     yield {
@@ -102,16 +74,23 @@ async function* speakWithMarks(
   }
 }
 
+type WebSpeechVoice = SpeechSynthesisVoice & {
+  id: string;
+};
+
 export class WebSpeechClient implements TTSClient {
+  name = 'web-speech';
+  initialized = false;
   controller?: TTSController;
+
+  #voices: WebSpeechVoice[] = [];
   #primaryLang = 'en';
   #speakingLang = '';
+  #currentVoiceId = '';
   #rate = 1.0;
   #pitch = 1.0;
-  #voice: SpeechSynthesisVoice | null = null;
-  #voices: SpeechSynthesisVoice[] = [];
+
   #synth = window.speechSynthesis;
-  available = true;
 
   constructor(controller?: TTSController) {
     this.controller = controller;
@@ -119,12 +98,16 @@ export class WebSpeechClient implements TTSClient {
 
   async init() {
     if (!this.#synth) {
-      this.available = false;
-      return this.available;
+      this.initialized = false;
+      return this.initialized;
     }
     await new Promise<void>((resolve) => {
       const populateVoices = () => {
-        this.#voices = this.#synth.getVoices();
+        this.#voices = this.#synth.getVoices().map((voice) => {
+          const webSpeechVoice = voice as WebSpeechVoice;
+          webSpeechVoice.id = voice.voiceURI || voice.name;
+          return webSpeechVoice;
+        });
         // console.log('Voices', this.#voices);
         if (this.#voices.length > 0) {
           resolve();
@@ -140,19 +123,22 @@ export class WebSpeechClient implements TTSClient {
         resolve();
       }
     });
-    return this.available;
+    this.initialized = true;
+    return this.initialized;
   }
 
-  getVoiceFromLang = async (lang: string) => {
-    const preferredVoiceId = TTSUtils.getPreferredVoice('web-speech', lang);
-    const preferredVoice = this.#voices.find((v) => v.voiceURI === preferredVoiceId);
-    if (preferredVoice) {
-      this.#voice = preferredVoice;
-    } else {
-      const voiceId = (await this.getVoices(lang))[0]?.id ?? '';
-      this.#voice = this.#voices.find((v) => v.voiceURI === voiceId) || null;
-    }
-    return this.#voice;
+  getVoiceIdFromLang = async (lang: string) => {
+    const preferredVoiceId = TTSUtils.getPreferredVoice(this.name, lang);
+    const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
+    const defaultVoice = preferredVoice
+      ? preferredVoice
+      : (await this.getVoices(lang))[0]?.voices[0] || null;
+    return defaultVoice?.id || this.#currentVoiceId || '';
+  };
+
+  getWebSpeechVoiceFromLang = async (lang: string) => {
+    const voiceId = await this.getVoiceIdFromLang(lang);
+    return this.#voices.find((v) => v.id === voiceId) || null;
   };
 
   async *speak(
@@ -173,7 +159,8 @@ export class WebSpeechClient implements TTSClient {
       defaultLang,
       () => this.#rate,
       () => this.#pitch,
-      this.getVoiceFromLang,
+      this.getWebSpeechVoiceFromLang,
+      (voiceId) => (this.#currentVoiceId = voiceId),
       (lang) => (this.#speakingLang = lang),
       (mark) => this.controller?.dispatchSpeakMark(mark),
     )) {
@@ -198,10 +185,12 @@ export class WebSpeechClient implements TTSClient {
 
   async pause() {
     this.#synth.pause();
+    return true;
   }
 
   async resume() {
     this.#synth.resume();
+    return true;
   }
 
   async stop() {
@@ -223,19 +212,19 @@ export class WebSpeechClient implements TTSClient {
   }
 
   async setVoice(voiceId: string) {
-    const selectedVoice = this.#voices.find((v) => v.voiceURI === voiceId);
+    const selectedVoice = this.#voices.find((v) => v.id === voiceId);
     if (selectedVoice) {
-      this.#voice = selectedVoice;
+      this.#currentVoiceId = selectedVoice.id;
     }
   }
 
   async getAllVoices(): Promise<TTSVoice[]> {
     const voices = this.#voices.map((voice) => {
       return {
-        id: voice.voiceURI,
+        id: voice.id,
         name: voice.name,
         lang: voice.lang,
-        disabled: !this.available,
+        disabled: !this.initialized,
       } as TTSVoice;
     });
     return voices;
@@ -247,7 +236,7 @@ export class WebSpeechClient implements TTSClient {
       return !id.includes('com.apple') || id.includes('com.apple.voice.compact');
     };
     const isNotBlacklisted = (voice: SpeechSynthesisVoice) => {
-      return BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
+      return WEB_SPEECH_BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
     };
     const filteredVoices = this.#voices
       .filter(
@@ -275,9 +264,16 @@ export class WebSpeechClient implements TTSClient {
         return true;
       });
     voices.forEach((voice) => {
-      voice.disabled = !this.available;
+      voice.disabled = !this.initialized;
     });
-    return voices;
+
+    const voicesGroup: TTSVoicesGroup = {
+      id: 'web-speech-api',
+      name: 'Web TTS',
+      voices,
+      disabled: !this.initialized || voices.length === 0,
+    };
+    return [voicesGroup];
   }
 
   getGranularities(): TTSGranularity[] {
@@ -287,10 +283,16 @@ export class WebSpeechClient implements TTSClient {
   }
 
   getVoiceId(): string {
-    return this.#voice?.voiceURI ?? '';
+    return this.#currentVoiceId;
   }
 
   getSpeakingLang(): string {
     return this.#speakingLang;
+  }
+
+  async shutdown(): Promise<void> {
+    this.initialized = false;
+    this.#voices = [];
+    await this.stop();
   }
 }

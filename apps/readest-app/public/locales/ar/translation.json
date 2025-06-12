@@ -236,7 +236,7 @@
   "Border Color": "لون الحدود",
   "Border Frame": "إطار الحدود",
   "Show Header": "إظهار الترويسة",
-  "Show Footer": "إظهار التذييل"
+  "Show Footer": "إظهار التذييل",
   "Small": "صغير",
   "Large": "كبير",
   "Auto": "تلقائي",
@@ -357,5 +357,11 @@
   "Quota Exceeded": "تجاوزت الحصة المخصصة",
   "{{percentage}}% of Daily Translation Characters Used.": "تم استخدام ما نسبته {{percentage}}% من إجمالي أحرف الترجمة المسموح بها يوميًا.",
   "Translation Characters": "أحرف الترجمة",
-  "Daily translation quota reached. Select another translate service to proceed.": "تم استنفاد حصة الترجمة اليومية. قم بتحديد خدمة ترجمة أخرى للاستمرار."
+  "Daily translation quota reached. Select another translate service to proceed.": "تم استنفاد حصة الترجمة اليومية. قم بتحديد خدمة ترجمة أخرى للاستمرار.",
+  "{{engine}}: {{count}} voices_zero": "{{engine}}: لا توجد أصوات",
+  "{{engine}}: {{count}} voices_one": "{{engine}}: صوت واحد",
+  "{{engine}}: {{count}} voices_two": "{{engine}}: صوتان",
+  "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} أصوات",
+  "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} صوتاً",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} صوت"
 }

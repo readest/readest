@@ -20,10 +20,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.*
 
 data class TTSVoiceData(
     val id: String,
@@ -38,11 +38,26 @@ data class TTSMessageEvent(
     val mark: String? = null
 )
 
-enum class TTSGranularity(val value: String) {
-    WORD("word"),
-    SENTENCE("sentence"),
-    PARAGRAPH("paragraph")
-}
+@InvokeArg
+class SpeakArgs(
+    val text: String? = "",
+    val preload: Boolean? = false
+)
+
+@InvokeArg
+class SetRateArgs(
+    val rate: Float? = 1.0f
+)
+
+@InvokeArg
+class SetPitchArgs(
+    val pitch: Float? = 1.0f
+)
+
+@InvokeArg
+class SetVoiceArgs(
+    val voice: String? = null
+)
 
 @TauriPlugin
 class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
@@ -56,12 +71,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     private var isInitialized = AtomicBoolean(false)
     private var isPaused = AtomicBoolean(false)
     private var isSpeaking = AtomicBoolean(false)
-    private var currentVoiceId = AtomicReference<String>("")
-    private var currentLang = AtomicReference<String>("en-US")
     private var currentRate = AtomicReference<Float>(1.0f)
     private var currentPitch = AtomicReference<Float>(1.0f)
     
-    // Event channels for each speaking session
     private val eventChannels = ConcurrentHashMap<String, Channel<TTSMessageEvent>>()
     private val speakingJobs = ConcurrentHashMap<String, Job>()
     
@@ -90,16 +102,19 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                     TextToSpeech.SUCCESS -> {
                         setupTTSListener()
                         isInitialized.set(true)
+                        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
                         continuation.resume(true) {}
                     }
                     else -> {
                         Log.e(TAG, "TTS initialization failed with status: $status")
+                        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
                         continuation.resume(false) {}
                     }
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exception during TTS initialization", e)
+            @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
             continuation.resume(false) {}
         }
     }
@@ -120,11 +135,20 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                     closeEventChannel(id)
                 }
             }
-            
+
+            @Deprecated("deprecated in API level 21")
             override fun onError(utteranceId: String?) {
                 utteranceId?.let { id ->
                     isSpeaking.set(false)
                     sendEvent(id, TTSMessageEvent("error", "TTS playback error"))
+                    closeEventChannel(id)
+                }
+            }
+            
+            override fun onError(utteranceId: String?, errorCode: Int) {
+                utteranceId?.let { id ->
+                    isSpeaking.set(false)
+                    sendEvent(id, TTSMessageEvent("error", "TTS playback error:$errorCode"))
                     closeEventChannel(id)
                 }
             }
@@ -140,9 +164,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     @Command
     fun speak(invoke: Invoke) {
         val args = invoke.parseArgs(SpeakArgs::class.java)
+        val text = args.text ?: ""
         
-        if (!isInitialized.get()) {
-            invoke.reject("TTS not initialized")
+        if (text.isEmpty()) {
+            invoke.reject("Text cannot be empty")
             return
         }
         
@@ -154,11 +179,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 eventChannels[utteranceId] = eventChannel
                 
                 val speakJob = launch {
-                    speakText(args.ssml, utteranceId, args.preload ?: false)
+                    speakText(text, utteranceId, args.preload ?: false)
                 }
                 speakingJobs[utteranceId] = speakJob
                 
-                // Return the utterance ID so frontend can listen to events
                 val result = JSObject().apply {
                     put("utteranceId", utteranceId)
                 }
@@ -174,12 +198,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
     
-    private suspend fun speakText(ssml: String, utteranceId: String, preload: Boolean) {
+    private suspend fun speakText(text: String, utteranceId: String, preload: Boolean) {
         withContext(Dispatchers.Main) {
             try {
-                // Parse SSML and extract text
-                val text = parseSSML(ssml)
-
                 textToSpeech?.apply {
                     setSpeechRate(currentRate.get())
                     setPitch(currentPitch.get())
@@ -205,18 +226,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
     
-    private fun parseSSML(ssml: String): String {
-        // Simple SSML parsing - extract text content
-        return ssml
-            .replace(Regex("<[^>]*>"), " ")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-    }
-    
     private fun startEventStream(utteranceId: String) {
         coroutineScope.launch {
             val channel = eventChannels[utteranceId] ?: return@launch
-            
             try {
                 for (event in channel) {
                     val eventData = JSObject().apply {
@@ -225,8 +237,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         event.message?.let { put("message", it) }
                         event.mark?.let { put("mark", it) }
                     }
-                    
-                    // Send event to frontend via Tauri event system
                     trigger(CHANNEL_NAME, eventData)
                 }
             } catch (e: Exception) {
@@ -266,7 +276,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     
     @Command
     fun resume(invoke: Invoke) {
-        // Android TTS doesn't have native resume, so we'll need to track state
         try {
             isPaused.set(false)
             invoke.resolve()
@@ -281,8 +290,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             if (textToSpeech?.stop() == TextToSpeech.SUCCESS) {
                 isSpeaking.set(false)
                 isPaused.set(false)
-                
-                // Cancel all active speaking jobs and close channels
                 speakingJobs.values.forEach { it.cancel() }
                 eventChannels.values.forEach { it.close() }
                 speakingJobs.clear()
@@ -294,29 +301,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             }
         } catch (e: Exception) {
             invoke.reject("Exception while stopping: ${e.message}")
-        }
-    }
-    
-    @Command
-    fun set_primary_lang(invoke: Invoke) {
-        val args = invoke.parseArgs(SetLangArgs::class.java)
-        try {
-            val locale = Locale.forLanguageTag(args.lang)
-            val result = textToSpeech?.setLanguage(locale)
-            
-            when (result) {
-                TextToSpeech.LANG_AVAILABLE,
-                TextToSpeech.LANG_COUNTRY_AVAILABLE,
-                TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE -> {
-                    currentLang.set(args.lang)
-                    invoke.resolve()
-                }
-                else -> {
-                    invoke.reject("Language not supported: ${args.lang}")
-                }
-            }
-        } catch (e: Exception) {
-            invoke.reject("Exception setting language: ${e.message}")
         }
     }
     
@@ -352,7 +336,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             if (targetVoice != null) {
                 val result = textToSpeech?.setVoice(targetVoice)
                 if (result == TextToSpeech.SUCCESS) {
-                    currentVoiceId.set(args.voice)
                     invoke.resolve()
                 } else {
                     invoke.reject("Failed to set voice: ${args.voice}")
@@ -386,68 +369,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
     
-    @Command
-    fun get_voices(invoke: Invoke) {
-        val args = invoke.parseArgs(GetVoicesArgs::class.java)
-        try {
-            val locale = Locale.forLanguageTag(args.lang)
-            val voices = textToSpeech?.voices?.filter { voice ->
-                voice.locale.language == locale.language
-            }?.map { voice ->
-                JSObject().apply {
-                    put("id", voice.name)
-                    put("name", voice.name)
-                    put("lang", voice.locale.toLanguageTag())
-                    put("disabled", false)
-                }
-            } ?: emptyList()
-            
-            val result = JSObject().apply {
-                put("voices", JSONArray(voices))
-            }
-            invoke.resolve(result)
-        } catch (e: Exception) {
-            invoke.reject("Exception getting voices for language: ${e.message}")
-        }
-    }
-    
-    @Command
-    fun get_granularities(invoke: Invoke) {
-        try {
-            val granularities = TTSGranularity.values().map { it.value }
-            val result = JSObject().apply {
-                put("granularities", JSONArray(granularities))
-            }
-            invoke.resolve(result)
-        } catch (e: Exception) {
-            invoke.reject("Exception getting granularities: ${e.message}")
-        }
-    }
-    
-    @Command
-    fun get_voice_id(invoke: Invoke) {
-        try {
-            val result = JSObject().apply {
-                put("voiceId", currentVoiceId.get())
-            }
-            invoke.resolve(result)
-        } catch (e: Exception) {
-            invoke.reject("Exception getting voice ID: ${e.message}")
-        }
-    }
-    
-    @Command
-    fun get_speaking_lang(invoke: Invoke) {
-        try {
-            val result = JSObject().apply {
-                put("lang", currentLang.get())
-            }
-            invoke.resolve(result)
-        } catch (e: Exception) {
-            invoke.reject("Exception getting speaking language: ${e.message}")
-        }
-    }
-    
     fun destroy() {
         coroutineScope.cancel()
         textToSpeech?.shutdown()
@@ -457,29 +378,3 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         speakingJobs.clear()
     }
 }
-
-// Data classes for command arguments
-data class SpeakArgs(
-    val ssml: String,
-    val preload: Boolean? = false
-)
-
-data class SetLangArgs(
-    val lang: String
-)
-
-data class SetRateArgs(
-    val rate: Float
-)
-
-data class SetPitchArgs(
-    val pitch: Float
-)
-
-data class SetVoiceArgs(
-    val voice: String
-)
-
-data class GetVoicesArgs(
-    val lang: String
-)

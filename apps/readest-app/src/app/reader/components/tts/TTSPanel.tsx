@@ -3,7 +3,7 @@ import React, { useState, ChangeEvent, useEffect } from 'react';
 import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdAlarm } from 'react-icons/md';
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { MdCheck } from 'react-icons/md';
-import { TTSVoice } from '@/services/tts';
+import { TTSVoicesGroup } from '@/services/tts';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
@@ -20,7 +20,7 @@ type TTSPanelProps = {
   onBackward: () => void;
   onForward: () => void;
   onSetRate: (rate: number) => void;
-  onGetVoices: (lang: string) => Promise<TTSVoice[]>;
+  onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
   onSelectTimeout: (bookKey: string, value: number) => void;
@@ -119,7 +119,7 @@ const TTSPanel = ({
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey);
 
-  const [voices, setVoices] = useState<TTSVoice[]>([]);
+  const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState(viewSettings?.ttsVoice ?? '');
 
@@ -177,8 +177,8 @@ const TTSPanel = ({
 
   useEffect(() => {
     const fetchVoices = async () => {
-      const voices = await onGetVoices(ttsLang);
-      setVoices(voices);
+      const voiceGroups = await onGetVoices(ttsLang);
+      setVoiceGroups(voiceGroups);
     };
     fetchVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,7 +261,12 @@ const TTSPanel = ({
                 onClick={() => onSelectTimeout(bookKey, option.value)}
               >
                 <div className='flex items-center px-2'>
-                  <span style={{ minWidth: `${defaultIconSize}px` }}>
+                  <span
+                    style={{
+                      width: `${defaultIconSize}px`,
+                      height: `${defaultIconSize}px`,
+                    }}
+                  >
                     {timeoutOption === option.value && <MdCheck className='text-base-content' />}
                   </span>
                   <span className={clsx('text-base sm:text-sm')}>{option.label}</span>
@@ -282,21 +287,52 @@ const TTSPanel = ({
               'mt-4 inline max-h-96 w-[250px] overflow-y-scroll',
             )}
           >
-            {voices.map((voice, index) => (
-              <li
-                key={`${index}-${voice.id}`}
-                onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}
-              >
-                <div className='flex items-center px-2'>
-                  <span style={{ minWidth: `${defaultIconSize}px` }}>
-                    {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
-                  </span>
-                  <span className={clsx('text-base sm:text-sm', voice.disabled && 'text-gray-400')}>
-                    {voice.name}
-                  </span>
-                </div>
-              </li>
-            ))}
+            {voiceGroups.map((voiceGroup, index) => {
+              return (
+                voiceGroup.voices.length > 0 && (
+                  <div key={voiceGroup.id} className=''>
+                    <div className='flex items-center gap-2 px-2 py-1'>
+                      <span
+                        style={{ width: `${defaultIconSize}px`, height: `${defaultIconSize}px` }}
+                      ></span>
+                      <span className='text-sm text-gray-400 sm:text-xs'>
+                        {_('{{engine}}: {{count}} voices', {
+                          engine: _(voiceGroup.name),
+                          count: voiceGroup.voices.length,
+                        })}
+                      </span>
+                    </div>
+                    {voiceGroup.voices.map((voice, voiceIndex) => (
+                      <li
+                        key={`${index}-${voiceGroup.id}-${voiceIndex}`}
+                        onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}
+                      >
+                        <div className='flex items-center px-2'>
+                          <span
+                            style={{
+                              width: `${defaultIconSize}px`,
+                              height: `${defaultIconSize}px`,
+                            }}
+                          >
+                            {selectedVoice === voice.id && (
+                              <MdCheck className='text-base-content' />
+                            )}
+                          </span>
+                          <span
+                            className={clsx(
+                              'text-base sm:text-sm',
+                              voice.disabled && 'text-gray-400',
+                            )}
+                          >
+                            {_(voice.name)}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </div>
+                )
+              );
+            })}
           </ul>
         </div>
       </div>

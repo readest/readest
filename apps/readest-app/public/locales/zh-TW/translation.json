@@ -347,5 +347,6 @@
   "Quota Exceeded": "額度不足",
   "{{percentage}}% of Daily Translation Characters Used.": "已使用 {{percentage}}% 的每日翻譯字數",
   "Translation Characters": "翻譯字數",
-  "Daily translation quota reached. Select another translate service to proceed.": "已達到每日翻譯字數限制，請選擇其他翻譯服務繼續。"
+  "Daily translation quota reached. Select another translate service to proceed.": "已達到每日翻譯字數限制，請選擇其他翻譯服務繼續。",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} 種語音"
 }

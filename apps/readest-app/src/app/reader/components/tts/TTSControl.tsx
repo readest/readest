@@ -90,7 +90,7 @@ const TTSControl = () => {
   useEffect(() => {
     return () => {
       if (ttsControllerRef.current) {
-        ttsControllerRef.current.kill();
+        ttsControllerRef.current.shutdown();
         ttsControllerRef.current = null;
       }
     };
@@ -202,7 +202,7 @@ const TTSControl = () => {
         unblockAudio();
       }
       setTtsClientsInitialized(false);
-      const ttsController = new TTSController(view);
+      const ttsController = new TTSController(appService, view);
       await ttsController.init();
       await ttsController.initViewTTS();
       const ssml = view.tts?.from(ttsFromRange);

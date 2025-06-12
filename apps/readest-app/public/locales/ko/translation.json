@@ -347,5 +347,6 @@
   "Quota Exceeded": "한도 초과",
   "{{percentage}}% of Daily Translation Characters Used.": "일일 번역 문자 사용량 {{percentage}}%.",
   "Translation Characters": "번역 문자",
-  "Daily translation quota reached. Select another translate service to proceed.": "일일 번역 할당량에 도달했습니다. 계속 진행하려면 다른 번역 서비스를 선택하세요."
+  "Daily translation quota reached. Select another translate service to proceed.": "일일 번역 할당량에 도달했습니다. 계속 진행하려면 다른 번역 서비스를 선택하세요.",
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}}개의 음성"
 }

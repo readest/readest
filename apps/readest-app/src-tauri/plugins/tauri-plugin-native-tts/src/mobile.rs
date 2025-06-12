@@ -25,14 +25,16 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct NativeTts<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn init(&self) -> crate::Result<bool> {
+    pub fn init(&self) -> crate::Result<InitResponse> {
         self.0.run_mobile_plugin("init", ()).map_err(Into::into)
     }
 }
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn speak(&self, args: SpeakArgs) -> crate::Result<String> {
-        self.0.run_mobile_plugin("speak", args).map_err(Into::into)
+    pub fn speak(&self, payload: SpeakArgs) -> crate::Result<SpeakResponse> {
+        self.0
+            .run_mobile_plugin("speak", payload)
+            .map_err(Into::into)
     }
 }
 
@@ -55,73 +57,33 @@ impl<R: Runtime> NativeTts<R> {
 }
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn set_primary_lang(&self, args: SetLangArgs) -> crate::Result<()> {
+    pub fn set_rate(&self, payload: SetRateArgs) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("set_primary_lang", args)
+            .run_mobile_plugin("set_rate", payload)
             .map_err(Into::into)
     }
 }
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn set_rate(&self, args: SetRateArgs) -> crate::Result<()> {
+    pub fn set_pitch(&self, payload: SetPitchArgs) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("set_rate", args)
+            .run_mobile_plugin("set_pitch", payload)
             .map_err(Into::into)
     }
 }
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn set_pitch(&self, args: SetPitchArgs) -> crate::Result<()> {
+    pub fn set_voice(&self, payload: SetVoiceArgs) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("set_pitch", args)
+            .run_mobile_plugin("set_voice", payload)
             .map_err(Into::into)
     }
 }
 
 impl<R: Runtime> NativeTts<R> {
-    pub fn set_voice(&self, args: SetVoiceArgs) -> crate::Result<()> {
-        self.0
-            .run_mobile_plugin("set_voice", args)
-            .map_err(Into::into)
-    }
-}
-
-impl<R: Runtime> NativeTts<R> {
-    pub fn get_voices(&self, args: GetVoicesArgs) -> crate::Result<Vec<TTSVoice>> {
-        self.0
-            .run_mobile_plugin("get_voices", args)
-            .map_err(Into::into)
-    }
-}
-
-impl<R: Runtime> NativeTts<R> {
-    pub fn get_all_voices(&self) -> crate::Result<Vec<TTSVoice>> {
+    pub fn get_all_voices(&self) -> crate::Result<GetVoicesResponse> {
         self.0
             .run_mobile_plugin("get_all_voices", ())
-            .map_err(Into::into)
-    }
-}
-
-impl<R: Runtime> NativeTts<R> {
-    pub fn get_granularities(&self) -> crate::Result<Vec<TTSGranularity>> {
-        self.0
-            .run_mobile_plugin("get_granularities", ())
-            .map_err(Into::into)
-    }
-}
-
-impl<R: Runtime> NativeTts<R> {
-    pub fn get_voice_id(&self) -> crate::Result<String> {
-        self.0
-            .run_mobile_plugin("get_voice_id", ())
-            .map_err(Into::into)
-    }
-}
-
-impl<R: Runtime> NativeTts<R> {
-    pub fn get_speaking_lang(&self) -> crate::Result<String> {
-        self.0
-            .run_mobile_plugin("get_speaking_lang", ())
             .map_err(Into::into)
     }
 }
