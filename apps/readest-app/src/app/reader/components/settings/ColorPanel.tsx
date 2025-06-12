@@ -20,6 +20,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import ThemeEditor from './ThemeEditor';
+import { CODE_LANGUAGES, CodeLanguage } from '@/utils/highlightjs';
 
 const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -39,6 +40,10 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
   const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor!);
+  const [overrideCodeHighlighting, setOverrideCodeHighlighting] = useState(
+    viewSettings.overrideCodeHighlighting!,
+  );
+  const [codeLanguage, setCodeLanguage] = useState(viewSettings.overrideCodeLanguage!);
 
   useEffect(() => {
     if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
@@ -51,6 +56,19 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     saveViewSettings(envConfig, bookKey, 'overrideColor', overrideColor);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideColor]);
+
+  useEffect(() => {
+    if (overrideCodeHighlighting === viewSettings.overrideCodeHighlighting) return;
+    saveViewSettings(envConfig, bookKey, 'overrideCodeHighlighting', overrideCodeHighlighting);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overrideCodeHighlighting]);
+
+  useEffect(() => {
+    if (codeLanguage === viewSettings.overrideCodeLanguage) return;
+    console.log('Setting code language to: ', codeLanguage);
+    saveViewSettings(envConfig, bookKey, 'overrideCodeLanguage', codeLanguage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codeLanguage]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
@@ -152,6 +170,28 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               checked={overrideColor}
               onChange={() => setOverrideColor(!overrideColor)}
             />
+          </div>
+
+          <div className='flex items-center justify-between'>
+            <h2 className=''>{_('Override Code Highlighting')}</h2>
+            <input
+              type='checkbox'
+              className='toggle'
+              checked={overrideCodeHighlighting}
+              onChange={() => setOverrideCodeHighlighting(!overrideCodeHighlighting)}
+            />
+            <select
+              className='select'
+              onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}
+              disabled={!overrideCodeHighlighting}
+              value={codeLanguage}
+            >
+              {CODE_LANGUAGES.map((lang, index) => (
+                <option key={index} value={lang}>
+                  {lang}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
