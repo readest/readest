@@ -57,17 +57,22 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [overrideColor]);
 
   useEffect(() => {
-    if (codeHighlighting === viewSettings.codeHighlighting) return;
-    saveViewSettings(envConfig, bookKey, 'codeHighlighting', codeHighlighting);
+    let update = false; // check if we need to update syntax highlighting
+    if (codeHighlighting !== viewSettings.codeHighlighting) {
+      saveViewSettings(envConfig, bookKey, 'codeHighlighting', codeHighlighting);
+      update = true;
+    }
+    if (codeLanguage !== viewSettings.codeLanguage) {
+      saveViewSettings(envConfig, bookKey, 'codeLanguage', codeLanguage);
+      update = true;
+    }
+    if (!update) return;
+    const view = getView(bookKey);
+    if (!view) return;
+    const docs = view.renderer.getContents();
+    docs.forEach(({ doc }) => manageSyntaxHighlighting(doc, viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeHighlighting]);
-
-  useEffect(() => {
-    if (codeLanguage === viewSettings.codeLanguage) return;
-    console.log('Setting code language to: ', codeLanguage);
-    saveViewSettings(envConfig, bookKey, 'codeLanguage', codeLanguage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeLanguage]);
+  }, [codeHighlighting, codeLanguage]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
@@ -83,23 +88,6 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       })),
     );
   }, [settings]);
-
-  // manage syntax highlighting toggle
-  useEffect(() => {
-    const viewSettings = getViewSettings(bookKey);
-    const view = getView(bookKey);
-    if (!viewSettings || !view) return;
-    const docs = view.renderer.getContents();
-    // Apply or remove highlighting in all current documents based on the setting
-    for (const { doc } of docs) {
-      manageSyntaxHighlighting(doc, viewSettings, isDarkMode);
-    }
-  }, [
-    getViewSettings(bookKey)?.codeHighlighting,
-    getViewSettings(bookKey)?.codeLanguage,
-    isDarkMode,
-    bookKey,
-  ]);
 
   const handleSaveCustomTheme = (customTheme: CustomTheme) => {
     applyCustomTheme(customTheme);
