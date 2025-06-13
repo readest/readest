@@ -119,7 +119,7 @@ const FoliateViewer: React.FC<{
 
       // only call on load if we have highlighting turned on.
       if (viewSettings.codeHighlighting) {
-        manageSyntaxHighlighting(detail.doc, viewSettings, isDarkMode);
+        manageSyntaxHighlighting(detail.doc, viewSettings);
       }
 
       if (!detail.doc.isEventListenersAdded) {
