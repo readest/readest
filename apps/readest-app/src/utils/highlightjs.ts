@@ -1,16 +1,14 @@
 import { ViewSettings } from '@/types/book';
 import hljs from 'highlight.js/lib/common';
+
 export const CODE_LANGUAGES = [
   'auto-detect',
-  'xml',
   'bash',
   'c',
   'cpp',
   'csharp',
   'css',
-  'markdown',
   'diff',
-  'ruby',
   'go',
   'graphql',
   'ini',
@@ -21,22 +19,25 @@ export const CODE_LANGUAGES = [
   'less',
   'lua',
   'makefile',
-  'perl',
+  'markdown',
   'objectivec',
+  'perl',
   'php',
   'php-t',
   'python',
   'python-r',
   'r',
+  'ruby',
   'rust',
   'scss',
   'shell',
   'sql',
   'swift',
-  'yaml',
   'typescript',
   'vbnet',
   'wasm',
+  'xml',
+  'yaml',
 ] as const;
 
 export type CodeLanguage = (typeof CODE_LANGUAGES)[number];
