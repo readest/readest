@@ -107,8 +107,8 @@ export interface BookStyle {
   overrideFont: boolean;
   overrideLayout: boolean;
   overrideColor: boolean;
-  overrideCodeHighlighting: boolean;
-  overrideCodeLanguage: CodeLanguage;
+  codeHighlighting: boolean;
+  codeLanguage: CodeLanguage;
   userStylesheet: string;
 }
 

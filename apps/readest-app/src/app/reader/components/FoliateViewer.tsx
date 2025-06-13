@@ -68,8 +68,8 @@ const FoliateViewer: React.FC<{
       manageSyntaxHighlighting(doc, viewSettings, isDarkMode);
     }
   }, [
-    getViewSettings(bookKey)?.overrideCodeHighlighting,
-    getViewSettings(bookKey)?.overrideCodeLanguage,
+    getViewSettings(bookKey)?.codeHighlighting,
+    getViewSettings(bookKey)?.codeLanguage,
     isDarkMode,
     bookKey,
   ]);

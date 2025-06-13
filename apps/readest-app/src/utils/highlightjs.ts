@@ -48,14 +48,14 @@ export const manageSyntaxHighlighting = (
   isDarkMode: boolean,
 ) => {
   const styleId = 'highlight-js-theme-style'; // arbitrary css id
-  const { overrideCodeHighlighting, overrideCodeLanguage } = viewSettings;
+  const { codeHighlighting, codeLanguage } = viewSettings;
 
   const existingStyleElement = doc.getElementById(styleId);
   if (existingStyleElement) {
     existingStyleElement.remove();
   }
 
-  if (!overrideCodeHighlighting) {
+  if (!codeHighlighting) {
     // If disabling, remove the stylesheet and applied classes
     const styleElement = doc.getElementById(styleId);
     if (styleElement) styleElement.remove();
@@ -72,11 +72,8 @@ export const manageSyntaxHighlighting = (
   style.textContent = getHighlightJsStyles(isDarkMode);
   doc.head.appendChild(style);
 
-  const codeBlocks = doc.querySelectorAll('pre');
   // Find all <pre> elements in available content
-  if (codeBlocks.length > 0) {
-    console.log(`Found ${codeBlocks.length} code blocks to highlight.`);
-  }
+  const codeBlocks = doc.querySelectorAll('pre');
 
   // https://github.com/highlightjs/highlight.js/wiki/security
   // I believe this is valid in this use case to ignore this warning.
@@ -88,8 +85,8 @@ export const manageSyntaxHighlighting = (
     block.className = block.className.replace(/language-\S+/g, '');
     block.classList.remove('hljs');
     block.removeAttribute('data-highlighted');
-    if (overrideCodeLanguage && overrideCodeLanguage !== 'auto-detect') {
-      block.classList.add(`language-${overrideCodeLanguage}`);
+    if (codeLanguage && codeLanguage !== 'auto-detect') {
+      block.classList.add(`language-${codeLanguage}`);
     }
     hljs.highlightElement(block as HTMLElement);
   });
