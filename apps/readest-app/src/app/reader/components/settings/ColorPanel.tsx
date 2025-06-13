@@ -20,7 +20,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import ThemeEditor from './ThemeEditor';
-import { CODE_LANGUAGES, CodeLanguage } from '@/utils/highlightjs';
+import { CODE_LANGUAGES, CodeLanguage, manageSyntaxHighlighting } from '@/utils/highlightjs';
 import Select from '@/components/Select';
 
 const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -29,7 +29,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     useThemeStore();
   const { envConfig } = useEnv();
   const { settings, setSettings } = useSettingsStore();
-  const { getViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
@@ -83,6 +83,23 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       })),
     );
   }, [settings]);
+
+  // manage syntax highlighting toggle
+  useEffect(() => {
+    const viewSettings = getViewSettings(bookKey);
+    const view = getView(bookKey);
+    if (!viewSettings || !view) return;
+    const docs = view.renderer.getContents();
+    // Apply or remove highlighting in all current documents based on the setting
+    for (const { doc } of docs) {
+      manageSyntaxHighlighting(doc, viewSettings, isDarkMode);
+    }
+  }, [
+    getViewSettings(bookKey)?.codeHighlighting,
+    getViewSettings(bookKey)?.codeLanguage,
+    isDarkMode,
+    bookKey,
+  ]);
 
   const handleSaveCustomTheme = (customTheme: CustomTheme) => {
     applyCustomTheme(customTheme);
