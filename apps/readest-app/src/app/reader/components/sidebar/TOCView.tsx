@@ -32,10 +32,11 @@ const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ bookKey, toc }) => {
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewState, getViewSettings } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const viewSettings = getViewSettings(bookKey)!;
   const progress = getProgress(bookKey);
+  const viewState = getViewState(bookKey);
 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [containerHeight, setContainerHeight] = useState(400);
@@ -150,7 +151,7 @@ const TOCView: React.FC<{
   );
 
   useEffect(() => {
-    if (!progress || eventDispatcher.dispatchSync('tts-is-speaking')) return;
+    if (!progress || viewState?.ttsEnabled) return;
     if (sideBarBookKey !== bookKey) return;
     if (!isSideBarVisible) return;
 
@@ -158,7 +159,7 @@ const TOCView: React.FC<{
     if (currentHref) {
       expandParents(toc, currentHref);
     }
-  }, [toc, progress, sideBarBookKey, isSideBarVisible, bookKey, expandParents]);
+  }, [toc, progress, viewState, sideBarBookKey, isSideBarVisible, bookKey, expandParents]);
 
   useEffect(() => {
     if (flatItems.length > 0) {

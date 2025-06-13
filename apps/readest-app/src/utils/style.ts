@@ -224,7 +224,8 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
-  p:has(> img:only-child), p:has(> span:only-child > img:only-child) {
+  p:has(> img:only-child), p:has(> span:only-child > img:only-child),
+  p:has(> a:first-child + img:last-child) {
     text-indent: unset !important;
   }
   p {
@@ -274,7 +275,9 @@ const getLayoutStyles = (
   p > img, span > img, sup img {
     height: 1em;
   }
-  p:has(> img:only-child) img, span:has(> img:only-child) img {
+  p:has(> img:only-child) img, span:has(> img:only-child) img,
+  p:has(> a:first-child + img:last-child) img,
+  span:has(> a:first-child + img:last-child) img {
     height: auto;
   }
 

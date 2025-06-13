@@ -99,11 +99,9 @@ const TTSControl = () => {
   useEffect(() => {
     eventDispatcher.on('tts-speak', handleTTSSpeak);
     eventDispatcher.on('tts-stop', handleTTSStop);
-    eventDispatcher.onSync('tts-is-speaking', handleQueryIsSpeaking);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
       eventDispatcher.off('tts-stop', handleTTSStop);
-      eventDispatcher.offSync('tts-is-speaking', handleQueryIsSpeaking);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -236,10 +234,6 @@ const TTSControl = () => {
     if (ttsControllerRef.current) {
       handleStop(bookKey);
     }
-  };
-
-  const handleQueryIsSpeaking = () => {
-    return !!ttsControllerRef.current;
   };
 
   const handleTogglePlay = async () => {

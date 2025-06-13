@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import posthog from 'posthog-js';
+import { useEffect, useState } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { parseWebViewVersion } from '@/utils/ua';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -11,8 +13,11 @@ interface ErrorPageProps {
 
 export default function Error({ error, reset }: ErrorPageProps) {
   const _ = useTranslation();
+  const { appService } = useEnv();
+  const [browserInfo, setBrowserInfo] = useState('');
 
   useEffect(() => {
+    setBrowserInfo(parseWebViewVersion(appService));
     posthog.captureException(error);
   }, [error]);
 
@@ -48,6 +53,7 @@ export default function Error({ error, reset }: ErrorPageProps) {
             <div className='flex-col items-start text-left'>
               <h3 className='mb-2 font-bold'>{_('Error Details:')}</h3>
               <p className='break-words font-mono text-sm'>{error.message}</p>
+              {browserInfo && <p className='mt-2 font-mono text-sm'>Browser: {browserInfo}</p>}
               {error.stack && (
                 <p className='mt-2 break-words font-mono text-sm'>
                   {error.stack.split('\n').slice(0, 5).join('\n')}
@@ -92,7 +98,7 @@ export default function Error({ error, reset }: ErrorPageProps) {
                     d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
                   />
                 </svg>
-                Home
+                {_('Your Library')}
               </button>
             </div>
           </div>

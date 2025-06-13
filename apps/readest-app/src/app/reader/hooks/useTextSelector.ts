@@ -14,7 +14,7 @@ export const useTextSelector = (
 ) => {
   const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getViewState, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const bookData = getBookData(bookKey)!;
   const primaryLang = bookData.book?.primaryLanguage || 'en';
@@ -94,6 +94,9 @@ export const useTextSelector = (
   const handlePointerup = (doc: Document, index: number) => {
     // Available on iOS and Desktop, fired at touchend or mouseup
     // Note that on Android, pointerup event is fired after an additional touch event
+    const viewState = getViewState(bookKey);
+    if (viewState?.ttsEnabled) return;
+
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
       if (osPlatform === 'ios') {
