@@ -55,25 +55,6 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  // manage syntax highlighting toggle
-  useEffect(() => {
-    // Wait for the view to be ready
-    if (!viewRef.current?.renderer) return;
-
-    const viewSettings = getViewSettings(bookKey);
-    const docs = viewRef.current.renderer.getContents();
-    if (!viewSettings || !docs) return;
-    // Apply or remove highlighting in all current documents based on the setting
-    for (const { doc } of docs) {
-      manageSyntaxHighlighting(doc, viewSettings, isDarkMode);
-    }
-  }, [
-    getViewSettings(bookKey)?.codeHighlighting,
-    getViewSettings(bookKey)?.codeLanguage,
-    isDarkMode,
-    bookKey,
-  ]);
-
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
@@ -136,7 +117,10 @@ const FoliateViewer: React.FC<{
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
-      manageSyntaxHighlighting(detail.doc, viewSettings, isDarkMode); // add code syntax highlighting
+      // only call on load if we have highlighting turned on.
+      if (viewSettings.codeHighlighting) {
+        manageSyntaxHighlighting(detail.doc, viewSettings, isDarkMode);
+      }
 
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window
