@@ -348,5 +348,13 @@
   "{{percentage}}% of Daily Translation Characters Used.": "일일 번역 문자 사용량 {{percentage}}%.",
   "Translation Characters": "번역 문자",
   "Daily translation quota reached. Select another translate service to proceed.": "일일 번역 할당량에 도달했습니다. 계속 진행하려면 다른 번역 서비스를 선택하세요.",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}}개의 음성"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}}개의 음성",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "문제가 발생했습니다. 걱정하지 마세요, 저희 팀이 이미 알림을 받았으며 해결 작업을 진행 중입니다.",
+  "Error Details:": "오류 세부사항:",
+  "Try Again": "다시 시도",
+  "Need help?": "도움이 필요하신가요?",
+  "Contact Support": "지원팀에 문의",
+  "Code Highlighting": "코드 하이라이팅",
+  "Enable Highlighting": "하이라이팅 활성화",
+  "Code Language": "코드 언어"
 }

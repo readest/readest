@@ -348,5 +348,13 @@
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% dari Karakter Terjemahan Harian Digunakan.",
   "Translation Characters": "Karakter Terjemahan",
   "Daily translation quota reached. Select another translate service to proceed.": "Kuota terjemahan harian tercapai. Pilih layanan terjemahan lain untuk melanjutkan.",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} suara"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} suara",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "Terjadi kesalahan. Jangan khawatir, tim kami telah diberitahu dan kami sedang bekerja untuk memperbaikinya.",
+  "Error Details:": "Rincian Kesalahan:",
+  "Try Again": "Coba Lagi",
+  "Need help?": "Butuh bantuan?",
+  "Contact Support": "Hubungi Dukungan",
+  "Code Highlighting": "Penyorotan Kode",
+  "Enable Highlighting": "Aktifkan Penyorotan",
+  "Code Language": "Bahasa Kode"
 }

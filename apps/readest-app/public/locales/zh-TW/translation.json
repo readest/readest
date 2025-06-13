@@ -348,5 +348,13 @@
   "{{percentage}}% of Daily Translation Characters Used.": "已使用 {{percentage}}% 的每日翻譯字數",
   "Translation Characters": "翻譯字數",
   "Daily translation quota reached. Select another translate service to proceed.": "已達到每日翻譯字數限制，請選擇其他翻譯服務繼續。",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} 種語音"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} 種語音",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "出了點問題。別擔心，我們的團隊已經收到通知，正在努力修復。",
+  "Error Details:": "錯誤詳情：",
+  "Try Again": "再試一次",
+  "Need help?": "需要幫助嗎？",
+  "Contact Support": "聯繫支援",
+  "Code Highlighting": "程式碼高亮",
+  "Enable Highlighting": "啟用高亮",
+  "Code Language": "程式語言"
 }

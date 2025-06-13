@@ -357,5 +357,13 @@
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} голос",
   "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} голоса",
   "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} голосов",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} голоса"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} голоса",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "Что-то пошло не так. Не волнуйтесь, наша команда уведомлена и работает над исправлением.",
+  "Error Details:": "Подробности ошибки:",
+  "Try Again": "Попробовать снова",
+  "Need help?": "Нужна помощь?",
+  "Contact Support": "Связаться с поддержкой",
+  "Code Highlighting": "Подсветка кода",
+  "Enable Highlighting": "Включить подсветку",
+  "Code Language": "Язык кода"
 }

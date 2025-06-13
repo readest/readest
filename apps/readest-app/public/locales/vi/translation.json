@@ -348,5 +348,13 @@
   "{{percentage}}% of Daily Translation Characters Used.": "{{percentage}}% số ký tự dịch hàng ngày đã sử dụng.",
   "Translation Characters": "Những ký tự dịch",
   "Daily translation quota reached. Select another translate service to proceed.": "Đã đạt hạn mức dịch hàng ngày. Chọn dịch vụ dịch khác để tiếp tục.",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} giọng"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} giọng",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "Đã xảy ra sự cố. Đừng lo, nhóm của chúng tôi đã được thông báo và chúng tôi đang làm việc để sửa chữa.",
+  "Error Details:": "Chi tiết lỗi:",
+  "Try Again": "Thử lại",
+  "Need help?": "Bạn cần giúp đỡ?",
+  "Contact Support": "Liên hệ hỗ trợ",
+  "Code Highlighting": "Đánh dấu mã",
+  "Enable Highlighting": "Cho phép đánh dấu",
+  "Code Language": "Ngôn ngữ mã"
 }

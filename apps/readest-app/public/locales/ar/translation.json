@@ -363,5 +363,13 @@
   "{{engine}}: {{count}} voices_two": "{{engine}}: صوتان",
   "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} أصوات",
   "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} صوتاً",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} صوت"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} صوت",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "حدث خطأ ما. لا تقلق، لقد تم إبلاغ فريقنا ونحن نعمل على إصلاحه.",
+  "Error Details:": "تفاصيل الخطأ:",
+  "Try Again": "حاول مرة أخرى",
+  "Need help?": "تحتاج مساعدة؟",
+  "Contact Support": "اتصل بالدعم الفني",
+  "Code Highlighting": "تمييز الكود",
+  "Enable Highlighting": "تمكين التمييز",
+  "Code Language": "لغة الكود"
 }

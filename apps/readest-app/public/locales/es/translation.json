@@ -354,5 +354,13 @@
   "Daily translation quota reached. Select another translate service to proceed.": "Cuota diaria de traducción alcanzada. Selecciona otro servicio de traducción para continuar.",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} voz",
   "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} voces",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} voces"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} voces",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "Algo salió mal. No te preocupes, nuestro equipo ha sido notificado y estamos trabajando en una solución.",
+  "Error Details:": "Detalles del error:",
+  "Try Again": "Intentar de nuevo",
+  "Need help?": "¿Necesitas ayuda?",
+  "Contact Support": "Contactar con soporte",
+  "Code Highlighting": "Resaltado de código",
+  "Enable Highlighting": "Activar resaltado",
+  "Code Language": "Lenguaje de código"
 }

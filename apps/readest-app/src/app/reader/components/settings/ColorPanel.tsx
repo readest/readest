@@ -228,7 +228,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             <div className='card border-base-200 bg-base-100 border shadow'>
               <div className='divide-base-200'>
                 <div className='config-item'>
-                  <span className=''>{_('Enable Code Highlighting')}</span>
+                  <span className=''>{_('Enable Highlighting')}</span>
                   <input
                     type='checkbox'
                     className='toggle'
@@ -238,7 +238,7 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 </div>
 
                 <div className='config-item'>
-                  <span className=''>{_('Language Selection')}</span>
+                  <span className=''>{_('Code Language')}</span>
                   <Select
                     value={codeLanguage}
                     onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}

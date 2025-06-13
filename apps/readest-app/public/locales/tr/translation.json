@@ -351,5 +351,13 @@
   "Translation Characters": "Çeviri Karakterleri",
   "Daily translation quota reached. Select another translate service to proceed.": "Günlük çeviri kotası aşıldı. Devam etmek için başka bir çeviri hizmeti seçin.",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} ses",
-  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} sesler"
+  "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} sesler",
+  "Something went wrong. Don't worry, our team has been notified and we're working on a fix.": "Bir şeyler yanlış gitti. Endişelenmeyin, ekibimiz bilgilendirildi ve bir çözüm üzerinde çalışıyoruz.",
+  "Error Details:": "Error Detayları:",
+  "Try Again": "Tekrar Dene",
+  "Need help?": "Yardıma mı ihtiyacınız var?",
+  "Contact Support": "Destekle İletişime Geç",
+  "Code Highlighting": "Code Vurgulama",
+  "Enable Highlighting": "Vurgulamayı Etkinleştir",
+  "Code Language": "Code Dili"
 }
