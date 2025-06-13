@@ -171,36 +171,6 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             />
           </div>
 
-          <div className='w-full'>
-            <h2 className='mb-2 font-medium'>{_('Code Highlighting')}</h2>
-            <div className='card border-base-200 bg-base-100 border shadow'>
-              <div className='divide-base-200'>
-                <div className='config-item'>
-                  <span className=''>{_('Enable Code Highlighting')}</span>
-                  <input
-                    type='checkbox'
-                    className='toggle'
-                    checked={codeHighlighting}
-                    onChange={() => setcodeHighlighting(!codeHighlighting)}
-                  />
-                </div>
-
-                <div className='config-item'>
-                  <span className=''>{_('Language Selection')}</span>
-                  <Select
-                    value={codeLanguage}
-                    onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}
-                    options={CODE_LANGUAGES.map((lang) => ({
-                      value: lang,
-                      label: lang,
-                    }))}
-                    disabled={!codeHighlighting}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div>
             <h2 className='mb-2 font-medium'>{_('Theme Color')}</h2>
             <div className='grid grid-cols-3 gap-4'>
@@ -245,6 +215,36 @@ const ColorPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 <PiPlus size={iconSize24} />
                 <span>{_('Custom')}</span>
               </label>
+            </div>
+          </div>
+
+          <div className='w-full'>
+            <h2 className='mb-2 font-medium'>{_('Code Highlighting')}</h2>
+            <div className='card border-base-200 bg-base-100 border shadow'>
+              <div className='divide-base-200'>
+                <div className='config-item'>
+                  <span className=''>{_('Enable Code Highlighting')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle'
+                    checked={codeHighlighting}
+                    onChange={() => setcodeHighlighting(!codeHighlighting)}
+                  />
+                </div>
+
+                <div className='config-item'>
+                  <span className=''>{_('Language Selection')}</span>
+                  <Select
+                    value={codeLanguage}
+                    onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}
+                    options={CODE_LANGUAGES.map((lang) => ({
+                      value: lang,
+                      label: lang,
+                    }))}
+                    disabled={!codeHighlighting}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </>
