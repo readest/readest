@@ -55,7 +55,7 @@
 | **Translate with DeepL**                | From a single sentence to the entire book—translate instantly with DeepL.                      | ✅         |
 | **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                | ✅         |
 | **Library Management**                  | Organize, sort, and manage your entire ebook library.                                          | ✅         |
-| **Code Syntax Highlighting**                | Read software manuals with rich coloring of code examples.                                     | ✅         |
+| **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                     | ✅         |
 
 ## Planned Features
 
