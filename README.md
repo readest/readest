@@ -55,6 +55,7 @@
 | **Translate with DeepL**                | From a single sentence to the entire book—translate instantly with DeepL.                      | ✅         |
 | **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                | ✅         |
 | **Library Management**                  | Organize, sort, and manage your entire ebook library.                                          | ✅         |
+| **Code Syntax Highlighting**                | Read software manuals with rich coloring of code examples.                                     | ✅         |
 
 ## Planned Features
 
@@ -94,7 +95,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 The Readest app is available for download! 🥳 🚀
 
-- macOS / iOS / iPadOS : Search for "Readest" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to readestapp@gmail.com to request access).
+- macOS / iOS / iPadOS : Search for "Readest" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
 - Windows / Linux / Android: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
 - Web: Visit [https://web.readest.com][link-web-readest].
 
