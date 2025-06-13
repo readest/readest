@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.56": {
+      "date": "2025-06-13",
+      "notes": [
+        "Performance: Improved TOC loading for books with very large chapter lists",
+        "TTS: Added support for native Android TTS engines (e.g., MultiTTS)",
+        "TTS: Fixed an issue where the next chapter would not load properly in the background",
+        "Translation: Improved accuracy and clarity of some Arabic translations",
+        "Reading: Added support for code syntax highlighting in books with code snippets"
+      ]
+    },
     "0.9.55": {
       "date": "2025-06-07",
       "notes": [
