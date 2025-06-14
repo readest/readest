@@ -1,5 +1,9 @@
 {
   "releases": {
+    "0.9.57": {
+      "date": "2025-06-14",
+      "notes": ["TTS: Fixed an issue to detect custom TTS engines on some Android devices"]
+    },
     "0.9.56": {
       "date": "2025-06-13",
       "notes": [
