@@ -270,7 +270,7 @@ export class WebSpeechClient implements TTSClient {
     const voicesGroup: TTSVoicesGroup = {
       id: 'web-speech-api',
       name: 'Web TTS',
-      voices,
+      voices: voices.sort(TTSUtils.sortVoicesFunc),
       disabled: !this.initialized || voices.length === 0,
     };
     return [voicesGroup];

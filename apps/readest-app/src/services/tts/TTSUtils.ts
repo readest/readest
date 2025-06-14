@@ -1,3 +1,5 @@
+import { TTSVoice } from './types';
+
 export class TTSUtils {
   private static readonly LOCAL_STORAGE_KEY = 'ttsPreferredVoices';
   private static readonly PREFERRED_CLIENT_KEY = 'preferredClient';
@@ -36,5 +38,24 @@ export class TTSUtils {
   private static getPreferences(): Record<string, string> {
     const storedPreferences = localStorage.getItem(this.LOCAL_STORAGE_KEY);
     return storedPreferences ? JSON.parse(storedPreferences) : {};
+  }
+
+  static sortVoicesFunc(a: TTSVoice, b: TTSVoice): number {
+    const aRegion = a.lang.split('-')[1] || '';
+    const bRegion = b.lang.split('-')[1] || '';
+    if (aRegion === bRegion) {
+      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+    }
+    if (aRegion === 'CN') return -1;
+    if (bRegion === 'CN') return 1;
+    if (aRegion === 'TW') return -1;
+    if (bRegion === 'TW') return 1;
+    if (aRegion === 'HK') return -1;
+    if (bRegion === 'HK') return 1;
+    if (aRegion === 'US') return -1;
+    if (bRegion === 'US') return 1;
+    if (aRegion === 'GB') return -1;
+    if (bRegion === 'GB') return 1;
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
   }
 }

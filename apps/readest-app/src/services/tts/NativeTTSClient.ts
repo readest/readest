@@ -14,12 +14,25 @@ type TTSEventPayload = {
 
 const TTSEngines = {
   default: 'System TTS',
+  msctts: 'Msc TTS',
   mstrans: 'MSTrans TTS',
   microsoft: 'Microsoft TTS',
+  bytedance: 'ByteDance TTS',
+  peiyinya: 'PeiYinYa TTS',
+  huoshan: 'HuoShan TTS',
+  sougou: 'Sougou TTS',
+  xiaomi: 'XiaoMi TTS',
+  bdetts: 'BDeTTS',
+  bdotts: 'BDoTTS',
+  vcstts: 'VcsTTS',
+  isstts: 'IssTTS',
+  xfpeiyin: 'XFPeiYin',
+  azure: 'Azure TTS',
   edgetts: 'Edge TTS',
   google: 'Google TTS',
   gemini: 'Gemini TTS',
   weread: 'WeRead TTS',
+  aispeech: 'Aispeech',
 } as Record<string, string>;
 
 export class NativeTTSClient implements TTSClient {
@@ -189,7 +202,7 @@ export class NativeTTSClient implements TTSClient {
     const defaultVoice = preferredVoice
       ? preferredVoice
       : (await this.getVoices(lang))[0]?.voices[0] || null;
-    return defaultVoice?.id || 'NOT_SET';
+    return defaultVoice?.id || '';
   }
 
   async pause() {
@@ -244,7 +257,6 @@ export class NativeTTSClient implements TTSClient {
     const filteredVoices = voices.filter(
       (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
     );
-
     const voiceGroups = new Map<string, TTSVoice[]>();
     filteredVoices.forEach((voice) => {
       const { name, lang } = voice;
@@ -271,7 +283,7 @@ export class NativeTTSClient implements TTSClient {
           ({
             id: groupId,
             name: TTSEngines[groupId] || groupId,
-            voices: voices,
+            voices: voices.sort(TTSUtils.sortVoicesFunc),
             disabled: !this.initialized || voices.length === 0,
           }) as TTSVoicesGroup,
       )

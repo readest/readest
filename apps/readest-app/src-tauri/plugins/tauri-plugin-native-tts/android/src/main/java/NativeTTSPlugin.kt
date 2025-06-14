@@ -3,6 +3,7 @@ package com.readest.native_tts
 import android.os.Bundle
 import android.app.Activity
 import android.content.Context
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
@@ -97,7 +98,11 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     
     private suspend fun initializeTTS(): Boolean = suspendCancellableCoroutine { continuation ->
         try {
-            textToSpeech = TextToSpeech(activity) { status ->
+            val preferredEngine = Settings.Secure.getString(
+                activity.contentResolver,
+                Settings.Secure.TTS_DEFAULT_SYNTH
+            )
+            textToSpeech = TextToSpeech(activity, { status ->
                 when (status) {
                     TextToSpeech.SUCCESS -> {
                         setupTTSListener()
@@ -111,7 +116,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         continuation.resume(false) {}
                     }
                 }
-            }
+            }, preferredEngine)
         } catch (e: Exception) {
             Log.e(TAG, "Exception during TTS initialization", e)
             @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

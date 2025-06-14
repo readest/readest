@@ -264,7 +264,7 @@ export class EdgeTTSClient implements TTSClient {
     const voicesGroup: TTSVoicesGroup = {
       id: 'edge-tts',
       name: 'Edge TTS',
-      voices: filteredVoices,
+      voices: filteredVoices.sort(TTSUtils.sortVoicesFunc),
       disabled: !this.initialized || filteredVoices.length === 0,
     };
 

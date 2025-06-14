@@ -61,6 +61,7 @@ export class TTSController extends EventTarget {
     if (await this.ttsWebClient.init()) {
       availableClients.push(this.ttsWebClient);
     }
+    this.ttsClient = availableClients[0] || this.ttsWebClient;
     const preferredClientName = TTSUtils.getPreferredClient();
     if (preferredClientName) {
       const preferredClient = availableClients.find(
@@ -69,9 +70,6 @@ export class TTSController extends EventTarget {
       if (preferredClient) {
         this.ttsClient = preferredClient;
       }
-    }
-    if (!this.ttsClient) {
-      this.ttsClient = availableClients[0] || this.ttsWebClient;
     }
     this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
@@ -288,26 +286,6 @@ export class TTSController extends EventTarget {
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
 
     const voicesGroups = [...ttsNativeVoices, ...ttsEdgeVoices, ...ttsWebVoices];
-    voicesGroups.forEach((group) => {
-      group.voices = group.voices.sort((a, b) => {
-        const aRegion = a.lang.split('-')[1] || '';
-        const bRegion = b.lang.split('-')[1] || '';
-        if (aRegion === bRegion) {
-          return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-        }
-        if (aRegion === 'CN') return -1;
-        if (bRegion === 'CN') return 1;
-        if (aRegion === 'TW') return -1;
-        if (bRegion === 'TW') return 1;
-        if (aRegion === 'HK') return -1;
-        if (bRegion === 'HK') return 1;
-        if (aRegion === 'US') return -1;
-        if (bRegion === 'US') return 1;
-        if (aRegion === 'GB') return -1;
-        if (bRegion === 'GB') return 1;
-        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-      });
-    });
     return voicesGroups;
   }
 
