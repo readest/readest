@@ -36,7 +36,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
   const { getConfig, getBookData, saveConfig } = useBookDataStore();
-  const { getView, setBookKeys } = useReaderStore();
+  const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const isInitiating = useRef(false);
@@ -150,7 +150,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   if (!bookKeys || bookKeys.length === 0) return null;
   const bookData = getBookData(bookKeys[0]!);
-  if (!bookData || !bookData.book || !bookData.bookDoc) {
+  const viewSettings = getViewSettings(bookKeys[0]!);
+  if (!bookData || !bookData.book || !bookData.bookDoc || !viewSettings) {
     setTimeout(() => setLoading(true), 300);
     return (
       loading && (

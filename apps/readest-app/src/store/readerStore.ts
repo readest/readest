@@ -119,9 +119,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       },
     }));
     try {
+      const { settings } = useSettingsStore.getState();
       if (!bookData) {
         const appService = await envConfig.getAppService();
-        const { settings } = useSettingsStore.getState();
         const { library } = useLibraryStore.getState();
         const book = library.find((b) => b.hash === id);
         if (!book) {
@@ -145,6 +145,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const booksData = useBookDataStore.getState().booksData;
       const config = booksData[id]?.config as BookConfig;
       const configViewSettings = config.viewSettings!;
+      const globalViewSettings = settings.globalViewSettings;
       set((state) => ({
         viewStates: {
           ...state.viewStates,
@@ -158,7 +159,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             progress: null,
             ribbonVisible: false,
             ttsEnabled: false,
-            viewSettings: JSON.parse(JSON.stringify(configViewSettings)) as ViewSettings,
+            viewSettings: { ...globalViewSettings, ...configViewSettings },
           },
         },
       }));

@@ -42,7 +42,11 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
   setConfig: (key: string, partialConfig: Partial<BookConfig>) => {
     set((state: BookDataState) => {
       const id = key.split('-')[0]!;
-      const config = (state.booksData[id]?.config || {}) as BookConfig;
+      const config = (state.booksData[id]?.config || null) as BookConfig;
+      if (!config) {
+        console.warn('No config found for book', id);
+        return state;
+      }
       Object.assign(config, partialConfig);
       return {
         booksData: {
