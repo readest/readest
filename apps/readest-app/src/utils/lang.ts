@@ -8,7 +8,7 @@ export const isCJKLang = (lang: string | null | undefined): boolean => {
   return ['zh', 'ja', 'ko'].includes(normalizedLang);
 };
 
-export const langToDefaultLocale = (langCode: string): string => {
+export const normalizeToFullLang = (langCode: string): string => {
   const mapping: Record<string, string> = {
     en: 'en-US',
     fr: 'fr-FR',
@@ -26,24 +26,31 @@ export const langToDefaultLocale = (langCode: string): string => {
     ru: 'ru-RU',
     uk: 'uk-UA',
     zh: 'zh-Hans',
+    'zh-cn': 'zh-Hans',
+    'zh-tw': 'zh-Hant',
+    'zh-mo': 'zh-Hant',
     'zh-hans': 'zh-Hans',
     'zh-hant': 'zh-Hant',
   };
 
-  return mapping[langCode] || langCode;
+  return mapping[langCode.toLowerCase()] || langCode;
 };
 
-export const localeToLang = (locale: string): string => {
+export const normalizeToShortLang = (langCode: string): string => {
+  const lang = langCode.toLowerCase();
   const mapping: Record<string, string> = {
-    'zh-CN': 'zh-Hans',
-    'zh-TW': 'zh-Hant',
-    'zh-HK': 'zh-Hant',
+    'zh-cn': 'zh-Hans',
+    'zh-tw': 'zh-Hant',
+    'zh-hk': 'zh-Hant',
+    'zh-mo': 'zh-Hant',
+    'zh-hans': 'zh-Hans',
+    'zh-hant': 'zh-Hant',
   };
 
-  if (locale.startsWith('zh')) {
-    return mapping[locale] || 'zh-Hans';
+  if (lang.startsWith('zh')) {
+    return mapping[lang] || 'zh-Hans';
   }
-  return mapping[locale] || locale.split('-')[0]!.toLowerCase();
+  return lang.split('-')[0]!;
 };
 
 export const normalizedLangCode = (lang: string | null | undefined): string => {

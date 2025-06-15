@@ -51,12 +51,12 @@ export class TTSController extends EventTarget {
 
   async init() {
     const availableClients = [];
+    if (await this.ttsEdgeClient.init()) {
+      availableClients.push(this.ttsEdgeClient);
+    }
     if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
       availableClients.push(this.ttsNativeClient);
       this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
-    }
-    if (await this.ttsEdgeClient.init()) {
-      availableClients.push(this.ttsEdgeClient);
     }
     if (await this.ttsWebClient.init()) {
       availableClients.push(this.ttsWebClient);

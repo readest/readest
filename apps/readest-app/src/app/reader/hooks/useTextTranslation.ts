@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FoliateView } from '@/types/view';
 import { UseTranslatorOptions } from '@/services/translators';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslator } from '@/hooks/useTranslator';
 import { walkTextNodes } from '@/utils/walk';
-import { localeToLang } from '@/utils/lang';
+import { debounce } from '@/utils/debounce';
 import { getLocale } from '@/utils/misc';
 
 export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElement | null) {
-  const { getViewSettings } = useReaderStore();
+  const { getViewSettings, getViewState, getProgress } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
+  const viewState = getViewState(bookKey);
+  const progress = getProgress(bookKey);
 
   const enabled = useRef(viewSettings?.translationEnabled);
   const [provider, setProvider] = useState(viewSettings?.translationProvider);
@@ -17,7 +19,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
 
   const { translate } = useTranslator({
     provider,
-    targetLang: localeToLang(targetLang || getLocale()),
+    targetLang: targetLang || getLocale(),
   } as UseTranslatorOptions);
 
   const translateRef = useRef(translate);
@@ -118,7 +120,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
 
   const translateElement = async (el: HTMLElement) => {
     if (!enabled.current) return;
-    const text = el.textContent?.trim();
+    const text = el.textContent?.replaceAll('\n', '').trim();
     if (!text) return;
 
     if (el.querySelector('.translation-target')) {
@@ -155,6 +157,61 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
       console.warn('Translation failed:', err);
     }
   };
+
+  const findNodeIndicesInRange = (range: Range, nodes: HTMLElement[]) => {
+    const startContainer = range.startContainer;
+    const endContainer = range.endContainer;
+
+    let startIndex = -1;
+    let endIndex = -1;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i]!;
+      if (node === startContainer || node.contains(startContainer)) {
+        if (startIndex === -1) startIndex = i;
+      }
+      if (node === endContainer || node.contains(endContainer)) {
+        endIndex = i;
+      }
+    }
+    if (startIndex !== -1 && endIndex === -1) {
+      endIndex = startIndex;
+    }
+
+    return { startIndex, endIndex };
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const translateInRange = useCallback(
+    debounce((range: Range) => {
+      const nodes = allTextNodes.current;
+      if (nodes.length === 0) {
+        console.warn('No text nodes available for translation.');
+        return;
+      }
+      const { startIndex, endIndex } = findNodeIndicesInRange(range, nodes);
+      if (startIndex === -1) {
+        console.log('Range not found in text nodes');
+        return;
+      }
+      const beforeStart = Math.max(0, startIndex - 2);
+      const afterEnd = Math.min(nodes.length - 1, endIndex + 2);
+      for (let i = beforeStart; i <= afterEnd; i++) {
+        const node = nodes[i];
+        if (node) {
+          translateElement(node);
+        }
+      }
+    }, 500),
+    [],
+  );
+
+  useEffect(() => {
+    if (viewState?.ttsEnabled && progress && document.hidden) {
+      const { range } = progress;
+      translateInRange(range);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewState?.ttsEnabled, progress]);
 
   useEffect(() => {
     if (!viewSettings) return;

@@ -3,6 +3,7 @@ import { stubTranslation as _ } from '@/utils/misc';
 import { ErrorCodes, TranslationProvider } from '../types';
 import { UserPlan } from '@/types/user';
 import { getUserPlan } from '@/utils/access';
+import { normalizeToShortLang } from '@/utils/lang';
 import { DEFAULT_DAILY_TRANSLATION_QUOTA } from '@/services/constants';
 import { saveDailyUsage } from '../utils';
 
@@ -38,8 +39,8 @@ export const deeplProvider: TranslationProvider = {
 
     const body = JSON.stringify({
       text: text,
-      source_lang: sourceLang.toUpperCase(),
-      target_lang: targetLang.toUpperCase(),
+      source_lang: normalizeToShortLang(sourceLang).toUpperCase(),
+      target_lang: normalizeToShortLang(targetLang).toUpperCase(),
       use_cache: useCache,
     });
 

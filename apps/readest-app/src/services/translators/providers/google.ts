@@ -1,6 +1,7 @@
 import { stubTranslation as _ } from '@/utils/misc';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { normalizeToShortLang } from '@/utils/lang';
 import { TranslationProvider } from '../types';
 
 export const googleProvider: TranslationProvider = {
@@ -20,8 +21,8 @@ export const googleProvider: TranslationProvider = {
       const url = new URL('https://translate.googleapis.com/translate_a/single');
       url.searchParams.append('client', 'gtx');
       url.searchParams.append('dt', 't');
-      url.searchParams.append('sl', sourceLang.toLowerCase() || 'auto');
-      url.searchParams.append('tl', targetLang.toLowerCase());
+      url.searchParams.append('sl', normalizeToShortLang(sourceLang).toLowerCase() || 'auto');
+      url.searchParams.append('tl', normalizeToShortLang(targetLang).toLowerCase());
       url.searchParams.append('q', line);
 
       const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;

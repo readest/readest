@@ -2,7 +2,7 @@ import { stubTranslation as _ } from '@/utils/misc';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TranslationProvider } from '../types';
-import { langToDefaultLocale } from '@/utils/lang';
+import { normalizeToFullLang } from '@/utils/lang';
 
 interface TokenCache {
   token: string;
@@ -53,8 +53,8 @@ export const azureProvider: TranslationProvider = {
     if (!text.length) return [];
 
     const results: string[] = [];
-    const msSourceLang = sourceLang ? langToDefaultLocale(sourceLang.toLowerCase()) : '';
-    const msTargetLang = langToDefaultLocale(targetLang.toLowerCase());
+    const msSourceLang = sourceLang ? normalizeToFullLang(sourceLang) : '';
+    const msTargetLang = normalizeToFullLang(targetLang);
 
     const translationPromises = text.map(async (line, index) => {
       if (!line?.trim().length) {
@@ -67,7 +67,7 @@ export const azureProvider: TranslationProvider = {
         to: msTargetLang,
         'api-version': '3.0',
       });
-      if (msSourceLang && msSourceLang !== 'auto') {
+      if (msSourceLang && msSourceLang.toLowerCase() !== 'auto') {
         params.append('from', msSourceLang);
       }
 

@@ -7,20 +7,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import { UseTranslatorOptions, getTranslators } from '@/services/translators';
-import { localeToLang } from '@/utils/lang';
 import Select from '@/components/Select';
 
-const notSupportedLangs = ['hi', 'vi'];
+const notSupportedLangs = [''];
 
 const generateTranslatorLangs = () => {
-  const langs = { ...TRANSLATED_LANGS };
-  const result: Record<string, string> = {};
-  for (const [code, name] of Object.entries(langs)) {
-    if (notSupportedLangs.includes(code)) continue;
-    const newCode = localeToLang(code).toUpperCase();
-    result[newCode] = name;
-  }
-  return result;
+  return Object.fromEntries(
+    Object.entries(TRANSLATED_LANGS).filter(([code]) => !notSupportedLangs.includes(code)),
+  );
 };
 
 const TRANSLATOR_LANGS = generateTranslatorLangs();
@@ -205,7 +199,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         </div>
         <div className='absolute bottom-0 flex h-8 w-full items-center justify-between bg-gray-600 px-4'>
           {provider && !loading && (
-            <div className='text-xs opacity-60'>
+            <div className='line-clamp-1 text-xs opacity-60'>
               {error
                 ? ''
                 : _('Translated by {{provider}}.', {
