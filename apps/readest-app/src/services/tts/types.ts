@@ -1,5 +1,10 @@
 export type TTSGranularity = 'sentence' | 'word';
 
+export type TTSHighlightOptions = {
+  style: 'highlight' | 'underline' | 'squiggly' | 'outline';
+  color: string;
+};
+
 export type TTSVoice = {
   id: string;
   name: string;

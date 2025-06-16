@@ -17,7 +17,7 @@ interface UseBookShortcutsProps {
 }
 
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
-  const { getView, getViewSettings, setViewSettings } = useReaderStore();
+  const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
   const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
   const { toggleNotebook } = useNotebookStore();
@@ -136,6 +136,13 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     view?.renderer.setStyles?.(getStyles(viewSettings!));
   };
 
+  const toggleTTS = () => {
+    if (!sideBarBookKey) return;
+    const bookKey = sideBarBookKey;
+    const viewState = getViewState(bookKey);
+    eventDispatcher.dispatch(viewState?.ttsEnabled ? 'tts-stop' : 'tts-speak', { bookKey });
+  };
+
   useShortcuts(
     {
       onSwitchSideBar: switchSideBar,
@@ -144,8 +151,9 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleScrollMode: toggleScrollMode,
       onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
-      onReloadPage: reloadPage,
       onToggleFullscreen: toggleFullscreen,
+      onToggleTTS: toggleTTS,
+      onReloadPage: reloadPage,
       onQuitApp: quitApp,
       onGoLeft: goLeft,
       onGoRight: goRight,

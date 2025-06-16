@@ -1,36 +1,11 @@
-export interface ShortcutConfig {
-  onSwitchSideBar: string[];
-  onToggleSideBar: string[];
-  onToggleNotebook: string[];
-  onToggleSearchBar: string[];
-  onToggleScrollMode: string[];
-  onToggleSelectMode: string[];
-  onOpenFontLayoutSettings: string[];
-  onReloadPage: string[];
-  onToggleFullscreen: string[];
-  onQuitApp: string[];
-  onGoLeft: string[];
-  onGoRight: string[];
-  onGoNext: string[];
-  onGoPrev: string[];
-  onGoHalfPageDown: string[];
-  onGoHalfPageUp: string[];
-  onGoBack: string[];
-  onGoForward: string[];
-  onZoomIn: string[];
-  onZoomOut: string[];
-  onResetZoom: string[];
-  onSaveNote: string[];
-  onCloseNote: string[];
-}
-
-const DEFAULT_SHORTCUTS: ShortcutConfig = {
+const DEFAULT_SHORTCUTS = {
   onSwitchSideBar: ['ctrl+Tab', 'opt+Tab', 'alt+Tab'],
   onToggleSideBar: ['s'],
   onToggleNotebook: ['n'],
   onToggleSearchBar: ['ctrl+f', 'cmd+f'],
   onToggleScrollMode: ['shift+j'],
   onToggleSelectMode: ['shift+s'],
+  onToggleTTS: ['t'],
   onOpenFontLayoutSettings: ['shift+f'],
   onReloadPage: ['shift+r'],
   onToggleFullscreen: ['F11'],
@@ -48,6 +23,10 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   onResetZoom: ['ctrl+0', 'cmd+0'],
   onSaveNote: ['ctrl+Enter'],
   onCloseNote: ['Escape'],
+};
+
+export type ShortcutConfig = {
+  [K in keyof typeof DEFAULT_SHORTCUTS]: string[];
 };
 
 // Load shortcuts from localStorage or fallback to defaults

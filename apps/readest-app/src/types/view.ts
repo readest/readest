@@ -20,7 +20,7 @@ export interface FoliateView extends HTMLElement {
   clearSearch: () => void;
   select: (target: string | number | { fraction: number }) => void;
   deselect: () => void;
-  initTTS: (granularity?: TTSGranularity) => Promise<void>;
+  initTTS: (granularity?: TTSGranularity, highlight?: (range: Range) => void) => Promise<void>;
   book: BookDoc;
   tts: TTS | null;
   language: {
@@ -49,7 +49,8 @@ export interface FoliateView extends HTMLElement {
     prevSection?: () => Promise<void>;
     goTo?: (params: { index: number; anchor: number }) => void;
     setStyles?: (css: string) => void;
-    getContents: () => { doc: Document; index?: number }[];
+    getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
+    scrollToAnchor: (anchor: number | Range) => void;
     addEventListener: (
       type: string,
       listener: EventListener,

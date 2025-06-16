@@ -1,7 +1,8 @@
 import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
-import { TTSGranularity, TTSMark, TTSVoice } from './types';
+import { Overlayer } from 'foliate-js/overlayer.js';
+import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
@@ -17,6 +18,8 @@ type TTSState =
   | 'forward-paused'
   | 'setrate-paused'
   | 'setvoice-paused';
+
+const HIGHLIGHT_KEY = 'tts-highlight';
 
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
@@ -75,13 +78,29 @@ export class TTSController extends EventTarget {
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
   }
 
+  #getHighlighter(options: TTSHighlightOptions) {
+    return (range: Range) => {
+      const { style, color } = options;
+      const { overlayer } = this.view.renderer.getContents()[0] as { overlayer: Overlayer };
+      overlayer?.remove(HIGHLIGHT_KEY);
+      overlayer?.add(HIGHLIGHT_KEY, range, Overlayer[style], { color });
+      this.view.renderer.scrollToAnchor(range);
+    };
+  }
+
+  #clearHighlighter() {
+    const { overlayer } = this.view.renderer.getContents()[0] as { overlayer: Overlayer };
+    overlayer?.remove(HIGHLIGHT_KEY);
+  }
+
   async initViewTTS() {
     let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
     const supportedGranularities = this.ttsClient.getGranularities();
     if (!supportedGranularities.includes(granularity)) {
       granularity = supportedGranularities[0]!;
     }
-    await this.view.initTTS(granularity);
+    const highlightOptions: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
+    await this.view.initTTS(granularity, this.#getHighlighter(highlightOptions));
   }
 
   async preloadSSML(ssml: string | undefined) {
@@ -334,6 +353,7 @@ export class TTSController extends EventTarget {
 
   async shutdown() {
     await this.stop();
+    this.#clearHighlighter();
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }

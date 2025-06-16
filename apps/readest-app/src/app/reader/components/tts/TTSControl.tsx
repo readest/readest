@@ -274,7 +274,7 @@ const TTSControl = () => {
   const handleStop = async (bookKey: string) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      await ttsController.stop();
+      await ttsController.shutdown();
       ttsControllerRef.current = null;
       setTtsController(null);
       getView(bookKey)?.deselect();
