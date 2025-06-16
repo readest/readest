@@ -18,14 +18,13 @@ import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { isTauriAppPlatform } from '@/services/environment';
+import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { handleAuthCallback } from '@/helpers/auth';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
-import { READEST_WEB_BASE_URL } from '@/services/constants';
 import WindowButtons from '@/components/WindowButtons';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
@@ -42,7 +41,7 @@ interface ProviderLoginProp {
   label: string;
 }
 
-const WEB_AUTH_CALLBACK = `${READEST_WEB_BASE_URL}/auth/callback`;
+const WEB_AUTH_CALLBACK = `${getBaseUrl()}/auth/callback`;
 const DEEPLINK_CALLBACK = 'readest://auth-callback';
 const USE_APPLE_SIGN_IN = process.env['NEXT_PUBLIC_USE_APPLE_SIGN_IN'] === 'true';
 
