@@ -203,17 +203,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPageNumber]);
 
-  const applyMarginAndGap = () => {
-    const isCompact = !showHeader && !showFooter;
-    const marginPx = isCompact ? viewSettings.compactMarginPx : viewSettings.marginPx;
-    const gapPercent = isCompact ? viewSettings.compactGapPercent : viewSettings.gapPercent;
-    view?.renderer.setAttribute('margin', `${marginPx}px`);
-    view?.renderer.setAttribute('gap', `${gapPercent}%`);
-    if (viewSettings.scrolled) {
-      view?.renderer.setAttribute('flow', 'scrolled');
-    }
-  };
-
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
     if (showHeader && !viewSettings.vertical) {
@@ -229,8 +218,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setViewSettings(bookKey, viewSettings);
     }
     saveViewSettings(envConfig, bookKey, 'showHeader', showHeader, false, false);
-
-    applyMarginAndGap();
+    // Margin and gap settings will be applied in FoliateViewer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHeader]);
 
@@ -249,8 +237,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setViewSettings(bookKey, viewSettings);
     }
     saveViewSettings(envConfig, bookKey, 'showFooter', showFooter, false, false);
-
-    applyMarginAndGap();
+    // Margin and gap settings will be applied in FoliateViewer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFooter]);
 

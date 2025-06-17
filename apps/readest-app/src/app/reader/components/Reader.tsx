@@ -17,7 +17,8 @@ import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { eventDispatcher } from '@/utils/event';
 import { interceptWindowOpen } from '@/utils/open';
 import { mountAdditionalFonts } from '@/utils/font';
-import { setSystemUIVisibility } from '@/utils/bridge';
+import { isTauriAppPlatform } from '@/services/environment';
+import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { Toast } from '@/components/Toast';
@@ -41,6 +42,9 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useEffect(() => {
     mountAdditionalFonts(document);
     interceptWindowOpen();
+    if (isTauriAppPlatform()) {
+      setTimeout(getSysFontsList, 3000);
+    }
   }, []);
 
   useEffect(() => {

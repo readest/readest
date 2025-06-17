@@ -6,6 +6,11 @@
   border-radius: 10px;
   scrollbar-gutter: auto !important;
   overscroll-behavior: none;
+
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-right: env(safe-area-inset-right);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
 }
 
 /* Fixes the scrollbar gutter issue for DaisyUI */

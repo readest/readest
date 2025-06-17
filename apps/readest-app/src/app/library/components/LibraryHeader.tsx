@@ -13,6 +13,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
 import { debounce } from '@/utils/debounce';
@@ -44,7 +45,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
-  const { statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
   const {
     isTrafficLightVisible,
@@ -58,6 +59,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
   const iconSize20 = useResponsiveSize(20);
+  const insets = useSafeAreaInsets();
 
   useShortcuts({
     onToggleSelectMode,
@@ -102,6 +104,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     0,
   );
 
+  if (!insets) return null;
+
   return (
     <div
       ref={headerRef}
@@ -111,8 +115,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       )}
       style={{
         marginTop: appService?.hasSafeAreaInset
-          ? `max(env(safe-area-inset-top), ${statusBarHeight}px)`
-          : '',
+          ? `max(${insets.top}px, ${systemUIVisible ? statusBarHeight : 0}px)`
+          : '0px',
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>

@@ -19,7 +19,7 @@ export default function Error({ error, reset }: ErrorPageProps) {
   useEffect(() => {
     setBrowserInfo(parseWebViewVersion(appService));
     posthog.captureException(error);
-  }, [error]);
+  }, [appService, error]);
 
   const handleGoHome = () => {
     window.location.href = '/library';

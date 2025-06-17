@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -44,6 +44,26 @@ export const useTheme = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, isDarkMode]);
+
+  const handleOrientationChange = useCallback(() => {
+    if (appService?.isIOSApp) {
+      if (screen.orientation.type.includes('landscape')) {
+        dismissSystemUI();
+        setSystemUIVisibility({ visible: false, darkMode: isDarkMode });
+      } else if (systemUIVisible) {
+        showSystemUI();
+        setSystemUIVisibility({ visible: true, darkMode: isDarkMode });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService, isDarkMode, systemUIVisible]);
+
+  useEffect(() => {
+    screen.orientation.addEventListener('change', handleOrientationChange);
+    return () => {
+      screen.orientation.removeEventListener('change', handleOrientationChange);
+    };
+  }, [handleOrientationChange]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings?.customThemes ?? [];

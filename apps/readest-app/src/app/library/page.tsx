@@ -28,7 +28,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
-import { useThemeStore } from '@/store/themeStore';
+import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { lockScreenOrientation } from '@/utils/bridge';
@@ -69,8 +69,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   } = useLibraryStore();
   const _ = useTranslation();
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
+  const insets = useSafeAreaInsets();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { statusBarHeight } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -559,7 +559,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setShowDetailsBook(book);
   };
 
-  if (!appService) {
+  if (!appService || !insets) {
     return null;
   }
 
@@ -582,7 +582,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         appService?.hasRoundedWindow && 'rounded-window',
       )}
     >
-      <div className='fixed top-0 z-40 w-full'>
+      <div className='top-0 z-40 w-full'>
         <LibraryHeader
           isSelectMode={isSelectMode}
           isSelectAll={isSelectAll}
@@ -603,14 +603,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             ref={containerRef}
             className={clsx(
               'scroll-container drop-zone flex-grow overflow-y-auto',
-              appService?.hasSafeAreaInset && 'pt-[52px]',
-              appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom))]',
               isDragging && 'drag-over',
             )}
             style={{
-              marginTop: appService?.hasSafeAreaInset
-                ? `max(env(safe-area-inset-top), ${statusBarHeight}px)`
-                : '48px',
+              paddingTop: '0px',
+              paddingRight: `${insets.right}px`,
+              paddingBottom: `${insets.bottom}px`,
+              paddingLeft: `${insets.left}px`,
             }}
           >
             <DropIndicator />

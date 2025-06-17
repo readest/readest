@@ -38,18 +38,21 @@ const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
   config: BookConfig;
-}> = ({ bookKey, bookDoc, config }) => {
-  const { appService } = useEnv();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const viewRef = useRef<FoliateView | null>(null);
-  const isViewCreated = useRef(false);
+  padding: { top: number; right: number; bottom: number; left: number };
+}> = ({ bookKey, bookDoc, config, padding }) => {
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
+  const { appService } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
+  const viewSettings = getViewSettings(bookKey);
 
+  const viewRef = useRef<FoliateView | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isViewCreated = useRef(false);
   const [toastMessage, setToastMessage] = useState('');
+
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
     return () => clearTimeout(timer);
@@ -167,14 +170,6 @@ const FoliateViewer: React.FC<{
   });
 
   useEffect(() => {
-    if (viewRef.current && viewRef.current.renderer) {
-      const viewSettings = getViewSettings(bookKey)!;
-      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode, isDarkMode]);
-
-  useEffect(() => {
     if (isViewCreated.current) return;
     isViewCreated.current = true;
 
@@ -218,12 +213,6 @@ const FoliateViewer: React.FC<{
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
 
-      const isScrolled = viewSettings.scrolled!;
-      const showHeader = viewSettings.showHeader!;
-      const showFooter = viewSettings.showFooter!;
-      const isCompact = !showHeader && !showFooter;
-      const marginPx = isCompact ? viewSettings.compactMarginPx : viewSettings.marginPx;
-      const gapPercent = isCompact ? viewSettings.compactGapPercent : viewSettings.gapPercent;
       const animated = viewSettings.animated!;
       const maxColumnCount = viewSettings.maxColumnCount!;
       const maxInlineSize = getMaxInlineSize(viewSettings);
@@ -237,12 +226,10 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
-      view.renderer.setAttribute('flow', isScrolled ? 'scrolled' : 'paginated');
-      view.renderer.setAttribute('margin', `${marginPx}px`);
-      view.renderer.setAttribute('gap', `${gapPercent}%`);
       view.renderer.setAttribute('max-column-count', maxColumnCount);
       view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
       view.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
+      applyMarginAndGap();
 
       const lastLocation = config.location;
       if (lastLocation) {
@@ -256,15 +243,53 @@ const FoliateViewer: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const applyMarginAndGap = () => {
+    const viewSettings = getViewSettings(bookKey)!;
+    const showHeader = viewSettings.showHeader!;
+    const showFooter = viewSettings.showFooter!;
+    const isCompact = !showHeader && !showFooter;
+    const marginPx = isCompact ? viewSettings.compactMarginPx : viewSettings.marginPx;
+    const gapPercent = isCompact ? viewSettings.compactGapPercent : viewSettings.gapPercent;
+    viewRef.current?.renderer.setAttribute('margin', `${marginPx + padding.top}px`);
+    viewRef.current?.renderer.setAttribute('gap', `${gapPercent}%`);
+    if (viewSettings.scrolled) {
+      viewRef.current?.renderer.setAttribute('flow', 'scrolled');
+    }
+  };
+
+  useEffect(() => {
+    if (viewRef.current && viewRef.current.renderer) {
+      const viewSettings = getViewSettings(bookKey)!;
+      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeCode, isDarkMode]);
+
+  useEffect(() => {
+    if (viewRef.current && viewRef.current.renderer && viewSettings) {
+      applyMarginAndGap();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    padding.top,
+    padding.right,
+    padding.bottom,
+    padding.left,
+    viewSettings?.showHeader,
+    viewSettings?.showFooter,
+    viewSettings?.marginPx,
+    viewSettings?.compactMarginPx,
+    viewSettings?.gapPercent,
+    viewSettings?.compactGapPercent,
+  ]);
+
   return (
-    <>
-      <div
-        ref={containerRef}
-        className='foliate-viewer h-[100%] w-[100%]'
-        {...mouseHandlers}
-        {...touchHandlers}
-      />
-    </>
+    <div
+      ref={containerRef}
+      className='foliate-viewer h-[100%] w-[100%]'
+      {...mouseHandlers}
+      {...touchHandlers}
+    />
   );
 };
 
