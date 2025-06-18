@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,7 +13,8 @@ interface PageInfoProps {
   pageinfo?: PageInfo;
   timeinfo?: TimeInfo;
   horizontalGap: number;
-  verticalMargin: number;
+  contentInsets: Insets;
+  gridInsets: Insets;
 }
 
 const ProgressInfoView: React.FC<PageInfoProps> = ({
@@ -22,7 +24,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   pageinfo,
   timeinfo,
   horizontalGap,
-  verticalMargin,
+  contentInsets,
+  gridInsets,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -51,25 +54,25 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   return (
     <div
       className={clsx(
-        'pageinfo absolute bottom-0 flex items-center justify-between',
+        'progressinfo absolute bottom-0 flex items-center justify-between',
         'text-neutral-content font-sans text-xs font-extralight',
-        isVertical ? 'writing-vertical-rl' : 'h-12 w-full',
+        isVertical ? 'writing-vertical-rl' : 'h-[52px] w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}
       style={
         isVertical
           ? {
-              bottom: `${verticalMargin * 1.5}px`,
-              left: showDoubleBorder ? `calc(${horizontalGap}% - 32px)` : 0,
+              bottom: `${contentInsets.bottom * 1.5}px`,
+              left: showDoubleBorder
+                ? `calc(${contentInsets.left}px)`
+                : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
               width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
-              height: `calc(100% - ${verticalMargin * 3}px)`,
+              height: `calc(100% - ${((contentInsets.top + contentInsets.bottom) / 2) * 3}px)`,
             }
           : {
-              paddingInlineStart: `${horizontalGap}%`,
-              paddingInlineEnd: `${horizontalGap}%`,
-              paddingBottom: appService?.hasSafeAreaInset
-                ? 'calc(env(safe-area-inset-bottom)*0.67)'
-                : 0,
+              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
+              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
+              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.67}px` : 0,
             }
       }
     >

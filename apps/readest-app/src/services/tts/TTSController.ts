@@ -80,16 +80,22 @@ export class TTSController extends EventTarget {
 
   #getHighlighter(options: TTSHighlightOptions) {
     return (range: Range) => {
-      const { style, color } = options;
       const { overlayer } = this.view.renderer.getContents()[0] as { overlayer: Overlayer };
+      const { style, color } = options;
       overlayer?.remove(HIGHLIGHT_KEY);
       overlayer?.add(HIGHLIGHT_KEY, range, Overlayer[style], { color });
-      this.view.renderer.scrollToAnchor(range);
+      const rect = range.getBoundingClientRect();
+      const { start, size, viewSize, sideProp } = this.view.renderer;
+      const position = rect[sideProp === 'height' ? 'y' : 'x'] + 88;
+      const offset = this.view.book.dir === 'rtl' ? viewSize - position : position;
+      if (!this.view.renderer.scrolled || offset < start || offset > start + size) {
+        this.view.renderer.scrollToAnchor(range);
+      }
     };
   }
 
   #clearHighlighter() {
-    const { overlayer } = this.view.renderer.getContents()[0] as { overlayer: Overlayer };
+    const { overlayer } = (this.view.renderer.getContents()?.[0] || {}) as { overlayer: Overlayer };
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 

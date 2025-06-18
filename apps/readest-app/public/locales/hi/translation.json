@@ -114,8 +114,6 @@
   "Your Library": "आपकी लाइब्रेरी",
   "TTS not supported for PDF": "PDF के लिए TTS समर्थित नहीं है",
   "Override Book Font": "पुस्तक फ़ॉन्ट ओवरराइड करें",
-  "Vertical Margins (px)": "ऊर्ध्वाधर मार्जिन (px)",
-  "Horizontal Margins (%)": "क्षैतिज मार्जिन (%)",
   "Apply to All Books": "सभी पुस्तकों पर लागू करें",
   "Apply to This Book": "इस पुस्तक पर लागू करें",
   "Unable to fetch the translation. Try again later.": "अनुवाद प्राप्त करने में असमर्थ। बाद में पुनः प्रयास करें।",
@@ -359,5 +357,10 @@
   "Contact Support": "सहायता से संपर्क करें",
   "Code Highlighting": "कोड हाइलाइटिंग",
   "Enable Highlighting": "हाइलाइटिंग सक्षम करें",
-  "Code Language": "कोड भाषा"
+  "Code Language": "कोड भाषा",
+  "Top Margin (px)": "ऊपरी हाशिया (px)",
+  "Bottom Margin (px)": "निचला हाशिया (px)",
+  "Right Margin (px)": "दायां हाशिया (px)",
+  "Left Margin (px)": "बायां हाशिया (px)",
+  "Column Gap (%)": "स्तंभों के बीच की दूरी (%)"
 }

@@ -169,8 +169,6 @@
   "Hyphenation": "Woordafbreking",
   "Override Book Layout": "Boekopmaak overschrijven",
   "Page": "Pagina",
-  "Vertical Margins (px)": "Verticale marges (px)",
-  "Horizontal Margins (%)": "Horizontale marges (%)",
   "Maximum Number of Columns": "Maximum aantal kolommen",
   "Maximum Column Height": "Maximale kolomhoogte",
   "Maximum Column Width": "Maximale kolombreedte",
@@ -359,5 +357,10 @@
   "Contact Support": "Neem contact op met ondersteuning",
   "Code Highlighting": "Code markering",
   "Enable Highlighting": "Markering inschakelen",
-  "Code Language": "Code taal"
+  "Code Language": "Code taal",
+  "Top Margin (px)": "Bovenmarge (px)",
+  "Bottom Margin (px)": "Ondermarge (px)",
+  "Right Margin (px)": "Rechter marge (px)",
+  "Left Margin (px)": "Linker marge (px)",
+  "Column Gap (%)": "Kolomafstand (%)"
 }

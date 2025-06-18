@@ -114,8 +114,6 @@
   "Your Library": "المكتبة الخاصة بك",
   "TTS not supported for PDF": "القراءة الصوتية غير مدعومة لملفات PDF",
   "Override Book Font": "تجاوز خط الكتاب",
-  "Vertical Margins (px)": "هوامش عمودية (بكسل)",
-  "Horizontal Margins (%)": "هوامش أفقية (%)",
   "Apply to All Books": "تطبيق على جميع الكتب",
   "Apply to This Book": "تطبيق على هذا الكتاب",
   "Unable to fetch the translation. Try again later.": "تعذر جلب الترجمة. حاول مرة أخرى لاحقًا.",
@@ -371,5 +369,10 @@
   "Contact Support": "اتصل بالدعم الفني",
   "Code Highlighting": "تمييز الكود",
   "Enable Highlighting": "تمكين التمييز",
-  "Code Language": "لغة الكود"
+  "Code Language": "لغة الكود",
+  "Top Margin (px)": "الهامش العلوي (بكسل)",
+  "Bottom Margin (px)": "الهامش السفلي (بكسل)",
+  "Right Margin (px)": "الهامش الأيمن (بكسل)",
+  "Left Margin (px)": "الهامش الأيسر (بكسل)",
+  "Column Gap (%)": "تباعد الأعمدة (%)"
 }

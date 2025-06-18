@@ -114,8 +114,6 @@
   "Your Library": "Kütüphaneniz",
   "TTS not supported for PDF": "PDF için TTS desteklenmiyor",
   "Override Book Font": "Kitap Yazı Tipini Geçersiz Kıl",
-  "Vertical Margins (px)": "Dikey Kenar Boşlukları (px)",
-  "Horizontal Margins (%)": "Yatay Kenar Boşlukları (%)",
   "Apply to All Books": "Tüm kitaplara uygula",
   "Apply to This Book": "Bu kitaba uygula",
   "Unable to fetch the translation. Try again later.": "Çeviri alınamıyor. Daha sonra tekrar deneyin.",
@@ -359,5 +357,10 @@
   "Contact Support": "Destekle İletişime Geç",
   "Code Highlighting": "Code Vurgulama",
   "Enable Highlighting": "Vurgulamayı Etkinleştir",
-  "Code Language": "Code Dili"
+  "Code Language": "Code Dili",
+  "Top Margin (px)": "Üst Kenar Boşluğu (px)",
+  "Bottom Margin (px)": "Alt Kenar Boşluğu (px)",
+  "Right Margin (px)": "Sağ Kenar Boşluğu (px)",
+  "Left Margin (px)": "Sol Kenar Boşluğu (px)",
+  "Column Gap (%)": "Sütun Aralığı (%)"
 }

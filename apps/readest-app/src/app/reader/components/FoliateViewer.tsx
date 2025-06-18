@@ -38,8 +38,8 @@ const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
   config: BookConfig;
-  padding: { top: number; right: number; bottom: number; left: number };
-}> = ({ bookKey, bookDoc, config, padding }) => {
+  insets: { top: number; right: number; bottom: number; left: number };
+}> = ({ bookKey, bookDoc, config, insets }) => {
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
@@ -245,13 +245,16 @@ const FoliateViewer: React.FC<{
 
   const applyMarginAndGap = () => {
     const viewSettings = getViewSettings(bookKey)!;
-    const showHeader = viewSettings.showHeader!;
-    const showFooter = viewSettings.showFooter!;
-    const isCompact = !showHeader && !showFooter;
-    const marginPx = isCompact ? viewSettings.compactMarginPx : viewSettings.marginPx;
-    const gapPercent = isCompact ? viewSettings.compactGapPercent : viewSettings.gapPercent;
-    viewRef.current?.renderer.setAttribute('margin', `${marginPx + padding.top}px`);
-    viewRef.current?.renderer.setAttribute('gap', `${gapPercent}%`);
+    const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
+    const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
+    const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
+    const moreRightInset = showDoubleBorderHeader ? 32 : 0;
+    const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
+    viewRef.current?.renderer.setAttribute('margin-top', `${insets.top}px`);
+    viewRef.current?.renderer.setAttribute('margin-right', `${insets.right + moreRightInset}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${insets.bottom}px`);
+    viewRef.current?.renderer.setAttribute('margin-left', `${insets.left + moreLeftInset}px`);
+    viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
     }
@@ -271,16 +274,13 @@ const FoliateViewer: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    padding.top,
-    padding.right,
-    padding.bottom,
-    padding.left,
+    insets.top,
+    insets.right,
+    insets.bottom,
+    insets.left,
+    viewSettings?.doubleBorder,
     viewSettings?.showHeader,
     viewSettings?.showFooter,
-    viewSettings?.marginPx,
-    viewSettings?.compactMarginPx,
-    viewSettings?.gapPercent,
-    viewSettings?.compactGapPercent,
   ]);
 
   return (

@@ -114,8 +114,6 @@
   "Your Library": "Thư viện của bạn",
   "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF",
   "Override Book Font": "Ghi đè phông chữ sách",
-  "Vertical Margins (px)": "Lề dọc (px)",
-  "Horizontal Margins (%)": "Lề ngang (%)",
   "Apply to All Books": "Áp dụng cho tất cả sách",
   "Apply to This Book": "Áp dụng cho sách này",
   "Unable to fetch the translation. Try again later.": "Không thể tải dịch vụ. Vui lòng thử lại sau.",
@@ -356,5 +354,10 @@
   "Contact Support": "Liên hệ hỗ trợ",
   "Code Highlighting": "Đánh dấu mã",
   "Enable Highlighting": "Cho phép đánh dấu",
-  "Code Language": "Ngôn ngữ mã"
+  "Code Language": "Ngôn ngữ mã",
+  "Top Margin (px)": "Lề trên (px)",
+  "Bottom Margin (px)": "Lề dưới (px)",
+  "Right Margin (px)": "Lề phải (px)",
+  "Left Margin (px)": "Lề trái (px)",
+  "Column Gap (%)": "Khoảng cách cột (%)"
 }

@@ -114,8 +114,6 @@
   "Your Library": "Η βιβλιοθήκη σας",
   "TTS not supported for PDF": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται για αρχεία PDF",
   "Override Book Font": "Παράκαμψη γραμματοσειράς βιβλίου",
-  "Vertical Margins (px)": "Κάθετα περιθώρια (px)",
-  "Horizontal Margins (%)": "Οριζόντια περιθώρια (%)",
   "Apply to All Books": "Εφαρμογή σε όλα τα βιβλία",
   "Apply to This Book": "Εφαρμογή σε αυτό το βιβλίο",
   "Unable to fetch the translation. Try again later.": "Αδυναμία λήψης της μετάφρασης. Δοκιμάστε ξανά αργότερα.",
@@ -359,5 +357,10 @@
   "Contact Support": "Επικοινωνήστε με την υποστήριξη",
   "Code Highlighting": "Επισήμανση κώδικα",
   "Enable Highlighting": "Ενεργοποίηση επισήμανσης",
-  "Code Language": "Γλώσσα κώδικα"
+  "Code Language": "Γλώσσα κώδικα",
+  "Top Margin (px)": "Πάνω περιθώριο (px)",
+  "Bottom Margin (px)": "Κάτω περιθώριο (px)",
+  "Right Margin (px)": "Δεξί περιθώριο (px)",
+  "Left Margin (px)": "Αριστερό περιθώριο (px)",
+  "Column Gap (%)": "Απόσταση στηλών (%)"
 }

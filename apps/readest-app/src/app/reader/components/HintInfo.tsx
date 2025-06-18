@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
+import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
@@ -8,7 +9,8 @@ interface SectionInfoProps {
   isScrolled: boolean;
   isVertical: boolean;
   horizontalGap: number;
-  verticalMargin: number;
+  contentInsets: Insets;
+  gridInsets: Insets;
 }
 
 const HintInfo: React.FC<SectionInfoProps> = ({
@@ -17,7 +19,8 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   isScrolled,
   isVertical,
   horizontalGap,
-  verticalMargin,
+  contentInsets,
+  gridInsets,
 }) => {
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
   const hintTimeout = useRef(2000);
@@ -50,14 +53,16 @@ const HintInfo: React.FC<SectionInfoProps> = ({
     <>
       <div
         className={clsx(
-          'absolute left-0 right-0 top-0 z-10 h-[env(safe-area-inset-top)]',
+          'absolute left-0 right-0 top-0 z-10',
           hintMessage ? 'bg-base-100' : 'bg-transparent',
         )}
+        style={{
+          height: `${gridInsets.top}px`,
+        }}
       />
       <div
         className={clsx(
           'hintinfo absolute flex items-center justify-end overflow-hidden ps-2',
-          'mt-[env(safe-area-inset-top)]',
           hintMessage ? 'bg-base-100' : 'bg-transparent',
           isVertical ? 'writing-vertical-rl' : 'top-0 h-[44px]',
           isScrolled
@@ -71,11 +76,16 @@ const HintInfo: React.FC<SectionInfoProps> = ({
         style={
           isVertical
             ? {
-                bottom: `${verticalMargin * 1.5}px`,
-                left: `calc(100% - ${horizontalGap}%)`,
+                bottom: `${contentInsets.bottom * 1.5}px`,
+                right: showDoubleBorder
+                  ? `calc(${contentInsets.right}px)`
+                  : `calc(${Math.max(0, contentInsets.right - 32)}px)`,
                 width: showDoubleBorder ? '30px' : `${horizontalGap}%`,
               }
-            : { insetInlineEnd: `${horizontalGap}%` }
+            : {
+                top: `${gridInsets.top}px`,
+                insetInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
+              }
         }
       >
         <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>

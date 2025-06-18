@@ -114,8 +114,6 @@
   "Your Library": "Ваша бібліотека",
   "TTS not supported for PDF": "TTS не підтримується для PDF",
   "Override Book Font": "Перевизначити шрифт книги",
-  "Vertical Margins (px)": "Вертикальні відступи (px)",
-  "Horizontal Margins (%)": "Горизонтальні відступи (%)",
   "Apply to All Books": "Застосувати до всіх книг",
   "Apply to This Book": "Застосувати до цієї книги",
   "Unable to fetch the translation. Try again later.": "Не вдалося отримати переклад. Спробуйте пізніше.",
@@ -365,5 +363,10 @@
   "Contact Support": "Зв'язатися з підтримкою",
   "Code Highlighting": "Підсвічування коду",
   "Enable Highlighting": "Увімкнути підсвічування",
-  "Code Language": "Мова коду"
+  "Code Language": "Мова коду",
+  "Top Margin (px)": "Верхній відступ (px)",
+  "Bottom Margin (px)": "Нижній відступ (px)",
+  "Right Margin (px)": "Правий відступ (px)",
+  "Left Margin (px)": "Лівий відступ (px)",
+  "Column Gap (%)": "Проміжок між стовпцями (%)"
 }

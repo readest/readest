@@ -73,10 +73,17 @@ export interface BooknoteGroup {
 export type WritingMode = 'auto' | 'horizontal-tb' | 'horizontal-rl' | 'vertical-rl';
 
 export interface BookLayout {
-  marginPx: number;
+  marginTopPx: number;
+  marginBottomPx: number;
+  marginLeftPx: number;
+  marginRightPx: number;
+  marginPx?: number; // deprecated
+  compactMarginTopPx: number;
+  compactMarginBottomPx: number;
+  compactMarginLeftPx: number;
+  compactMarginRightPx: number;
+  compactMarginPx?: number; // deprecated
   gapPercent: number;
-  compactMarginPx: number;
-  compactGapPercent: number;
   scrolled: boolean;
   disableClick: boolean;
   swapClickArea: boolean;

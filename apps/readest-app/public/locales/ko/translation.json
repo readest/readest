@@ -114,8 +114,6 @@
   "Your Library": "내 서재",
   "TTS not supported for PDF": "PDF에서 TTS가 지원되지 않음",
   "Override Book Font": "책 글꼴 덮어쓰기",
-  "Vertical Margins (px)": "수직 여백 (px)",
-  "Horizontal Margins (%)": "수평 여백 (%)",
   "Apply to All Books": "모든 책에 적용",
   "Apply to This Book": "이 책에 적용",
   "Unable to fetch the translation. Try again later.": "번역을 가져올 수 없습니다. 나중에 다시 시도하세요.",
@@ -356,5 +354,10 @@
   "Contact Support": "지원팀에 문의",
   "Code Highlighting": "코드 하이라이팅",
   "Enable Highlighting": "하이라이팅 활성화",
-  "Code Language": "코드 언어"
+  "Code Language": "코드 언어",
+  "Top Margin (px)": "위쪽 여백 (px)",
+  "Bottom Margin (px)": "아래쪽 여백 (px)",
+  "Right Margin (px)": "오른쪽 여백 (px)",
+  "Left Margin (px)": "왼쪽 여백 (px)",
+  "Column Gap (%)": "열 간격 (%)"
 }

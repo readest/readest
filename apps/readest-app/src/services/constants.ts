@@ -87,10 +87,15 @@ export const DEFAULT_BOOK_FONT: BookFont = {
 };
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {
-  marginPx: 44,
+  marginTopPx: 44,
+  marginBottomPx: 16,
+  marginLeftPx: 16,
+  marginRightPx: 16,
+  compactMarginTopPx: 16,
+  compactMarginBottomPx: 16,
+  compactMarginLeftPx: 16,
+  compactMarginRightPx: 16,
   gapPercent: 5,
-  compactMarginPx: 0,
-  compactGapPercent: 5,
   scrolled: false,
   disableClick: false,
   swapClickArea: false,

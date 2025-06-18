@@ -114,8 +114,6 @@
   "Your Library": "Votre bibliothèque",
   "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
   "Override Book Font": "Remplacer la police du livre",
-  "Vertical Margins (px)": "Marges verticales (px)",
-  "Horizontal Margins (%)": "Marges horizontales (%)",
   "Apply to All Books": "Appliquer à tous les livres",
   "Apply to This Book": "Appliquer à ce livre",
   "Unable to fetch the translation. Try again later.": "Impossible de récupérer la traduction. Réessayez plus tard.",
@@ -362,5 +360,10 @@
   "Contact Support": "Contacter le support",
   "Code Highlighting": "Coloration syntaxique",
   "Enable Highlighting": "Activer la coloration syntaxique",
-  "Code Language": "Langage de programmation"
+  "Code Language": "Langage de programmation",
+  "Top Margin (px)": "Marge supérieure (px)",
+  "Bottom Margin (px)": "Marge inférieure (px)",
+  "Right Margin (px)": "Marge droite (px)",
+  "Left Margin (px)": "Marge gauche (px)",
+  "Column Gap (%)": "Espacement des colonnes (%)"
 }

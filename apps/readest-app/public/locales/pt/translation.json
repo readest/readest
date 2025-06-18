@@ -114,8 +114,6 @@
   "Your Library": "Sua Biblioteca",
   "TTS not supported for PDF": "TTS não suportado para PDF",
   "Override Book Font": "Sobrescrever Fonte do Livro",
-  "Vertical Margins (px)": "Margens Verticais (px)",
-  "Horizontal Margins (%)": "Margens Horizontais (%)",
   "Apply to All Books": "Aplicar a todos os livros",
   "Apply to This Book": "Aplicar a este livro",
   "Unable to fetch the translation. Try again later.": "Não foi possível buscar a tradução. Tente novamente mais tarde.",
@@ -362,5 +360,10 @@
   "Contact Support": "Contato com Suporte",
   "Code Highlighting": "Realce de Código",
   "Enable Highlighting": "Ativar Realce",
-  "Code Language": "Idioma do Código"
+  "Code Language": "Idioma do Código",
+  "Top Margin (px)": "Margem superior (px)",
+  "Bottom Margin (px)": "Margem inferior (px)",
+  "Right Margin (px)": "Margem direita (px)",
+  "Left Margin (px)": "Margem esquerda (px)",
+  "Column Gap (%)": "Espaço entre colunas (%)"
 }

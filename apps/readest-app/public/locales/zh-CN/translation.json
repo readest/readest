@@ -114,8 +114,6 @@
   "Your Library": "书库",
   "TTS not supported for PDF": "PDF 文档暂不支持 TTS",
   "Override Book Font": "覆盖书籍字体",
-  "Vertical Margins (px)": "垂直边距（px）",
-  "Horizontal Margins (%)": "水平边距（%）",
   "Apply to All Books": "应用于所有书籍",
   "Apply to This Book": "应用于此书籍",
   "Unable to fetch the translation. Try again later.": "无法获取翻译，请稍后重试。",
@@ -356,5 +354,10 @@
   "Contact Support": "联系客服",
   "Code Highlighting": "代码高亮",
   "Enable Highlighting": "启用高亮",
-  "Code Language": "代码语言"
+  "Code Language": "代码语言",
+  "Top Margin (px)": "上边距",
+  "Bottom Margin (px)": "下边距",
+  "Right Margin (px)": "右边距",
+  "Left Margin (px)": "左边距",
+  "Column Gap (%)": "列间距"
 }

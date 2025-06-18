@@ -241,6 +241,11 @@ const getLayoutStyles = (
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
   }
 
+  :lang(zh), :lang(ja), :lang(ko) {
+    widows: 1;
+    orphans: 1;
+  }
+
   pre {
     white-space: pre-wrap !important;
   }
@@ -423,8 +428,8 @@ export const transformStylesheet = (
 ) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
-  const w = width * (1 - viewSettings.gapPercent / 100);
-  const h = height - viewSettings.marginPx * 2;
+  const w = width - viewSettings.marginLeftPx - viewSettings.marginRightPx;
+  const h = height - viewSettings.marginTopPx - viewSettings.marginBottomPx;
   const ruleRegex = /([^{]+)({[^}]+})/g;
   css = css.replace(ruleRegex, (match, selector, block) => {
     const hasTextAlignCenter = /text-align\s*:\s*center\s*[;$]/.test(block);

@@ -64,9 +64,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
   };
 
   const handleMarginChange = (value: number) => {
+    const viewSettings = getViewSettings(bookKey)!;
     const marginPx = Math.round((value / 100) * 88);
     const gapPercent = Math.round((value / 100) * 10);
-    saveViewSettings(envConfig, bookKey, 'marginPx', marginPx, false, false);
+    viewSettings.marginTopPx = marginPx;
+    viewSettings.marginBottomPx = marginPx / 2;
+    viewSettings.marginLeftPx = marginPx / 2;
+    viewSettings.marginRightPx = marginPx / 2;
     saveViewSettings(envConfig, bookKey, 'gapPercent', gapPercent, false, false);
     view?.renderer.setAttribute('margin', `${marginPx}px`);
     view?.renderer.setAttribute('gap', `${gapPercent}%`);
@@ -269,7 +273,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           <div className='flex w-full items-center justify-between gap-x-6'>
             <Slider
               initialValue={getMarginProgressValue(
-                viewSettings?.marginPx ?? 44,
+                viewSettings?.marginTopPx ?? 44,
                 viewSettings?.gapPercent ?? 5,
               )}
               bubbleElement={<TbBoxMargin size={marginIconSize} />}
