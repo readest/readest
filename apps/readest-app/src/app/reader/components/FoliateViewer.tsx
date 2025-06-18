@@ -181,10 +181,6 @@ const FoliateViewer: React.FC<{
       document.body.append(view);
       containerRef.current?.appendChild(view);
 
-      const containerRect = containerRef.current?.getBoundingClientRect();
-      const width = containerRect?.width || window.innerWidth;
-      const height = containerRect?.height || window.innerHeight;
-
       const viewSettings = getViewSettings(bookKey)!;
       const writingMode = viewSettings.writingMode;
       if (writingMode) {
@@ -210,6 +206,9 @@ const FoliateViewer: React.FC<{
           detail.allowScript = viewSettings.allowScript ?? false;
         }
       });
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const width = containerRect?.width || window.innerWidth;
+      const height = containerRect?.height || window.innerHeight;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
 

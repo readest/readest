@@ -156,7 +156,6 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       false,
       false,
     );
-    console.log('compactMarginRightPx', compactMarginRightPx, viewSettings.compactMarginRightPx);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compactMarginRightPx]);
 
@@ -460,17 +459,17 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               step={4}
             />
             <NumberInput
-              label={_('Right Margin (px)')}
-              value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
-              onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
+              label={_('Left Margin (px)')}
+              value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
+              onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
               min={0}
               max={88}
               step={4}
             />
             <NumberInput
-              label={_('Left Margin (px)')}
-              value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
-              onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
+              label={_('Right Margin (px)')}
+              value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
+              onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
               min={0}
               max={88}
               step={4}
