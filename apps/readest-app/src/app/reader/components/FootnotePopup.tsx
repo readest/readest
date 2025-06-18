@@ -66,7 +66,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       footnoteRef.current?.replaceChildren(view);
       const { renderer } = view;
       renderer.setAttribute('flow', 'scrolled');
-      renderer.setAttribute('margin', '0px');
+      renderer.setAttribute('margin-top', '0px');
+      renderer.setAttribute('margin-right', '0px');
+      renderer.setAttribute('margin-bottom', '0px');
+      renderer.setAttribute('margin-left', '0px');
       renderer.setAttribute('gap', '0%');
       const viewSettings = getViewSettings(bookKey)!;
       const themeCode = getThemeCode();

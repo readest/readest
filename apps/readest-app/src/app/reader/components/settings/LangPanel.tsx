@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { getTranslators } from '@/services/translators';
 import { TRANSLATED_LANGS } from '@/services/constants';
+import { initDayjs } from '@/utils/time';
 import Select from '@/components/Select';
 
 const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -43,7 +44,9 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSelectUILang = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const option = event.target.value;
     saveViewSettings(envConfig, bookKey, 'uiLanguage', option, false, false);
-    i18n.changeLanguage(option ? option : navigator.language);
+    const locale = option ? option : navigator.language;
+    i18n.changeLanguage(locale);
+    initDayjs(locale);
   };
 
   const getTranslationProviderOptions = () => {

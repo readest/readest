@@ -22,6 +22,8 @@ import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { Toast } from '@/components/Toast';
+import { getLocale } from '@/utils/misc';
+import { initDayjs } from '@/utils/time';
 import ReaderContent from './ReaderContent';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
@@ -45,6 +47,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     if (isTauriAppPlatform()) {
       setTimeout(getSysFontsList, 3000);
     }
+    initDayjs(getLocale());
   }, []);
 
   useEffect(() => {

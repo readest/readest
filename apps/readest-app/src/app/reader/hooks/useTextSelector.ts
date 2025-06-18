@@ -113,6 +113,7 @@ export const useTextSelector = (
     // Prevent the container from scrolling when text is selected in paginated mode
     // FIXME: this is a workaround for issue #873
     // TODO: support text selection across pages
+    handleDismissPopup();
     const viewSettings = getViewSettings(bookKey);
     if (
       appService?.isAndroidApp &&

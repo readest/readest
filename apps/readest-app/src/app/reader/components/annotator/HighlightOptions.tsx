@@ -69,16 +69,18 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               className={clsx(
                 'w-4 p-0 text-center leading-none',
                 style === 'highlight' &&
-                  (selectedStyle === 'highlight' ? `bg-${selectedColor}-400` : `bg-gray-300`),
+                  (selectedStyle === 'highlight'
+                    ? `bg-${selectedColor}-300 pt-[2px]`
+                    : `bg-gray-300 pt-[2px]`),
                 (style === 'underline' || style === 'squiggly') &&
                   'text-gray-300 underline decoration-2',
                 style === 'underline' &&
                   (selectedStyle === 'underline'
-                    ? `decoration-${selectedColor}-400`
+                    ? `decoration-${selectedColor}-300`
                     : `decoration-gray-300`),
                 style === 'squiggly' &&
                   (selectedStyle === 'squiggly'
-                    ? `decoration-wavy decoration-${selectedColor}-400`
+                    ? `decoration-wavy decoration-${selectedColor}-300`
                     : `decoration-gray-300 decoration-wavy`),
               )}
             >
@@ -100,10 +102,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             key={color}
             onClick={() => handleSelectColor(color)}
             style={{ width: size16, height: size16 }}
-            className={clsx(`rounded-full p-0`, selectedColor !== color && `bg-${color}-400`)}
+            className={clsx(`rounded-full p-0`, selectedColor !== color && `bg-${color}-300`)}
           >
             {selectedColor === color && (
-              <FaCheckCircle size={size16} className={clsx(`fill-${color}-400`)} />
+              <FaCheckCircle size={size16} className={clsx(`fill-${color}-300`)} />
             )}
           </button>
         ))}

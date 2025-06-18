@@ -16,10 +16,11 @@ const NotebookHeader: React.FC<{
 }> = ({ isPinned, isSearchBarVisible, handleClose, handleTogglePin, handleToggleSearchBar }) => {
   const _ = useTranslation();
   const iconSize14 = useResponsiveSize(14);
+  const iconSize18 = useResponsiveSize(18);
   return (
     <div className='notebook-header relative flex h-11 items-center px-3' dir='ltr'>
       <div className='absolute inset-0 z-[-1] flex items-center justify-center space-x-2'>
-        <LuNotebookPen />
+        <LuNotebookPen size={iconSize18} />
         <div className='notebook-title hidden text-sm font-medium sm:flex'>{_('Notebook')}</div>
       </div>
       <div className='flex w-full items-center gap-x-4'>
@@ -44,7 +45,7 @@ const NotebookHeader: React.FC<{
           onClick={handleToggleSearchBar}
           className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0', isSearchBarVisible && 'bg-base-300')}
         >
-          <FiSearch />
+          <FiSearch size={iconSize18} />
         </button>
       </div>
     </div>

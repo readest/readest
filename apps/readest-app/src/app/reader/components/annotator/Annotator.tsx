@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
@@ -26,6 +26,7 @@ import { useTextSelector } from '../../hooks/useTextSelector';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
+import { throttle } from '@/utils/throttle';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -78,13 +79,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
-  const handleDismissPopup = () => {
-    setSelection(null);
-    setShowAnnotPopup(false);
-    setShowWiktionaryPopup(false);
-    setShowWikipediaPopup(false);
-    setShowDeepLPopup(false);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleDismissPopup = useCallback(
+    throttle(() => {
+      setSelection(null);
+      setShowAnnotPopup(false);
+      setShowWiktionaryPopup(false);
+      setShowWikipediaPopup(false);
+      setShowDeepLPopup(false);
+    }, 500),
+    [],
+  );
 
   const handleDismissPopupAndSelection = () => {
     handleDismissPopup();

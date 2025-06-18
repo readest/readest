@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dayjs from 'dayjs';
 import React from 'react';
 
 import { marked } from 'marked';
@@ -103,7 +104,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           <div className={clsx('content font-size-sm line-clamp-3', item.note && 'mt-2')}>
             <span
               className={clsx(
-                'inline',
+                'inline leading-normal',
                 item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
@@ -130,47 +131,52 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
         }
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex justify-end space-x-3 p-2' dir='ltr'>
-          {item.note && (
-            <button
+        <div className='flex cursor-default items-center justify-between'>
+          <div className='flex items-center'>
+            <span className='text-gray-500'>{dayjs(item.createdAt).fromNow()}</span>
+          </div>
+          <div className='flex items-center justify-end space-x-3 p-2' dir='ltr'>
+            {item.note && (
+              <div
+                className={clsx(
+                  'content settings-content cursor-pointer',
+                  'flex items-end p-0 hover:bg-transparent',
+                )}
+                onClick={editNote.bind(null, item)}
+              >
+                <div
+                  className={clsx(
+                    'align-bottom text-blue-500',
+                    'transition duration-300 ease-in-out',
+                    'content font-size-sm',
+                    'opacity-0 group-hover:opacity-100',
+                    'hover:text-blue-600',
+                  )}
+                >
+                  {_('Edit')}
+                </div>
+              </div>
+            )}
+            <div
               className={clsx(
-                'btn btn-ghost content settings-content hover:bg-transparent',
-                'flex h-4 min-h-4 items-end p-0',
+                'content settings-content cursor-pointer',
+                'flex items-end p-0 hover:bg-transparent',
               )}
-              onClick={editNote.bind(null, item)}
+              onClick={deleteNote.bind(null, item)}
             >
               <div
                 className={clsx(
-                  'align-bottom text-blue-500',
+                  'align-bottom text-red-500',
                   'transition duration-300 ease-in-out',
                   'content font-size-sm',
                   'opacity-0 group-hover:opacity-100',
-                  'hover:text-blue-600',
+                  'hover:text-red-600',
                 )}
               >
-                {_('Edit')}
+                {_('Delete')}
               </div>
-            </button>
-          )}
-          <button
-            className={clsx(
-              'btn btn-ghost content settings-content hover:bg-transparent',
-              'flex h-4 min-h-4 items-end p-0',
-            )}
-            onClick={deleteNote.bind(null, item)}
-          >
-            <div
-              className={clsx(
-                'align-bottom text-red-500',
-                'transition duration-300 ease-in-out',
-                'content font-size-sm',
-                'opacity-0 group-hover:opacity-100',
-                'hover:text-red-600',
-              )}
-            >
-              {_('Delete')}
             </div>
-          </button>
+          </div>
         </div>
       </div>
     </li>
