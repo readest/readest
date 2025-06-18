@@ -11,7 +11,7 @@
     <key>UIHomeIndicatorAutoHidden</key>
     <true/>
     <key>UIRequiresFullScreen</key>
-    <true/>
+    <false/>
     <key>CFBundleDocumentTypes</key>
     <array>
       <dict>
