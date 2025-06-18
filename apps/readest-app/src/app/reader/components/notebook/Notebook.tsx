@@ -216,8 +216,9 @@ const Notebook: React.FC = ({}) => {
           }
         `}</style>
         <div
-          className='drag-bar absolute left-0 top-0 h-full w-0.5 cursor-col-resize'
+          className='drag-bar absolute left-0 top-0 -m-3 h-full w-0.5 cursor-col-resize p-3'
           onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
         />
         <div className='flex-shrink-0'>
           <NotebookHeader

@@ -182,6 +182,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               section={section}
               pageinfo={pageinfo}
               isHoveredAnim={false}
+              gridInsets={gridInsets}
             />
             {isFontLayoutSettingsDialogOpen && <SettingsDialog bookKey={bookKey} config={config} />}
           </div>
