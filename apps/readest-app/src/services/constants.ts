@@ -89,7 +89,7 @@ export const DEFAULT_BOOK_FONT: BookFont = {
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   marginTopPx: 44,
-  marginBottomPx: 16,
+  marginBottomPx: 44,
   marginLeftPx: 16,
   marginRightPx: 16,
   compactMarginTopPx: 16,
@@ -136,6 +136,7 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
   animated: true,
   defaultFont: 'Sans-serif',
+  marginBottomPx: 16,
 };
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {

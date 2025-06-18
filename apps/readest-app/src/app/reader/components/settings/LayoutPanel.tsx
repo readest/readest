@@ -98,42 +98,54 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     if (marginTopPx === viewSettings.marginTopPx) return;
-    viewSettings.marginPx = undefined;
+    if (viewSettings.marginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'marginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'marginTopPx', marginTopPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginTopPx]);
 
   useEffect(() => {
     if (marginBottomPx === viewSettings.marginBottomPx) return;
-    viewSettings.marginPx = undefined;
+    if (viewSettings.marginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'marginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'marginBottomPx', marginBottomPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginBottomPx]);
 
   useEffect(() => {
     if (marginRightPx === viewSettings.marginRightPx) return;
-    viewSettings.marginPx = undefined;
+    if (viewSettings.marginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'marginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'marginRightPx', marginRightPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginRightPx]);
 
   useEffect(() => {
     if (marginLeftPx === viewSettings.marginLeftPx) return;
-    viewSettings.marginPx = undefined;
+    if (viewSettings.marginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'marginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'marginLeftPx', marginLeftPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marginLeftPx]);
 
   useEffect(() => {
     if (compactMarginTopPx === viewSettings.compactMarginTopPx) return;
-    viewSettings.compactMarginPx = undefined;
+    if (viewSettings.compactMarginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'compactMarginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'compactMarginTopPx', compactMarginTopPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compactMarginTopPx]);
 
   useEffect(() => {
     if (compactMarginBottomPx === viewSettings.compactMarginBottomPx) return;
-    viewSettings.compactMarginPx = undefined;
+    if (viewSettings.compactMarginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'compactMarginPx', undefined, false, false);
+    }
     saveViewSettings(
       envConfig,
       bookKey,
@@ -147,7 +159,9 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     if (compactMarginRightPx === viewSettings.compactMarginRightPx) return;
-    viewSettings.compactMarginPx = undefined;
+    if (viewSettings.compactMarginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'compactMarginPx', undefined, false, false);
+    }
     saveViewSettings(
       envConfig,
       bookKey,
@@ -161,7 +175,9 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     if (compactMarginLeftPx === viewSettings.compactMarginLeftPx) return;
-    viewSettings.compactMarginPx = undefined;
+    if (viewSettings.compactMarginPx !== undefined) {
+      saveViewSettings(envConfig, bookKey, 'compactMarginPx', undefined, false, false);
+    }
     saveViewSettings(envConfig, bookKey, 'compactMarginLeftPx', compactMarginLeftPx, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compactMarginLeftPx]);
