@@ -1,5 +1,21 @@
 {
   "releases": {
+    "0.9.58": {
+      "date": "2025-06-18",
+      "notes": [
+        "TTS: Translation now works even when TTS is playing in the background",
+        "TTS: Press T on your keyboard to quickly toggle TTS on or off",
+        "TTS: Each open book now has its own independent TTS controller",
+        "Annotations: Annotation tools now function properly while TTS is active",
+        "Settings: Margins for top, bottom, left, and right can now be adjusted individually",
+        "Settings: New option to always show the status bar while reading",
+        "Layout: Reader page now adapts better to device safe areas for a more comfortable layout",
+        "UI: Added creation timestamps to annotations and made various interface improvements",
+        "iPad: Multiple columns are now supported in portrait mode",
+        "iPad: Fixed issue where sidebars couldn't be resized by dragging",
+        "iPad: Added support for split-screen mode"
+      ]
+    },
     "0.9.57": {
       "date": "2025-06-14",
       "notes": ["TTS: Fixed an issue to detect custom TTS engines on some Android devices"]
