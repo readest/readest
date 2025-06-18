@@ -23,6 +23,7 @@ import { saveViewSettings } from '../utils/viewSettingsHelper';
 import { PageInfo } from '@/types/book';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
+import TTSControl from './tts/TTSControl';
 
 interface FooterBarProps {
   bookKey: string;
@@ -376,6 +377,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           />
         </div>
       </div>
+      <TTSControl bookKey={bookKey} />
     </>
   );
 };

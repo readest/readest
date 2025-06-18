@@ -20,13 +20,16 @@ const POPUP_WIDTH = 282;
 const POPUP_HEIGHT = 160;
 const POPUP_PADDING = 10;
 
-const TTSControl = () => {
+interface TTSControlProps {
+  bookKey: string;
+}
+
+const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getView, getProgress, getViewSettings } = useReaderStore();
   const { setViewSettings, setTTSEnabled } = useReaderStore();
-  const [bookKey, setBookKey] = useState<string>('');
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -152,7 +155,9 @@ const TTSControl = () => {
   }, [ttsController, bookKey]);
 
   const handleTTSSpeak = async (event: CustomEvent) => {
-    const { bookKey, range } = event.detail;
+    const { bookKey: ttsBookKey, range } = event.detail;
+    if (bookKey !== ttsBookKey) return;
+
     const view = getView(bookKey);
     const progress = getProgress(bookKey);
     const viewSettings = getViewSettings(bookKey);
@@ -182,7 +187,6 @@ const TTSControl = () => {
     }
 
     const primaryLang = bookData.book.primaryLanguage;
-    setBookKey(bookKey);
 
     if (ttsControllerRef.current) {
       ttsControllerRef.current.stop();
@@ -230,8 +234,8 @@ const TTSControl = () => {
   };
 
   const handleTTSStop = async (event: CustomEvent) => {
-    const { bookKey } = event.detail;
-    if (ttsControllerRef.current) {
+    const { bookKey: ttsBookKey } = event.detail;
+    if (ttsControllerRef.current && bookKey === ttsBookKey) {
       handleStop(bookKey);
     }
   };
