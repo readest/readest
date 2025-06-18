@@ -365,5 +365,6 @@
   "Bottom Margin (px)": "Margine Inferiore (px)",
   "Right Margin (px)": "Margine Destro (px)",
   "Left Margin (px)": "Margine Sinistro (px)",
-  "Column Gap (%)": "Spazio tra Colonne (%)"
+  "Column Gap (%)": "Spazio tra Colonne (%)",
+  "Always Show Status Bar": "Mostra sempre la barra di stato"
 }

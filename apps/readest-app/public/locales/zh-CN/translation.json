@@ -359,5 +359,6 @@
   "Bottom Margin (px)": "下边距",
   "Right Margin (px)": "右边距",
   "Left Margin (px)": "左边距",
-  "Column Gap (%)": "列间距"
+  "Column Gap (%)": "列间距",
+  "Always Show Status Bar": "始终显示状态栏"
 }

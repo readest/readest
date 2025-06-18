@@ -359,5 +359,6 @@
   "Bottom Margin (px)": "Margin Bawah (px)",
   "Right Margin (px)": "Margin Kanan (px)",
   "Left Margin (px)": "Margin Kiri (px)",
-  "Column Gap (%)": "Jarak Antar Kolom (%)"
+  "Column Gap (%)": "Jarak Antar Kolom (%)",
+  "Always Show Status Bar": "Selalu Tampilkan Bilah Status"
 }

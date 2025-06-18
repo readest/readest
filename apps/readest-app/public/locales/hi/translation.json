@@ -362,5 +362,6 @@
   "Bottom Margin (px)": "निचला हाशिया (px)",
   "Right Margin (px)": "दायां हाशिया (px)",
   "Left Margin (px)": "बायां हाशिया (px)",
-  "Column Gap (%)": "स्तंभों के बीच की दूरी (%)"
+  "Column Gap (%)": "स्तंभों के बीच की दूरी (%)",
+  "Always Show Status Bar": "स्थिति पट्टी हमेशा दिखाएं"
 }

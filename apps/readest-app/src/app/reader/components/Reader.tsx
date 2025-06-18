@@ -38,7 +38,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const isInitiating = useRef(false);
 
-  useTheme({ systemUIVisible: false, appThemeColor: 'base-100' });
+  useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
   useScreenWakeLock(settings.screenWakeLock);
 
   useEffect(() => {
@@ -49,20 +49,6 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     }
     initDayjs(getLocale());
   }, []);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (appService?.isMobileApp && !document.hidden) {
-        dismissSystemUI();
-        setSystemUIVisibility({ visible: false, darkMode: isDarkMode });
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService, isDarkMode]);
 
   const handleKeyDown = (event: CustomEvent) => {
     if (event.detail.keyName === 'Back') {
@@ -109,7 +95,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;
-    const systemUIVisible = !!hoveredBookKey;
+    const systemUIVisible = !!hoveredBookKey || settings.alwaysShowStatusBar;
     setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
     if (systemUIVisible) {
       showSystemUI();

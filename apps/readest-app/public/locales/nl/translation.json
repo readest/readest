@@ -362,5 +362,6 @@
   "Bottom Margin (px)": "Ondermarge (px)",
   "Right Margin (px)": "Rechter marge (px)",
   "Left Margin (px)": "Linker marge (px)",
-  "Column Gap (%)": "Kolomafstand (%)"
+  "Column Gap (%)": "Kolomafstand (%)",
+  "Always Show Status Bar": "Statusbalk altijd weergeven"
 }

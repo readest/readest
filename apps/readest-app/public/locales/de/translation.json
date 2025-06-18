@@ -362,5 +362,6 @@
   "Bottom Margin (px)": "Unterer Rand (px)",
   "Right Margin (px)": "Rechter Rand (px)",
   "Left Margin (px)": "Linker Rand (px)",
-  "Column Gap (%)": "Spaltenabstand (%)"
+  "Column Gap (%)": "Spaltenabstand (%)",
+  "Always Show Status Bar": "Statusleiste immer anzeigen"
 }

@@ -368,5 +368,6 @@
   "Bottom Margin (px)": "Нижній відступ (px)",
   "Right Margin (px)": "Правий відступ (px)",
   "Left Margin (px)": "Лівий відступ (px)",
-  "Column Gap (%)": "Проміжок між стовпцями (%)"
+  "Column Gap (%)": "Проміжок між стовпцями (%)",
+  "Always Show Status Bar": "Завжди показувати панель стану"
 }

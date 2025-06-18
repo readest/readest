@@ -359,5 +359,6 @@
   "Bottom Margin (px)": "下マージン (px)",
   "Right Margin (px)": "右マージン (px)",
   "Left Margin (px)": "左マージン (px)",
-  "Column Gap (%)": "列間の間隔 (%)"
+  "Column Gap (%)": "列間の間隔 (%)",
+  "Always Show Status Bar": "ステータスバーを常に表示"
 }

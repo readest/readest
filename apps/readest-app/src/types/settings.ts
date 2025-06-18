@@ -28,6 +28,7 @@ export interface SystemSettings {
   alwaysOnTop: boolean;
   autoCheckUpdates: boolean;
   screenWakeLock: boolean;
+  alwaysShowStatusBar: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;

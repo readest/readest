@@ -4,6 +4,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { applyCustomTheme, Palette } from '@/styles/themes';
 import { getStatusBarHeight, setSystemUIVisibility } from '@/utils/bridge';
+import { getOSPlatform } from '@/utils/misc';
 
 type UseThemeProps = {
   systemUIVisible?: boolean;
@@ -27,14 +28,6 @@ export const useTheme = ({
 
   useEffect(() => {
     updateAppTheme(appThemeColor);
-    if (appService?.isMobileApp) {
-      if (systemUIVisible) {
-        showSystemUI();
-      } else {
-        dismissSystemUI();
-      }
-      setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
-    }
     if (appService?.isAndroidApp) {
       getStatusBarHeight().then((res) => {
         if (res.height && res.height > 0) {
@@ -43,27 +36,56 @@ export const useTheme = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService, isDarkMode]);
+  }, []);
 
-  const handleOrientationChange = useCallback(() => {
-    if (appService?.isIOSApp) {
-      if (screen.orientation.type.includes('landscape')) {
-        dismissSystemUI();
-        setSystemUIVisibility({ visible: false, darkMode: isDarkMode });
-      } else if (systemUIVisible) {
-        showSystemUI();
-        setSystemUIVisibility({ visible: true, darkMode: isDarkMode });
-      }
+  const handleSystemUIVisibility = useCallback(() => {
+    if (!appService?.isMobileApp) return;
+
+    // This is a workaround for iPhone apps where the system UI is not visible in landscape mode
+    // when the app is in fullscreen mode until we find a better solution to override the prefersStatusBarHidden
+    // in the ViewController.
+    const isIPhoneApp = appService.isIOSApp && getOSPlatform() === 'ios';
+    const systemUINeverVisible = isIPhoneApp && screen.orientation.type.includes('landscape');
+    const visible = systemUIVisible && !systemUINeverVisible;
+    if (visible) {
+      showSystemUI();
+    } else {
+      dismissSystemUI();
     }
+    setSystemUIVisibility({ visible, darkMode: isDarkMode });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, isDarkMode, systemUIVisible]);
 
   useEffect(() => {
+    if (appService?.isMobileApp) {
+      handleSystemUIVisibility();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleSystemUIVisibility]);
+
+  useEffect(() => {
+    if (!appService?.isMobileApp) return;
+
+    handleSystemUIVisibility();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleSystemUIVisibility();
+      }
+    };
+    const handleOrientationChange = () => {
+      // Only handle orientation change for iPhone apps
+      if (appService?.isIOSApp && getOSPlatform() === 'ios') {
+        handleSystemUIVisibility();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     screen.orientation.addEventListener('change', handleOrientationChange);
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       screen.orientation.removeEventListener('change', handleOrientationChange);
     };
-  }, [handleOrientationChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleSystemUIVisibility]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings?.customThemes ?? [];

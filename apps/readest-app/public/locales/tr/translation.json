@@ -362,5 +362,6 @@
   "Bottom Margin (px)": "Alt Kenar Boşluğu (px)",
   "Right Margin (px)": "Sağ Kenar Boşluğu (px)",
   "Left Margin (px)": "Sol Kenar Boşluğu (px)",
-  "Column Gap (%)": "Sütun Aralığı (%)"
+  "Column Gap (%)": "Sütun Aralığı (%)",
+  "Always Show Status Bar": "Durum Çubuğunu Her Zaman Göster"
 }

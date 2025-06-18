@@ -365,5 +365,6 @@
   "Bottom Margin (px)": "Marge inférieure (px)",
   "Right Margin (px)": "Marge droite (px)",
   "Left Margin (px)": "Marge gauche (px)",
-  "Column Gap (%)": "Espacement des colonnes (%)"
+  "Column Gap (%)": "Espacement des colonnes (%)",
+  "Always Show Status Bar": "Afficher toujours la barre d'état"
 }

@@ -38,6 +38,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
+  const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
@@ -89,6 +90,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     saveSettings(envConfig, settings);
     setIsAlwaysOnTop(settings.alwaysOnTop);
     tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
+    setIsDropdownOpen?.(false);
+  };
+
+  const toggleAlwaysShowStatusBar = () => {
+    settings.alwaysShowStatusBar = !settings.alwaysShowStatusBar;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAlwaysShowStatusBar(settings.alwaysShowStatusBar);
     setIsDropdownOpen?.(false);
   };
 
@@ -212,6 +221,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           label={_('Always on Top')}
           Icon={isAlwaysOnTop ? MdCheck : undefined}
           onClick={toggleAlwaysOnTop}
+        />
+      )}
+      {appService?.isMobileApp && (
+        <MenuItem
+          label={_('Always Show Status Bar')}
+          Icon={isAlwaysShowStatusBar ? MdCheck : undefined}
+          onClick={toggleAlwaysShowStatusBar}
         />
       )}
       <MenuItem

@@ -359,5 +359,6 @@
   "Bottom Margin (px)": "Lề dưới (px)",
   "Right Margin (px)": "Lề phải (px)",
   "Left Margin (px)": "Lề trái (px)",
-  "Column Gap (%)": "Khoảng cách cột (%)"
+  "Column Gap (%)": "Khoảng cách cột (%)",
+  "Always Show Status Bar": "Luôn hiển thị thanh trạng thái"
 }

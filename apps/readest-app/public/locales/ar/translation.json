@@ -374,5 +374,6 @@
   "Bottom Margin (px)": "الهامش السفلي (بكسل)",
   "Right Margin (px)": "الهامش الأيمن (بكسل)",
   "Left Margin (px)": "الهامش الأيسر (بكسل)",
-  "Column Gap (%)": "تباعد الأعمدة (%)"
+  "Column Gap (%)": "تباعد الأعمدة (%)",
+  "Always Show Status Bar": "دائمًا إظهار شريط الحالة"
 }

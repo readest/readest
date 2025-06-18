@@ -368,5 +368,6 @@
   "Bottom Margin (px)": "Dolny margines (px)",
   "Right Margin (px)": "Prawy margines (px)",
   "Left Margin (px)": "Lewy margines (px)",
-  "Column Gap (%)": "Odstęp między kolumnami (%)"
+  "Column Gap (%)": "Odstęp między kolumnami (%)",
+  "Always Show Status Bar": "Zawsze pokazuj pasek stanu"
 }
