@@ -420,16 +420,9 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   return `${layoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
 };
 
-export const transformStylesheet = (
-  viewSettings: ViewSettings,
-  width: number,
-  height: number,
-  css: string,
-) => {
+export const transformStylesheet = (vw: number, vh: number, css: string) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
-  const w = width - viewSettings.marginLeftPx - viewSettings.marginRightPx;
-  const h = height - viewSettings.marginTopPx - viewSettings.marginBottomPx;
   const ruleRegex = /([^{]+)({[^}]+})/g;
   css = css.replace(ruleRegex, (match, selector, block) => {
     const hasTextAlignCenter = /text-align\s*:\s*center\s*[;$]/.test(block);
@@ -467,8 +460,8 @@ export const transformStylesheet = (
       const rem = parseFloat(pt) / fontScale / 12;
       return `font-size: ${rem}rem`;
     })
-    .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * w) / 100 + 'px')
-    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * h) / 100 + 'px')
+    .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
+    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
     .replace(/[\s;]color\s*:\s*black/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')

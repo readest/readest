@@ -83,7 +83,7 @@ const FoliateViewer: React.FC<{
         .then((data) => {
           const viewSettings = getViewSettings(bookKey);
           if (viewSettings && detail.type === 'text/css')
-            return transformStylesheet(viewSettings, width, height, data);
+            return transformStylesheet(width, height, data);
           if (viewSettings && detail.type === 'application/xhtml+xml') {
             const ctx = {
               bookKey,
@@ -206,9 +206,10 @@ const FoliateViewer: React.FC<{
           detail.allowScript = viewSettings.allowScript ?? false;
         }
       });
-      const containerRect = containerRef.current?.getBoundingClientRect();
-      const width = containerRect?.width || window.innerWidth;
-      const height = containerRect?.height || window.innerHeight;
+      const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
+      const viewHeight = appService?.isMobile ? screen.height : window.innerHeight;
+      const width = viewWidth - insets.left - insets.right;
+      const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
 
