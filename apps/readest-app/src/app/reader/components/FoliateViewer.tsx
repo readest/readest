@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
+import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -38,8 +39,8 @@ const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
   config: BookConfig;
-  insets: { top: number; right: number; bottom: number; left: number };
-}> = ({ bookKey, bookDoc, config, insets }) => {
+  contentInsets: Insets;
+}> = ({ bookKey, bookDoc, config, contentInsets: insets }) => {
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
@@ -248,11 +249,16 @@ const FoliateViewer: React.FC<{
     const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
     const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
+    const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
+    const showBottomFooter = viewSettings.showFooter && !viewSettings.vertical;
+
+    const moreTopInset = showTopHeader ? Math.max(0, 44 - insets.top) : 0;
+    const moreBottomInset = showBottomFooter ? Math.max(0, 44 - insets.bottom) : 0;
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
-    viewRef.current?.renderer.setAttribute('margin-top', `${insets.top}px`);
+    viewRef.current?.renderer.setAttribute('margin-top', `${insets.top + moreTopInset}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${insets.right + moreRightInset}px`);
-    viewRef.current?.renderer.setAttribute('margin-bottom', `${insets.bottom}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${insets.bottom + moreBottomInset}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${insets.left + moreLeftInset}px`);
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {

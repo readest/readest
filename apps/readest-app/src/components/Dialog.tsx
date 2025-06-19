@@ -192,7 +192,7 @@ const Dialog: React.FC<DialogProps> = ({
         >
           <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
         </div>
-        <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-4'>
+        <div className='dialog-header bg-base-100 sticky top-1 z-10 flex items-center justify-between px-2 sm:px-4'>
           {header ? (
             header
           ) : (

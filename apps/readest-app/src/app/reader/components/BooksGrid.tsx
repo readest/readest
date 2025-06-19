@@ -29,7 +29,8 @@ interface BooksGridProps {
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
-  const { getProgress, getViewState, getViewSettings, hoveredBookKey } = useReaderStore();
+  const { getProgress, getViewState, getViewSettings } = useReaderStore();
+  const { getGridInsets, setGridInsets, hoveredBookKey } = useReaderStore();
   const { isSideBarVisible, sideBarBookKey } = useSidebarStore();
   const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
@@ -45,6 +46,21 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
+  useEffect(() => {
+    if (!screenInsets) return;
+    bookKeys.forEach((bookKey, index) => {
+      const { top, right, bottom, left } = getInsetEdges(index, bookKeys.length, aspectRatio);
+      const gridInsets = {
+        top: top ? screenInsets.top : 0,
+        right: right ? screenInsets.right : 0,
+        bottom: bottom ? screenInsets.bottom : 0,
+        left: left ? screenInsets.left : 0,
+      };
+      setGridInsets(bookKey, gridInsets);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKeys, screenInsets]);
+
   if (!screenInsets) return null;
 
   return (
@@ -56,26 +72,18 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
       }}
     >
       {bookKeys.map((bookKey, index) => {
-        const { top, right, bottom, left } = getInsetEdges(index, bookKeys.length, aspectRatio);
         const bookData = getBookData(bookKey);
         const config = getConfig(bookKey);
         const progress = getProgress(bookKey);
         const viewSettings = getViewSettings(bookKey);
+        const gridInsets = getGridInsets(bookKey);
         const { book, bookDoc } = bookData || {};
-        if (!book || !config || !bookDoc || !viewSettings) return null;
+        if (!book || !config || !bookDoc || !viewSettings || !gridInsets) return null;
 
         const { section, pageinfo, timeinfo, sectionLabel } = progress || {};
         const isBookmarked = getViewState(bookKey)?.ribbonVisible;
         const horizontalGapPercent = viewSettings.gapPercent;
         const viewInsets = getViewInsets(viewSettings);
-        // insets for the grid cell
-        const gridInsets = {
-          top: top ? screenInsets.top : 0,
-          right: right ? screenInsets.right : 0,
-          bottom: bottom ? screenInsets.bottom : 0,
-          left: left ? screenInsets.left : 0,
-        };
-        // insets for the content inside the grid cell
         const contentInsets = {
           top: gridInsets.top + viewInsets.top,
           right: gridInsets.right + viewInsets.right,
@@ -110,7 +118,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               bookKey={bookKey}
               bookDoc={bookDoc}
               config={config}
-              insets={contentInsets}
+              contentInsets={contentInsets}
             />
             {viewSettings.vertical && viewSettings.scrolled && (
               <>

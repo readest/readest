@@ -18,11 +18,12 @@ import NumberInput from './NumberInput';
 const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getView, getViewSettings, setViewSettings } = useReaderStore();
+  const { getView, getViewSettings, getGridInsets, setViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const view = getView(bookKey);
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
+  const gridInsets = getGridInsets(bookKey)!;
 
   const [paragraphMargin, setParagraphMargin] = useState(viewSettings.paragraphMargin!);
   const [lineHeight, setLineHeight] = useState(viewSettings.lineHeight!);
@@ -273,7 +274,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
     if (showHeader && !viewSettings.vertical) {
-      viewSettings.marginTopPx = Math.max(viewSettings.marginTopPx, 44);
+      const minMarginTop = Math.max(0, Math.round((44 - gridInsets.top) / 4) * 4);
+      viewSettings.marginTopPx = Math.max(viewSettings.marginTopPx, minMarginTop);
       setMarginTopPx(viewSettings.marginTopPx);
       setViewSettings(bookKey, viewSettings);
     }
@@ -285,7 +287,8 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (showFooter === viewSettings.showFooter) return;
     if (showFooter && !viewSettings.vertical) {
-      viewSettings.marginBottomPx = Math.max(viewSettings.marginBottomPx, 44);
+      const minMarginBottom = Math.max(0, Math.round((44 - gridInsets.bottom) / 4) * 4);
+      viewSettings.marginBottomPx = Math.max(viewSettings.marginBottomPx, minMarginBottom);
       setMarginBottomPx(viewSettings.marginBottomPx);
       setViewSettings(bookKey, viewSettings);
     }
@@ -462,7 +465,11 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Top Margin (px)')}
               value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
               onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
-              min={0}
+              min={
+                showHeader && !isVertical
+                  ? Math.max(0, Math.round((44 - gridInsets.top) / 4) * 4)
+                  : 0
+              }
               max={88}
               step={4}
             />
@@ -470,7 +477,11 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               label={_('Bottom Margin (px)')}
               value={showFooter && !isVertical ? marginBottomPx : compactMarginBottomPx}
               onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
-              min={0}
+              min={
+                showFooter && !isVertical
+                  ? Math.max(0, Math.round((44 - gridInsets.bottom) / 4) * 4)
+                  : 0
+              }
               max={88}
               step={4}
             />

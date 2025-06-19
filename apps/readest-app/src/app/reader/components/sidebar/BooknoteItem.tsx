@@ -133,7 +133,9 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
       >
         <div className='flex cursor-default items-center justify-between'>
           <div className='flex items-center'>
-            <span className='text-gray-500'>{dayjs(item.createdAt).fromNow()}</span>
+            <span className='text-sm text-gray-500 sm:text-xs'>
+              {dayjs(item.createdAt).fromNow()}
+            </span>
           </div>
           <div className='flex items-center justify-end space-x-3 p-2' dir='ltr'>
             {item.note && (

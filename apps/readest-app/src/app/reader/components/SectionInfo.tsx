@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import React from 'react';
 import { Insets } from '@/types/misc';
+import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 
 interface SectionInfoProps {
   section?: string;
@@ -21,6 +23,13 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   contentInsets,
   gridInsets,
 }) => {
+  const { appService } = useEnv();
+  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const topInset = Math.max(
+    gridInsets.top,
+    appService?.isAndroidApp && systemUIVisible ? statusBarHeight / 2 : 0,
+  );
+
   return (
     <>
       <div
@@ -29,7 +38,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           isScrolled && !isVertical && 'bg-base-100',
         )}
         style={{
-          height: `${gridInsets.top}px`,
+          height: `${topInset}px`,
         }}
       />
       <div
@@ -49,7 +58,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
                 height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px)`,
               }
             : {
-                top: `${gridInsets.top}px`,
+                top: `${topInset}px`,
                 insetInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
                 width: `calc(100% - ${contentInsets.left + contentInsets.right}px)`,
               }

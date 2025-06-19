@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
 import { Insets } from '@/types/misc';
+import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
@@ -22,6 +24,13 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   contentInsets,
   gridInsets,
 }) => {
+  const { appService } = useEnv();
+  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const topInset = Math.max(
+    gridInsets.top,
+    appService?.isAndroidApp && systemUIVisible ? statusBarHeight / 2 : 0,
+  );
+
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
   const hintTimeout = useRef(2000);
   const dismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,7 +66,7 @@ const HintInfo: React.FC<SectionInfoProps> = ({
           hintMessage ? 'bg-base-100' : 'bg-transparent',
         )}
         style={{
-          height: `${gridInsets.top}px`,
+          height: `${topInset}px`,
         }}
       />
       <div
@@ -83,7 +92,7 @@ const HintInfo: React.FC<SectionInfoProps> = ({
                 width: showDoubleBorder ? '30px' : `${horizontalGap}%`,
               }
             : {
-                top: `${gridInsets.top}px`,
+                top: `${topInset}px`,
                 insetInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
               }
         }
