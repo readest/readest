@@ -274,7 +274,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
 
           <div className='text-base-content flex-grow text-sm'>
             <h2 className='mb-4 text-center font-bold sm:text-start'>
-              {_('A new version of Readest is Available!')}
+              {_('A new version of Readest is available!')}
             </h2>
             <p className='mb-2'>
               {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {

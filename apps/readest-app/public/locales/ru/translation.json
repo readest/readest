@@ -264,7 +264,7 @@
   "Clear Search": "Очистить поиск",
   "Header & Footer": "Заголовок и нижний колонтитул",
   "Apply also in Scrolled Mode": "Применить также в прокручиваемом режиме",
-  "A new version of Readest is Available!": "Доступна новая версия Readest!",
+  "A new version of Readest is available!": "Доступна новая версия Readest!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} доступен (установленная версия {{currentVersion}}).",
   "Download and install now?": "Скачать и установить сейчас?",
   "Downloading {{downloaded}} of {{contentLength}}": "Скачано {{downloaded}} из {{contentLength}}",

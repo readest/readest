@@ -264,7 +264,7 @@
   "Clear Search": "清除搜索",
   "Header & Footer": "頁眉頁腳",
   "Apply also in Scrolled Mode": "滾動模式同樣適用",
-  "A new version of Readest is Available!": "有新版本的 Readest 可更新！",
+  "A new version of Readest is available!": "有新版本的 Readest 可更新！",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} 可更新（已安裝版本 {{currentVersion}}）。",
   "Download and install now?": "立即下載並安裝？",
   "Downloading {{downloaded}} of {{contentLength}}": "正在下載 {{downloaded}} / {{contentLength}}",

@@ -264,7 +264,7 @@
   "Clear Search": "Wyczyść wyszukiwanie",
   "Header & Footer": "Nagłówek i stopka",
   "Apply also in Scrolled Mode": "Zastosuj również w trybie przewijania",
-  "A new version of Readest is Available!": "Nowa wersja Readest jest dostępna!",
+  "A new version of Readest is available!": "Nowa wersja Readest jest dostępna!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} jest dostępny (zainstalowana wersja {{currentVersion}}).",
   "Download and install now?": "Pobierz i zainstaluj teraz?",
   "Downloading {{downloaded}} of {{contentLength}}": "Pobieranie {{downloaded}} z {{contentLength}}",

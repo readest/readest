@@ -264,7 +264,7 @@
   "Clear Search": "Suche löschen",
   "Header & Footer": "Kopf- & Fußzeile",
   "Apply also in Scrolled Mode": "Auch im Scroll-Modus anwenden",
-  "A new version of Readest is Available!": "Eine neue Version von Readest ist verfügbar!",
+  "A new version of Readest is available!": "Eine neue Version von Readest ist verfügbar!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} ist verfügbar (installierte Version {{currentVersion}}).",
   "Download and install now?": "Jetzt herunterladen und installieren?",
   "Downloading {{downloaded}} of {{contentLength}}": "Herunterladen {{downloaded}} von {{contentLength}}",

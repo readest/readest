@@ -264,7 +264,7 @@
   "Clear Search": "खोज साफ करें",
   "Header & Footer": "हेडर और फ़ुटर",
   "Apply also in Scrolled Mode": "स्क्रॉल मोड में भी लागू करें",
-  "A new version of Readest is Available!": "Readest का एक नया संस्करण उपलब्ध है!",
+  "A new version of Readest is available!": "Readest का एक नया संस्करण उपलब्ध है!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} उपलब्ध है (स्थापित संस्करण {{currentVersion}})।",
   "Download and install now?": "अब डाउनलोड और इंस्टॉल करें?",
   "Downloading {{downloaded}} of {{contentLength}}": "डाउनलोड कर रहा है {{downloaded}} का {{contentLength}}",

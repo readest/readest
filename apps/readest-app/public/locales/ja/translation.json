@@ -264,7 +264,7 @@
   "Clear Search": "検索をクリア",
   "Header & Footer": "ヘッダーとフッター",
   "Apply also in Scrolled Mode": "スクロールモードでも適用",
-  "A new version of Readest is Available!": "新しいバージョンのReadestが利用可能です！",
+  "A new version of Readest is available!": "新しいバージョンのReadestが利用可能です！",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}}が利用可能です（インストールされたバージョン{{currentVersion}}）。",
   "Download and install now?": "今すぐダウンロードしてインストールしますか？",
   "Downloading {{downloaded}} of {{contentLength}}": "ダウンロード中 {{downloaded}} / {{contentLength}}",

@@ -264,7 +264,7 @@
   "Clear Search": "مسح البحث",
   "Header & Footer": "الترويسة والتذييل",
   "Apply also in Scrolled Mode": "تطبيق أيضًا في وضع التمرير",
-  "A new version of Readest is Available!": "يتوفر إصدار جديد من Readest!",
+  "A new version of Readest is available!": "يتوفر إصدار جديد من Readest!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "إصدار {{newVersion}} من ريديست متاح للتنزيل (الإصدار المثبت حاليًا {{currentVersion}}).",
   "Download and install now?": "هل ترغب في تنزيله وتثبيته الآن؟",
   "Downloading {{downloaded}} of {{contentLength}}": "جارٍ تنزيل {{downloaded}} من {{contentLength}}",

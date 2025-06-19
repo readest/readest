@@ -264,7 +264,7 @@
   "Clear Search": "Limpiar búsqueda",
   "Header & Footer": "Encabezado y pie de página",
   "Apply also in Scrolled Mode": "Aplicar también en modo desplazamiento",
-  "A new version of Readest is Available!": "¡Una nueva versión de Readest está disponible!",
+  "A new version of Readest is available!": "¡Una nueva versión de Readest está disponible!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} está disponible (versión instalada {{currentVersion}}).",
   "Download and install now?": "Descargar e instalar ahora?",
   "Downloading {{downloaded}} of {{contentLength}}": "Descargando {{downloaded}} de {{contentLength}}",

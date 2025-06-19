@@ -264,7 +264,7 @@
   "Clear Search": "Καθαρισμός αναζήτησης",
   "Header & Footer": "Κεφαλίδα & Υποσέλιδο",
   "Apply also in Scrolled Mode": "Εφαρμογή και σε λειτουργία κύλισης",
-  "A new version of Readest is Available!": "Μια νέα έκδοση του Readest είναι διαθέσιμη!",
+  "A new version of Readest is available!": "Μια νέα έκδοση του Readest είναι διαθέσιμη!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Η έκδοση Readest {{newVersion}} είναι διαθέσιμη (έκδοση που είναι εγκατεστημένη {{currentVersion}}).",
   "Download and install now?": "Θέλετε να την κατεβάσετε και να την εγκαταστήσετε τώρα;",
   "Downloading {{downloaded}} of {{contentLength}}": "Κατεβάζω {{downloaded}} από {{contentLength}}",

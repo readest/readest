@@ -275,7 +275,7 @@
   "Description:": "Beschrijving:",
   "No description available": "Geen beschrijving beschikbaar",
   "Drop to Import Books": "Sleep om boeken te importeren",
-  "A new version of Readest is Available!": "Een nieuwe versie van Readest is beschikbaar!",
+  "A new version of Readest is available!": "Een nieuwe versie van Readest is beschikbaar!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} is beschikbaar (geïnstalleerde versie {{currentVersion}}).",
   "Download and install now?": "Nu downloaden en installeren?",
   "Downloading {{downloaded}} of {{contentLength}}": "Downloaden {{downloaded}} van {{contentLength}}",

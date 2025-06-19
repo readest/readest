@@ -264,7 +264,7 @@
   "Clear Search": "Aramayı Temizle",
   "Header & Footer": "Başlık ve Altbilgi",
   "Apply also in Scrolled Mode": "Kaydırılmış Modda da Uygula",
-  "A new version of Readest is Available!": "Yeni bir Readest sürümü mevcut!",
+  "A new version of Readest is available!": "Yeni bir Readest sürümü mevcut!",
   "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Readest {{newVersion}} mevcut (yüklü sürüm {{currentVersion}}).",
   "Download and install now?": "Şimdi indirip yükleyelim mi?",
   "Downloading {{downloaded}} of {{contentLength}}": "İndiriliyor {{downloaded}}/{{contentLength}}",
