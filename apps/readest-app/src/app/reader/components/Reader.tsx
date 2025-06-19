@@ -33,7 +33,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { settings, setSettings } = useSettingsStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
   const { isNotebookVisible, setNotebookVisible } = useNotebookStore();
-  const { isDarkMode, showSystemUI, dismissSystemUI } = useThemeStore();
+  const { isDarkMode, systemUIAlwaysHidden, showSystemUI, dismissSystemUI } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const isInitiating = useRef(false);
@@ -96,8 +96,9 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useEffect(() => {
     if (!appService?.isMobileApp) return;
     const systemUIVisible = !!hoveredBookKey || settings.alwaysShowStatusBar;
-    setSystemUIVisibility({ visible: systemUIVisible, darkMode: isDarkMode });
-    if (systemUIVisible) {
+    const visible = systemUIVisible && !systemUIAlwaysHidden;
+    setSystemUIVisibility({ visible, darkMode: isDarkMode });
+    if (visible) {
       showSystemUI();
     } else {
       dismissSystemUI();

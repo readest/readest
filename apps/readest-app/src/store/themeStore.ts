@@ -12,6 +12,8 @@ interface ThemeState {
   isDarkMode: boolean;
   systemUIVisible: boolean;
   statusBarHeight: number;
+  systemUIAlwaysHidden: boolean;
+  setSystemUIAlwaysHidden: (hidden: boolean) => void;
   setStatusBarHeight: (height: number) => void;
   showSystemUI: () => void;
   dismissSystemUI: () => void;
@@ -69,9 +71,11 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     themeCode,
     systemUIVisible: false,
     statusBarHeight: 24,
+    systemUIAlwaysHidden: false,
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
     setStatusBarHeight: (height: number) => set({ statusBarHeight: height }),
+    setSystemUIAlwaysHidden: (hidden: boolean) => set({ systemUIAlwaysHidden: hidden }),
     getIsDarkMode: () => get().isDarkMode,
     setThemeMode: (mode) => {
       if (typeof window !== 'undefined' && localStorage) {

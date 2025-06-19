@@ -24,6 +24,8 @@ export const useTheme = ({
     dismissSystemUI,
     updateAppTheme,
     setStatusBarHeight,
+    systemUIAlwaysHidden,
+    setSystemUIAlwaysHidden,
   } = useThemeStore();
 
   useEffect(() => {
@@ -41,12 +43,7 @@ export const useTheme = ({
   const handleSystemUIVisibility = useCallback(() => {
     if (!appService?.isMobileApp) return;
 
-    // This is a workaround for iPhone apps where the system UI is not visible in landscape mode
-    // when the app is in fullscreen mode until we find a better solution to override the prefersStatusBarHidden
-    // in the ViewController.
-    const isIPhoneApp = appService.isIOSApp && getOSPlatform() === 'ios';
-    const systemUINeverVisible = isIPhoneApp && screen.orientation.type.includes('landscape');
-    const visible = systemUIVisible && !systemUINeverVisible;
+    const visible = systemUIVisible && !systemUIAlwaysHidden;
     if (visible) {
       showSystemUI();
     } else {
@@ -73,8 +70,12 @@ export const useTheme = ({
       }
     };
     const handleOrientationChange = () => {
-      // Only handle orientation change for iPhone apps
       if (appService?.isIOSApp && getOSPlatform() === 'ios') {
+        // FIXME: This is a workaround for iPhone apps where the system UI is not visible in landscape mode
+        // when the app is in fullscreen mode until we find a better solution to override the prefersStatusBarHidden
+        // in the ViewController. Note that screen.orientation.type is not abailable in iOS before 16.4.
+        const systemUIAlwaysHidden = screen.orientation?.type.includes('landscape');
+        setSystemUIAlwaysHidden(systemUIAlwaysHidden);
         handleSystemUIVisibility();
       }
     };

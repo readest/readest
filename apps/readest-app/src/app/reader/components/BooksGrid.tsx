@@ -104,6 +104,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               isHoveredAnim={bookKeys.length > 2}
               onCloseBook={onCloseBook}
               onSetSettingsDialogOpen={setFontLayoutSettingsDialogOpen}
+              gridInsets={gridInsets}
             />
             <FoliateViewer
               bookKey={bookKey}
