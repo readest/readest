@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.9.59": {
+      "date": "2025-06-19",
+      "notes": [
+        "Layout: Image size now adjusts more accurately by converting screen units to pixels properly",
+        "Layout: Improved header layout on iOS landscape mode — extra spacing has been removed",
+        "Settings: Top and bottom margin settings are now more intuitive and better constrained"
+      ]
+    },
     "0.9.58": {
       "date": "2025-06-18",
       "notes": [
