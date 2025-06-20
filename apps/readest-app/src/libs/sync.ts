@@ -1,6 +1,7 @@
 import { Book, BookConfig, BookNote, BookDataRecord } from '@/types/book';
 import { getAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
+import { fetchWithTimeout } from '@/utils/fetch';
 
 const SYNC_API_ENDPOINT = getAPIBaseUrl() + '/sync';
 
@@ -33,11 +34,15 @@ export class SyncClient {
     if (!token) throw new Error('Not authenticated');
 
     const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+      5000,
+    );
 
     if (!res.ok) {
       const error = await res.json();
@@ -55,14 +60,18 @@ export class SyncClient {
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
-    const res = await fetch(SYNC_API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const res = await fetchWithTimeout(
+      SYNC_API_ENDPOINT,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+      5000,
+    );
 
     if (!res.ok) {
       const error = await res.json();
