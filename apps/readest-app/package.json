@@ -30,6 +30,7 @@
     "build-ios-appstore": "dotenv -e .env.ios-appstore.local -- tauri ios build --export-method app-store-connect",
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh",
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
+    "release-google-play": "dotenv -e .env.google-play.local -- bash scripts/release-google-play.sh",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
     "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare deploy",

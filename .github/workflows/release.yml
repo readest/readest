@@ -177,6 +177,11 @@ jobs:
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout .
 
+          MANIFEST="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
+          PERMISSION_LINE='<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>'
+          grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST" || \
+            sed -i "/android.permission.INTERNET/a \    $PERMISSION_LINE" "$MANIFEST"
+
           pushd src-tauri/gen/android
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
           echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
