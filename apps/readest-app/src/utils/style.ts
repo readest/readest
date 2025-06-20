@@ -209,7 +209,7 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
-  p, li, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
+  p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
@@ -239,6 +239,9 @@ const getLayoutStyles = (
     ${vertical && overrideLayout ? `margin-right: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
+  }
+  h1, h2, h3, h4, h5, h6 {
+    text-align: initial;
   }
 
   :lang(zh), :lang(ja), :lang(ko) {
