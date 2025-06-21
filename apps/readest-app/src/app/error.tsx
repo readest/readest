@@ -36,8 +36,8 @@ export default function Error({ error, reset }: ErrorPageProps) {
   return (
     <div className='hero bg-base-200 min-h-screen'>
       <div className='hero-content text-center'>
-        <div className='max-w-2xl'>
-          <div className='mb-8'>
+        <div className='w-full max-w-2xl p-1'>
+          <div className='mb-8 mt-6'>
             <div className='text-error animate-pulse text-8xl'>⚠️</div>
           </div>
 
@@ -55,8 +55,8 @@ export default function Error({ error, reset }: ErrorPageProps) {
               <p className='break-words font-mono text-sm'>{error.message}</p>
               {browserInfo && <p className='mt-2 font-mono text-sm'>Browser: {browserInfo}</p>}
               {error.stack && (
-                <p className='mt-2 break-words font-mono text-sm'>
-                  {error.stack.split('\n').slice(0, 5).join('\n')}
+                <p className='mt-2 whitespace-pre-wrap break-all font-mono text-sm'>
+                  {error.stack.split('\n').slice(0, 3).join('\n')}
                 </p>
               )}
               {error.digest && <p className='mt-2 text-xs opacity-70'>Error ID: {error.digest}</p>}

@@ -80,10 +80,10 @@ export const useTheme = ({
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    screen.orientation.addEventListener('change', handleOrientationChange);
+    screen.orientation?.addEventListener('change', handleOrientationChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      screen.orientation.removeEventListener('change', handleOrientationChange);
+      screen.orientation?.removeEventListener('change', handleOrientationChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleSystemUIVisibility]);

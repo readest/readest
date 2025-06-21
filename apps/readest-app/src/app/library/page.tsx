@@ -401,8 +401,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const selectFilesTauri = async () => {
-    const exts = appService?.isAndroidApp ? [] : SUPPORTED_FILE_EXTS;
+    const exts = appService?.isMobileApp ? [] : SUPPORTED_FILE_EXTS;
     const files = (await appService?.selectFiles(_('Select Books'), exts)) || [];
+    if (appService?.isIOSApp) {
+      return files.filter((file) => {
+        const fileExt = file.split('.').pop()?.toLowerCase() || 'unknown';
+        return SUPPORTED_FILE_EXTS.includes(fileExt);
+      });
+    }
     // Cannot filter out files on Android since some content providers may not return the file name
     return files;
   };
@@ -525,11 +531,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     let files;
 
     if (isTauriAppPlatform()) {
-      if (appService?.isIOSApp) {
-        files = (await selectFilesWeb()) as [File];
-      } else {
-        files = (await selectFilesTauri()) as [string];
-      }
+      files = (await selectFilesTauri()) as [string];
     } else {
       files = (await selectFilesWeb()) as [File];
     }
