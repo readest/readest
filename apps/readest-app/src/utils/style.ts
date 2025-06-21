@@ -58,6 +58,8 @@ const getFontStyles = (
       font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
       font-size: ${fontSize}px !important;
       font-weight: ${fontWeight};
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
     }
     font[size="1"] {
       font-size: ${minFontSize}px;
