@@ -50,7 +50,7 @@ export const webDownload = async (downloadUrl: string, onProgress?: ProgressHand
   const totalSize = parseInt(contentLength, 10);
   let receivedSize = 0;
   const reader = response.body!.getReader();
-  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  const chunks: Uint8Array[] = [];
 
   const startTime = Date.now();
   while (true) {
@@ -69,7 +69,7 @@ export const webDownload = async (downloadUrl: string, onProgress?: ProgressHand
     }
   }
 
-  return new Blob(chunks);
+  return new Blob(chunks as BlobPart[]);
 };
 
 export const tauriUpload = async (
