@@ -523,11 +523,11 @@ export const DOWNLOAD_READEST_URL = 'https://readest.com?utm_source=readest_web'
 
 export const READEST_WEB_BASE_URL = 'https://web.readest.com';
 
-export const GITHUB_LATEST_DOWNLOAD = 'https://github.com/readest/readest/releases/latest/download';
+const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 
-export const READEST_UPDATER_FILE = `${GITHUB_LATEST_DOWNLOAD}/latest.json`;
+export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
 
-export const READEST_CHANGELOG_FILE = `${GITHUB_LATEST_DOWNLOAD}/release-notes.json`;
+export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`;
 
 export const SYNC_PROGRESS_INTERVAL_SEC = 3;
 export const SYNC_NOTES_INTERVAL_SEC = 5;

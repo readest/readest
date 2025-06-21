@@ -50,7 +50,7 @@ export const webDownload = async (downloadUrl: string, onProgress?: ProgressHand
   const totalSize = parseInt(contentLength, 10);
   let receivedSize = 0;
   const reader = response.body!.getReader();
-  const chunks: Uint8Array[] = [];
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
 
   const startTime = Date.now();
   while (true) {
