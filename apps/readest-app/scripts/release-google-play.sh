@@ -29,12 +29,10 @@ if [[ ! -f "$PROPERTIES_FILE" ]]; then
   exit 1
 fi
 
-HEADER_LINE=$(head -n 1 "$PROPERTIES_FILE")
-{
-  echo "$HEADER_LINE"
-  echo "tauri.android.versionName=$VERSION"
-  echo "tauri.android.versionCode=$VERSION_CODE"
-} > "$PROPERTIES_FILE"
+tmpfile=$(mktemp)
+sed "s/^tauri\.android\.versionName=.*/tauri.android.versionName=$VERSION/" "$PROPERTIES_FILE" | \
+sed "s/^tauri\.android\.versionCode=.*/tauri.android.versionCode=$VERSION_CODE/" > "$tmpfile"
+mv "$tmpfile" "$PROPERTIES_FILE"
 
 echo "✅ Updated $PROPERTIES_FILE"
 

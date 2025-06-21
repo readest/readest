@@ -1,0 +1,57 @@
+name: Upload Release Assets to R2
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag name (e.g., v1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  upload-to-r2:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_R2_BUCKET: readest-releases
+      RELEASE_R2_ACCOUNT_ID: ${{ secrets.RELEASE_R2_ACCOUNT_ID }}
+      RELEASE_R2_ACCESS_KEY_ID: ${{ secrets.RELEASE_R2_ACCESS_KEY_ID }}
+      RELEASE_R2_SECRET_ACCESS_KEY: ${{ secrets.RELEASE_R2_SECRET_ACCESS_KEY }}
+
+    steps:
+      - name: Download release assets
+        run: |
+          gh release download "${{ inputs.tag }}" --dir ./release-assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install rclone
+        run: curl https://rclone.org/install.sh | sudo bash
+
+      - name: Configure rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          r2
+          type = s3
+          provider = Cloudflare
+          access_key_id = $RELEASE_R2_ACCESS_KEY_ID
+          secret_access_key = $RELEASE_R2_SECRET_ACCESS_KEY
+          endpoint = https://${RELEASE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+          EOF
+
+      - name: Modify latest.json download URLs
+        run: |
+          GITHUB_BASE_URL="https://github.com/readest/readest/releases/download"
+          READEST_BASE_URL="https://download.readest.com/releases"
+          sed -i "s#${GITHUB_BASE_URL}#${READEST_BASE_URL}#g" ./release-assets/latest.json
+
+      - name: Upload to R2
+        run: |
+          rclone copy ./release-assets r2:${RELEASE_R2_BUCKET}/releases/${{ inputs.tag }}/ --progress
+          rclone copy ./release-assets/latest.json r2:${RELEASE_R2_BUCKET}/releases/latest.json --progress
