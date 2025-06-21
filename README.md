@@ -87,7 +87,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 ![Wikipedia](./data/screenshots/wikipedia_vertical.png)
 
-![Themeing Dark Mode](./data/screenshots/theming_dark_mode.png)
+![Theming Dark Mode](./data/screenshots/theming_dark_mode.png)
 
 ---
 
