@@ -154,9 +154,8 @@ class VolumeKeyHandler: NSObject {
 class NativeBridgePlugin: Plugin {
   private var webView: WKWebView?
   private var authSession: ASWebAuthenticationSession?
-  private var isOrientationLocked = false
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
-  private var orientationObserver: NSObjectProtocol?
+  private var originalDelegate: UIApplicationDelegate?
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
@@ -175,15 +174,18 @@ class NativeBridgePlugin: Plugin {
       name: UIApplication.didEnterBackgroundNotification,
       object: nil
     )
+
+    if let app = UIApplication.value(forKey: "sharedApplication") as? UIApplication {
+      self.originalDelegate = app.delegate
+      app.delegate = self
+    } else {
+      Logger.error("NativeBridgePlugin: Failed to get shared application")
+    }
   }
 
   @objc func appDidBecomeActive() {
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
-    }
-
-    if orientationObserver != nil {
-      self.setupOrientationObserver()
     }
   }
 
@@ -360,18 +362,11 @@ class NativeBridgePlugin: Plugin {
       let orientation = args.orientation ?? "auto"
       switch orientation.lowercased() {
       case "portrait":
-        self.isOrientationLocked = true
-        self.currentOrientationMask = .portrait
-        self.forceOrientation(.portrait)
-        self.setupOrientationObserver()
+        self.changeOrientation(.portrait)
       case "landscape":
-        self.isOrientationLocked = true
-        self.currentOrientationMask = .landscape
-        self.forceOrientation(.landscapeRight)
-        self.setupOrientationObserver()
+        self.changeOrientation(.landscape)
       case "auto":
-        self.isOrientationLocked = false
-        self.currentOrientationMask = .all
+        self.changeOrientation(.all)
       default:
         invoke.reject("Invalid orientation mode")
         return
@@ -381,40 +376,49 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
-  private func forceOrientation(_ orientation: UIInterfaceOrientation) {
+  private func changeOrientation(_ orientationMask: UIInterfaceOrientationMask) {
+    self.currentOrientationMask = orientationMask
     if #available(iOS 16.0, *) {
       if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-        let orientationMask: UIInterfaceOrientationMask =
-          orientation.isPortrait ? .portrait : .landscape
-
         for window in windowScene.windows {
           if let rootVC = window.rootViewController {
             rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
           }
         }
-
-        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientationMask)) { error in
-          print("Orientation update error: \(error.localizedDescription)")
+        if orientationMask == .all {
+          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all)) { error in
+            logger.error("Orientation update error: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+              UIViewController.attemptRotationToDeviceOrientation()
+            }
+          }
+        } else {
+          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientationMask)) { error in
+            logger.error("Orientation update error: \(error.localizedDescription)")
+          }
         }
       }
     } else {
-      UIDevice.current.setValue(orientation.rawValue, forKey: "orientation")
-      UIViewController.attemptRotationToDeviceOrientation()
-    }
-  }
-
-  private func setupOrientationObserver() {
-    orientationObserver = NotificationCenter.default.addObserver(
-      forName: UIDevice.orientationDidChangeNotification,
-      object: nil,
-      queue: .main
-    ) { [weak self] _ in
-      guard let self = self, self.isOrientationLocked else { return }
-
-      if self.currentOrientationMask == .portrait {
-        self.forceOrientation(.portrait)
-      } else if self.currentOrientationMask == .landscape {
-        self.forceOrientation(.landscapeRight)
+      if orientationMask == .all {
+        UIViewController.attemptRotationToDeviceOrientation()
+      } else {
+        let specificOrientation: UIInterfaceOrientation
+        if orientationMask.contains(.portrait) {
+          specificOrientation = .portrait
+        } else if orientationMask.contains(.landscape) {
+          let currentOrientation = UIDevice.current.orientation
+          if currentOrientation == .landscapeLeft {
+            specificOrientation = .landscapeRight
+          } else if currentOrientation == .landscapeRight {
+            specificOrientation = .landscapeLeft
+          } else {
+            specificOrientation = .landscapeRight
+          }
+        } else {
+          specificOrientation = .portrait
+        }
+        UIDevice.current.setValue(specificOrientation.rawValue, forKey: "orientation")
+        UIViewController.attemptRotationToDeviceOrientation()
       }
     }
   }
@@ -429,5 +433,68 @@ func initPlugin() -> Plugin {
 extension NativeBridgePlugin: ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
     return UIApplication.shared.windows.first ?? UIWindow()
+  }
+}
+
+extension NativeBridgePlugin: UIApplicationDelegate {
+  public func application(
+    _ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    return self.currentOrientationMask
+  }
+
+  /*
+    Proxy all application delegate methods to the original delegate:
+      sel!(application:didFinishLaunchingWithOptions:),
+      sel!(application:openURL:options:),
+      sel!(application:continue:restorationHandler:),
+      sel!(applicationDidBecomeActive:),
+      sel!(applicationWillResignActive:),
+      sel!(applicationWillEnterForeground:),
+      sel!(applicationDidEnterBackground:),
+      sel!(applicationWillTerminate:),
+  */
+
+  public func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    self.originalDelegate?.application?(application, didFinishLaunchingWithOptions: launchOptions)
+      ?? false
+  }
+
+  public func application(
+    _ application: UIApplication, open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    self.originalDelegate?.application?(application, open: url, options: options) ?? false
+  }
+
+  public func application(
+    _ application: UIApplication, continue continueUserActivity: NSUserActivity,
+    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+  ) -> Bool {
+    self.originalDelegate?.application?(
+      application, continue: continueUserActivity, restorationHandler: restorationHandler) ?? false
+  }
+
+  public func applicationDidBecomeActive(_ application: UIApplication) {
+    self.originalDelegate?.applicationDidBecomeActive?(application)
+  }
+
+  public func applicationWillResignActive(_ application: UIApplication) {
+    self.originalDelegate?.applicationWillResignActive?(application)
+  }
+
+  public func applicationWillEnterForeground(_ application: UIApplication) {
+    self.originalDelegate?.applicationWillEnterForeground?(application)
+  }
+
+  public func applicationDidEnterBackground(_ application: UIApplication) {
+    self.originalDelegate?.applicationDidEnterBackground?(application)
+  }
+
+  public func applicationWillTerminate(_ application: UIApplication) {
+    self.originalDelegate?.applicationWillTerminate?(application)
   }
 }
