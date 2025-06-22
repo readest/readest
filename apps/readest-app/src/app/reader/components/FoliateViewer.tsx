@@ -30,11 +30,18 @@ import {
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { isCJKLang } from '@/utils/lang';
+import { isTauriAppPlatform } from '@/services/environment';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
+
+declare global {
+  interface Window {
+    eval(script: string): void;
+  }
+}
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -122,6 +129,11 @@ const FoliateViewer: React.FC<{
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
+      // Inline scripts in tauri platforms are not executed by default
+      if (viewSettings.allowScript && isTauriAppPlatform()) {
+        evalInlineScripts(detail.doc);
+      }
+
       // only call on load if we have highlighting turned on.
       if (viewSettings.codeHighlighting) {
         manageSyntaxHighlighting(detail.doc, viewSettings);
@@ -141,6 +153,22 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
       }
+    }
+  };
+
+  const evalInlineScripts = (doc: Document) => {
+    if (doc.defaultView && doc.defaultView.frameElement) {
+      const iframe = doc.defaultView.frameElement as HTMLIFrameElement;
+      const scripts = doc.querySelectorAll('script:not([src])');
+      scripts.forEach((script, index) => {
+        const scriptContent = script.textContent || script.innerHTML;
+        try {
+          console.warn('Evaluating inline scripts in iframe');
+          iframe.contentWindow?.eval(scriptContent);
+        } catch (error) {
+          console.error(`Error executing iframe script ${index + 1}:`, error);
+        }
+      });
     }
   };
 
