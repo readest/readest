@@ -163,6 +163,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
       ? (progressInfo!.current + 1) / progressInfo!.total || 0
       : 0;
 
+  const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+
   return (
     <>
       <div
@@ -202,7 +204,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
           )}
           style={{
-            bottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom + 64}px` : '64px',
+            bottom: isMobile ? `${gridInsets.bottom + 64}px` : '64px',
           }}
         >
           <div className='flex w-full items-center justify-between gap-x-6'>
@@ -256,7 +258,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
           )}
           style={{
-            bottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom + 64}px` : '64px',
+            bottom: isMobile ? `${gridInsets.bottom + 64}px` : '64px',
           }}
         >
           <Slider
@@ -298,7 +300,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
             'bg-base-200 z-50 mt-auto flex w-full justify-between px-8 py-4 sm:hidden',
           )}
           style={{
-            paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom + 16}px` : '0px',
+            paddingBottom: isMobile ? `${gridInsets.bottom + 16}px` : '0px',
           }}
         >
           <Button
@@ -328,7 +330,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <div
           className='absolute hidden h-full w-full items-center gap-x-4 px-4 sm:flex'
           style={{
-            bottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom / 2}px` : '0px',
+            bottom: isMobile ? `${gridInsets.bottom / 2}px` : '0px',
           }}
         >
           <Button

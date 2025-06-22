@@ -31,7 +31,8 @@ export interface TextSelection {
   annotated?: boolean;
 }
 
-const frameRect = (frame: Frame, rect: Rect, sx = 1, sy = 1) => {
+const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
+  if (!rect) return { left: 0, right: 0, top: 0, bottom: 0 };
   const left = sx * rect.left + frame.left;
   const right = sx * rect.right + frame.left;
   const top = sy * rect.top + frame.top;
@@ -84,8 +85,8 @@ export const getPosition = (
 
   const frame = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
   const rects = Array.from(target.getClientRects());
-  const first = frameRect(frame, rects[0] as Rect, sx, sy);
-  const last = frameRect(frame, rects.at(-1) as Rect, sx, sy);
+  const first = frameRect(frame, rects[0], sx, sy);
+  const last = frameRect(frame, rects.at(-1), sx, sy);
 
   if (isVertical) {
     const leftSpace = first.left - rect.left;
