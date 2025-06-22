@@ -47,7 +47,7 @@ const Dialog: React.FC<DialogProps> = ({
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const iconSize22 = useResponsiveSize(22);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     if (event instanceof CustomEvent) {
@@ -63,7 +63,7 @@ const Dialog: React.FC<DialogProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    setIsFullHeightInMobile(!snapHeight);
+    setIsFullHeightInMobile(!snapHeight && isMobile);
     window.addEventListener('keydown', handleKeyDown);
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception();
@@ -177,9 +177,7 @@ const Dialog: React.FC<DialogProps> = ({
             appService?.hasSafeAreaInset && isFullHeightInMobile
               ? `max(env(safe-area-inset-top), ${systemUIVisible ? statusBarHeight : 0}px)`
               : '0px',
-          ...(appService?.isMobile
-            ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 }
-            : {}),
+          ...(isMobile ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 } : {}),
         }}
       >
         <div

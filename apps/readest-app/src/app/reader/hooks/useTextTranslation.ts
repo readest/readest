@@ -136,7 +136,6 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
       wrapper.className = `translation-target ${!enabled.current ? 'hidden' : ''}`;
       wrapper.setAttribute('translation-element-mark', '1');
       wrapper.setAttribute('lang', targetLang || getLocale());
-      wrapper.appendChild(document.createElement('br'));
 
       const blockWrapper = document.createElement('font');
       blockWrapper.className = 'translation-target translation-block-wrapper';
