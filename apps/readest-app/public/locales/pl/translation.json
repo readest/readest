@@ -369,5 +369,6 @@
   "Right Margin (px)": "Prawy margines (px)",
   "Left Margin (px)": "Lewy margines (px)",
   "Column Gap (%)": "Odstęp między kolumnami (%)",
-  "Always Show Status Bar": "Zawsze pokazuj pasek stanu"
+  "Always Show Status Bar": "Zawsze pokazuj pasek stanu",
+  "Translation Not Available": "Brak dostępnego tłumaczenia"
 }

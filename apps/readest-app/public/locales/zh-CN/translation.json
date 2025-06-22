@@ -360,5 +360,6 @@
   "Right Margin (px)": "右边距",
   "Left Margin (px)": "左边距",
   "Column Gap (%)": "列间距",
-  "Always Show Status Bar": "始终显示状态栏"
+  "Always Show Status Bar": "始终显示状态栏",
+  "Translation Not Available": "翻译不可用"
 }

@@ -363,5 +363,6 @@
   "Right Margin (px)": "Δεξί περιθώριο (px)",
   "Left Margin (px)": "Αριστερό περιθώριο (px)",
   "Column Gap (%)": "Απόσταση στηλών (%)",
-  "Always Show Status Bar": "Πάντα εμφάνιση γραμμής κατάστασης"
+  "Always Show Status Bar": "Πάντα εμφάνιση γραμμής κατάστασης",
+  "Translation Not Available": "Η μετάφραση δεν είναι διαθέσιμη"
 }

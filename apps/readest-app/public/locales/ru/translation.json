@@ -369,5 +369,6 @@
   "Right Margin (px)": "Правый отступ (пикс)",
   "Left Margin (px)": "Левый отступ (пикс)",
   "Column Gap (%)": "Промежуток между колонками (%)",
-  "Always Show Status Bar": "Всегда показывать панель состояния"
+  "Always Show Status Bar": "Всегда показывать панель состояния",
+  "Translation Not Available": "Перевод недоступен"
 }

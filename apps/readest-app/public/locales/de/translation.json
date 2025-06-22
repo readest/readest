@@ -363,5 +363,6 @@
   "Right Margin (px)": "Rechter Rand (px)",
   "Left Margin (px)": "Linker Rand (px)",
   "Column Gap (%)": "Spaltenabstand (%)",
-  "Always Show Status Bar": "Statusleiste immer anzeigen"
+  "Always Show Status Bar": "Statusleiste immer anzeigen",
+  "Translation Not Available": "Übersetzung nicht verfügbar"
 }

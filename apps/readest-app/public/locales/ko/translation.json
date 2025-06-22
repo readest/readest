@@ -360,5 +360,6 @@
   "Right Margin (px)": "오른쪽 여백 (px)",
   "Left Margin (px)": "왼쪽 여백 (px)",
   "Column Gap (%)": "열 간격 (%)",
-  "Always Show Status Bar": "상태 표시줄 항상 표시"
+  "Always Show Status Bar": "상태 표시줄 항상 표시",
+  "Translation Not Available": "번역을 사용할 수 없음"
 }

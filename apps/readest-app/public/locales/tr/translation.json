@@ -363,5 +363,6 @@
   "Right Margin (px)": "Sağ Kenar Boşluğu (px)",
   "Left Margin (px)": "Sol Kenar Boşluğu (px)",
   "Column Gap (%)": "Sütun Aralığı (%)",
-  "Always Show Status Bar": "Durum Çubuğunu Her Zaman Göster"
+  "Always Show Status Bar": "Durum Çubuğunu Her Zaman Göster",
+  "Translation Not Available": "Çeviri Mevcut Değil"
 }

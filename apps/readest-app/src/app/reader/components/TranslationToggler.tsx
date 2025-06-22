@@ -6,9 +6,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
-import { isSameLang } from '@/utils/lang';
+import { isTranslationAvailable } from '@/services/translators/utils';
 import Button from '@/components/Button';
-import { getLocale } from '@/utils/misc';
 
 const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const _ = useTranslation();
@@ -19,9 +18,9 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
-
-  const primaryLanguage = bookData?.book?.primaryLanguage;
-  const targetLanguage = viewSettings.translateTargetLang;
+  const [translationAvailable, setTranslationAvailable] = useState(
+    isTranslationAvailable(bookData?.book, viewSettings.translateTargetLang),
+  );
 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;
@@ -34,19 +33,27 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translationEnabled]);
 
+  useEffect(() => {
+    setTranslationEnabled(viewSettings.translationEnabled);
+    setTranslationAvailable(
+      isTranslationAvailable(bookData?.book, viewSettings.translateTargetLang),
+    );
+  }, [bookData, viewSettings.translationEnabled, viewSettings.translateTargetLang]);
+
   return (
     <Button
       icon={
         <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
       }
-      disabled={
-        !bookData ||
-        bookData.book?.format === 'PDF' ||
-        isSameLang(primaryLanguage, targetLanguage) ||
-        (!targetLanguage && isSameLang(primaryLanguage, getLocale()))
-      }
+      disabled={!translationAvailable}
       onClick={() => setTranslationEnabled(!translationEnabled)}
-      tooltip={translationEnabled ? _('Disable Translation') : _('Enable Translation')}
+      tooltip={
+        translationAvailable
+          ? translationEnabled
+            ? _('Disable Translation')
+            : _('Enable Translation')
+          : _('Translation Not Available')
+      }
       tooltipDirection='bottom'
     ></Button>
   );

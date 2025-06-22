@@ -366,5 +366,6 @@
   "Right Margin (px)": "Margine Destro (px)",
   "Left Margin (px)": "Margine Sinistro (px)",
   "Column Gap (%)": "Spazio tra Colonne (%)",
-  "Always Show Status Bar": "Mostra sempre la barra di stato"
+  "Always Show Status Bar": "Mostra sempre la barra di stato",
+  "Translation Not Available": "Traduzione non disponibile"
 }
