@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.9.60": {
+      "date": "2025-06-22",
+      "notes": [
+        "Layout has been improved for iPad devices",
+        "Screen orientation changes are now smoother on iOS",
+        "Importing books on iOS during the first launch is now more reliable",
+        "Font size no longer changes unexpectedly in scrolled mode on iOS",
+        "Top and bottom safe insets are now ignored when no header or footer is present",
+        "Interactive books now load correctly on the Desktop platform",
+        "Translation is now disabled when the primary language is undefined",
+        "Android: the task list background color has been updated with current theme color"
+      ]
+    },
     "0.9.59": {
       "date": "2025-06-19",
       "notes": [
