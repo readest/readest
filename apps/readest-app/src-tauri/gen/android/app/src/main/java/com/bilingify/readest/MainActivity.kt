@@ -1,10 +1,14 @@
 package com.bilingify.readest
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import android.view.KeyEvent
 import android.webkit.WebView
 import android.util.Log
+import android.graphics.Color
+import android.app.ActivityManager
+import android.content.res.Configuration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -77,5 +81,39 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        updateTaskDescription()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateTaskDescription()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateTaskDescription()
+    }
+
+    private fun updateTaskDescription() {
+        val backgroundColor = if (isDarkTheme()) {
+            Color.parseColor("#2D2D2D")
+        } else {
+            Color.parseColor("#FFFFFF")
+        }
+
+        setTaskDescription(
+            ActivityManager.TaskDescription(
+                "Readest",
+                null,
+                backgroundColor
+            )
+        )
+    }
+
+    private fun isDarkTheme(): Boolean {
+        return when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+            Configuration.UI_MODE_NIGHT_YES -> true
+            else -> false
+        }
     }
 }
