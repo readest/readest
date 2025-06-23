@@ -86,13 +86,15 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       return oldBook;
     };
 
-    let updatedLibrary: Book[] = [];
-    try {
-      updatedLibrary = await Promise.all(library.map(processOldBook));
-    } catch (error) {
-      console.error('Error processing old books during sync:', error);
-      updatedLibrary = [...library];
-    }
+    const oldBooksResults = await Promise.allSettled(library.map(processOldBook));
+    const updatedLibrary = oldBooksResults.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        console.error('Failed to process old book:', library[index].title || library[index].hash, result.reason);
+        return library[index];
+      }
+    });
 
     const processNewBook = async (newBook: Book) => {
       if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
@@ -118,11 +120,12 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
     const batchSize = 3;
     for (let i = 0; i < syncedBooks.length; i += batchSize) {
       const batch = syncedBooks.slice(i, i + batchSize);
-      try {
-        await Promise.all(batch.map(processNewBook));
-      } catch (error) {
-        console.error(`Error processing batch ${Math.floor(i / batchSize) + 1}:`, error);
-      }
+      const batchResults = await Promise.allSettled(batch.map(processNewBook));
+      batchResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error('Failed to process new book:', batch[index].title || batch[index].hash, result.reason);
+        }
+      });
     }
     onSyncEnd?.();
     setLibrary(updatedLibrary);
