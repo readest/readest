@@ -71,7 +71,11 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
       if (matchingBook) {
         if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.downloadedAt) {
-          await appService?.downloadBook(oldBook, true);
+          try {
+            await appService?.downloadBook(oldBook, true);
+          } catch (error) {
+            console.error('Failed to download old book:', oldBook.title || oldBook.hash, error);
+          }
         }
         const mergedBook =
           matchingBook.updatedAt > oldBook.updatedAt
@@ -82,27 +86,43 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       return oldBook;
     };
 
-    const updatedLibrary = await Promise.all(library.map(processOldBook));
+    let updatedLibrary: Book[] = [];
+    try {
+      updatedLibrary = await Promise.all(library.map(processOldBook));
+    } catch (error) {
+      console.error('Error processing old books during sync:', error);
+      updatedLibrary = [...library];
+    }
+
     const processNewBook = async (newBook: Book) => {
       if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
         if (newBook.uploadedAt && !newBook.deletedAt) {
           try {
             await appService?.downloadBook(newBook, true);
-          } catch {
-            console.error('Failed to download book:', newBook);
+          } catch (error) {
+            console.error('Failed to download book:', newBook.title || newBook.hash, error);
           } finally {
-            newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+            try {
+              newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+            } catch (error) {
+              console.error('Failed to generate cover image for book:', newBook.title || newBook.hash, error);
+            }
             updatedLibrary.push(newBook);
             setLibrary(updatedLibrary);
           }
         }
       }
     };
+
     onSyncStart?.();
     const batchSize = 3;
     for (let i = 0; i < syncedBooks.length; i += batchSize) {
       const batch = syncedBooks.slice(i, i + batchSize);
-      await Promise.all(batch.map(processNewBook));
+      try {
+        await Promise.all(batch.map(processNewBook));
+      } catch (error) {
+        console.error(`Error processing batch ${Math.floor(i / batchSize) + 1}:`, error);
+      }
     }
     onSyncEnd?.();
     setLibrary(updatedLibrary);
