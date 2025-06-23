@@ -91,8 +91,9 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {
-        console.error('Failed to process old book:', library[index].title || library[index].hash, result.reason);
-        return library[index];
+        const book = library[index];
+        console.error('Failed to process old book:', book?.title || book?.hash, result.reason);
+        return book!;
       }
     });
 
@@ -123,7 +124,8 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       const batchResults = await Promise.allSettled(batch.map(processNewBook));
       batchResults.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error('Failed to process new book:', batch[index].title || batch[index].hash, result.reason);
+          const book = batch[index];
+          console.error('Failed to process new book:', book?.title || book?.hash, result.reason);
         }
       });
     }
