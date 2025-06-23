@@ -29,6 +29,7 @@
   <a href="#downloads">Downloads</a> •
   <a href="#getting-started">Getting Started</a> •
   <a href="#troubleshooting">Troubleshooting</a> •
+  <a href="#support">Support</a> •
   <a href="#license">License</a>
 </p>
 
@@ -244,6 +245,20 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
     <img width="500" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
   </p>
 </a>
+
+## Support
+
+If Readest has been useful to you, consider supporting its development. Your contribution helps us squash bugs faster, improve performance, and keep building great features.
+
+### How to Donate
+
+1. **GitHub Sponsors**  
+   Back the project directly on GitHub:  
+   👉 [https://github.com/sponsors/readest](https://github.com/sponsors/readest)
+
+2. **Crypto Donations**  
+   Prefer crypto? You can donate here:  
+   👉 [https://donate.readest.com/](https://donate.readest.com/)
 
 ## License
 
