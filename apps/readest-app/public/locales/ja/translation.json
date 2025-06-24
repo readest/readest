@@ -18,7 +18,6 @@
   "Confirm Deletion": "削除の確認",
   "Copied to notebook": "ノートブックにコピー",
   "Copy": "コピー",
-  "Custom CSS": "カスタムCSS",
   "Dark Mode": "ダークモード",
   "Default": "デフォルト",
   "Default Font": "デフォルトフォント",
@@ -28,7 +27,6 @@
   "Dictionary": "辞書",
   "Download Readest": "Readestをダウンロード",
   "Edit": "編集",
-  "Enter your custom CSS here...": "ここにカスタムCSSを入力...",
   "Excerpts": "抜粋",
   "Failed to import book(s): {{filenames}}": "書籍のインポートに失敗しました：{{filenames}}",
   "Fast": "高速",
@@ -361,5 +359,9 @@
   "Left Margin (px)": "左マージン (px)",
   "Column Gap (%)": "列間の間隔 (%)",
   "Always Show Status Bar": "ステータスバーを常に表示",
-  "Translation Not Available": "翻訳は利用できません"
+  "Translation Not Available": "翻訳は利用できません",
+  "Custom Content CSS": "コンテンツCSS",
+  "Enter CSS for book content styling...": "本のコンテンツ用CSSを入力...",
+  "Custom Reader UI CSS": "リーダーUIのCSS",
+  "Enter CSS for reader interface styling...": "リーダーインターフェース用CSSを入力..."
 }

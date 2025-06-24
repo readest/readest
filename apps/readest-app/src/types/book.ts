@@ -117,6 +117,7 @@ export interface BookStyle {
   codeHighlighting: boolean;
   codeLanguage: CodeLanguage;
   userStylesheet: string;
+  userUIStylesheet: string;
 }
 
 export interface BookFont {

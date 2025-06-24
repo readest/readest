@@ -18,7 +18,6 @@
   "Confirm Deletion": "हटाने की पुष्टि करें",
   "Copied to notebook": "नोटबुक में कॉपी किया गया",
   "Copy": "कॉपी",
-  "Custom CSS": "कस्टम CSS",
   "Dark Mode": "डार्क मोड",
   "Default": "डिफ़ॉल्ट",
   "Default Font": "डिफ़ॉल्ट फ़ॉन्ट",
@@ -28,7 +27,6 @@
   "Dictionary": "शब्दकोश",
   "Download Readest": "Readest डाउनलोड करें",
   "Edit": "संपादित करें",
-  "Enter your custom CSS here...": "अपना कस्टम CSS यहां दर्ज करें...",
   "Excerpts": "अंश",
   "Failed to import book(s): {{filenames}}": "पुस्तक(ें) आयात करने में विफल: {{filenames}}",
   "Fast": "तेज़",
@@ -364,5 +362,9 @@
   "Left Margin (px)": "बायां हाशिया (px)",
   "Column Gap (%)": "स्तंभों के बीच की दूरी (%)",
   "Always Show Status Bar": "स्थिति पट्टी हमेशा दिखाएं",
-  "Translation Not Available": "अनुवाद उपलब्ध नहीं है"
+  "Translation Not Available": "अनुवाद उपलब्ध नहीं है",
+  "Custom Content CSS": "सामग्री का CSS",
+  "Enter CSS for book content styling...": "पुस्तक सामग्री के लिए CSS दर्ज करें...",
+  "Custom Reader UI CSS": "इंटरफ़ेस का CSS",
+  "Enter CSS for reader interface styling...": "रीडर इंटरफ़ेस के लिए CSS दर्ज करें..."
 }

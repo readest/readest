@@ -18,7 +18,6 @@
   "Confirm Deletion": "삭제 확인",
   "Copied to notebook": "노트북에 복사됨",
   "Copy": "복사",
-  "Custom CSS": "사용자 정의 CSS",
   "Dark Mode": "다크 모드",
   "Default": "기본값",
   "Default Font": "기본 글꼴",
@@ -28,7 +27,6 @@
   "Dictionary": "사전",
   "Download Readest": "Readest 다운로드",
   "Edit": "편집",
-  "Enter your custom CSS here...": "여기에 사용자 정의 CSS를 입력하세요...",
   "Excerpts": "발췌",
   "Failed to import book(s): {{filenames}}": "책 가져오기 실패: {{filenames}}",
   "Fast": "빠름",
@@ -361,5 +359,9 @@
   "Left Margin (px)": "왼쪽 여백 (px)",
   "Column Gap (%)": "열 간격 (%)",
   "Always Show Status Bar": "상태 표시줄 항상 표시",
-  "Translation Not Available": "번역을 사용할 수 없음"
+  "Translation Not Available": "번역을 사용할 수 없음",
+  "Custom Content CSS": "콘텐츠 CSS",
+  "Enter CSS for book content styling...": "도서 콘텐츠 스타일을 위한 CSS 입력...",
+  "Custom Reader UI CSS": "리더 UI CSS",
+  "Enter CSS for reader interface styling...": "리더 인터페이스 스타일용 CSS 입력..."
 }

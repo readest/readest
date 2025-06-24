@@ -18,7 +18,6 @@
   "Confirm Deletion": "確認刪除",
   "Copied to notebook": "已複製到筆記本",
   "Copy": "複製",
-  "Custom CSS": "自定義 CSS",
   "Dark Mode": "深色主題",
   "Default": "預設",
   "Default Font": "預設字體",
@@ -28,7 +27,6 @@
   "Dictionary": "詞典",
   "Download Readest": "下載 Readest",
   "Edit": "編輯",
-  "Enter your custom CSS here...": "在此處輸入您的自定義 CSS...",
   "Excerpts": "摘錄",
   "Failed to import book(s): {{filenames}}": "導入書籍失敗：{{filenames}}",
   "Fast": "快",
@@ -361,5 +359,9 @@
   "Left Margin (px)": "左邊距",
   "Column Gap (%)": "欄間距",
   "Always Show Status Bar": "始終顯示狀態欄",
-  "Translation Not Available": "翻譯不可用"
+  "Translation Not Available": "翻譯不可用",
+  "Custom Content CSS": "自訂內容 CSS",
+  "Enter CSS for book content styling...": "輸入書籍內容樣式的CSS…",
+  "Custom Reader UI CSS": "自訂介面 CSS",
+  "Enter CSS for reader interface styling...": "輸入閱讀器介面樣式的CSS…"
 }

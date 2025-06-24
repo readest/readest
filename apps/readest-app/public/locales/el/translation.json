@@ -18,7 +18,6 @@
   "Confirm Deletion": "Επιβεβαίωση διαγραφής",
   "Copied to notebook": "Αντιγράφηκε στο σημειωματάριο",
   "Copy": "Αντιγραφή",
-  "Custom CSS": "Προσαρμοσμένο CSS",
   "Dark Mode": "Σκοτεινή λειτουργία",
   "Default": "Προεπιλογή",
   "Default Font": "Προεπιλεγμένη γραμματοσειρά",
@@ -28,7 +27,6 @@
   "Dictionary": "Λεξικό",
   "Download Readest": "Λήψη Readest",
   "Edit": "Επεξεργασία",
-  "Enter your custom CSS here...": "Εισάγετε το προσαρμοσμένο CSS εδώ...",
   "Excerpts": "Αποσπάσματα",
   "Failed to import book(s): {{filenames}}": "Αποτυχία εισαγωγής βιβλίου(ων): {{filenames}}",
   "Fast": "Γρήγορα",
@@ -364,5 +362,9 @@
   "Left Margin (px)": "Αριστερό περιθώριο (px)",
   "Column Gap (%)": "Απόσταση στηλών (%)",
   "Always Show Status Bar": "Πάντα εμφάνιση γραμμής κατάστασης",
-  "Translation Not Available": "Η μετάφραση δεν είναι διαθέσιμη"
+  "Translation Not Available": "Η μετάφραση δεν είναι διαθέσιμη",
+  "Custom Content CSS": "Προσαρμοσμένο CSS περιεχομένου",
+  "Enter CSS for book content styling...": "Εισαγάγετε CSS για στυλ περιεχομένου βιβλίου...",
+  "Custom Reader UI CSS": "Προσαρμοσμένο CSS διεπαφής αναγνώστη",
+  "Enter CSS for reader interface styling...": "Εισαγάγετε CSS για στυλ διεπαφής αναγνώστη..."
 }

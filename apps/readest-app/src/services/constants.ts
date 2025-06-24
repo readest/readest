@@ -130,6 +130,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   codeHighlighting: false,
   codeLanguage: 'auto-detect',
   userStylesheet: '',
+  userUIStylesheet: '',
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {

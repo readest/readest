@@ -14,7 +14,7 @@ export const useUICSS = (bookKey: string) => {
       styleElement.remove();
     }
 
-    const rawCSS = viewSettings.userStylesheet || '';
+    const rawCSS = viewSettings.userUIStylesheet || '';
     const newStyleEl = document.createElement('style');
     newStyleEl.textContent = rawCSS.replace('foliate-view', `#foliate-view-${bookKey}`);
     document.head.appendChild(newStyleEl);

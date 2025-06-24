@@ -18,7 +18,6 @@
   "Confirm Deletion": "Silmeyi Onayla",
   "Copied to notebook": "Not defterine kopyalandı",
   "Copy": "Kopyala",
-  "Custom CSS": "Özel CSS",
   "Dark Mode": "Karanlık Mod",
   "Default": "Varsayılan",
   "Default Font": "Varsayılan Yazı Tipi",
@@ -28,7 +27,6 @@
   "Dictionary": "Sözlük",
   "Download Readest": "Readest'i İndir",
   "Edit": "Düzenle",
-  "Enter your custom CSS here...": "Özel CSS'nizi buraya girin...",
   "Excerpts": "Alıntılar",
   "Failed to import book(s): {{filenames}}": "Kitap(lar) içe aktarılamadı: {{filenames}}",
   "Fast": "Hızlı",
@@ -364,5 +362,9 @@
   "Left Margin (px)": "Sol Kenar Boşluğu (px)",
   "Column Gap (%)": "Sütun Aralığı (%)",
   "Always Show Status Bar": "Durum Çubuğunu Her Zaman Göster",
-  "Translation Not Available": "Çeviri Mevcut Değil"
+  "Translation Not Available": "Çeviri Mevcut Değil",
+  "Custom Content CSS": "Özel İçerik CSS'si",
+  "Enter CSS for book content styling...": "Kitap içeriği stili için CSS girin...",
+  "Custom Reader UI CSS": "Özel Okuyucu Arayüzü CSS'si",
+  "Enter CSS for reader interface styling...": "Okuyucu arayüzü stili için CSS girin..."
 }

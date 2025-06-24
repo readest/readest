@@ -118,7 +118,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         }}
         onMouseLeave={() => !appService?.isMobile && setHoveredBookKey('')}
       >
-        <div className='sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4'>
+        <div className='bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2'>
           <div className='hidden sm:flex'>
             <SidebarToggler bookKey={bookKey} />
           </div>
@@ -132,7 +132,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </h2>
         </div>
 
-        <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4'>
+        <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
           <SettingsToggler />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown

@@ -18,7 +18,6 @@
   "Confirm Deletion": "Confirmar eliminación",
   "Copied to notebook": "Copiado al cuaderno",
   "Copy": "Copiar",
-  "Custom CSS": "CSS personalizado",
   "Dark Mode": "Modo oscuro",
   "Default": "Predeterminado",
   "Default Font": "Fuente predeterminada",
@@ -28,7 +27,6 @@
   "Dictionary": "Diccionario",
   "Download Readest": "Descargar Readest",
   "Edit": "Editar",
-  "Enter your custom CSS here...": "Introduce tu CSS personalizado aquí...",
   "Excerpts": "Extractos",
   "Failed to import book(s): {{filenames}}": "Error al importar libro(s): {{filenames}}",
   "Fast": "Rápido",
@@ -367,5 +365,9 @@
   "Left Margin (px)": "Margen izquierdo (px)",
   "Column Gap (%)": "Espacio entre columnas (%)",
   "Always Show Status Bar": "Mostrar siempre la barra de estado",
-  "Translation Not Available": "Traducción no disponible"
+  "Translation Not Available": "Traducción no disponible",
+  "Custom Content CSS": "CSS del contenido",
+  "Enter CSS for book content styling...": "Introduce CSS para el contenido del libro...",
+  "Custom Reader UI CSS": "CSS de la interfaz",
+  "Enter CSS for reader interface styling...": "Introduce CSS para la interfaz de lectura..."
 }

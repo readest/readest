@@ -18,7 +18,6 @@
   "Confirm Deletion": "تأكيد الحذف",
   "Copied to notebook": "تم النسخ إلى المفكرة",
   "Copy": "نسخ",
-  "Custom CSS": "CSS مخصص",
   "Dark Mode": "الوضع الداكن",
   "Default": "الافتراضي",
   "Default Font": "الخط الافتراضي",
@@ -28,7 +27,6 @@
   "Dictionary": "القاموس",
   "Download Readest": "تحميل ريديست",
   "Edit": "تحرير",
-  "Enter your custom CSS here...": "أدخل الـ CSS المخصص هنا...",
   "Excerpts": "مقتطفات",
   "Failed to import book(s): {{filenames}}": "فشل استيراد الكتاب/الكتب: {{filenames}}",
   "Fast": "سريع",
@@ -376,5 +374,9 @@
   "Left Margin (px)": "الهامش الأيسر (بكسل)",
   "Column Gap (%)": "تباعد الأعمدة (%)",
   "Always Show Status Bar": "دائمًا إظهار شريط الحالة",
-  "Translation Not Available": "الترجمة غير متاحة"
+  "Translation Not Available": "الترجمة غير متاحة",
+  "Custom Content CSS": "CSS مخصص للمحتوى",
+  "Enter CSS for book content styling...": "أدخل CSS لتنسيق محتوى الكتاب...",
+  "Custom Reader UI CSS": "CSS مخصص لواجهة القارئ",
+  "Enter CSS for reader interface styling...": "أدخل CSS لتنسيق واجهة القارئ..."
 }

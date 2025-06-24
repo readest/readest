@@ -189,8 +189,6 @@
   "Volume Keys for Page Flip": "Volumetoetsen voor pagina omslaan",
   "Clicks for Page Flip": "Klikken voor pagina omslaan",
   "Swap Clicks Area": "Klikgebieden omwisselen",
-  "Custom CSS": "Aangepaste CSS",
-  "Enter your custom CSS here...": "Voer hier uw aangepaste CSS in...",
   "Apply": "Toepassen",
   "Font": "Lettertype",
   "Layout": "Opmaak",
@@ -364,5 +362,9 @@
   "Left Margin (px)": "Linker marge (px)",
   "Column Gap (%)": "Kolomafstand (%)",
   "Always Show Status Bar": "Statusbalk altijd weergeven",
-  "Translation Not Available": "Vertaling niet beschikbaar"
+  "Translation Not Available": "Vertaling niet beschikbaar",
+  "Custom Content CSS": "Aangepaste inhoud-CSS",
+  "Enter CSS for book content styling...": "Voer CSS in voor de opmaak van de boekinhoud...",
+  "Custom Reader UI CSS": "Aangepaste interface-CSS",
+  "Enter CSS for reader interface styling...": "Voer CSS in voor de opmaak van de leesinterface..."
 }

@@ -18,7 +18,6 @@
   "Confirm Deletion": "Konfirmasi Penghapusan",
   "Copied to notebook": "Disalin ke buku catatan",
   "Copy": "Salin",
-  "Custom CSS": "CSS Kustom",
   "Dark Mode": "Mode Gelap",
   "Default": "Default",
   "Default Font": "Font Default",
@@ -28,7 +27,6 @@
   "Dictionary": "Kamus",
   "Download Readest": "Unduh Readest",
   "Edit": "Edit",
-  "Enter your custom CSS here...": "Masukkan CSS kustom Anda di sini...",
   "Excerpts": "Kutipan",
   "Failed to import book(s): {{filenames}}": "Gagal mengimpor buku: {{filenames}}",
   "Fast": "Cepat",
@@ -361,5 +359,9 @@
   "Left Margin (px)": "Margin Kiri (px)",
   "Column Gap (%)": "Jarak Antar Kolom (%)",
   "Always Show Status Bar": "Selalu Tampilkan Bilah Status",
-  "Translation Not Available": "Terjemahan Tidak Tersedia"
+  "Translation Not Available": "Terjemahan Tidak Tersedia",
+  "Custom Content CSS": "CSS konten",
+  "Enter CSS for book content styling...": "Masukkan CSS untuk gaya konten buku...",
+  "Custom Reader UI CSS": "CSS antarmuka",
+  "Enter CSS for reader interface styling...": "Masukkan CSS untuk gaya antarmuka pembaca..."
 }
