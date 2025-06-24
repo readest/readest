@@ -81,39 +81,15 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        updateTaskDescription()
-    }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        updateTaskDescription()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        updateTaskDescription()
-    }
-
-    private fun updateTaskDescription() {
-        val backgroundColor = if (isDarkTheme()) {
-            Color.parseColor("#2D2D2D")
-        } else {
-            Color.parseColor("#FFFFFF")
-        }
-
-        setTaskDescription(
-            ActivityManager.TaskDescription(
-                "Readest",
-                null,
-                backgroundColor
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setTaskDescription(
+                ActivityManager.TaskDescription(
+                    getString(R.string.app_name),
+                    null,
+                    Color.TRANSPARENT
+                )
             )
-        )
-    }
-
-    private fun isDarkTheme(): Boolean {
-        return when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-            Configuration.UI_MODE_NIGHT_YES -> true
-            else -> false
         }
     }
 }

@@ -9,10 +9,11 @@
 
     <application
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:largeHeap="true"
         android:label="@string/app_name"
         android:theme="@style/Theme.readest"
-	android:hardwareAccelerated="true"
+        android:hardwareAccelerated="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
