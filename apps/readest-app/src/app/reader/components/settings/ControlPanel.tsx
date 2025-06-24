@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { RELOAD_BEFREE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import NumberInput from './NumberInput';
 
 const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -85,7 +86,7 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
     saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false);
-    setTimeout(() => window.location.reload(), 100);
+    setTimeout(() => window.location.reload(), RELOAD_BEFREE_SAVED_TIMEOUT_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowScript]);
 

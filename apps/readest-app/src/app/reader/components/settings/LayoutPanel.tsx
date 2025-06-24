@@ -11,7 +11,7 @@ import { isCJKEnv } from '@/utils/misc';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
-import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
+import { MIGHT_BE_RTL_LANGS, RELOAD_BEFREE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import NumberInput from './NumberInput';
 
@@ -234,7 +234,7 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       (['horizontal-rl', 'vertical-rl'].includes(writingMode) ||
         ['horizontal-rl', 'vertical-rl'].includes(prevWritingMode))
     ) {
-      setTimeout(() => window.location.reload(), 100);
+      setTimeout(() => window.location.reload(), RELOAD_BEFREE_SAVED_TIMEOUT_MS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [writingMode]);

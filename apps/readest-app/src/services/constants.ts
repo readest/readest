@@ -534,6 +534,8 @@ export const SYNC_NOTES_INTERVAL_SEC = 5;
 export const SYNC_BOOKS_INTERVAL_SEC = 5;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
 
+export const RELOAD_BEFREE_SAVED_TIMEOUT_MS = 300;
+
 export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
