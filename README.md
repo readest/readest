@@ -67,8 +67,8 @@
 
 | **Feature**                     | **Description**                                                                            | **Priority** |
 | ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
+| **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🛠           |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
-| **Sync with Koreader**          | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🔄           |
 | **Keyboard Navigation**         | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
 | **Support OPDS/Calibre**        | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
 | **Audiobook Support**           | Extend functionality to play and manage audiobooks.                                        | 🔄           |
