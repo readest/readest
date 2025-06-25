@@ -1,4 +1,5 @@
 'use client';
+
 import posthog from 'posthog-js';
 import { ReactNode } from 'react';
 import { PostHogProvider } from 'posthog-js/react';
@@ -9,13 +10,16 @@ const shouldDisablePostHog = () => {
   return localStorage.getItem(TELEMETRY_OPT_OUT_KEY) === 'true';
 };
 
-if (
-  typeof window !== 'undefined' &&
-  process.env['NODE_ENV'] === 'production' &&
-  process.env['NEXT_PUBLIC_POSTHOG_KEY']
-) {
-  posthog.init(process.env['NEXT_PUBLIC_POSTHOG_KEY'], {
-    api_host: process.env['NEXT_PUBLIC_POSTHOG_HOST'],
+const posthogUrl =
+  process.env['NEXT_PUBLIC_POSTHOG_HOST'] ||
+  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_URL_BASE64']!);
+const posthogKey =
+  process.env['NEXT_PUBLIC_POSTHOG_KEY'] ||
+  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64']!);
+
+if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' && posthogKey) {
+  posthog.init(posthogKey, {
+    api_host: posthogUrl,
     person_profiles: 'always',
   });
   if (shouldDisablePostHog()) {
