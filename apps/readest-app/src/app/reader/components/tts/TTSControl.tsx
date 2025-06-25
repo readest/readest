@@ -204,25 +204,33 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
         unblockAudio();
       }
       setTtsClientsInitialized(false);
+      
       const ttsController = new TTSController(appService, view);
       await ttsController.init();
       await ttsController.initViewTTS();
-      const ssml = view.tts?.from(ttsFromRange);
-      if (ssml) {
-        let lang = parseSSMLLang(ssml) || 'en';
-        // We will not trust 'en' language from ssml, as it may be a fallback or hardcoded value
-        if (lang === 'en' && primaryLang && primaryLang !== 'en') {
-          lang = primaryLang.split('-')[0]!;
-        }
-        setIsPlaying(true);
-        setTtsLang(lang);
-
-        ttsController.setLang(lang);
-        ttsController.setRate(viewSettings.ttsRate);
-        ttsController.speak(ssml);
-        ttsControllerRef.current = ttsController;
-        setTtsController(ttsController);
+      
+      if (!view.tts) {
+        throw new Error('TTS not initialized for current view');
       }
+      
+      const ssml = view.tts.from(ttsFromRange);
+      if (!ssml) {
+        throw new Error('Failed to generate SSML from text range');
+      }
+
+      let lang = parseSSMLLang(ssml) || 'en';
+      // We will not trust 'en' language from ssml, as it may be a fallback or hardcoded value
+      if (lang === 'en' && primaryLang && primaryLang !== 'en') {
+        lang = primaryLang.split('-')[0]!;
+      }
+      setIsPlaying(true);
+      setTtsLang(lang);
+
+      ttsController.setLang(lang);
+      ttsController.setRate(viewSettings.ttsRate);
+      ttsController.speak(ssml);
+      ttsControllerRef.current = ttsController;
+      setTtsController(ttsController);
       setTtsClientsInitialized(true);
     } catch (error) {
       eventDispatcher.dispatch('toast', {
