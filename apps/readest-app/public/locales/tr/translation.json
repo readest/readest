@@ -366,5 +366,8 @@
   "Custom Content CSS": "Özel İçerik CSS'si",
   "Enter CSS for book content styling...": "Kitap içeriği stili için CSS girin...",
   "Custom Reader UI CSS": "Özel Okuyucu Arayüzü CSS'si",
-  "Enter CSS for reader interface styling...": "Okuyucu arayüzü stili için CSS girin..."
+  "Enter CSS for reader interface styling...": "Okuyucu arayüzü stili için CSS girin...",
+  "Crop": "Kes",
+  "Book Covers": "Kitap Kapağı",
+  "Fit": "Uygun"
 }

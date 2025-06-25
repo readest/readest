@@ -372,5 +372,8 @@
   "Custom Content CSS": "CSS treści",
   "Enter CSS for book content styling...": "Wprowadź CSS dla stylu treści książki...",
   "Custom Reader UI CSS": "CSS interfejsu",
-  "Enter CSS for reader interface styling...": "Wprowadź CSS dla stylu interfejsu czytnika..."
+  "Enter CSS for reader interface styling...": "Wprowadź CSS dla stylu interfejsu czytnika...",
+  "Crop": "Przytnij",
+  "Book Covers": "Okładki książek",
+  "Fit": "Pasuje"
 }

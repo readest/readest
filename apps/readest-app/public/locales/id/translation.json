@@ -363,5 +363,8 @@
   "Custom Content CSS": "CSS konten",
   "Enter CSS for book content styling...": "Masukkan CSS untuk gaya konten buku...",
   "Custom Reader UI CSS": "CSS antarmuka",
-  "Enter CSS for reader interface styling...": "Masukkan CSS untuk gaya antarmuka pembaca..."
+  "Enter CSS for reader interface styling...": "Masukkan CSS untuk gaya antarmuka pembaca...",
+  "Crop": "Potong",
+  "Book Covers": "Sampul Buku",
+  "Fit": "Pas"
 }

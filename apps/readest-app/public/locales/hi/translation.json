@@ -366,5 +366,8 @@
   "Custom Content CSS": "सामग्री का CSS",
   "Enter CSS for book content styling...": "पुस्तक सामग्री के लिए CSS दर्ज करें...",
   "Custom Reader UI CSS": "इंटरफ़ेस का CSS",
-  "Enter CSS for reader interface styling...": "रीडर इंटरफ़ेस के लिए CSS दर्ज करें..."
+  "Enter CSS for reader interface styling...": "रीडर इंटरफ़ेस के लिए CSS दर्ज करें...",
+  "Crop": "काटें",
+  "Book Covers": "पुस्तक कवर",
+  "Fit": "फिट"
 }

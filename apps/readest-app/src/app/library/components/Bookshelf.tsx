@@ -6,7 +6,7 @@ import { MdDelete, MdOpenInNew, MdOutlineCancel, MdInfoOutline } from 'react-ico
 import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
-import { LibraryViewModeType } from '@/types/settings';
+import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -66,6 +66,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [sortOrder, setSortOrder] = useState(
     searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc'),
   );
+  const [coverFit, setCoverFit] = useState(searchParams?.get('cover') || settings.libraryCoverFit);
   const isImportingBook = useRef(false);
 
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
@@ -106,6 +107,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const view = searchParams?.get('view') || settings.libraryViewMode;
     const sort = searchParams?.get('sort') || settings.librarySortBy;
     const order = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
+    const cover = searchParams?.get('cover') || settings.libraryCoverFit;
     const params = new URLSearchParams(searchParams?.toString());
     if (query) {
       params.set('q', query);
@@ -131,6 +133,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       setViewMode(view);
     } else {
       params.delete('view');
+    }
+    setCoverFit(cover);
+    if (cover === 'crop') {
+      params.delete('cover');
     }
     if (sort === 'updated' && order === 'desc' && view === 'grid') {
       params.delete('sort');
@@ -288,8 +294,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         {filteredBookshelfItems.map((item, index) => (
           <BookshelfItem
             key={`library-item-${index}`}
-            mode={viewMode as LibraryViewModeType}
             item={item}
+            mode={viewMode as LibraryViewModeType}
+            coverFit={coverFit as LibraryCoverFitType}
             isSelectMode={isSelectMode}
             selectedBooks={selectedBooks}
             setLoading={setLoading}

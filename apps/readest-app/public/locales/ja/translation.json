@@ -363,5 +363,8 @@
   "Custom Content CSS": "コンテンツCSS",
   "Enter CSS for book content styling...": "本のコンテンツ用CSSを入力...",
   "Custom Reader UI CSS": "リーダーUIのCSS",
-  "Enter CSS for reader interface styling...": "リーダーインターフェース用CSSを入力..."
+  "Enter CSS for reader interface styling...": "リーダーインターフェース用CSSを入力...",
+  "Crop": "トリミング",
+  "Book Covers": "書籍の表紙",
+  "Fit": "フィット"
 }

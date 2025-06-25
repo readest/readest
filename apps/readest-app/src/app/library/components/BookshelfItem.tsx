@@ -10,7 +10,7 @@ import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { getOSPlatform } from '@/utils/misc';
 import { getLocalBookFilename } from '@/utils/book';
-import { LibraryViewModeType } from '@/types/settings';
+import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { Book, BookGroupType, BooksGroup } from '@/types/book';
@@ -73,6 +73,7 @@ export const generateGroupsList = (items: Book[]): BookGroupType[] => {
 interface BookshelfItemProps {
   mode: LibraryViewModeType;
   item: BookshelfItem;
+  coverFit: LibraryCoverFitType;
   isSelectMode: boolean;
   selectedBooks: string[];
   transferProgress: number | null;
@@ -88,6 +89,7 @@ interface BookshelfItemProps {
 const BookshelfItem: React.FC<BookshelfItemProps> = ({
   mode,
   item,
+  coverFit,
   isSelectMode,
   selectedBooks,
   transferProgress,
@@ -276,6 +278,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
             <BookItem
               mode={mode}
               book={item}
+              coverFit={coverFit}
               isSelectMode={isSelectMode}
               selectedBooks={selectedBooks}
               transferProgress={transferProgress}

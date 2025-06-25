@@ -22,7 +22,7 @@ import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
-import SortMenu from './SortMenu';
+import ViewMenu from './ViewMenu';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -228,7 +228,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
               toggleButton={<PiDotsThreeCircle size={iconSize18} />}
             >
-              <SortMenu />
+              <ViewMenu />
             </Dropdown>
             <Dropdown
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'

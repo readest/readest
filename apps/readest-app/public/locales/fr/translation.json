@@ -369,5 +369,8 @@
   "Custom Content CSS": "CSS du contenu",
   "Enter CSS for book content styling...": "Saisissez le CSS pour le contenu du livre...",
   "Custom Reader UI CSS": "CSS de l’interface",
-  "Enter CSS for reader interface styling...": "Saisissez le CSS pour l’interface de lecture..."
+  "Enter CSS for reader interface styling...": "Saisissez le CSS pour l’interface de lecture...",
+  "Crop": "Rogner",
+  "Book Covers": "Couvertures de livres",
+  "Fit": "Adapter"
 }

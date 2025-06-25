@@ -363,5 +363,8 @@
   "Custom Content CSS": "自定义内容 CSS",
   "Enter CSS for book content styling...": "输入书籍内容样式的CSS…",
   "Custom Reader UI CSS": "自定义界面 CSS",
-  "Enter CSS for reader interface styling...": "输入阅读器界面样式的CSS…"
+  "Enter CSS for reader interface styling...": "输入阅读器界面样式的CSS…",
+  "Crop": "裁剪",
+  "Book Covers": "书籍封面",
+  "Fit": "适应"
 }

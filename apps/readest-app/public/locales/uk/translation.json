@@ -372,5 +372,8 @@
   "Custom Content CSS": "CSS вмісту",
   "Enter CSS for book content styling...": "Введіть CSS для стилізації вмісту книги...",
   "Custom Reader UI CSS": "CSS інтерфейсу",
-  "Enter CSS for reader interface styling...": "Введіть CSS для стилізації інтерфейсу рідера..."
+  "Enter CSS for reader interface styling...": "Введіть CSS для стилізації інтерфейсу рідера...",
+  "Crop": "Обрізати",
+  "Book Covers": "Обкладинки книг",
+  "Fit": "Вписати"
 }

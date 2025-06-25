@@ -363,5 +363,8 @@
   "Custom Content CSS": "콘텐츠 CSS",
   "Enter CSS for book content styling...": "도서 콘텐츠 스타일을 위한 CSS 입력...",
   "Custom Reader UI CSS": "리더 UI CSS",
-  "Enter CSS for reader interface styling...": "리더 인터페이스 스타일용 CSS 입력..."
+  "Enter CSS for reader interface styling...": "리더 인터페이스 스타일용 CSS 입력...",
+  "Crop": "자르기",
+  "Book Covers": "책 표지",
+  "Fit": "맞춤"
 }

@@ -4,6 +4,7 @@ import { HighlightColor, HighlightStyle, ViewSettings } from './book';
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
 export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'size' | 'format';
+export type LibraryCoverFitType = 'crop' | 'fit';
 
 export interface ReadSettings {
   sideBarWidth: string;
@@ -36,6 +37,7 @@ export interface SystemSettings {
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
+  libraryCoverFit: LibraryCoverFitType;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

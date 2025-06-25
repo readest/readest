@@ -366,5 +366,8 @@
   "Custom Content CSS": "Benutzerdefiniertes Inhalts-CSS",
   "Enter CSS for book content styling...": "CSS für die Buchinhaltsgestaltung eingeben...",
   "Custom Reader UI CSS": "Benutzerdefiniertes CSS für die Leseroberfläche",
-  "Enter CSS for reader interface styling...": "CSS für die Leseroberfläche eingeben..."
+  "Enter CSS for reader interface styling...": "CSS für die Leseroberfläche eingeben...",
+  "Crop": "Zuschneiden",
+  "Book Covers": "Buchcover",
+  "Fit": "Anpassen"
 }

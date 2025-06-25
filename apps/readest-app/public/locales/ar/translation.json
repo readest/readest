@@ -378,5 +378,8 @@
   "Custom Content CSS": "CSS مخصص للمحتوى",
   "Enter CSS for book content styling...": "أدخل CSS لتنسيق محتوى الكتاب...",
   "Custom Reader UI CSS": "CSS مخصص لواجهة القارئ",
-  "Enter CSS for reader interface styling...": "أدخل CSS لتنسيق واجهة القارئ..."
+  "Enter CSS for reader interface styling...": "أدخل CSS لتنسيق واجهة القارئ...",
+  "Crop": "قص",
+  "Book Covers": "أغلفة الكتب",
+  "Fit": "ملاءمة"
 }

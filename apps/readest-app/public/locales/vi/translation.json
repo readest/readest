@@ -363,5 +363,8 @@
   "Custom Content CSS": "CSS nội dung",
   "Enter CSS for book content styling...": "Nhập CSS cho phần nội dung sách...",
   "Custom Reader UI CSS": "CSS giao diện đọc",
-  "Enter CSS for reader interface styling...": "Nhập CSS cho giao diện trình đọc..."
+  "Enter CSS for reader interface styling...": "Nhập CSS cho giao diện trình đọc...",
+  "Crop": "Cắt",
+  "Book Covers": "Bìa sách",
+  "Fit": "Vừa vặn"
 }
