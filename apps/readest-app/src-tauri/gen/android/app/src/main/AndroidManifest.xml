@@ -42,15 +42,15 @@
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="text/plain" />
 
-                <data android:pathPattern=".*\\.epub" />
-                <data android:pathPattern=".*\\.pdf" />
-                <data android:pathPattern=".*\\.fb2" />
-                <data android:pathPattern=".*\\.fb2.zip" />
-                <data android:pathPattern=".*\\.mobi" />
-                <data android:pathPattern=".*\\.azw" />
-                <data android:pathPattern=".*\\.cbz" />
-                <data android:pathPattern=".*\\.zip" />
-                <data android:pathPattern=".*\\.txt" />
+                <data android:pathPattern="/.*\\.epub" />
+                <data android:pathPattern="/.*\\.pdf" />
+                <data android:pathPattern="/.*\\.fb2" />
+                <data android:pathPattern="/.*\\.fb2.zip" />
+                <data android:pathPattern="/.*\\.mobi" />
+                <data android:pathPattern="/.*\\.azw" />
+                <data android:pathPattern="/.*\\.cbz" />
+                <data android:pathPattern="/.*\\.zip" />
+                <data android:pathPattern="/.*\\.txt" />
             </intent-filter>
 
             <intent-filter android:label="oauth">

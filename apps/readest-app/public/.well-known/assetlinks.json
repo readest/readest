@@ -1,11 +1,15 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.bilingify.readest",
       "sha256_cert_fingerprints": [
-        "65:2D:11:67:76:12:29:14:18:42:CB:3D:18:50:B6:E4:7E:46:E1:2F:4B:E4:7F:5A:6C:14:B6:D7:12:74:1E:82"
+        "65:2D:11:67:76:12:29:14:18:42:CB:3D:18:50:B6:E4:7E:46:E1:2F:4B:E4:7F:5A:6C:14:B6:D7:12:74:1E:82",
+        "E0:E7:60:55:80:8D:3A:DE:A0:D1:CF:7C:20:85:40:A3:DD:4B:E6:4D:17:5C:0F:DE:26:57:7D:9C:5B:29:5F:51"
       ]
     }
   }
