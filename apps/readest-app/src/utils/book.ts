@@ -1,6 +1,6 @@
 import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
-import { getUserLang, isContentURI, isValidURL, makeSafeFilename } from './misc';
+import { getUserLang, isContentURI, isFileURI, isValidURL, makeSafeFilename } from './misc';
 import { getStorageType } from './object';
 import { getDirFromLanguage } from './rtl';
 import { SUPPORTED_LANGS } from '@/services/constants';
@@ -34,7 +34,7 @@ export const isBookFile = (filename: string) => {
   return Object.values(EXTS).includes(filename.split('.').pop()!);
 };
 export const getFilename = (fileOrUri: string) => {
-  if (isValidURL(fileOrUri) || isContentURI(fileOrUri)) {
+  if (isValidURL(fileOrUri) || isContentURI(fileOrUri) || isFileURI(fileOrUri)) {
     fileOrUri = decodeURI(fileOrUri);
   }
   const normalizedPath = fileOrUri.replace(/\\/g, '/');
