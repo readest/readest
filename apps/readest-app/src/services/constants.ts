@@ -158,6 +158,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showFooter: true,
   showBarsOnScroll: false,
   showRemainingTime: false,
+  showRemainingPages: false,
   showPageNumber: true,
 };
 

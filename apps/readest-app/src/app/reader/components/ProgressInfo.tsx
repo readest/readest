@@ -29,7 +29,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
+  const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
@@ -47,9 +48,12 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           totalPage: pageinfo.total,
         })
       : '';
-  const timeInfo = timeinfo
+  const timeLeft = timeinfo
     ? _('{{time}} min left in chapter', { time: Math.round(timeinfo.section) })
     : '';
+  const { page = 0, pages = 0 } = view?.renderer || {};
+  const pageLeft =
+    pages - 1 > page ? _('{{count}} pages left in chapter', { count: pages - 1 - page }) : '';
 
   return (
     <div
@@ -76,7 +80,11 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
             }
       }
     >
-      {viewSettings.showRemainingTime && <span className='text-start'>{timeInfo}</span>}
+      {viewSettings.showRemainingTime ? (
+        <span className='text-start'>{timeLeft}</span>
+      ) : viewSettings.showRemainingPages ? (
+        <span className='text-start'>{pageLeft}</span>
+      ) : null}
       {viewSettings.showPageNumber && <span className='ms-auto text-end'>{pageInfo}</span>}
     </div>
   );

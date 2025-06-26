@@ -368,5 +368,7 @@
   "Book Covers": "書籍封面",
   "Fit": "適應",
   "Reset {{settings}}": "重置{{settings}}",
-  "Reset Settings": "重置設置"
+  "Reset Settings": "重置設置",
+  "{{count}} pages left in chapter_other": "本章剩餘 {{count}} 頁",
+  "Show Remaining Pages": "顯示剩餘頁數"
 }

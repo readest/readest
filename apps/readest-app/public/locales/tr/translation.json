@@ -371,5 +371,8 @@
   "Book Covers": "Kitap Kapağı",
   "Fit": "Uygun",
   "Reset {{settings}}": "{{settings}}'i Sıfırla",
-  "Reset Settings": "Ayarları Sıfırla"
+  "Reset Settings": "Ayarları Sıfırla",
+  "{{count}} pages left in chapter_one": "Bu bölümde {{count}} sayfa kaldı",
+  "{{count}} pages left in chapter_other": "Bu bölümde {{count}} sayfa kaldı",
+  "Show Remaining Pages": "Kalan sayfaları göster"
 }

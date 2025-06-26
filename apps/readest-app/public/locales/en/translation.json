@@ -4,5 +4,7 @@
   "Are you sure to delete {{count}} selected book(s)?_one": "Are you sure to delete {{count}} selected book?",
   "Are you sure to delete {{count}} selected book(s)?_other": "Are you sure to delete {{count}} selected books?",
   "Search in {{count}} Book(s)..._one": "Search in {{count}} book...",
-  "Search in {{count}} Book(s)..._other": "Search in {{count}} books..."
+  "Search in {{count}} Book(s)..._other": "Search in {{count}} books...",
+  "{{count}} pages left in chapter_one": "{{count}} page left in chapter",
+  "{{count}} pages left in chapter_other": "{{count}} pages left in chapter"
 }

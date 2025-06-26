@@ -368,5 +368,7 @@
   "Book Covers": "Bìa sách",
   "Fit": "Vừa vặn",
   "Reset {{settings}}": "Đặt lại {{settings}}",
-  "Reset Settings": "Đặt lại cài đặt"
+  "Reset Settings": "Đặt lại cài đặt",
+  "{{count}} pages left in chapter_other": "Còn {{count}} trang trong chương",
+  "Show Remaining Pages": "Hiển thị trang còn lại"
 }

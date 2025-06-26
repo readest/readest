@@ -371,5 +371,8 @@
   "Book Covers": "पुस्तक कवर",
   "Fit": "फिट",
   "Reset {{settings}}": "रीसेट {{settings}}",
-  "Reset Settings": "सेटिंग्स रीसेट करें"
+  "Reset Settings": "सेटिंग्स रीसेट करें",
+  "{{count}} pages left in chapter_one": "इस अध्याय में {{count}} पृष्ठ शेष हैं",
+  "{{count}} pages left in chapter_other": "इस अध्याय में {{count}} पृष्ठ शेष हैं",
+  "Show Remaining Pages": "शेष पृष्ठ दिखाएँ"
 }

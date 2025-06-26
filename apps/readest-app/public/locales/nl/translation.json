@@ -371,5 +371,8 @@
   "Book Covers": "Boekomslagen",
   "Fit": "Passend maken",
   "Reset {{settings}}": "Reset {{settings}}",
-  "Reset Settings": "Instellingen resetten"
+  "Reset Settings": "Instellingen resetten",
+  "{{count}} pages left in chapter_one": "Nog {{count}} pagina in hoofdstuk",
+  "{{count}} pages left in chapter_other": "Nog {{count}} pagina’s in hoofdstuk",
+  "Show Remaining Pages": "Toon resterende pagina’s"
 }

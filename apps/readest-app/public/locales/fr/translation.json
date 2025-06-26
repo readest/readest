@@ -374,5 +374,9 @@
   "Book Covers": "Couvertures de livres",
   "Fit": "Adapter",
   "Reset {{settings}}": "Réinitialiser {{settings}}",
-  "Reset Settings": "Réinitialiser les paramètres"
+  "Reset Settings": "Réinitialiser les paramètres",
+  "{{count}} pages left in chapter_one": "{{count}} page restant dans le chapitre",
+  "{{count}} pages left in chapter_many": "{{count}} pages restantes dans le chapitre",
+  "{{count}} pages left in chapter_other": "{{count}} pages restantes dans le chapitre",
+  "Show Remaining Pages": "Voir restantes"
 }

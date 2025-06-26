@@ -383,5 +383,12 @@
   "Book Covers": "أغلفة الكتب",
   "Fit": "ملاءمة",
   "Reset {{settings}}": "إعادة تعيين {{settings}}",
-  "Reset Settings": "إعادة تعيين الإعدادات"
+  "Reset Settings": "إعادة تعيين الإعدادات",
+  "{{count}} pages left in chapter_zero": "لم يتبق أي صفحات في هذا الفصل",
+  "{{count}} pages left in chapter_one": "تبقّت صفحة واحدة في هذا الفصل",
+  "{{count}} pages left in chapter_two": "تبقّت صفحتان في هذا الفصل",
+  "{{count}} pages left in chapter_few": "تبقّت {{count}} صفحات في هذا الفصل",
+  "{{count}} pages left in chapter_many": "تبقّت {{count}} صفحة في هذا الفصل",
+  "{{count}} pages left in chapter_other": "تبقّى {{count}} صفحة في هذا الفصل",
+  "Show Remaining Pages": "عرض الصفحات المتبقية"
 }

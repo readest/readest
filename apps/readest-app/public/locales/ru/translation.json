@@ -377,5 +377,10 @@
   "Book Covers": "Обложки книг",
   "Fit": "Подогнать",
   "Reset {{settings}}": "Сбросить {{settings}}",
-  "Reset Settings": "Сбросить настройки"
+  "Reset Settings": "Сбросить настройки",
+  "{{count}} pages left in chapter_one": "Осталась {{count}} страница в главе",
+  "{{count}} pages left in chapter_few": "Осталось {{count}} страницы в главе",
+  "{{count}} pages left in chapter_many": "Осталось {{count}} страниц в главе",
+  "{{count}} pages left in chapter_other": "Осталось {{count}} страниц в главе",
+  "Show Remaining Pages": "Показать оставшиеся страницы"
 }

@@ -377,5 +377,10 @@
   "Book Covers": "Обкладинки книг",
   "Fit": "Вписати",
   "Reset {{settings}}": "Скинути {{settings}}",
-  "Reset Settings": "Скинути налаштування"
+  "Reset Settings": "Скинути налаштування",
+  "{{count}} pages left in chapter_one": "Залишилася {{count}} сторінка у розділі",
+  "{{count}} pages left in chapter_few": "Залишилось {{count}} сторінки у розділі",
+  "{{count}} pages left in chapter_many": "Залишилось {{count}} сторінок у розділі",
+  "{{count}} pages left in chapter_other": "Залишилось {{count}} сторінок у розділі",
+  "Show Remaining Pages": "Показати залишок сторінок"
 }

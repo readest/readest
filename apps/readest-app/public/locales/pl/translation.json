@@ -377,5 +377,10 @@
   "Book Covers": "Okładki książek",
   "Fit": "Pasuje",
   "Reset {{settings}}": "Zresetuj {{settings}}",
-  "Reset Settings": "Zresetuj ustawienia"
+  "Reset Settings": "Zresetuj ustawienia",
+  "{{count}} pages left in chapter_one": "Pozostała {{count}} strona w rozdziale",
+  "{{count}} pages left in chapter_few": "Pozostały {{count}} strony w rozdziale",
+  "{{count}} pages left in chapter_many": "Pozostało {{count}} stron w rozdziale",
+  "{{count}} pages left in chapter_other": "Pozostało {{count}} stron w rozdziale",
+  "Show Remaining Pages": "Pokaż pozostałe strony"
 }

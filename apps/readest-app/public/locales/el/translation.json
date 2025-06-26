@@ -371,5 +371,8 @@
   "Book Covers": "Εξώφυλλα βιβλίων",
   "Fit": "Προσαρμογή",
   "Reset {{settings}}": "Επαναφορά {{settings}}",
-  "Reset Settings": "Επαναφορά ρυθμίσεων"
+  "Reset Settings": "Επαναφορά ρυθμίσεων",
+  "{{count}} pages left in chapter_one": "Μένει {{count}} σελίδα",
+  "{{count}} pages left in chapter_other": "Μένουν {{count}} σελίδες",
+  "Show Remaining Pages": "Εμφάνιση υπολοίπων"
 }

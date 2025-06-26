@@ -64,6 +64,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter!);
   const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll!);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime!);
+  const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages!);
   const [showPageNumber, setShowPageNumber] = useState(viewSettings.showPageNumber!);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
 
@@ -97,6 +98,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showFooter: setShowFooter,
       showBarsOnScroll: setShowBarsOnScroll,
       showRemainingTime: setShowRemainingTime,
+      showRemainingPages: setShowRemainingPages,
       showPageNumber: setShowPageNumber,
     });
   };
@@ -309,6 +311,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'showRemainingTime', showRemainingTime, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRemainingTime]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showRemainingPages', showRemainingPages, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRemainingPages]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showPageNumber', showPageNumber, false, false);
@@ -618,7 +625,31 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 className='toggle'
                 checked={showRemainingTime}
                 disabled={!showFooter}
-                onChange={() => setShowRemainingTime(!showRemainingTime)}
+                onChange={() => {
+                  if (!showRemainingTime) {
+                    setShowRemainingTime(true);
+                    setShowRemainingPages(false);
+                  } else {
+                    setShowRemainingTime(false);
+                  }
+                }}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Remaining Pages')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showRemainingPages}
+                disabled={!showFooter}
+                onChange={() => {
+                  if (!showRemainingPages) {
+                    setShowRemainingPages(true);
+                    setShowRemainingTime(false);
+                  } else {
+                    setShowRemainingPages(false);
+                  }
+                }}
               />
             </div>
             <div className='config-item'>
