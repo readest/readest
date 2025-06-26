@@ -36,7 +36,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     : children;
 
   return (
-    <div className='dropdown-container'>
+    <div className='dropdown-container flex'>
       {isOpen && (
         <div className='fixed inset-0 bg-transparent' onClick={() => setIsDropdownOpen(false)} />
       )}

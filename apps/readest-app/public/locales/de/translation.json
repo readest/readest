@@ -369,5 +369,7 @@
   "Enter CSS for reader interface styling...": "CSS für die Leseroberfläche eingeben...",
   "Crop": "Zuschneiden",
   "Book Covers": "Buchcover",
-  "Fit": "Anpassen"
+  "Fit": "Anpassen",
+  "Reset {{settings}}": "{{settings}} zurücksetzen",
+  "Reset Settings": "Einstellungen zurücksetzen"
 }

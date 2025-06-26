@@ -22,7 +22,11 @@ import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 
-type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelPanelProp = {
+  bookKey: string;
+  onRegisterReset: (resetFn: () => void) => void;
+};
 
 type TabConfig = {
   tab: SettingsPanelType;
@@ -84,6 +88,28 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     localStorage.setItem('lastConfigPanel', tab);
   };
 
+  const [resetFunctions, setResetFunctions] = useState<
+    Record<SettingsPanelType, (() => void) | null>
+  >({
+    Font: null,
+    Layout: null,
+    Color: null,
+    Control: null,
+    Language: null,
+    Custom: null,
+  });
+
+  const registerResetFunction = (panel: SettingsPanelType, resetFn: () => void) => {
+    setResetFunctions((prev) => ({ ...prev, [panel]: resetFn }));
+  };
+
+  const handleResetCurrentPanel = () => {
+    const resetFn = resetFunctions[activePanel];
+    if (resetFn) {
+      resetFn();
+    }
+  };
+
   const handleClose = () => {
     setFontLayoutSettingsDialogOpen(false);
   };
@@ -130,6 +156,8 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     };
   }, []);
 
+  const currentPanel = tabConfig.find((tab) => tab.tab === activePanel);
+
   return (
     <Dialog
       isOpen={true}
@@ -140,7 +168,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       header={
         <div className='flex w-full flex-col items-center'>
           <div className='tab-title flex pb-2 text-base font-semibold sm:hidden'>
-            {tabConfig.find((tab) => tab.tab === activePanel)?.label || ''}
+            {currentPanel?.label || ''}
           </div>
           <div className='flex w-full flex-row items-center justify-between'>
             <button
@@ -184,7 +212,15 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
                 buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
                 toggleButton={<PiDotsThreeVerticalBold />}
               >
-                <DialogMenu />
+                <DialogMenu
+                  activePanel={activePanel}
+                  onReset={handleResetCurrentPanel}
+                  resetLabel={
+                    currentPanel
+                      ? _('Reset {{settings}}', { settings: currentPanel.label })
+                      : undefined
+                  }
+                />
               </Dropdown>
               <button
                 onClick={handleClose}
@@ -209,12 +245,39 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
         </div>
       }
     >
-      {activePanel === 'Font' && <FontPanel bookKey={bookKey} />}
-      {activePanel === 'Layout' && <LayoutPanel bookKey={bookKey} />}
-      {activePanel === 'Color' && <ColorPanel bookKey={bookKey} />}
-      {activePanel === 'Control' && <ControlPanel bookKey={bookKey} />}
-      {activePanel === 'Language' && <LangPanel bookKey={bookKey} />}
-      {activePanel === 'Custom' && <MiscPanel bookKey={bookKey} />}
+      {activePanel === 'Font' && (
+        <FontPanel bookKey={bookKey} onRegisterReset={(fn) => registerResetFunction('Font', fn)} />
+      )}
+      {activePanel === 'Layout' && (
+        <LayoutPanel
+          bookKey={bookKey}
+          onRegisterReset={(fn) => registerResetFunction('Layout', fn)}
+        />
+      )}
+      {activePanel === 'Color' && (
+        <ColorPanel
+          bookKey={bookKey}
+          onRegisterReset={(fn) => registerResetFunction('Color', fn)}
+        />
+      )}
+      {activePanel === 'Control' && (
+        <ControlPanel
+          bookKey={bookKey}
+          onRegisterReset={(fn) => registerResetFunction('Control', fn)}
+        />
+      )}
+      {activePanel === 'Language' && (
+        <LangPanel
+          bookKey={bookKey}
+          onRegisterReset={(fn) => registerResetFunction('Language', fn)}
+        />
+      )}
+      {activePanel === 'Custom' && (
+        <MiscPanel
+          bookKey={bookKey}
+          onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
+        />
+      )}
     </Dialog>
   );
 };

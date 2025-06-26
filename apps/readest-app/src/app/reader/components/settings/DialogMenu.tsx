@@ -3,20 +3,30 @@ import React from 'react';
 import { MdCheck } from 'react-icons/md';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { SettingsPanelType } from './SettingsDialog';
+import MenuItem from '@/components/MenuItem';
 
 interface DialogMenuProps {
-  toggleDropdown?: () => void;
+  activePanel: SettingsPanelType;
+  setIsDropdownOpen?: (open: boolean) => void;
+  onReset: () => void;
+  resetLabel?: string;
 }
 
-const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
+const DialogMenu: React.FC<DialogMenuProps> = ({ setIsDropdownOpen, onReset, resetLabel }) => {
   const _ = useTranslation();
-  const iconSize = useDefaultIconSize();
+  const iconSize = useResponsiveSize(16);
   const { isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } = useSettingsStore();
 
   const handleToggleGlobal = () => {
     setFontLayoutSettingsGlobal(!isFontLayoutSettingsGlobal);
-    toggleDropdown?.();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleResetToDefaults = () => {
+    onReset();
+    setIsDropdownOpen?.(false);
   };
 
   return (
@@ -27,24 +37,18 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ toggleDropdown }) => {
         'text-base sm:text-sm',
       )}
     >
-      <button
-        className='hover:bg-base-200 text-base-content flex w-full items-center justify-between rounded-md p-1'
+      <MenuItem
+        label={_('Global Settings')}
+        tooltip={isFontLayoutSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
+        buttonClass='lg:tooltip'
+        Icon={
+          isFontLayoutSettingsGlobal ? (
+            <MdCheck size={iconSize} className='text-base-content' />
+          ) : null
+        }
         onClick={handleToggleGlobal}
-      >
-        <div className='flex items-center'>
-          <span style={{ minWidth: `${iconSize}px` }}>
-            {isFontLayoutSettingsGlobal && <MdCheck className='text-base-content' />}
-          </span>
-          <div
-            className='lg:tooltip'
-            data-tip={
-              isFontLayoutSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')
-            }
-          >
-            <span className='ml-2 whitespace-nowrap'>{_('Global Settings')}</span>
-          </div>
-        </div>
-      </button>
+      />
+      <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
     </div>
   );
 };

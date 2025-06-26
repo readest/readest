@@ -372,5 +372,7 @@
   "Enter CSS for reader interface styling...": "Insira o CSS para o estilo da interface de leitura...",
   "Crop": "Cortar",
   "Book Covers": "Capas de Livros",
-  "Fit": "Encaixar"
+  "Fit": "Encaixar",
+  "Reset {{settings}}": "Redefinir {{settings}}",
+  "Reset Settings": "Redefinir Configurações"
 }

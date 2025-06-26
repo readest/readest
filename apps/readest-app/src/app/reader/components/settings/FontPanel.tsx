@@ -24,6 +24,8 @@ import { getOSPlatform, isCJKEnv } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
+import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 
@@ -79,7 +81,7 @@ const FontFace = ({
   );
 };
 
-const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
@@ -119,10 +121,10 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       break;
   }
   const [sysFonts, setSysFonts] = useState<string[]>(defaultSysFonts);
+  const [defaultFont, setDefaultFont] = useState(viewSettings.defaultFont!);
   const [defaultFontSize, setDefaultFontSize] = useState(viewSettings.defaultFontSize!);
   const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize!);
   const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont!);
-  const [defaultFont, setDefaultFont] = useState(viewSettings.defaultFont!);
   const [defaultCJKFont, setDefaultCJKFont] = useState(viewSettings.defaultCJKFont!);
   const [serifFont, setSerifFont] = useState(viewSettings.serifFont!);
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
@@ -131,6 +133,27 @@ const FontPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [CJKFonts, setCJKFonts] = useState<string[]>(() => {
     return genCJKFontsList(sysFonts);
   });
+
+  const resetToDefaults = useResetViewSettings();
+
+  const handleReset = () => {
+    resetToDefaults({
+      defaultFont: setDefaultFont,
+      defaultFontSize: setDefaultFontSize,
+      minimumFontSize: setMinFontSize,
+      overrideFont: setOverrideFont,
+      defaultCJKFont: setDefaultCJKFont,
+      serifFont: setSerifFont,
+      sansSerifFont: setSansSerifFont,
+      monospaceFont: setMonospaceFont,
+      fontWeight: setFontWeight,
+    });
+  };
+
+  useEffect(() => {
+    onRegisterReset(handleReset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setCJKFonts((prev) => {

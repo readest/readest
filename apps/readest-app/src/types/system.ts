@@ -1,5 +1,5 @@
 import { SystemSettings } from './settings';
-import { Book, BookConfig, BookContent } from './book';
+import { Book, BookConfig, BookContent, ViewSettings } from './book';
 import { BookDoc } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 
@@ -44,6 +44,7 @@ export interface AppService {
 
   selectDirectory(): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
+  getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;
   saveSettings(settings: SystemSettings): Promise<void>;
   importBook(

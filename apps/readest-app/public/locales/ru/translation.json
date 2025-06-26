@@ -375,5 +375,7 @@
   "Enter CSS for reader interface styling...": "Введите CSS для оформления интерфейса ридера...",
   "Crop": "Обрезать",
   "Book Covers": "Обложки книг",
-  "Fit": "Подогнать"
+  "Fit": "Подогнать",
+  "Reset {{settings}}": "Сбросить {{settings}}",
+  "Reset Settings": "Сбросить настройки"
 }

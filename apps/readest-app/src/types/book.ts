@@ -2,7 +2,6 @@ export type BookFormat = 'EPUB' | 'PDF' | 'MOBI' | 'CBZ' | 'FB2' | 'FBZ';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet';
-import { CodeLanguage } from '@/utils/highlightjs';
 
 export interface Book {
   // if Book is a remote book we just lazy load the book content via url
@@ -115,7 +114,7 @@ export interface BookStyle {
   overrideLayout: boolean;
   overrideColor: boolean;
   codeHighlighting: boolean;
-  codeLanguage: CodeLanguage;
+  codeLanguage: string;
   userStylesheet: string;
   userUIStylesheet: string;
 }

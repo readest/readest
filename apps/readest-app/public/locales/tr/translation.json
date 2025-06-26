@@ -369,5 +369,7 @@
   "Enter CSS for reader interface styling...": "Okuyucu arayüzü stili için CSS girin...",
   "Crop": "Kes",
   "Book Covers": "Kitap Kapağı",
-  "Fit": "Uygun"
+  "Fit": "Uygun",
+  "Reset {{settings}}": "{{settings}}'i Sıfırla",
+  "Reset Settings": "Ayarları Sıfırla"
 }

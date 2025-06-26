@@ -366,5 +366,7 @@
   "Enter CSS for reader interface styling...": "리더 인터페이스 스타일용 CSS 입력...",
   "Crop": "자르기",
   "Book Covers": "책 표지",
-  "Fit": "맞춤"
+  "Fit": "맞춤",
+  "Reset {{settings}}": "{{settings}} 재설정",
+  "Reset Settings": "설정 재설정"
 }

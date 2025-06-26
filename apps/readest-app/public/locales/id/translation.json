@@ -366,5 +366,7 @@
   "Enter CSS for reader interface styling...": "Masukkan CSS untuk gaya antarmuka pembaca...",
   "Crop": "Potong",
   "Book Covers": "Sampul Buku",
-  "Fit": "Pas"
+  "Fit": "Pas",
+  "Reset {{settings}}": "Atur Ulang {{settings}}",
+  "Reset Settings": "Atur Ulang Pengaturan"
 }

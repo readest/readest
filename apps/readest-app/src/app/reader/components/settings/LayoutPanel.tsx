@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
 import { isCJKEnv } from '@/utils/misc';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
@@ -15,9 +16,10 @@ import { lockScreenOrientation } from '@/utils/bridge';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS, RELOAD_BEFREE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 
-const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings, getGridInsets, setViewSettings } = useReaderStore();
@@ -63,8 +65,46 @@ const LayoutPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll!);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime!);
   const [showPageNumber, setShowPageNumber] = useState(viewSettings.showPageNumber!);
-
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
+
+  const resetToDefaults = useResetViewSettings();
+
+  const handleReset = () => {
+    resetToDefaults({
+      paragraphMargin: setParagraphMargin,
+      lineHeight: setLineHeight,
+      wordSpacing: setWordSpacing,
+      letterSpacing: setLetterSpacing,
+      textIndent: setTextIndent,
+      fullJustification: setFullJustification,
+      hyphenation: setHyphenation,
+      marginTopPx: setMarginTopPx,
+      marginBottomPx: setMarginBottomPx,
+      marginLeftPx: setMarginLeftPx,
+      marginRightPx: setMarginRightPx,
+      compactMarginTopPx: setCompactMarginTopPx,
+      compactMarginBottomPx: setCompactMarginBottomPx,
+      compactMarginLeftPx: setCompactMarginLeftPx,
+      compactMarginRightPx: setCompactMarginRightPx,
+      gapPercent: setGapPercent,
+      maxColumnCount: setMaxColumnCount,
+      maxInlineSize: setMaxInlineSize,
+      maxBlockSize: setMaxBlockSize,
+      overrideLayout: setOverrideLayout,
+      doubleBorder: setDoubleBorder,
+      borderColor: setBorderColor,
+      showHeader: setShowHeader,
+      showFooter: setShowFooter,
+      showBarsOnScroll: setShowBarsOnScroll,
+      showRemainingTime: setShowRemainingTime,
+      showPageNumber: setShowPageNumber,
+    });
+  };
+
+  useEffect(() => {
+    onRegisterReset(handleReset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'paragraphMargin', paragraphMargin);

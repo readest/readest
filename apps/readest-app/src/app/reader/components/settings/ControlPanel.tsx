@@ -8,9 +8,11 @@ import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { RELOAD_BEFREE_SAVED_TIMEOUT_MS } from '@/services/constants';
+import { SettingsPanelPanelProp } from './SettingsDialog';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
 import NumberInput from './NumberInput';
 
-const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
@@ -27,6 +29,26 @@ const ControlPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript!);
+
+  const resetToDefaults = useResetViewSettings();
+
+  const handleReset = () => {
+    resetToDefaults({
+      scrolled: setScrolledMode,
+      continuousScroll: setIsContinuousScroll,
+      scrollingOverlap: setScrollingOverlap,
+      volumeKeysToFlip: setVolumeKeysToFlip,
+      disableClick: setIsDisableClick,
+      swapClickArea: setSwapClickArea,
+      animated: setAnimated,
+      allowScript: setAllowScript,
+    });
+  };
+
+  useEffect(() => {
+    onRegisterReset(handleReset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isScrolledMode === viewSettings.scrolled) return;

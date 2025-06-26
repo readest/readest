@@ -6,6 +6,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 interface MenuItemProps {
   label: string;
   description?: string;
+  tooltip?: string;
   buttonClass?: string;
   labelClass?: string;
   shortcut?: string;
@@ -19,6 +20,7 @@ interface MenuItemProps {
 const MenuItem: React.FC<MenuItemProps> = ({
   label,
   description,
+  tooltip,
   buttonClass,
   labelClass,
   shortcut,
@@ -36,6 +38,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         disabled && 'btn-disabled text-gray-400',
         buttonClass,
       )}
+      data-tip={tooltip ? tooltip : ''}
       onClick={onClick}
       disabled={disabled}
     >

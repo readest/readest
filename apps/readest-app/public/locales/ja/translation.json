@@ -366,5 +366,7 @@
   "Enter CSS for reader interface styling...": "リーダーインターフェース用CSSを入力...",
   "Crop": "トリミング",
   "Book Covers": "書籍の表紙",
-  "Fit": "フィット"
+  "Fit": "フィット",
+  "Reset {{settings}}": "{{settings}}をリセット",
+  "Reset Settings": "設定をリセット"
 }

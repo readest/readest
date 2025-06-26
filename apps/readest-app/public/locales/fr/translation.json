@@ -372,5 +372,7 @@
   "Enter CSS for reader interface styling...": "Saisissez le CSS pour l’interface de lecture...",
   "Crop": "Rogner",
   "Book Covers": "Couvertures de livres",
-  "Fit": "Adapter"
+  "Fit": "Adapter",
+  "Reset {{settings}}": "Réinitialiser {{settings}}",
+  "Reset Settings": "Réinitialiser les paramètres"
 }

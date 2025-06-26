@@ -366,5 +366,7 @@
   "Enter CSS for reader interface styling...": "输入阅读器界面样式的CSS…",
   "Crop": "裁剪",
   "Book Covers": "书籍封面",
-  "Fit": "适应"
+  "Fit": "适应",
+  "Reset {{settings}}": "重置{{settings}}",
+  "Reset Settings": "重置设置"
 }

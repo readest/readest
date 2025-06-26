@@ -375,5 +375,7 @@
   "Enter CSS for reader interface styling...": "Wprowadź CSS dla stylu interfejsu czytnika...",
   "Crop": "Przytnij",
   "Book Covers": "Okładki książek",
-  "Fit": "Pasuje"
+  "Fit": "Pasuje",
+  "Reset {{settings}}": "Zresetuj {{settings}}",
+  "Reset Settings": "Zresetuj ustawienia"
 }

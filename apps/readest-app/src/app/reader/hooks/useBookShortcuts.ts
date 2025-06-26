@@ -1,8 +1,6 @@
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { isTauriAppPlatform } from '@/services/environment';
-import useShortcuts from '@/hooks/useShortcuts';
-import useBooksManager from './useBooksManager';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getStyles } from '@/utils/style';
@@ -10,6 +8,8 @@ import { tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { viewPagination } from './usePagination';
+import useShortcuts from '@/hooks/useShortcuts';
+import useBooksManager from './useBooksManager';
 
 interface UseBookShortcutsProps {
   sideBarBookKey: string | null;

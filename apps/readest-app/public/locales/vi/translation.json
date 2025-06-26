@@ -366,5 +366,7 @@
   "Enter CSS for reader interface styling...": "Nhập CSS cho giao diện trình đọc...",
   "Crop": "Cắt",
   "Book Covers": "Bìa sách",
-  "Fit": "Vừa vặn"
+  "Fit": "Vừa vặn",
+  "Reset {{settings}}": "Đặt lại {{settings}}",
+  "Reset Settings": "Đặt lại cài đặt"
 }

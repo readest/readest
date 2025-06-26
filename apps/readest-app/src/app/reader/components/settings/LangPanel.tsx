@@ -8,19 +8,38 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { getTranslators } from '@/services/translators';
 import { TRANSLATED_LANGS } from '@/services/constants';
+import { SettingsPanelPanelProp } from './SettingsDialog';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
 import { initDayjs } from '@/utils/time';
 import Select from '@/components/Select';
 
-const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { token } = useAuth();
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey)!;
 
+  const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage!);
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
   const [translationProvider, setTranslationProvider] = useState(viewSettings.translationProvider!);
   const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang!);
+
+  const resetToDefaults = useResetViewSettings();
+
+  const handleReset = () => {
+    resetToDefaults({
+      uiLanguage: setUILanguage,
+      translationEnabled: setTranslationEnabled,
+      translationProvider: setTranslationProvider,
+      translateTargetLang: setTranslateTargetLang,
+    });
+  };
+
+  useEffect(() => {
+    onRegisterReset(handleReset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getCurrentUILangOption = () => {
     const uiLanguage = viewSettings.uiLanguage;
@@ -43,10 +62,7 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleSelectUILang = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const option = event.target.value;
-    saveViewSettings(envConfig, bookKey, 'uiLanguage', option, false, false);
-    const locale = option ? option : navigator.language;
-    i18n.changeLanguage(locale);
-    initDayjs(locale);
+    setUILanguage(option);
   };
 
   const getTranslationProviderOptions = () => {
@@ -96,6 +112,15 @@ const LangPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     viewSettings.translateTargetLang = option;
     setViewSettings(bookKey, { ...viewSettings });
   };
+
+  useEffect(() => {
+    if (uiLanguage === viewSettings.uiLanguage) return;
+    saveViewSettings(envConfig, bookKey, 'uiLanguage', uiLanguage, false, false);
+    const locale = uiLanguage ? uiLanguage : navigator.language;
+    i18n.changeLanguage(locale);
+    initDayjs(locale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uiLanguage]);
 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;

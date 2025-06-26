@@ -1,17 +1,19 @@
 import clsx from 'clsx';
 import cssbeautify from 'cssbeautify';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
+import { SettingsPanelPanelProp } from './SettingsDialog';
 import { getStyles } from '@/utils/style';
 import cssValidate from '@/utils/css';
 
 type CSSType = 'book' | 'reader';
 
-const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
+const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
@@ -28,6 +30,22 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [inputFocusInAndroid, setInputFocusInAndroid] = useState(false);
   const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const uiTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const resetToDefaults = useResetViewSettings();
+
+  const handleReset = () => {
+    resetToDefaults({
+      userStylesheet: setDraftContentStylesheet,
+      userUIStylesheet: setDraftUIStylesheet,
+    });
+    applyStyles('book', true);
+    applyStyles('reader', true);
+  };
+
+  useEffect(() => {
+    onRegisterReset(handleReset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validateCSS = (cssInput: string): { isValid: boolean; error?: string } => {
     if (!cssInput.trim()) return { isValid: true };
@@ -64,9 +82,9 @@ const MiscPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-  const applyStyles = (type: CSSType) => {
+  const applyStyles = (type: CSSType, clear = false) => {
     const cssInput = type === 'book' ? draftContentStylesheet : draftUIStylesheet;
-    const formattedCSS = cssbeautify(cssInput, {
+    const formattedCSS = cssbeautify(clear ? '' : cssInput, {
       indent: '  ',
       openbrace: 'end-of-line',
       autosemicolon: true,

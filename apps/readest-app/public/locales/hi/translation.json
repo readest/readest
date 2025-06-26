@@ -369,5 +369,7 @@
   "Enter CSS for reader interface styling...": "रीडर इंटरफ़ेस के लिए CSS दर्ज करें...",
   "Crop": "काटें",
   "Book Covers": "पुस्तक कवर",
-  "Fit": "फिट"
+  "Fit": "फिट",
+  "Reset {{settings}}": "रीसेट {{settings}}",
+  "Reset Settings": "सेटिंग्स रीसेट करें"
 }

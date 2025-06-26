@@ -369,5 +369,7 @@
   "Enter CSS for reader interface styling...": "Εισαγάγετε CSS για στυλ διεπαφής αναγνώστη...",
   "Crop": "Περικοπή",
   "Book Covers": "Εξώφυλλα βιβλίων",
-  "Fit": "Προσαρμογή"
+  "Fit": "Προσαρμογή",
+  "Reset {{settings}}": "Επαναφορά {{settings}}",
+  "Reset Settings": "Επαναφορά ρυθμίσεων"
 }

@@ -2,7 +2,7 @@ import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, BaseDir } from '@/types/system';
-import { Book, BookConfig, BookContent, BookFormat } from '@/types/book';
+import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
 import {
   getDir,
   getLocalBookFilename,
@@ -74,6 +74,20 @@ export abstract class BaseAppService implements AppService {
   abstract selectDirectory(): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
 
+  getDefaultViewSettings(): ViewSettings {
+    return {
+      ...DEFAULT_BOOK_LAYOUT,
+      ...DEFAULT_BOOK_STYLE,
+      ...DEFAULT_BOOK_FONT,
+      ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+      ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
+      ...DEFAULT_VIEW_CONFIG,
+      ...DEFAULT_TTS_CONFIG,
+      ...DEFAULT_SCREEN_CONFIG,
+      ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
+    };
+  }
+
   async loadSettings(): Promise<SystemSettings> {
     let settings: SystemSettings;
     const { fp, base } = this.resolvePath('settings.json', 'Settings');
@@ -90,15 +104,7 @@ export abstract class BaseAppService implements AppService {
       settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
       settings.globalReadSettings = { ...DEFAULT_READSETTINGS, ...settings.globalReadSettings };
       settings.globalViewSettings = {
-        ...DEFAULT_BOOK_LAYOUT,
-        ...DEFAULT_BOOK_STYLE,
-        ...DEFAULT_BOOK_FONT,
-        ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
-        ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
-        ...DEFAULT_VIEW_CONFIG,
-        ...DEFAULT_TTS_CONFIG,
-        ...DEFAULT_SCREEN_CONFIG,
-        ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
+        ...this.getDefaultViewSettings(),
         ...settings.globalViewSettings,
       };
     } catch {
@@ -110,17 +116,7 @@ export abstract class BaseAppService implements AppService {
           ...DEFAULT_READSETTINGS,
           ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
         },
-        globalViewSettings: {
-          ...DEFAULT_BOOK_LAYOUT,
-          ...DEFAULT_BOOK_STYLE,
-          ...DEFAULT_BOOK_FONT,
-          ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
-          ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
-          ...DEFAULT_VIEW_CONFIG,
-          ...DEFAULT_TTS_CONFIG,
-          ...DEFAULT_SCREEN_CONFIG,
-          ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
-        },
+        globalViewSettings: this.getDefaultViewSettings(),
       } as SystemSettings;
 
       await this.fs.createDir('', 'Books', true);
