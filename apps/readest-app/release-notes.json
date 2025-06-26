@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.9.61": {
+      "date": "2025-06-26",
+      "notes": [
+        "Layout: Fixed view menu width on smaller screens",
+        "Layout: Added option to crop or fit book covers in library view",
+        "Reader: You can now apply custom CSS to the reading interface (UI)",
+        "Reader: Added an option to show remaining pages in the current chapter",
+        "Settings: Added options to reset settings from the config dialog",
+        "Import: Fixed encoded filenames when importing TXT files on iOS",
+        "Linux: Fixed missing app icon on some Linux distributions",
+        "GitHub: Added donation link to support Readest development"
+      ]
+    },
     "0.9.60": {
       "date": "2025-06-22",
       "notes": [
