@@ -21,38 +21,52 @@ const BookCover: React.FC<BookCoverProps> = ({
   imageClassName,
   isPreview,
 }) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    img.style.display = 'none';
+
+    const mainContainer = img.closest('.book-cover-container');
+    const fallbackDiv = mainContainer?.querySelector('.fallback-cover');
+
+    if (fallbackDiv) {
+      fallbackDiv.classList.remove('invisible');
+    }
+  };
+
   return (
-    <div className={clsx('relative flex h-full w-full shadow-md', className)}>
+    <div className={clsx('book-cover-container relative flex h-full w-full', className)}>
       {coverFit === 'crop' ? (
         <Image
           src={book.coverImageUrl!}
           alt={book.title}
           fill={true}
-          className={clsx('crop-cover-img object-cover', imageClassName)}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
-          }}
+          className={clsx('crop-cover-img object-cover shadow-md', imageClassName)}
+          onError={handleImageError}
         />
       ) : (
-        <div className='flex h-full w-full items-end justify-center'>
+        <div
+          className={clsx(
+            'flex h-full w-full justify-center',
+            mode === 'grid' ? 'items-end' : 'items-center',
+          )}
+        >
           <Image
             src={book.coverImageUrl!}
             alt={book.title}
             width={0}
             height={0}
             sizes='100vw'
-            className={clsx('fit-cover-img h-auto max-h-full w-auto max-w-full', imageClassName)}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
-            }}
+            className={clsx(
+              'fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
+              imageClassName,
+            )}
+            onError={handleImageError}
           />
         </div>
       )}
       <div
         className={clsx(
-          'invisible absolute inset-0 rounded-none p-2',
+          'fallback-cover invisible absolute inset-0 rounded-none p-2',
           'text-neutral-content text-center font-serif font-medium',
           isPreview ? 'bg-base-200/50' : 'bg-base-100',
         )}
