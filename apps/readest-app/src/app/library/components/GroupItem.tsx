@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { BooksGroup } from '@/types/book';
 import BookCover from '@/components/BookCover';
 
@@ -12,10 +13,12 @@ interface GroupItemProps {
 
 const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBooks }) => {
   const { appService } = useEnv();
+  const iconSize15 = useResponsiveSize(15);
+
   return (
     <div
       className={clsx(
-        'group-item flex h-full flex-col',
+        'group-item flex h-full flex-col justify-end',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
     >
@@ -40,10 +43,13 @@ const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBook
           </div>
         )}
       </div>
-      <div className='min-w-0 flex-1 pt-2'>
-        <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold'>
-          {group.name}
-        </h4>
+      <div className={clsx('flex w-full flex-col pt-2')}>
+        <div className='min-w-0 flex-1'>
+          <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold'>
+            {group.name}
+          </h4>
+        </div>
+        <div className='placeholder' style={{ height: `${iconSize15}px` }}></div>
       </div>
     </div>
   );

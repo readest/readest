@@ -26,6 +26,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
+import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
@@ -68,7 +69,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setCheckLastOpenBooks,
   } = useLibraryStore();
   const _ = useTranslation();
-  useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   const insets = useSafeAreaInsets();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
@@ -86,6 +86,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+
+  useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
+  useUICSS();
 
   useOpenWithBooks();
 

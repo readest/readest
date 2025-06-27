@@ -22,22 +22,34 @@ const BookCover: React.FC<BookCoverProps> = ({
   isPreview,
 }) => {
   return (
-    <div className={clsx('relative flex h-full w-full', className)}>
-      <Image
-        src={book.coverImageUrl!}
-        alt={book.title}
-        fill={true}
-        className={clsx(
-          coverFit === 'crop'
-            ? 'object-cover'
-            : `object-contain ${mode === 'grid' ? 'object-bottom' : ''}`,
-          imageClassName,
-        )}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
-        }}
-      />
+    <div className={clsx('relative flex h-full w-full shadow-md', className)}>
+      {coverFit === 'crop' ? (
+        <Image
+          src={book.coverImageUrl!}
+          alt={book.title}
+          fill={true}
+          className={clsx('crop-cover-img object-cover', imageClassName)}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
+          }}
+        />
+      ) : (
+        <div className='flex h-full w-full items-end justify-center'>
+          <Image
+            src={book.coverImageUrl!}
+            alt={book.title}
+            width={0}
+            height={0}
+            sizes='100vw'
+            className={clsx('fit-cover-img h-auto max-h-full w-auto max-w-full', imageClassName)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('invisible');
+            }}
+          />
+        </div>
+      )}
       <div
         className={clsx(
           'invisible absolute inset-0 rounded-none p-2',

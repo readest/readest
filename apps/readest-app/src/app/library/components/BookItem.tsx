@@ -54,7 +54,7 @@ const BookItem: React.FC<BookItemProps> = ({
     <div
       className={clsx(
         'book-item flex',
-        mode === 'grid' && 'h-full flex-col',
+        mode === 'grid' && 'h-full flex-col justify-end',
         mode === 'list' && 'h-28 flex-row gap-4 overflow-hidden',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
@@ -65,7 +65,7 @@ const BookItem: React.FC<BookItemProps> = ({
           mode === 'list' && 'min-w-20',
         )}
       >
-        <BookCover mode={mode} book={book} coverFit={coverFit} className='drop-shadow-md' />
+        <BookCover mode={mode} book={book} coverFit={coverFit} />
         {selectedBooks.includes(book.hash) && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
