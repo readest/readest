@@ -29,14 +29,14 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
         if let Err(e) = fs_scope.allow_file(file) {
-            eprintln!("Failed to allow file in fs_scope: {}", e);
+            eprintln!("Failed to allow file in fs_scope: {e}");
         } else {
-            println!("Allowed file in fs_scope: {:?}", file);
+            println!("Allowed file in fs_scope: {file:?}");
         }
         if let Err(e) = asset_protocol_scope.allow_file(file) {
-            eprintln!("Failed to allow file in asset_protocol_scope: {}", e);
+            eprintln!("Failed to allow file in asset_protocol_scope: {e}");
         } else {
-            println!("Allowed file in asset_protocol_scope: {:?}", file);
+            println!("Allowed file in asset_protocol_scope: {file:?}");
         }
     }
 }
@@ -80,18 +80,18 @@ fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
         .collect::<Vec<_>>()
         .join(",");
     let window = app.get_webview_window("main").unwrap();
-    let script = format!("window.OPEN_WITH_FILES = [{}];", files);
+    let script = format!("window.OPEN_WITH_FILES = [{files}];");
     if let Err(e) = window.eval(&script) {
-        eprintln!("Failed to set open files variable: {}", e);
+        eprintln!("Failed to set open files variable: {e}");
     }
 }
 
 #[cfg(desktop)]
 fn set_rounded_window(app: &AppHandle, rounded: bool) {
     let window = app.get_webview_window("main").unwrap();
-    let script = format!("window.IS_ROUNDED = {};", rounded);
+    let script = format!("window.IS_ROUNDED = {rounded};");
     if let Err(e) = window.eval(&script) {
-        eprintln!("Failed to set IS_ROUNDED variable: {}", e);
+        eprintln!("Failed to set IS_ROUNDED variable: {e}");
     }
 }
 
@@ -249,7 +249,7 @@ pub fn run() {
                     .level(log::LevelFilter::Info)
                     .build(),
             ) {
-                eprintln!("Failed to initialize tauri_plugin_log: {}", e);
+                eprintln!("Failed to initialize tauri_plugin_log: {e}");
             };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
