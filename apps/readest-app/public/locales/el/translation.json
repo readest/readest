@@ -374,5 +374,8 @@
   "Reset Settings": "Επαναφορά ρυθμίσεων",
   "{{count}} pages left in chapter_one": "Μένει {{count}} σελίδα",
   "{{count}} pages left in chapter_other": "Μένουν {{count}} σελίδες",
-  "Show Remaining Pages": "Εμφάνιση υπολοίπων"
+  "Show Remaining Pages": "Εμφάνιση υπολοίπων",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

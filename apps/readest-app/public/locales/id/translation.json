@@ -370,5 +370,8 @@
   "Reset {{settings}}": "Atur Ulang {{settings}}",
   "Reset Settings": "Atur Ulang Pengaturan",
   "{{count}} pages left in chapter_other": "{{count}} halaman tersisa di bab ini",
-  "Show Remaining Pages": "Tampilkan halaman tersisa"
+  "Show Remaining Pages": "Tampilkan halaman tersisa",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

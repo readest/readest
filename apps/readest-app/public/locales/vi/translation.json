@@ -370,5 +370,8 @@
   "Reset {{settings}}": "Đặt lại {{settings}}",
   "Reset Settings": "Đặt lại cài đặt",
   "{{count}} pages left in chapter_other": "Còn {{count}} trang trong chương",
-  "Show Remaining Pages": "Hiển thị trang còn lại"
+  "Show Remaining Pages": "Hiển thị trang còn lại",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

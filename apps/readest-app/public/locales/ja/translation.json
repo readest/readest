@@ -370,5 +370,8 @@
   "Reset {{settings}}": "{{settings}}をリセット",
   "Reset Settings": "設定をリセット",
   "{{count}} pages left in chapter_other": "{{count}} ページ残り",
-  "Show Remaining Pages": "残りを表示"
+  "Show Remaining Pages": "残りを表示",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

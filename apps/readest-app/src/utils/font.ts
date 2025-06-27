@@ -28,15 +28,18 @@ const getAdditionalBasicFontLinks = () => `
 `;
 
 const getAdditionalCJKFontLinks = () => `
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous">
-  <link rel='stylesheet' href='https://fontsapi.zeoseven.com/431/main/result.css' crossorigin="anonymous"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://ik.imagekit.io/fonts18/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://ik.imagekit.io/fonts18/packages/jhlst/dist/%E4%BA%AC%E8%8F%AF%E8%80%81%E5%AE%8B%E4%BD%93v2_002/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://ik.imagekit.io/fonts18/packages/syst/dist/SourceHanSerifCN/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://ik.imagekit.io/fonts18/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${cjkGoogleFonts
     .map(
       ({ family, weights }) =>
         `family=${encodeURIComponent(family)}${weights ? `:${weights}` : ''}`,
     )
-    .join('&')}&display=swap" crossorigin="anonymous">
+    .join('&')}&display=swap" crossorigin="anonymous" />
 `;
 
 const getAdditionalCJKFontFaces = () => `

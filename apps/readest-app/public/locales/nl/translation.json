@@ -374,5 +374,8 @@
   "Reset Settings": "Instellingen resetten",
   "{{count}} pages left in chapter_one": "Nog {{count}} pagina in hoofdstuk",
   "{{count}} pages left in chapter_other": "Nog {{count}} pagina’s in hoofdstuk",
-  "Show Remaining Pages": "Toon resterende pagina’s"
+  "Show Remaining Pages": "Toon resterende pagina’s",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

@@ -98,6 +98,6 @@ export const isValidURL = (url: string, allowedSchemes: string[] = ['http', 'htt
   }
 };
 
-export const stubTranslation = (key: string) => {
-  return key;
+export const stubTranslation = (stubKey: string) => {
+  return stubKey;
 };

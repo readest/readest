@@ -202,6 +202,9 @@ export const CJK_SERIF_FONTS = [
   _('LXGW WenKai GB Screen'),
   _('LXGW WenKai TC'),
   _('GuanKiapTsingKhai-T'),
+  _('Source Han Serif CN VF'),
+  _('Huiwen-mincho'),
+  _('KingHwa_OldSong'),
 ];
 
 export const CJK_SANS_SERIF_FONTS = ['Noto Sans SC', 'Noto Sans TC'];
@@ -498,6 +501,8 @@ export const CJK_FONTS_PATTENS = new RegExp(
     'Song',
     'Ming',
     'FZ',
+    'Huiwen',
+    'KingHwa',
     'FangZheng',
     'WenQuanYi',
     'PingFang',

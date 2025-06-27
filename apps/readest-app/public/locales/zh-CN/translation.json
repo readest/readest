@@ -370,5 +370,8 @@
   "Reset {{settings}}": "重置{{settings}}",
   "Reset Settings": "重置设置",
   "{{count}} pages left in chapter_other": "本章剩余 {{count}} 页",
-  "Show Remaining Pages": "显示剩余页数"
+  "Show Remaining Pages": "显示剩余页数",
+  "Source Han Serif CN VF": "思源宋体",
+  "Huiwen-mincho": "汇文明朝体",
+  "KingHwa_OldSong": "京华老宋体"
 }

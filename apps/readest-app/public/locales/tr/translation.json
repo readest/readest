@@ -374,5 +374,8 @@
   "Reset Settings": "Ayarları Sıfırla",
   "{{count}} pages left in chapter_one": "Bu bölümde {{count}} sayfa kaldı",
   "{{count}} pages left in chapter_other": "Bu bölümde {{count}} sayfa kaldı",
-  "Show Remaining Pages": "Kalan sayfaları göster"
+  "Show Remaining Pages": "Kalan sayfaları göster",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

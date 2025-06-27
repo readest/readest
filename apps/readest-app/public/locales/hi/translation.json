@@ -374,5 +374,8 @@
   "Reset Settings": "सेटिंग्स रीसेट करें",
   "{{count}} pages left in chapter_one": "इस अध्याय में {{count}} पृष्ठ शेष हैं",
   "{{count}} pages left in chapter_other": "इस अध्याय में {{count}} पृष्ठ शेष हैं",
-  "Show Remaining Pages": "शेष पृष्ठ दिखाएँ"
+  "Show Remaining Pages": "शेष पृष्ठ दिखाएँ",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }

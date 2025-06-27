@@ -378,5 +378,8 @@
   "{{count}} pages left in chapter_one": "{{count}} pagina rimasta nel capitolo",
   "{{count}} pages left in chapter_many": "{{count}} pagine rimaste nel capitolo",
   "{{count}} pages left in chapter_other": "{{count}} pagine rimaste nel capitolo",
-  "Show Remaining Pages": "Mostra pagine rimanenti"
+  "Show Remaining Pages": "Mostra pagine rimanenti",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song"
 }
