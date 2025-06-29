@@ -1,36 +1,54 @@
 'use client';
 
 import clsx from 'clsx';
-import React, { useState, useRef } from 'react';
+import Stripe from 'stripe';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { IoArrowBack } from 'react-icons/io5';
-import { PiUserCircle } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { UserPlan } from '@/types/user';
 import { navigateToLibrary } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
+import { getStripe } from '@/libs/stripe/client';
+import { getAPIBaseUrl } from '@/services/environment';
+import { getAccessToken } from '@/utils/access';
+import { getPlanDetails } from './utils/plan';
 import { Toast } from '@/components/Toast';
-import WindowButtons from '@/components/WindowButtons';
-import Quota from '@/components/Quota';
-import UserAvatar from '@/components/UserAvatar';
+import ProfileHeader from './components/Header';
+import UserInfo from './components/UserInfo';
+import UsageStats from './components/UsageStats';
+import PlansComparison from './components/PlansComparison';
+import AccountActions from './components/AccountActions';
+
+const WEB_STRIPE_PLANS_URL = `${getAPIBaseUrl()}/stripe/plans`;
+const WEB_STRIPE_CHECKOUT_URL = `${getAPIBaseUrl()}/stripe/checkout`;
+const WEB_STRIPE_PORTAL_URL = `${getAPIBaseUrl()}/stripe/portal`;
+
+export type AvailablePlan = {
+  plan: UserPlan;
+  price_id: string;
+  price: number;
+  currency: string;
+  interval: string;
+  product: Stripe.Product;
+};
 
 const ProfilePage = () => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user, logout } = useAuth();
-  const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
-  const headerRef = useRef<HTMLDivElement>(null);
+  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useTheme({ systemUIVisible: false });
 
@@ -48,14 +66,6 @@ const ProfilePage = () => {
     navigateToLibrary(router);
   };
 
-  const handleDeleteRequest = () => {
-    setShowConfirmDelete(true);
-  };
-
-  const handleCancelDelete = () => {
-    setShowConfirmDelete(false);
-  };
-
   const handleConfirmDelete = async () => {
     try {
       await deleteUser();
@@ -67,54 +77,68 @@ const ProfilePage = () => {
         message: _('Failed to delete user. Please try again later.'),
       });
     }
-    setShowConfirmDelete(false);
   };
 
-  const getPlanDetails = (userPlan: UserPlan) => {
-    switch (userPlan) {
-      case 'free':
-        return {
-          name: _('Free Tier'),
-          color: 'bg-gray-200 text-gray-800',
-          features: [
-            _('Community Support'),
-            _('DeepL Free Access'),
-            _('Essential Text-to-Speech Voices'),
-            _('Unlimited Offline/Online Reading'),
-            _('Unlimited Cloud Sync Devices'),
-            _('500 MB Cloud Sync Space'),
-          ],
-        };
-      case 'plus':
-        return {
-          name: _('Plus Tier'),
-          color: 'bg-blue-200 text-blue-800',
-          features: [
-            _('Includes All Free Tier Benefits'),
-            _('Priority Support'),
-            _('AI Summaries'),
-            _('AI Translations'),
-            _('DeepL Pro Access'),
-            _('Expanded Text-to-Speech Voices'),
-            _('2000 MB Cloud Sync Space'),
-          ],
-        };
-      case 'pro':
-        return {
-          name: _('Pro Tier'),
-          color: 'bg-purple-200 text-purple-800',
-          features: [
-            _('Includes All Plus Tier Benefits'),
-            _('Unlimited AI Summaries'),
-            _('Unlimited AI Translations'),
-            _('Unlimited DeepL Pro Access'),
-            _('Advanced AI Tools'),
-            _('Early Feature Access'),
-            _('10 GB Cloud Sync Space'),
-          ],
-        };
+  const handleSubscribe = async (priceId?: string) => {
+    const token = await getAccessToken();
+    const stripe = await getStripe();
+    if (!stripe) {
+      console.error('Stripe not loaded');
+      return;
+    }
+    const { sessionId, url } = await fetch(WEB_STRIPE_CHECKOUT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ priceId }),
+    }).then((res) => res.json());
+
+    if (url) {
+      window.location.href = url;
+    } else {
+      const result = await stripe.redirectToCheckout({ sessionId });
+
+      if (result.error) {
+        console.error(result.error);
+      }
     }
   };
+
+  const handleManageSubscription = async () => {
+    const token = await getAccessToken();
+    const response = await fetch(WEB_STRIPE_PORTAL_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const { url, error } = await response.json();
+
+    if (error) {
+      console.error('Error creating portal session:', error);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to manage subscription. Please try again later.'),
+      });
+      return;
+    }
+
+    window.location.href = url;
+  };
+
+  useEffect(() => {
+    fetch(WEB_STRIPE_PLANS_URL)
+      .then((res) => res.json())
+      .then((data) => setAvailablePlans(data));
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   if (!user || !token) {
     return (
@@ -131,7 +155,8 @@ const ProfilePage = () => {
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'] || '-';
   const userEmail = user?.email || '';
-  const planDetails = getPlanDetails(userPlan) || getPlanDetails('free');
+  const planDetails =
+    getPlanDetails(userPlan, availablePlans) || getPlanDetails('free', availablePlans);
 
   return (
     <div
@@ -141,140 +166,33 @@ const ProfilePage = () => {
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >
-      <div
-        ref={headerRef}
-        className={clsx(
-          'fixed flex w-full items-center justify-between py-2 pe-6 ps-4',
-          appService?.hasTrafficLight && 'pt-11',
-        )}
-      >
-        <button onClick={handleGoBack} className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0')}>
-          <IoArrowBack className='text-base-content' />
-        </button>
-
-        {appService?.hasWindowBar && (
-          <WindowButtons
-            headerRef={headerRef}
-            showMinimize={!isTrafficLightVisible}
-            showMaximize={!isTrafficLightVisible}
-            showClose={!isTrafficLightVisible}
-            onClose={handleGoBack}
-          />
-        )}
-      </div>
+      <ProfileHeader onGoBack={handleGoBack} />
       <div className='w-full min-w-60 max-w-4xl px-4 py-10'>
         <div className='bg-base-200 overflow-hidden rounded-lg p-2 shadow-md sm:p-6'>
-          <div className='p-2 sm:p-6'>
-            <div className='mb-8 flex flex-col items-center gap-x-6 gap-y-4 md:flex-row md:items-start'>
-              <div className='flex-shrink-0'>
-                {avatarUrl ? (
-                  <UserAvatar
-                    url={avatarUrl}
-                    size={128}
-                    DefaultIcon={PiUserCircle}
-                    className='h-16 w-16 md:h-24 md:w-24'
-                    borderClassName='border-base-100 border-4'
-                  />
-                ) : (
-                  <PiUserCircle className='h-16 w-16 md:h-24 md:w-24' />
-                )}
-              </div>
+          <div className='flex flex-col gap-y-8 p-2 sm:p-6'>
+            <UserInfo
+              avatarUrl={avatarUrl}
+              userFullName={userFullName}
+              userEmail={userEmail}
+              planDetails={planDetails}
+            />
 
-              <div className='flex-grow text-center md:text-left'>
-                <h2 className='text-base-content text-xl font-bold md:text-2xl'>{userFullName}</h2>
-                <p className='text-base-content/60'>{userEmail}</p>
-                <div className='mt-3'>
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${planDetails.color}`}
-                  >
-                    {planDetails.name}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <UsageStats quotas={quotas} />
 
-            <div className='bg-base-100 mb-8 rounded-lg px-4 py-6'>
-              <h3 className='text-base-content mb-2 text-lg font-semibold'>{_('Features')}</h3>
-              <div className='mt-6'>
-                <ul className='text-base-content/60 grid grid-cols-1 gap-2 md:grid-cols-2'>
-                  {planDetails.features.map((feature, index) => (
-                    <li key={index} className='flex items-center'>
-                      <svg
-                        className='mr-2 h-4 w-4 text-green-500'
-                        fill='currentColor'
-                        viewBox='0 0 20 20'
-                      >
-                        <path
-                          fillRule='evenodd'
-                          d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
-                          clipRule='evenodd'
-                        />
-                      </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            <PlansComparison
+              availablePlans={availablePlans}
+              userPlan={userPlan}
+              onSubscribe={handleSubscribe}
+            />
 
-            <div className='mb-8 rounded-lg'>
-              <div className='p-0'>
-                {quotas && quotas.length > 0 ? (
-                  <Quota
-                    quotas={quotas}
-                    showProgress
-                    className='space-y-4'
-                    labelClassName='pl-4 pr-2'
-                  />
-                ) : (
-                  <div className='h-10 animate-pulse'></div>
-                )}
-              </div>
-            </div>
-
-            <div className='flex flex-col gap-4 md:flex-row'>
-              <button
-                onClick={handleLogout}
-                className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
-              >
-                {_('Sign Out')}
-              </button>
-              <button
-                onClick={handleDeleteRequest}
-                className='w-full rounded-lg bg-red-100 px-6 py-3 font-medium text-red-600 transition-colors hover:bg-red-200 md:w-auto'
-              >
-                {_('Delete Account')}
-              </button>
-            </div>
+            <AccountActions
+              userPlan={userPlan}
+              onLogout={handleLogout}
+              onConfirmDelete={handleConfirmDelete}
+              onManageSubscription={handleManageSubscription}
+            />
           </div>
         </div>
-
-        {showConfirmDelete && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>
-            <div className='w-full max-w-md rounded-2xl bg-white p-6'>
-              <h3 className='mb-4 text-xl font-bold text-gray-800'>{_('Delete Your Account?')}</h3>
-              <p className='mb-6 text-gray-600'>
-                {_(
-                  'This action cannot be undone. All your data in the cloud will be permanently deleted.',
-                )}
-              </p>
-              <div className='flex flex-col gap-3 sm:flex-row'>
-                <button
-                  onClick={handleCancelDelete}
-                  className='flex-1 rounded-lg bg-gray-300 px-4 py-2 font-medium text-gray-800 hover:bg-gray-400'
-                >
-                  {_('Cancel')}
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className='flex-1 rounded-lg bg-red-500 px-4 py-2 font-medium text-white hover:bg-red-600'
-                >
-                  {_('Delete Permanently')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       <Toast />
     </div>
