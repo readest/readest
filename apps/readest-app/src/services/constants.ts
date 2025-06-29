@@ -555,9 +555,9 @@ export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
-  free: 50 * 1024,
-  plus: 500 * 1024,
-  pro: 1024 * 1024,
+  free: 10 * 1024,
+  plus: 50 * 1024,
+  pro: 200 * 1024,
 };
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;

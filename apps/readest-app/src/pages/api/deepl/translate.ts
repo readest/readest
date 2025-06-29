@@ -1,9 +1,8 @@
 import crypto from 'crypto';
-import { supabase } from '@/utils/supabase';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { getDailyTranslationPlanData, getUserPlan } from '@/utils/access';
+import { getDailyTranslationPlanData, getUserPlan, validateUserAndToken } from '@/utils/access';
 import { ErrorCodes } from '@/services/translators';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
@@ -18,19 +17,6 @@ interface KVNamespace {
 interface CloudflareEnv {
   TRANSLATIONS_KV?: KVNamespace;
 }
-
-const getUserAndToken = async (authHeader: string | undefined) => {
-  if (!authHeader) return {};
-
-  const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) return {};
-  return { user, token };
-};
 
 const LANG_V2_V1_MAP: Record<string, string> = {
   'ZH-HANS': 'ZH',
@@ -58,7 +44,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const env = (getCloudflareContext().env || {}) as CloudflareEnv;
   const hasKVCache = !!env['TRANSLATIONS_KV'];
 
-  const { user, token } = await getUserAndToken(req.headers['authorization']);
+  const { user, token } = await validateUserAndToken(req.headers['authorization']);
   const { DEEPL_PRO_API, DEEPL_FREE_API } = process.env;
   const deepFreeApiUrl = DEEPL_FREE_API || DEFAULT_DEEPL_FREE_API;
   const deeplProApiUrl = DEEPL_PRO_API || DEFAULT_DEEPL_PRO_API;

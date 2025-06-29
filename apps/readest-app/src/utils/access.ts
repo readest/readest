@@ -76,7 +76,7 @@ export const getUserID = async (): Promise<string | null> => {
   return data?.session?.user?.id ?? null;
 };
 
-export const validateUserAndToken = async (authHeader: string | undefined) => {
+export const validateUserAndToken = async (authHeader: string | null | undefined) => {
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');

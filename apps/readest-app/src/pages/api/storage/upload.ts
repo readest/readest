@@ -1,21 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase, createSupabaseClient } from '@/utils/supabase';
+import { createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { getStoragePlanData } from '@/utils/access';
+import { getStoragePlanData, validateUserAndToken } from '@/utils/access';
 import { getUploadSignedUrl } from '@/utils/object';
-
-const getUserAndToken = async (authHeader: string | undefined) => {
-  if (!authHeader) return {};
-
-  const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) return {};
-  return { user, token };
-};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -25,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { user, token } = await getUserAndToken(req.headers['authorization']);
+    const { user, token } = await validateUserAndToken(req.headers['authorization']);
     if (!user || !token) {
       return res.status(403).json({ error: 'Not authenticated' });
     }
@@ -74,11 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const uploadUrl = await getUploadSignedUrl(
-        fileKey,
-        objSize,
-        1800,
-      );
+      const uploadUrl = await getUploadSignedUrl(fileKey, objSize, 1800);
 
       res.status(200).json({
         uploadUrl,

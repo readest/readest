@@ -1,13 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextRequest, NextResponse } from 'next/server';
 import { PostgrestError } from '@supabase/supabase-js';
-import { supabase, createSupabaseClient } from '@/utils/supabase';
+import { createSupabaseClient } from '@/utils/supabase';
 import { BookDataRecord } from '@/types/book';
 import { transformBookConfigToDB } from '@/utils/transform';
 import { transformBookNoteToDB } from '@/utils/transform';
 import { transformBookToDB } from '@/utils/transform';
 import { runMiddleware, corsAllMethods } from '@/utils/cors';
 import { SyncData, SyncResult, SyncType } from '@/libs/sync';
+import { validateUserAndToken } from '@/utils/access';
 
 const transformsToDB = {
   books: transformBookToDB,
@@ -25,31 +26,10 @@ type TableName = keyof typeof transformsToDB;
 
 type DBError = { table: TableName; error: PostgrestError };
 
-const getUserAndToken = async (req: NextRequest) => {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader) return {};
-
-  const token = authHeader.replace('Bearer ', '');
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
-    if (error?.message === 'fetch failed') {
-      return { error: 'Network error' };
-    } else if (error || !user) {
-      return { error: 'Not authenticated' };
-    }
-    return { user, token };
-  } catch {
-    return { error: 'Network error' };
-  }
-};
-
 export async function GET(req: NextRequest) {
-  const { user, token, error } = await getUserAndToken(req);
-  if (!user || !token || error) {
-    return NextResponse.json({ error: error || 'Unknown error' }, { status: 401 });
+  const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+  if (!user || !token) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
   }
   const supabase = createSupabaseClient(token);
 
@@ -121,9 +101,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, token, error } = await getUserAndToken(req);
-  if (!user || !token || error) {
-    return NextResponse.json({ error: error || 'Unknown error' }, { status: 401 });
+  const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+  if (!user || !token) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
   }
   const supabase = createSupabaseClient(token);
 
