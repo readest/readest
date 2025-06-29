@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/libs/stripe/server';
-import { createSubscription } from '@/utils/stripe';
+import { createOrUpdateSubscription } from '@/utils/stripe';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
@@ -46,12 +46,16 @@ export async function POST(request: NextRequest) {
         }
         break;
 
-      case 'invoice.paid':
+      case 'invoice.payment_succeeded':
         await handleSuccessfulInvoice(event.data.object);
         break;
 
       case 'invoice.payment_failed':
         await handleFailedInvoice(event.data.object);
+        break;
+
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object);
         break;
 
       case 'customer.subscription.deleted':
@@ -85,7 +89,7 @@ async function handleSuccessfulSubscription(session: Stripe.Checkout.Session, us
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
-  await createSubscription(userId, customerId, subscriptionId);
+  await createOrUpdateSubscription(userId, customerId, subscriptionId);
 }
 
 async function handleSuccessfulInvoice(invoice: Stripe.Invoice) {
@@ -157,6 +161,25 @@ async function handleFailedInvoice(invoice: Stripe.Invoice) {
       status: 'past_due',
     })
     .eq('id', customerData.user_id);
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const subscriptionId = subscription.id;
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: subscriptionData } = await supabase
+    .from('subscriptions')
+    .select('user_id, stripe_customer_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single();
+
+  if (!subscriptionData) {
+    console.error('Subscription not found:', subscriptionId);
+    return;
+  }
+  const { user_id, stripe_customer_id } = subscriptionData;
+  await createOrUpdateSubscription(user_id, stripe_customer_id, subscriptionId);
 }
 
 async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {

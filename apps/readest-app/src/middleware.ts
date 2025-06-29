@@ -4,13 +4,15 @@ const allowedOrigins = [
   'https://web.readest.com',
   'https://tauri.localhost',
   'http://tauri.localhost',
-  'tauri://localhost',
   'http://localhost:3000',
   'http://localhost:3001',
+  'tauri://localhost',
 ];
 
 const corsOptions = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Max-Age': '86400',
 };
 
 export function middleware(request: NextRequest) {

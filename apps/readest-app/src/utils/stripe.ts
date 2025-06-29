@@ -3,7 +3,7 @@ import { getStripe } from '@/libs/stripe/server';
 import { createSupabaseAdminClient } from './supabase';
 import { UserPlan } from '@/types/user';
 
-export const createSubscription = async (
+export const createOrUpdateSubscription = async (
   userId: string,
   customerId: string,
   subscriptionId: string,
@@ -58,7 +58,7 @@ export const createSubscription = async (
   await supabase
     .from('plans')
     .update({
-      plan: plan,
+      plan: ['active', 'trialing'].includes(subscription.status) ? plan : 'free',
       status: subscription.status,
     })
     .eq('id', userId);
