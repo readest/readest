@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "Fehler beim Herunterladen des Buches: {{title}}",
   "Upload Book": "Buch hochladen",
   "Auto Upload Books to Cloud": "Bücher automatisch hochladen",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% des Cloud-Speichers verwendet.",
-  "Storage": "Speicher",
   "Book deleted: {{title}}": "Buch gelöscht: {{title}}",
   "Failed to delete book: {{title}}": "Fehler beim Löschen des Buches: {{title}}",
   "Check Updates on Start": "Aktualisierungen beim Start prüfen",
@@ -390,7 +388,6 @@
   "Unlimited Text-to-Speech Hours": "Unbegrenzte Text-to-Speech-Stunden",
   "DeepL Free Access (10K characters/day)": "Kostenfreier DeepL-Zugang (10.000 Zeichen/Tag)",
   "AI Translations (per day)": "KI-Übersetzungen (pro Tag)",
-  "Cloud Storage": "Cloud-Speicher",
   "Plus Plan": "Plus-Tarif",
   "Includes All Free Plan Benefits": "Enthält alle Vorteile des Gratis-Tarifs",
   "Basic AI Translations": "Basis-KI-Übersetzungen",
@@ -399,5 +396,8 @@
   "Pro Plan": "Pro-Tarif",
   "Includes All Plus Plan Benefits": "Enthält alle Vorteile des Plus-Tarifs",
   "More AI Translations": "Mehr KI-Übersetzungen",
-  "DeepL Pro Access (200K characters/day)": "DeepL Pro-Zugang (200.000 Zeichen/Tag)"
+  "DeepL Pro Access (200K characters/day)": "DeepL Pro-Zugang (200.000 Zeichen/Tag)",
+  "Complete Your Subscription": "Abschließen Sie Ihr Abonnement",
+  "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% des Cloud-Synchronisierungsspeichers verwendet.",
+  "Cloud Sync Storage": "Cloud-Speicher"
 }

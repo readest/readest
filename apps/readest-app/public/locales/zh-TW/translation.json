@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "書籍下載失敗：{{title}}",
   "Upload Book": "上傳書籍",
   "Auto Upload Books to Cloud": "自動上傳書籍到雲端",
-  "{{percentage}}% of Cloud Storage Used.": "已使用 {{percentage}}% 雲存儲空間",
-  "Storage": "存儲空間",
   "Book deleted: {{title}}": "書籍已刪除：{{title}}",
   "Failed to delete book: {{title}}": "書籍刪除失敗：{{title}}",
   "Check Updates on Start": "啟動時檢查更新",
@@ -386,7 +384,6 @@
   "Unlimited Text-to-Speech Hours": "無限文字轉語音時數",
   "DeepL Free Access (10K characters/day)": "DeepL 免費使用（每日1萬字）",
   "AI Translations (per day)": "AI 翻譯（每日）",
-  "Cloud Storage": "雲端儲存",
   "Plus Plan": "Plus 方案",
   "Includes All Free Plan Benefits": "包含所有免費方案功能",
   "Basic AI Translations": "基本 AI 翻譯",
@@ -395,5 +392,8 @@
   "Pro Plan": "Pro 方案",
   "Includes All Plus Plan Benefits": "包含所有 Plus 方案功能",
   "More AI Translations": "更多 AI 翻譯",
-  "DeepL Pro Access (200K characters/day)": "DeepL Pro（每日20萬字）"
+  "DeepL Pro Access (200K characters/day)": "DeepL Pro（每日20萬字）",
+  "Complete Your Subscription": "完成您的訂閱",
+  "{{percentage}}% of Cloud Sync Space Used.": "已使用 {{percentage}}% 的雲同步空間。",
+  "Cloud Sync Storage": "雲同步空間"
 }

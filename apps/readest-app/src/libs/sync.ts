@@ -41,7 +41,7 @@ export class SyncClient {
           Authorization: `Bearer ${token}`,
         },
       },
-      5000,
+      8000,
     );
 
     if (!res.ok) {
@@ -70,7 +70,7 @@ export class SyncClient {
         },
         body: JSON.stringify(payload),
       },
-      5000,
+      8000,
     );
 
     if (!res.ok) {

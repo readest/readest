@@ -16,8 +16,8 @@ export const useQuotaStats = () => {
     const userPlan = getUserPlan(token);
     const storagPlan = getStoragePlanData(token);
     const storageQuota: QuotaType = {
-      name: _('Storage'),
-      tooltip: _('{{percentage}}% of Cloud Storage Used.', {
+      name: _('Cloud Sync Storage'),
+      tooltip: _('{{percentage}}% of Cloud Sync Space Used.', {
         percentage: Math.round((storagPlan.usage / storagPlan.quota) * 100),
       }),
       used: Math.round(storagPlan.usage / 1024 / 1024),

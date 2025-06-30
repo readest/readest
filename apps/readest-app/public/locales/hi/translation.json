@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "पुस्तक डाउनलोड करने में विफल: {{title}}",
   "Upload Book": "पुस्तक अपलोड करें",
   "Auto Upload Books to Cloud": "पुस्तकें बादल में स्वचालित रूप से अपलोड करें",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% क्लाउड स्टोरेज का उपयोग किया गया है।",
-  "Storage": "स्टोरेज",
   "Book deleted: {{title}}": "पुस्तक हटाई गई: {{title}}",
   "Failed to delete book: {{title}}": "पुस्तक हटाने में विफल: {{title}}",
   "Check Updates on Start": "शुरू में अपडेट जांचें",
@@ -390,7 +388,6 @@
   "Unlimited Text-to-Speech Hours": "अनलिमिटेड पाठ-पाठ ध्वनि घंटे",
   "DeepL Free Access (10K characters/day)": "DeepL मुफ्त एक्सेस (10,000 अक्षर/दिन)",
   "AI Translations (per day)": "AI अनुवाद (प्रतिदिन)",
-  "Cloud Storage": "क्लाउड स्टोरेज",
   "Plus Plan": "Plus योजना",
   "Includes All Free Plan Benefits": "सभी मुफ्त योजना के लाभ शामिल हैं",
   "Basic AI Translations": "मूल AI अनुवाद",
@@ -399,5 +396,8 @@
   "Pro Plan": "Pro योजना",
   "Includes All Plus Plan Benefits": "सभी Plus योजना के लाभ शामिल हैं",
   "More AI Translations": "और अधिक AI अनुवाद",
-  "DeepL Pro Access (200K characters/day)": "DeepL प्रो एक्सेस (200,000 अक्षर/दिन)"
+  "DeepL Pro Access (200K characters/day)": "DeepL प्रो एक्सेस (200,000 अक्षर/दिन)",
+  "Complete Your Subscription": "अपनी सदस्यता पूरी करें",
+  "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% क्लाउड सिंक स्पेस का उपयोग किया गया है।",
+  "Cloud Sync Storage": "क्लाउड सिंक स्टोरेज"
 }

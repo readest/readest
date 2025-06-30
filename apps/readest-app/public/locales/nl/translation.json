@@ -57,8 +57,6 @@
   "Import Books": "Boeken importeren",
   "Select Multiple Books": "Meerdere boeken selecteren",
   "Select Books": "Boeken selecteren",
-  "Storage": "Opslag",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% van cloudopslag gebruikt.",
   "Logged in as {{userDisplayName}}": "Ingelogd als {{userDisplayName}}",
   "Logged in": "Ingelogd",
   "Account": "Account",
@@ -388,7 +386,6 @@
   "Unlimited Text-to-Speech Hours": "Onbeperkte tekst-naar-spraak-uren",
   "DeepL Free Access (10K characters/day)": "DeepL gratis toegang (10.000 tekens/dag)",
   "AI Translations (per day)": "AI-vertalingen (per dag)",
-  "Cloud Storage": "Cloudopslag",
   "Plus Plan": "Plus-abonnement",
   "Includes All Free Plan Benefits": "Bevat alle voordelen van het gratis abonnement",
   "Basic AI Translations": "Basis AI-vertalingen",
@@ -399,5 +396,8 @@
   "More AI Translations": "Meer AI-vertalingen",
   "DeepL Pro Access (200K characters/day)": "DeepL Pro toegang (200.000 tekens/dag)",
   "We couldn't process your subscription. Please try again or contact support if the issue persists.": "We konden je abonnement niet verwerken. Probeer het opnieuw of neem contact op met support als het probleem blijft bestaan.",
-  "Thank you for your subscription! Your payment has been processed successfully.": "Bedankt voor je abonnement! Je betaling is succesvol verwerkt."
+  "Thank you for your subscription! Your payment has been processed successfully.": "Bedankt voor je abonnement! Je betaling is succesvol verwerkt.",
+  "Complete Your Subscription": "Voltooi uw abonnement",
+  "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% van de cloud-synchronisatie ruimte gebruikt.",
+  "Cloud Sync Storage": "Cloud Sync Opslag"
 }

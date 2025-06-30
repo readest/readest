@@ -2,7 +2,7 @@ import { getAccessToken } from './access';
 
 export const fetchWithTimeout = (url: string, options: RequestInit, timeout = 8000) => {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  const id = setTimeout(() => controller.abort('Request timed out'), timeout);
 
   return fetch(url, {
     ...options,

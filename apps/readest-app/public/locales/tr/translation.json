@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "Kitap indirilemedi: {{title}}",
   "Upload Book": "Kitap Yükle",
   "Auto Upload Books to Cloud": "Kitapları Otomatik Olarak Buluta Yükle",
-  "{{percentage}}% of Cloud Storage Used.": "Bulut Depolamanın %{{percentage}}'si kullanıldı.",
-  "Storage": "Depolama",
   "Book deleted: {{title}}": "Kitap silindi: {{title}}",
   "Failed to delete book: {{title}}": "Kitap silinemedi: {{title}}",
   "Check Updates on Start": "Başlangıçta Güncellemeleri Kontrol Et",
@@ -390,7 +388,6 @@
   "Unlimited Text-to-Speech Hours": "Sınırsız Sesli Okuma Süresi",
   "DeepL Free Access (10K characters/day)": "DeepL Ücretsiz Erişim (Günde 10K karakter)",
   "AI Translations (per day)": "AI Çevirileri (günlük)",
-  "Cloud Storage": "Bulut Depolama",
   "Plus Plan": "Plus Plan",
   "Includes All Free Plan Benefits": "Tüm Ücretsiz Plan Özelliklerini İçerir",
   "Basic AI Translations": "Temel AI Çevirileri",
@@ -399,5 +396,8 @@
   "Pro Plan": "Pro Plan",
   "Includes All Plus Plan Benefits": "Tüm Plus Plan Özelliklerini İçerir",
   "More AI Translations": "Daha Fazla AI Çevirisi",
-  "DeepL Pro Access (200K characters/day)": "DeepL Pro Erişim (Günde 200K karakter)"
+  "DeepL Pro Access (200K characters/day)": "DeepL Pro Erişim (Günde 200K karakter)",
+  "Complete Your Subscription": "Aboneliğinizi Tamamlayın",
+  "{{percentage}}% of Cloud Sync Space Used.": "Bulut Senkronizasyon Alanının %{{percentage}}'si Kullanıldı.",
+  "Cloud Sync Storage": "Bulut Senkronizasyon Depolama"
 }

@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "Không thể tải về sách: {{title}}",
   "Upload Book": "Tải lên sách",
   "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% dung lượng lưu trữ đám mây đã sử dụng.",
-  "Storage": "Lưu trữ",
   "Book deleted: {{title}}": "Sách đã xóa: {{title}}",
   "Failed to delete book: {{title}}": "Không thể xóa sách: {{title}}",
   "Check Updates on Start": "Kiểm tra cập nhật khi khởi động",
@@ -386,7 +384,6 @@
   "Unlimited Text-to-Speech Hours": "Không giới hạn giờ chuyển văn bản thành giọng nói",
   "DeepL Free Access (10K characters/day)": "Truy cập DeepL miễn phí (10.000 ký tự/ngày)",
   "AI Translations (per day)": "Dịch AI (mỗi ngày)",
-  "Cloud Storage": "Lưu trữ đám mây",
   "Plus Plan": "Gói Plus",
   "Includes All Free Plan Benefits": "Bao gồm tất cả lợi ích của gói miễn phí",
   "Basic AI Translations": "Dịch AI cơ bản",
@@ -395,5 +392,8 @@
   "Pro Plan": "Gói Pro",
   "Includes All Plus Plan Benefits": "Bao gồm tất cả lợi ích của gói Plus",
   "More AI Translations": "Thêm dịch AI",
-  "DeepL Pro Access (200K characters/day)": "Truy cập DeepL Pro (200.000 ký tự/ngày)"
+  "DeepL Pro Access (200K characters/day)": "Truy cập DeepL Pro (200.000 ký tự/ngày)",
+  "Complete Your Subscription": "Hoàn tất đăng ký của bạn",
+  "{{percentage}}% of Cloud Sync Space Used.": "Đã sử dụng {{percentage}}% không gian đồng bộ đám mây.",
+  "Cloud Sync Storage": "Lưu trữ đồng bộ đám mây"
 }

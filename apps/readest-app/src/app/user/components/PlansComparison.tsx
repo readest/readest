@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { debounce } from '@/utils/debounce';
-import { isWebAppPlatform } from '@/services/environment';
 import { getPlanDetails } from '../utils/plan';
-import { AvailablePlan } from '../page';
 import { UserPlan } from '@/types/user';
+import { AvailablePlan } from '../page';
 import PlanNavigation from './PlanNavigation';
 import PlanCard from './PlanCard';
 import PlanIndicators from './PlanIndicators';
@@ -19,6 +19,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   userPlan,
   onSubscribe,
 }) => {
+  const { appService } = useEnv();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [userPlanIndex, setUserPlanIndex] = useState(0);
   const plansScrollRef = useRef<HTMLDivElement>(null);
@@ -137,7 +138,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
           <PlanCard
             key={plan.plan}
             plan={plan}
-            comingSoon={!isWebAppPlatform()}
+            comingSoon={appService?.isIOSApp}
             isUserPlan={plan.plan === userPlan}
             upgradable={index > userPlanIndex}
             index={index}

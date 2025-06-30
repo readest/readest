@@ -4,7 +4,7 @@ import { validateUserAndToken } from '@/utils/access';
 import { supabase } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
-  const { priceId, metadata = {} } = await request.json();
+  const { priceId, embedded = true, metadata = {} } = await request.json();
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripe();
+    const successUrl = `${request.headers.get('origin')}/user/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
+    const returnUrl = `${request.headers.get('origin')}/user`;
     const session = await stripe.checkout.sessions.create({
+      ui_mode: embedded ? 'embedded' : 'hosted',
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -53,11 +56,16 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata: enhancedMetadata,
-      success_url: `${request.headers.get('origin')}/user/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin')}/user`,
+      success_url: embedded ? undefined : successUrl,
+      cancel_url: embedded ? undefined : returnUrl,
+      redirect_on_completion: embedded ? 'never' : undefined,
     });
 
-    return NextResponse.json({ sessionId: session.id, url: session.url });
+    return NextResponse.json({
+      url: session.url,
+      sessionId: session.id,
+      clientSecret: session.client_secret,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Error creating checkout session' }, { status: 500 });

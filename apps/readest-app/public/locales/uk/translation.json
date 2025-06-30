@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "Не вдалося завантажити книгу: {{title}}",
   "Upload Book": "Завантажити книгу",
   "Auto Upload Books to Cloud": "Автоматично завантажувати книги в хмару",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% використано хмарного сховища.",
-  "Storage": "Сховище",
   "Book deleted: {{title}}": "Книгу видалено: {{title}}",
   "Failed to delete book: {{title}}": "Не вдалося видалити книгу: {{title}}",
   "Check Updates on Start": "Перевіряти оновлення при запуску",
@@ -398,7 +396,6 @@
   "Unlimited Text-to-Speech Hours": "Необмежені години озвучення тексту",
   "DeepL Free Access (10K characters/day)": "Безкоштовний доступ до DeepL (10 тис. символів/день)",
   "AI Translations (per day)": "AI-переклади (на день)",
-  "Cloud Storage": "Хмарне сховище",
   "Plus Plan": "План Plus",
   "Includes All Free Plan Benefits": "Включає всі переваги Безкоштовного плану",
   "Basic AI Translations": "Базові AI-переклади",
@@ -407,5 +404,8 @@
   "Pro Plan": "План Pro",
   "Includes All Plus Plan Benefits": "Включає всі переваги плану Plus",
   "More AI Translations": "Більше AI-перекладів",
-  "DeepL Pro Access (200K characters/day)": "DeepL Pro доступ (200 тис. символів/день)"
+  "DeepL Pro Access (200K characters/day)": "DeepL Pro доступ (200 тис. символів/день)",
+  "Complete Your Subscription": "Завершіть підписку",
+  "{{percentage}}% of Cloud Sync Space Used.": "Використано {{percentage}}% хмарного сховища.",
+  "Cloud Sync Storage": "Облачне хранилище"
 }

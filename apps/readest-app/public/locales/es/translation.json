@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "Error al descargar libro: {{title}}",
   "Upload Book": "Subir libro",
   "Auto Upload Books to Cloud": "Subir libros automáticamente a la nube",
-  "{{percentage}}% of Cloud Storage Used.": "{{percentage}}% del almacenamiento en la nube utilizado.",
-  "Storage": "Almacenamiento",
   "Book deleted: {{title}}": "Libro eliminado: {{title}}",
   "Failed to delete book: {{title}}": "Error al eliminar libro: {{title}}",
   "Check Updates on Start": "Comprobar actualizaciones al iniciar",
@@ -393,7 +391,6 @@
   "Unlimited Text-to-Speech Hours": "Horas ilimitadas de texto a voz",
   "DeepL Free Access (10K characters/day)": "Acceso gratuito a DeepL (10.000 caracteres/día)",
   "AI Translations (per day)": "Traducciones con IA (por día)",
-  "Cloud Storage": "Almacenamiento en la nube",
   "Plus Plan": "Plan Plus",
   "Includes All Free Plan Benefits": "Incluye todos los beneficios del plan gratuito",
   "Basic AI Translations": "Traducciones básicas con IA",
@@ -403,5 +400,8 @@
   "Includes All Plus Plan Benefits": "Incluye todos los beneficios del plan Plus",
   "More AI Translations": "Más traducciones con IA",
   "DeepL Pro Access (200K characters/day)": "Acceso Pro a DeepL (200.000 caracteres/día)",
-  "Your payment is being processed. This usually takes a few moments.": "Tu pago se está procesando. Normalmente tarda unos momentos."
+  "Your payment is being processed. This usually takes a few moments.": "Tu pago se está procesando. Normalmente tarda unos momentos.",
+  "Complete Your Subscription": "Completa tu suscripción",
+  "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% del espacio de sincronización en la nube utilizado.",
+  "Cloud Sync Storage": "Almacenamiento en la nube"
 }

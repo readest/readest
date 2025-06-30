@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "فشل تنزيل الكتاب: {{title}}",
   "Upload Book": "تحميل الكتاب",
   "Auto Upload Books to Cloud": "تحميل الكتب تلقائيًا إلى السحابة",
-  "{{percentage}}% of Cloud Storage Used.": "تم استخدام {{percentage}}% من مساحة التخزين السحابية.",
-  "Storage": "التخزين",
   "Book deleted: {{title}}": "تم حذف الكتاب: {{title}}",
   "Failed to delete book: {{title}}": "فشل حذف الكتاب: {{title}}",
   "Check Updates on Start": "التحقق من التحديثات عند البدء",
@@ -406,7 +404,6 @@
   "Unlimited Text-to-Speech Hours": "ساعات تحويل النص إلى كلام غير محدودة",
   "DeepL Free Access (10K characters/day)": "وصول مجاني إلى DeepL (10 آلاف حرف يوميًا)",
   "AI Translations (per day)": "ترجمات بالذكاء الاصطناعي (يوميًا)",
-  "Cloud Storage": "تخزين سحابي",
   "Plus Plan": "خطة Plus",
   "Includes All Free Plan Benefits": "تتضمن جميع مزايا الخطة المجانية",
   "Basic AI Translations": "ترجمات أساسية بالذكاء الاصطناعي",
@@ -415,5 +412,8 @@
   "Pro Plan": "خطة Pro",
   "Includes All Plus Plan Benefits": "تتضمن جميع مزايا خطة Plus",
   "More AI Translations": "المزيد من الترجمات بالذكاء الاصطناعي",
-  "DeepL Pro Access (200K characters/day)": "وصول احترافي إلى DeepL (200 ألف حرف يوميًا)"
+  "DeepL Pro Access (200K characters/day)": "وصول احترافي إلى DeepL (200 ألف حرف يوميًا)",
+  "Complete Your Subscription": "أكمل اشتراكك",
+  "{{percentage}}% of Cloud Sync Space Used.": "تم استخدام {{percentage}}% من مساحة المزامنة السحابية.",
+  "Cloud Sync Storage": "مساحة المزامنة السحابية"
 }

@@ -10,11 +10,11 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
+import { getAppVersion } from '@/utils/version';
 import { tauriDownload } from '@/utils/transfer';
 import { installPackage } from '@/utils/bridge';
 import { getLocale } from '@/utils/misc';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
-import packageJson from '../../package.json';
 import Dialog from '@/components/Dialog';
 
 interface ReleaseNotes {
@@ -68,7 +68,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   });
   const { appService } = useEnv();
   const searchParams = useSearchParams();
-  const currentVersion = packageJson.version;
+  const currentVersion = getAppVersion();
   const resolvedVersion = version ?? searchParams?.get('version') ?? '';
   const [update, setUpdate] = useState<GenericUpdate | Update | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -93,7 +93,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     const checkAndroidUpdate = async () => {
       const response = await fetch(READEST_UPDATER_FILE);
       const data = await response.json();
-      if (semver.gt(data.version, packageJson.version)) {
+      if (semver.gt(data.version, currentVersion)) {
         const OS_ARCH = osArch();
         const platformKey = OS_ARCH === 'aarch64' ? 'android-arm64' : 'android-universal';
         const arch = OS_ARCH === 'aarch64' ? 'arm64' : 'universal';
@@ -101,7 +101,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
         const cachePrefix = appService?.fs.getPrefix('Cache');
         const apkFilePath = `${cachePrefix}/Readest_${data.version}_${arch}.apk`;
         setUpdate({
-          currentVersion: packageJson.version,
+          currentVersion,
           version: data.version,
           date: data.date,
           body: data.notes,

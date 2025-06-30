@@ -1,9 +1,10 @@
 'use client';
 
 import posthog from 'posthog-js';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { PostHogProvider } from 'posthog-js/react';
 import { TELEMETRY_OPT_OUT_KEY } from '@/utils/telemetry';
+import { getAppVersion } from '@/utils/version';
 
 const shouldDisablePostHog = () => {
   if (typeof window === 'undefined') return false;
@@ -27,5 +28,10 @@ if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' &&
   }
 }
 export const CSPostHogProvider = ({ children }: { children: ReactNode }) => {
+  useEffect(() => {
+    posthog.register_for_session({
+      $app_version: getAppVersion(),
+    });
+  }, []);
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 };

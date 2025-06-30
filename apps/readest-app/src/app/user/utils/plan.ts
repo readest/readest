@@ -35,8 +35,8 @@ export const getPlanDetails = (
           _('500 MB Cloud Sync Space'),
         ],
         limits: {
+          [_('Cloud Sync Storage')]: '500 MB',
           [_('AI Translations (per day)')]: '10K',
-          [_('Cloud Storage')]: '500 MB',
         },
       };
     case 'plus':
@@ -55,8 +55,8 @@ export const getPlanDetails = (
           _('2 GB Cloud Sync Space'),
         ],
         limits: {
+          [_('Cloud Sync Storage')]: '2 GB',
           [_('AI Translations (per day)')]: '50K',
-          [_('Cloud Storage')]: '2 GB',
         },
       };
     case 'pro':
@@ -76,8 +76,8 @@ export const getPlanDetails = (
           _('10 GB Cloud Sync Space'),
         ],
         limits: {
+          [_('Cloud Sync Storage')]: '10 GB',
           [_('AI Translations (per day)')]: '200K',
-          [_('Cloud Storage')]: '10 GB',
         },
       };
     default:

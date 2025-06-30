@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "書籍のダウンロードに失敗しました：{{title}}",
   "Upload Book": "書籍をアップロード",
   "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード",
-  "{{percentage}}% of Cloud Storage Used.": "クラウドストレージの{{percentage}}%が使用されています。",
-  "Storage": "ストレージ",
   "Book deleted: {{title}}": "書籍が削除されました：{{title}}",
   "Failed to delete book: {{title}}": "書籍の削除に失敗しました：{{title}}",
   "Check Updates on Start": "開始時に更新を確認",
@@ -386,7 +384,6 @@
   "Unlimited Text-to-Speech Hours": "無制限の音声読み上げ時間",
   "DeepL Free Access (10K characters/day)": "DeepL無料アクセス（1日1万文字）",
   "AI Translations (per day)": "AI翻訳（1日あたり）",
-  "Cloud Storage": "クラウドストレージ",
   "Plus Plan": "Plusプラン",
   "Includes All Free Plan Benefits": "無料プランの全特典を含む",
   "Basic AI Translations": "基本的なAI翻訳",
@@ -395,5 +392,8 @@
   "Pro Plan": "Proプラン",
   "Includes All Plus Plan Benefits": "Plusプランの全特典を含む",
   "More AI Translations": "さらに多くのAI翻訳",
-  "DeepL Pro Access (200K characters/day)": "DeepL Proアクセス（1日20万文字）"
+  "DeepL Pro Access (200K characters/day)": "DeepL Proアクセス（1日20万文字）",
+  "Complete Your Subscription": "サブスクリプションを完了する",
+  "{{percentage}}% of Cloud Sync Space Used.": "クラウド同期スペースの使用量は{{percentage}}%です。",
+  "Cloud Sync Storage": "クラウド同期容量"
 }

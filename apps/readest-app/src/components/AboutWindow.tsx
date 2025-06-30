@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import packageJson from '../../package.json';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { checkForAppUpdates } from '@/helpers/updater';
 import { parseWebViewVersion } from '@/utils/ua';
+import { getAppVersion } from '@/utils/version';
 import Dialog from './Dialog';
 import Link from './Link';
 
@@ -83,7 +83,7 @@ export const AboutWindow = () => {
           <div className='flex select-text flex-col items-center'>
             <h2 className='mb-2 text-2xl font-bold'>Readest</h2>
             <p className='text-neutral-content text-center text-sm'>
-              {_('Version {{version}}', { version: packageJson.version })} {`(${browserInfo})`}
+              {_('Version {{version}}', { version: getAppVersion() })} {`(${browserInfo})`}
             </p>
           </div>
           <div className='h-5'>

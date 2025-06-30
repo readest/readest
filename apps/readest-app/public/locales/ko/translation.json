@@ -126,8 +126,6 @@
   "Failed to download book: {{title}}": "책 다운로드 실패: {{title}}",
   "Upload Book": "책 업로드",
   "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드",
-  "{{percentage}}% of Cloud Storage Used.": "클라우드 저장소 사용량 {{percentage}}%.",
-  "Storage": "저장소",
   "Book deleted: {{title}}": "책 삭제됨: {{title}}",
   "Failed to delete book: {{title}}": "책 삭제 실패: {{title}}",
   "Check Updates on Start": "시작 시 업데이트 확인",
@@ -386,7 +384,6 @@
   "Unlimited Text-to-Speech Hours": "무제한 음성 변환 시간",
   "DeepL Free Access (10K characters/day)": "DeepL 무료 액세스 (일 1만자)",
   "AI Translations (per day)": "AI 번역 (일 기준)",
-  "Cloud Storage": "클라우드 저장소",
   "Plus Plan": "Plus 요금제",
   "Includes All Free Plan Benefits": "무료 요금제의 모든 혜택 포함",
   "Basic AI Translations": "기본 AI 번역",
@@ -395,5 +392,8 @@
   "Pro Plan": "Pro 요금제",
   "Includes All Plus Plan Benefits": "Plus 요금제의 모든 혜택 포함",
   "More AI Translations": "더 많은 AI 번역",
-  "DeepL Pro Access (200K characters/day)": "DeepL Pro 액세스 (일 20만자)"
+  "DeepL Pro Access (200K characters/day)": "DeepL Pro 액세스 (일 20만자)",
+  "Complete Your Subscription": "구독 완료",
+  "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}%의 클라우드 동기화 공간 사용됨.",
+  "Cloud Sync Storage": "클라우드 저장 공간"
 }

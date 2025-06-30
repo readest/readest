@@ -5,8 +5,8 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { setUpdaterWindowVisible } from '@/components/UpdaterWindow';
+import { getAppVersion } from '@/utils/version';
 import { CHECK_UPDATE_INTERVAL_SEC, READEST_UPDATER_FILE } from '@/services/constants';
-import packageJson from '../../package.json';
 
 const LAST_CHECK_KEY = 'lastAppUpdateCheck';
 
@@ -49,7 +49,7 @@ export const checkForAppUpdates = async (
     try {
       const response = await fetch(READEST_UPDATER_FILE, { connectTimeout: 5000 });
       const data = await response.json();
-      const isNewer = semver.gt(data.version, packageJson.version);
+      const isNewer = semver.gt(data.version, getAppVersion());
       if (isNewer && ('android-arm64' in data.platforms || 'android-universal' in data.platforms)) {
         setUpdaterWindowVisible(true, data.version);
       }
