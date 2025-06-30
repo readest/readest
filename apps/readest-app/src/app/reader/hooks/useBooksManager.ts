@@ -36,7 +36,7 @@ const useBooksManager = () => {
       const updatedKeys = [...bookKeys, newKey];
       setBookKeys(updatedKeys);
     }
-    if (isParallel) setParallel(sideBarBookKey!, newKey);
+    if (isParallel) setParallel([sideBarBookKey!, newKey]);
     setSideBarBookKey(newKey);
     setShouldUpdateSearchParams(true);
   };

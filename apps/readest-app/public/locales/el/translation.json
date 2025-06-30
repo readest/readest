@@ -399,5 +399,7 @@
   "DeepL Pro Access (200K characters/day)": "Pro πρόσβαση στο DeepL (200.000 χαρακτήρες/ημέρα)",
   "Complete Your Subscription": "Ολοκληρώστε τη συνδρομή σας",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% του χώρου συγχρονισμού στο cloud χρησιμοποιήθηκε.",
-  "Cloud Sync Storage": "Χώρος συγχρονισμού cloud"
+  "Cloud Sync Storage": "Χώρος συγχρονισμού cloud",
+  "Disable": "Απενεργοποίηση",
+  "Enable": "Ενεργοποίηση"
 }

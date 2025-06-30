@@ -399,5 +399,7 @@
   "DeepL Pro Access (200K characters/day)": "DeepL प्रो एक्सेस (200,000 अक्षर/दिन)",
   "Complete Your Subscription": "अपनी सदस्यता पूरी करें",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% क्लाउड सिंक स्पेस का उपयोग किया गया है।",
-  "Cloud Sync Storage": "क्लाउड सिंक स्टोरेज"
+  "Cloud Sync Storage": "क्लाउड सिंक स्टोरेज",
+  "Disable": "अक्षम करें",
+  "Enable": "सक्षम करें"
 }

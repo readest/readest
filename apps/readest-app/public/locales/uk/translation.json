@@ -407,5 +407,7 @@
   "DeepL Pro Access (200K characters/day)": "DeepL Pro доступ (200 тис. символів/день)",
   "Complete Your Subscription": "Завершіть підписку",
   "{{percentage}}% of Cloud Sync Space Used.": "Використано {{percentage}}% хмарного сховища.",
-  "Cloud Sync Storage": "Облачне хранилище"
+  "Cloud Sync Storage": "Облачне хранилище",
+  "Disable": "Вимкнути",
+  "Enable": "Увімкнути"
 }

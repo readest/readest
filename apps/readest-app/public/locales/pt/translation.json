@@ -403,5 +403,7 @@
   "DeepL Pro Access (200K characters/day)": "Acesso ao DeepL Pro (200 mil caracteres/dia)",
   "Complete Your Subscription": "Complete sua assinatura",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% do espaço de sincronização na nuvem utilizado.",
-  "Cloud Sync Storage": "Armazenamento na Nuvem"
+  "Cloud Sync Storage": "Armazenamento na Nuvem",
+  "Disable": "Desativar",
+  "Enable": "Ativar"
 }

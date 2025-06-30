@@ -67,7 +67,6 @@
   "Page": "Seite",
   "Paging Animation": "Blätter-Animation",
   "Paragraph": "Absatz",
-  "Parallel Read": "Paralleles Lesen",
   "Published:": "Veröffentlicht:",
   "Publisher:": "Verlag:",
   "Reading Progress Synced": "Lesevorgang synchronisiert",
@@ -399,5 +398,8 @@
   "DeepL Pro Access (200K characters/day)": "DeepL Pro-Zugang (200.000 Zeichen/Tag)",
   "Complete Your Subscription": "Abschließen Sie Ihr Abonnement",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% des Cloud-Synchronisierungsspeichers verwendet.",
-  "Cloud Sync Storage": "Cloud-Speicher"
+  "Cloud Sync Storage": "Cloud-Speicher",
+  "Parallel Read": "Paralleles Lesen",
+  "Disable": "Deaktivieren",
+  "Enable": "Aktivieren"
 }

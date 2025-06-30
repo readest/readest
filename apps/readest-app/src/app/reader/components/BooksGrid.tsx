@@ -30,7 +30,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
-  const { getGridInsets, setGridInsets, hoveredBookKey } = useReaderStore();
+  const { setGridInsets, hoveredBookKey } = useReaderStore();
   const { isSideBarVisible, sideBarBookKey } = useSidebarStore();
   const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
@@ -46,16 +46,21 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
+  const calcGridInsets = (index: number, count: number) => {
+    if (!screenInsets) return { top: 0, right: 0, bottom: 0, left: 0 };
+    const { top, right, bottom, left } = getInsetEdges(index, count, aspectRatio);
+    return {
+      top: top ? screenInsets.top : 0,
+      right: right ? screenInsets.right : 0,
+      bottom: bottom ? screenInsets.bottom : 0,
+      left: left ? screenInsets.left : 0,
+    };
+  };
+
   useEffect(() => {
     if (!screenInsets) return;
     bookKeys.forEach((bookKey, index) => {
-      const { top, right, bottom, left } = getInsetEdges(index, bookKeys.length, aspectRatio);
-      const gridInsets = {
-        top: top ? screenInsets.top : 0,
-        right: right ? screenInsets.right : 0,
-        bottom: bottom ? screenInsets.bottom : 0,
-        left: left ? screenInsets.left : 0,
-      };
+      const gridInsets = calcGridInsets(index, bookKeys.length);
       setGridInsets(bookKey, gridInsets);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,9 +81,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         const config = getConfig(bookKey);
         const progress = getProgress(bookKey);
         const viewSettings = getViewSettings(bookKey);
-        const gridInsets = getGridInsets(bookKey);
+        const gridInsets = calcGridInsets(index, bookKeys.length);
         const { book, bookDoc } = bookData || {};
-        if (!book || !config || !bookDoc || !viewSettings || !gridInsets) return null;
+        if (!book || !config || !bookDoc || !viewSettings) return null;
 
         const { section, pageinfo, timeinfo, sectionLabel } = progress || {};
         const isBookmarked = getViewState(bookKey)?.ribbonVisible;

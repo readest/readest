@@ -395,5 +395,7 @@
   "DeepL Pro Access (200K characters/day)": "Truy cập DeepL Pro (200.000 ký tự/ngày)",
   "Complete Your Subscription": "Hoàn tất đăng ký của bạn",
   "{{percentage}}% of Cloud Sync Space Used.": "Đã sử dụng {{percentage}}% không gian đồng bộ đám mây.",
-  "Cloud Sync Storage": "Lưu trữ đồng bộ đám mây"
+  "Cloud Sync Storage": "Lưu trữ đồng bộ đám mây",
+  "Disable": "Tắt",
+  "Enable": "Bật"
 }

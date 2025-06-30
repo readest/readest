@@ -403,5 +403,7 @@
   "Your payment is being processed. This usually takes a few moments.": "Tu pago se está procesando. Normalmente tarda unos momentos.",
   "Complete Your Subscription": "Completa tu suscripción",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% del espacio de sincronización en la nube utilizado.",
-  "Cloud Sync Storage": "Almacenamiento en la nube"
+  "Cloud Sync Storage": "Almacenamiento en la nube",
+  "Disable": "Desactivar",
+  "Enable": "Activar"
 }

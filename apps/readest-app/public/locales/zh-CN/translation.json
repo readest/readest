@@ -395,5 +395,7 @@
   "DeepL Pro Access (200K characters/day)": "DeepL Pro（每日20万字符）",
   "Complete Your Subscription": "完成您的订阅",
   "{{percentage}}% of Cloud Sync Space Used.": "已使用 {{percentage}}% 的云同步空间。",
-  "Cloud Sync Storage": "云同步空间"
+  "Cloud Sync Storage": "云同步空间",
+  "Disable": "禁用",
+  "Enable": "启用"
 }

@@ -399,5 +399,7 @@
   "DeepL Pro Access (200K characters/day)": "DeepL Pro Erişim (Günde 200K karakter)",
   "Complete Your Subscription": "Aboneliğinizi Tamamlayın",
   "{{percentage}}% of Cloud Sync Space Used.": "Bulut Senkronizasyon Alanının %{{percentage}}'si Kullanıldı.",
-  "Cloud Sync Storage": "Bulut Senkronizasyon Depolama"
+  "Cloud Sync Storage": "Bulut Senkronizasyon Depolama",
+  "Disable": "Devre Dışı Bırak",
+  "Enable": "Etkinleştir"
 }

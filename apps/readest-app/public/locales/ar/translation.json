@@ -67,7 +67,6 @@
   "Page": "الصفحة",
   "Paging Animation": "رسوم متحركةعند الانتقال إلى صفحة جديدة",
   "Paragraph": "فقرة",
-  "Parallel Read": "قراءة متوازية",
   "Published:": "تاريخ النشر:",
   "Publisher:": "الناشر:",
   "Reading Progress Synced": "تمت مزامنة تقدم القراءة",
@@ -415,5 +414,8 @@
   "DeepL Pro Access (200K characters/day)": "وصول احترافي إلى DeepL (200 ألف حرف يوميًا)",
   "Complete Your Subscription": "أكمل اشتراكك",
   "{{percentage}}% of Cloud Sync Space Used.": "تم استخدام {{percentage}}% من مساحة المزامنة السحابية.",
-  "Cloud Sync Storage": "مساحة المزامنة السحابية"
+  "Cloud Sync Storage": "مساحة المزامنة السحابية",
+  "Parallel Read": "القراءة المتزامنة",
+  "Disable": "تعطيل",
+  "Enable": "تمكين"
 }

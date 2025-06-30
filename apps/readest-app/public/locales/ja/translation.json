@@ -395,5 +395,7 @@
   "DeepL Pro Access (200K characters/day)": "DeepL Proアクセス（1日20万文字）",
   "Complete Your Subscription": "サブスクリプションを完了する",
   "{{percentage}}% of Cloud Sync Space Used.": "クラウド同期スペースの使用量は{{percentage}}%です。",
-  "Cloud Sync Storage": "クラウド同期容量"
+  "Cloud Sync Storage": "クラウド同期容量",
+  "Disable": "無効にする",
+  "Enable": "有効にする"
 }

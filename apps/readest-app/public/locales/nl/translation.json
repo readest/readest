@@ -399,5 +399,7 @@
   "Thank you for your subscription! Your payment has been processed successfully.": "Bedankt voor je abonnement! Je betaling is succesvol verwerkt.",
   "Complete Your Subscription": "Voltooi uw abonnement",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% van de cloud-synchronisatie ruimte gebruikt.",
-  "Cloud Sync Storage": "Cloud Sync Opslag"
+  "Cloud Sync Storage": "Cloud Sync Opslag",
+  "Disable": "Uitschakelen",
+  "Enable": "Inschakelen"
 }

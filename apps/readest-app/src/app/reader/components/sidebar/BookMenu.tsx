@@ -13,6 +13,7 @@ import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
+import { useParallelViewStore } from '@/store/parallelViewStore';
 
 interface BookMenuProps {
   menuClassName?: string;
@@ -21,10 +22,11 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
-  const { getViewSettings, setViewSettings } = useReaderStore();
+  const { bookKeys, getViewSettings, setViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
+  const { parallelViews, setParallel, unsetParallel } = useParallelViewStore();
   const viewSettings = getViewSettings(sideBarBookKey!);
 
   const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
@@ -59,6 +61,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     }
     setTimeout(() => window.location.reload(), 100);
   };
+  const handleSetParallel = () => {
+    setParallel(bookKeys);
+    setIsDropdownOpen?.(false);
+  };
+  const handleUnsetParallel = () => {
+    unsetParallel(bookKeys);
+    setIsDropdownOpen?.(false);
+  };
 
   const isWebApp = isWebAppPlatform();
 
@@ -67,7 +77,19 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       tabIndex={0}
       className={clsx('book-menu dropdown-content border-base-100 z-20 shadow-2xl', menuClassName)}
     >
-      <MenuItem label={_('Parallel Read')}>
+      <MenuItem
+        label={_('Parallel Read')}
+        buttonClass={bookKeys.length > 1 ? 'lg:tooltip lg:tooltip-bottom' : ''}
+        tooltip={parallelViews.length > 0 ? _('Disable') : bookKeys.length > 1 ? _('Enable') : ''}
+        Icon={parallelViews.length > 0 && bookKeys.length > 1 ? MdCheck : undefined}
+        onClick={
+          parallelViews.length > 0
+            ? handleUnsetParallel
+            : bookKeys.length > 1
+              ? handleSetParallel
+              : undefined
+        }
+      >
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
             .filter((book) => book.format !== 'PDF' && book.format !== 'CBZ')
@@ -94,6 +116,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             ))}
         </ul>
       </MenuItem>
+      <hr className='border-base-200 my-1' />
       <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
       <MenuItem
         label={_('Sort TOC by Page')}

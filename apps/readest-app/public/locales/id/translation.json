@@ -395,5 +395,7 @@
   "DeepL Pro Access (200K characters/day)": "Akses DeepL Pro (200.000 karakter/hari)",
   "Complete Your Subscription": "Selesaikan Langganan Anda",
   "{{percentage}}% of Cloud Sync Space Used.": "{{percentage}}% ruang sinkronisasi cloud terpakai",
-  "Cloud Sync Storage": "Ruang cloud"
+  "Cloud Sync Storage": "Ruang cloud",
+  "Disable": "Nonaktifkan",
+  "Enable": "Aktifkan"
 }

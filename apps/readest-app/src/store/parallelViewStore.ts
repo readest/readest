@@ -2,8 +2,8 @@ import { create } from 'zustand';
 
 interface ParallelViewState {
   parallelViews: Set<string>[];
-  setParallel: (bookKey1: string, bookKey2: string) => void;
-  unsetParallel: (bookKey1: string, bookKey2: string) => void;
+  setParallel: (bookKeys: string[]) => void;
+  unsetParallel: (bookKeys: string[]) => void;
   areParallels: (bookKey1: string, bookKey2: string) => boolean;
   getParallels: (bookKey: string) => Set<string> | null;
 }
@@ -11,48 +11,59 @@ interface ParallelViewState {
 export const useParallelViewStore = create<ParallelViewState>((set, get) => ({
   parallelViews: [],
 
-  setParallel: (bookKey1: string, bookKey2: string) => {
+  setParallel: (bookKeys: string[]) => {
     set((state) => {
-      const newGroups = [...state.parallelViews];
-      const group1 = newGroups.find((group) => group.has(bookKey1));
-      const group2 = newGroups.find((group) => group.has(bookKey2));
-
-      if (group1 && group2) {
-        if (group1 !== group2) {
-          group1.forEach((key) => group2.add(key));
-          newGroups.splice(newGroups.indexOf(group1), 1);
-        }
-      } else if (group1) {
-        group1.add(bookKey2);
-      } else if (group2) {
-        group2.add(bookKey1);
-      } else {
-        // Neither book is in a group, create a new group
-        newGroups.push(new Set([bookKey1, bookKey2]));
+      const uniqueKeys = [...new Set(bookKeys.filter((key) => key.trim() !== ''))];
+      if (uniqueKeys.length < 2) {
+        return state;
       }
 
+      const newGroups = [...state.parallelViews];
+      const existingGroups = newGroups.filter((group) => uniqueKeys.some((key) => group.has(key)));
+
+      let targetGroup: Set<string>;
+      if (existingGroups.length === 0) {
+        targetGroup = new Set(uniqueKeys);
+        newGroups.push(targetGroup);
+      } else if (existingGroups.length === 1) {
+        targetGroup = existingGroups[0]!;
+        uniqueKeys.forEach((key) => targetGroup.add(key));
+      } else {
+        targetGroup = existingGroups[0]!;
+        existingGroups.slice(1).forEach((group) => {
+          group.forEach((key) => targetGroup.add(key));
+          const index = newGroups.indexOf(group);
+          if (index > -1) {
+            newGroups.splice(index, 1);
+          }
+        });
+        uniqueKeys.forEach((key) => targetGroup.add(key));
+      }
+
+      console.log('Set parallel groups:', newGroups);
       return { parallelViews: newGroups };
     });
   },
-  unsetParallel: (bookKey1: string, bookKey2: string) => {
+  unsetParallel: (bookKeys: string[]) => {
     set((state) => {
-      const newGroups = [...state.parallelViews];
-      const group = newGroups.find((group) => group.has(bookKey1) && group.has(bookKey2));
-
-      if (group) {
-        group.delete(bookKey1);
-        group.delete(bookKey2);
-
-        // If the group becomes disjointed, split into separate groups
-        const remainingKeys = Array.from(group);
-        if (remainingKeys.length > 0) {
-          newGroups.push(new Set(remainingKeys));
-        }
-
-        // Remove the original group
-        newGroups.splice(newGroups.indexOf(group), 1);
+      const uniqueKeys = [...new Set(bookKeys.filter((key) => key.trim() !== ''))];
+      if (uniqueKeys.length === 0) {
+        return state;
       }
 
+      const newGroups = [...state.parallelViews];
+      const affectedGroups = newGroups.filter((group) => uniqueKeys.some((key) => group.has(key)));
+      affectedGroups.forEach((group) => {
+        uniqueKeys.forEach((key) => group.delete(key));
+        if (group.size <= 1) {
+          const index = newGroups.indexOf(group);
+          if (index > -1) {
+            newGroups.splice(index, 1);
+          }
+        }
+      });
+
+      console.log('Unset parallel groups:', newGroups);
       return { parallelViews: newGroups };
     });
   },
