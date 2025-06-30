@@ -96,7 +96,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
         handleSaveNote();
       }
     },
-    onCloseNote: () => {
+    onEscape: () => {
       if (notebookNewAnnotation) {
         setNotebookNewAnnotation(null);
       }

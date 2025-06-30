@@ -22,7 +22,7 @@ const DEFAULT_SHORTCUTS = {
   onZoomOut: ['ctrl+-', 'cmd+-', 'shift+-'],
   onResetZoom: ['ctrl+0', 'cmd+0'],
   onSaveNote: ['ctrl+Enter'],
-  onCloseNote: ['Escape'],
+  onEscape: ['Escape'],
 };
 
 export type ShortcutConfig = {

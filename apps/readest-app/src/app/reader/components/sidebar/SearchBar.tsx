@@ -21,6 +21,7 @@ interface SearchBarProps {
   bookKey: string;
   searchTerm: string;
   onSearchResultChange: (results: BookSearchResult[]) => void;
+  onHideSearchBar: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -28,6 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   bookKey,
   searchTerm: term,
   onSearchResultChange,
+  onHideSearchBar,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -37,6 +39,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { getView, getProgress } = useReaderStore();
   const [searchTerm, setSearchTerm] = useState(term);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputFocusedRef = useRef(false);
 
   const view = getView(bookKey)!;
   const config = getConfig(bookKey)!;
@@ -65,14 +68,27 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   useEffect(() => {
     if (isVisible && inputRef.current) {
+      inputRef.current.onblur = () => {
+        inputFocusedRef.current = false;
+      };
+      inputRef.current.onfocus = () => {
+        inputFocusedRef.current = true;
+      };
       inputRef.current.focus();
+    }
+    if (isVisible && searchTerm) {
+      handleSearchTermChange(searchTerm);
     }
   }, [isVisible]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && inputRef.current) {
-        inputRef.current.blur();
+      if (e.key === 'Escape') {
+        if (inputRef.current && inputFocusedRef.current) {
+          inputRef.current.blur();
+        } else {
+          onHideSearchBar();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);

@@ -146,15 +146,22 @@ const SideBar: React.FC<{
   };
 
   const handleToggleSearchBar = () => {
-    setIsSearchBarVisible((prev) => !prev);
-    if (isSearchBarVisible) {
-      setSearchResults(null);
-      setSearchTerm('');
-      getView(sideBarBookKey)?.clearSearch();
-    }
+    setIsSearchBarVisible((prev) => {
+      if (prev) handleHideSearchBar();
+      return !prev;
+    });
   };
 
-  useShortcuts({ onToggleSearchBar: handleToggleSearchBar }, [sideBarBookKey]);
+  const handleHideSearchBar = () => {
+    setIsSearchBarVisible(false);
+    setSearchResults(null);
+    setSearchTerm('');
+    getView(sideBarBookKey)?.clearSearch();
+  };
+
+  useShortcuts({ onToggleSearchBar: handleToggleSearchBar, onEscape: handleHideSearchBar }, [
+    sideBarBookKey,
+  ]);
 
   const handleSearchResultClick = (cfi: string) => {
     onNavigateEvent();
@@ -233,6 +240,7 @@ const SideBar: React.FC<{
               bookKey={sideBarBookKey!}
               searchTerm={searchTerm}
               onSearchResultChange={setSearchResults}
+              onHideSearchBar={handleHideSearchBar}
             />
           </div>
           <div className='border-base-300/50 border-b px-3'>
