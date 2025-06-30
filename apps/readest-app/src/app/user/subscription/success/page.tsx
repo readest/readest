@@ -29,6 +29,9 @@ const SuccessPageWithSearchParams = () => {
   const router = useRouter();
   const sessionId = searchParams?.get('session_id');
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   async function fetchSessionStatus() {
     try {
       const token = await getAccessToken();
@@ -110,6 +113,10 @@ const SuccessPageWithSearchParams = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionStatus.status, retryCount]);
+
+  if (!mounted) {
+    return null;
+  }
 
   // Loading state
   if (sessionStatus.status === 'loading') {

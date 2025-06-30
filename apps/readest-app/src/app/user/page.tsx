@@ -150,10 +150,13 @@ const ProfilePage = () => {
     }
   };
 
-  const handleCheckoutSuccess = useCallback((sessionId: string) => {
-    setShowEmbeddedCheckout(false);
-    router.push(`/user/subscription/success?session_id=${sessionId}`);
-  }, []);
+  const handleCheckoutSuccess = useCallback(
+    (sessionId: string) => {
+      setShowEmbeddedCheckout(false);
+      router.push(`/user/subscription/success?session_id=${sessionId}`);
+    },
+    [router],
+  );
 
   const handleManageSubscription = async () => {
     const token = await getAccessToken();

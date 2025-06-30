@@ -167,7 +167,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
 
   const supabase = createSupabaseAdminClient();
-
   const { data: subscriptionData } = await supabase
     .from('subscriptions')
     .select('user_id, stripe_customer_id')

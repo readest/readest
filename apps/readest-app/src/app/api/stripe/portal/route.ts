@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/libs/stripe/server';
 import { validateUserAndToken } from '@/utils/access';
-import { supabase } from '@/utils/supabase';
+import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const supabase = createSupabaseAdminClient();
     const { data: customerData } = await supabase
       .from('customers')
       .select('stripe_customer_id')
