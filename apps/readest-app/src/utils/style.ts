@@ -290,6 +290,10 @@ const getLayoutStyles = (
   span:has(> a:first-child + img:last-child) img {
     height: auto;
   }
+  .ie6 img {
+    width: auto;
+    height: auto;
+  }
 
   /* workaround for some badly designed epubs */
   div.left *, p.left * { text-align: left; }
