@@ -79,6 +79,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (isVisible && searchTerm) {
       handleSearchTermChange(searchTerm);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVisible]);
 
   useEffect(() => {
@@ -98,7 +99,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         clearTimeout(searchTimeout.current);
       }
     };
-  }, []);
+  }, [onHideSearchBar]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -152,12 +152,13 @@ const SideBar: React.FC<{
     });
   };
 
-  const handleHideSearchBar = () => {
+  const handleHideSearchBar = useCallback(() => {
     setIsSearchBarVisible(false);
     setSearchResults(null);
     setSearchTerm('');
     getView(sideBarBookKey)?.clearSearch();
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
 
   useShortcuts({ onToggleSearchBar: handleToggleSearchBar, onEscape: handleHideSearchBar }, [
     sideBarBookKey,
@@ -257,7 +258,10 @@ const SideBar: React.FC<{
           <SidebarContent bookDoc={bookDoc} sideBarBookKey={sideBarBookKey!} />
         )}
         <div
-          className='drag-bar absolute right-0 top-0 -m-3 h-full w-0.5 cursor-col-resize p-3'
+          className={clsx(
+            'drag-bar absolute right-0 top-0 -m-3 h-full w-0.5 cursor-col-resize p-3',
+            isMobile && 'hidden',
+          )}
           onMouseDown={handleHorizontalDragStart}
           onTouchStart={handleHorizontalDragStart}
         ></div>

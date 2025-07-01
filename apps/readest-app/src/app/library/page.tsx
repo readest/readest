@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
@@ -604,34 +606,33 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       {libraryLoaded &&
         (libraryBooks.some((book) => !book.deletedAt) ? (
-          <div
-            ref={containerRef}
-            className={clsx(
-              'scroll-container drop-zone flex-grow overflow-y-auto',
-              isDragging && 'drag-over',
-            )}
-            style={{
-              paddingTop: '0px',
-              paddingRight: `${insets.right}px`,
-              paddingBottom: `${insets.bottom}px`,
-              paddingLeft: `${insets.left}px`,
-            }}
-          >
-            <DropIndicator />
-            <Bookshelf
-              libraryBooks={libraryBooks}
-              isSelectMode={isSelectMode}
-              isSelectAll={isSelectAll}
-              isSelectNone={isSelectNone}
-              handleImportBooks={handleImportBooks}
-              handleBookUpload={handleBookUpload}
-              handleBookDownload={handleBookDownload}
-              handleBookDelete={handleBookDelete}
-              handleSetSelectMode={handleSetSelectMode}
-              handleShowDetailsBook={handleShowDetailsBook}
-              booksTransferProgress={booksTransferProgress}
-            />
-          </div>
+          <OverlayScrollbarsComponent options={{ scrollbars: { autoHide: 'scroll' } }} defer>
+            <div
+              ref={containerRef}
+              className={clsx('scroll-container drop-zone flex-grow', isDragging && 'drag-over')}
+              style={{
+                paddingTop: '0px',
+                paddingRight: `${insets.right}px`,
+                paddingBottom: `${insets.bottom}px`,
+                paddingLeft: `${insets.left}px`,
+              }}
+            >
+              <DropIndicator />
+              <Bookshelf
+                libraryBooks={libraryBooks}
+                isSelectMode={isSelectMode}
+                isSelectAll={isSelectAll}
+                isSelectNone={isSelectNone}
+                handleImportBooks={handleImportBooks}
+                handleBookUpload={handleBookUpload}
+                handleBookDownload={handleBookDownload}
+                handleBookDelete={handleBookDelete}
+                handleSetSelectMode={handleSetSelectMode}
+                handleShowDetailsBook={handleShowDetailsBook}
+                booksTransferProgress={booksTransferProgress}
+              />
+            </div>
+          </OverlayScrollbarsComponent>
         ) : (
           <div className='hero drop-zone h-screen items-center justify-center'>
             <DropIndicator />

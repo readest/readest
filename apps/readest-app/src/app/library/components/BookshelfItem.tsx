@@ -117,6 +117,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const makeBookAvailable = async (book: Book) => {
     if (book.uploadedAt && !book.downloadedAt) {
       if (await appService?.isBookAvailable(book)) {
+        if (!book.downloadedAt) {
+          book.downloadedAt = Date.now();
+          updateBook(envConfig, book);
+        }
         return true;
       }
       let available = false;

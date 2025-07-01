@@ -202,16 +202,6 @@ foliate-view {
   visibility: visible;
 }
 
-.scroll-container {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-
-.scroll-container.hidden-scrollbar {
-  scrollbar-width: none;
-}
-
 .pull-indicator {
   position: fixed;
   width: 100%;
