@@ -409,5 +409,6 @@
   "{{percentage}}% of Cloud Sync Space Used.": "Использовано {{percentage}}% облачного пространства для синхронизации.",
   "Cloud Sync Storage": "Облачное хранилище",
   "Disable": "Отключить",
-  "Enable": "Включить"
+  "Enable": "Включить",
+  "Upgrade to Readest Premium": "Обновить до Readest Premium"
 }

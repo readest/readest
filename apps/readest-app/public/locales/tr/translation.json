@@ -401,5 +401,6 @@
   "{{percentage}}% of Cloud Sync Space Used.": "Bulut Senkronizasyon Alanının %{{percentage}}'si Kullanıldı.",
   "Cloud Sync Storage": "Bulut Senkronizasyon Depolama",
   "Disable": "Devre Dışı Bırak",
-  "Enable": "Etkinleştir"
+  "Enable": "Etkinleştir",
+  "Upgrade to Readest Premium": "Readest Premium’a Yükselt"
 }

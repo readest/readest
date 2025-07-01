@@ -397,5 +397,6 @@
   "{{percentage}}% of Cloud Sync Space Used.": "クラウド同期スペースの使用量は{{percentage}}%です。",
   "Cloud Sync Storage": "クラウド同期容量",
   "Disable": "無効にする",
-  "Enable": "有効にする"
+  "Enable": "有効にする",
+  "Upgrade to Readest Premium": "Readest Premiumにアップグレード"
 }
