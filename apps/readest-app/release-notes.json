@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.62": {
+      "date": "2025-07-02",
+      "notes": [
+        "Subscription: You can now upgrade to Readest Premium and manage your subscription",
+        "Reader: Added an option to toggle Parallel Reading when viewing multiple books",
+        "Translation: Added an option to show or hide the original text in translations",
+        "Layout: TOC on Android now uses an overlay scrollbar for easier navigation",
+        "Layout: Custom CSS can now also be applied to the library page",
+        "Fonts: Added three new CJK fonts to choose from",
+        "Shortcuts: Press ESC to quickly close the search bar"
+      ]
+    },
     "0.9.61": {
       "date": "2025-06-26",
       "notes": [

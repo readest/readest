@@ -36,7 +36,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
       onClick={() => onSelectPlan(index)}
     >
       <div
-        className={`rounded-xl border-2 p-6 ${plan.color} ${index === currentPlanIndex ? 'ring-2 ring-blue-500' : ''}`}
+        className={`rounded-xl border-2 p-4 ${plan.color} ${index === currentPlanIndex ? 'ring-2 ring-blue-500' : ''}`}
       >
         <div className='mb-6 text-center'>
           <h4 className='mb-2 text-2xl font-bold'>{_(plan.name)}</h4>
@@ -49,12 +49,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
         <div className='mb-6 space-y-3'>
           {plan.features.map((feature, featureIndex) => (
             <div key={featureIndex} className='flex flex-col'>
-              <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-2'>
                 <IoCheckmark className='h-5 w-5 flex-shrink-0 text-green-500' />
                 <span>{_(feature.label)}</span>
               </div>
               {feature.description && (
-                <div className={`ms-8 text-sm sm:text-xs ${plan.hintColor}`}>
+                <div className={`ms-7 text-sm sm:text-xs ${plan.hintColor}`}>
                   {_(feature.description)}
                 </div>
               )}

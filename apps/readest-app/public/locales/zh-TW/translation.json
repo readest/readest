@@ -392,7 +392,7 @@
   "Customizable Reading": "個人化閱讀",
   "Personalize every detail with adjustable fonts, layouts, themes, and advanced display settings for the perfect reading experience.": "透過可調節的字體、版面配置、主題和進階顯示設定個人化每個細節，獲得完美閱讀體驗。",
   "AI Read Aloud": "AI 朗讀",
-  "Enjoy hands-free reading with natural-sounding AI voices that bring your books to life.": "享受免手操作閱讀，自然音質的 AI 語音讓您的書籍栩栩如生。",
+  "Enjoy hands-free reading with natural-sounding AI voices that bring your books to life.": "享受免手持的閱讀體驗，透過自然流暢的 AI 聲音讓書籍栩栩如生。",
   "AI Translations": "AI 翻譯",
   "Translate any text instantly with the power of Google, Azure, or DeepL—understand content in any language.": "借助 Google、Azure 或 DeepL 的強大功能即時翻譯任何文字——理解任何語言的內容。",
   "Connect with fellow readers and get help fast in our friendly community channels.": "與其他讀者交流，在我們友善的社群頻道中快速獲得幫助。",
@@ -401,7 +401,6 @@
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "解鎖增強翻譯功能，享受更多翻譯用量和進階選項。",
   "DeepL Pro Access": "DeepL Pro 存取權限",
   "2 GB Cloud Sync Storage": "2GB 雲端同步儲存",
-  "Keep your entire library safe with 2 GB of secure cloud storage.": "使用 2GB 安全雲端儲存保護您的整個書庫。",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "享受更快回應和專屬幫助，隨時獲得所需支援。",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "已達每日翻譯配額。升級方案以繼續使用 AI 翻譯。",
   "Includes All Plus Plan Benefits": "包含所有 Plus 方案優惠",
@@ -412,5 +411,6 @@
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達10萬字元。",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達50萬字元。",
   "10 GB Cloud Sync Storage": "10GB 雲端同步儲存",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多達10GB的安全雲端儲存保存和存取您的整個閱讀收藏。"
+  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "使用多達 2GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多達 10GB 的安全雲端儲存保存和存取您的整個閱讀收藏。"
 }

@@ -104,7 +104,9 @@ export const getPlanDetails = (
           },
           {
             label: _('2 GB Cloud Sync Storage'),
-            description: _('Keep your entire library safe with 2 GB of secure cloud storage.'),
+            description: _(
+              'Securely store and access your entire reading collection with up to 2 GB of cloud storage.',
+            ),
           },
           {
             label: _('Priority Support'),

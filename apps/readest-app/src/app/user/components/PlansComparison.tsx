@@ -82,7 +82,10 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
         const newIndex = Math.floor(viewportCenter / cardWidth);
         const clampedIndex = Math.max(0, Math.min(newIndex, allPlans.length - 1));
 
-        if (clampedIndex !== currentPlanIndex && clampedIndex !== 0) {
+        if (currentPlanIndex === 0 && scrollLeft < 10) {
+          return;
+        }
+        if (clampedIndex !== currentPlanIndex) {
           setCurrentPlanIndex(clampedIndex);
         }
       }
