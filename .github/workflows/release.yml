@@ -320,3 +320,10 @@ jobs:
               draft: false,
               prerelease: false
             })
+
+  upload-to-r2:
+    needs: [get-release, update-release]
+    uses: ./.github/workflows/upload-to-r2.yml
+    with:
+      tag: ${{ needs.get-release.outputs.release_tag }}
+    secrets: inherit

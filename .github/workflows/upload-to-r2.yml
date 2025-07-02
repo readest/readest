@@ -17,6 +17,11 @@ on:
 jobs:
   upload-to-r2:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2, 3]
     env:
       RELEASE_R2_BUCKET: readest-releases
       RELEASE_R2_ACCOUNT_ID: ${{ secrets.RELEASE_R2_ACCOUNT_ID }}
@@ -58,3 +63,7 @@ jobs:
           mv ./release-assets/release-notes.json releases
           rclone copy ./release-assets r2:${RELEASE_R2_BUCKET}/releases/${{ inputs.tag }}/
           rclone copy ./releases r2:${RELEASE_R2_BUCKET}/releases/
+
+      - name: Upload successful
+        if: success()
+        run: echo "Upload completed successfully on attempt ${{ matrix.attempt }}"
