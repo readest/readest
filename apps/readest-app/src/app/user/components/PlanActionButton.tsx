@@ -7,7 +7,7 @@ interface PlanActionButtonProps {
   comingSoon?: boolean;
   upgradable?: boolean;
   onSubscribe: (priceId?: string) => void;
-  onPlanSwipe: (direction: 'left' | 'right') => void;
+  onSelectPlan: (index: number) => void;
 }
 
 const PlanActionButton: React.FC<PlanActionButtonProps> = ({
@@ -16,7 +16,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   comingSoon,
   upgradable,
   onSubscribe,
-  onPlanSwipe,
+  onSelectPlan,
 }) => {
   const _ = useTranslation();
 
@@ -44,7 +44,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   if (plan.plan === 'free' && isUserPlan) {
     return (
       <button
-        onClick={() => onPlanSwipe('left')}
+        onClick={() => onSelectPlan(1)}
         className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
       >
         {_('Upgrade to Plus or Pro')}

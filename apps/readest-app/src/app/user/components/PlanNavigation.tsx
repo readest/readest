@@ -1,44 +1,36 @@
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { PlanDetails } from '../utils/plan';
 
 interface PlanNavigationProps {
+  allPlans: PlanDetails[];
   currentPlanIndex: number;
-  totalPlans: number;
-  onPlanSwipe: (direction: 'left' | 'right') => void;
+  onSelectPlan: (index: number) => void;
 }
 
 const PlanNavigation: React.FC<PlanNavigationProps> = ({
+  allPlans,
   currentPlanIndex,
-  totalPlans,
-  onPlanSwipe,
+  onSelectPlan,
 }) => {
   const _ = useTranslation();
 
   return (
-    <div className='border-b bg-gray-50 px-6 py-4'>
-      <div className='flex items-center justify-between'>
-        <h3 className='text-lg font-semibold'>{_('Available Plans')}</h3>
-        <div className='flex items-center space-x-2'>
-          <button
-            onClick={() => onPlanSwipe('right')}
-            disabled={currentPlanIndex === 0}
-            className='rounded-lg p-1 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            <IoChevronBack className='h-5 w-5' />
-          </button>
-          <span className='text-sm text-gray-600'>
-            {_('{{current}} of {{all}}', {
-              current: currentPlanIndex + 1,
-              all: totalPlans,
-            })}
-          </span>
-          <button
-            onClick={() => onPlanSwipe('left')}
-            disabled={currentPlanIndex === totalPlans - 1}
-            className='rounded-lg p-1 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            <IoChevronForward className='h-5 w-5' />
-          </button>
+    <div className='bg-base-200/50 border-base-200 border-b px-6 py-4'>
+      <div className='flex items-center justify-center'>
+        <div className='bg-base-300 flex items-center space-x-1 rounded-lg p-1'>
+          {allPlans.map((plan, index) => (
+            <button
+              key={plan.name}
+              onClick={() => onSelectPlan(index)}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                currentPlanIndex === index
+                  ? `${plan.color} shadow-sm`
+                  : 'text-base-content hover:bg-base-200'
+              }`}
+            >
+              {_(plan.name)}
+            </button>
+          ))}
         </div>
       </div>
     </div>

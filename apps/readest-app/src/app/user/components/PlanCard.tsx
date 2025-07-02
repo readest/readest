@@ -11,7 +11,6 @@ interface PlanCardProps {
   index: number;
   currentPlanIndex: number;
   onSubscribe: (priceId?: string) => void;
-  onPlanSwipe: (direction: 'left' | 'right') => void;
   onSelectPlan: (index: number) => void;
 }
 
@@ -23,7 +22,6 @@ const PlanCard: React.FC<PlanCardProps> = ({
   index,
   currentPlanIndex,
   onSubscribe,
-  onPlanSwipe,
   onSelectPlan,
 }) => {
   const _ = useTranslation();
@@ -33,7 +31,6 @@ const PlanCard: React.FC<PlanCardProps> = ({
       key={plan.plan}
       className='w-full flex-shrink-0 p-6 sm:min-w-96 sm:max-w-96'
       style={{ scrollSnapAlign: 'start' }}
-      onClick={() => onSelectPlan(index)}
     >
       <div
         className={`rounded-xl border-2 p-4 ${plan.color} ${index === currentPlanIndex ? 'ring-2 ring-blue-500' : ''}`}
@@ -46,7 +43,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         </div>
 
-        <div className='mb-6 space-y-3'>
+        <div className='mb-6 space-y-3' onClick={() => onSelectPlan(index)}>
           {plan.features.map((feature, featureIndex) => (
             <div key={featureIndex} className='flex flex-col'>
               <div className='flex items-center gap-2'>
@@ -62,7 +59,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           ))}
         </div>
 
-        <div className='mb-6 rounded-lg bg-white/50 p-4'>
+        <div className='mb-6 rounded-lg bg-white/50 p-4' onClick={() => onSelectPlan(index)}>
           <h5 className='mb-3 font-semibold'>{_('Plan Limits')}</h5>
           <div className='space-y-2'>
             {Object.entries(plan.limits).map(([key, value]) => (
@@ -80,7 +77,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           upgradable={upgradable}
           isUserPlan={isUserPlan}
           onSubscribe={onSubscribe}
-          onPlanSwipe={onPlanSwipe}
+          onSelectPlan={onSelectPlan}
         />
       </div>
     </div>

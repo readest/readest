@@ -291,9 +291,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           viewMode === 'list' && 'flex flex-col',
         )}
       >
-        {filteredBookshelfItems.map((item, index) => (
+        {filteredBookshelfItems.map((item) => (
           <BookshelfItem
-            key={`library-item-${'hash' in item ? item.hash : item.id}-${index}`}
+            key={`library-item-${'hash' in item ? item.hash : item.id}`}
             item={item}
             mode={viewMode as LibraryViewModeType}
             coverFit={coverFit as LibraryCoverFitType}

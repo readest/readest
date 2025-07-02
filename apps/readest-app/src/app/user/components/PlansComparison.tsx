@@ -104,9 +104,11 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   }, [currentPlanIndex, handleScroll]);
 
   useEffect(() => {
+    console.log('Current plan index:', currentPlanIndex);
     if (plansScrollRef.current) {
       const planWidth = plansScrollRef.current.scrollWidth / allPlans.length;
       const scrollPosition = currentPlanIndex * planWidth;
+      console.log('Scroll position:', scrollPosition);
       plansScrollRef.current.scrollTo({
         left: scrollPosition,
         behavior: 'smooth',
@@ -120,19 +122,19 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   }));
 
   return (
-    <div className='overflow-hidden rounded-xl border bg-white shadow-sm'>
+    <div className='bg-base-100 border-base-200 overflow-hidden rounded-xl border shadow-sm'>
       <PlanNavigation
+        allPlans={allPlans}
         currentPlanIndex={currentPlanIndex}
-        totalPlans={allPlans.length}
-        onPlanSwipe={handlePlanSwipe}
+        onSelectPlan={setCurrentPlanIndex}
       />
 
       <div
         ref={plansScrollRef}
-        className='scrollbar-hide flex items-center overflow-x-auto scroll-smooth'
+        className='scrollbar-hide flex items-start overflow-x-auto scroll-smooth'
         onTouchStart={handleTouchStart}
         style={{
-          scrollSnapType: 'x mandatory',
+          scrollSnapType: appService?.isAndroidApp ? 'none' : 'x mandatory',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
@@ -147,10 +149,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             index={index}
             currentPlanIndex={currentPlanIndex}
             onSubscribe={onSubscribe}
-            onPlanSwipe={handlePlanSwipe}
-            onSelectPlan={(selectedIndex) => {
-              setCurrentPlanIndex(selectedIndex);
-            }}
+            onSelectPlan={setCurrentPlanIndex}
           />
         ))}
       </div>
@@ -158,7 +157,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
       <PlanIndicators
         allPlans={allPlans}
         currentPlanIndex={currentPlanIndex}
-        onPlanSelect={setCurrentPlanIndex}
+        onSelectPlan={setCurrentPlanIndex}
       />
     </div>
   );
