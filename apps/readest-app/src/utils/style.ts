@@ -294,6 +294,10 @@ const getLayoutStyles = (
     width: auto;
     height: auto;
   }
+  .duokan-footnote img {
+    width: 0.8em;
+    height: 0.8em;
+  }
 
   /* workaround for some badly designed epubs */
   div.left *, p.left * { text-align: left; }

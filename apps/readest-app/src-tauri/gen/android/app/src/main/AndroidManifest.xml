@@ -73,6 +73,10 @@
                 <data android:scheme="https" />
                 <data android:scheme="http" />
                 <data android:host="web.readest.com" />
+                
+                
+                
+                
             </intent-filter>
             <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
         </activity>
