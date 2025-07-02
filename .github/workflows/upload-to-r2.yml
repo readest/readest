@@ -20,8 +20,6 @@ jobs:
     timeout-minutes: 3
     strategy:
       fail-fast: false
-      matrix:
-        attempt: [1, 2, 3]
     env:
       RELEASE_R2_BUCKET: readest-releases
       RELEASE_R2_ACCOUNT_ID: ${{ secrets.RELEASE_R2_ACCOUNT_ID }}
@@ -66,4 +64,14 @@ jobs:
 
       - name: Upload successful
         if: success()
-        run: echo "Upload completed successfully on attempt ${{ matrix.attempt }}"
+        run: echo "Upload completed successfully"
+
+  retry-on-failure:
+    if: failure() && fromJSON(github.run_attempt) < 3
+    needs: [upload-to-r2]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run retry-workflow.yml -F run_id=${{ github.run_id }}
