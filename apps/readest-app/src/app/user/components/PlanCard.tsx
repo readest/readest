@@ -12,6 +12,7 @@ interface PlanCardProps {
   currentPlanIndex: number;
   onSubscribe: (priceId?: string) => void;
   onPlanSwipe: (direction: 'left' | 'right') => void;
+  onSelectPlan: (index: number) => void;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -23,14 +24,16 @@ const PlanCard: React.FC<PlanCardProps> = ({
   currentPlanIndex,
   onSubscribe,
   onPlanSwipe,
+  onSelectPlan,
 }) => {
   const _ = useTranslation();
 
   return (
     <div
       key={plan.plan}
-      className='w-full min-w-72 max-w-96 flex-shrink-0 p-6'
+      className='w-full flex-shrink-0 p-6 sm:min-w-96 sm:max-w-96'
       style={{ scrollSnapAlign: 'start' }}
+      onClick={() => onSelectPlan(index)}
     >
       <div
         className={`rounded-xl border-2 p-6 ${plan.color} ${index === currentPlanIndex ? 'ring-2 ring-blue-500' : ''}`}
@@ -41,21 +44,20 @@ const PlanCard: React.FC<PlanCardProps> = ({
             {`$${(plan.price / 100).toFixed(2)}`}
             <span className='text-lg font-normal'>/{_(plan.interval)}</span>
           </div>
-          {isUserPlan && (
-            <div className='mt-3'>
-              <span className='inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800'>
-                <IoCheckmark className='mr-1 h-4 w-4' />
-                {_('Current Plan')}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className='mb-6 space-y-3'>
           {plan.features.map((feature, featureIndex) => (
-            <div key={featureIndex} className='flex items-center'>
-              <IoCheckmark className='mr-3 h-5 w-5 flex-shrink-0 text-green-500' />
-              <span>{_(feature)}</span>
+            <div key={featureIndex} className='flex flex-col'>
+              <div className='flex items-center gap-3'>
+                <IoCheckmark className='h-5 w-5 flex-shrink-0 text-green-500' />
+                <span>{_(feature.label)}</span>
+              </div>
+              {feature.description && (
+                <div className={`ms-8 text-sm sm:text-xs ${plan.hintColor}`}>
+                  {_(feature.description)}
+                </div>
+              )}
             </div>
           ))}
         </div>

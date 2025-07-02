@@ -41,6 +41,7 @@ export interface AppService {
   isIOSApp: boolean;
   isMacOSApp: boolean;
   isLinuxApp: boolean;
+  distChannel: string;
 
   selectDirectory(): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;

@@ -63,6 +63,7 @@ export abstract class BaseAppService implements AppService {
   hasSafeAreaInset = false;
   hasHaptics = false;
   hasUpdater = false;
+  distChannel = 'readest';
 
   abstract fs: FileSystem;
 

@@ -227,6 +227,7 @@ export class NativeAppService extends BaseAppService {
     OS_TYPE !== 'ios' &&
     !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
     !window.__READEST_UPDATER_DISABLED;
+  override distChannel = process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest';
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

@@ -82,7 +82,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
         const newIndex = Math.floor(viewportCenter / cardWidth);
         const clampedIndex = Math.max(0, Math.min(newIndex, allPlans.length - 1));
 
-        if (clampedIndex !== currentPlanIndex) {
+        if (clampedIndex !== currentPlanIndex && clampedIndex !== 0) {
           setCurrentPlanIndex(clampedIndex);
         }
       }
@@ -126,7 +126,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 
       <div
         ref={plansScrollRef}
-        className='scrollbar-hide flex items-center overflow-x-auto scroll-smooth pe-20'
+        className='scrollbar-hide flex items-center overflow-x-auto scroll-smooth'
         onTouchStart={handleTouchStart}
         style={{
           scrollSnapType: 'x mandatory',
@@ -138,13 +138,16 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
           <PlanCard
             key={plan.plan}
             plan={plan}
-            comingSoon={appService?.isIOSApp}
+            comingSoon={['appstore', 'playstore'].includes(appService?.distChannel || '')}
             isUserPlan={plan.plan === userPlan}
             upgradable={index > userPlanIndex}
             index={index}
             currentPlanIndex={currentPlanIndex}
             onSubscribe={onSubscribe}
             onPlanSwipe={handlePlanSwipe}
+            onSelectPlan={(selectedIndex) => {
+              setCurrentPlanIndex(selectedIndex);
+            }}
           />
         ))}
       </div>

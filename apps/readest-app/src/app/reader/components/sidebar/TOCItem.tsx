@@ -76,7 +76,7 @@ const TOCItemView = React.memo<{
       }}
     >
       {item.subitems && (
-        <span
+        <div
           onClick={handleToggleExpand}
           className='inline-block cursor-pointer'
           style={{
@@ -85,7 +85,7 @@ const TOCItemView = React.memo<{
           }}
         >
           {createExpanderIcon(flatItem.isExpanded || false)}
-        </span>
+        </div>
       )}
       <div
         className='ms-2 truncate text-ellipsis'

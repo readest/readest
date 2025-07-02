@@ -159,6 +159,7 @@ const ProfilePage = () => {
   );
 
   const handleManageSubscription = async () => {
+    setLoading(true);
     const token = await getAccessToken();
     const response = await fetch(WEB_STRIPE_PORTAL_URL, {
       method: 'POST',
@@ -167,6 +168,7 @@ const ProfilePage = () => {
         Authorization: `Bearer ${token}`,
       },
     });
+    setLoading(false);
 
     const { url, error } = await response.json();
 
@@ -223,7 +225,7 @@ const ProfilePage = () => {
       )}
     >
       <ProfileHeader onGoBack={handleGoBack} />
-      <div className='w-full min-w-60 max-w-4xl px-4 py-10'>
+      <div className='w-full min-w-60 max-w-4xl py-10'>
         {loading && (
           <div className='fixed inset-0 z-50 flex items-center justify-center'>
             <Spinner loading />
@@ -239,29 +241,35 @@ const ProfilePage = () => {
             />
           </div>
         ) : (
-          <div className='bg-base-200 overflow-hidden rounded-lg p-2 shadow-md sm:p-6'>
-            <div className='flex flex-col gap-y-8 p-2 sm:p-6'>
-              <UserInfo
-                avatarUrl={avatarUrl}
-                userFullName={userFullName}
-                userEmail={userEmail}
-                planDetails={planDetails}
-              />
+          <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
+            <div className='flex flex-col gap-y-8'>
+              <div className='flex flex-col gap-y-8 px-6'>
+                <UserInfo
+                  avatarUrl={avatarUrl}
+                  userFullName={userFullName}
+                  userEmail={userEmail}
+                  planDetails={planDetails}
+                />
 
-              <UsageStats quotas={quotas} />
+                <UsageStats quotas={quotas} />
+              </div>
 
-              <PlansComparison
-                availablePlans={availablePlans}
-                userPlan={userPlan}
-                onSubscribe={handleSubscribe}
-              />
+              <div className='flex flex-col gap-y-8 sm:px-6'>
+                <PlansComparison
+                  availablePlans={availablePlans}
+                  userPlan={userPlan}
+                  onSubscribe={handleSubscribe}
+                />
+              </div>
 
-              <AccountActions
-                userPlan={userPlan}
-                onLogout={handleLogout}
-                onConfirmDelete={handleConfirmDelete}
-                onManageSubscription={handleManageSubscription}
-              />
+              <div className='flex flex-col gap-y-8 px-6'>
+                <AccountActions
+                  userPlan={userPlan}
+                  onLogout={handleLogout}
+                  onConfirmDelete={handleConfirmDelete}
+                  onManageSubscription={handleManageSubscription}
+                />
+              </div>
             </div>
           </div>
         )}

@@ -2,14 +2,20 @@ import { UserPlan } from '@/types/user';
 import { stubTranslation as _ } from '@/utils/misc';
 import { AvailablePlan } from '../page';
 
+type FeatureType = {
+  label: string;
+  description?: string;
+};
+
 export type PlanDetails = {
   name: string;
   plan: UserPlan;
   color: string;
+  hintColor: string;
   price: number;
   price_id?: string;
   interval: string;
-  features: string[];
+  features: FeatureType[];
   limits: Record<string, string | number>;
 };
 
@@ -24,15 +30,41 @@ export const getPlanDetails = (
         name: _('Free Plan'),
         plan: userPlan,
         color: 'bg-gray-200 text-gray-800',
+        hintColor: 'text-gray-800/75',
         price: 0,
         price_id: availablePlan?.price_id,
         interval: _('month'),
         features: [
-          _('Community Support'),
-          _('Unlimited Text-to-Speech Hours'),
-          _('Unlimited Cloud Sync Devices'),
-          _('DeepL Free Access (10K characters/day)'),
-          _('500 MB Cloud Sync Space'),
+          {
+            label: _('Cross-Platform Sync'),
+            description: _(
+              'Seamlessly sync your library, progress, highlights, and notes across all your devices—never lose your place again.',
+            ),
+          },
+          {
+            label: _('Customizable Reading'),
+            description: _(
+              'Personalize every detail with adjustable fonts, layouts, themes, and advanced display settings for the perfect reading experience.',
+            ),
+          },
+          {
+            label: _('AI Read Aloud'),
+            description: _(
+              'Enjoy hands-free reading with natural-sounding AI voices that bring your books to life.',
+            ),
+          },
+          {
+            label: _('AI Translations'),
+            description: _(
+              'Translate any text instantly with the power of Google, Azure, or DeepL—understand content in any language.',
+            ),
+          },
+          {
+            label: _('Community Support'),
+            description: _(
+              'Connect with fellow readers and get help fast in our friendly community channels.',
+            ),
+          },
         ],
         limits: {
           [_('Cloud Sync Storage')]: '500 MB',
@@ -44,19 +76,46 @@ export const getPlanDetails = (
         name: _('Plus Plan'),
         plan: userPlan,
         color: 'bg-blue-200 text-blue-800',
+        hintColor: 'text-blue-800/75',
         price: availablePlan?.price || 499,
         price_id: availablePlan?.price_id,
         interval: _('month'),
         features: [
-          _('Includes All Free Plan Benefits'),
-          _('Priority Support'),
-          _('Basic AI Translations'),
-          _('DeepL Pro Access (50K characters/day)'),
-          _('2 GB Cloud Sync Space'),
+          {
+            label: _('Includes All Free Plan Benefits'),
+          },
+          {
+            label: _('Unlimited AI Read Aloud Hours'),
+            description: _(
+              'Listen without limits—convert as much text as you like into immersive audio.',
+            ),
+          },
+          {
+            label: _('More AI Translations'),
+            description: _(
+              'Unlock enhanced translation capabilities with more daily usage and advanced options.',
+            ),
+          },
+          {
+            label: _('DeepL Pro Access'),
+            description: _(
+              'Translate up to 100,000 characters daily with the most accurate translation engine available.',
+            ),
+          },
+          {
+            label: _('2 GB Cloud Sync Storage'),
+            description: _('Keep your entire library safe with 2 GB of secure cloud storage.'),
+          },
+          {
+            label: _('Priority Support'),
+            description: _(
+              'Enjoy faster responses and dedicated assistance whenever you need help.',
+            ),
+          },
         ],
         limits: {
           [_('Cloud Sync Storage')]: '2 GB',
-          [_('AI Translations (per day)')]: '50K',
+          [_('AI Translations (per day)')]: '100K',
         },
       };
     case 'pro':
@@ -64,20 +123,42 @@ export const getPlanDetails = (
         name: _('Pro Plan'),
         plan: userPlan,
         color: 'bg-purple-200 text-purple-800',
+        hintColor: 'text-purple-800/75',
         price: availablePlan?.price || 999,
         price_id: availablePlan?.price_id,
         interval: _('month'),
         features: [
-          _('Includes All Plus Plan Benefits'),
-          _('Early Feature Access'),
-          _('More AI Translations'),
-          _('Advanced AI Tools'),
-          _('DeepL Pro Access (200K characters/day)'),
-          _('10 GB Cloud Sync Space'),
+          {
+            label: _('Includes All Plus Plan Benefits'),
+          },
+          {
+            label: _('Early Feature Access'),
+            description: _(
+              'Be the first to explore new features, updates, and innovations before anyone else.',
+            ),
+          },
+          {
+            label: _('Advanced AI Tools'),
+            description: _(
+              'Harness powerful AI tools for smarter reading, translation, and content discovery.',
+            ),
+          },
+          {
+            label: _('DeepL Pro Access'),
+            description: _(
+              'Translate up to 500,000 characters daily with the most accurate translation engine available.',
+            ),
+          },
+          {
+            label: _('10 GB Cloud Sync Storage'),
+            description: _(
+              'Securely store and access your entire reading collection with up to 10 GB of cloud storage.',
+            ),
+          },
         ],
         limits: {
           [_('Cloud Sync Storage')]: '10 GB',
-          [_('AI Translations (per day)')]: '200K',
+          [_('AI Translations (per day)')]: '500K',
         },
       };
     default:
