@@ -22,9 +22,15 @@ export const walkTextNodes = (root: HTMLElement): HTMLElement[] => {
       }
       const hasDirectText =
         child.childNodes &&
-        Array.from(child.childNodes).some(
-          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-        );
+        Array.from(child.childNodes).some((node) => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+            return true;
+          }
+          if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'SPAN') {
+            return true;
+          }
+          return false;
+        });
       if (child.children.length === 0 && child.textContent?.trim()) {
         elements.push(child);
       } else if (hasDirectText) {

@@ -45,7 +45,7 @@ const TOCView: React.FC<{
   const vitualListRef = useRef<VirtualList | null>(null);
   const staticListRef = useRef<HTMLDivElement | null>(null);
 
-  useTextTranslation(bookKey, containerRef.current);
+  useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
 
   useEffect(() => {
     const updateHeight = () => {

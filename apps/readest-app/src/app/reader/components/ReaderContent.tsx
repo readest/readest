@@ -16,6 +16,7 @@ import { parseOpenWithFiles } from '@/helpers/openWith';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
+import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLibrary } from '@/utils/nav';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
@@ -84,9 +85,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
     if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
     window.addEventListener('beforeunload', handleCloseBooks);
+    eventDispatcher.on('beforereload', handleCloseBooks);
     eventDispatcher.on('quit-app', handleCloseBooks);
     return () => {
       window.removeEventListener('beforeunload', handleCloseBooks);
+      eventDispatcher.off('beforereload', handleCloseBooks);
       eventDispatcher.off('quit-app', handleCloseBooks);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,11 +124,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateToLibrary(router);
   };
 
-  const handleCloseBooks = async () => {
+  const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
     await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
-  };
+  }, 500);
 
   const handleCloseBooksToLibrary = () => {
     handleCloseBooks();

@@ -381,7 +381,7 @@
   "Need help? Contact our support team at support@readest.com": "需要協助？請聯絡支援團隊：support@readest.com",
   "Free Plan": "免費方案",
   "month": "月",
-  "Unlimited Text-to-Speech Hours": "無限文字轉語音時數",
+  "Unlimited Text-to-Speech Hours": "AI 朗讀不限時長",
   "DeepL Free Access (10K characters/day)": "DeepL 免費使用（每日1萬字）",
   "AI Translations (per day)": "AI 翻譯（每日）",
   "Plus Plan": "Plus 方案",
@@ -398,5 +398,6 @@
   "Cloud Sync Storage": "雲同步空間",
   "Disable": "禁用",
   "Enable": "啟用",
-  "Upgrade to Readest Premium": "升級到 Readest Premium"
+  "Upgrade to Readest Premium": "升級到 Readest Premium",
+  "Show Source Text": "顯示原文"
 }

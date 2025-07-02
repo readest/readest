@@ -249,7 +249,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     try {
       Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
     } catch (e) {
-      console.error(e);
+      console.warn(e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);

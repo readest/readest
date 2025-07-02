@@ -13,7 +13,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { getStyles, transformStylesheet } from '@/utils/style';
+import { applyTranslationStyles, getStyles, transformStylesheet } from '@/utils/style';
 import { mountAdditionalFonts } from '@/utils/font';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -242,6 +242,7 @@ const FoliateViewer: React.FC<{
       const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
+      applyTranslationStyles(viewSettings);
 
       const animated = viewSettings.animated!;
       const maxColumnCount = viewSettings.maxColumnCount!;

@@ -7,7 +7,12 @@ import { walkTextNodes } from '@/utils/walk';
 import { debounce } from '@/utils/debounce';
 import { getLocale } from '@/utils/misc';
 
-export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElement | null) {
+export function useTextTranslation(
+  bookKey: string,
+  view: FoliateView | HTMLElement | null,
+  widthLineBreak = false,
+  targetBlockClassName = 'translation-target-block',
+) {
   const { getViewSettings, getViewState, getProgress } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
   const viewState = getViewState(bookKey);
@@ -16,6 +21,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
   const enabled = useRef(viewSettings?.translationEnabled);
   const [provider, setProvider] = useState(viewSettings?.translationProvider);
   const [targetLang, setTargetLang] = useState(viewSettings?.translateTargetLang);
+  const showTranslateSourceRef = useRef(viewSettings?.showTranslateSource);
 
   const { translate } = useTranslator({
     provider,
@@ -123,9 +129,58 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
     const text = el.textContent?.replaceAll('\n', '').trim();
     if (!text) return;
 
-    if (el.querySelector('.translation-target')) {
+    if (el.classList.contains('translation-target')) {
       return;
     }
+
+    const updateSourceNodes = (element: HTMLElement) => {
+      const hasDirectText = Array.from(element.childNodes).some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '',
+      );
+      if (hasDirectText) {
+        element.classList.add('translation-source');
+
+        const textNodes = Array.from(element.childNodes).filter(
+          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '',
+        );
+
+        if (!element.hasAttribute('original-text-stored')) {
+          element.setAttribute(
+            'original-text-nodes',
+            JSON.stringify(textNodes.map((node) => node.textContent)),
+          );
+          element.setAttribute('original-text-stored', 'true');
+        }
+      }
+      const isSource = element.classList.contains('translation-source');
+      if (isSource) {
+        const textNodes = Array.from(element.childNodes).filter(
+          (node) => node.nodeType === Node.TEXT_NODE,
+        ) as Text[];
+
+        if (showTranslateSourceRef.current) {
+          const originalTexts = JSON.parse(element.getAttribute('original-text-nodes') || '[]');
+          textNodes.forEach((textNode, index) => {
+            if (originalTexts[index] !== undefined) {
+              textNode.textContent = originalTexts[index];
+            }
+          });
+        } else {
+          textNodes.forEach((textNode) => {
+            textNode.textContent = '';
+          });
+        }
+      }
+      for (const child of Array.from(element.childNodes)) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const node = child as HTMLElement;
+        if (!node.classList.contains('translation-target')) {
+          updateSourceNodes(node);
+        }
+      }
+    };
+
+    updateSourceNodes(el);
 
     try {
       const translated = await translateRef.current([text]);
@@ -136,9 +191,12 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
       wrapper.className = `translation-target ${!enabled.current ? 'hidden' : ''}`;
       wrapper.setAttribute('translation-element-mark', '1');
       wrapper.setAttribute('lang', targetLang || getLocale());
+      if (widthLineBreak) {
+        wrapper.appendChild(document.createElement('br'));
+      }
 
       const blockWrapper = document.createElement('font');
-      blockWrapper.className = 'translation-target translation-block-wrapper';
+      blockWrapper.className = `translation-target ${targetBlockClassName}`;
 
       const inner = document.createElement('font');
       inner.className = 'translation-target target-inner target-inner-theme-none';
@@ -201,7 +259,7 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
         }
       }
     }, 500),
-    [],
+    [translateElement],
   );
 
   useEffect(() => {
@@ -218,6 +276,8 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
     const enabledChanged = enabled.current !== viewSettings.translationEnabled;
     const providerChanged = provider !== viewSettings.translationProvider;
     const targetLangChanged = targetLang !== viewSettings.translateTargetLang;
+    const showTranslateSourceChanged =
+      showTranslateSourceRef.current !== viewSettings.showTranslateSource;
 
     if (enabledChanged) {
       enabled.current = viewSettings.translationEnabled;
@@ -231,12 +291,16 @@ export function useTextTranslation(bookKey: string, view: FoliateView | HTMLElem
       setTargetLang(viewSettings.translateTargetLang);
     }
 
+    if (showTranslateSourceChanged) {
+      showTranslateSourceRef.current = viewSettings.showTranslateSource;
+    }
+
     if (enabledChanged) {
       toggleTranslationVisibility(viewSettings.translationEnabled);
       if (enabled.current) {
         observeTextNodes();
       }
-    } else if (providerChanged || targetLangChanged) {
+    } else if (providerChanged || targetLangChanged || showTranslateSourceChanged) {
       updateTranslation();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

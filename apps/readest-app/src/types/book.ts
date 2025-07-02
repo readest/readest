@@ -156,6 +156,7 @@ export interface TranslatorConfig {
   translationEnabled: boolean;
   translationProvider: string;
   translateTargetLang: string;
+  showTranslateSource: boolean;
 }
 
 export interface ScreenConfig {

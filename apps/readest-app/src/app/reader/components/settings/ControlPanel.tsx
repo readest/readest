@@ -4,12 +4,12 @@ import { useReaderStore } from '@/store/readerStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useResetViewSettings } from '../../hooks/useResetSettings';
 import { getStyles } from '@/utils/style';
+import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
-import { RELOAD_BEFREE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
 import NumberInput from './NumberInput';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -108,7 +108,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
     saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false);
-    setTimeout(() => window.location.reload(), RELOAD_BEFREE_SAVED_TIMEOUT_MS);
+    saveAndReload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowScript]);
 

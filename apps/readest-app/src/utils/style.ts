@@ -333,13 +333,22 @@ export const getFootnoteStyles = () => `
   }
 `;
 
-const getTranslationStyles = () => `
-  .translation-block-wrapper {
-    display: block !important;
-    margin: 0.5em 0 !important;
+const getTranslationStyles = (showSource: boolean) => `
+  .translation-source {
+  }
+  .translation-target {
   }
   .translation-target.hidden {
     display: none !important;
+  }
+  .translation-target-block {
+    display: block !important;
+    ${showSource ? 'margin: 0.5em 0 !important;' : ''}
+  }
+  .translation-target-toc {
+    display: block !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;
 
@@ -424,9 +433,24 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.invertImgColorInDark!,
     themeCode,
   );
-  const translationStyles = getTranslationStyles();
+  const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const userStylesheet = viewSettings.userStylesheet!;
   return `${layoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
+};
+
+export const applyTranslationStyles = (viewSettings: ViewSettings) => {
+  const styleId = 'translation-styles';
+
+  const existingStyle = document.getElementById(styleId);
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+
+  const styleElement = document.createElement('style');
+  styleElement.id = styleId;
+  styleElement.textContent = getTranslationStyles(viewSettings.showTranslateSource);
+
+  document.head.appendChild(styleElement);
 };
 
 export const transformStylesheet = (vw: number, vh: number, css: string) => {
