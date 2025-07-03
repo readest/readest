@@ -34,6 +34,7 @@ export interface AppService {
   hasSafeAreaInset: boolean;
   hasHaptics: boolean;
   hasUpdater: boolean;
+  hasOrientationLock: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
   isMobileApp: boolean;

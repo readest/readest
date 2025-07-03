@@ -676,7 +676,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         </div>
       </div>
 
-      {appService?.isMobileApp && (
+      {appService?.hasOrientationLock && (
         <div className='w-full'>
           <h2 className='mb-2 font-medium'>{_('Screen')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>

@@ -19,7 +19,7 @@ import { type as osType } from '@tauri-apps/plugin-os';
 
 import { Book } from '@/types/book';
 import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
-import { isContentURI, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
 import { getCoverFilename, getFilename } from '@/utils/book';
 import { copyURIToPath } from '@/utils/bridge';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -227,6 +227,9 @@ export class NativeAppService extends BaseAppService {
     OS_TYPE !== 'ios' &&
     !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
     !window.__READEST_UPDATER_DISABLED;
+  // orientation lock is not supported on iPad
+  override hasOrientationLock =
+    (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
   override distChannel = process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest';
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
