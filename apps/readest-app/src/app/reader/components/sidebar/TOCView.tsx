@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as VirtualList } from 'react-window';
 
+import { useOverlayScrollbars } from 'overlayscrollbars-react';
+import 'overlayscrollbars/overlayscrollbars.css';
 import { TOCItem } from '@/libs/document';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { findParentPath } from '@/utils/toc';
@@ -32,6 +35,7 @@ const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ bookKey, toc }) => {
+  const { appService } = useEnv();
   const { getView, getProgress, getViewState, getViewSettings } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const viewSettings = getViewSettings(bookKey)!;
@@ -42,8 +46,40 @@ const TOCView: React.FC<{
   const [containerHeight, setContainerHeight] = useState(400);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const listOuterRef = useRef<HTMLDivElement | null>(null);
   const vitualListRef = useRef<VirtualList | null>(null);
   const staticListRef = useRef<HTMLDivElement | null>(null);
+
+  const [initialize] = useOverlayScrollbars({
+    defer: true,
+    options: {
+      scrollbars: {
+        autoHide: 'scroll',
+      },
+      showNativeOverlaidScrollbars: false,
+    },
+    events: {
+      initialized(osInstance) {
+        const { viewport } = osInstance.elements();
+        viewport.style.overflowX = `var(--os-viewport-overflow-x)`;
+        viewport.style.overflowY = `var(--os-viewport-overflow-y)`;
+      },
+    },
+  });
+
+  useEffect(() => {
+    const { current: root } = containerRef;
+    const { current: virtualOuter } = listOuterRef;
+
+    if (root && virtualOuter) {
+      initialize({
+        target: root,
+        elements: {
+          viewport: virtualOuter,
+        },
+      });
+    }
+  }, [initialize]);
 
   useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
 
@@ -78,8 +114,11 @@ const TOCView: React.FC<{
     };
   }, []);
 
-  const activeHref = useMemo(() => progress?.sectionHref || null, [progress]);
+  const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
   const flatItems = useFlattenedTOC(toc, expandedItems);
+  const activeItemIndex = useMemo(() => {
+    return flatItems.findIndex((item) => item.item.href === activeHref);
+  }, [flatItems, activeHref]);
 
   const handleToggleExpand = useCallback((item: TOCItem) => {
     const href = item.href || '';
@@ -136,7 +175,7 @@ const TOCView: React.FC<{
 
   const virtualItemSize = useMemo(() => {
     return window.innerWidth >= 640 && !viewSettings?.translationEnabled ? 37 : 57;
-  }, [viewSettings]);
+  }, [viewSettings?.translationEnabled]);
 
   const virtualListData = useMemo(
     () => ({
@@ -163,40 +202,43 @@ const TOCView: React.FC<{
 
   useEffect(() => {
     if (flatItems.length > 0) {
-      setTimeout(scrollToActiveItem, 0);
+      setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 0);
     }
   }, [flatItems, scrollToActiveItem]);
 
-  return (
-    <div className='rounded' ref={containerRef}>
-      {flatItems.length > 256 ? (
-        <VirtualList
-          ref={vitualListRef}
-          width='100%'
-          height={containerHeight}
-          itemCount={flatItems.length}
-          itemSize={virtualItemSize}
-          itemData={virtualListData}
-          overscanCount={20}
-        >
-          {VirtualListRow}
-        </VirtualList>
-      ) : (
-        <div className='pt-2' ref={staticListRef}>
-          {flatItems.map((flatItem, index) => (
-            <StaticListRow
-              key={`static-row-${index}`}
-              bookKey={bookKey}
-              flatItem={flatItem}
-              activeHref={activeHref}
-              onToggleExpand={handleToggleExpand}
-              onItemClick={handleItemClick}
-            />
-          ))}
-        </div>
-      )}
+  return flatItems.length > 256 ? (
+    <div className='rounded' data-overlayscrollbars-initialize='' ref={containerRef}>
+      <VirtualList
+        ref={vitualListRef}
+        outerRef={listOuterRef}
+        width='100%'
+        height={containerHeight}
+        itemCount={flatItems.length}
+        itemSize={virtualItemSize}
+        itemData={virtualListData}
+        overscanCount={20}
+        initialScrollOffset={
+          appService?.isAndroidApp && activeItemIndex >= 0
+            ? Math.max(0, activeItemIndex * virtualItemSize - containerHeight / 2)
+            : undefined
+        }
+      >
+        {VirtualListRow}
+      </VirtualList>
+    </div>
+  ) : (
+    <div className='rounded pt-2' ref={staticListRef}>
+      {flatItems.map((flatItem, index) => (
+        <StaticListRow
+          key={`static-row-${index}`}
+          bookKey={bookKey}
+          flatItem={flatItem}
+          activeHref={activeHref}
+          onToggleExpand={handleToggleExpand}
+          onItemClick={handleItemClick}
+        />
+      ))}
     </div>
   );
 };
-
 export default TOCView;

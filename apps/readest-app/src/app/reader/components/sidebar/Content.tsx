@@ -51,12 +51,16 @@ const SidebarContent: React.FC<{
           'font-sans text-base font-normal sm:text-sm',
         )}
       >
-        <OverlayScrollbarsComponent options={{ scrollbars: { autoHide: 'scroll' } }} defer>
+        <OverlayScrollbarsComponent
+          className='min-h-0 flex-1'
+          options={{ scrollbars: { autoHide: 'scroll' }, showNativeOverlaidScrollbars: false }}
+          defer
+        >
           <div
-            className={clsx(
-              'scroll-container min-h-0 flex-1 transition-opacity duration-300 ease-in-out',
-              { 'opacity-0': fade, 'opacity-100': !fade },
-            )}
+            className={clsx('scroll-container h-full transition-opacity duration-300 ease-in-out', {
+              'opacity-0': fade,
+              'opacity-100': !fade,
+            })}
           >
             {targetTab === 'toc' && bookDoc.toc && (
               <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />

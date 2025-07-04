@@ -15,6 +15,7 @@ import { RxLineHeight } from 'react-icons/rx';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
@@ -45,6 +46,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { getConfig, setConfig } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
@@ -55,6 +57,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const marginIconSize = useResponsiveSize(20);
 
   const view = getView(bookKey);
+  const config = getConfig(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
   const viewState = getViewState(bookKey);
@@ -131,15 +134,17 @@ const FooterBar: React.FC<FooterBarProps> = ({
       handleSpeakText();
     } else if (tab === 'toc') {
       setHoveredBookKey('');
-      if (viewSettings) {
-        viewSettings.sideBarTab = 'toc';
+      if (config && config.viewSettings) {
+        config.viewSettings.sideBarTab = 'toc';
+        setConfig(bookKey, config);
       }
       setSideBarVisible(true);
     } else if (tab === 'note') {
       setHoveredBookKey('');
       setSideBarVisible(true);
-      if (viewSettings) {
-        viewSettings.sideBarTab = 'annotations';
+      if (config && config.viewSettings) {
+        config.viewSettings.sideBarTab = 'annotations';
+        setConfig(bookKey, config);
       }
     }
   };
