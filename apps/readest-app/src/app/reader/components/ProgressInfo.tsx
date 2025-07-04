@@ -42,7 +42,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         ? `${section.current + 1} · ${section.total}`
         : `${section.current + 1} / ${section.total}`
       : ''
-    : pageinfo
+    : pageinfo && pageinfo.current >= 0 && pageinfo.total > 0
       ? _(isVertical ? '{{currentPage}} · {{totalPage}}' : 'Loc. {{currentPage}} / {{totalPage}}', {
           currentPage: pageinfo.current + 1,
           totalPage: pageinfo.total,
