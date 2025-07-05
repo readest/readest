@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.readest.native_bridge"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21

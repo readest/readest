@@ -103,7 +103,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
         setUpdate({
           currentVersion,
           version: data.version,
-          date: data.date,
+          date: data.pub_date,
           body: data.notes,
           downloadAndInstall: async (onEvent) => {
             await new Promise<void>(async (resolve, reject) => {
@@ -175,7 +175,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
           .sort(([a], [b]) => semver.rcompare(a, b))
           .map(([version, info]) => ({
             version,
-            date: new Date(info.date).toDateString(),
+            date: new Date(info.date).toLocaleDateString(),
             notes: info.notes,
           }));
 
@@ -198,7 +198,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
         changelogs = [
           {
             version: update.version,
-            date: new Date(update.date!).toDateString(),
+            date: new Date(update.date!).toLocaleDateString(),
             notes: parseNumberedList(update.body ?? ''),
           },
         ];
