@@ -204,6 +204,7 @@ const TOCView: React.FC<{
     if (flatItems.length > 0) {
       setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flatItems, scrollToActiveItem]);
 
   return flatItems.length > 256 ? (

@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { FixedSizeList as List } from 'react-window';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
@@ -15,6 +16,44 @@ interface DropdownProps {
   onGetFontFamily: (option: string, family: string) => string;
 }
 
+interface FontItemProps {
+  index: number;
+  style: React.CSSProperties;
+  data: {
+    options: { option: string; label?: string }[];
+    selected: string;
+    onSelect: (option: string) => void;
+    onGetFontFamily: (option: string, family: string) => string;
+    family: string;
+    iconSize: number;
+  };
+}
+
+const FontItem: React.FC<FontItemProps> = ({ index, style, data }) => {
+  const { options, selected, onSelect, onGetFontFamily, family, iconSize: iconSize16 } = data;
+  const option = options[index]!;
+
+  return (
+    <li
+      className='px-1 sm:px-2'
+      key={option.option}
+      style={style}
+      onClick={() => onSelect(option.option)}
+    >
+      <div className='flex w-full items-center overflow-hidden !px-0 text-sm'>
+        <span style={{ minWidth: `${iconSize16}px` }}>
+          {selected === option.option && (
+            <MdCheck className='text-base-content' size={iconSize16} />
+          )}
+        </span>
+        <span style={{ fontFamily: onGetFontFamily(option.option, family) }}>
+          {option.label || option.option}
+        </span>
+      </div>
+    </li>
+  );
+};
+
 const FontDropdown: React.FC<DropdownProps> = ({
   family,
   selected,
@@ -25,9 +64,38 @@ const FontDropdown: React.FC<DropdownProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const iconSize16 = useResponsiveSize(16);
+  const iconSize = useResponsiveSize(16);
   const allOptions = [...options, ...(moreOptions ?? [])];
   const selectedOption = allOptions.find((option) => option.option === selected) ?? allOptions[0]!;
+
+  const ITEM_HEIGHT = 40;
+  const MAX_HEIGHT = 320;
+
+  const mainListData = useMemo(
+    () => ({
+      options,
+      selected,
+      onSelect,
+      onGetFontFamily,
+      family: family ?? '',
+      iconSize,
+      appService,
+    }),
+    [options, selected, onSelect, onGetFontFamily, family, iconSize, appService],
+  );
+
+  const moreListData = useMemo(
+    () => ({
+      options: moreOptions ?? [],
+      selected,
+      onSelect,
+      onGetFontFamily,
+      family: family ?? '',
+      iconSize,
+    }),
+    [moreOptions, selected, onSelect, onGetFontFamily, family, iconSize],
+  );
+
   return (
     <div className='dropdown dropdown-top'>
       <button
@@ -44,34 +112,36 @@ const FontDropdown: React.FC<DropdownProps> = ({
           >
             {selectedOption.label}
           </span>
-          <FiChevronUp size={iconSize16} />
+          <FiChevronUp size={iconSize} />
         </div>
       </button>
       <ul
         tabIndex={0}
         className={clsx(
           'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow',
-          '!sm:px-2 right-[-32px] w-[46vw] !px-1 sm:right-0 sm:w-44',
-          moreOptions?.length ? '' : 'inline max-h-80 overflow-y-scroll',
+          'right-[-32px] w-[46vw] !px-0 sm:right-0 sm:w-44',
+          moreOptions?.length ? '' : 'inline overflow-hidden',
         )}
       >
-        {options.map(({ option, label }) => (
-          <li key={option} onClick={() => onSelect(option)}>
-            <div className='flex w-full items-center overflow-hidden px-0 text-sm'>
-              <span style={{ minWidth: `${iconSize16}px` }}>
-                {selected === option && <MdCheck className='text-base-content' size={iconSize16} />}
-              </span>
-              <span style={{ fontFamily: onGetFontFamily(option, family ?? '') }}>
-                {label || option}
-              </span>
-            </div>
-          </li>
-        ))}
+        {/* Virtualized main options */}
+        <div style={{ height: Math.min(options.length * ITEM_HEIGHT, MAX_HEIGHT) }}>
+          <List
+            width='100%'
+            height={Math.min(options.length * ITEM_HEIGHT, MAX_HEIGHT)}
+            itemCount={options.length}
+            itemSize={ITEM_HEIGHT}
+            itemData={mainListData}
+          >
+            {FontItem}
+          </List>
+        </div>
+
+        {/* More options with nested dropdown */}
         {moreOptions && moreOptions.length > 0 && (
-          <li className='dropdown dropdown-left dropdown-top'>
+          <li className='dropdown dropdown-left dropdown-top px-1 sm:px-2'>
             <div className='flex items-center px-0 text-sm'>
-              <span style={{ minWidth: `${iconSize16}px` }}>
-                <FiChevronLeft size={iconSize16} />
+              <span style={{ minWidth: `${iconSize}px` }}>
+                <FiChevronLeft size={iconSize} />
               </span>
               <span>{_('System Fonts')}</span>
             </div>
@@ -79,29 +149,21 @@ const FontDropdown: React.FC<DropdownProps> = ({
               tabIndex={0}
               className={clsx(
                 'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] shadow',
-                '!sm:px-2 !mr-4 mb-[-46px] inline max-h-80 w-[46vw] overflow-y-scroll !px-1 sm:w-[200px]',
+                '!mr-4 mb-[-46px] inline w-[46vw] overflow-hidden !px-0 sm:w-[200px]',
               )}
             >
-              {moreOptions.map((option, index) => (
-                <li key={`${index}-${option.option}`} onClick={() => onSelect(option.option)}>
-                  <div className='flex w-full items-center overflow-hidden px-0 text-sm'>
-                    <span style={{ minWidth: `${iconSize16}px` }}>
-                      {selected === option.option && (
-                        <MdCheck className='text-base-content' size={iconSize16} />
-                      )}
-                    </span>
-                    <span
-                      style={
-                        !appService?.isLinuxApp
-                          ? { fontFamily: onGetFontFamily(option.option, family ?? '') }
-                          : {}
-                      }
-                    >
-                      {option.label || option.option}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {/* Virtualized more options */}
+              <div style={{ height: Math.min(moreOptions.length * ITEM_HEIGHT, MAX_HEIGHT) }}>
+                <List
+                  width='100%'
+                  height={Math.min(moreOptions.length * ITEM_HEIGHT, MAX_HEIGHT)}
+                  itemCount={moreOptions.length}
+                  itemSize={ITEM_HEIGHT}
+                  itemData={moreListData}
+                >
+                  {FontItem}
+                </List>
+              </div>
             </ul>
           </li>
         )}
