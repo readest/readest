@@ -285,7 +285,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     <div className='bookshelf'>
       <div
         className={clsx(
-          'transform-wrapper',
+          'bookshelf-items transform-wrapper',
           viewMode === 'grid' && 'grid flex-1 grid-cols-3 gap-x-4 px-4 sm:gap-x-0 sm:px-2',
           viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
           viewMode === 'list' && 'flex flex-col',

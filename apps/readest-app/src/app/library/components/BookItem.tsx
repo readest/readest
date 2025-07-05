@@ -62,6 +62,7 @@ const BookItem: React.FC<BookItemProps> = ({
       <div
         className={clsx(
           'relative flex aspect-[28/41] items-center justify-center',
+          coverFit === 'crop' && 'overflow-hidden shadow-md',
           mode === 'list' && 'min-w-20',
         )}
       >

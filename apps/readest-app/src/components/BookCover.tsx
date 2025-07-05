@@ -40,7 +40,7 @@ const BookCover: React.FC<BookCoverProps> = ({
           src={book.coverImageUrl!}
           alt={book.title}
           fill={true}
-          className={clsx('crop-cover-img object-cover shadow-md', imageClassName)}
+          className={clsx('crop-cover-img object-cover', imageClassName)}
           onError={handleImageError}
         />
       ) : (
