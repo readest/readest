@@ -96,7 +96,18 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 ## Downloads
 
-The Readest app is available for download! 🥳 🚀
+### Mobile Apps
+
+<div align="center">
+  <a href="https://apps.apple.com/app/id6738622779">
+    <img alt="Download on the App Store" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" style="height: 50px; margin: 0 10px;"/>
+  </a>
+  <a href="https://play.google.com/store/apps/details?id=com.bilingify.readest">
+    <img alt="Get it on Google Play" src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" style="height: 50px; margin: 0 10px;"/>
+  </a>
+</div>
+
+### Platform-Specific Downloads
 
 - macOS / iOS / iPadOS : Search for "Readest" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
 - Windows / Linux / Android: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
