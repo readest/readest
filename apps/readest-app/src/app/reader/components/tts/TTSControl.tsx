@@ -171,19 +171,22 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
       return;
     }
 
-    let ttsFromRange = range || progress.range;
-    if (viewSettings.ttsLocation) {
+    let ttsFromRange = range;
+    if (!ttsFromRange && viewSettings.ttsLocation) {
       const { location } = progress;
       const ttsCfi = viewSettings.ttsLocation;
       const start = CFI.collapse(location);
       const end = CFI.collapse(location, true);
       if (CFI.compare(start, ttsCfi) * CFI.compare(end, ttsCfi) <= 0) {
         const { index, anchor } = view.resolveCFI(ttsCfi);
-        const { doc } = view.renderer.getContents().find((x) => (x.index = index)) || {};
+        const { doc } = view.renderer.getContents().find((x) => x.index === index) || {};
         if (doc) {
-          ttsFromRange = anchor(doc) || ttsFromRange;
+          ttsFromRange = anchor(doc);
         }
       }
+    }
+    if (!ttsFromRange) {
+      ttsFromRange = progress.range;
     }
 
     const primaryLang = bookData.book.primaryLanguage;
