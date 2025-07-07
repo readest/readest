@@ -35,7 +35,6 @@ import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { lockScreenOrientation } from '@/utils/bridge';
-import { mountAdditionalFonts } from '@/utils/font';
 import {
   tauriHandleSetAlwaysOnTop,
   tauriHandleToggleFullScreen,
@@ -114,10 +113,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     },
   });
-
-  useEffect(() => {
-    mountAdditionalFonts(document);
-  }, []);
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {

@@ -230,6 +230,10 @@ const getLayoutStyles = (
   p:has(> a:first-child + img:last-child) {
     text-indent: unset !important;
   }
+  blockquote[align="center"], div[align="center"],
+  p[align="center"], dd[align="center"] {
+    text-indent: unset !important;
+  }
   p {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
