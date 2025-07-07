@@ -294,14 +294,8 @@ export abstract class BaseAppService implements AppService {
       }
     }
 
-    if (
-      (!book.uploadedAt && includingLocal) // file only in local
-      || (!book.downloadedAt && !!book.uploadedAt && includingUploaded) // file only in cloud
-      || (!!book.uploadedAt && includingLocal && includingUploaded) // file both in local and cloud
-    ) {
-      book.deletedAt = Date.now();
-    }
     if (includingLocal) {
+      book.deletedAt = Date.now();
       book.downloadedAt = null;
     }
     if (includingUploaded) {
