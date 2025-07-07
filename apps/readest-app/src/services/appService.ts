@@ -272,16 +272,18 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async deleteBook(book: Book, includingUploaded = false): Promise<void> {
-    const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
-    const localDeleteFps = [getLocalBookFilename(book), getCoverFilename(book)];
-    for (const fp of localDeleteFps) {
-      if (await this.fs.exists(fp, 'Books')) {
-        await this.fs.removeFile(fp, 'Books');
+  async deleteBook(book: Book, includingUploaded = false, includingLocal = true): Promise<void> {
+    if (includingLocal) {
+      const localDeleteFps = [getLocalBookFilename(book), getCoverFilename(book)];
+      for (const fp of localDeleteFps) {
+        if (await this.fs.exists(fp, 'Books')) {
+          await this.fs.removeFile(fp, 'Books');
+        }
       }
     }
-    for (const fp of fps) {
-      if (includingUploaded) {
+    if (includingUploaded) {
+      const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
+      for (const fp of fps) {
         console.log('Deleting uploaded file:', fp);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
         try {
@@ -291,25 +293,20 @@ export abstract class BaseAppService implements AppService {
         }
       }
     }
-    book.deletedAt = Date.now();
-    book.downloadedAt = null;
+
+    if (
+      (!book.uploadedAt && includingLocal) // file only in local
+      || (!book.downloadedAt && !!book.uploadedAt && includingUploaded) // file only in cloud
+      || (!!book.uploadedAt && includingLocal && includingUploaded) // file both in local and cloud
+    ) {
+      book.deletedAt = Date.now();
+    }
+    if (includingLocal) {
+      book.downloadedAt = null;
+    }
     if (includingUploaded) {
       book.uploadedAt = null;
     }
-  }
-
-  async deleteBookCloudStore(book: Book): Promise<void> {
-    const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
-    for (const fp of fps) {
-      console.log('Deleting uploaded file:', fp);
-      const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
-      try {
-        deleteFile(cfp);
-      } catch (error) {
-        console.log('Failed to delete uploaded file:', error);
-      }
-    }
-    book.uploadedAt = null;
   }
 
   async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {

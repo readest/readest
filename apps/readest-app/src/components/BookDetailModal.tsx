@@ -155,12 +155,12 @@ const BookDetailModal = ({
                       <MdOutlineCloudOff className='fill-red-500' />
                     </button>
                   )}
-                  {book.uploadedAt && !book.downloadedAt && handleBookDownload && (
+                  {book.uploadedAt && handleBookDownload && (
                     <button onClick={handleRedownload}>
                       <MdOutlineCloudDownload className='fill-base-content' />
                     </button>
                   )}
-                  {book.downloadedAt && !book.uploadedAt && handleBookUpload && (
+                  {book.downloadedAt && handleBookUpload && (
                     <button onClick={handleReupload}>
                       <MdOutlineCloudUpload className='fill-base-content' />
                     </button>

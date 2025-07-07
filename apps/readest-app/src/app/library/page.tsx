@@ -508,7 +508,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleBookDelete = async (book: Book) => {
     try {
-      await appService?.deleteBook(book, !!book.uploadedAt);
+      await appService?.deleteBook(book, !!book.uploadedAt, true);
       await updateBook(envConfig, book);
       pushLibrary();
       eventDispatcher.dispatch('toast', {
@@ -532,7 +532,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleBookDeleteCloudStore = async (book: Book) => { 
     try {
-      await appService?.deleteBookCloudStore(book);
+      await appService?.deleteBook(book, !!book.uploadedAt, false);
       await updateBook(envConfig, book);
       pushLibrary();
       eventDispatcher.dispatch('toast', {

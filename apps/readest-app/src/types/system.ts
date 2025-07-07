@@ -57,8 +57,7 @@ export interface AppService {
     overwrite?: boolean,
     transient?: boolean,
   ): Promise<Book | null>;
-  deleteBook(book: Book, includingUploaded?: boolean): Promise<void>;
-  deleteBookCloudStore(book: Book): Promise<void>;
+  deleteBook(book: Book, includingUploaded?: boolean, includingLocal?: boolean): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
   downloadBook(book: Book, onlyCover?: boolean, onProgress?: ProgressHandler): Promise<void>;
   isBookAvailable(book: Book): Promise<boolean>;
