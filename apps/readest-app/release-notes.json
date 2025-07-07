@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.9.63": {
+      "date": "2025-07-07",
+      "notes": [
+        "Reader: Fixed links not working in some MOBI books",
+        "TTS: Fixed an issue where some text was skipped during reading",
+        "Library: You can now delete only the cloud backup of a book without removing the local copy",
+        "Performance: Fonts in the font list now load only when displayed for faster startup",
+        "Performance: Opening large MOBI books is now significantly faster",
+        "Layout: Fixed overlay scrollbar display in virtualized book lists",
+        "Layout: Improved grid cover image height in crop mode",
+        "Layout: Removed unsupported screen orientation lock option on iPad",
+        "Layout: System context menu no longer appears when selecting text on iPad",
+        "Translation: Added Thai (th-TH) language support"
+      ]
+    },
     "0.9.62": {
       "date": "2025-07-02",
       "notes": [
