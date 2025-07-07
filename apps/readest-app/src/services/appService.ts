@@ -298,6 +298,20 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
+  async deleteBookCloudStore(book: Book): Promise<void> {
+    const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
+    for (const fp of fps) {
+      console.log('Deleting uploaded file:', fp);
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
+      try {
+        deleteFile(cfp);
+      } catch (error) {
+        console.log('Failed to delete uploaded file:', error);
+      }
+    }
+    book.uploadedAt = null;
+  }
+
   async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {
     console.log('Uploading file:', lfp, 'to', cfp);
     const file = await this.fs.openFile(lfp, 'Books', cfp);

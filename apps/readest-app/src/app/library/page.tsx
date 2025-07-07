@@ -530,6 +530,31 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
+  const handleBookDeleteCloudStore = async (book: Book) => { 
+    try {
+      await appService?.deleteBookCloudStore(book);
+      await updateBook(envConfig, book);
+      pushLibrary();
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 2000,
+        message: _('Book\'s cloud store deleted: {{title}}', {
+          title: book.title,
+        }),
+      });
+      return true;
+    } catch (e){
+      console.error(e);
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to delete book\'s cloud store: {{title}}', {
+          title: book.title,
+        }),
+        type: 'error',
+      });
+      return false;
+    }
+  };
+
   const handleImportBooks = async () => {
     setIsSelectMode(false);
     console.log('Importing books...');
@@ -659,6 +684,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
           handleBookDelete={handleBookDelete}
+          handleBookDeleteCloudStore={handleBookDeleteCloudStore}
         />
       )}
       <AboutWindow />

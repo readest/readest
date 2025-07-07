@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdDelete, MdCloudDownload, MdCloudUpload } from 'react-icons/md';
+import { MdOutlineDelete, MdOutlineCloudDownload, MdOutlineCloudUpload, MdOutlineCloudOff } from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookDoc } from '@/libs/document';
@@ -28,6 +28,7 @@ interface BookDetailModalProps {
   handleBookDownload?: (book: Book) => void;
   handleBookUpload?: (book: Book) => void;
   handleBookDelete?: (book: Book) => void;
+  handleBookDeleteCloudStore?: (book: Book) => void;
 }
 
 const BookDetailModal = ({
@@ -37,10 +38,12 @@ const BookDetailModal = ({
   handleBookDownload,
   handleBookUpload,
   handleBookDelete,
+  handleBookDeleteCloudStore,
 }: BookDetailModalProps) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showDeleteCloudStoreAlert, setShowDeleteCloudStoreAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
   const { envConfig } = useEnv();
@@ -73,11 +76,23 @@ const BookDetailModal = ({
     setShowDeleteAlert(true);
   };
 
+  const handleDeleteCloudStore = () => {
+    setShowDeleteCloudStoreAlert(true);
+  };
+
   const confirmDelete = async () => {
     handleClose();
     setShowDeleteAlert(false);
     if (handleBookDelete) {
       handleBookDelete(book);
+    }
+  };
+
+  const confirmDeleteCloudStore = async () => {
+    handleClose();
+    setShowDeleteCloudStoreAlert(false);
+    if (handleBookDeleteCloudStore) {
+      handleBookDeleteCloudStore(book);
     }
   };
 
@@ -132,17 +147,22 @@ const BookDetailModal = ({
                 <div className='flex flex-wrap items-center gap-x-4'>
                   {handleBookDelete && (
                     <button onClick={handleDelete}>
-                      <MdDelete className='fill-red-500' />
+                      <MdOutlineDelete className='fill-red-500' />
                     </button>
                   )}
-                  {book.uploadedAt && handleBookDownload && (
+                  {book.uploadedAt && handleBookDeleteCloudStore && (
+                    <button onClick={handleDeleteCloudStore}>
+                      <MdOutlineCloudOff className='fill-red-500' />
+                    </button>
+                  )}
+                  {book.uploadedAt && !book.downloadedAt && handleBookDownload && (
                     <button onClick={handleRedownload}>
-                      <MdCloudDownload className='fill-base-content' />
+                      <MdOutlineCloudDownload className='fill-base-content' />
                     </button>
                   )}
-                  {book.downloadedAt && handleBookUpload && (
+                  {book.downloadedAt && !book.uploadedAt && handleBookUpload && (
                     <button onClick={handleReupload}>
-                      <MdCloudUpload className='fill-base-content' />
+                      <MdOutlineCloudUpload className='fill-base-content' />
                     </button>
                   )}
                 </div>
@@ -218,6 +238,23 @@ const BookDetailModal = ({
               setShowDeleteAlert(false);
             }}
             onConfirm={confirmDelete}
+          />
+        </div>
+      )}
+      {showDeleteCloudStoreAlert && (
+        <div
+          className={clsx(
+            'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
+            'pb-[calc(env(safe-area-inset-bottom)+16px)]',
+          )}
+        >
+          <Alert
+            title={_('Confirm Deletion')}
+            message={_('Are you sure to delete the selected book\'s cloud store?')}
+            onCancel={() => {
+              setShowDeleteAlert(false);
+            }}
+            onConfirm={confirmDeleteCloudStore}
           />
         </div>
       )}
