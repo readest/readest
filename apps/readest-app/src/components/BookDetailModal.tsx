@@ -1,6 +1,11 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdOutlineDelete, MdOutlineCloudDownload, MdOutlineCloudUpload, MdOutlineCloudOff } from 'react-icons/md';
+import {
+  MdOutlineDelete,
+  MdOutlineCloudDownload,
+  MdOutlineCloudUpload,
+  MdOutlineCloudOff,
+} from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookDoc } from '@/libs/document';
@@ -28,7 +33,7 @@ interface BookDetailModalProps {
   handleBookDownload?: (book: Book) => void;
   handleBookUpload?: (book: Book) => void;
   handleBookDelete?: (book: Book) => void;
-  handleBookDeleteCloudStore?: (book: Book) => void;
+  handleBookDeleteCloudBackup?: (book: Book) => void;
 }
 
 const BookDetailModal = ({
@@ -38,12 +43,12 @@ const BookDetailModal = ({
   handleBookDownload,
   handleBookUpload,
   handleBookDelete,
-  handleBookDeleteCloudStore,
+  handleBookDeleteCloudBackup,
 }: BookDetailModalProps) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [showDeleteCloudStoreAlert, setShowDeleteCloudStoreAlert] = useState(false);
+  const [showDeleteCloudBackupAlert, setShowDeleteCloudBackupAlert] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookDoc['metadata'] | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
   const { envConfig } = useEnv();
@@ -76,8 +81,8 @@ const BookDetailModal = ({
     setShowDeleteAlert(true);
   };
 
-  const handleDeleteCloudStore = () => {
-    setShowDeleteCloudStoreAlert(true);
+  const handleDeleteCloudBackup = () => {
+    setShowDeleteCloudBackupAlert(true);
   };
 
   const confirmDelete = async () => {
@@ -88,11 +93,11 @@ const BookDetailModal = ({
     }
   };
 
-  const confirmDeleteCloudStore = async () => {
+  const confirmDeleteCloudBackup = async () => {
     handleClose();
-    setShowDeleteCloudStoreAlert(false);
-    if (handleBookDeleteCloudStore) {
-      handleBookDeleteCloudStore(book);
+    setShowDeleteCloudBackupAlert(false);
+    if (handleBookDeleteCloudBackup) {
+      handleBookDeleteCloudBackup(book);
     }
   };
 
@@ -150,8 +155,8 @@ const BookDetailModal = ({
                       <MdOutlineDelete className='fill-red-500' />
                     </button>
                   )}
-                  {book.uploadedAt && handleBookDeleteCloudStore && (
-                    <button onClick={handleDeleteCloudStore}>
+                  {book.uploadedAt && handleBookDeleteCloudBackup && (
+                    <button onClick={handleDeleteCloudBackup}>
                       <MdOutlineCloudOff className='fill-red-500' />
                     </button>
                   )}
@@ -216,9 +221,12 @@ const BookDetailModal = ({
               </div>
               <div>
                 <span className='font-bold'>{_('Description:')}</span>
-                <p className='text-neutral-content text-sm prose prose-sm'
-                  dangerouslySetInnerHTML={{ __html: bookMeta.description || _('No description available') }}>
-                </p>
+                <p
+                  className='text-neutral-content prose prose-sm text-sm'
+                  dangerouslySetInnerHTML={{
+                    __html: bookMeta.description || _('No description available'),
+                  }}
+                ></p>
               </div>
             </div>
           </div>
@@ -241,7 +249,7 @@ const BookDetailModal = ({
           />
         </div>
       )}
-      {showDeleteCloudStoreAlert && (
+      {showDeleteCloudBackupAlert && (
         <div
           className={clsx(
             'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
@@ -250,11 +258,11 @@ const BookDetailModal = ({
         >
           <Alert
             title={_('Confirm Deletion')}
-            message={_('Are you sure to delete the selected book\'s cloud store?')}
+            message={_('Are you sure to delete the cloud backup of the selected book?')}
             onCancel={() => {
               setShowDeleteAlert(false);
             }}
-            onConfirm={confirmDeleteCloudStore}
+            onConfirm={confirmDeleteCloudBackup}
           />
         </div>
       )}

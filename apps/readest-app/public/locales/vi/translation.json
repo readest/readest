@@ -157,7 +157,7 @@
   "Create a Password": "Tạo mật khẩu",
   "Sign up": "Đăng ký",
   "Signing up...": "Đang đăng ký...",
-  "Don’t have an account? Sign up": "Chưa có tài khoản? Đăng ký",
+  "Don't have an account? Sign up": "Chưa có tài khoản? Đăng ký",
   "Check your email for the confirmation link": "Kiểm tra email của bạn để nhận liên kết xác nhận",
   "Signing in ...": "Đang đăng nhập ...",
   "Send a magic link email": "Gửi email liên kết ma thuật",
@@ -355,8 +355,6 @@
   "Upgrade to Plus or Pro": "Nâng cấp lên Plus hoặc Pro",
   "Current Plan": "Gói hiện tại",
   "Plan Limits": "Giới hạn gói",
-  "Available Plans": "Gói khả dụng",
-  "{{current}} of {{all}}": "{{current}} trên {{all}}",
   "Failed to manage subscription. Please try again later.": "Không thể quản lý đăng ký. Vui lòng thử lại sau.",
   "Processing your payment...": "Đang xử lý thanh toán...",
   "Please wait while we confirm your subscription.": "Vui lòng chờ trong khi chúng tôi xác nhận đăng ký của bạn.",
@@ -412,5 +410,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Dịch tới 500.000 ký tự hàng ngày với công cụ dịch chính xác nhất hiện có.",
   "10 GB Cloud Sync Storage": "Lưu Trữ Đồng Bộ Đám Mây 10 GB",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Lưu trữ và truy cập an toàn toàn bộ bộ sưu tập đọc với tới 2 GB lưu trữ đám mây.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Lưu trữ và truy cập an toàn toàn bộ bộ sưu tập đọc với tới 10 GB lưu trữ đám mây."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Lưu trữ và truy cập an toàn toàn bộ bộ sưu tập đọc với tới 10 GB lưu trữ đám mây.",
+  "Deleted cloud backup of the book: {{title}}": "Đã xóa bản sao lưu đám mây của sách: {{title}}",
+  "Failed to delete cloud backup of the book": "Không thể xóa bản sao lưu đám mây của sách.",
+  "Are you sure to delete the cloud backup of the selected book?": "Bạn có chắc chắn muốn xóa bản sao lưu đám mây của sách đã chọn không?"
 }

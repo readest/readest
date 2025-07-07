@@ -157,7 +157,7 @@
   "Create a Password": "創建密碼",
   "Sign up": "註冊",
   "Signing up...": "正在註冊...",
-  "Don’t have an account? Sign up": "沒有帳號？註冊",
+  "Don't have an account? Sign up": "沒有帳號？註冊",
   "Check your email for the confirmation link": "檢查您的電子郵件以獲取確認連結",
   "Signing in ...": "正在登入...",
   "Send a magic link email": "發送魔法連結郵件",
@@ -355,8 +355,6 @@
   "Upgrade to Plus or Pro": "升級到 Plus 或 Pro",
   "Current Plan": "當前方案",
   "Plan Limits": "方案限制",
-  "Available Plans": "可用方案",
-  "{{current}} of {{all}}": "{{current}} / {{all}}",
   "Failed to manage subscription. Please try again later.": "無法管理訂閱，請稍後再試。",
   "Processing your payment...": "正在處理付款...",
   "Please wait while we confirm your subscription.": "請稍候，我們正在確認您的訂閱。",
@@ -412,5 +410,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達50萬字元。",
   "10 GB Cloud Sync Storage": "10GB 雲端同步儲存",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "使用多達 2GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多達 10GB 的安全雲端儲存保存和存取您的整個閱讀收藏。"
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多達 10GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
+  "Deleted cloud backup of the book: {{title}}": "已刪除書籍的雲端備份：{{title}}",
+  "Failed to delete cloud backup of the book": "無法刪除書籍的雲端備份。",
+  "Are you sure to delete the cloud backup of the selected book?": "您確定要刪除所選書籍的雲端備份嗎？"
 }

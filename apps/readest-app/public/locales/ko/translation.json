@@ -157,7 +157,7 @@
   "Create a Password": "비밀번호 만들기",
   "Sign up": "회원가입",
   "Signing up...": "회원가입 중...",
-  "Don’t have an account? Sign up": "계정이 없습니까? 회원가입",
+  "Don't have an account? Sign up": "계정이 없습니까? 회원가입",
   "Check your email for the confirmation link": "확인 링크를 위해 이메일을 확인하세요",
   "Signing in ...": "로그인 중 ...",
   "Send a magic link email": "마법의 링크 이메일 보내기",
@@ -355,8 +355,6 @@
   "Upgrade to Plus or Pro": "Plus 또는 Pro로 업그레이드",
   "Current Plan": "현재 요금제",
   "Plan Limits": "요금제 한도",
-  "Available Plans": "이용 가능한 요금제",
-  "{{current}} of {{all}}": "{{all}} 중 {{current}}",
   "Failed to manage subscription. Please try again later.": "구독 관리에 실패했습니다. 나중에 다시 시도해주세요.",
   "Processing your payment...": "결제를 처리 중입니다...",
   "Please wait while we confirm your subscription.": "구독을 확인하는 중입니다. 잠시만 기다려주세요.",
@@ -412,5 +410,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "가장 정확한 번역 엔진으로 매일 최대 50만 자를 번역하세요.",
   "10 GB Cloud Sync Storage": "10GB 클라우드 동기화 저장소",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "최대 2GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "최대 10GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "최대 10GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
+  "Deleted cloud backup of the book: {{title}}": "책의 클라우드 백업이 삭제됨: {{title}}",
+  "Failed to delete cloud backup of the book": "책의 클라우드 백업을 삭제하지 못했습니다.",
+  "Are you sure to delete the cloud backup of the selected book?": "선택한 책의 클라우드 백업을 삭제하시겠습니까?"
 }

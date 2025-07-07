@@ -241,7 +241,7 @@ export default function AuthPage() {
           button_label: _('Sign up'),
           loading_button_label: _('Signing up...'),
           social_provider_text: _('Sign in with {{provider}}'),
-          link_text: _('Don’t have an account? Sign up'),
+          link_text: _("Don't have an account? Sign up"),
           confirmation_text: _('Check your email for the confirmation link'),
         },
         magic_link: {

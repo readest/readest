@@ -25,6 +25,7 @@ export const normalizeToFullLang = (langCode: string): string => {
     id: 'id-ID',
     ru: 'ru-RU',
     uk: 'uk-UA',
+    th: 'th-TH',
     zh: 'zh-Hans',
     'zh-cn': 'zh-Hans',
     'zh-tw': 'zh-Hant',

@@ -157,7 +157,7 @@
   "Create a Password": "Создать пароль",
   "Sign up": "Зарегистрироваться",
   "Signing up...": "Регистрация...",
-  "Don’t have an account? Sign up": "Нет аккаунта? Зарегистрируйтесь",
+  "Don't have an account? Sign up": "Нет аккаунта? Зарегистрируйтесь",
   "Check your email for the confirmation link": "Проверьте свою почту для подтверждающей ссылки",
   "Signing in ...": "Вход ...",
   "Send a magic link email": "Отправить магическую ссылку по электронной почте",
@@ -367,8 +367,6 @@
   "Upgrade to Plus or Pro": "Обновить до Plus или Pro",
   "Current Plan": "Текущий план",
   "Plan Limits": "Лимиты плана",
-  "Available Plans": "Доступные планы",
-  "{{current}} of {{all}}": "{{current}} из {{all}}",
   "Failed to manage subscription. Please try again later.": "Не удалось управлять подпиской. Пожалуйста, попробуйте позже.",
   "Processing your payment...": "Обработка платежа...",
   "Please wait while we confirm your subscription.": "Пожалуйста, подождите, пока мы подтверждаем вашу подписку.",
@@ -424,5 +422,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Переводите до 500 000 символов ежедневно с самым точным доступным движком перевода.",
   "10 GB Cloud Sync Storage": "10 ГБ Облачного Хранилища",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Безопасно храните и получайте доступ ко всей коллекции чтения с до 2 ГБ облачного хранилища.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Безопасно храните и получайте доступ ко всей коллекции чтения с до 10 ГБ облачного хранилища."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Безопасно храните и получайте доступ ко всей коллекции чтения с до 10 ГБ облачного хранилища.",
+  "Deleted cloud backup of the book: {{title}}": "Удалено облачное резервное копирование книги: {{title}}",
+  "Failed to delete cloud backup of the book": "Не удалось удалить облачное резервное копирование книги.",
+  "Are you sure to delete the cloud backup of the selected book?": "Вы уверены, что хотите удалить облачное резервное копирование выбранной книги?"
 }

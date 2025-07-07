@@ -157,7 +157,7 @@
   "Create a Password": "Buat kata sandi",
   "Sign up": "Daftar",
   "Signing up...": "Sedang mendaftar...",
-  "Don’t have an account? Sign up": "Belum punya akun? Daftar",
+  "Don't have an account? Sign up": "Belum punya akun? Daftar",
   "Check your email for the confirmation link": "Periksa email Anda untuk tautan konfirmasi",
   "Signing in ...": "Sedang masuk ...",
   "Send a magic link email": "Kirim email tautan ajaib",
@@ -355,8 +355,6 @@
   "Upgrade to Plus or Pro": "Tingkatkan ke Plus atau Pro",
   "Current Plan": "Paket Saat Ini",
   "Plan Limits": "Batas Paket",
-  "Available Plans": "Paket yang Tersedia",
-  "{{current}} of {{all}}": "{{current}} dari {{all}}",
   "Failed to manage subscription. Please try again later.": "Gagal mengelola langganan. Silakan coba lagi nanti.",
   "Processing your payment...": "Memproses pembayaran Anda...",
   "Please wait while we confirm your subscription.": "Mohon tunggu saat kami mengonfirmasi langganan Anda.",
@@ -412,5 +410,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Terjemahkan hingga 500.000 karakter harian dengan mesin terjemahan paling akurat.",
   "10 GB Cloud Sync Storage": "Penyimpanan Cloud Sync 10 GB",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 2 GB.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 10 GB."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 10 GB.",
+  "Deleted cloud backup of the book: {{title}}": "Cadangan cloud buku dihapus: {{title}}",
+  "Failed to delete cloud backup of the book": "Cadangan cloud buku gagal dihapus",
+  "Are you sure to delete the cloud backup of the selected book?": "Apakah Anda yakin ingin menghapus cadangan cloud dari buku yang dipilih?"
 }

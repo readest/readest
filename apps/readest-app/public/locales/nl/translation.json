@@ -273,7 +273,7 @@
   "Reveal in Finder": "Tonen in Finder",
   "Reveal in File Explorer": "Tonen in Verkenner",
   "Reveal in Folder": "Tonen in map",
-  "Don’t have an account? Sign up": "Nog geen account? Registreer u",
+  "Don't have an account? Sign up": "Nog geen account? Registreer u",
   "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "De hele wereld is een toneel,\nEn alle mannen en vrouwen slechts spelers;\nZij hebben hun uitgangen en hun entrees,\nEn één man speelt in zijn tijd vele rollen,\nZijn daden zijnde zeven leeftijden.\n\n— William Shakespeare",
   "Next Section": "Volgende sectie",
   "Previous Section": "Vorige sectie",
@@ -359,8 +359,6 @@
   "Upgrade to Plus or Pro": "Upgrade naar Plus of Pro",
   "Current Plan": "Huidig abonnement",
   "Plan Limits": "Abonnementslimieten",
-  "Available Plans": "Beschikbare abonnementen",
-  "{{current}} of {{all}}": "{{current}} van {{all}}",
   "Failed to manage subscription. Please try again later.": "Abonnement beheren is mislukt. Probeer het later opnieuw.",
   "Processing your payment...": "Je betaling wordt verwerkt...",
   "Please wait while we confirm your subscription.": "Even geduld terwijl we je abonnement bevestigen.",
@@ -416,5 +414,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Vertaal dagelijks tot 500.000 tekens met de meest nauwkeurige vertaalengine.",
   "10 GB Cloud Sync Storage": "10 GB Cloud Sync Opslag",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Sla je hele leesverzameling veilig op en benader deze met tot 2 GB cloudopslag.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Sla je hele leesverzameling veilig op en benader deze met tot 10 GB cloudopslag."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Sla je hele leesverzameling veilig op en benader deze met tot 10 GB cloudopslag.",
+  "Deleted cloud backup of the book: {{title}}": "Verwijderde cloudback-up van het boek: {{title}}",
+  "Failed to delete cloud backup of the book": "Verwijderen van cloudback-up van het boek is mislukt.",
+  "Are you sure to delete the cloud backup of the selected book?": "Weet je zeker dat je de cloudback-up van het geselecteerde boek wilt verwijderen?"
 }

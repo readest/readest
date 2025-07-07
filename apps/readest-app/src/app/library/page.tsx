@@ -525,7 +525,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
-  const handleBookDeleteCloudStore = async (book: Book) => { 
+  const handleBookDeleteCloudBackup = async (book: Book) => {
     try {
       await appService?.deleteBook(book, !!book.uploadedAt, false);
       await updateBook(envConfig, book);
@@ -533,18 +533,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       eventDispatcher.dispatch('toast', {
         type: 'info',
         timeout: 2000,
-        message: _('Book\'s cloud store deleted: {{title}}', {
+        message: _('Deleted cloud backup of the book: {{title}}', {
           title: book.title,
         }),
       });
       return true;
-    } catch (e){
+    } catch (e) {
       console.error(e);
       eventDispatcher.dispatch('toast', {
-        message: _('Failed to delete book\'s cloud store: {{title}}', {
+        type: 'error',
+        message: _('Failed to delete cloud backup of the book', {
           title: book.title,
         }),
-        type: 'error',
       });
       return false;
     }
@@ -679,7 +679,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
           handleBookDelete={handleBookDelete}
-          handleBookDeleteCloudStore={handleBookDeleteCloudStore}
+          handleBookDeleteCloudBackup={handleBookDeleteCloudBackup}
         />
       )}
       <AboutWindow />

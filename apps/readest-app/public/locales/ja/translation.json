@@ -157,7 +157,7 @@
   "Create a Password": "パスワードを作成",
   "Sign up": "サインアップ",
   "Signing up...": "サインアップ中...",
-  "Don’t have an account? Sign up": "アカウントをお持ちでないですか？ サインアップ",
+  "Don't have an account? Sign up": "アカウントをお持ちでないですか？ サインアップ",
   "Check your email for the confirmation link": "確認リンクのためにメールを確認してください",
   "Signing in ...": "サインイン中 ...",
   "Send a magic link email": "マジックリンクメールを送信",
@@ -355,8 +355,6 @@
   "Upgrade to Plus or Pro": "Plus または Pro にアップグレード",
   "Current Plan": "現在のプラン",
   "Plan Limits": "プランの上限",
-  "Available Plans": "利用可能なプラン",
-  "{{current}} of {{all}}": "{{all}} 中 {{current}}",
   "Failed to manage subscription. Please try again later.": "サブスクリプションの管理に失敗しました。後でもう一度お試しください。",
   "Processing your payment...": "お支払いを処理中...",
   "Please wait while we confirm your subscription.": "サブスクリプションを確認しています。しばらくお待ちください。",
@@ -412,5 +410,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "最も正確な翻訳エンジンで1日最大50万文字を翻訳。",
   "10 GB Cloud Sync Storage": "10GBクラウド同期ストレージ",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "最大2GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "最大10GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。"
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "最大10GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
+  "Deleted cloud backup of the book: {{title}}": "書籍のクラウドバックアップを削除しました：{{title}}",
+  "Failed to delete cloud backup of the book": "書籍のクラウドバックアップを削除できませんでした",
+  "Are you sure to delete the cloud backup of the selected book?": "選択した書籍のクラウドバックアップを削除してもよろしいですか？"
 }

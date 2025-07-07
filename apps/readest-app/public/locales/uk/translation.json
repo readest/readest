@@ -157,7 +157,7 @@
   "Create a Password": "Створити пароль",
   "Sign up": "Зареєструватися",
   "Signing up...": "Реєстрація...",
-  "Don’t have an account? Sign up": "Немає акаунту? Зареєструйтеся",
+  "Don't have an account? Sign up": "Немає акаунту? Зареєструйтеся",
   "Check your email for the confirmation link": "Перевірте свою електронну пошту для підтвердження посилання",
   "Signing in ...": "Увійти...",
   "Send a magic link email": "Відправити магічне посилання на електронну пошту",
@@ -367,8 +367,6 @@
   "Upgrade to Plus or Pro": "Перейти на Plus або Pro",
   "Current Plan": "Поточний план",
   "Plan Limits": "Обмеження плану",
-  "Available Plans": "Доступні плани",
-  "{{current}} of {{all}}": "{{current}} із {{all}}",
   "Failed to manage subscription. Please try again later.": "Не вдалося керувати підпискою. Спробуйте ще раз пізніше.",
   "Processing your payment...": "Обробка вашого платежу...",
   "Please wait while we confirm your subscription.": "Зачекайте, ми підтверджуємо вашу підписку.",
@@ -424,5 +422,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Перекладайте до 500 000 символів щодня з найточнішим доступним движком перекладу.",
   "10 GB Cloud Sync Storage": "10 ГБ Хмарного Сховища",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 2 ГБ хмарного сховища.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 10 ГБ хмарного сховища."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 10 ГБ хмарного сховища.",
+  "Deleted cloud backup of the book: {{title}}": "Видалено хмарну резервну копію книги: {{title}}",
+  "Failed to delete cloud backup of the book": "Не вдалося видалити хмарну резервну копію книги.",
+  "Are you sure to delete the cloud backup of the selected book?": "Ви впевнені, що хочете видалити хмарну резервну копію вибраної книги?"
 }

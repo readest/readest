@@ -157,7 +157,7 @@
   "Create a Password": "पासवर्ड बनाएं",
   "Sign up": "साइन अप करें",
   "Signing up...": "साइन अप हो रहा है...",
-  "Don’t have an account? Sign up": "कोई खाता नहीं है? साइन अप करें",
+  "Don't have an account? Sign up": "कोई खाता नहीं है? साइन अप करें",
   "Check your email for the confirmation link": "पुष्टि लिंक के लिए अपना ईमेल जांचें",
   "Signing in ...": "साइन इन हो रहा है ...",
   "Send a magic link email": "जादू लिंक ईमेल भेजें",
@@ -359,8 +359,6 @@
   "Upgrade to Plus or Pro": "Plus या Pro में अपग्रेड करें",
   "Current Plan": "वर्तमान योजना",
   "Plan Limits": "योजना की सीमाएँ",
-  "Available Plans": "उपलब्ध योजनाएँ",
-  "{{current}} of {{all}}": "{{all}} में से {{current}}",
   "Failed to manage subscription. Please try again later.": "सदस्यता प्रबंधित करने में विफल। कृपया बाद में पुनः प्रयास करें।",
   "Processing your payment...": "आपका भुगतान संसाधित हो रहा है...",
   "Please wait while we confirm your subscription.": "कृपया प्रतीक्षा करें, हम आपकी सदस्यता की पुष्टि कर रहे हैं।",
@@ -416,5 +414,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "सबसे सटीक अनुवाद इंजन के साथ दैनिक 5 लाख तक अक्षर अनुवाद करें।",
   "10 GB Cloud Sync Storage": "10 GB क्लाउड सिंक स्टोरेज",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "2 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "10 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।"
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "10 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
+  "Deleted cloud backup of the book: {{title}}": "पुस्तक का क्लाउड बैकअप हटाया गया: {{title}}",
+  "Failed to delete cloud backup of the book": "पुस्तक का क्लाउड बैकअप हटाने में विफल",
+  "Are you sure to delete the cloud backup of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक का क्लाउड बैकअप हटाना चाहते हैं?"
 }

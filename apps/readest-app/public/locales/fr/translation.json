@@ -157,7 +157,6 @@
   "Create a Password": "Créer un mot de passe",
   "Sign up": "S'inscrire",
   "Signing up...": "Inscription en cours...",
-  "Don’t have an account? Sign up": "Vous n'avez pas de compte ? Inscrivez-vous",
   "Check your email for the confirmation link": "Vérifiez votre e-mail pour le lien de confirmation",
   "Signing in ...": "Connexion en cours ...",
   "Send a magic link email": "Envoyer un e-mail avec un lien magique",
@@ -363,8 +362,6 @@
   "Upgrade to Plus or Pro": "Passer à Plus ou Pro",
   "Current Plan": "Abonnement actuel",
   "Plan Limits": "Limites de l’abonnement",
-  "Available Plans": "Abonnements disponibles",
-  "{{current}} of {{all}}": "{{current}} sur {{all}}",
   "Failed to manage subscription. Please try again later.": "Échec de la gestion de l’abonnement. Veuillez réessayer plus tard.",
   "Processing your payment...": "Traitement de votre paiement...",
   "Please wait while we confirm your subscription.": "Veuillez patienter pendant la confirmation de votre abonnement.",
@@ -420,5 +417,9 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Traduisez jusqu'à 500 000 caractères par jour avec le moteur de traduction le plus précis.",
   "10 GB Cloud Sync Storage": "10 GB de Stockage Cloud Sync",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Stockez et accédez en sécurité à votre collection de lecture avec jusqu'à 2 GB de stockage cloud.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Stockez et accédez en sécurité à votre collection de lecture avec jusqu'à 10 GB de stockage cloud."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Stockez et accédez en sécurité à votre collection de lecture avec jusqu'à 10 GB de stockage cloud.",
+  "Deleted cloud backup of the book: {{title}}": "Suppression de la sauvegarde cloud du livre : {{title}}",
+  "Failed to delete cloud backup of the book": "Échec de la suppression de la sauvegarde cloud du livre",
+  "Are you sure to delete the cloud backup of the selected book?": "Êtes-vous sûr de vouloir supprimer la sauvegarde cloud du livre sélectionné ?",
+  "Don't have an account? Sign up": "Vous n'avez pas de compte ? Inscrivez-vous"
 }

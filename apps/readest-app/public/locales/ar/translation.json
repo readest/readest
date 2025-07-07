@@ -156,7 +156,7 @@
   "Create a Password": "إنشاء كلمة مرور",
   "Sign up": "إنشاء حساب",
   "Signing up...": "يتم الآن إنشاء الحساب...",
-  "Don’t have an account? Sign up": "ليس لديك حساب؟ قم بالتسجيل",
+  "Don't have an account? Sign up": "ليس لديك حساب؟ قم بالتسجيل",
   "Check your email for the confirmation link": "تحقق من بريدك الإلكتروني للحصول على رابط التأكيد",
   "Signing in ...": "يتم الآن تسجيل الدخول ...",
   "Send a magic link email": "إرسال رابط سحري إلى بريدك الإلكتروني",
@@ -374,8 +374,6 @@
   "Upgrade to Plus or Pro": "الترقية إلى Plus أو Pro",
   "Current Plan": "الخطة الحالية",
   "Plan Limits": "حدود الخطة",
-  "Available Plans": "الخطط المتاحة",
-  "{{current}} of {{all}}": "{{current}} من {{all}}",
   "Failed to manage subscription. Please try again later.": "فشل في إدارة الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.",
   "Processing your payment...": "جارٍ معالجة الدفع...",
   "Please wait while we confirm your subscription.": "يرجى الانتظار بينما نقوم بتأكيد اشتراكك.",
@@ -432,5 +430,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "ترجم حتى 500 ألف حرف يوميًا بأدق محرك ترجمة متاح.",
   "10 GB Cloud Sync Storage": "10 جيجابايت تخزين سحابي",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "احفظ واوصل لمجموعة قراءتك كاملة بـ 2 جيجابايت تخزين سحابي آمن.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "احفظ واوصل لمجموعة قراءتك كاملة بـ 10 جيجابايت تخزين سحابي آمن."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "احفظ واوصل لمجموعة قراءتك كاملة بـ 10 جيجابايت تخزين سحابي آمن.",
+  "Deleted cloud backup of the book: {{title}}": "تم حذف النسخة الاحتياطية السحابية للكتاب: {{title}}",
+  "Failed to delete cloud backup of the book": "فشل في حذف النسخة الاحتياطية السحابية للكتاب",
+  "Are you sure to delete the cloud backup of the selected book?": "هل أنت متأكد من حذف النسخة الاحتياطية السحابية للكتاب المحدد؟"
 }

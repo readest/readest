@@ -157,7 +157,7 @@
   "Create a Password": "Şifre oluştur",
   "Sign up": "Kaydol",
   "Signing up...": "Kaydolunuyor...",
-  "Don’t have an account? Sign up": "Hesabınız yok mu? Kaydolun",
+  "Don't have an account? Sign up": "Hesabınız yok mu? Kaydolun",
   "Check your email for the confirmation link": "Onay bağlantısı için e-posta adresinizi kontrol edin",
   "Signing in ...": "Giriş yapılıyor...",
   "Send a magic link email": "Sihirli bağlantı e-postası gönder",
@@ -359,8 +359,6 @@
   "Upgrade to Plus or Pro": "Plus veya Pro'ya yükselt",
   "Current Plan": "Mevcut Plan",
   "Plan Limits": "Plan Limitleri",
-  "Available Plans": "Mevcut Planlar",
-  "{{current}} of {{all}}": "{{all}} üzerinden {{current}}",
   "Failed to manage subscription. Please try again later.": "Abonelik yönetimi başarısız oldu. Lütfen daha sonra tekrar deneyin.",
   "Processing your payment...": "Ödemeniz işleniyor...",
   "Please wait while we confirm your subscription.": "Aboneliğinizi onaylıyoruz, lütfen bekleyin.",
@@ -416,5 +414,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Mevcut en doğru çeviri motoruyla günlük 500.000 karaktere kadar çeviri yapın.",
   "10 GB Cloud Sync Storage": "10 GB Bulut Senkronizasyon Depolama",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 2 GB'a kadar güvenli bulut depolamayla saklayın ve erişin.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 10 GB'a kadar güvenli bulut depolamayla saklayın ve erişin."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 10 GB'a kadar güvenli bulut depolamayla saklayın ve erişin.",
+  "Deleted cloud backup of the book: {{title}}": "Kitabın bulut yedeği silindi: {{title}}",
+  "Failed to delete cloud backup of the book": "Kitabın bulut yedeğini silme işlemi başarısız oldu.",
+  "Are you sure to delete the cloud backup of the selected book?": "Seçilen kitabın bulut yedeğini silmek istediğinize emin misiniz?"
 }

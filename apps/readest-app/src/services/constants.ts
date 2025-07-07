@@ -646,6 +646,7 @@ export const TRANSLATED_LANGS = {
   hi: 'हिन्दी',
   id: 'Indonesia',
   vi: 'Tiếng Việt',
+  th: 'ภาษาไทย',
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
 };

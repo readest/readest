@@ -157,7 +157,7 @@
   "Create a Password": "Crea una password",
   "Sign up": "Registrati",
   "Signing up...": "Registrazione in corso...",
-  "Don’t have an account? Sign up": "Non hai un account? Registrati",
+  "Don't have an account? Sign up": "Non hai un account? Registrati",
   "Check your email for the confirmation link": "Controlla la tua email per il link di conferma",
   "Signing in ...": "Accesso in corso ...",
   "Send a magic link email": "Invia un'email con link magico",
@@ -363,8 +363,6 @@
   "Upgrade to Plus or Pro": "Aggiorna a Plus o Pro",
   "Current Plan": "Piano Attuale",
   "Plan Limits": "Limiti del Piano",
-  "Available Plans": "Piani Disponibili",
-  "{{current}} of {{all}}": "{{current}} di {{all}}",
   "Failed to manage subscription. Please try again later.": "Impossibile gestire l'abbonamento. Riprova più tardi.",
   "Processing your payment...": "Elaborazione del pagamento...",
   "Please wait while we confirm your subscription.": "Attendi mentre confermiamo il tuo abbonamento.",
@@ -420,5 +418,8 @@
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Traduci fino a 500.000 caratteri al giorno con il motore di traduzione più accurato.",
   "10 GB Cloud Sync Storage": "Archiviazione Cloud Sync da 10 GB",
   "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Archivia e accedi in sicurezza alla tua intera collezione di lettura con fino a 2 GB di storage cloud.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Archivia e accedi in sicurezza alla tua intera collezione di lettura con fino a 10 GB di storage cloud."
+  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Archivia e accedi in sicurezza alla tua intera collezione di lettura con fino a 10 GB di storage cloud.",
+  "Deleted cloud backup of the book: {{title}}": "Backup cloud del libro eliminato: {{title}}",
+  "Failed to delete cloud backup of the book": "Impossibile eliminare il backup cloud del libro",
+  "Are you sure to delete the cloud backup of the selected book?": "Sei sicuro di voler eliminare il backup cloud del libro selezionato?"
 }
