@@ -115,26 +115,26 @@ const Popup = ({
             trianglePosition?.dir === 'right'
               ? 'none'
               : trianglePosition?.dir === 'left'
-                ? `6px solid`
-                : '6px solid transparent',
+                ? `7px solid`
+                : '7px solid transparent',
           borderRight:
             trianglePosition?.dir === 'left'
               ? 'none'
               : trianglePosition?.dir === 'right'
-                ? `6px solid`
-                : '6px solid transparent',
+                ? `7px solid`
+                : '7px solid transparent',
           borderTop:
             trianglePosition?.dir === 'down'
               ? 'none'
               : trianglePosition?.dir === 'up'
-                ? `6px solid`
-                : '6px solid transparent',
+                ? `7px solid`
+                : '7px solid transparent',
           borderBottom:
             trianglePosition?.dir === 'up'
               ? 'none'
               : trianglePosition?.dir === 'down'
-                ? `6px solid`
-                : '6px solid transparent',
+                ? `7px solid`
+                : '7px solid transparent',
           transform:
             trianglePosition?.dir === 'left' || trianglePosition?.dir === 'right'
               ? 'translateY(-50%)'

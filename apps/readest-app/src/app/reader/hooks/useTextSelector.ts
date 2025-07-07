@@ -63,14 +63,14 @@ export const useTextSelector = (
         if (!isTextSelected.current) return;
         sel.addRange(range);
         setSelection({ key: bookKey, text: await getAnnotationText(range), range, index });
-      }, 40);
-    }, 0);
+      }, 30);
+    }, 30);
   };
   const handleSelectionchange = (doc: Document, index: number) => {
     // Available on iOS, Android and Desktop, fired when the selection is changed
     // Ideally the popup only shows when the selection is done,
     const sel = doc.getSelection() as Selection;
-    if (osPlatform === 'ios') return;
+    if (osPlatform === 'ios' || appService?.isIOSApp) return;
     if (!isValidSelection(sel)) {
       if (!isUpToPopup.current) {
         handleDismissPopup();
@@ -91,12 +91,30 @@ export const useTextSelector = (
     }
     isUpToPopup.current = true;
   };
-  const handlePointerup = (doc: Document, index: number) => {
+  const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
+    if (selection.rangeCount === 0) return false;
+    const range = selection.getRangeAt(0);
+    const rects = range.getClientRects();
+    const padding = 80;
+    for (let i = 0; i < rects.length; i++) {
+      const rect = rects[i]!;
+      if (
+        ev.clientX >= rect.left - padding &&
+        ev.clientX <= rect.right + padding &&
+        ev.clientY >= rect.top - padding &&
+        ev.clientY <= rect.bottom + padding
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const handlePointerup = (doc: Document, index: number, ev: PointerEvent) => {
     // Available on iOS and Desktop, fired at touchend or mouseup
     // Note that on Android, pointerup event is fired after an additional touch event
     const sel = doc.getSelection() as Selection;
-    if (isValidSelection(sel)) {
-      if (osPlatform === 'ios') {
+    if (isValidSelection(sel) && isPointerInsideSelection(sel, ev)) {
+      if (osPlatform === 'ios' || appService?.isIOSApp) {
         makeSelectionOnIOS(sel, index);
       } else {
         makeSelection(sel, index, true);
@@ -134,7 +152,7 @@ export const useTextSelector = (
         }
         isPopuped.current = showPopup;
       },
-      ['android', 'ios'].includes(osPlatform) ? 0 : 500,
+      ['android', 'ios'].includes(osPlatform) || appService?.isIOSApp ? 0 : 500,
     );
   };
 
