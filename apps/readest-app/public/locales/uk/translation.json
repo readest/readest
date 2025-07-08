@@ -425,5 +425,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 10 ГБ хмарного сховища.",
   "Deleted cloud backup of the book: {{title}}": "Видалено хмарну резервну копію книги: {{title}}",
   "Failed to delete cloud backup of the book": "Не вдалося видалити хмарну резервну копію книги.",
-  "Are you sure to delete the cloud backup of the selected book?": "Ви впевнені, що хочете видалити хмарну резервну копію вибраної книги?"
+  "Are you sure to delete the cloud backup of the selected book?": "Ви впевнені, що хочете видалити хмарну резервну копію вибраної книги?",
+  "What's New in Readest": "Що нового в Readest"
 }

@@ -413,5 +413,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "최대 10GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
   "Deleted cloud backup of the book: {{title}}": "책의 클라우드 백업이 삭제됨: {{title}}",
   "Failed to delete cloud backup of the book": "책의 클라우드 백업을 삭제하지 못했습니다.",
-  "Are you sure to delete the cloud backup of the selected book?": "선택한 책의 클라우드 백업을 삭제하시겠습니까?"
+  "Are you sure to delete the cloud backup of the selected book?": "선택한 책의 클라우드 백업을 삭제하시겠습니까?",
+  "What's New in Readest": "Readest의 새로운 기능"
 }

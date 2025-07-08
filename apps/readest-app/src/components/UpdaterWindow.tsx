@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { fetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { isTauriAppPlatform } from '@/services/environment';
 import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
@@ -14,8 +15,10 @@ import { getAppVersion } from '@/utils/version';
 import { tauriDownload } from '@/utils/transfer';
 import { installPackage } from '@/utils/bridge';
 import { getLocale } from '@/utils/misc';
+import { setLastShownReleaseNotesVersion } from '@/helpers/updater';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
 import Dialog from '@/components/Dialog';
+import Link from './Link';
 
 interface ReleaseNotes {
   releases: Record<
@@ -58,7 +61,15 @@ interface GenericUpdate {
   downloadAndInstall?(onEvent?: (progress: DownloadEvent) => void): Promise<void>;
 }
 
-export const UpdaterContent = ({ version }: { version?: string }) => {
+export const UpdaterContent = ({
+  latestVersion,
+  lastVersion,
+  checkUpdate = true,
+}: {
+  latestVersion?: string;
+  lastVersion?: string;
+  checkUpdate?: boolean;
+}) => {
   const _ = useTranslation();
   const [targetLang, setTargetLang] = useState('EN');
   const { translate } = useTranslator({
@@ -69,15 +80,19 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   const { appService } = useEnv();
   const searchParams = useSearchParams();
   const currentVersion = getAppVersion();
-  const resolvedVersion = version ?? searchParams?.get('version') ?? '';
+  const [newVersion, setNewVersion] = useState(
+    latestVersion ?? searchParams?.get('latestVersion') ?? '',
+  );
+  const [oldVersion, setOldVersion] = useState(
+    lastVersion ?? searchParams?.get('lastVersion') ?? '',
+  );
   const [update, setUpdate] = useState<GenericUpdate | Update | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const [newVersion, setNewVersion] = useState(resolvedVersion);
   const [changelogs, setChangelogs] = useState<Changelog[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
   const [contentLength, setContentLength] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setTargetLang(getLocale());
@@ -91,6 +106,7 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
       }
     };
     const checkAndroidUpdate = async () => {
+      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
       const response = await fetch(READEST_UPDATER_FILE);
       const data = await response.json();
       if (semver.gt(data.version, currentVersion)) {
@@ -156,30 +172,46 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
         checkAndroidUpdate();
       }
     };
-    checkForUpdates();
+    if (appService?.hasUpdater && checkUpdate) {
+      checkForUpdates();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [appService?.hasUpdater]);
 
   useEffect(() => {
-    const fetchChangelogs = async (
-      fromVersion: string,
-      toVersion: string,
-    ): Promise<Changelog[]> => {
+    if (latestVersion) {
+      setNewVersion(latestVersion);
+    }
+    if (lastVersion) {
+      setOldVersion(lastVersion);
+    }
+    if (!checkUpdate) {
+      setUpdate({
+        currentVersion,
+        version: latestVersion,
+        date: '',
+        body: '',
+      } as GenericUpdate);
+    }
+  }, [latestVersion, lastVersion, checkUpdate]);
+
+  useEffect(() => {
+    const fetchChangelogs = async (fromVersion: string): Promise<Changelog[]> => {
       try {
+        const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
         const res = await fetch(READEST_CHANGELOG_FILE);
         const data: ReleaseNotes = await res.json();
         const releases = data.releases;
 
-        const entries = Object.entries(releases)
-          .filter(([ver]) => semver.gt(ver, fromVersion) && semver.lte(ver, toVersion))
-          .sort(([a], [b]) => semver.rcompare(a, b))
-          .map(([version, info]) => ({
-            version,
-            date: new Date(info.date).toLocaleDateString(),
-            notes: info.notes,
-          }));
-
-        return entries;
+        let entries = Object.entries(releases)
+          .filter(([ver]) => semver.gt(ver, fromVersion))
+          .sort(([a], [b]) => semver.rcompare(a, b));
+        entries = entries.length ? entries : Object.entries(releases).slice(0, 3);
+        return entries.map(([version, info]) => ({
+          version,
+          date: new Date(info.date).toLocaleDateString(),
+          notes: info.notes,
+        }));
       } catch (error) {
         console.error('Failed to fetch changelog:', error);
         return [];
@@ -193,25 +225,28 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
     };
     const updateChangelogs = async (update: GenericUpdate) => {
       setNewVersion(update.version);
-      let changelogs = await fetchChangelogs(currentVersion, update.version);
-      if (changelogs.length === 0) {
+      let changelogs = await fetchChangelogs(oldVersion || currentVersion);
+      if (changelogs.length === 0 && update.date && update.body) {
         changelogs = [
           {
             version: update.version,
-            date: new Date(update.date!).toLocaleDateString(),
+            date: new Date(update.date).toLocaleDateString(),
             notes: parseNumberedList(update.body ?? ''),
           },
         ];
       }
-      for (const entry of changelogs) {
-        try {
-          entry.notes = await translate(entry.notes, { useCache: true });
-        } catch (error) {
-          console.log('Failed to translate changelog:', error);
+      if (!targetLang.toLowerCase().startsWith('en')) {
+        for (const entry of changelogs) {
+          try {
+            entry.notes = await translate(entry.notes, { useCache: true });
+          } catch (error) {
+            console.log('Failed to translate changelog:', error);
+          }
         }
       }
 
       setChangelogs(changelogs);
+      setLastShownReleaseNotesVersion(newVersion);
     };
     if (update) {
       updateChangelogs(update);
@@ -272,54 +307,94 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
             <Image src='/icon.png' alt='Logo' className='h-20 w-20' width={64} height={64} />
           </div>
 
-          <div className='text-base-content flex-grow text-sm'>
-            <h2 className='mb-4 text-center font-bold sm:text-start'>
-              {_('A new version of Readest is available!')}
-            </h2>
-            <p className='mb-2'>
-              {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {
-                newVersion,
-                currentVersion,
-              })}
-            </p>
-            <p className='mb-2'>{_('Download and install now?')}</p>
+          {checkUpdate ? (
+            <div className='text-base-content flex-grow text-sm'>
+              <h2 className='mb-4 text-center font-bold sm:text-start'>
+                {_('A new version of Readest is available!')}
+              </h2>
+              <p className='mb-2'>
+                {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {
+                  newVersion,
+                  currentVersion,
+                })}
+              </p>
+              <p className='mb-2'>{_('Download and install now?')}</p>
 
-            <div className='flex w-full flex-row items-center justify-end gap-4'>
-              {progress !== null && (
-                <div className='flex flex-grow flex-col'>
-                  <progress
-                    className='progress my-1 h-4 w-full'
-                    value={progress}
-                    max='100'
-                  ></progress>
-                  <p className='text-base-content/75 flex items-center justify-center text-sm'>
-                    {progress < 100
-                      ? _('Downloading {{downloaded}} of {{contentLength}}', {
-                          downloaded: downloaded
-                            ? `${Math.floor(downloaded / 1024 / 1024)} MB`
-                            : '0 MB',
-                          contentLength: contentLength
-                            ? `${Math.floor(contentLength / 1024 / 1024)} MB`
-                            : '0 MB',
-                        })
-                      : _('Download finished')}
-                  </p>
+              <div className='flex w-full flex-row items-center justify-end gap-4'>
+                {progress !== null && (
+                  <div className='flex flex-grow flex-col'>
+                    <progress
+                      className='progress my-1 h-4 w-full'
+                      value={progress}
+                      max='100'
+                    ></progress>
+                    <p className='text-base-content/75 flex items-center justify-center text-sm'>
+                      {progress < 100
+                        ? _('Downloading {{downloaded}} of {{contentLength}}', {
+                            downloaded: downloaded
+                              ? `${Math.floor(downloaded / 1024 / 1024)} MB`
+                              : '0 MB',
+                            contentLength: contentLength
+                              ? `${Math.floor(contentLength / 1024 / 1024)} MB`
+                              : '0 MB',
+                          })
+                        : _('Download finished')}
+                    </p>
+                  </div>
+                )}
+
+                <div className='card-actions'>
+                  <button
+                    className={clsx(
+                      'btn btn-warning text-base-100 px-6 font-bold',
+                      (!update || isDownloading) && 'btn-disabled',
+                    )}
+                    onClick={handleDownloadInstall}
+                  >
+                    {_('DOWNLOAD & INSTALL')}
+                  </button>
                 </div>
-              )}
-
-              <div className='card-actions'>
-                <button
-                  className={clsx(
-                    'btn btn-warning text-base-100 px-6 font-bold',
-                    (!update || isDownloading) && 'btn-disabled',
-                  )}
-                  onClick={handleDownloadInstall}
-                >
-                  {_('DOWNLOAD & INSTALL')}
-                </button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className='text-base-content flex h-full flex-grow flex-col text-sm sm:flex-row'>
+              <div className='flex flex-col items-center justify-center gap-4 p-1 sm:items-start sm:gap-2'>
+                <h2 className='text-center font-bold sm:text-start'>
+                  {_('Version {{version}}', { version: currentVersion })}
+                </h2>
+
+                {changelogs.length > 0 && semver.gt(changelogs[0]!.version, currentVersion) ? (
+                  <div className='flex gap-2'>
+                    {(appService?.isIOSApp || appService?.isMacOSApp) && (
+                      <Link
+                        href='https://apps.apple.com/app/id6738622779'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='btn btn-primary btn-sm'
+                      >
+                        {_('Check Update')}
+                      </Link>
+                    )}
+
+                    {appService?.isAndroidApp && (
+                      <Link
+                        href='https://play.google.com/store/apps/details?id=com.bilingify.readest'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='btn btn-primary btn-sm'
+                      >
+                        {_('Check Update')}
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className='flex'>
+                    <p className='text-sm font-bold'>{_('Already the latest version')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <div className='text-base-content text-sm'>
           <h3 className='mb-2 font-bold'>{_('Changelog:')}</h3>
@@ -351,11 +426,16 @@ export const UpdaterContent = ({ version }: { version?: string }) => {
   );
 };
 
-export const setUpdaterWindowVisible = (visible: boolean, newVersion?: string) => {
+export const setUpdaterWindowVisible = (
+  visible: boolean,
+  latestVersion: string,
+  lastVersion?: string,
+  checkUpdate = true,
+) => {
   const dialog = document.getElementById('updater_window');
   if (dialog) {
     const event = new CustomEvent('setDialogVisibility', {
-      detail: { visible, newVersion },
+      detail: { visible, latestVersion, lastVersion, checkUpdate },
     });
     dialog.dispatchEvent(event);
   }
@@ -363,15 +443,21 @@ export const setUpdaterWindowVisible = (visible: boolean, newVersion?: string) =
 
 export const UpdaterWindow = () => {
   const _ = useTranslation();
-  const [newVersion, setNewVersion] = useState('');
+  const [latestVersion, setLatestVersion] = useState('');
+  const [lastVersion, setLastVersion] = useState('');
+  const [checkUpdate, setCheckUpdate] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
-      const { visible, newVersion } = event.detail;
+      const { visible, latestVersion, lastVersion, checkUpdate } = event.detail;
       setIsOpen(visible);
-      if (newVersion) {
-        setNewVersion(newVersion);
+      setCheckUpdate(checkUpdate);
+      if (latestVersion) {
+        setLatestVersion(latestVersion);
+      }
+      if (lastVersion) {
+        setLastVersion(lastVersion);
       }
     };
 
@@ -391,11 +477,17 @@ export const UpdaterWindow = () => {
     <Dialog
       id='updater_window'
       isOpen={isOpen}
-      title={_('Software Update')}
+      title={checkUpdate ? _('Software Update') : _("What's New in Readest")}
       onClose={() => setIsOpen(false)}
-      boxClassName='sm:!w-[80%] sm:h-auto'
+      boxClassName='sm:!w-[75%] sm:h-auto sm:!max-h-[85vh] sm:!max-w-2xl'
     >
-      <UpdaterContent version={newVersion ?? undefined} />
+      {isOpen && (
+        <UpdaterContent
+          latestVersion={latestVersion ?? undefined}
+          lastVersion={lastVersion ?? undefined}
+          checkUpdate={checkUpdate}
+        />
+      )}
     </Dialog>
   );
 };

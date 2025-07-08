@@ -417,5 +417,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 10 GB'a kadar güvenli bulut depolamayla saklayın ve erişin.",
   "Deleted cloud backup of the book: {{title}}": "Kitabın bulut yedeği silindi: {{title}}",
   "Failed to delete cloud backup of the book": "Kitabın bulut yedeğini silme işlemi başarısız oldu.",
-  "Are you sure to delete the cloud backup of the selected book?": "Seçilen kitabın bulut yedeğini silmek istediğinize emin misiniz?"
+  "Are you sure to delete the cloud backup of the selected book?": "Seçilen kitabın bulut yedeğini silmek istediğinize emin misiniz?",
+  "What's New in Readest": "Readest'te Neler Yeni"
 }

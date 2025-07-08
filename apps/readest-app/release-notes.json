@@ -8,7 +8,7 @@
         "Library: You can now delete only the cloud backup of a book without removing the local copy",
         "Performance: Fonts in the font list now load only when displayed for faster startup",
         "Performance: Opening large MOBI books is now significantly faster",
-        "Layout: Fixed overlay scrollbar display in virtualized book lists",
+        "Layout: Fixed overlay scrollbar display in longer TOC items list",
         "Layout: Improved grid cover image height in crop mode",
         "Layout: Removed unsupported screen orientation lock option on iPad",
         "Layout: System context menu no longer appears when selecting text on iPad",

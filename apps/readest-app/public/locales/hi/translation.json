@@ -417,5 +417,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "10 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
   "Deleted cloud backup of the book: {{title}}": "पुस्तक का क्लाउड बैकअप हटाया गया: {{title}}",
   "Failed to delete cloud backup of the book": "पुस्तक का क्लाउड बैकअप हटाने में विफल",
-  "Are you sure to delete the cloud backup of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक का क्लाउड बैकअप हटाना चाहते हैं?"
+  "Are you sure to delete the cloud backup of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक का क्लाउड बैकअप हटाना चाहते हैं?",
+  "What's New in Readest": "Readest में नया क्या है"
 }

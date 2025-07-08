@@ -413,5 +413,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 10 GB.",
   "Deleted cloud backup of the book: {{title}}": "Cadangan cloud buku dihapus: {{title}}",
   "Failed to delete cloud backup of the book": "Cadangan cloud buku gagal dihapus",
-  "Are you sure to delete the cloud backup of the selected book?": "Apakah Anda yakin ingin menghapus cadangan cloud dari buku yang dipilih?"
+  "Are you sure to delete the cloud backup of the selected book?": "Apakah Anda yakin ingin menghapus cadangan cloud dari buku yang dipilih?",
+  "What's New in Readest": "Yang Baru di Readest"
 }

@@ -433,5 +433,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "احفظ واوصل لمجموعة قراءتك كاملة بـ 10 جيجابايت تخزين سحابي آمن.",
   "Deleted cloud backup of the book: {{title}}": "تم حذف النسخة الاحتياطية السحابية للكتاب: {{title}}",
   "Failed to delete cloud backup of the book": "فشل في حذف النسخة الاحتياطية السحابية للكتاب",
-  "Are you sure to delete the cloud backup of the selected book?": "هل أنت متأكد من حذف النسخة الاحتياطية السحابية للكتاب المحدد؟"
+  "Are you sure to delete the cloud backup of the selected book?": "هل أنت متأكد من حذف النسخة الاحتياطية السحابية للكتاب المحدد؟",
+  "What's New in Readest": "ما الجديد في Readest"
 }

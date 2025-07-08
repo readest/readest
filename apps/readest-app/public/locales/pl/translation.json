@@ -425,5 +425,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 10 GB pamięci w chmurze.",
   "Deleted cloud backup of the book: {{title}}": "Usunięto kopię zapasową książki w chmurze: {{title}}",
   "Failed to delete cloud backup of the book": "Nie udało się usunąć kopii zapasowej książki w chmurze.",
-  "Are you sure to delete the cloud backup of the selected book?": "Czy na pewno chcesz usunąć kopię zapasową chmury wybranej książki?"
+  "Are you sure to delete the cloud backup of the selected book?": "Czy na pewno chcesz usunąć kopię zapasową chmury wybranej książki?",
+  "What's New in Readest": "Co nowego w Readest"
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { checkForAppUpdates } from '@/helpers/updater';
+import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewVersion } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
 import Dialog from './Dialog';
@@ -50,14 +50,23 @@ export const AboutWindow = () => {
   const handleCheckUpdate = async () => {
     setUpdateStatus('checking');
     try {
-      const update = await checkForAppUpdates(_, false);
-      if (update) {
-        setIsOpen(false);
+      const hasUpdate = await checkForAppUpdates(_, false);
+      if (hasUpdate) {
+        handleClose();
       } else {
         setUpdateStatus('updated');
       }
     } catch (error) {
       console.info('Error checking for updates:', error);
+      setUpdateStatus('error');
+    }
+  };
+
+  const handleShowRecentUpdates = async () => {
+    const hasNotes = await checkAppReleaseNotes(false);
+    if (hasNotes) {
+      handleClose();
+    } else {
       setUpdateStatus('error');
     }
   };
@@ -87,8 +96,11 @@ export const AboutWindow = () => {
             </p>
           </div>
           <div className='h-5'>
-            {appService?.hasUpdater && !updateStatus && (
-              <span className='badge badge-primary cursor-pointer p-1' onClick={handleCheckUpdate}>
+            {!updateStatus && (
+              <span
+                className='badge badge-primary cursor-pointer p-2'
+                onClick={appService?.hasUpdater ? handleCheckUpdate : handleShowRecentUpdates}
+              >
                 {_('Check Update')}
               </span>
             )}

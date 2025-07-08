@@ -16,7 +16,7 @@ import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform } from '@/services/environment';
-import { checkForAppUpdates } from '@/helpers/updater';
+import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -118,6 +118,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const doCheckAppUpdates = async () => {
       if (appService?.hasUpdater && settings.autoCheckUpdates) {
         await checkForAppUpdates(_);
+      } else if (appService?.hasUpdater === false) {
+        checkAppReleaseNotes();
       }
     };
     if (settings.alwaysOnTop) {
@@ -125,7 +127,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
     doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings]);
+  }, [appService?.hasUpdater, settings]);
 
   useEffect(() => {
     if (appService?.isMobileApp) {
@@ -683,7 +685,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         />
       )}
       <AboutWindow />
-      {appService?.isAndroidApp && <UpdaterWindow />}
+      <UpdaterWindow />
       <Toast />
     </div>
   );

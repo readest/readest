@@ -413,5 +413,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多达 10GB 的安全云存储保存和访问您的整个阅读收藏。",
   "Deleted cloud backup of the book: {{title}}": "已删除书籍云备份：{{title}}",
   "Failed to delete cloud backup of the book": "无法删除书籍云备份。",
-  "Are you sure to delete the cloud backup of the selected book?": "您确定要删除所选书籍的云备份吗？"
+  "Are you sure to delete the cloud backup of the selected book?": "您确定要删除所选书籍的云备份吗？",
+  "What's New in Readest": "Readest 更新功能"
 }

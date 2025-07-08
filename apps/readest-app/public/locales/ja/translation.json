@@ -413,5 +413,6 @@
   "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "最大10GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
   "Deleted cloud backup of the book: {{title}}": "書籍のクラウドバックアップを削除しました：{{title}}",
   "Failed to delete cloud backup of the book": "書籍のクラウドバックアップを削除できませんでした",
-  "Are you sure to delete the cloud backup of the selected book?": "選択した書籍のクラウドバックアップを削除してもよろしいですか？"
+  "Are you sure to delete the cloud backup of the selected book?": "選択した書籍のクラウドバックアップを削除してもよろしいですか？",
+  "What's New in Readest": "Readestの新機能"
 }
