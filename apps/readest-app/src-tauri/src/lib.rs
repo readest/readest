@@ -264,27 +264,12 @@ pub fn run() {
                 .title("");
 
             #[cfg(all(not(target_os = "macos"), desktop))]
-            let win_builder = {
-                let mut win_builder = win_builder
-                    .decorations(false)
-                    .transparent(true)
-                    .visible(false)
-                    .title("Readest");
-
-                if cfg!(target_os = "windows") {
-                    if tauri_plugin_os::version()
-                        <= tauri_plugin_os::Version::from_string("10.0.19045")
-                    {
-                        win_builder = win_builder.shadow(false);
-                    } else {
-                        win_builder = win_builder.shadow(true);
-                    }
-                } else {
-                    win_builder = win_builder.shadow(true);
-                }
-
-                win_builder
-            };
+            let win_builder = win_builder
+                .decorations(false)
+                .transparent(true)
+                .visible(false)
+                .shadow(true)
+                .title("Readest");
 
             win_builder.build().unwrap();
             // let win = win_builder.build().unwrap();
