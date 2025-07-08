@@ -38,3 +38,11 @@ echo "✅ Updated $PROPERTIES_FILE"
 
 echo "🚀 Running: pnpm tauri android build"
 pnpm tauri android build
+
+source .env.google-play.local
+if [[ -z "$GOOGLE_PLAY_JSON_KEY_FILE" ]]; then
+  echo "❌ GOOGLE_PLAY_JSON_KEY_FILE is not set"
+  exit 1
+fi
+cd ../../
+fastlane android upload_production

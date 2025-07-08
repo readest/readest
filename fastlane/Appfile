@@ -1,0 +1,2 @@
+package_name(ENV["PACKAGE_NAME"])
+json_key_file(ENV["GOOGLE_PLAY_JSON_KEY_FILE"])

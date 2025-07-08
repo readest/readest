@@ -1,0 +1,44 @@
+default_platform(:android)
+
+platform :android do
+  aab_file = "./apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab"
+
+  desc "Upload AAB to Google Play Production"
+  lane :upload_production do
+    upload_to_play_store(
+      aab: aab_file,
+      track: "production",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  end
+  
+  desc "Upload AAB to Google Play Internal Testing"
+  lane :upload_internal do
+    upload_to_play_store(
+      aab: aab_file,
+      track: "internal",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  end
+  
+  desc "Upload AAB to Google Play Beta"
+  lane :upload_beta do
+    upload_to_play_store(
+      aab: aab_file,
+      track: "beta",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  end
+end
