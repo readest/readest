@@ -100,5 +100,9 @@ export const useTheme = ({
     const colorScheme = isDarkMode ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
     document.documentElement.style.setProperty('color-scheme', colorScheme);
+    document.documentElement.style.setProperty(
+      '--overlayer-highlight-blend-mode',
+      isDarkMode ? 'lighten' : 'normal',
+    );
   }, [themeColor, isDarkMode]);
 };
