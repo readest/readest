@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
@@ -85,7 +85,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const demoBooks = useDemoBooks();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const osRef = useRef<OverlayScrollbarsComponentRef>(null);
+  const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
@@ -628,9 +629,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       {libraryLoaded &&
         (libraryBooks.some((book) => !book.deletedAt) ? (
-          <OverlayScrollbarsComponent options={{ scrollbars: { autoHide: 'scroll' } }} defer>
+          <OverlayScrollbarsComponent
+            defer
+            ref={osRef}
+            options={{ scrollbars: { autoHide: 'scroll' } }}
+            events={{
+              initialized: (instance) => {
+                const { content } = instance.elements();
+                if (content) {
+                  containerRef.current = content as HTMLDivElement;
+                }
+              },
+            }}
+          >
             <div
-              ref={containerRef}
               className={clsx('scroll-container drop-zone flex-grow', isDragging && 'drag-over')}
               style={{
                 paddingTop: '0px',
