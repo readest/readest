@@ -9,7 +9,7 @@ const Ribbon: React.FC<RibbonProps> = ({}) => {
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-10 flex w-8 justify-center sm:w-6',
+        'ribbon absolute inset-0 z-10 flex w-8 justify-center sm:w-6',
         'h-[calc(env(safe-area-inset-top)+44px)]',
       )}
     >
