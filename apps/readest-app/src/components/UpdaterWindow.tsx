@@ -193,6 +193,7 @@ export const UpdaterContent = ({
         body: '',
       } as GenericUpdate);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestVersion, lastVersion, checkUpdate]);
 
   useEffect(() => {
