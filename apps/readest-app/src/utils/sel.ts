@@ -84,7 +84,24 @@ export const getPosition = (
   const [sx, , , sy] = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x)) ?? [];
 
   const frame = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
-  const rects = Array.from(target.getClientRects());
+  let padding = { top: 0, right: 0, bottom: 0, left: 0 };
+  if ('nodeType' in target && target.nodeType === 1) {
+    const computedStyle = window.getComputedStyle(target);
+    padding = {
+      top: parseInt(computedStyle.paddingTop, 10) || 0,
+      right: parseInt(computedStyle.paddingRight, 10) || 0,
+      bottom: parseInt(computedStyle.paddingBottom, 10) || 0,
+      left: parseInt(computedStyle.paddingLeft, 10) || 0,
+    };
+  }
+  const rects = Array.from(target.getClientRects()).map((rect) => {
+    return {
+      top: rect.top + padding.top,
+      right: rect.right - padding.right,
+      bottom: rect.bottom - padding.bottom,
+      left: rect.left + padding.left,
+    };
+  });
   const first = frameRect(frame, rects[0], sx, sy);
   const last = frameRect(frame, rects.at(-1), sx, sy);
 

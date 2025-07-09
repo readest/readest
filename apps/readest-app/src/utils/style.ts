@@ -211,6 +211,11 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
+  /* enlarge the clickable area of links */
+  a {
+    padding: 10px;
+    margin: -10px;
+  }
   p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
@@ -286,13 +291,12 @@ const getLayoutStyles = (
   }
 
   /* inline images without dimension */
-  p > img, span > img, sup img {
+  sup img {
     height: 1em;
   }
-  p:has(> img:only-child) img, span:has(> img:only-child) img,
-  p:has(> a:first-child + img:last-child) img,
-  span:has(> a:first-child + img:last-child) img {
-    height: auto;
+  img.has-text-siblings {
+    height: 1em;
+    vertical-align: text-bottom;
   }
   .ie6 img {
     width: auto;
@@ -328,6 +332,8 @@ export const getFootnoteStyles = () => `
 
   a:any-link {
     text-decoration: none;
+    padding: unset;
+    margin: unset;
   }
 
   ol {
@@ -446,8 +452,8 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   return `${layoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
 };
 
-export const applyTranslationStyles = (viewSettings: ViewSettings) => {
-  const styleId = 'translation-styles';
+export const applyTranslationStyle = (viewSettings: ViewSettings) => {
+  const styleId = 'translation-style';
 
   const existingStyle = document.getElementById(styleId);
   if (existingStyle) {
@@ -508,4 +514,17 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
     .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
   return css;
+};
+
+export const applyImageStyle = (document: Document) => {
+  document.querySelectorAll('img').forEach((img) => {
+    const parent = img.parentNode;
+    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
+    const hasTextSiblings = Array.from(parent.childNodes).some(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+    );
+    if (hasTextSiblings) {
+      img.classList.add('has-text-siblings');
+    }
+  });
 };
