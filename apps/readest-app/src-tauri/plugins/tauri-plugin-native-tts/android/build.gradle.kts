@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.readest.native_tts"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21
