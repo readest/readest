@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.bilingify.readest</id>
+
+  <name>Readest</name>
+  <summary>Modern, feature-rich ebook reader for immersive reading experiences</summary>
+  <icon type="stock">com.bilingify.readest</icon>
+
+  <description>
+    <p>Readest is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
+    <p>Built as a modern rewrite of Foliate, Readest leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
+    <p>Whether you're analyzing complex texts, immersing yourself in stories, or exploring new ideas, Readest adapts to your needs with powerful features for deep, thoughtful reading.</p>
+    <p>Key features include:</p>
+    <ul>
+      <li>Multi-format support for EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, and PDF (experimental).</li>
+      <li>Switch between scrolling or paginated reading modes for your preferred reading style.</li>
+      <li>Full-text search across the entire book to find relevant sections quickly.</li>
+      <li>Add highlights, bookmarks, and notes to enhance your reading experience and learning.</li>
+      <li>Easily excerpt text from books for detailed notes and analysis.</li>
+      <li>Instantly look up words and terms with built-in dictionary and Wikipedia integration.</li>
+      <li>Translate selected text instantly using DeepL for accurate translations.</li>
+      <li>Parallel Reading: Read two books or documents simultaneously in a split-screen view, perfect for researchers, language learners, and multitaskers.</li>
+      <li>Customize fonts, layout, theme mode, and theme colors for a personalized reading experience.</li>
+      <li>Cross-platform synchronization of book files, reading progress, notes, and bookmarks across all supported platforms.</li>
+      <li>Text-to-Speech functionality for a more accessible reading experience.</li>
+      <li>Organize, sort, and manage your entire ebook library with advanced library management tools.</li>
+      <li>One-click file association to quickly open files in Readest from your file browser.</li>
+    </ul>
+    <p>Readest also includes custom CSS support for personalized styling, and code syntax highlighting for technical books. The application is designed to honor the legacy of deep reading while embracing modern technology for an enhanced experience.</p>
+  </description>
+
+  <categories>
+    <category>Office</category>
+    <category>Education</category>
+    <category>Literature</category>
+  </categories>
+
+  <keywords>
+    <keyword translate="no">readest</keyword>
+    <keyword>ebook</keyword>
+    <keyword>reader</keyword>
+    <keyword>epub</keyword>
+    <keyword>mobi</keyword>
+    <keyword>pdf</keyword>
+    <keyword>reading</keyword>
+    <keyword>books</keyword>
+    <keyword>annotation</keyword>
+    <keyword>highlight</keyword>
+    <keyword>notes</keyword>
+    <keyword>translation</keyword>
+    <keyword>tts</keyword>
+    <keyword>sync</keyword>
+  </keywords>
+
+  <url type="homepage">https://readest.com</url>
+  <url type="bugtracker">https://github.com/readest/readest/issues</url>
+  <url type="help">https://github.com/readest/readest/wiki</url>
+  <url type="donation">https://github.com/sponsors/readest</url>
+
+  <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
+
+  <releases>
+    <release version="0.9.63" date="2025-07-07">
+      <description>
+        <ul>
+          <li>Reader: Fixed links not working in some MOBI books</li>
+          <li>TTS: Fixed an issue where some text was skipped during reading</li>
+          <li>Library: You can now delete only the cloud backup of a book without removing the local copy</li>
+          <li>Performance: Fonts in the font list now load only when displayed for faster startup</li>
+          <li>Performance: Opening large MOBI books is now significantly faster</li>
+          <li>Layout: Fixed overlay scrollbar display in virtualized book lists</li>
+          <li>Layout: Improved grid cover image height in crop mode</li>
+          <li>Layout: Removed unsupported screen orientation lock option on iPad</li>
+          <li>Layout: System context menu no longer appears when selecting text on iPad</li>
+          <li>Translation: Added Thai (th-TH) language support</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.62" date="2025-07-02">
+      <description>
+        <ul>
+          <li>Subscription: You can now upgrade to Readest Premium and manage your subscription</li>
+          <li>Reader: Added an option to toggle Parallel Reading when viewing multiple books</li>
+          <li>Translation: Added an option to show or hide the original text in translations</li>
+          <li>Layout: TOC on Android now uses an overlay scrollbar for easier navigation</li>
+          <li>Layout: Custom CSS can now also be applied to the library page</li>
+          <li>Fonts: Added three new CJK fonts to choose from</li>
+          <li>Shortcuts: Press ESC to quickly close the search bar</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.61" date="2025-06-25">
+      <description>
+        <ul>
+          <li>Layout: Fixed view menu width on smaller screens</li>
+          <li>Layout: Added option to crop or fit book covers in library view</li>
+          <li>Reader: You can now apply custom CSS to the reading interface (UI)</li>
+          <li>Reader: Added an option to show remaining pages in the current chapter</li>
+          <li>Settings: Added options to reset settings from the config dialog</li>
+          <li>Import: Fixed encoded filenames when importing TXT files on iOS</li>
+          <li>Linux: Fixed missing app icon on some Linux distributions</li>
+          <li>GitHub: Added donation link to support Readest development</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.60" date="2025-06-18">
+      <description>
+        <ul>
+          <li>Layout has been improved for iPad devices</li>
+          <li>Screen orientation changes are now smoother on iOS</li>
+          <li>Importing books on iOS during the first launch is now more reliable</li>
+          <li>Font size no longer changes unexpectedly in scrolled mode on iOS</li>
+          <li>Top and bottom safe insets are now ignored when no header or footer is present</li>
+          <li>Interactive books now load correctly on the Desktop platform</li>
+          <li>Translation is now disabled when the primary language is undefined</li>
+          <li>Android: the task list background color has been updated with current theme color</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.59" date="2025-06-12">
+      <description>
+        <ul>
+          <li>Layout: Image size now adjusts more accurately by converting screen units to pixels properly</li>
+          <li>Layout: Improved header layout on iOS landscape mode — extra spacing has been removed</li>
+          <li>Settings: Top and bottom margin settings are now more intuitive and better constrained</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+
+  <developer id="com.readest">
+    <name>Readest Team</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Readest main interface with annotation</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/annotations.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading interface with dark mode</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/dark_mode.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.0"></content_rating>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#d97706</color>
+    <color type="primary" scheme_preference="dark">#b45309</color>
+  </branding>
+</component>
