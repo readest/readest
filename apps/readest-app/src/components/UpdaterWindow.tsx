@@ -398,7 +398,7 @@ export const UpdaterContent = ({
           )}
         </div>
         <div className='text-base-content text-sm'>
-          <h3 className='mb-2 font-bold'>{_('Changelog:')}</h3>
+          <h3 className='mb-2 font-bold'>{_('Changelog')}</h3>
           <div className='bg-base-300 mb-4 rounded-lg px-4 pb-2 pt-4'>
             {changelogs.length > 0 ? (
               changelogs.map((entry: Changelog) => (

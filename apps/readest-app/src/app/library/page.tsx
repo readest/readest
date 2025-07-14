@@ -10,7 +10,13 @@ import 'overlayscrollbars/overlayscrollbars.css';
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
-import { getFilename, listFormater } from '@/utils/book';
+import {
+  formatAuthors,
+  formatTitle,
+  getFilename,
+  getPrimaryLanguage,
+  listFormater,
+} from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
@@ -43,11 +49,12 @@ import {
 
 import { AboutWindow } from '@/components/AboutWindow';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
+import { BookMetadata } from '@/libs/document';
+import { BookDetailModal } from '@/components/metadata';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
-import BookDetailModal from '@/components/BookDetailModal';
 import useShortcuts from '@/hooks/useShortcuts';
 import DropIndicator from '@/components/DropIndicator';
 
@@ -553,6 +560,25 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
+  const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
+    book.metadata = metadata;
+    book.title = formatTitle(metadata.title);
+    book.author = formatAuthors(metadata.author);
+    book.primaryLanguage = getPrimaryLanguage(metadata.language);
+    if (metadata.coverImageBlobUrl || metadata.coverImageUrl) {
+      try {
+        appService?.updateCoverImage(
+          book,
+          (metadata.coverImageBlobUrl || metadata.coverImageUrl) as string,
+        );
+      } catch (error) {
+        console.warn('Failed to update cover image:', error);
+      }
+    }
+    metadata.coverImageBlobUrl = undefined;
+    await updateBook(envConfig, book);
+  };
+
   const handleImportBooks = async () => {
     setIsSelectMode(false);
     console.log('Importing books...');
@@ -694,6 +720,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDownload={handleBookDownload}
           handleBookDelete={handleBookDelete}
           handleBookDeleteCloudBackup={handleBookDeleteCloudBackup}
+          handleBookMetadataUpdate={handleUpdateMetadata}
         />
       )}
       <AboutWindow />

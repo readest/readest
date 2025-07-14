@@ -140,6 +140,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         // Set the book's language for formerly imported books, newly imported books have this field set
         book.primaryLanguage =
           book.primaryLanguage ?? getPrimaryLanguage(bookDoc.metadata.language);
+        book.metadata = book.metadata ?? bookDoc.metadata;
         useBookDataStore.setState((state) => ({
           booksData: {
             ...state.booksData,

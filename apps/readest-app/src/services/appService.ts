@@ -36,6 +36,7 @@ import {
   DEFAULT_SCREEN_CONFIG,
   DEFAULT_TRANSLATOR_CONFIG,
 } from './constants';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
@@ -536,5 +537,28 @@ export abstract class BaseAppService implements AppService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
     await this.fs.writeFile(getLibraryFilename(), 'Books', JSON.stringify(libraryBooks));
+  }
+
+  private imageToArrayBuffer(imageUrl: string): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      if (imageUrl.startsWith('blob:')) {
+        fetch(imageUrl)
+          .then((response) => response.arrayBuffer())
+          .then((buffer) => resolve(buffer))
+          .catch((error) => reject(error));
+      } else if (this.appPlatform === 'web') {
+        reject(new Error('Skip non-blob URL'));
+      } else if (this.appPlatform === 'tauri') {
+        tauriFetch(imageUrl, { method: 'GET' })
+          .then((response) => response.arrayBuffer())
+          .then((buffer) => resolve(buffer))
+          .catch((error) => reject(error));
+      }
+    });
+  }
+
+  async updateCoverImage(book: Book, imageUrl: string): Promise<void> {
+    const arrayBuffer = await this.imageToArrayBuffer(imageUrl);
+    await this.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
   }
 }

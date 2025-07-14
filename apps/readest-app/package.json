@@ -72,6 +72,7 @@
     "i18next": "^24.2.0",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.1",
+    "iso-639-2": "^3.0.2",
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
     "marked": "^15.0.12",

@@ -59,19 +59,28 @@ export interface SectionItem {
   location?: Location;
 }
 
+export type BookMetadata = {
+  // NOTE: the title and author fields should be formatted
+  title: string | LanguageMap;
+  author: string | Contributor;
+  language: string | string[];
+  editor?: string;
+  publisher?: string;
+  published?: string;
+  description?: string;
+  subject?: string[];
+  identifier?: string;
+
+  subtitle?: string;
+  series?: string;
+  seriesIndex?: number;
+  seriesTotal?: number;
+  coverImageUrl?: string;
+  coverImageBlobUrl?: string;
+};
+
 export interface BookDoc {
-  metadata: {
-    // NOTE: the title and author fields should be formatted
-    title: string | LanguageMap;
-    author: string | Contributor;
-    language: string | string[];
-    editor?: string;
-    publisher?: string;
-    published?: string;
-    description?: string;
-    subject?: string[];
-    identifier?: string;
-  };
+  metadata: BookMetadata;
   dir: string;
   toc?: Array<TOCItem>;
   sections?: Array<SectionItem>;

@@ -1,3 +1,5 @@
+import { iso6392 } from 'iso-639-2';
+
 export const isCJKStr = (str: string) => {
   return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(str ?? '');
 };
@@ -64,4 +66,9 @@ export const isSameLang = (lang1?: string | null, lang2?: string | null): boolea
   const normalizedLang1 = normalizedLangCode(lang1);
   const normalizedLang2 = normalizedLangCode(lang2);
   return normalizedLang1 === normalizedLang2;
+};
+
+export const code6392to6391 = (code: string): string => {
+  const lang = iso6392.find((l) => l.iso6392B === code);
+  return lang?.iso6391 || '';
 };

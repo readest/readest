@@ -1,6 +1,6 @@
 import { SystemSettings } from './settings';
 import { Book, BookConfig, BookContent, ViewSettings } from './book';
-import { BookDoc } from '@/libs/document';
+import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 
 export type AppPlatform = 'web' | 'tauri';
@@ -63,7 +63,7 @@ export interface AppService {
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
-  fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookDoc['metadata']>;
+  fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookMetadata>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
   loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent>;
   loadLibraryBooks(): Promise<Book[]>;
@@ -71,4 +71,5 @@ export interface AppService {
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;
   generateCoverImageUrl(book: Book): Promise<string>;
+  updateCoverImage(book: Book, imageUrl: string): Promise<void>;
 }
