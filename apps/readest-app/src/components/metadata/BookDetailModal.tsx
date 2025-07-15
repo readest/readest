@@ -99,7 +99,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   const handleSaveMetadata = () => {
     if (editedMeta && handleBookMetadataUpdate) {
-      setBookMeta(editedMeta);
+      setBookMeta({ ...editedMeta });
       handleBookMetadataUpdate(book, editedMeta);
       setEditMode(false);
     }

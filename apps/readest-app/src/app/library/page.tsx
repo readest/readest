@@ -21,7 +21,7 @@ import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
 import { parseOpenWithFiles } from '@/helpers/openWith';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
@@ -565,17 +565,29 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     book.title = formatTitle(metadata.title);
     book.author = formatAuthors(metadata.author);
     book.primaryLanguage = getPrimaryLanguage(metadata.language);
-    if (metadata.coverImageBlobUrl || metadata.coverImageUrl) {
+    book.updatedAt = Date.now();
+    if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
+      book.coverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
       try {
-        appService?.updateCoverImage(
+        await appService?.updateCoverImage(
           book,
-          (metadata.coverImageBlobUrl || metadata.coverImageUrl) as string,
+          metadata.coverImageBlobUrl || metadata.coverImageUrl,
+          metadata.coverImageFile,
         );
       } catch (error) {
         console.warn('Failed to update cover image:', error);
       }
     }
+    if (isWebAppPlatform()) {
+      // Clear HTTP cover image URL if cover is updated with a local file
+      if (metadata.coverImageBlobUrl) {
+        metadata.coverImageUrl = undefined;
+      }
+    } else {
+      metadata.coverImageUrl = undefined;
+    }
     metadata.coverImageBlobUrl = undefined;
+    metadata.coverImageFile = undefined;
     await updateBook(envConfig, book);
   };
 
@@ -585,9 +597,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     let files;
 
     if (isTauriAppPlatform()) {
-      files = (await selectFilesTauri()) as [string];
+      files = (await selectFilesTauri()) as string[];
     } else {
-      files = (await selectFilesWeb()) as [File];
+      files = (await selectFilesWeb()) as File[];
     }
     importBooks(files);
   };

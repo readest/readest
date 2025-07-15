@@ -39,7 +39,6 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
 
   useEffect(() => {
     if (metadata) {
-      console.log('initial metadata:', metadata);
       setEditedMeta({ ...metadata });
     }
   }, [metadata]);

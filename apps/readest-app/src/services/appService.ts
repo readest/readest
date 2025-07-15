@@ -539,26 +539,36 @@ export abstract class BaseAppService implements AppService {
     await this.fs.writeFile(getLibraryFilename(), 'Books', JSON.stringify(libraryBooks));
   }
 
-  private imageToArrayBuffer(imageUrl: string): Promise<ArrayBuffer> {
+  private imageToArrayBuffer(imageUrl?: string, imageFile?: string): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
-      if (imageUrl.startsWith('blob:')) {
+      if (!imageUrl && !imageFile) {
+        reject(new Error('No image URL or file provided'));
+        return;
+      }
+      if (this.appPlatform === 'web' && imageUrl && imageUrl.startsWith('blob:')) {
         fetch(imageUrl)
           .then((response) => response.arrayBuffer())
           .then((buffer) => resolve(buffer))
           .catch((error) => reject(error));
-      } else if (this.appPlatform === 'web') {
-        reject(new Error('Skip non-blob URL'));
-      } else if (this.appPlatform === 'tauri') {
+      } else if (this.appPlatform === 'tauri' && imageFile) {
+        this.fs
+          .openFile(imageFile, 'None')
+          .then((file) => file.arrayBuffer())
+          .then((buffer) => resolve(buffer))
+          .catch((error) => reject(error));
+      } else if (this.appPlatform === 'tauri' && imageUrl) {
         tauriFetch(imageUrl, { method: 'GET' })
           .then((response) => response.arrayBuffer())
           .then((buffer) => resolve(buffer))
           .catch((error) => reject(error));
+      } else {
+        reject(new Error('Unsupported platform or missing image data'));
       }
     });
   }
 
-  async updateCoverImage(book: Book, imageUrl: string): Promise<void> {
-    const arrayBuffer = await this.imageToArrayBuffer(imageUrl);
+  async updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void> {
+    const arrayBuffer = await this.imageToArrayBuffer(imageUrl, imageFile);
     await this.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
   }
 }

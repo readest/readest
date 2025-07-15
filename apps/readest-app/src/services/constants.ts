@@ -33,6 +33,9 @@ export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).j
 export const BOOK_UNGROUPED_NAME = '';
 export const BOOK_UNGROUPED_ID = '';
 
+export const SUPPORTED_IMAGE_EXTS = ['png', 'jpg', 'jpeg'];
+export const IMAGE_ACCEPT_FORMATS = SUPPORTED_IMAGE_EXTS.map((ext) => `.${ext}`).join(', ');
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,

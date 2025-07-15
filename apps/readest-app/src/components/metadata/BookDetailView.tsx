@@ -48,15 +48,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
     <div className='relative w-full rounded-lg'>
       <div className='mb-6 me-4 flex h-32 items-start'>
         <div className='me-10 aspect-[28/41] h-32 shadow-lg'>
-          <BookCover
-            mode='list'
-            book={{
-              ...book,
-              ...(metadata.coverImageUrl || metadata.coverImageBlobUrl
-                ? { coverImageUrl: metadata.coverImageUrl || metadata.coverImageBlobUrl }
-                : {}),
-            }}
-          />
+          <BookCover mode='list' book={book} />
         </div>
         <div className='title-author flex h-32 flex-col justify-between'>
           <div>

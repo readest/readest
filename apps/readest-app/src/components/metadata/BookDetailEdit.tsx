@@ -4,9 +4,12 @@ import { MdEdit, MdLock, MdLockOpen, MdOutlineSearch } from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { FormField } from './FormField';
+import { IMAGE_ACCEPT_FORMATS, SUPPORTED_IMAGE_EXTS } from '@/services/constants';
+import { isTauriAppPlatform } from '@/services/environment';
 import BookCover from '@/components/BookCover';
 
 interface BookDetailEditProps {
@@ -43,20 +46,18 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   onSave,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
 
   const hasLockedFields = Object.values(lockedFields).some((locked) => locked);
   const allFieldsLocked = Object.values(lockedFields).every((locked) => locked);
   const isCoverLocked = lockedFields['coverImageUrl'] || false;
-  const [coverImageUpdated, setCoverImageUpdated] = useState(false);
+  const [newCoverImageUrl, setNewCoverImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (metadata.coverImageUrl) {
-      if (book.metadata) {
-        book.metadata.coverImageUrl = metadata.coverImageUrl;
-      }
-      setCoverImageUpdated(true);
+      setNewCoverImageUrl(metadata.coverImageUrl);
     }
-  }, [book.metadata, metadata.coverImageUrl]);
+  }, [metadata.coverImageUrl]);
 
   const titleAuthorFields = [
     {
@@ -147,12 +148,11 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     },
   ];
 
-  const selectImageFile = () => {
-    if (coverImageUpdated) setCoverImageUpdated(false);
+  const selectImageFileWeb = () => {
     return new Promise((resolve) => {
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
-      fileInput.accept = '.png, .jpg, .jpeg';
+      fileInput.accept = IMAGE_ACCEPT_FORMATS;
       fileInput.multiple = false;
       fileInput.click();
 
@@ -162,27 +162,50 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     });
   };
 
+  const selectImageFileTauri = async () => {
+    const exts = appService?.isMobileApp ? [] : SUPPORTED_IMAGE_EXTS;
+    const files = (await appService?.selectFiles(_('Select Cover Image'), exts)) || [];
+    if (appService?.isIOSApp) {
+      return files.filter((file) => {
+        const fileExt = file.split('.').pop()?.toLowerCase() || 'unknown';
+        return SUPPORTED_IMAGE_EXTS.includes(fileExt);
+      });
+    }
+    return files;
+  };
+
   const handleSelectLocalImage = async () => {
-    const files = (await selectImageFile()) as [File];
-    if (files && files.length > 0) {
-      const file = files[0];
-      metadata.coverImageBlobUrl = URL.createObjectURL(file);
-      setCoverImageUpdated(true);
+    let files;
+    if (isTauriAppPlatform()) {
+      files = (await selectImageFileTauri()) as string[];
+      if (files.length > 0) {
+        metadata.coverImageFile = files[0]!;
+        metadata.coverImageUrl = appService?.fs.getURL(files[0]!);
+        setNewCoverImageUrl(metadata.coverImageUrl!);
+      }
+    } else {
+      files = (await selectImageFileWeb()) as File[];
+      if (files.length > 0) {
+        metadata.coverImageBlobUrl = URL.createObjectURL(files[0]!);
+        setNewCoverImageUrl(metadata.coverImageBlobUrl!);
+      }
     }
   };
 
   return (
     <div className='bg-base-100 relative w-full rounded-lg'>
       <div className='mb-6 flex items-start gap-4'>
-        <div className='flex w-[40%] max-w-36 flex-col gap-2'>
+        <div className='flex w-[30%] max-w-32 flex-col gap-2'>
           <div className='aspect-[28/41] h-full shadow-md'>
             <BookCover
               mode='list'
               book={{
                 ...book,
-                ...(metadata.coverImageUrl || metadata.coverImageBlobUrl
-                  ? { coverImageUrl: metadata.coverImageUrl || metadata.coverImageBlobUrl }
-                  : {}),
+                metadata: {
+                  ...metadata,
+                  coverImageUrl: newCoverImageUrl || metadata.coverImageUrl,
+                },
+                ...(newCoverImageUrl ? { coverImageUrl: newCoverImageUrl } : {}),
               }}
             />
           </div>
@@ -191,14 +214,15 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               onClick={handleSelectLocalImage}
               disabled={isCoverLocked}
               className={clsx(
-                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-xs',
+                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1',
                 'border border-gray-300 bg-white hover:bg-gray-50',
                 'disabled:cursor-not-allowed disabled:opacity-50',
+                'text-sm sm:text-xs',
                 isCoverLocked && '!text-base-content !bg-base-200',
               )}
               title={_('Change cover image')}
             >
-              <MdEdit className='h-3 w-3' />
+              <MdEdit className='h-5 w-5 sm:h-4 sm:w-4' />
               <span className='hidden sm:inline'>{_('Replace')}</span>
             </button>
 

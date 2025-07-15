@@ -75,6 +75,8 @@ export type BookMetadata = {
   series?: string;
   seriesIndex?: number;
   seriesTotal?: number;
+
+  coverImageFile?: string;
   coverImageUrl?: string;
   coverImageBlobUrl?: string;
 };

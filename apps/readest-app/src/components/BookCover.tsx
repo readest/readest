@@ -37,9 +37,7 @@ const BookCover: React.FC<BookCoverProps> = ({
     <div className={clsx('book-cover-container relative flex h-full w-full', className)}>
       {coverFit === 'crop' ? (
         <Image
-          src={
-            book.metadata?.coverImageUrl || book.metadata?.coverImageBlobUrl || book.coverImageUrl!
-          }
+          src={book.metadata?.coverImageUrl || book.coverImageUrl!}
           alt={book.title}
           fill={true}
           className={clsx('crop-cover-img object-cover', imageClassName)}
@@ -53,7 +51,7 @@ const BookCover: React.FC<BookCoverProps> = ({
           )}
         >
           <Image
-            src={book.coverImageUrl!}
+            src={book.metadata?.coverImageUrl || book.coverImageUrl!}
             alt={book.title}
             width={0}
             height={0}
