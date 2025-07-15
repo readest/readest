@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.64": {
+      "date": "2025-07-16",
+      "notes": [
+        "Library: Added support to edit book metadata",
+        "Layout: Fixed bookmark icon placement when the sidebar is pinned",
+        "Reader: Fixed an issue where links to other chapters in EPUB files did not work",
+        "Reader: Lightened the highlight color in dark mode for better contrast",
+        "Reader: Pull-to-refresh gesture is now smoother and more responsive",
+        "Reader: Removed unintended indentation on images",
+        "Search: Improved responsiveness of full-text search for faster results"
+      ]
+    },
     "0.9.63": {
       "date": "2025-07-07",
       "notes": [
