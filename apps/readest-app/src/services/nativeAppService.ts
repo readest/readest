@@ -220,7 +220,7 @@ export class NativeAppService extends BaseAppService {
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
+  override hasRoundedWindow = OS_TYPE === 'linux';
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasUpdater =

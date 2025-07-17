@@ -4,6 +4,7 @@ import { MdBookmarkBorder as BookmarkIcon } from 'react-icons/md';
 import { IoIosList as TOCIcon } from 'react-icons/io';
 import { PiNotePencil as NoteIcon } from 'react-icons/pi';
 
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const TabNavigation: React.FC<{
@@ -11,12 +12,16 @@ const TabNavigation: React.FC<{
   onTabChange: (tab: string) => void;
 }> = ({ activeTab, onTabChange }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
 
   const tabs = ['toc', 'annotations', 'bookmarks'];
 
   return (
     <div
-      className={clsx('bottom-tab border-base-300/50 bg-base-200 relative flex w-full border-t')}
+      className={clsx(
+        'bottom-tab border-base-300/50 bg-base-200 relative flex w-full border-t',
+        appService?.hasRoundedWindow && 'rounded-window-bottom-left',
+      )}
       dir='ltr'
     >
       <div

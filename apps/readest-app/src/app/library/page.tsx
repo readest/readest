@@ -669,6 +669,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       className={clsx(
         'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        appService?.isLinuxApp && 'window-border',
         appService?.hasRoundedWindow && 'rounded-window',
       )}
     >

@@ -334,8 +334,10 @@ export default function AuthPage() {
   return isTauriAppPlatform() ? (
     <div
       className={clsx(
-        'fixed inset-0 z-0 flex select-none flex-col items-center overflow-y-auto',
-        'bg-base-100 border-base-200 border',
+        'bg-base-100 fixed inset-0 flex select-none flex-col items-center overflow-hidden overflow-y-auto',
+        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        appService?.isLinuxApp && 'window-border',
+        appService?.hasRoundedWindow && 'rounded-window',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >

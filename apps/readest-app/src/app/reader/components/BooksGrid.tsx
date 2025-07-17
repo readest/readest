@@ -31,7 +31,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { getConfig, getBookData } = useBookDataStore();
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
   const { setGridInsets, hoveredBookKey } = useReaderStore();
-  const { isSideBarVisible, sideBarBookKey } = useSidebarStore();
+  const { sideBarBookKey } = useSidebarStore();
   const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
   const screenInsets = useSafeAreaInsets();
@@ -106,7 +106,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             key={bookKey}
             className={clsx(
               'relative h-full w-full overflow-hidden',
-              !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window',
+              appService?.hasRoundedWindow && 'rounded-window',
             )}
           >
             {isBookmarked && !hoveredBookKey && <Ribbon width={`${horizontalGapPercent}%`} />}

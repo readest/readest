@@ -8,7 +8,7 @@ export const useQuotaStats = () => {
   const _ = useTranslation();
   const { token, user } = useAuth();
   const [quotas, setQuotas] = useState<QuotaType[]>([]);
-  const [userPlan, setUserPlan] = useState<UserPlan>('free');
+  const [userPlan, setUserPlan] = useState<UserPlan | undefined>(undefined);
 
   useEffect(() => {
     if (!user || !token) return;

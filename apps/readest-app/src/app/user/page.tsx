@@ -69,7 +69,7 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
-  const { quotas, userPlan } = useQuotaStats();
+  const { quotas, userPlan = 'free' } = useQuotaStats();
 
   const handleGoBack = () => {
     if (showEmbeddedCheckout) {
@@ -219,62 +219,66 @@ const ProfilePage = () => {
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-0 flex select-none flex-col items-center overflow-y-auto',
-        'bg-base-100 border-base-200 border',
+        'bg-base-100 fixed inset-0 select-none overflow-hidden',
+        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        appService?.isLinuxApp && 'window-border',
+        appService?.hasRoundedWindow && 'rounded-window',
         appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >
-      <ProfileHeader onGoBack={handleGoBack} />
-      <div className='w-full min-w-60 max-w-4xl py-10'>
-        {loading && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center'>
-            <Spinner loading />
-          </div>
-        )}
-        {showEmbeddedCheckout ? (
-          <div className='bg-base-100 rounded-lg p-4'>
-            <Checkout
-              clientSecret={checkoutState.clientSecret}
-              sessionId={checkoutState.sessionId}
-              planName={checkoutState.planName}
-              onSuccess={handleCheckoutSuccess}
-            />
-          </div>
-        ) : (
-          <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
-            <div className='flex flex-col gap-y-8'>
-              <div className='flex flex-col gap-y-8 px-6'>
-                <UserInfo
-                  avatarUrl={avatarUrl}
-                  userFullName={userFullName}
-                  userEmail={userEmail}
-                  planDetails={planDetails}
-                />
+      <div className='flex h-full w-full flex-col items-center overflow-y-auto'>
+        <ProfileHeader onGoBack={handleGoBack} />
+        <div className='w-full min-w-60 max-w-4xl py-10'>
+          {loading && (
+            <div className='fixed inset-0 z-50 flex items-center justify-center'>
+              <Spinner loading />
+            </div>
+          )}
+          {showEmbeddedCheckout ? (
+            <div className='bg-base-100 rounded-lg p-4'>
+              <Checkout
+                clientSecret={checkoutState.clientSecret}
+                sessionId={checkoutState.sessionId}
+                planName={checkoutState.planName}
+                onSuccess={handleCheckoutSuccess}
+              />
+            </div>
+          ) : (
+            <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
+              <div className='flex flex-col gap-y-8'>
+                <div className='flex flex-col gap-y-8 px-6'>
+                  <UserInfo
+                    avatarUrl={avatarUrl}
+                    userFullName={userFullName}
+                    userEmail={userEmail}
+                    planDetails={planDetails}
+                  />
 
-                <UsageStats quotas={quotas} />
-              </div>
+                  <UsageStats quotas={quotas} />
+                </div>
 
-              <div className='flex flex-col gap-y-8 sm:px-6'>
-                <PlansComparison
-                  availablePlans={availablePlans}
-                  userPlan={userPlan}
-                  onSubscribe={handleSubscribe}
-                />
-              </div>
+                <div className='flex flex-col gap-y-8 sm:px-6'>
+                  <PlansComparison
+                    availablePlans={availablePlans}
+                    userPlan={userPlan}
+                    onSubscribe={handleSubscribe}
+                  />
+                </div>
 
-              <div className='flex flex-col gap-y-8 px-6'>
-                <AccountActions
-                  userPlan={userPlan}
-                  onLogout={handleLogout}
-                  onConfirmDelete={handleConfirmDelete}
-                  onManageSubscription={handleManageSubscription}
-                />
+                <div className='flex flex-col gap-y-8 px-6'>
+                  <AccountActions
+                    userPlan={userPlan}
+                    onLogout={handleLogout}
+                    onConfirmDelete={handleConfirmDelete}
+                    onManageSubscription={handleManageSubscription}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        <Toast />
       </div>
-      <Toast />
     </div>
   );
 };

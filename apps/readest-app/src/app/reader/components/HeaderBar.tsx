@@ -92,6 +92,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       <div
         className={clsx(
           'bg-base-100 absolute left-0 right-0 top-0 z-10',
+          appService?.hasRoundedWindow && 'rounded-window-top-right',
           isVisible ? 'visible' : 'hidden',
         )}
         style={{

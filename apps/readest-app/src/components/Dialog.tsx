@@ -160,7 +160,11 @@ const Dialog: React.FC<DialogProps> = ({
       dir={isRtl ? 'rtl' : undefined}
     >
       <div
-        className={clsx('overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20', bgClassName)}
+        className={clsx(
+          'overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20',
+          appService?.hasRoundedWindow && 'rounded-window',
+          bgClassName,
+        )}
         onClick={onClose}
       />
       <div

@@ -111,8 +111,9 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     settings.globalReadSettings && (
       <div
         className={clsx(
-          `reader-page bg-base-100 text-base-content select-none`,
-          !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window',
+          `reader-page bg-base-100 text-base-content select-none overflow-hidden`,
+          appService?.isLinuxApp && 'window-border',
+          appService?.hasRoundedWindow && 'rounded-window',
         )}
       >
         <Suspense>
