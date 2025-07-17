@@ -13,7 +13,10 @@ interface CliArgument {
 }
 
 const parseWindowOpenWithFiles = () => {
-  return window.OPEN_WITH_FILES;
+  const params = new URLSearchParams(window.location.search);
+  const filesParams = params.get('files') || '';
+  const files = filesParams ? filesParams.split(',').map(decodeURIComponent) : [];
+  return files.length > 0 ? files : window.OPEN_WITH_FILES;
 };
 
 const parseCLIOpenWithFiles = async () => {

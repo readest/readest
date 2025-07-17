@@ -5,14 +5,16 @@ import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { Book } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { parseOpenWithFiles } from '@/helpers/openWith';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { UnlistenFn } from '@tauri-apps/api/event';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
@@ -83,7 +85,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       saveSettings(envConfig, settings);
     }
 
-    if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
+    let unlistenOnCloseWindow: Promise<UnlistenFn>;
+    if (isTauriAppPlatform()) {
+      unlistenOnCloseWindow = tauriHandleOnCloseWindow(handleCloseBooks);
+    }
     window.addEventListener('beforeunload', handleCloseBooks);
     eventDispatcher.on('beforereload', handleCloseBooks);
     eventDispatcher.on('quit-app', handleCloseBooks);
@@ -91,6 +96,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       window.removeEventListener('beforeunload', handleCloseBooks);
       eventDispatcher.off('beforereload', handleCloseBooks);
       eventDispatcher.off('quit-app', handleCloseBooks);
+      unlistenOnCloseWindow?.then((fn) => fn());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKeys]);
@@ -128,7 +134,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     const settings = useSettingsStore.getState().settings;
     await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
-  }, 500);
+  }, 200);
 
   const handleCloseBooksToLibrary = () => {
     handleCloseBooks();
@@ -143,11 +149,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     dismissBook(bookKey);
     if (bookKeys.filter((key) => key !== bookKey).length == 0) {
       const openWithFiles = (await parseOpenWithFiles()) || [];
-      if (openWithFiles.length > 0 && !appService?.isMobile) {
-        tauriHandleClose();
-      } else {
-        saveSettingsAndGoToLibrary();
+      if (appService?.hasWindow) {
+        if (openWithFiles.length > 0) {
+          return await tauriHandleClose();
+        }
+        const currentWindow = getCurrentWindow();
+        if (currentWindow.label.startsWith('reader')) {
+          return await currentWindow.close();
+        }
       }
+      saveSettingsAndGoToLibrary();
     }
   };
 

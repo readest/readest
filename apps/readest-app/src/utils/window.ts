@@ -1,5 +1,5 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { TauriEvent } from '@tauri-apps/api/event';
+import { emitTo, TauriEvent } from '@tauri-apps/api/event';
 import { exit } from '@tauri-apps/plugin-process';
 import { eventDispatcher } from './event';
 
@@ -33,8 +33,12 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
   return currentWindow.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async () => {
     await callback();
-    console.log('exit app');
-    await exit(0);
+    if (currentWindow.label.startsWith('reader')) {
+      await emitTo('main', 'close-reader-window', { label: currentWindow.label });
+      setTimeout(() => currentWindow.destroy(), 300);
+    } else if (currentWindow.label === 'main') {
+      await currentWindow.destroy();
+    }
   });
 };
 

@@ -1,6 +1,48 @@
 import { useRouter, redirect } from 'next/navigation';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
+import { AppService } from '@/types/system';
+
+let readerWindowsCount = 0;
+const createReaderWindow = (appService: AppService, url: string) => {
+  const win = new WebviewWindow(`reader-${readerWindowsCount}`, {
+    url,
+    width: 800,
+    height: 600,
+    center: true,
+    resizable: true,
+    title: appService.isMacOSApp ? '' : 'Readest',
+    decorations: appService.isMacOSApp ? true : false,
+    transparent: appService.isMacOSApp ? false : true,
+    shadow: appService.isMacOSApp ? undefined : true,
+    titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+  });
+  win.once('tauri://created', () => {
+    console.log('new window created');
+    readerWindowsCount += 1;
+  });
+  win.once('tauri://error', (e) => {
+    console.error('error creating window', e);
+  });
+  win.once('tauri://destroyed', () => {
+    readerWindowsCount -= 1;
+  });
+};
+
+export const showReaderWindow = (appService: AppService, bookIds: string[]) => {
+  const ids = bookIds.join(BOOK_IDS_SEPARATOR);
+  const params = new URLSearchParams('');
+  params.set('ids', ids);
+  const url = `/reader?${params.toString()}`;
+  createReaderWindow(appService, url);
+};
+
+export const showLibraryWindow = (appService: AppService, filenames: string[]) => {
+  const files = filenames.map((file) => `${encodeURIComponent(file)}`).join(',');
+  const url = `/library?files=${files}`;
+  createReaderWindow(appService, url);
+};
 
 export const navigateToReader = (
   router: ReturnType<typeof useRouter>,

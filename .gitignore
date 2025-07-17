@@ -38,3 +38,5 @@ next-env.d.ts
 
 # Rust build
 target
+
+fastlane/report.xml

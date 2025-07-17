@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -194,6 +194,28 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
+  const handleRefreshLibrary = useCallback(async () => {
+    const appService = await envConfig.getAppService();
+    const settings = await appService.loadSettings();
+    const library = await appService.loadLibraryBooks();
+    setSettings(settings);
+    setLibrary(library);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [envConfig, appService]);
+
+  useEffect(() => {
+    if (appService?.hasWindow) {
+      const currentWebview = getCurrentWebview();
+      const unlisten = currentWebview.listen('close-reader-window', async () => {
+        handleRefreshLibrary();
+      });
+      return () => {
+        unlisten.then((fn) => fn());
+      };
+    }
+    return;
+  }, [appService, handleRefreshLibrary]);
+
   useEffect(() => {
     const libraryPage = document.querySelector('.library-page');
     if (!appService?.isMobile) {
@@ -294,7 +316,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         navigateToReader(router, bookIds);
       }
     }
-  }, [pendingNavigationBookIds, router]);
+  }, [pendingNavigationBookIds, appService, router]);
 
   useEffect(() => {
     if (isInitiating.current) return;

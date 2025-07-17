@@ -83,6 +83,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
+  const toggleOpenInNewWindow = () => {
+    settings.openBookInNewWindow = !settings.openBookInNewWindow;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsDropdownOpen?.(false);
+  };
+
   const toggleAlwaysOnTop = () => {
     settings.alwaysOnTop = !settings.alwaysOnTop;
     setSettings(settings);
@@ -219,6 +226,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         />
       )}
       <hr className='border-base-200 my-1' />
+      {appService?.hasWindow && (
+        <MenuItem
+          label={_('Open Book in New Window')}
+          Icon={settings.openBookInNewWindow ? MdCheck : undefined}
+          onClick={toggleOpenInNewWindow}
+        />
+      )}
       {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       {appService?.hasWindow && (
         <MenuItem

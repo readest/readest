@@ -70,7 +70,7 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
     const processOldBook = async (oldBook: Book) => {
       const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
       if (matchingBook) {
-        if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.downloadedAt) {
+        if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.coverDownloadedAt) {
           await appService?.downloadBook(oldBook, true);
         }
         const mergedBook =

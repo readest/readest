@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEnv } from '@/context/EnvContext';
+import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriAppPlatform } from '@/services/environment';
-import { useLibraryStore } from '@/store/libraryStore';
-import { navigateToLibrary } from '@/utils/nav';
+import { navigateToLibrary, showLibraryWindow } from '@/utils/nav';
 
 interface SingleInstancePayload {
   args: string[];
@@ -13,6 +15,7 @@ interface SingleInstancePayload {
 
 export function useOpenWithBooks() {
   const router = useRouter();
+  const { appService } = useEnv();
   const { setCheckOpenWithBooks } = useLibraryStore();
   const listenedOpenWithBooks = useRef(false);
 
@@ -23,14 +26,19 @@ export function useOpenWithBooks() {
       filePath = decodeURI(filePath.replace('file://', ''));
     }
     if (!/^(https?:|data:|blob:)/i.test(filePath)) {
-      window.OPEN_WITH_FILES = [filePath];
-      setCheckOpenWithBooks(true);
-      navigateToLibrary(router, `reload=${Date.now()}`);
+      const settings = useSettingsStore.getState().settings;
+      if (appService?.hasWindow && settings.openBookInNewWindow) {
+        showLibraryWindow(appService, [filePath]);
+      } else {
+        window.OPEN_WITH_FILES = [filePath];
+        setCheckOpenWithBooks(true);
+        navigateToLibrary(router, `reload=${Date.now()}`);
+      }
     }
   };
 
   useEffect(() => {
-    if (!isTauriAppPlatform()) return;
+    if (!isTauriAppPlatform() || !appService) return;
     if (listenedOpenWithBooks.current) return;
     listenedOpenWithBooks.current = true;
 
@@ -54,5 +62,5 @@ export function useOpenWithBooks() {
       unlistenOpenUrl.then((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [appService]);
 }

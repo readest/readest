@@ -144,7 +144,8 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                         .expect("NS window should exist on state to handle resize")
                         as id;
 
-                    if state.window.label() == "main" {
+                    if state.window.label() == "main" || state.window.label().starts_with("reader")
+                    {
                         position_traffic_lights(
                             UnsafeWindowHandle(id as *mut std::ffi::c_void),
                             TRAFFIC_LIGHTS_VISIBLE,
@@ -278,7 +279,8 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                         .expect("Failed to emit event");
 
                     let id = state.window.ns_window().expect("Failed to emit event") as id;
-                    if state.window.label() == "main" {
+                    if state.window.label() == "main" || state.window.label().starts_with("reader")
+                    {
                         position_traffic_lights(
                             UnsafeWindowHandle(id as *mut std::ffi::c_void),
                             TRAFFIC_LIGHTS_VISIBLE,

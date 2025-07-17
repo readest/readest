@@ -26,6 +26,7 @@ export interface Book {
 
   uploadedAt?: number | null;
   downloadedAt?: number | null;
+  coverDownloadedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number

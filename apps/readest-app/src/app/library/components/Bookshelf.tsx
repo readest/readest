@@ -11,7 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { navigateToLibrary, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { isMd5 } from '@/utils/md5';
 
@@ -169,8 +169,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const openSelectedBooks = () => {
-    setTimeout(() => setLoading(true), 200);
-    navigateToReader(router, selectedBooks);
+    handleSetSelectMode(false);
+    if (appService?.hasWindow && settings.openBookInNewWindow) {
+      showReaderWindow(appService, selectedBooks);
+    } else {
+      setTimeout(() => setLoading(true), 200);
+      navigateToReader(router, selectedBooks);
+    }
   };
 
   const openBookDetails = () => {

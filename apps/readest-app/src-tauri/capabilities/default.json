@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": ["main", "updater"],
+  "windows": ["main", "updater", "reader-*"],
   "permissions": [
     "core:default",
     "fs:default",
@@ -91,6 +91,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-set-fullscreen",
     "core:window:allow-set-always-on-top",
+    "core:window:allow-destroy",
     "core:webview:allow-create-webview-window",
     "core:path:allow-resolve-directory",
     "log:default",
