@@ -70,7 +70,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
 
   return (
     <div
-      className={clsx('relative grid h-full flex-grow')}
+      className={clsx('books-grid bg-base-100 relative grid h-full flex-grow')}
       style={{
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,
