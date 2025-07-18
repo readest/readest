@@ -4,7 +4,8 @@
   "repository": "readest/readest",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tauri": "pnpm --filter @readest/readest-app tauri"
+    "tauri": "pnpm --filter @readest/readest-app tauri",
+    "dev-web": "pnpm --filter @readest/readest-app dev-web"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
