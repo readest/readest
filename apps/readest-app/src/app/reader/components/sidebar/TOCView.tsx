@@ -81,7 +81,12 @@ const TOCView: React.FC<{
     }
   }, [initialize]);
 
-  useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
+  useTextTranslation(
+    bookKey,
+    containerRef.current || staticListRef.current,
+    false,
+    'translation-target-toc',
+  );
 
   useEffect(() => {
     const updateHeight = () => {
