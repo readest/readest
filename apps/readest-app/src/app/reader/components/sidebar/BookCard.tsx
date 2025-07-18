@@ -10,7 +10,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { formatAuthors, formatTitle } from '@/utils/book';
 
 const BookCard = ({ book }: { book: Book }) => {
-  const { coverImageUrl, title, author } = book;
+  const { coverImageUrl, title, author, metadata } = book;
   const _ = useTranslation();
   const { isDarkMode } = useThemeStore();
   const iconSize18 = useResponsiveSize(18);
@@ -22,7 +22,7 @@ const BookCard = ({ book }: { book: Book }) => {
   return (
     <div className='flex h-20 w-full items-center'>
       <Image
-        src={coverImageUrl!}
+        src={metadata?.coverImageUrl || coverImageUrl!}
         alt={_('Book Cover')}
         width={56}
         height={80}
