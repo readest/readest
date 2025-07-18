@@ -11,6 +11,7 @@ import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { debounce } from '@/utils/debounce';
 import { isCJKStr } from '@/utils/lang';
+import { createRejecttFilter } from '@/utils/node';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
 
@@ -117,19 +118,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
     return searchTerm.length >= minLength;
   };
 
-  const createAcceptNode = ({ withRT = true } = {}) => {
-    return (node: Node): number => {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const name = (node as Element).tagName.toLowerCase();
-        if (name === 'script' || name === 'style' || (!withRT && name === 'rt')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_SKIP;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    };
-  };
-
   const handleSearch = useCallback(
     async (term: string) => {
       console.log('searching for:', term);
@@ -139,7 +127,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         ...searchConfig,
         index,
         query: term,
-        acceptNode: createAcceptNode({ withRT: !primaryLang.startsWith('ja') }),
+        acceptNode: createRejecttFilter({
+          tags: primaryLang.startsWith('ja') ? ['rt'] : [],
+        }),
       });
       const results: BookSearchResult[] = [];
       let lastProgressLogTime = 0;

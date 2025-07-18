@@ -183,13 +183,13 @@ export const getPopupPosition = (
   return { point: popupPoint, dir: position.dir } as Position;
 };
 
-export const getTextFromRange = (range: Range, rejects: string[] = []): string => {
+export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {
   const clonedRange = range.cloneRange();
   const fragment = clonedRange.cloneContents();
   const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT, {
     acceptNode: (node) => {
       const parent = node.parentElement;
-      if (rejects.includes(parent?.tagName.toLowerCase() || '')) {
+      if (rejectTags.includes(parent?.tagName.toLowerCase() || '')) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;

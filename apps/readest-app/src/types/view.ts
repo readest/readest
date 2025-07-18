@@ -20,7 +20,11 @@ export interface FoliateView extends HTMLElement {
   clearSearch: () => void;
   select: (target: string | number | { fraction: number }) => void;
   deselect: () => void;
-  initTTS: (granularity?: TTSGranularity, highlight?: (range: Range) => void) => Promise<void>;
+  initTTS: (
+    granularity?: TTSGranularity,
+    nodeFilter?: (node: Node) => number,
+    highlight?: (range: Range) => void,
+  ) => Promise<void>;
   book: BookDoc;
   tts: TTS | null;
   language: {
