@@ -244,7 +244,8 @@ const getLayoutStyles = (
     text-indent: initial !important;
   }
   blockquote[align="center"], div[align="center"],
-  p[align="center"], dd[align="center"] {
+  p[align="center"], dd[align="center"],
+  li p, ol p, ul p {
     text-indent: initial !important;
   }
   p {
