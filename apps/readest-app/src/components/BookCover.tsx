@@ -48,7 +48,10 @@ const BookCover: React.FC<BookCoverProps> = ({
   return (
     <div
       ref={coverRef}
-      className={clsx('book-cover-container relative flex h-full w-full', className)}
+      className={clsx(
+        'book-cover-container no-context-menu relative flex h-full w-full',
+        className,
+      )}
     >
       {coverFit === 'crop' ? (
         <Image

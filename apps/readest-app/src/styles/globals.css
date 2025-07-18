@@ -324,3 +324,12 @@ foliate-view {
 .drop-zone.drag-over .drop-indicator {
   display: block;
 }
+
+.no-context-menu {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
