@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import Image from 'next/image';
+import { useEffect, useRef } from 'react';
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
@@ -21,26 +22,40 @@ const BookCover: React.FC<BookCoverProps> = ({
   imageClassName,
   isPreview,
 }) => {
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement;
-    img.style.display = 'none';
+  const coverRef = useRef<HTMLDivElement>(null);
 
-    const mainContainer = img.closest('.book-cover-container');
-    const fallbackDiv = mainContainer?.querySelector('.fallback-cover');
-
-    if (fallbackDiv) {
-      fallbackDiv.classList.remove('invisible');
+  const toggleImageVisibility = (showImage: boolean) => {
+    if (coverRef.current) {
+      const coverImage = coverRef.current.querySelector('.cover-image');
+      const fallbackCover = coverRef.current.querySelector('.fallback-cover');
+      if (coverImage) {
+        coverImage.classList.toggle('invisible', !showImage);
+      }
+      if (fallbackCover) {
+        fallbackCover.classList.toggle('invisible', showImage);
+      }
     }
   };
 
+  const handleImageError = () => {
+    toggleImageVisibility(false);
+  };
+
+  useEffect(() => {
+    toggleImageVisibility(true);
+  }, [book.metadata?.coverImageUrl, book.coverImageUrl]);
+
   return (
-    <div className={clsx('book-cover-container relative flex h-full w-full', className)}>
+    <div
+      ref={coverRef}
+      className={clsx('book-cover-container relative flex h-full w-full', className)}
+    >
       {coverFit === 'crop' ? (
         <Image
           src={book.metadata?.coverImageUrl || book.coverImageUrl!}
           alt={book.title}
           fill={true}
-          className={clsx('crop-cover-img object-cover', imageClassName)}
+          className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
           onError={handleImageError}
         />
       ) : (
@@ -57,7 +72,7 @@ const BookCover: React.FC<BookCoverProps> = ({
             height={0}
             sizes='100vw'
             className={clsx(
-              'fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
+              'cover-image fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
               imageClassName,
             )}
             onError={handleImageError}
