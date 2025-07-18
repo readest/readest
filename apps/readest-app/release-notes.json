@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.65": {
+      "date": "2025-07-19",
+      "notes": [
+        "Reader: Added support for opening multiple reader windows on desktop",
+        "Layout: Added visible window borders on Linux",
+        "TTS: Improved handling of invalid book language",
+        "TTS: Skipped reading footnote anchor links",
+        "Translation: Fixed an issue where table of contents entries were not translated",
+        "Sync: Edited book metadata is now included in sync across devices",
+        "iOS: Disabled context menu when long-pressing on book covers"
+      ]
+    },
     "0.9.64": {
       "date": "2025-07-16",
       "notes": [
