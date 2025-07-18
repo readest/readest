@@ -60,7 +60,7 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     const newMeta = { ...editedMeta } as { [key: string]: unknown };
     switch (field) {
       case 'subject':
-        newMeta['subject'] = value ? value.split(/,|，|、/).map((s) => s.trim()) : [];
+        newMeta['subject'] = value ? value.split(/,|;|，|、/).map((s) => s.trim()) : [];
         break;
       default:
         newMeta[field] = value;

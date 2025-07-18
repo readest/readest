@@ -16,7 +16,7 @@ import { updateToc } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
-import { getPrimaryLanguage } from '@/utils/book';
+import { formatTitle, getBaseFilename, getPrimaryLanguage } from '@/utils/book';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -138,8 +138,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const { book: bookDoc } = await new DocumentLoader(file).open();
         updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
         // Set the book's language for formerly imported books, newly imported books have this field set
-        book.primaryLanguage =
-          book.primaryLanguage ?? getPrimaryLanguage(bookDoc.metadata.language);
+        if (!bookDoc.metadata.title) {
+          bookDoc.metadata.title = getBaseFilename(file.name);
+        }
+        book.sourceTitle = formatTitle(bookDoc.metadata.title);
+        const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
+        book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
         book.metadata = book.metadata ?? bookDoc.metadata;
         useBookDataStore.setState((state) => ({
           booksData: {

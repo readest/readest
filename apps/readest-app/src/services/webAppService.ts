@@ -151,8 +151,10 @@ const indexedDBFileSystem: FileSystem = {
   async removeDir() {
     // Directories are virtual in IndexedDB; no-op
   },
-  async readDir(path: string) {
+  async readDir(path: string, base: BaseDir) {
+    const { fp } = resolvePath(path, base);
     const db = await openIndexedDB();
+
     return new Promise<{ path: string; isDir: boolean }[]>((resolve, reject) => {
       const transaction = db.transaction('files', 'readonly');
       const store = transaction.objectStore('files');
@@ -162,8 +164,8 @@ const indexedDBFileSystem: FileSystem = {
         const files = request.result as { path: string }[];
         resolve(
           files
-            .filter((file) => file.path.startsWith(path))
-            .map((file) => ({ path: file.path, isDir: false })),
+            .filter((file) => file.path.startsWith(fp))
+            .map((file) => ({ path: file.path.slice(fp.length + 1), isDir: false })),
         );
       };
 

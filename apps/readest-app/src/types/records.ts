@@ -3,12 +3,14 @@ export interface DBBook {
   book_hash: string;
   format: string;
   title: string;
+  source_title?: string;
   author: string;
   group_id?: string;
   group_name?: string;
   tags?: string[];
   progress?: [number, number];
 
+  metadata?: string | null;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;

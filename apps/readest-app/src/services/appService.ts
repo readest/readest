@@ -18,7 +18,7 @@ import {
   getPrimaryLanguage,
 } from '@/utils/book';
 import { partialMD5 } from '@/utils/md5';
-import { BookDoc, DocumentLoader } from '@/libs/document';
+import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
 import {
   DEFAULT_BOOK_LAYOUT,
   DEFAULT_BOOK_STYLE,
@@ -205,6 +205,7 @@ export abstract class BaseAppService implements AppService {
         hash,
         format,
         title: formatTitle(loadedBook.metadata.title),
+        sourceTitle: formatTitle(loadedBook.metadata.title),
         author: formatAuthors(loadedBook.metadata.author, loadedBook.metadata.language),
         primaryLanguage: getPrimaryLanguage(loadedBook.metadata.language),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
@@ -215,8 +216,9 @@ export abstract class BaseAppService implements AppService {
       };
       // update book metadata when reimporting the same book
       if (existingBook) {
-        existingBook.title = book.title;
-        existingBook.author = book.author;
+        existingBook.title = existingBook.title ?? book.title;
+        existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
+        existingBook.author = existingBook.author ?? book.author;
         existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
       }
 
@@ -467,7 +469,19 @@ export abstract class BaseAppService implements AppService {
     } else if (book.url) {
       file = await this.fs.openFile(book.url, 'None');
     } else {
-      throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
+      // 0.9.64 has a bug that book.title might be modified but the filename is not updated
+      const bookDir = getDir(book);
+      const files = await this.fs.readDir(getDir(book), 'Books');
+      if (files.length > 0) {
+        const bookFile = files.find((f) => f.path.endsWith(`.${EXTS[book.format]}`));
+        if (bookFile) {
+          file = await this.fs.openFile(`${bookDir}/${bookFile.path}`, 'Books');
+        } else {
+          throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
+        }
+      } else {
+        throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
+      }
     }
     return { book, file, config: await this.loadBookConfig(book, settings) };
   }

@@ -14,7 +14,7 @@ export const getLibraryFilename = () => {
 export const getRemoteBookFilename = (book: Book) => {
   // S3 storage: https://docs.aws.amazon.com/zh_cn/AmazonS3/latest/userguide/object-keys.html
   if (getStorageType() === 'r2') {
-    return `${book.hash}/${makeSafeFilename(book.title)}.${EXTS[book.format]}`;
+    return `${book.hash}/${makeSafeFilename(book.sourceTitle || book.title)}.${EXTS[book.format]}`;
   } else if (getStorageType() === 's3') {
     return `${book.hash}/${book.hash}.${EXTS[book.format]}`;
   } else {
@@ -22,7 +22,7 @@ export const getRemoteBookFilename = (book: Book) => {
   }
 };
 export const getLocalBookFilename = (book: Book) => {
-  return `${book.hash}/${makeSafeFilename(book.title)}.${EXTS[book.format]}`;
+  return `${book.hash}/${makeSafeFilename(book.sourceTitle || book.title)}.${EXTS[book.format]}`;
 };
 export const getCoverFilename = (book: Book) => {
   return `${book.hash}/cover.png`;
