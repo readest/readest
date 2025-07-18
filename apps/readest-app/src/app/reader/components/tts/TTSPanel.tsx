@@ -9,6 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { getLanguageName } from '@/utils/lang';
 
 type TTSPanelProps = {
   bookKey: string;
@@ -178,7 +179,19 @@ const TTSPanel = ({
   useEffect(() => {
     const fetchVoices = async () => {
       const voiceGroups = await onGetVoices(ttsLang);
-      setVoiceGroups(voiceGroups);
+      const voicesCount = voiceGroups.reduce((acc, group) => acc + group.voices.length, 0);
+      if (!voiceGroups || voicesCount === 0) {
+        console.warn('No voices found for TTSPanel');
+        setVoiceGroups([
+          {
+            id: 'no-voices',
+            name: _('Voices for {{lang}}', { lang: getLanguageName(ttsLang) }),
+            voices: [],
+          },
+        ]);
+      } else {
+        setVoiceGroups(voiceGroups);
+      }
     };
     fetchVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -289,48 +302,44 @@ const TTSPanel = ({
           >
             {voiceGroups.map((voiceGroup, index) => {
               return (
-                voiceGroup.voices.length > 0 && (
-                  <div key={voiceGroup.id} className=''>
-                    <div className='flex items-center gap-2 px-2 py-1'>
-                      <span
-                        style={{ width: `${defaultIconSize}px`, height: `${defaultIconSize}px` }}
-                      ></span>
-                      <span className='text-sm text-gray-400 sm:text-xs'>
-                        {_('{{engine}}: {{count}} voices', {
-                          engine: _(voiceGroup.name),
-                          count: voiceGroup.voices.length,
-                        })}
-                      </span>
-                    </div>
-                    {voiceGroup.voices.map((voice, voiceIndex) => (
-                      <li
-                        key={`${index}-${voiceGroup.id}-${voiceIndex}`}
-                        onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}
-                      >
-                        <div className='flex items-center px-2'>
-                          <span
-                            style={{
-                              width: `${defaultIconSize}px`,
-                              height: `${defaultIconSize}px`,
-                            }}
-                          >
-                            {selectedVoice === voice.id && (
-                              <MdCheck className='text-base-content' />
-                            )}
-                          </span>
-                          <span
-                            className={clsx(
-                              'text-base sm:text-sm',
-                              voice.disabled && 'text-gray-400',
-                            )}
-                          >
-                            {_(voice.name)}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
+                <div key={voiceGroup.id} className=''>
+                  <div className='flex items-center gap-2 px-2 py-1'>
+                    <span
+                      style={{ width: `${defaultIconSize}px`, height: `${defaultIconSize}px` }}
+                    ></span>
+                    <span className='text-sm text-gray-400 sm:text-xs'>
+                      {_('{{engine}}: {{count}} voices', {
+                        engine: _(voiceGroup.name),
+                        count: voiceGroup.voices.length,
+                      })}
+                    </span>
                   </div>
-                )
+                  {voiceGroup.voices.map((voice, voiceIndex) => (
+                    <li
+                      key={`${index}-${voiceGroup.id}-${voiceIndex}`}
+                      onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}
+                    >
+                      <div className='flex items-center px-2'>
+                        <span
+                          style={{
+                            width: `${defaultIconSize}px`,
+                            height: `${defaultIconSize}px`,
+                          }}
+                        >
+                          {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
+                        </span>
+                        <span
+                          className={clsx(
+                            'text-base sm:text-sm',
+                            voice.disabled && 'text-gray-400',
+                          )}
+                        >
+                          {_(voice.name)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </div>
               );
             })}
           </ul>

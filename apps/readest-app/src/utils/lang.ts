@@ -68,7 +68,32 @@ export const isSameLang = (lang1?: string | null, lang2?: string | null): boolea
   return normalizedLang1 === normalizedLang2;
 };
 
+export const isValidLang = (lang?: string) => {
+  if (!lang) return false;
+  const code = lang.split('-')[0]!.toLowerCase();
+  return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code);
+};
+
 export const code6392to6391 = (code: string): string => {
   const lang = iso6392.find((l) => l.iso6392B === code);
   return lang?.iso6391 || '';
+};
+
+export const getLanguageName = (code: string): string => {
+  const lang = normalizedLangCode(code);
+  const language = iso6392.find((l) => l.iso6391 === lang || l.iso6392B === lang);
+  return language ? language.name : lang;
+};
+
+export const inferLangFromScript = (text: string, lang: string): string => {
+  if (!lang || lang === 'en') {
+    if (/[\p{Script=Hangul}]/u.test(text)) {
+      return 'ko';
+    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
+      return 'ja';
+    } else if (/[\p{Script=Han}]/u.test(text)) {
+      return 'zh';
+    }
+  }
+  return lang;
 };

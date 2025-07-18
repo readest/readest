@@ -1,7 +1,7 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
-import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
+import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
 import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
@@ -60,19 +60,14 @@ export class EdgeTTSClient implements TTSClient {
   };
 
   async *speak(ssml: string, signal: AbortSignal, preload = false) {
-    const { marks } = parseSSMLMarks(ssml);
-    let defaultLang = parseSSMLLang(ssml) || 'en';
-    if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
-      defaultLang = this.#primaryLang;
-    }
+    const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
 
     if (preload) {
       // preload the first 2 marks immediately and the rest in the background
       const maxImmediate = 2;
       for (let i = 0; i < Math.min(maxImmediate, marks.length); i++) {
         const mark = marks[i]!;
-        const { language } = mark;
-        const voiceLang = language || defaultLang;
+        const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#currentVoiceId = voiceId;
         await this.#edgeTTS
@@ -86,8 +81,7 @@ export class EdgeTTSClient implements TTSClient {
           for (let i = maxImmediate; i < marks.length; i++) {
             const mark = marks[i]!;
             try {
-              const { language } = mark;
-              const voiceLang = language || defaultLang;
+              const { language: voiceLang } = mark;
               const voiceId = await this.getVoiceIdFromLang(voiceLang);
               await this.#edgeTTS.createAudio(this.getPayload(voiceLang, mark.text, voiceId));
             } catch (err) {
@@ -116,8 +110,7 @@ export class EdgeTTSClient implements TTSClient {
         break;
       }
       try {
-        const { language } = mark;
-        const voiceLang = language || defaultLang;
+        const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#speakingLang = voiceLang;
         const blob = await this.#edgeTTS.createAudio(

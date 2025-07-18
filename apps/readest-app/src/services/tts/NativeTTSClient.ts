@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { getUserLocale } from '@/utils/misc';
-import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
+import { parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
@@ -100,13 +100,12 @@ export class NativeTTSClient implements TTSClient {
     return this.initialized;
   }
 
-  async *speakMark(mark: TTSMark, preload: boolean, defaultLang: string, signal: AbortSignal) {
+  async *speakMark(mark: TTSMark, preload: boolean, signal: AbortSignal) {
     if (preload) {
       yield { code: 'end', message: 'Dummy preload finished' } as TTSMessageEvent;
       return;
     }
-    const { language } = mark;
-    const voiceLang = language || defaultLang;
+    const { language: voiceLang } = mark;
     const voiceId = await this.getVoiceIdFromLang(voiceLang);
     this.#currentVoiceId = voiceId;
     this.#speakingLang = voiceLang;
@@ -179,14 +178,10 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async *speak(ssml: string, signal: AbortSignal, preload: boolean = false) {
-    const { marks } = parseSSMLMarks(ssml);
-    let defaultLang = parseSSMLLang(ssml) || 'en';
-    if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
-      defaultLang = this.#primaryLang;
-    }
+    const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
 
     for (const mark of marks) {
-      for await (const ev of this.speakMark(mark, preload, defaultLang, signal)) {
+      for await (const ev of this.speakMark(mark, preload, signal)) {
         if (signal.aborted) {
           yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;
           return;

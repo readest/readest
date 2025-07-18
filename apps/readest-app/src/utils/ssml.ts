@@ -1,4 +1,5 @@
 import { TTSMark } from '@/services/tts/types';
+import { inferLangFromScript, isSameLang, isValidLang } from './lang';
 
 const cleanTextContent = (text: string) =>
   text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();
@@ -16,9 +17,28 @@ export const genSSML = (lang: string, text: string, voice: string, rate: number)
   `;
 };
 
-export const parseSSMLMarks = (ssml: string) => {
-  const speakMatch = ssml.match(/<speak[^>]*xml:lang="([^"]+)"[^>]*>/i);
-  const defaultLang = speakMatch?.[1] ?? 'en';
+export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
+  let lang = 'en';
+  const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
+  if (match && match[1]) {
+    const parts = match[1].split('-');
+    lang =
+      parts.length > 1
+        ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
+        : parts[0]!.toLowerCase();
+
+    if (!isValidLang(lang)) {
+      lang = 'en';
+    }
+  }
+  if (lang === 'en' && primaryLang && !isSameLang(lang, primaryLang)) {
+    lang = primaryLang.split('-')[0]!.toLowerCase();
+  }
+  return inferLangFromScript(ssml, lang);
+};
+
+export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
+  const defaultLang = parseSSMLLang(ssml, primaryLang) || 'en';
   ssml = ssml.replace(/<speak[^>]*>/i, '').replace(/<\/speak>/i, '');
 
   let plainText = '';
@@ -92,30 +112,4 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
   }
 
   return result;
-};
-
-const inferLangFromScript = (text: string, lang: string | null): string | null => {
-  if (!lang || lang.startsWith('en')) {
-    if (/[\p{Script=Hangul}]/u.test(text)) {
-      return 'ko';
-    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
-      return 'ja';
-    } else if (/[\p{Script=Han}]/u.test(text)) {
-      return 'zh';
-    }
-  }
-  return lang;
-};
-
-export const parseSSMLLang = (ssml: string): string | null => {
-  let lang = null;
-  const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
-  if (match && match[1]) {
-    const parts = match[1].split('-');
-    lang =
-      parts.length > 1
-        ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
-        : parts[0]!.toLowerCase();
-  }
-  return inferLangFromScript(ssml, lang);
 };

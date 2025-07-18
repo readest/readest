@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { parseSSMLLang, parseSSMLMarks } from '@/utils/ssml';
+import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
 import { WEB_SPEECH_BLACKLISTED_VOICES } from './TTSData';
 import { TTSController } from './TTSController';
@@ -18,7 +18,7 @@ interface TTSBoundaryEvent {
 
 async function* speakWithMarks(
   ssml: string,
-  defaultLang: string,
+  primaryLang: string,
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
@@ -26,14 +26,11 @@ async function* speakWithMarks(
   setSpeakingLang: (lang: string) => void,
   dispatchSpeakMark: (mark: TTSMark) => void,
 ) {
-  const { marks } = parseSSMLMarks(ssml);
-
+  const { marks } = parseSSMLMarks(ssml, primaryLang);
   const synth = window.speechSynthesis;
-
   const utterance = new SpeechSynthesisUtterance();
   for (const mark of marks) {
-    const { language } = mark;
-    const voiceLang = language || defaultLang;
+    const { language: voiceLang } = mark;
     dispatchSpeakMark(mark);
     utterance.text = mark.text;
     utterance.rate = getRate();
@@ -149,14 +146,9 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
-    let defaultLang = parseSSMLLang(ssml) || 'en';
-    if (defaultLang === 'en' && this.#primaryLang && this.#primaryLang !== 'en') {
-      defaultLang = this.#primaryLang;
-    }
-
     for await (const ev of speakWithMarks(
       ssml,
-      defaultLang,
+      this.#primaryLang,
       () => this.#rate,
       () => this.#pitch,
       this.getWebSpeechVoiceFromLang,

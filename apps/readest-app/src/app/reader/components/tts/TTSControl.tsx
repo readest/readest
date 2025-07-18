@@ -212,11 +212,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
       await ttsController.initViewTTS();
       const ssml = view.tts?.from(ttsFromRange);
       if (ssml) {
-        let lang = parseSSMLLang(ssml) || 'en';
-        // We will not trust 'en' language from ssml, as it may be a fallback or hardcoded value
-        if (lang === 'en' && primaryLang && primaryLang !== 'en') {
-          lang = primaryLang.split('-')[0]!;
-        }
+        let lang = parseSSMLLang(ssml, primaryLang) || 'en';
         setIsPlaying(true);
         setTtsLang(lang);
 

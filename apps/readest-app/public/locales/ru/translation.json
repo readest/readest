@@ -458,5 +458,6 @@
   "Open Library": "Open Library",
   "Fiction, Science, History": "Художественная литература, Наука, История",
   "Select Cover Image": "Выбрать изображение обложки",
-  "Open Book in New Window": "Открыть книгу в новом окне"
+  "Open Book in New Window": "Открыть книгу в новом окне",
+  "Voices for {{lang}}": "Голоса для {{lang}}"
 }

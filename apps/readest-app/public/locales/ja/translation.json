@@ -446,5 +446,6 @@
   "Open Library": "Open Library",
   "Fiction, Science, History": "小説、科学、歴史",
   "Select Cover Image": "表紙画像を選択",
-  "Open Book in New Window": "新しいウィンドウで本を開く"
+  "Open Book in New Window": "新しいウィンドウで本を開く",
+  "Voices for {{lang}}": "{{lang}}の音声"
 }
