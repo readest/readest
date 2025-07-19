@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { parseWebViewVersion } from '@/utils/ua';
+import { handleGlobalError } from '@/utils/error';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -19,6 +20,7 @@ export default function Error({ error, reset }: ErrorPageProps) {
   useEffect(() => {
     setBrowserInfo(parseWebViewVersion(appService));
     posthog.captureException(error);
+    handleGlobalError(error);
   }, [appService, error]);
 
   const handleGoHome = () => {
