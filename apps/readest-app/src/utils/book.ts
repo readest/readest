@@ -1,7 +1,7 @@
 import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
 import { getUserLang, isContentURI, isFileURI, isValidURL, makeSafeFilename } from './misc';
-import { getStorageType } from './object';
+import { getStorageType } from './storage';
 import { getDirFromLanguage } from './rtl';
 import { SUPPORTED_LANGS } from '@/services/constants';
 

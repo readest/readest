@@ -1,7 +1,7 @@
 export const handleGlobalError = (e: Error) => {
   const isChunkError = e?.message?.includes('Loading chunk');
 
-  if (isChunkError) {
+  if (!isChunkError) {
     const now = Date.now();
     const lastReload = Number(sessionStorage.getItem('lastErrorReload') || '0');
     if (now - lastReload > 60_000) {

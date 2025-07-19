@@ -56,4 +56,4 @@ jobs:
       - name: build the web App
         working-directory: apps/readest-app
         run: |
-          pnpm build-web
+          pnpm build-check

@@ -1,14 +1,21 @@
 import withPWAInit from '@ducanh2912/next-pwa';
-import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const isDev = process.env['NODE_ENV'] === 'development';
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
 
+/* uncomment this to enable OpenNext Cloudflare for development
 if (isDev) {
-  initOpenNextCloudflareForDev();
+   const { initOpenNextCloudflareForDev } = await import('@opennextjs/cloudflare');
+   initOpenNextCloudflareForDev();
 }
+*/
 
 const exportOutput = appPlatform !== 'web' && !isDev;
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -25,6 +32,16 @@ const nextConfig = {
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,
+  transpilePackages: [
+    'i18next-browser-languagedetector',
+    'react-i18next',
+    'i18next',
+    '@ducanh2912/next-pwa',
+    '@tauri-apps',
+    'highlight.js',
+    'foliate-js',
+    'marked',
+  ],
   async headers() {
     return [
       {
@@ -55,4 +72,4 @@ const withPWA = withPWAInit({
   },
 });
 
-export default withPWA(nextConfig);
+export default withPWA(bundleAnalyzer(nextConfig));

@@ -1,21 +1,8 @@
 import { s3Storage } from './s3';
 import { r2Storage } from './r2';
+import { getStorageType } from './storage';
 
-type ObjectStorageType = 'r2' | 's3';
-
-export const getStorageType = (): ObjectStorageType => {
-  // TODO: do not expose storage type to client
-  if (process.env['NEXT_PUBLIC_OBJECT_STORAGE_TYPE']) {
-    return process.env['NEXT_PUBLIC_OBJECT_STORAGE_TYPE'] as ObjectStorageType;
-  } else {
-    return 'r2';
-  }
-};
-
-export const getDownloadSignedUrl = async (
-  fileKey: string,
-  expiresIn: number,
-) => {
+export const getDownloadSignedUrl = async (fileKey: string, expiresIn: number) => {
   const storageType = getStorageType();
   if (storageType === 'r2') {
     const bucketName = process.env['R2_BUCKET_NAME'] || '';
