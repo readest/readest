@@ -4,3 +4,6 @@
 [submodule "packages/tauri"]
 	path = packages/tauri
 	url = https://github.com/readest/tauri.git
+[submodule "packages/tauri-plugins"]
+	path = packages/tauri-plugins
+	url = https://github.com/readest/tauri-plugins-workspace.git
