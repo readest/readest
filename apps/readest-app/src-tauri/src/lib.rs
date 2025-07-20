@@ -252,12 +252,24 @@ pub fn run() {
                 .title("");
 
             #[cfg(all(not(target_os = "macos"), desktop))]
-            let win_builder = win_builder
-                .decorations(false)
-                .transparent(true)
-                .visible(false)
-                .shadow(true)
-                .title("Readest");
+            let win_builder = {
+                let mut builder = win_builder
+                    .decorations(false)
+                    .visible(false)
+                    .shadow(true)
+                    .title("Readest");
+
+                #[cfg(target_os = "windows")]
+                {
+                    builder = builder.transparent(false);
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    builder = builder.transparent(true);
+                }
+
+                builder
+            };
 
             win_builder.build().unwrap();
             // let win = win_builder.build().unwrap();

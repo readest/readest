@@ -344,12 +344,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
       // Reuse the library from the store when we return from the reader
       const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
-      setCheckOpenWithBooks(checkOpenWithBooks && (await handleOpenWithBooks(appService, library)));
-      setCheckLastOpenBooks(
-        checkLastOpenBooks &&
-          settings.openLastBooks &&
-          (await handleOpenLastBooks(appService, settings.lastOpenBooks, library)),
-      );
+      let opened = false;
+      if (checkOpenWithBooks) {
+        opened = await handleOpenWithBooks(appService, library);
+      }
+      setCheckOpenWithBooks(opened);
+      if (!opened && checkLastOpenBooks && settings.openLastBooks) {
+        opened = await handleOpenLastBooks(appService, settings.lastOpenBooks, library);
+      }
+      setCheckLastOpenBooks(opened);
 
       setLibrary(library);
       setLibraryLoaded(true);
