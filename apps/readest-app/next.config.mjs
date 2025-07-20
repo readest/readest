@@ -13,10 +13,6 @@ if (isDev) {
 
 const exportOutput = appPlatform !== 'web' && !isDev;
 
-const bundleAnalyzer = withBundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Ensure Next.js uses SSG instead of SSR
@@ -75,4 +71,8 @@ const withPWA = withPWAInit({
   },
 });
 
-export default withPWA(bundleAnalyzer(nextConfig));
+const withAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default withPWA(withAnalyzer(nextConfig));

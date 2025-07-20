@@ -44,13 +44,16 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    const touchStart = e.touches[0]!.clientX;
+    const touchStartX = e.touches[0]!.clientX;
+    const touchStartY = e.touches[0]!.clientY;
     const handleTouchMove = (moveEvent: TouchEvent) => {
-      const touchEnd = moveEvent.touches[0]!.clientX;
-      const diff = touchStart - touchEnd;
+      const touchEndX = moveEvent.touches[0]!.clientX;
+      const touchEndY = moveEvent.touches[0]!.clientY;
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
 
-      if (Math.abs(diff) > 50) {
-        if (diff > 0) {
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        if (diffX > 0) {
           handlePlanSwipe('left');
         } else {
           handlePlanSwipe('right');

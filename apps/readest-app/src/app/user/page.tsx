@@ -191,7 +191,7 @@ const ProfilePage = () => {
   useEffect(() => {
     fetch(WEB_STRIPE_PLANS_URL)
       .then((res) => res.json())
-      .then((data) => setAvailablePlans(data));
+      .then((data) => setAvailablePlans(data || []));
   }, []);
 
   if (!mounted) {
@@ -219,14 +219,18 @@ const ProfilePage = () => {
   return (
     <div
       className={clsx(
-        'bg-base-100 fixed inset-0 select-none overflow-hidden',
+        'bg-base-100 inset-0 select-none overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
         appService?.isLinuxApp && 'window-border',
         appService?.hasRoundedWindow && 'rounded-window',
-        appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
       )}
     >
-      <div className='flex h-full w-full flex-col items-center overflow-y-auto'>
+      <div
+        className={clsx(
+          'flex h-full w-full flex-col items-center overflow-y-auto',
+          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
+        )}
+      >
         <ProfileHeader onGoBack={handleGoBack} />
         <div className='w-full min-w-60 max-w-4xl py-10'>
           {loading && (

@@ -22,7 +22,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onGoBack }) => {
         appService?.hasTrafficLight && 'pt-11',
       )}
     >
-      <button onClick={onGoBack} className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0')}>
+      <button
+        onClick={onGoBack}
+        className={clsx('btn btn-ghost h-12 min-h-12 w-12 p-0 sm:h-8 sm:min-h-8 sm:w-8')}
+      >
         <IoArrowBack className='text-base-content' />
       </button>
 
