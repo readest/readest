@@ -32,6 +32,7 @@ const nextConfig = {
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,
+  serverExternalPackages: ['isows'],
   transpilePackages: !isDev
     ? [
         'i18next-browser-languagedetector',
