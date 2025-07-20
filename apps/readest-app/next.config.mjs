@@ -32,16 +32,18 @@ const nextConfig = {
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,
-  transpilePackages: [
-    'i18next-browser-languagedetector',
-    'react-i18next',
-    'i18next',
-    '@ducanh2912/next-pwa',
-    '@tauri-apps',
-    'highlight.js',
-    'foliate-js',
-    'marked',
-  ],
+  transpilePackages: !isDev
+    ? [
+        'i18next-browser-languagedetector',
+        'react-i18next',
+        'i18next',
+        '@ducanh2912/next-pwa',
+        '@tauri-apps',
+        'highlight.js',
+        'foliate-js',
+        'marked',
+      ]
+    : [],
   async headers() {
     return [
       {
