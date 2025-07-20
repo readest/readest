@@ -19,6 +19,7 @@
 <br>
 [![Last commit][badge-last-commit]][link-gh-commits]
 [![Commits][badge-commit-activity]][link-gh-pulse]
+[![Ask DeepWiki][badge-deepwiki]][link-deepwiki]
 
 </div>
 
@@ -304,6 +305,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
 [badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
 [badge-donate]: https://donate.readest.com/badge.svg
+[badge-deepwiki]: https://deepwiki.com/badge.svg
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
@@ -316,3 +318,4 @@ The following fonts are utilized in this software, either bundled within the app
 [link-parallel-read]: https://readest.com/#parallel-read
 [link-koreader]: https://github.com/koreader/koreader
 [link-hellogithub]: https://hellogithub.com/repository/8a5b6ade2aee461a8bd94e59200682a7
+[link-deepwiki]: https://deepwiki.com/readest/readest
