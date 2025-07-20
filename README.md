@@ -166,6 +166,8 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 pnpm tauri dev
 # or start development for the Web app
 pnpm dev-web
+# preview with OpenNext build for the Web app
+pnpm preview
 ```
 
 For Android:
