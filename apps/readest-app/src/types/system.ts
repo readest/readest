@@ -59,7 +59,12 @@ export interface AppService {
   ): Promise<Book | null>;
   deleteBook(book: Book, includingUploaded?: boolean, includingLocal?: boolean): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
-  downloadBook(book: Book, onlyCover?: boolean, onProgress?: ProgressHandler): Promise<void>;
+  downloadBook(
+    book: Book,
+    onlyCover?: boolean,
+    redownload?: boolean,
+    onProgress?: ProgressHandler,
+  ): Promise<void>;
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;

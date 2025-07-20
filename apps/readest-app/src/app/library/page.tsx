@@ -511,9 +511,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
-  const handleBookDownload = async (book: Book) => {
+  const handleBookDownload = async (book: Book, redownload = false) => {
     try {
-      await appService?.downloadBook(book, false, (progress) => {
+      await appService?.downloadBook(book, false, redownload, (progress) => {
         updateBookTransferProgress(book.hash, progress);
       });
       await updateBook(envConfig, book);

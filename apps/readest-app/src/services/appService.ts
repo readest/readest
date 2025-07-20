@@ -381,13 +381,19 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async downloadBook(book: Book, onlyCover = false, onProgress?: ProgressHandler): Promise<void> {
+  async downloadBook(
+    book: Book,
+    onlyCover = false,
+    redownload = false,
+    onProgress?: ProgressHandler,
+  ): Promise<void> {
     let bookDownloaded = false;
     let bookCoverDownloaded = false;
     const completedFiles = { count: 0 };
     let toDownloadFpCount = 0;
-    const needDownCover = !(await this.fs.exists(getCoverFilename(book), 'Books'));
-    const needDownBook = !onlyCover && !(await this.fs.exists(getLocalBookFilename(book), 'Books'));
+    const needDownCover = !(await this.fs.exists(getCoverFilename(book), 'Books')) || redownload;
+    const needDownBook =
+      (!onlyCover && !(await this.fs.exists(getLocalBookFilename(book), 'Books'))) || redownload;
     if (needDownCover) {
       toDownloadFpCount++;
     }

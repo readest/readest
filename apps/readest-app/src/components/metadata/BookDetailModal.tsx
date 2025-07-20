@@ -18,7 +18,7 @@ interface BookDetailModalProps {
   book: Book;
   isOpen: boolean;
   onClose: () => void;
-  handleBookDownload?: (book: Book) => void;
+  handleBookDownload?: (book: Book, redownload?: boolean) => void;
   handleBookUpload?: (book: Book) => void;
   handleBookDelete?: (book: Book) => void;
   handleBookDeleteCloudBackup?: (book: Book) => void;
@@ -132,7 +132,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleRedownload = async () => {
     handleClose();
     if (handleBookDownload) {
-      handleBookDownload(book);
+      handleBookDownload(book, true);
     }
   };
 
