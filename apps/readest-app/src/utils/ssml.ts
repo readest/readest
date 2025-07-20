@@ -1,5 +1,5 @@
 import { TTSMark } from '@/services/tts/types';
-import { inferLangFromScript, isSameLang, isValidLang } from './lang';
+import { code6392to6391, inferLangFromScript, isSameLang, isValidLang } from './lang';
 
 const cleanTextContent = (text: string) =>
   text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();
@@ -27,10 +27,12 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
         ? `${parts[0]!.toLowerCase()}-${parts[1]!.toUpperCase()}`
         : parts[0]!.toLowerCase();
 
+    lang = code6392to6391(lang) || lang;
     if (!isValidLang(lang)) {
       lang = 'en';
     }
   }
+  primaryLang = code6392to6391(primaryLang?.toLowerCase() || '') || primaryLang;
   if (lang === 'en' && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }

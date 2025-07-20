@@ -364,7 +364,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
           </button>
           <button
             onClick={onSave}
-            className='rounded-md bg-green-500 px-4 py-2 text-white hover:bg-green-600'
+            disabled={fieldErrors && Object.keys(fieldErrors).length > 0}
+            className='rounded-md bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:opacity-50'
           >
             {_('Save')}
           </button>
