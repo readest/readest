@@ -32,6 +32,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 ] }
 tauri = { version = "2.5.1", features = [ "protocol-asset" ] }
 tauri-build = "2.3.0"
+tauri-bundler = "2.5.0"
 tauri-plugin-log = "2.4.0"
 tauri-plugin-fs = "2.2.1"
 tauri-plugin-dialog = "2.2.1"

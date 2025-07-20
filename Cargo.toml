@@ -2,6 +2,7 @@
 members = [
   "apps/readest-app/src-tauri",
   "packages/tauri/crates/tauri",
+  "packages/tauri/crates/tauri-bundler",
   "packages/tauri-plugins/plugins/deep-link",
 ]
 resolver = "2"
@@ -29,4 +30,5 @@ rust-version = "1.77.2"
 
 [patch.crates-io]
 tauri = { path = "packages/tauri/crates/tauri" }
+tauri-bundler = { path = "packages/tauri/crates/tauri-bundler" }
 tauri-plugin-deep-link = { path = "packages/tauri-plugins/plugins/deep-link" }
