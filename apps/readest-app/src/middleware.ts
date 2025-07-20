@@ -45,5 +45,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/stripe/:path*', '/api/metadata/:path*'],
+  matcher: ['/api/:path*', '/api/stripe/:path*', '/api/metadata/:path*'],
 };
