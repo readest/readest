@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.66": {
+      "date": "2025-07-21",
+      "notes": [
+        "Layout: Fixed nested table of contents items not expanding in long TOC lists",
+        "Reader: Opening files from the OS now takes highest priority",
+        "TTS: Improved voice filtering for some language codes",
+        "App: Fixed loading issues on older browsers",
+        "App: Fixed wrong MIME types generated on Linux"
+      ]
+    },
     "0.9.65": {
       "date": "2025-07-19",
       "notes": [
