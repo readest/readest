@@ -39,8 +39,9 @@ export const showReaderWindow = (appService: AppService, bookIds: string[]) => {
 };
 
 export const showLibraryWindow = (appService: AppService, filenames: string[]) => {
-  const files = filenames.map((file) => `${encodeURIComponent(file)}`).join(',');
-  const url = `/library?files=${files}`;
+  const params = new URLSearchParams();
+  filenames.forEach((filename) => params.append('file', filename));
+  const url = `/library?${params.toString()}`;
   createReaderWindow(appService, url);
 };
 

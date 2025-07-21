@@ -14,8 +14,7 @@ interface CliArgument {
 
 const parseWindowOpenWithFiles = () => {
   const params = new URLSearchParams(window.location.search);
-  const filesParams = params.get('files') || '';
-  const files = filesParams ? filesParams.split(',').map(decodeURIComponent) : [];
+  const files = params.getAll('file');
   return files.length > 0 ? files : window.OPEN_WITH_FILES;
 };
 
