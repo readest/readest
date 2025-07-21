@@ -110,6 +110,13 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
+    html[has-background], body[has-background] {
+      --background-set: var(--theme-bg-color);
+    }
+    html {
+      background-color: var(--theme-bg-color, transparent);
+      background: var(--background-set, none);
+    }
     div, p, h1, h2, h3, h4, h5, h6 {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
@@ -129,6 +136,7 @@ const getColorStyles = (
     }
     img {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
     /* inline images */
     p img, span img, sup img {
@@ -190,17 +198,10 @@ const getLayoutStyles = (
       white-space: pre-wrap !important;
       tab-size: 2;
   }
-  html[has-background], body[has-background] {
-    --background-set: var(--theme-bg-color);
-  }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     text-align: var(--default-text-align);
     max-height: unset;
-  }
-  html {
-    background-color: var(--theme-bg-color, transparent);
-    background: var(--background-set, none);
   }
   body {
     overflow: unset;
