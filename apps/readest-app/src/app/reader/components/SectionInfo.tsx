@@ -3,8 +3,10 @@ import React from 'react';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { useReaderStore } from '@/store/readerStore';
 
 interface SectionInfoProps {
+  bookKey: string;
   section?: string;
   showDoubleBorder: boolean;
   isScrolled: boolean;
@@ -15,6 +17,7 @@ interface SectionInfoProps {
 }
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
+  bookKey,
   section,
   showDoubleBorder,
   isScrolled,
@@ -24,6 +27,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   gridInsets,
 }) => {
   const { appService } = useEnv();
+  const { hoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const topInset = Math.max(
     gridInsets.top,
@@ -68,6 +72,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           className={clsx(
             'text-neutral-content text-center font-sans text-xs font-light',
             isVertical ? '' : 'line-clamp-1',
+            !isVertical && hoveredBookKey == bookKey && 'hidden',
           )}
         >
           {section || ''}

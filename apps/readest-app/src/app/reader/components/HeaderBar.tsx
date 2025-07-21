@@ -40,7 +40,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { appService } = useEnv();
   const headerRef = useRef<HTMLDivElement>(null);
   const {
-    isTrafficLightVisible,
+    trafficLightInFullscreen,
     setTrafficLightVisibility,
     initializeTrafficLightStore,
     initializeTrafficLightListeners,
@@ -70,12 +70,19 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   useEffect(() => {
     if (!appService?.hasTrafficLight) return;
+    if (isSideBarVisible) return;
 
-    setTrafficLightVisibility(isSideBarVisible);
+    if (hoveredBookKey === bookKey && isTopLeft) {
+      setTrafficLightVisibility(true, { x: 10, y: 20 });
+    } else if (!hoveredBookKey) {
+      setTrafficLightVisibility(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService, isSideBarVisible]);
+  }, [appService, isSideBarVisible, hoveredBookKey]);
 
-  const isVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  const trafficLightInHeader =
+    appService?.hasTrafficLight && !trafficLightInFullscreen && !isSideBarVisible && isTopLeft;
 
   return (
     <div
@@ -93,7 +100,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         className={clsx(
           'bg-base-100 absolute left-0 right-0 top-0 z-10',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
-          isVisible ? 'visible' : 'hidden',
+          isHeaderVisible ? 'visible' : 'hidden',
         )}
         style={{
           height: systemUIVisible ? `${Math.max(gridInsets.top, statusBarHeight)}px` : '0px',
@@ -104,11 +111,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
           `shadow-xs transition-[opacity,margin-top] duration-300`,
-          isTrafficLightVisible && isTopLeft && !isSideBarVisible ? 'pl-16' : 'pl-4',
+          trafficLightInHeader ? 'pl-20' : 'pl-4',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
           isHoveredAnim && 'hover-bar-anim',
-          isVisible ? 'pointer-events-auto visible' : 'pointer-events-none opacity-0',
+          isHeaderVisible ? 'pointer-events-auto visible' : 'pointer-events-none opacity-0',
           isDropdownOpen && 'header-bar-pinned',
         )}
         style={{
@@ -148,10 +155,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             className='window-buttons flex h-full items-center'
             headerRef={headerRef}
             showMinimize={
-              bookKeys.length == 1 && !isTrafficLightVisible && appService?.appPlatform !== 'web'
+              bookKeys.length == 1 &&
+              !appService?.hasTrafficLight &&
+              appService?.appPlatform !== 'web'
             }
             showMaximize={
-              bookKeys.length == 1 && !isTrafficLightVisible && appService?.appPlatform !== 'web'
+              bookKeys.length == 1 &&
+              !appService?.hasTrafficLight &&
+              appService?.appPlatform !== 'web'
             }
             onClose={() => {
               setHoveredBookKey(null);

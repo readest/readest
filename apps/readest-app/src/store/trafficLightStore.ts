@@ -9,8 +9,9 @@ interface TrafficLightState {
   appService?: AppService;
   isTrafficLightVisible: boolean;
   shouldShowTrafficLight: boolean;
+  trafficLightInFullscreen: boolean;
   initializeTrafficLightStore: (appService: AppService) => void;
-  setTrafficLightVisibility: (visible: boolean) => void;
+  setTrafficLightVisibility: (visible: boolean, position?: { x: number; y: number }) => void;
   initializeTrafficLightListeners: () => Promise<void>;
   cleanupTrafficLightListeners: () => void;
   unlistenEnterFullScreen?: () => void;
@@ -22,6 +23,7 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
     appService: undefined,
     isTrafficLightVisible: false,
     shouldShowTrafficLight: false,
+    trafficLightInFullscreen: false,
 
     initializeTrafficLightStore: (appService: AppService) => {
       set({
@@ -31,15 +33,19 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
       });
     },
 
-    setTrafficLightVisibility: async (visible: boolean) => {
+    setTrafficLightVisibility: async (visible: boolean, position?: { x: number; y: number }) => {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const currentWindow = getCurrentWindow();
       const isFullscreen = await currentWindow.isFullscreen();
-      set({ isTrafficLightVisible: !isFullscreen && visible, shouldShowTrafficLight: visible });
+      set({
+        isTrafficLightVisible: !isFullscreen && visible,
+        shouldShowTrafficLight: visible,
+        trafficLightInFullscreen: isFullscreen,
+      });
       invoke('set_traffic_lights', {
         visible: visible,
-        x: WINDOW_CONTROL_PAD_X,
-        y: WINDOW_CONTROL_PAD_Y,
+        x: position?.x ?? WINDOW_CONTROL_PAD_X,
+        y: position?.y ?? WINDOW_CONTROL_PAD_Y,
       });
     },
 
@@ -48,12 +54,12 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
       const currentWindow = getCurrentWindow();
 
       const unlistenEnterFullScreen = await currentWindow.listen('will-enter-fullscreen', () => {
-        set({ isTrafficLightVisible: false });
+        set({ isTrafficLightVisible: false, trafficLightInFullscreen: true });
       });
 
       const unlistenExitFullScreen = await currentWindow.listen('will-exit-fullscreen', () => {
         const { shouldShowTrafficLight } = get();
-        set({ isTrafficLightVisible: shouldShowTrafficLight });
+        set({ isTrafficLightVisible: shouldShowTrafficLight, trafficLightInFullscreen: false });
       });
 
       set({ unlistenEnterFullScreen, unlistenExitFullScreen });
