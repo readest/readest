@@ -69,6 +69,9 @@
           "url": "https://edge.microsoft.com"
         },
         {
+          "url": "https://translate.toil.cc"
+        },
+        {
           "url": "https://*.microsofttranslator.com"
         },
         {
