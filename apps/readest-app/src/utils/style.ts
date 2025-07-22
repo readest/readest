@@ -538,3 +538,21 @@ export const applyImageStyle = (document: Document) => {
     }
   });
 };
+
+export const applyFixedlayoutStyles = (document: Document) => {
+  const style = document.createElement('style');
+  style.textContent = `
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+    }
+    body {
+      position: relative;
+    }
+    img.singlePage {
+      position: relative;
+    }
+  `;
+  document.head.appendChild(style);
+};

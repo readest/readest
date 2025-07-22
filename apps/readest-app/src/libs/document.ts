@@ -83,6 +83,10 @@ export type BookMetadata = {
 
 export interface BookDoc {
   metadata: BookMetadata;
+  rendition?: {
+    layout?: 'pre-paginated' | 'reflowable';
+    viewport?: { width: number; height: number };
+  };
   dir: string;
   toc?: Array<TOCItem>;
   sections?: Array<SectionItem>;

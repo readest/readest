@@ -14,6 +14,7 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import {
+  applyFixedlayoutStyles,
   applyImageStyle,
   applyTranslationStyle,
   getStyles,
@@ -133,6 +134,10 @@ const FoliateViewer: React.FC<{
       setViewSettings(bookKey, { ...viewSettings });
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+
+      if (bookDoc.rendition?.layout === 'pre-paginated') {
+        applyFixedlayoutStyles(detail.doc);
+      }
 
       applyImageStyle(detail.doc);
 
