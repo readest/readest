@@ -9,11 +9,11 @@ exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
 links = "tauri-plugin-native-tts"
 
 [dependencies]
-tauri = { version = "2.5.0" }
+tauri = { version = "2" }
 serde = "1.0"
 thiserror = "2"
 schemars = "0.8"
 
 [build-dependencies]
-tauri-plugin = { version = "2.2.0", features = ["build"] }
+tauri-plugin = { version = "2", features = ["build"] }
 schemars = "0.8"
