@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.9.67": {
+      "date": "2025-07-22",
+      "notes": [
+        "Reader: Fixed file opening issue when filenames contain commas",
+        "Translation: Added Yandex Translator as a new translation provider",
+        "Layout: Hovering over header now reveals macOS traffic light window controls",
+        "Theme: Reader background color is now customizable for EPUB and PDF",
+        "Library: Search now includes book format, group names, and descriptions",
+        "Library: Various improvements to metadata editor and bookshelf management",
+        "Linux: Fixed social login failure on Linux systems"
+      ]
+    },
     "0.9.66": {
       "date": "2025-07-21",
       "notes": [
