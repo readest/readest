@@ -21,14 +21,17 @@ interface UseLongPressResult {
   };
 }
 
-export const useLongPress = ({
-  onTap,
-  onLongPress,
-  onContextMenu,
-  onCancel,
-  threshold = 500,
-  moveThreshold = 10,
-}: UseLongPressOptions): UseLongPressResult => {
+export const useLongPress = (
+  {
+    onTap,
+    onLongPress,
+    onContextMenu,
+    onCancel,
+    threshold = 500,
+    moveThreshold = 10,
+  }: UseLongPressOptions,
+  deps: React.DependencyList,
+): UseLongPressResult => {
   const [pressing, setPressing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -114,15 +117,17 @@ export const useLongPress = ({
         e.stopPropagation();
         onContextMenu();
       }
+      reset();
     },
-    [onContextMenu],
+    [onContextMenu, reset],
   );
 
   useEffect(() => {
     return () => {
       clearTimeout(timerRef.current);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 
   return {
     pressing,

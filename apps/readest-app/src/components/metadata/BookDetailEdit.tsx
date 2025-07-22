@@ -178,9 +178,12 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     let files;
     if (isTauriAppPlatform()) {
       files = (await selectImageFileTauri()) as string[];
-      if (files.length > 0) {
+      if (appService && files.length > 0) {
         metadata.coverImageFile = files[0]!;
-        metadata.coverImageUrl = appService?.fs.getURL(files[0]!);
+        const tempName = 'cover-temp.png';
+        const cachePrefix = appService.fs.getPrefix('Cache');
+        await appService.fs.copyFile(files[0]!, tempName, 'Cache');
+        metadata.coverImageUrl = await appService.fs.getURL(`${cachePrefix}/${tempName}`);
         setNewCoverImageUrl(metadata.coverImageUrl!);
       }
     } else {
@@ -196,7 +199,10 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     <div className='bg-base-100 relative w-full rounded-lg'>
       <div className='mb-6 flex items-start gap-4'>
         <div className='flex w-[30%] max-w-32 flex-col gap-2'>
-          <div className='aspect-[28/41] h-full shadow-md'>
+          <div
+            className='aspect-[28/41] h-full shadow-md'
+            onClick={!isCoverLocked ? handleSelectLocalImage : undefined}
+          >
             <BookCover
               mode='list'
               book={{
@@ -222,7 +228,12 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               )}
               title={_('Change cover image')}
             >
-              <MdEdit className='h-5 w-5 sm:h-4 sm:w-4' />
+              <MdEdit
+                className={clsx(
+                  'h-5 w-5 sm:h-4 sm:w-4',
+                  isCoverLocked ? 'fill-base-content' : 'fill-gray-600',
+                )}
+              />
               <span className='hidden sm:inline'>{_('Replace')}</span>
             </button>
 

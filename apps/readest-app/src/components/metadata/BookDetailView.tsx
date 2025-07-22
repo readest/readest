@@ -100,7 +100,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Published')}</span>
             <p className='text-neutral-content text-sm'>
-              {formatDate(metadata.published) || _('Unknown')}
+              {formatDate(metadata.published, true) || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>

@@ -179,6 +179,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const openBookDetails = () => {
+    handleSetSelectMode(false);
     const book = libraryBooks.find((book) => book.hash === selectedBooks[0]);
     if (book) {
       handleShowDetailsBook(book);

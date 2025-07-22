@@ -123,7 +123,7 @@ export const getPrimaryLanguage = (lang: string | string[] | undefined) => {
   return Array.isArray(lang) ? lang[0] : lang;
 };
 
-export const formatDate = (date: string | number | Date | null | undefined) => {
+export const formatDate = (date: string | number | Date | null | undefined, isUTC = false) => {
   if (!date) return;
   const userLang = getUserLang();
   try {
@@ -131,6 +131,7 @@ export const formatDate = (date: string | number | Date | null | undefined) => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      timeZone: isUTC ? 'UTC' : undefined,
     });
   } catch {
     return;

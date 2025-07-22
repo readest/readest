@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
@@ -8,8 +9,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { getOSPlatform } from '@/utils/misc';
 import { getLocalBookFilename } from '@/utils/book';
+import { getOSPlatform } from '@/utils/misc';
+import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -138,28 +140,36 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     return true;
   };
 
-  const handleBookClick = async (book: Book) => {
-    if (isSelectMode) {
-      toggleSelection(book.hash);
-    } else {
-      if (!(await makeBookAvailable(book))) return;
-      if (appService?.hasWindow && settings.openBookInNewWindow) {
-        showReaderWindow(appService, [book.hash]);
+  const handleBookClick = useCallback(
+    async (book: Book) => {
+      if (isSelectMode) {
+        toggleSelection(book.hash);
       } else {
-        navigateToReader(router, [book.hash]);
+        if (!(await makeBookAvailable(book))) return;
+        if (appService?.hasWindow && settings.openBookInNewWindow) {
+          showReaderWindow(appService, [book.hash]);
+        } else {
+          navigateToReader(router, [book.hash]);
+        }
       }
-    }
-  };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isSelectMode, settings.openBookInNewWindow, appService],
+  );
 
-  const handleGroupClick = (group: BooksGroup) => {
-    if (isSelectMode) {
-      toggleSelection(group.id);
-    } else {
-      const params = new URLSearchParams(searchParams?.toString());
-      params.set('group', group.id);
-      navigateToLibrary(router, `${params.toString()}`);
-    }
-  };
+  const handleGroupClick = useCallback(
+    (group: BooksGroup) => {
+      if (isSelectMode) {
+        toggleSelection(group.id);
+      } else {
+        const params = new URLSearchParams(searchParams?.toString());
+        params.set('group', group.id);
+        navigateToLibrary(router, `${params.toString()}`);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isSelectMode, searchParams],
+  );
 
   const bookContextMenuHandler = async (book: Book) => {
     if (!appService?.hasContextMenu) return;
@@ -241,8 +251,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     menu.popup();
   };
 
-  const { pressing, handlers } = useLongPress({
-    onLongPress: async () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSelectItem = useCallback(
+    throttle(() => {
       if (!isSelectMode) {
         handleSetSelectMode(true);
       }
@@ -251,22 +262,56 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       } else {
         toggleSelection((item as BooksGroup).id);
       }
-    },
-    onTap: () => {
+    }, 100),
+    [isSelectMode],
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleOpenItem = useCallback(
+    throttle(() => {
+      if (isSelectMode) {
+        handleSelectItem();
+        return;
+      }
       if ('format' in item) {
         handleBookClick(item as Book);
       } else {
         handleGroupClick(item as BooksGroup);
       }
-    },
-    onContextMenu: () => {
+    }, 100),
+    [handleSelectItem, handleBookClick, handleGroupClick],
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleContextMenu = useCallback(
+    throttle(() => {
       if ('format' in item) {
         bookContextMenuHandler(item as Book);
       } else {
         groupContextMenuHandler(item as BooksGroup);
       }
+    }, 100),
+    [],
+  );
+
+  const { pressing, handlers } = useLongPress(
+    {
+      onLongPress: () => {
+        handleSelectItem();
+      },
+      onTap: () => {
+        handleOpenItem();
+      },
+      onContextMenu: () => {
+        if (appService?.hasContextMenu) {
+          handleContextMenu();
+        } else if (appService?.isAndroidApp) {
+          handleSelectItem();
+        }
+      },
     },
-  });
+    [isSelectMode, handleSelectItem, handleOpenItem, handleContextMenu],
+  );
 
   return (
     <div className={clsx(mode === 'list' && 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
@@ -275,6 +320,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           'group',
           mode === 'grid' && 'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-4 sm:px-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
+          appService?.isMobileApp && 'no-context-menu',
           pressing ? (mode === 'grid' ? 'scale-95' : 'scale-98') : 'scale-100',
         )}
         style={{
