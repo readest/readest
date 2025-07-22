@@ -221,7 +221,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const searchTerm = new RegExp(queryTerm, 'i');
     const title = formatTitle(item.title);
     const authors = formatAuthors(item.author);
-    return searchTerm.test(title) || searchTerm.test(authors);
+    return (
+      searchTerm.test(title) ||
+      searchTerm.test(authors) ||
+      searchTerm.test(item.format) ||
+      (item.groupName && searchTerm.test(item.groupName)) ||
+      (item.metadata?.description && searchTerm.test(item.metadata?.description))
+    );
   };
   const bookSorter = (a: Book, b: Book) => {
     const uiLanguage = localStorage?.getItem('i18nextLng') || '';
