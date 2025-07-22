@@ -114,7 +114,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       field: 'published',
       label: _('Publication Date'),
       value: metadata.published || '',
-      placeholder: 'YYYY or YYYY-MM-DD',
+      placeholder: _('YYYY or YYYY-MM-DD'),
     },
     {
       field: 'language',
