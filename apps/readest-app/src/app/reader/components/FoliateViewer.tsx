@@ -136,7 +136,7 @@ const FoliateViewer: React.FC<{
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
-        applyFixedlayoutStyles(detail.doc);
+        applyFixedlayoutStyles(detail.doc, viewSettings);
       }
 
       applyImageStyle(detail.doc);
@@ -317,9 +317,13 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const viewSettings = getViewSettings(bookKey)!;
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+      if (bookDoc.rendition?.layout === 'pre-paginated') {
+        const docs = viewRef.current.renderer.getContents();
+        docs.forEach(({ doc }) => applyFixedlayoutStyles(doc, viewSettings));
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode, isDarkMode]);
+  }, [themeCode, isDarkMode, viewSettings?.overrideColor, viewSettings?.invertImgColorInDark]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer && viewSettings) {

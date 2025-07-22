@@ -539,16 +539,39 @@ export const applyImageStyle = (document: Document) => {
   });
 };
 
-export const applyFixedlayoutStyles = (document: Document) => {
-  const style = document.createElement('style');
+export const applyFixedlayoutStyles = (
+  document: Document,
+  viewSettings: ViewSettings,
+  themeCode?: ThemeCode,
+) => {
+  if (!themeCode) {
+    themeCode = getThemeCode();
+  }
+  const { bg, fg, primary, isDarkMode } = themeCode;
+  const overrideColor = viewSettings.overrideColor!;
+  const invertImgColorInDark = viewSettings.invertImgColorInDark!;
+
+  const existingStyleId = 'fixed-layout-styles';
+  let style = document.getElementById(existingStyleId) as HTMLStyleElement;
+  if (style) {
+    style.remove();
+  }
+  style = document.createElement('style');
+  style.id = existingStyleId;
   style.textContent = `
-    html, body {
-      overflow: hidden;
-      height: 100%;
-      width: 100%;
+    html {
+      --theme-bg-color: ${bg};
+      --theme-fg-color: ${fg};
+      --theme-primary-color: ${primary};
+      color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
     body {
       position: relative;
+      background-color: var(--theme-bg-color);
+    }
+    img, canvas {
+      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
     img.singlePage {
       position: relative;
