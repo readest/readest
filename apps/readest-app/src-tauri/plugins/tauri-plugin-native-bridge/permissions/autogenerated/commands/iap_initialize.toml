@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-iap-initialize"
+description = "Enables the iap_initialize command without any pre-configured scope."
+commands.allow = ["iap_initialize"]
+
+[[permission]]
+identifier = "deny-iap-initialize"
+description = "Denies the iap_initialize command without any pre-configured scope."
+commands.deny = ["iap_initialize"]

@@ -3,6 +3,7 @@ import AuthenticationServices
 import CoreText
 import MediaPlayer
 import ObjectiveC
+import StoreKit
 import SwiftRs
 import Tauri
 import UIKit
@@ -46,6 +47,37 @@ class InterceptKeysRequestArgs: Decodable {
 
 class LockScreenOrientationRequestArgs: Decodable {
   let orientation: String?
+}
+
+struct InitializeRequest: Decodable {
+  let publicKey: String?
+}
+
+struct FetchProductsRequest: Decodable {
+  let productIds: [String]
+}
+
+struct PurchaseProductRequest: Decodable {
+  let productId: String
+}
+
+struct ProductData: Codable {
+  let id: String
+  let title: String
+  let description: String
+  let price: String
+  let priceCurrencyCode: String?
+  let priceAmountMicros: Int64
+  let productType: String
+}
+
+struct PurchaseData: Codable {
+  let productId: String
+  let transactionId: String
+  let originalTransactionId: String
+  let purchaseDate: String
+  let purchaseState: String
+  let platform: String
 }
 
 class VolumeKeyHandler: NSObject {
@@ -420,6 +452,85 @@ class NativeBridgePlugin: Plugin {
         UIDevice.current.setValue(specificOrientation.rawValue, forKey: "orientation")
         UIViewController.attemptRotationToDeviceOrientation()
       }
+    }
+  }
+
+  @objc public func iap_initialize(_ invoke: Invoke) {
+    StoreKitManager.shared.initialize()
+    invoke.resolve(["success": true])
+  }
+
+  @objc public func iap_fetch_products(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(FetchProductsRequest.self)
+
+      StoreKitManager.shared.fetchProducts(productIds: args.productIds) { products in
+        let productsData: [ProductData] = products.map { product in
+          return ProductData(
+            id: product.productIdentifier,
+            title: product.localizedTitle,
+            description: product.localizedDescription,
+            price: product.price.stringValue,
+            priceCurrencyCode: product.priceLocale.currencyCode,
+            priceAmountMicros: Int64(product.price.doubleValue * 1_000_000),
+            productType: product.productIdentifier.contains("monthly")
+              || product.productIdentifier.contains("yearly") ? "subscription" : "consumable"
+          )
+        }
+        invoke.resolve(["products": productsData])
+      }
+    } catch {
+      invoke.reject("Failed to parse fetch products arguments: \(error.localizedDescription)")
+    }
+  }
+
+  @objc public func iap_purchase_product(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(PurchaseProductRequest.self)
+
+      StoreKitManager.shared.fetchProducts(productIds: [args.productId]) { products in
+        guard let product = products.first else {
+          invoke.reject("Product not found")
+          return
+        }
+
+        StoreKitManager.shared.purchase(product: product) { result in
+          switch result {
+          case .success(let txn):
+            let purchase = PurchaseData(
+              productId: txn.payment.productIdentifier,
+              transactionId: txn.transactionIdentifier ?? "",
+              originalTransactionId: txn.original?.transactionIdentifier ?? txn
+                .transactionIdentifier ?? "",
+              purchaseDate: ISO8601DateFormatter().string(from: txn.transactionDate ?? Date()),
+              purchaseState: "purchased",
+              platform: "ios"
+            )
+            invoke.resolve(["purchase": purchase])
+          case .failure(let error):
+            invoke.reject("Purchase failed: \(error.localizedDescription)")
+          }
+        }
+      }
+    } catch {
+      invoke.reject("Failed to parse purchase arguments: \(error.localizedDescription)")
+    }
+  }
+
+  @objc public func iap_restore_purchases(_ invoke: Invoke) {
+    StoreKitManager.shared.restorePurchases { transactions in
+      let restored = transactions.map { txn -> PurchaseData in
+        return PurchaseData(
+          productId: txn.payment.productIdentifier,
+          transactionId: txn.transactionIdentifier ?? "",
+          originalTransactionId: txn.original?.transactionIdentifier ?? txn.transactionIdentifier
+            ?? "",
+          purchaseDate: ISO8601DateFormatter().string(from: txn.transactionDate ?? Date()),
+          purchaseState: "restored",
+          platform: "ios"
+        )
+      }
+      invoke.resolve(["purchases": restored])
     }
   }
 }

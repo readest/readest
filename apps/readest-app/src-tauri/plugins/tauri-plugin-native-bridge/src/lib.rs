@@ -47,6 +47,10 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_sys_fonts_list,
             commands::intercept_keys,
             commands::lock_screen_orientation,
+            commands::iap_initialize,
+            commands::iap_fetch_products,
+            commands::iap_purchase_product,
+            commands::iap_restore_purchases,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

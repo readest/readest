@@ -14,6 +14,10 @@ Default permissions for the plugin
 - `allow-get-sys-fonts-list`
 - `allow-intercept-keys`
 - `allow-lock-screen-orientation`
+- `allow-iap-initialize`
+- `allow-iap-fetch-products`
+- `allow-iap-purchase-product`
+- `allow-iap-restore-purchases`
 
 ## Permission Table
 
@@ -150,6 +154,110 @@ Enables the get_sys_fonts_list command without any pre-configured scope.
 <td>
 
 Denies the get_sys_fonts_list command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-iap-fetch-products`
+
+</td>
+<td>
+
+Enables the iap_fetch_products command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-iap-fetch-products`
+
+</td>
+<td>
+
+Denies the iap_fetch_products command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-iap-initialize`
+
+</td>
+<td>
+
+Enables the iap_initialize command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-iap-initialize`
+
+</td>
+<td>
+
+Denies the iap_initialize command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-iap-purchase-product`
+
+</td>
+<td>
+
+Enables the iap_purchase_product command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-iap-purchase-product`
+
+</td>
+<td>
+
+Denies the iap_purchase_product command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-iap-restore-purchases`
+
+</td>
+<td>
+
+Enables the iap_restore_purchases command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-iap-restore-purchases`
+
+</td>
+<td>
+
+Denies the iap_restore_purchases command without any pre-configured scope.
 
 </td>
 </tr>

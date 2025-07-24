@@ -86,3 +86,69 @@ pub struct InterceptKeysRequest {
 pub struct LockScreenOrientationRequest {
     pub orientation: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Product {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub price: String,
+    pub price_currency_code: Option<String>,
+    pub price_amount_micros: i64,
+    pub product_type: String, // "consumable", "non_consumable", or "subscription"
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Purchase {
+    pub product_id: String,
+    pub transaction_id: String,
+    pub purchase_date: String,
+    pub original_transaction_id: String,
+    pub purchase_state: String, // "purchased", "pending", "cancelled"
+    pub platform: String, // "ios" or "android"
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPInitializeRequest {
+    pub public_key: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPInitializeResponse {
+    pub success: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPFetchProductsRequest {
+    pub product_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPFetchProductsResponse {
+    pub products: Vec<Product>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPPurchaseProductRequest {
+    pub product_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPPurchaseProductResponse {
+    pub purchase: Option<Purchase>,
+    pub cancelled_purchase: Option<Purchase>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IAPRestorePurchasesResponse {
+    pub purchases: Vec<Purchase>,
+}

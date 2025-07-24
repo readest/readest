@@ -11,4 +11,8 @@ permissions = [
   "allow-get-sys-fonts-list",
   "allow-intercept-keys",
   "allow-lock-screen-orientation",
+  "allow-iap-initialize",
+  "allow-iap-fetch-products",
+  "allow-iap-purchase-product",
+  "allow-iap-restore-purchases",
 ]

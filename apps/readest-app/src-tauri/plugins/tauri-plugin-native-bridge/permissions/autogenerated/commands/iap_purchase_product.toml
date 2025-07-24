@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-iap-purchase-product"
+description = "Enables the iap_purchase_product command without any pre-configured scope."
+commands.allow = ["iap_purchase_product"]
+
+[[permission]]
+identifier = "deny-iap-purchase-product"
+description = "Denies the iap_purchase_product command without any pre-configured scope."
+commands.deny = ["iap_purchase_product"]

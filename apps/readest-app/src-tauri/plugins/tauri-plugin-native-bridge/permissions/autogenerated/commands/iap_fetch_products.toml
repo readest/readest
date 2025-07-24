@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-iap-fetch-products"
+description = "Enables the iap_fetch_products command without any pre-configured scope."
+commands.allow = ["iap_fetch_products"]
+
+[[permission]]
+identifier = "deny-iap-fetch-products"
+description = "Denies the iap_fetch_products command without any pre-configured scope."
+commands.deny = ["iap_fetch_products"]

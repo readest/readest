@@ -355,6 +355,54 @@
           "markdownDescription": "Denies the get_sys_fonts_list command without any pre-configured scope."
         },
         {
+          "description": "Enables the iap_fetch_products command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-iap-fetch-products",
+          "markdownDescription": "Enables the iap_fetch_products command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the iap_fetch_products command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-iap-fetch-products",
+          "markdownDescription": "Denies the iap_fetch_products command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the iap_initialize command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-iap-initialize",
+          "markdownDescription": "Enables the iap_initialize command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the iap_initialize command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-iap-initialize",
+          "markdownDescription": "Denies the iap_initialize command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the iap_purchase_product command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-iap-purchase-product",
+          "markdownDescription": "Enables the iap_purchase_product command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the iap_purchase_product command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-iap-purchase-product",
+          "markdownDescription": "Denies the iap_purchase_product command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the iap_restore_purchases command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-iap-restore-purchases",
+          "markdownDescription": "Enables the iap_restore_purchases command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the iap_restore_purchases command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-iap-restore-purchases",
+          "markdownDescription": "Denies the iap_restore_purchases command without any pre-configured scope."
+        },
+        {
           "description": "Enables the install_package command without any pre-configured scope.",
           "type": "string",
           "const": "allow-install-package",
@@ -415,10 +463,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`"
         }
       ]
     }

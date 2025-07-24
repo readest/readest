@@ -73,4 +73,29 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn iap_initialize(
+        &self,
+        _payload: IAPInitializeRequest,
+    ) -> crate::Result<IAPInitializeResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn iap_fetch_products(
+        &self,
+        _payload: IAPFetchProductsRequest,
+    ) -> crate::Result<IAPFetchProductsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn iap_purchase_product(
+        &self,
+        _payload: IAPPurchaseProductRequest,
+    ) -> crate::Result<IAPPurchaseProductResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn iap_restore_purchases(&self) -> crate::Result<IAPRestorePurchasesResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

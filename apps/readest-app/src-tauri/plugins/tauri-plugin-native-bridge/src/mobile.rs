@@ -112,3 +112,46 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn iap_initialize(
+        &self,
+        payload: IAPInitializeRequest,
+    ) -> crate::Result<IAPInitializeResponse> {
+        self.0
+            .run_mobile_plugin("iap_initialize", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn iap_fetch_products(
+        &self,
+        payload: IAPFetchProductsRequest,
+    ) -> crate::Result<IAPFetchProductsResponse> {
+        self.0
+            .run_mobile_plugin("iap_fetch_products", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn iap_purchase_product(
+        &self,
+        payload: IAPPurchaseProductRequest,
+    ) -> crate::Result<IAPPurchaseProductResponse> {
+        self.0
+            .run_mobile_plugin("iap_purchase_product", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn iap_restore_purchases(
+        &self,
+    ) -> crate::Result<IAPRestorePurchasesResponse> {
+        self.0
+            .run_mobile_plugin("iap_restore_purchases", ())
+            .map_err(Into::into)
+    }
+}
