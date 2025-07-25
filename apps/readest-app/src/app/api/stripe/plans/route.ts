@@ -28,6 +28,7 @@ export async function GET() {
           currency: price.currency,
           interval: price.recurring?.interval,
           product: price.product,
+          productName: product.name,
         };
       });
 

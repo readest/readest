@@ -45,7 +45,7 @@ interface RestorePurchasesResponse {
   purchases: IAPPurchase[];
 }
 
-class IAPService {
+export class IAPService {
   async initialize(): Promise<boolean> {
     const result = await invoke<InitializeResponse>('plugin:native-bridge|iap_initialize', {
       payload: {} as InitializeRequest,
@@ -95,5 +95,3 @@ class IAPService {
     }
   }
 }
-
-export default IAPService;

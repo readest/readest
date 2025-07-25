@@ -11,6 +11,7 @@
     "start-web": "dotenv -e .env.web -- next start",
     "i18n:extract": "i18next-scanner",
     "lint": "next lint",
+    "test": "dotenv -e .env -e .env.test.local vitest",
     "tauri": "tauri",
     "prepare-public-vendor": "mkdirp ./public/vendor/pdfjs",
     "copy-pdfjs-js": "cpx \"../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build/{pdf.worker.min.mjs,pdf.mjs,pdf.d.mts}\" ./public/vendor/pdfjs",
@@ -65,6 +66,7 @@
     "@tauri-apps/plugin-shell": "~2.3.0",
     "@tauri-apps/plugin-updater": "^2.9.0",
     "@zip.js/zip.js": "^2.7.53",
+    "app-store-server-api": "^0.17.1",
     "aws4fetch": "^1.0.20",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
@@ -93,12 +95,15 @@
     "semver": "^7.7.1",
     "stripe": "^18.2.1",
     "tinycolor2": "^1.6.0",
+    "zod": "^4.0.8",
     "zustand": "5.0.6"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tauri-apps/cli": "2.7.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.3.0",
     "@types/cors": "^2.8.17",
     "@types/cssbeautify": "^0.3.5",
     "@types/node": "^22.10.1",
@@ -108,6 +113,7 @@
     "@types/react-window": "^1.8.8",
     "@types/semver": "^7.7.0",
     "@types/tinycolor2": "^1.4.6",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "cpx2": "^8.0.0",
     "daisyui": "^4.12.24",
@@ -115,6 +121,7 @@
     "eslint": "^9.16.0",
     "eslint-config-next": "15.0.3",
     "i18next-scanner": "^4.6.0",
+    "jsdom": "^26.1.0",
     "mkdirp": "^3.0.1",
     "node-env-run": "^4.0.2",
     "postcss": "^8.4.49",
@@ -123,6 +130,8 @@
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4",
     "wrangler": "^4.21.0"
   }
 }

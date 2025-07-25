@@ -13,7 +13,7 @@
   "files": [],
   "references": [
     {
-      "path": "./packages"
-    }
+      "path": "./apps/readest-app"
+    },
   ]
 }
