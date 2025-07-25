@@ -357,7 +357,6 @@
   "Upgrade to Plus or Pro": "Plus veya Pro'ya yükselt",
   "Current Plan": "Mevcut Plan",
   "Plan Limits": "Plan Limitleri",
-  "Failed to manage subscription. Please try again later.": "Abonelik yönetimi başarısız oldu. Lütfen daha sonra tekrar deneyin.",
   "Processing your payment...": "Ödemeniz işleniyor...",
   "Please wait while we confirm your subscription.": "Aboneliğinizi onaylıyoruz, lütfen bekleyin.",
   "Payment Processing": "Ödeme İşleniyor",
@@ -453,5 +452,11 @@
   "Open Book in New Window": "Kitabı Yeni Pencerede Aç",
   "Voices for {{lang}}": "{{lang}} için Sesler",
   "Yandex Translate": "Yandex Çeviri",
-  "YYYY or YYYY-MM-DD": "YYYY veya YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY veya YYYY-MM-DD",
+  "Restore Purchase": "Satın Almayı Geri Yükle",
+  "No purchases found to restore.": "Geri yüklemek için satın alma bulunamadı.",
+  "Failed to restore purchases.": "Satın alımları geri yükleme başarısız oldu.",
+  "Failed to manage subscription.": "Aboneliği yönetme başarısız oldu.",
+  "Failed to load subscription plans.": "Abonelik planlarını yükleme başarısız oldu.",
+  "year": "yıl"
 }

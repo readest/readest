@@ -361,7 +361,6 @@
   "Upgrade to Plus or Pro": "Atualizar para Plus ou Pro",
   "Current Plan": "Plano atual",
   "Plan Limits": "Limites do plano",
-  "Failed to manage subscription. Please try again later.": "Não foi possível gerenciar a assinatura. Tente novamente mais tarde.",
   "Processing your payment...": "Processando seu pagamento...",
   "Please wait while we confirm your subscription.": "Por favor, aguarde enquanto confirmamos sua assinatura.",
   "Payment Processing": "Processando pagamento",
@@ -457,5 +456,11 @@
   "Open Book in New Window": "Abrir livro em nova janela",
   "Voices for {{lang}}": "Vozes para {{lang}}",
   "Yandex Translate": "Yandex Translate",
-  "YYYY or YYYY-MM-DD": "YYYY ou YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY ou YYYY-MM-DD",
+  "Restore Purchase": "Restaurar Compra",
+  "No purchases found to restore.": "Nenhuma compra encontrada para restaurar.",
+  "Failed to restore purchases.": "Falha ao restaurar compras.",
+  "Failed to manage subscription.": "Falha ao gerenciar assinatura.",
+  "Failed to load subscription plans.": "Falha ao carregar planos de assinatura.",
+  "year": "ano"
 }

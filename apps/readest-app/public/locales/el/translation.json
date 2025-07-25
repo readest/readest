@@ -357,7 +357,6 @@
   "Upgrade to Plus or Pro": "Αναβάθμιση σε Plus ή Pro",
   "Current Plan": "Τρέχον πρόγραμμα",
   "Plan Limits": "Όρια προγράμματος",
-  "Failed to manage subscription. Please try again later.": "Αποτυχία διαχείρισης της συνδρομής. Παρακαλώ δοκιμάστε ξανά αργότερα.",
   "Processing your payment...": "Επεξεργασία πληρωμής...",
   "Please wait while we confirm your subscription.": "Παρακαλώ περιμένετε όσο επιβεβαιώνουμε τη συνδρομή σας.",
   "Payment Processing": "Επεξεργασία πληρωμής",
@@ -453,5 +452,11 @@
   "Open Book in New Window": "Άνοιγμα βιβλίου σε νέο παράθυρο",
   "Voices for {{lang}}": "Φωνές για {{lang}}",
   "Yandex Translate": "Μετάφραση Yandex",
-  "YYYY or YYYY-MM-DD": "YYYY ή YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY ή YYYY-MM-DD",
+  "Restore Purchase": "Επαναφορά αγοράς",
+  "No purchases found to restore.": "Δεν βρέθηκαν αγορές για επαναφορά.",
+  "Failed to restore purchases.": "Αποτυχία επαναφοράς αγορών.",
+  "Failed to manage subscription.": "Αποτυχία διαχείρισης συνδρομής.",
+  "Failed to load subscription plans.": "Αποτυχία φόρτωσης σχεδίων συνδρομής.",
+  "year": "έτος"
 }

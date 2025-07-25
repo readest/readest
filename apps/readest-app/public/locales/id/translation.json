@@ -353,7 +353,6 @@
   "Upgrade to Plus or Pro": "Tingkatkan ke Plus atau Pro",
   "Current Plan": "Paket Saat Ini",
   "Plan Limits": "Batas Paket",
-  "Failed to manage subscription. Please try again later.": "Gagal mengelola langganan. Silakan coba lagi nanti.",
   "Processing your payment...": "Memproses pembayaran Anda...",
   "Please wait while we confirm your subscription.": "Mohon tunggu saat kami mengonfirmasi langganan Anda.",
   "Payment Processing": "Memproses Pembayaran",
@@ -449,5 +448,11 @@
   "Open Book in New Window": "Buka Buku di Jendela Baru",
   "Voices for {{lang}}": "Suara untuk {{lang}}",
   "Yandex Translate": "Yandex Translate",
-  "YYYY or YYYY-MM-DD": "YYYY atau YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY atau YYYY-MM-DD",
+  "Restore Purchase": "Pulihkan Pembelian",
+  "No purchases found to restore.": "Tidak ada pembelian yang ditemukan untuk dipulihkan.",
+  "Failed to restore purchases.": "Gagal memulihkan pembelian.",
+  "Failed to manage subscription.": "Gagal mengelola langganan.",
+  "Failed to load subscription plans.": "Gagal memuat rencana langganan.",
+  "year": "tahun"
 }

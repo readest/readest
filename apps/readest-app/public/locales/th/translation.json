@@ -306,7 +306,6 @@
   "Current Plan": "แผนปัจจุบัน",
   "Plan Limits": "ข้อจำกัดแผน",
   "Failed to delete user. Please try again later.": "ไม่สามารถลบผู้ใช้ ลองใหม่ภายหลัง",
-  "Failed to manage subscription. Please try again later.": "ไม่สามารถจัดการสมาชิก ลองใหม่ภายหลัง",
   "Loading profile...": "กำลังโหลดโปรไฟล์...",
   "Processing your payment...": "กำลังประมวลผลการชำระเงิน...",
   "Please wait while we confirm your subscription.": "กรุณารอสักครู่เพื่อยืนยันการสมัครสมาชิก",
@@ -449,5 +448,11 @@
   "Open Book in New Window": "เปิดหนังสือในหน้าต่างใหม่",
   "Voices for {{lang}}": "เสียงสำหรับ {{lang}}",
   "Yandex Translate": "Yandex Translate",
-  "YYYY or YYYY-MM-DD": "YYYY หรือ YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY หรือ YYYY-MM-DD",
+  "Restore Purchase": "กู้คืนการซื้อ",
+  "No purchases found to restore.": "ไม่พบการซื้อเพื่อกู้คืน",
+  "Failed to restore purchases.": "ไม่สามารถกู้คืนการซื้อได้",
+  "Failed to manage subscription.": "ไม่สามารถจัดการการสมัครสมาชิกได้",
+  "Failed to load subscription plans.": "ไม่สามารถโหลดแผนการสมัครสมาชิกได้",
+  "year": "ปี"
 }

@@ -360,7 +360,6 @@
   "Upgrade to Plus or Pro": "Passer à Plus ou Pro",
   "Current Plan": "Abonnement actuel",
   "Plan Limits": "Limites de l’abonnement",
-  "Failed to manage subscription. Please try again later.": "Échec de la gestion de l’abonnement. Veuillez réessayer plus tard.",
   "Processing your payment...": "Traitement de votre paiement...",
   "Please wait while we confirm your subscription.": "Veuillez patienter pendant la confirmation de votre abonnement.",
   "Payment Processing": "Traitement du paiement",
@@ -457,5 +456,11 @@
   "Open Book in New Window": "Ouvrir dans une nouvelle fenêtre",
   "Voices for {{lang}}": "Voix pour {{lang}}",
   "Yandex Translate": "Yandex Traduction",
-  "YYYY or YYYY-MM-DD": "YYYY ou YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY ou YYYY-MM-DD",
+  "Restore Purchase": "Restaurer l'achat",
+  "No purchases found to restore.": "Aucun achat trouvé à restaurer.",
+  "Failed to restore purchases.": "Échec de la restauration des achats.",
+  "Failed to manage subscription.": "Échec de la gestion de l'abonnement.",
+  "Failed to load subscription plans.": "Échec du chargement des plans d'abonnement.",
+  "year": "année"
 }

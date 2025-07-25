@@ -436,7 +436,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const selectFilesTauri = async () => {
-    const exts = appService?.isMobileApp ? [] : SUPPORTED_FILE_EXTS;
+    const exts = appService?.isIOSApp ? [] : SUPPORTED_FILE_EXTS;
     const files = (await appService?.selectFiles(_('Select Books'), exts)) || [];
     if (appService?.isIOSApp) {
       return files.filter((file) => {
@@ -444,7 +444,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         return SUPPORTED_FILE_EXTS.includes(fileExt);
       });
     }
-    // Cannot filter out files on Android since some content providers may not return the file name
     return files;
   };
 

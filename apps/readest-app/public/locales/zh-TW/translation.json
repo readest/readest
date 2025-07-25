@@ -353,7 +353,6 @@
   "Upgrade to Plus or Pro": "升級到 Plus 或 Pro",
   "Current Plan": "當前方案",
   "Plan Limits": "方案限制",
-  "Failed to manage subscription. Please try again later.": "無法管理訂閱，請稍後再試。",
   "Processing your payment...": "正在處理付款...",
   "Please wait while we confirm your subscription.": "請稍候，我們正在確認您的訂閱。",
   "Payment Processing": "付款處理中",
@@ -449,5 +448,11 @@
   "Open Book in New Window": "在新視窗中打開書籍",
   "Voices for {{lang}}": "{{lang}} 的語音",
   "Yandex Translate": "Yandex 翻譯",
-  "YYYY or YYYY-MM-DD": "YYYY 或 YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY 或 YYYY-MM-DD",
+  "Restore Purchase": "恢復購買",
+  "No purchases found to restore.": "未找到可恢復的購買。",
+  "Failed to restore purchases.": "恢復購買失敗。",
+  "Failed to manage subscription.": "管理訂閱失敗。",
+  "Failed to load subscription plans.": "加載訂閱計劃失敗。",
+  "year": "年"
 }

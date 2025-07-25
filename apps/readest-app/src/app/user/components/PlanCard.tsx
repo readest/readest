@@ -1,5 +1,6 @@
 import { IoCheckmark } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getLocale } from '@/utils/misc';
 import { PlanDetails } from '../utils/plan';
 import PlanActionButton from './PlanActionButton';
 
@@ -25,6 +26,10 @@ const PlanCard: React.FC<PlanCardProps> = ({
   onSelectPlan,
 }) => {
   const _ = useTranslation();
+  const { price, currency } = plan;
+  const formattedPrice = new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(
+    price / 100,
+  );
 
   return (
     <div
@@ -38,7 +43,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
         <div className='mb-6 text-center'>
           <h4 className='mb-2 text-2xl font-bold'>{_(plan.name)}</h4>
           <div className='text-3xl font-bold'>
-            {`$${(plan.price / 100).toFixed(2)}`}
+            {formattedPrice}
             <span className='text-lg font-normal'>/{_(plan.interval)}</span>
           </div>
         </div>

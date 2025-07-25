@@ -353,7 +353,6 @@
   "Upgrade to Plus or Pro": "Nâng cấp lên Plus hoặc Pro",
   "Current Plan": "Gói hiện tại",
   "Plan Limits": "Giới hạn gói",
-  "Failed to manage subscription. Please try again later.": "Không thể quản lý đăng ký. Vui lòng thử lại sau.",
   "Processing your payment...": "Đang xử lý thanh toán...",
   "Please wait while we confirm your subscription.": "Vui lòng chờ trong khi chúng tôi xác nhận đăng ký của bạn.",
   "Payment Processing": "Đang xử lý thanh toán",
@@ -449,5 +448,11 @@
   "Open Book in New Window": "Mở Sách trong Cửa sổ Mới",
   "Voices for {{lang}}": "Giọng nói cho {{lang}}",
   "Yandex Translate": "Yandex Dịch",
-  "YYYY or YYYY-MM-DD": "YYYY hoặc YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY hoặc YYYY-MM-DD",
+  "Restore Purchase": "Khôi phục mua hàng",
+  "No purchases found to restore.": "Không tìm thấy giao dịch mua nào để khôi phục.",
+  "Failed to restore purchases.": "Khôi phục giao dịch mua không thành công.",
+  "Failed to manage subscription.": "Quản lý đăng ký không thành công.",
+  "Failed to load subscription plans.": "Tải kế hoạch đăng ký không thành công.",
+  "year": "năm"
 }

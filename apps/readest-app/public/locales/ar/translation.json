@@ -372,7 +372,6 @@
   "Upgrade to Plus or Pro": "الترقية إلى Plus أو Pro",
   "Current Plan": "الخطة الحالية",
   "Plan Limits": "حدود الخطة",
-  "Failed to manage subscription. Please try again later.": "فشل في إدارة الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.",
   "Processing your payment...": "جارٍ معالجة الدفع...",
   "Please wait while we confirm your subscription.": "يرجى الانتظار بينما نقوم بتأكيد اشتراكك.",
   "Payment Processing": "معالجة الدفع",
@@ -469,5 +468,11 @@
   "Open Book in New Window": "فتح الكتاب في نافذة جديدة",
   "Voices for {{lang}}": "الأصوات لـ {{lang}}",
   "Yandex Translate": "ترجمة Yandex",
-  "YYYY or YYYY-MM-DD": "YYYY أو YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY أو YYYY-MM-DD",
+  "Restore Purchase": "استعادة الشراء",
+  "No purchases found to restore.": "لا توجد مشتريات لاستعادتها.",
+  "Failed to restore purchases.": "فشل في استعادة المشتريات.",
+  "Failed to manage subscription.": "فشل في إدارة الاشتراك.",
+  "Failed to load subscription plans.": "فشل في تحميل خطط الاشتراك.",
+  "year": "سنة"
 }

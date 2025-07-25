@@ -365,7 +365,6 @@
   "Upgrade to Plus or Pro": "Перейти на Plus або Pro",
   "Current Plan": "Поточний план",
   "Plan Limits": "Обмеження плану",
-  "Failed to manage subscription. Please try again later.": "Не вдалося керувати підпискою. Спробуйте ще раз пізніше.",
   "Processing your payment...": "Обробка вашого платежу...",
   "Please wait while we confirm your subscription.": "Зачекайте, ми підтверджуємо вашу підписку.",
   "Payment Processing": "Обробка платежу",
@@ -461,5 +460,11 @@
   "Open Book in New Window": "Відкрити книгу в новому вікні",
   "Voices for {{lang}}": "Голоси для {{lang}}",
   "Yandex Translate": "Yandex Перекладач",
-  "YYYY or YYYY-MM-DD": "YYYY або YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY або YYYY-MM-DD",
+  "Restore Purchase": "Відновити покупку",
+  "No purchases found to restore.": "Не знайдено покупок для відновлення.",
+  "Failed to restore purchases.": "Не вдалося відновити покупки.",
+  "Failed to manage subscription.": "Не вдалося керувати підпискою.",
+  "Failed to load subscription plans.": "Не вдалося завантажити плани підписки.",
+  "year": "рік"
 }

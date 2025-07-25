@@ -107,11 +107,9 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   }, [currentPlanIndex, handleScroll]);
 
   useEffect(() => {
-    console.log('Current plan index:', currentPlanIndex);
     if (plansScrollRef.current) {
       const planWidth = plansScrollRef.current.scrollWidth / allPlans.length;
       const scrollPosition = currentPlanIndex * planWidth;
-      console.log('Scroll position:', scrollPosition);
       plansScrollRef.current.scrollTo({
         left: scrollPosition,
         behavior: 'smooth',
@@ -146,7 +144,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
           <PlanCard
             key={plan.plan}
             plan={plan}
-            comingSoon={['appstore', 'playstore'].includes(appService?.distChannel || '')}
+            comingSoon={['playstore'].includes(appService?.distChannel || '')}
             isUserPlan={plan.plan === userPlan}
             upgradable={index > userPlanIndex}
             index={index}

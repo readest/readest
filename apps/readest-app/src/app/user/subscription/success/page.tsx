@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabase';
 import Spinner from '@/components/Spinner';
 
 const WEB_STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
+const WEB_APPLE_IAP_VERIFY_URL = `${getAPIBaseUrl()}/apple/iap-verify`;
 
 interface SessionStatus {
   status: 'loading' | 'complete' | 'failed' | 'processing';
@@ -27,12 +28,16 @@ const SuccessPageWithSearchParams = () => {
   const [retryCount, setRetryCount] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const payment = searchParams?.get('payment');
+  const platform = searchParams?.get('platform');
   const sessionId = searchParams?.get('session_id');
+  const transactionId = searchParams?.get('transaction_id');
+  const originalTransactionId = searchParams?.get('original_transaction_id');
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  async function fetchSessionStatus() {
+  const updateStripeSessionStatus = async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch(WEB_STRIPE_CHECK_URL, {
@@ -74,12 +79,75 @@ const SuccessPageWithSearchParams = () => {
       console.error('Failed to fetch session status:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
     }
-  }
+  };
+
+  const updateIAPSessionStatus = async (
+    platform: string,
+    transactionId: string,
+    originalTransactionId: string,
+  ) => {
+    if (!transactionId || !originalTransactionId) {
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      return;
+    }
+    if (platform === 'ios') {
+      try {
+        const token = await getAccessToken();
+        const response = await fetch(WEB_APPLE_IAP_VERIFY_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            transactionId,
+            originalTransactionId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const { purchase, error } = await response.json();
+
+        if (error) {
+          setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+          console.error('IAP verification error:', error);
+          return;
+        }
+
+        setSessionStatus({
+          status: purchase.status === 'active' ? 'complete' : 'processing',
+          customerEmail: purchase.customerEmail || '',
+          subscriptionId: purchase.subscriptionId,
+          planName: purchase.planName,
+        });
+
+        try {
+          await supabase.auth.refreshSession();
+        } catch {}
+      } catch (error) {
+        console.error('Failed to verify IAP transaction:', error);
+        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      }
+    }
+  };
+
+  const updateSessionStatus = async () => {
+    if (payment === 'stripe' && sessionId) {
+      await updateStripeSessionStatus();
+    } else if (payment === 'iap' && platform && transactionId && originalTransactionId) {
+      await updateIAPSessionStatus(platform, transactionId, originalTransactionId);
+    } else {
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+    }
+  };
 
   const handleRetry = () => {
     setRetryCount(0);
     setSessionStatus((prev) => ({ ...prev, status: 'loading' }));
-    fetchSessionStatus();
+    updateSessionStatus();
   };
 
   const handleGoToLibrary = () => {
@@ -91,20 +159,15 @@ const SuccessPageWithSearchParams = () => {
   };
 
   useEffect(() => {
-    if (!sessionId) {
-      handleGoToProfile();
-      return;
-    }
-
-    fetchSessionStatus();
+    updateSessionStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, router]);
+  }, [sessionId, originalTransactionId, router]);
 
   useEffect(() => {
     if (sessionStatus.status === 'processing' && retryCount < 3) {
       const timer = setTimeout(() => {
         setRetryCount((prev) => prev + 1);
-        fetchSessionStatus();
+        updateSessionStatus();
       }, 2000);
 
       return () => clearTimeout(timer);
@@ -166,7 +229,7 @@ const SuccessPageWithSearchParams = () => {
   if (sessionStatus.status === 'failed') {
     return (
       <div className='flex min-h-screen items-center justify-center bg-gray-50'>
-        <div className='max-w-md text-center'>
+        <div className='mx-auto max-w-2xl px-4 text-center'>
           <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100'>
             <svg
               className='h-6 w-6 text-red-600'
@@ -244,7 +307,7 @@ const SuccessPageWithSearchParams = () => {
             {sessionStatus.planName && (
               <div className='flex justify-between'>
                 <span className='font-medium'>{_('Plan:')}</span>
-                <span>{sessionStatus.planName}</span>
+                <span>{_(sessionStatus.planName)}</span>
               </div>
             )}
             {sessionStatus.amount && sessionStatus.currency && (

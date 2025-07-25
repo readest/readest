@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { defaultIAPVerifier } from '@/libs/iap/apple/verifier';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
+import { IAPError } from '@/types/error';
 
 const iapVerificationSchema = z.object({
   transactionId: z.string().min(1, 'Transaction ID is required'),
@@ -10,10 +11,10 @@ const iapVerificationSchema = z.object({
 });
 
 const PRODUCT_MAP: Record<string, string> = {
-  'com.bilingify.readest.monthly.plus': 'Monthly Plus Subscription',
-  'com.bilingify.readest.yearly.plus': 'Yearly Plus Subscription',
-  'com.bilingify.readest.monthly.pro': 'Monthly Pro Subscription',
-  'com.bilingify.readest.yearly.pro': 'Yearly Pro Subscription',
+  'com.bilingify.readest.monthly.plus': 'Plus',
+  'com.bilingify.readest.yearly.plus': 'Plus',
+  'com.bilingify.readest.monthly.pro': 'Pro',
+  'com.bilingify.readest.yearly.pro': 'Pro',
 };
 
 const getProductName = (productId: string) => {
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
+    return NextResponse.json({ error: IAPError.NOT_AUTHENTICATED }, { status: 403 });
   }
 
   try {
@@ -126,12 +127,22 @@ export async function POST(request: Request) {
     const { data: existingSubscription } = await supabase
       .from('apple_iap_subscriptions')
       .select('*')
-      .eq('transaction_id', transactionId)
-      .eq('user_id', user.id)
+      .eq('original_transaction_id', originalTransactionId)
       .single();
 
     console.log('Existing subscription:', existingSubscription);
-    if (existingSubscription && existingSubscription.status === 'active') {
+    // Should not restore purchase for another account
+    if (existingSubscription && existingSubscription.user_id !== user.id) {
+      return NextResponse.json(
+        { error: IAPError.TRANSACTION_BELONGS_TO_ANOTHER_USER },
+        { status: 403 },
+      );
+    }
+    if (
+      existingSubscription &&
+      existingSubscription.transactionId === transactionId &&
+      existingSubscription.status === 'active'
+    ) {
       console.log('Transaction already verified and active');
 
       const purchase = {
@@ -140,7 +151,7 @@ export async function POST(request: Request) {
         subscriptionId:
           existingSubscription.web_order_line_item_id ||
           existingSubscription.original_transaction_id,
-        planName: await getProductName(existingSubscription.product_id),
+        planName: getProductName(existingSubscription.product_id),
         productId: existingSubscription.product_id,
         platform: existingSubscription.platform,
         transactionId: existingSubscription.transaction_id,
@@ -163,7 +174,7 @@ export async function POST(request: Request) {
       console.error('Apple verification failed:', verificationResult.error);
       return NextResponse.json(
         {
-          error: verificationResult.error || 'Transaction verification failed with Apple',
+          error: verificationResult.error || IAPError.UNKNOWN_ERROR,
           purchase: null,
         },
         { status: 400 },
@@ -184,7 +195,7 @@ export async function POST(request: Request) {
       status: verificationResult.status!,
       customerEmail: user.email!,
       subscriptionId: transaction.webOrderLineItemId || transaction.originalTransactionId,
-      planName: await getProductName(transaction.productId),
+      planName: getProductName(transaction.productId),
       productId: transaction.productId,
       platform: 'ios',
       transactionId: transaction.transactionId,
@@ -208,7 +219,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         {
-          error: 'Transaction failed to update database. Please contact support.',
+          error: IAPError.TRANSACTION_SERVICE_UNAVAILABLE,
           purchase: null,
         },
         { status: 500 },
@@ -222,7 +233,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('IAP verification error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: error instanceof Error ? error.message : IAPError.UNKNOWN_ERROR },
       { status: 500 },
     );
   }

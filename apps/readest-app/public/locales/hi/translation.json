@@ -357,7 +357,6 @@
   "Upgrade to Plus or Pro": "Plus या Pro में अपग्रेड करें",
   "Current Plan": "वर्तमान योजना",
   "Plan Limits": "योजना की सीमाएँ",
-  "Failed to manage subscription. Please try again later.": "सदस्यता प्रबंधित करने में विफल। कृपया बाद में पुनः प्रयास करें।",
   "Processing your payment...": "आपका भुगतान संसाधित हो रहा है...",
   "Please wait while we confirm your subscription.": "कृपया प्रतीक्षा करें, हम आपकी सदस्यता की पुष्टि कर रहे हैं।",
   "Payment Processing": "भुगतान संसाधित हो रहा है",
@@ -453,5 +452,11 @@
   "Open Book in New Window": "नई विंडो में पुस्तक खोलें",
   "Voices for {{lang}}": "{{lang}} के लिए आवाज़ें",
   "Yandex Translate": "यांडेक्स अनुवाद",
-  "YYYY or YYYY-MM-DD": "YYYY या YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY या YYYY-MM-DD",
+  "Restore Purchase": "खरीदारी पुनर्स्थापित करें",
+  "No purchases found to restore.": "पुनर्स्थापित करने के लिए कोई खरीदारी नहीं मिली।",
+  "Failed to restore purchases.": "खरीदारी पुनर्स्थापित करने में विफल।",
+  "Failed to manage subscription.": "सदस्यता प्रबंधित करने में विफल।",
+  "Failed to load subscription plans.": "सदस्यता योजनाएँ लोड करने में विफल।",
+  "year": "वर्ष"
 }

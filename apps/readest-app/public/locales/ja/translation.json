@@ -353,7 +353,6 @@
   "Upgrade to Plus or Pro": "Plus または Pro にアップグレード",
   "Current Plan": "現在のプラン",
   "Plan Limits": "プランの上限",
-  "Failed to manage subscription. Please try again later.": "サブスクリプションの管理に失敗しました。後でもう一度お試しください。",
   "Processing your payment...": "お支払いを処理中...",
   "Please wait while we confirm your subscription.": "サブスクリプションを確認しています。しばらくお待ちください。",
   "Payment Processing": "支払いを処理中",
@@ -449,5 +448,11 @@
   "Open Book in New Window": "新しいウィンドウで本を開く",
   "Voices for {{lang}}": "{{lang}}の音声",
   "Yandex Translate": "Yandex翻訳",
-  "YYYY or YYYY-MM-DD": "YYYYまたはYYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYYまたはYYYY-MM-DD",
+  "Restore Purchase": "購入を復元",
+  "No purchases found to restore.": "復元する購入が見つかりません。",
+  "Failed to restore purchases.": "購入の復元に失敗しました。",
+  "Failed to manage subscription.": "サブスクリプションの管理に失敗しました。",
+  "Failed to load subscription plans.": "サブスクリプションプランの読み込みに失敗しました。",
+  "year": "年"
 }

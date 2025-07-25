@@ -1,3 +1,4 @@
+import { IAPError } from '@/types/error';
 import {
   AppStoreServerAPI,
   Environment,
@@ -58,7 +59,7 @@ export class AppleIAPVerifier {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : IAPError.UNKNOWN_ERROR,
       };
     }
     if (response.data && response.data.length > 0) {
@@ -69,7 +70,7 @@ export class AppleIAPVerifier {
       if (!lastTransaction) {
         return {
           success: false,
-          error: 'Transaction not found',
+          error: IAPError.TRANSACTION_NOT_FOUND,
         };
       }
       const decodedTransaction = await decodeTransaction(lastTransaction.signedTransactionInfo);
@@ -109,7 +110,7 @@ export class AppleIAPVerifier {
     } else {
       return {
         success: false,
-        error: 'No transactions found for this original transaction ID',
+        error: IAPError.TRANSACTION_NOT_FOUND,
       };
     }
   }

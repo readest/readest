@@ -365,7 +365,6 @@
   "Upgrade to Plus or Pro": "Обновить до Plus или Pro",
   "Current Plan": "Текущий план",
   "Plan Limits": "Лимиты плана",
-  "Failed to manage subscription. Please try again later.": "Не удалось управлять подпиской. Пожалуйста, попробуйте позже.",
   "Processing your payment...": "Обработка платежа...",
   "Please wait while we confirm your subscription.": "Пожалуйста, подождите, пока мы подтверждаем вашу подписку.",
   "Payment Processing": "Обработка платежа",
@@ -461,5 +460,11 @@
   "Open Book in New Window": "Открыть книгу в новом окне",
   "Voices for {{lang}}": "Голоса для {{lang}}",
   "Yandex Translate": "Yandex Translate",
-  "YYYY or YYYY-MM-DD": "YYYY или YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY или YYYY-MM-DD",
+  "Restore Purchase": "Восстановить покупку",
+  "No purchases found to restore.": "Не найдено покупок для восстановления.",
+  "Failed to restore purchases.": "Не удалось восстановить покупки.",
+  "Failed to manage subscription.": "Не удалось управлять подпиской.",
+  "Failed to load subscription plans.": "Не удалось загрузить планы подписки.",
+  "year": "год"
 }

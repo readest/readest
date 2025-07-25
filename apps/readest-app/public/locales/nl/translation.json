@@ -357,7 +357,6 @@
   "Upgrade to Plus or Pro": "Upgrade naar Plus of Pro",
   "Current Plan": "Huidig abonnement",
   "Plan Limits": "Abonnementslimieten",
-  "Failed to manage subscription. Please try again later.": "Abonnement beheren is mislukt. Probeer het later opnieuw.",
   "Processing your payment...": "Je betaling wordt verwerkt...",
   "Please wait while we confirm your subscription.": "Even geduld terwijl we je abonnement bevestigen.",
   "Payment Processing": "Betaling verwerken",
@@ -453,5 +452,11 @@
   "Open Book in New Window": "Open boek in nieuw venster",
   "Voices for {{lang}}": "Stemmen voor {{lang}}",
   "Yandex Translate": "Yandex Vertalen",
-  "YYYY or YYYY-MM-DD": "YYYY of YYYY-MM-DD"
+  "YYYY or YYYY-MM-DD": "YYYY of YYYY-MM-DD",
+  "Restore Purchase": "Herstel aankoop",
+  "No purchases found to restore.": "Geen aankopen gevonden om te herstellen.",
+  "Failed to restore purchases.": "Herstellen van aankopen is mislukt.",
+  "Failed to manage subscription.": "Beheren van abonnement is mislukt.",
+  "Failed to load subscription plans.": "Laden van abonnement plannen is mislukt.",
+  "year": "jaar"
 }
