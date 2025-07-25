@@ -123,5 +123,6 @@ export const defaultIAPVerifier = new AppleIAPVerifier({
   issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
   bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,
   privateKey: atob(process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || ''),
-  environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+  environment: 'sandbox',
+  // environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
 });
