@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "購入の復元に失敗しました。",
   "Failed to manage subscription.": "サブスクリプションの管理に失敗しました。",
   "Failed to load subscription plans.": "サブスクリプションプランの読み込みに失敗しました。",
-  "year": "年"
+  "year": "年",
+  "Failed to create checkout session": "チェックアウトセッションの作成に失敗しました"
 }

@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "Khôi phục giao dịch mua không thành công.",
   "Failed to manage subscription.": "Quản lý đăng ký không thành công.",
   "Failed to load subscription plans.": "Tải kế hoạch đăng ký không thành công.",
-  "year": "năm"
+  "year": "năm",
+  "Failed to create checkout session": "Không thể tạo phiên làm việc thanh toán"
 }

@@ -474,5 +474,6 @@
   "Failed to restore purchases.": "فشل في استعادة المشتريات.",
   "Failed to manage subscription.": "فشل في إدارة الاشتراك.",
   "Failed to load subscription plans.": "فشل في تحميل خطط الاشتراك.",
-  "year": "سنة"
+  "year": "سنة",
+  "Failed to create checkout session": "فشل في إنشاء جلسة الدفع"
 }

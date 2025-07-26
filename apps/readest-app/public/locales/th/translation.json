@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "ไม่สามารถกู้คืนการซื้อได้",
   "Failed to manage subscription.": "ไม่สามารถจัดการการสมัครสมาชิกได้",
   "Failed to load subscription plans.": "ไม่สามารถโหลดแผนการสมัครสมาชิกได้",
-  "year": "ปี"
+  "year": "ปี",
+  "Failed to create checkout session": "ไม่สามารถสร้างเซสชันการชำระเงินได้"
 }

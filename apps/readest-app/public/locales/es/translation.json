@@ -462,5 +462,6 @@
   "Failed to restore purchases.": "Error al restaurar compras.",
   "Failed to manage subscription.": "Error al gestionar la suscripción.",
   "Failed to load subscription plans.": "Error al cargar los planes de suscripción.",
-  "year": "año"
+  "year": "año",
+  "Failed to create checkout session": "Error al crear la sesión de pago"
 }

@@ -466,5 +466,6 @@
   "Failed to restore purchases.": "Не удалось восстановить покупки.",
   "Failed to manage subscription.": "Не удалось управлять подпиской.",
   "Failed to load subscription plans.": "Не удалось загрузить планы подписки.",
-  "year": "год"
+  "year": "год",
+  "Failed to create checkout session": "Не удалось создать сессию оформления заказа"
 }

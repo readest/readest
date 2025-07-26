@@ -466,5 +466,6 @@
   "Failed to restore purchases.": "Nie udało się przywrócić zakupów.",
   "Failed to manage subscription.": "Nie udało się zarządzać subskrypcją.",
   "Failed to load subscription plans.": "Nie udało się załadować planów subskrypcyjnych.",
-  "year": "rok"
+  "year": "rok",
+  "Failed to create checkout session": "Nie udało się utworzyć sesji zakupu"
 }

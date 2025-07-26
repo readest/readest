@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { defaultIAPVerifier } from '@/libs/iap/apple/verifier';
+import { getAppleIAPVerifier } from '@/libs/iap/apple/verifier';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { IAPError } from '@/types/error';
@@ -169,6 +169,7 @@ export async function POST(request: Request) {
       });
     }
 
+    const defaultIAPVerifier = getAppleIAPVerifier();
     const verificationResult = await defaultIAPVerifier.verifyTransaction(originalTransactionId);
     if (!verificationResult.success) {
       console.error('Apple verification failed:', verificationResult.error);

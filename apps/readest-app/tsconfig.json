@@ -29,7 +29,7 @@
       ],
       "@pdfjs/*": [
         "./public/vendor/pdfjs/*"
-      ]
+      ],
     }
   },
   "include": [

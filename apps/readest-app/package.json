@@ -33,7 +33,7 @@
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
     "release-google-play": "dotenv -e .env.google-play.local -- bash scripts/release-google-play.sh",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
-    "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "preview": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare preview --ip 0.0.0.0",
     "deploy": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
@@ -46,7 +46,7 @@
     "@aws-sdk/s3-request-presigner": "^3.735.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@fabianlars/tauri-plugin-oauth": "2",
-    "@opennextjs/cloudflare": "^1.3.1",
+    "@opennextjs/cloudflare": "^1.6.1",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.4.0",
     "@supabase/auth-ui-react": "^0.4.7",
@@ -106,7 +106,7 @@
     "@testing-library/react": "^16.3.0",
     "@types/cors": "^2.8.17",
     "@types/cssbeautify": "^0.3.5",
-    "@types/node": "^22.10.1",
+    "@types/node": "^22.15.31",
     "@types/react": "18.3.12",
     "@types/react-color": "^3.0.13",
     "@types/react-dom": "18.3.1",
@@ -132,6 +132,6 @@
     "typescript": "^5.7.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "wrangler": "^4.21.0"
+    "wrangler": "^4.26.0"
   }
 }

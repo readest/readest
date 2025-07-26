@@ -458,5 +458,6 @@
   "Failed to restore purchases.": "Herstellen van aankopen is mislukt.",
   "Failed to manage subscription.": "Beheren van abonnement is mislukt.",
   "Failed to load subscription plans.": "Laden van abonnement plannen is mislukt.",
-  "year": "jaar"
+  "year": "jaar",
+  "Failed to create checkout session": "Kon de afreken sessie niet aanmaken"
 }

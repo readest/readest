@@ -112,15 +112,27 @@ const ProfilePage = () => {
     }
     setLoading(true);
     const isEmbeddedCheckout = isTauriAppPlatform();
-    const { sessionId, clientSecret, url } = await fetch(WEB_STRIPE_CHECKOUT_URL, {
+    const response = await fetch(WEB_STRIPE_CHECKOUT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ priceId, embedded: isEmbeddedCheckout }),
-    }).then((res) => res.json());
+    });
     setLoading(false);
+    if (!response.ok) {
+      console.error('Failed to create Stripe checkout session');
+      posthog.capture('checkout_error', {
+        error: 'Failed to create Stripe checkout session',
+      });
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('Failed to create checkout session'),
+      });
+      return;
+    }
+    const { sessionId, clientSecret, url } = await response.json();
 
     const selectedPlan = availablePlans.find((plan) => plan.price_id === priceId)!;
     const planName = selectedPlan.product?.name || selectedPlan.productName;
@@ -193,6 +205,9 @@ const ProfilePage = () => {
     try {
       const purchases = await iapService.restorePurchases();
       if (purchases.length > 0) {
+        purchases.sort(
+          (a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime(),
+        );
         const purchase = purchases[0]!;
         const params = new URLSearchParams({
           payment: 'iap',
@@ -285,7 +300,10 @@ const ProfilePage = () => {
     } else {
       fetch(WEB_STRIPE_PLANS_URL)
         .then((res) => res.json())
-        .then((data) => setAvailablePlans(data || []));
+        .then((data) => {
+          const availablePlans = data && data instanceof Array ? data : [];
+          setAvailablePlans(availablePlans);
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);

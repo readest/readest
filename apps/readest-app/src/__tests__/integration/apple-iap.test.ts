@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { AppleIAPVerifier } from '@/libs/iap/apple/verifier';
+import { AppleIAPVerifier, createAppleIAPVerifier } from '@/libs/iap/apple/verifier';
 
 const SKIP_IAP_API_TESTS = !process.env['ENABLE_IAP_API_TESTS'];
 const REAL_TEST_DATA = {
@@ -26,7 +26,7 @@ describe.skipIf(SKIP_IAP_API_TESTS)('Apple IAP Integration Tests', () => {
   let verifier: AppleIAPVerifier;
 
   beforeAll(() => {
-    verifier = new AppleIAPVerifier({
+    verifier = createAppleIAPVerifier({
       keyId: process.env['APPLE_IAP_KEY_ID']!,
       issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
       bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,

@@ -458,5 +458,6 @@
   "Failed to restore purchases.": "Αποτυχία επαναφοράς αγορών.",
   "Failed to manage subscription.": "Αποτυχία διαχείρισης συνδρομής.",
   "Failed to load subscription plans.": "Αποτυχία φόρτωσης σχεδίων συνδρομής.",
-  "year": "έτος"
+  "year": "έτος",
+  "Failed to create checkout session": "Αποτυχία δημιουργίας συνεδρίας πληρωμής"
 }

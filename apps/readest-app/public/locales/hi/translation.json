@@ -458,5 +458,6 @@
   "Failed to restore purchases.": "खरीदारी पुनर्स्थापित करने में विफल।",
   "Failed to manage subscription.": "सदस्यता प्रबंधित करने में विफल।",
   "Failed to load subscription plans.": "सदस्यता योजनाएँ लोड करने में विफल।",
-  "year": "वर्ष"
+  "year": "वर्ष",
+  "Failed to create checkout session": "चेकआउट सत्र बनाने में विफल"
 }

@@ -2,13 +2,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getAPIBaseUrl } from '@/services/environment';
+import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import { supabase } from '@/utils/supabase';
 import Spinner from '@/components/Spinner';
 
-const WEB_STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
-const WEB_APPLE_IAP_VERIFY_URL = `${getAPIBaseUrl()}/apple/iap-verify`;
+const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
+const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
 
 interface SessionStatus {
   status: 'loading' | 'complete' | 'failed' | 'processing';
@@ -40,7 +40,7 @@ const SuccessPageWithSearchParams = () => {
   const updateStripeSessionStatus = async () => {
     try {
       const token = await getAccessToken();
-      const response = await fetch(WEB_STRIPE_CHECK_URL, {
+      const response = await fetch(STRIPE_CHECK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ const SuccessPageWithSearchParams = () => {
     if (platform === 'ios') {
       try {
         const token = await getAccessToken();
-        const response = await fetch(WEB_APPLE_IAP_VERIFY_URL, {
+        const response = await fetch(APPLE_IAP_VERIFY_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

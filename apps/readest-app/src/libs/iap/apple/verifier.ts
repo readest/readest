@@ -118,13 +118,19 @@ export class AppleIAPVerifier {
 
 export const createAppleIAPVerifier = (config: AppleIAPConfig) => new AppleIAPVerifier(config);
 
-export const defaultIAPVerifier = new AppleIAPVerifier({
-  keyId: process.env['APPLE_IAP_KEY_ID']!,
-  issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
-  bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,
-  privateKey: Buffer.from(process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '', 'base64').toString(
-    'utf-8',
-  ),
-  environment: 'sandbox',
-  // environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-});
+let defaultIAPVerifier: AppleIAPVerifier | undefined;
+export const getAppleIAPVerifier = () => {
+  if (!defaultIAPVerifier) {
+    defaultIAPVerifier = createAppleIAPVerifier({
+      keyId: process.env['APPLE_IAP_KEY_ID']!,
+      issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
+      bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,
+      privateKey: Buffer.from(
+        process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '',
+        'base64',
+      ).toString('utf-8'),
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+    });
+  }
+  return defaultIAPVerifier;
+};

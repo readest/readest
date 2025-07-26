@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "恢復購買失敗。",
   "Failed to manage subscription.": "管理訂閱失敗。",
   "Failed to load subscription plans.": "加載訂閱計劃失敗。",
-  "year": "年"
+  "year": "年",
+  "Failed to create checkout session": "創建結帳會話失敗"
 }

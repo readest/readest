@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "구매 복원에 실패했습니다.",
   "Failed to manage subscription.": "구독 관리에 실패했습니다.",
   "Failed to load subscription plans.": "구독 플랜 로드에 실패했습니다.",
-  "year": "년"
+  "year": "년",
+  "Failed to create checkout session": "체크아웃 세션 생성 실패"
 }

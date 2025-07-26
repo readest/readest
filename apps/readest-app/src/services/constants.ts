@@ -535,6 +535,7 @@ export const BOOK_IDS_SEPARATOR = '+';
 export const DOWNLOAD_READEST_URL = 'https://readest.com?utm_source=readest_web';
 
 export const READEST_WEB_BASE_URL = 'https://web.readest.com';
+export const READEST_NODE_BASE_URL = 'https://node.readest.com';
 
 const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 

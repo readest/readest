@@ -462,5 +462,6 @@
   "Failed to restore purchases.": "Échec de la restauration des achats.",
   "Failed to manage subscription.": "Échec de la gestion de l'abonnement.",
   "Failed to load subscription plans.": "Échec du chargement des plans d'abonnement.",
-  "year": "année"
+  "year": "année",
+  "Failed to create checkout session": "Échec de la création de la session de paiement"
 }

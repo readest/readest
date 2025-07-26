@@ -458,5 +458,6 @@
   "Failed to restore purchases.": "Satın alımları geri yükleme başarısız oldu.",
   "Failed to manage subscription.": "Aboneliği yönetme başarısız oldu.",
   "Failed to load subscription plans.": "Abonelik planlarını yükleme başarısız oldu.",
-  "year": "yıl"
+  "year": "yıl",
+  "Failed to create checkout session": "Ödeme oturumu oluşturma başarısız oldu"
 }

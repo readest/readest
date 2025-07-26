@@ -454,5 +454,6 @@
   "Failed to restore purchases.": "Gagal memulihkan pembelian.",
   "Failed to manage subscription.": "Gagal mengelola langganan.",
   "Failed to load subscription plans.": "Gagal memuat rencana langganan.",
-  "year": "tahun"
+  "year": "tahun",
+  "Failed to create checkout session": "Failed to create checkout session"
 }
