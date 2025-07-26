@@ -220,6 +220,7 @@ export abstract class BaseAppService implements AppService {
         existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
         existingBook.author = existingBook.author ?? book.author;
         existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
+        existingBook.downloadedAt = Date.now();
       }
 
       if (!(await this.fs.exists(getDir(book), 'Books'))) {

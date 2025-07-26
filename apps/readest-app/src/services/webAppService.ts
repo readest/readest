@@ -117,10 +117,13 @@ const indexedDBFileSystem: FileSystem = {
       request.onerror = () => reject(request.error);
     });
   },
-  async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer) {
+  async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File) {
     const { fp } = resolvePath(path, base);
     const db = await openIndexedDB();
 
+    if (content instanceof File) {
+      content = await content.arrayBuffer();
+    }
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction('files', 'readwrite');
       const store = transaction.objectStore('files');
