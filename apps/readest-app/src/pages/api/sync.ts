@@ -144,8 +144,12 @@ export async function POST(req: NextRequest) {
           .insert(dbRec)
           .select()
           .single();
-        console.log('Inserted record:', inserted);
-        if (insertError) return { error: insertError.message };
+        if (insertError) {
+          console.log(`Failed to insert ${table} record:`, JSON.stringify(dbRec));
+          return {
+            error: insertError.message,
+          };
+        }
         authoritativeRecords.push(inserted);
       } else {
         const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
@@ -166,8 +170,10 @@ export async function POST(req: NextRequest) {
             .match(matchConditions)
             .select()
             .single();
-          console.log('Updated record:', updated);
-          if (updateError) return { error: updateError.message };
+          if (updateError) {
+            console.log(`Failed to update ${table} record:`, JSON.stringify(dbRec));
+            return { error: updateError.message };
+          }
           authoritativeRecords.push(updated);
         } else {
           authoritativeRecords.push(serverData);

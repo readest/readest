@@ -16,6 +16,7 @@ import {
   formatAuthors,
   getFilename,
   getPrimaryLanguage,
+  getLibraryBackupFilename,
 } from '@/utils/book';
 import { partialMD5 } from '@/utils/md5';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
@@ -537,17 +538,44 @@ export abstract class BaseAppService implements AppService {
       : this.getCoverImageUrl(book);
   }
 
+  private async loadJSONFile(
+    filename: string,
+  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> {
+    try {
+      const txt = await this.fs.readFile(filename, 'Books', 'text');
+      if (!txt || typeof txt !== 'string' || txt.trim().length === 0) {
+        return { success: false, error: 'File is empty or invalid' };
+      }
+      try {
+        const data = JSON.parse(txt as string);
+        return { success: true, data };
+      } catch (parseError) {
+        return { success: false, error: `JSON parse error: ${parseError}` };
+      }
+    } catch (error) {
+      return { success: false, error };
+    }
+  }
+
   async loadLibraryBooks(): Promise<Book[]> {
     console.log('Loading library books...');
     let books: Book[] = [];
     const libraryFilename = getLibraryFilename();
+    const backupFilename = getLibraryBackupFilename();
 
-    try {
-      const txt = await this.fs.readFile(libraryFilename, 'Books', 'text');
-      books = JSON.parse(txt as string);
-    } catch {
-      await this.fs.createDir('', 'Books', true);
-      await this.fs.writeFile(libraryFilename, 'Books', '[]');
+    const mainResult = await this.loadJSONFile(libraryFilename);
+    if (mainResult.success) {
+      books = mainResult.data as Book[];
+    } else {
+      const backupResult = await this.loadJSONFile(backupFilename);
+      if (backupResult.success) {
+        books = backupResult.data as Book[];
+        console.warn('Loaded library from backup file:', backupFilename);
+      } else {
+        await this.fs.createDir('', 'Books', true);
+        await this.fs.writeFile(libraryFilename, 'Books', '[]');
+        await this.fs.writeFile(backupFilename, 'Books', '[]');
+      }
     }
 
     await Promise.all(
@@ -564,7 +592,19 @@ export abstract class BaseAppService implements AppService {
   async saveLibraryBooks(books: Book[]): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
-    await this.fs.writeFile(getLibraryFilename(), 'Books', JSON.stringify(libraryBooks));
+    const jsonData = JSON.stringify(libraryBooks, null, 2);
+    const libraryFilename = getLibraryFilename();
+    const backupFilename = getLibraryBackupFilename();
+
+    const saveResults = await Promise.allSettled([
+      this.fs.writeFile(backupFilename, 'Books', jsonData),
+      this.fs.writeFile(libraryFilename, 'Books', jsonData),
+    ]);
+    const backupSuccess = saveResults[0].status === 'fulfilled';
+    const mainSuccess = saveResults[1].status === 'fulfilled';
+    if (!backupSuccess || !mainSuccess) {
+      throw new Error('Failed to save library books');
+    }
   }
 
   private imageToArrayBuffer(imageUrl?: string, imageFile?: string): Promise<ArrayBuffer> {

@@ -11,6 +11,9 @@ export const getDir = (book: Book) => {
 export const getLibraryFilename = () => {
   return 'library.json';
 };
+export const getLibraryBackupFilename = () => {
+  return 'library_backup.json';
+};
 export const getRemoteBookFilename = (book: Book) => {
   // S3 storage: https://docs.aws.amazon.com/zh_cn/AmazonS3/latest/userguide/object-keys.html
   if (getStorageType() === 'r2') {
