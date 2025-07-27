@@ -92,6 +92,7 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
             console.error('Failed to download book:', newBook);
           } finally {
             newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+            newBook.coverImageUrl += '?timestamp=' + Date.now();
             updatedLibrary.push(newBook);
             setLibrary(updatedLibrary);
           }

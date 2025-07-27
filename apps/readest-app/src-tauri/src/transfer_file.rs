@@ -17,8 +17,8 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 use read_progress_stream::ReadProgressStream;
 
-use std::collections::HashMap;
 use std::time::Instant;
+use std::{collections::HashMap, sync::Arc};
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -109,41 +109,130 @@ pub async fn download_file(
     body: Option<String>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<()> {
+    use futures::stream::{self, StreamExt};
+    use std::cmp::min;
+    use tokio::io::AsyncSeekExt;
+
+    const PART_SIZE: u64 = 1024 * 1024 * 1;
+
     let client = reqwest::Client::new();
-    let mut request = if let Some(body) = body {
-        client.post(url).body(body)
-    } else {
-        client.get(url)
-    };
-    // Loop trought the headers keys and values
-    // and add them to the request object.
-    for (key, value) in headers {
-        request = request.header(&key, value);
+
+    // Check if server supports range requests
+    let range_resp = client.get(url).header("Range", "bytes=0-0").send().await?;
+    let accept_ranges = range_resp
+        .headers()
+        .get("accept-ranges")
+        .map(|v| v.to_str().unwrap_or(""))
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        == "bytes";
+    let total = range_resp
+        .headers()
+        .get("content-range")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split('/').nth(1))
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(0);
+
+    if !accept_ranges || total == 0 {
+        // Fallback to original single-threaded logic
+        let mut request = if let Some(body) = body {
+            client.post(url).body(body)
+        } else {
+            client.get(url)
+        };
+
+        for (key, value) in headers.iter() {
+            request = request.header(key, value);
+        }
+
+        let response = request.send().await?;
+        if !response.status().is_success() {
+            return Err(Error::HttpErrorCode(
+                response.status().as_u16(),
+                response.text().await.unwrap_or_default(),
+            ));
+        }
+
+        let total = response.content_length().unwrap_or(0);
+        let mut file = BufWriter::new(File::create(file_path).await?);
+        let mut stream = response.bytes_stream();
+
+        let mut stats = TransferStats::default();
+        while let Some(chunk) = stream.try_next().await? {
+            file.write_all(&chunk).await?;
+            stats.record_chunk_transfer(chunk.len());
+            let _ = on_progress.send(ProgressPayload {
+                progress: stats.total_transferred,
+                total,
+                transfer_speed: stats.transfer_speed,
+            });
+        }
+        file.flush().await?;
+        return Ok(());
     }
 
-    let response = request.send().await?;
-    if !response.status().is_success() {
-        return Err(Error::HttpErrorCode(
-            response.status().as_u16(),
-            response.text().await.unwrap_or_default(),
-        ));
-    }
-    let total = response.content_length().unwrap_or(0);
+    // Multi-part download with range access
+    let part_count = (total + PART_SIZE - 1) / PART_SIZE;
+    let file = File::create(file_path).await?;
+    file.set_len(total).await?;
 
-    let mut file = BufWriter::new(File::create(file_path).await?);
-    let mut stream = response.bytes_stream();
+    let file = Arc::new(tokio::sync::Mutex::new(file));
+    let progress = Arc::new(tokio::sync::Mutex::new(TransferStats::default()));
 
-    let mut stats = TransferStats::default();
-    while let Some(chunk) = stream.try_next().await? {
-        file.write_all(&chunk).await?;
-        stats.record_chunk_transfer(chunk.len());
-        let _ = on_progress.send(ProgressPayload {
-            progress: stats.total_transferred,
-            total,
-            transfer_speed: stats.transfer_speed,
-        });
-    }
-    file.flush().await?;
+    stream::iter(0..part_count)
+        .for_each_concurrent(8, |i| {
+            let client = client.clone();
+            let file = Arc::clone(&file);
+            let progress = Arc::clone(&progress);
+            let headers = headers.clone();
+            let url = url.to_string();
+            let on_progress = on_progress.clone();
+
+            async move {
+                let start = i * PART_SIZE;
+                let end = min(start + PART_SIZE - 1, total - 1);
+                let range_header = format!("bytes={}-{}", start, end);
+
+                let mut req = client.get(&url).header("Range", range_header);
+                for (key, value) in headers {
+                    req = req.header(key, value);
+                }
+
+                let resp = match req.send().await {
+                    Ok(r) => r,
+                    Err(_) => return,
+                };
+
+                if !resp.status().is_success()
+                    && resp.status() != reqwest::StatusCode::PARTIAL_CONTENT
+                {
+                    return;
+                }
+
+                let bytes = match resp.bytes().await {
+                    Ok(b) => b,
+                    Err(_) => return,
+                };
+
+                {
+                    let mut f = file.lock().await;
+                    f.seek(std::io::SeekFrom::Start(start)).await.unwrap();
+                    f.write_all(&bytes).await.unwrap();
+                }
+
+                {
+                    let mut stat = progress.lock().await;
+                    stat.record_chunk_transfer(bytes.len());
+                    let _ = on_progress.send(ProgressPayload {
+                        progress: stat.total_transferred,
+                        total,
+                        transfer_speed: stat.transfer_speed,
+                    });
+                }
+            }
+        })
+        .await;
 
     Ok(())
 }

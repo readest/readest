@@ -29,6 +29,7 @@ thiserror = "2"
 tokio = { version = "1", features = ["fs"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 futures-util = "0.3"
+futures = "0.3.31"
 read-progress-stream = "1.0.0"
 reqwest = { version = "0.12", default-features = false, features = [
   "json",
