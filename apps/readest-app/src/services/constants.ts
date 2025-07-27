@@ -40,7 +40,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
   alwaysOnTop: false,
-  openBookInNewWindow: false,
+  openBookInNewWindow: true,
   alwaysShowStatusBar: false,
   autoCheckUpdates: true,
   screenWakeLock: false,

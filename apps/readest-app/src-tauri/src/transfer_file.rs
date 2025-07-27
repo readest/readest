@@ -113,7 +113,7 @@ pub async fn download_file(
     use std::cmp::min;
     use tokio::io::AsyncSeekExt;
 
-    const PART_SIZE: u64 = 1024 * 1024 * 1;
+    const PART_SIZE: u64 = 1024 * 1024;
 
     let client = reqwest::Client::new();
 
@@ -124,8 +124,7 @@ pub async fn download_file(
         .get("accept-ranges")
         .map(|v| v.to_str().unwrap_or(""))
         .unwrap_or("")
-        .to_ascii_lowercase()
-        == "bytes";
+        .eq_ignore_ascii_case("bytes");
     let total = range_resp
         .headers()
         .get("content-range")
@@ -173,7 +172,7 @@ pub async fn download_file(
     }
 
     // Multi-part download with range access
-    let part_count = (total + PART_SIZE - 1) / PART_SIZE;
+    let part_count = total.div_ceil(PART_SIZE);
     let file = File::create(file_path).await?;
     file.set_len(total).await?;
 
@@ -192,7 +191,7 @@ pub async fn download_file(
             async move {
                 let start = i * PART_SIZE;
                 let end = min(start + PART_SIZE - 1, total - 1);
-                let range_header = format!("bytes={}-{}", start, end);
+                let range_header = format!("bytes={start}-{end}");
 
                 let mut req = client.get(&url).header("Range", range_header);
                 for (key, value) in headers {
