@@ -61,12 +61,17 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'relative flex aspect-[28/41] items-center justify-center',
-          coverFit === 'crop' && 'overflow-hidden shadow-md',
+          'relative flex items-end justify-center',
+          coverFit === 'crop' && 'aspect-[28/41] overflow-hidden shadow-md',
           mode === 'list' && 'min-w-20',
         )}
       >
-        <BookCover mode={mode} book={book} coverFit={coverFit} />
+        <BookCover
+          mode={mode}
+          book={book}
+          coverFit={coverFit}
+          showSpine={book.format !== 'PDF' || !!book.metadata?.publisher}
+        />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}

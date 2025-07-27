@@ -5,7 +5,7 @@ interface DoubleBorderProps {
   horizontalGap: number;
   showHeader: boolean;
   showFooter: boolean;
-  contentInsets: Insets;
+  insets: Insets;
 }
 
 const paddingPx = 10;
@@ -14,7 +14,7 @@ const DoubleBorder: React.FC<DoubleBorderProps> = ({
   borderColor,
   showHeader,
   showFooter,
-  contentInsets,
+  insets,
 }) => {
   return (
     <div>
@@ -23,10 +23,10 @@ const DoubleBorder: React.FC<DoubleBorderProps> = ({
         className={'borderframe pointer-events-none absolute'}
         style={{
           border: `4px solid ${borderColor}`,
-          height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px + ${paddingPx * 2}px)`,
-          top: `calc(${contentInsets.top}px - ${paddingPx}px)`,
-          left: `calc(${contentInsets.left}px - ${paddingPx}px)`,
-          right: `calc(${contentInsets.right}px - ${paddingPx}px)`,
+          height: `calc(100% - ${insets.top + insets.bottom}px + ${paddingPx * 2}px)`,
+          top: `calc(${insets.top}px - ${paddingPx}px)`,
+          left: `calc(${insets.left}px - ${paddingPx}px)`,
+          right: `calc(${insets.right}px - ${paddingPx}px)`,
         }}
       ></div>
       {/* inner frame */}
@@ -34,10 +34,10 @@ const DoubleBorder: React.FC<DoubleBorderProps> = ({
         className={'borderframe pointer-events-none absolute'}
         style={{
           border: `1px solid ${borderColor}`,
-          height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px)`,
-          top: `${contentInsets.top}px`,
-          left: `calc(${contentInsets.left + (showFooter ? 32 : 0)}px`,
-          right: `calc(${contentInsets.right + (showHeader ? 32 : 0)}px`,
+          height: `calc(100% - ${insets.top + insets.bottom}px)`,
+          top: `${insets.top}px`,
+          left: `calc(${insets.left + (showFooter ? 32 : 0)}px`,
+          right: `calc(${insets.right + (showHeader ? 32 : 0)}px`,
         }}
       />
       {/* footer */}
@@ -49,9 +49,9 @@ const DoubleBorder: React.FC<DoubleBorderProps> = ({
             borderBottom: `1px solid ${borderColor}`,
             borderLeft: `1px solid ${borderColor}`,
             width: '32px',
-            height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px)`,
-            top: `${contentInsets.top}px`,
-            left: `calc(${contentInsets.left}px)`,
+            height: `calc(100% - ${insets.top + insets.bottom}px)`,
+            top: `${insets.top}px`,
+            left: `calc(${insets.left}px)`,
           }}
         />
       )}
@@ -64,9 +64,9 @@ const DoubleBorder: React.FC<DoubleBorderProps> = ({
             borderBottom: `1px solid ${borderColor}`,
             borderRight: `1px solid ${borderColor}`,
             width: '32px',
-            height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px)`,
-            top: `${contentInsets.top}px`,
-            left: `calc(100% - ${contentInsets.right}px - 32px)`,
+            height: `calc(100% - ${insets.top + insets.bottom}px)`,
+            top: `${insets.top}px`,
+            left: `calc(100% - ${insets.right}px - 32px)`,
           }}
         />
       )}

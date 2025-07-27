@@ -333,3 +333,36 @@ foliate-view {
   user-select: none;
   touch-action: manipulation;
 }
+
+.book-spine {
+  background-image:
+    linear-gradient(180deg,
+      hsla(0, 0%, 90%, 0.2) 0%,    /* Top highlight */
+      hsla(0, 0%, 85%, 0.15) 0.5%, /* Top highlight */
+      hsla(0, 0%, 40%, 0.1) 40%,   /* Center fade */
+      hsla(0, 0%, 25%, 0.15) 90%,  /* Bottom shadow */
+      hsla(0, 0%, 15%, 0.2) 100%   /* Bottom edge dark */
+    ),
+    linear-gradient(90deg,
+      hsla(0, 0%, 0%, 0.1) 0%,       /* Left binding shadow */
+      hsla(0, 0%, 20%, 0.2) 0.5%,    /* Dark transition */
+      hsla(0, 0%, 95%, 0.4) 0.8%,    /* Peak highlight */
+      hsla(0, 0%, 90%, 0.4) 1.8%,    /* Peak highlight */
+      hsla(0, 0%, 70%, 0.3) 2.0%,    /* Gradient highlight */
+      hsla(0, 0%, 60%, 0.3) 2.8%,    /* Gradient highlight */
+      hsla(0, 0%, 50%, 0.2) 3.4%,    /* Shadow between highlights */
+      hsla(0, 0%, 40%, 0.2) 4.2%,    /* Shadow between highlights */
+      hsla(0, 0%, 70%, 0.15) 4.6%,   /* Second peak highlight */
+      hsla(0, 0%, 70%, 0.15) 5.4%,   /* Second gradient highlight */
+      hsla(0, 0%, 40%, 0.1) 6.0%,    /* Transition shadow */
+      transparent 88%,                 /* Main book surface */
+      hsla(0, 0%, 70%, 0.1) 99%,     /* Right edge highlight */
+      hsla(0, 0%, 30%, 0.2) 99.5%,   /* Right edge shadow */
+      hsla(0, 0%, 10%, 0.2) 100%     /* Right binding edge */
+    );
+  mask: linear-gradient(180deg,
+    black 0%,             /* Full opacity (1.0) */
+    rgba(0,0,0,0.9) 50%,
+    rgba(0,0,0,0.7) 100%  /* Half opacity (0.6) */
+  );
+}
