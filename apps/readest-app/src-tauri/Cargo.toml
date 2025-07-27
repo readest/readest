@@ -14,6 +14,10 @@ rust-version = "1.77.2"
 name = "readestlib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
+[features]
+# Internal feature to suppress warnings from old objc crate
+cargo-clippy = []
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
