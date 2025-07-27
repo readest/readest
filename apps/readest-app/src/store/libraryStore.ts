@@ -7,6 +7,10 @@ interface LibraryState {
   checkOpenWithBooks: boolean;
   checkLastOpenBooks: boolean;
   currentBookshelf: (Book | BooksGroup)[];
+  selectedBooks: Set<string>; // hashes for books, ids for groups
+  setSelectedBooks: (ids: string[]) => void;
+  getSelectedBooks: () => string[];
+  toggleSelectedBook: (id: string) => void;
   getVisibleLibrary: () => Book[];
   setCheckOpenWithBooks: (check: boolean) => void;
   setCheckLastOpenBooks: (check: boolean) => void;
@@ -18,6 +22,7 @@ interface LibraryState {
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
   currentBookshelf: [],
+  selectedBooks: new Set(),
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
   getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
@@ -35,6 +40,23 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       library[bookIndex] = book;
     }
     set({ library: [...library] });
-    appService.saveLibraryBooks(library);
+    await appService.saveLibraryBooks(library);
+  },
+  setSelectedBooks: (ids: string[]) => {
+    set({ selectedBooks: new Set(ids) });
+  },
+  getSelectedBooks: () => {
+    return Array.from(get().selectedBooks);
+  },
+  toggleSelectedBook: (id: string) => {
+    set((state) => {
+      const newSelection = new Set(state.selectedBooks);
+      if (newSelection.has(id)) {
+        newSelection.delete(id);
+      } else {
+        newSelection.add(id);
+      }
+      return { selectedBooks: newSelection };
+    });
   },
 }));

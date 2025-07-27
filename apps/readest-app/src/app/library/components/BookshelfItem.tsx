@@ -77,7 +77,7 @@ interface BookshelfItemProps {
   item: BookshelfItem;
   coverFit: LibraryCoverFitType;
   isSelectMode: boolean;
-  selectedBooks: string[];
+  itemSelected: boolean;
   transferProgress: number | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
@@ -93,7 +93,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   item,
   coverFit,
   isSelectMode,
-  selectedBooks,
+  itemSelected,
   transferProgress,
   setLoading,
   toggleSelection,
@@ -110,11 +110,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
 
-  const showBookDetailsModal = async (book: Book) => {
+  const showBookDetailsModal = useCallback(async (book: Book) => {
     if (await makeBookAvailable(book)) {
       handleShowDetailsBook(book);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const makeBookAvailable = async (book: Book) => {
     if (book.uploadedAt && !book.downloadedAt) {
@@ -122,7 +123,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         if (!book.downloadedAt || !book.coverDownloadedAt) {
           book.downloadedAt = Date.now();
           book.coverDownloadedAt = Date.now();
-          updateBook(envConfig, book);
+          await updateBook(envConfig, book);
         }
         return true;
       }
@@ -130,7 +131,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
         available = await handleBookDownload(book);
-        updateBook(envConfig, book);
+        await updateBook(envConfig, book);
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
         setLoading(false);
@@ -145,11 +146,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       if (isSelectMode) {
         toggleSelection(book.hash);
       } else {
-        if (!(await makeBookAvailable(book))) return;
+        const available = await makeBookAvailable(book);
+        if (!available) return;
         if (appService?.hasWindow && settings.openBookInNewWindow) {
           showReaderWindow(appService, [book.hash]);
         } else {
-          navigateToReader(router, [book.hash]);
+          setTimeout(() => {
+            navigateToReader(router, [book.hash]);
+          }, 0);
         }
       }
     },
@@ -164,7 +168,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       } else {
         const params = new URLSearchParams(searchParams?.toString());
         params.set('group', group.id);
-        navigateToLibrary(router, `${params.toString()}`);
+        setTimeout(() => {
+          navigateToLibrary(router, `${params.toString()}`);
+        }, 0);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +183,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const fileRevealLabel =
       FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
     const selectBookMenuItem = await MenuItem.new({
-      text: selectedBooks.includes(book.hash) ? _('Deselect Book') : _('Select Book'),
+      text: itemSelected ? _('Deselect Book') : _('Select Book'),
       action: async () => {
         if (!isSelectMode) handleSetSelectMode(true);
         toggleSelection(book.hash);
@@ -231,7 +237,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const groupContextMenuHandler = async (group: BooksGroup) => {
     if (!appService?.hasContextMenu) return;
     const selectGroupMenuItem = await MenuItem.new({
-      text: selectedBooks.includes(group.id) ? _('Deselect Group') : _('Select Group'),
+      text: itemSelected ? _('Deselect Group') : _('Select Group'),
       action: async () => {
         if (!isSelectMode) handleSetSelectMode(true);
         toggleSelection(group.id);
@@ -291,7 +297,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         groupContextMenuHandler(item as BooksGroup);
       }
     }, 100),
-    [],
+    [itemSelected],
   );
 
   const { pressing, handlers } = useLongPress(
@@ -335,14 +341,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               book={item}
               coverFit={coverFit}
               isSelectMode={isSelectMode}
-              selectedBooks={selectedBooks}
+              bookSelected={itemSelected}
               transferProgress={transferProgress}
               handleBookUpload={handleBookUpload}
               handleBookDownload={handleBookDownload}
               showBookDetailsModal={showBookDetailsModal}
             />
           ) : (
-            <GroupItem group={item} isSelectMode={isSelectMode} selectedBooks={selectedBooks} />
+            <GroupItem group={item} isSelectMode={isSelectMode} groupSelected={itemSelected} />
           )}
         </div>
       </div>

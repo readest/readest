@@ -8,10 +8,10 @@ import BookCover from '@/components/BookCover';
 interface GroupItemProps {
   group: BooksGroup;
   isSelectMode: boolean;
-  selectedBooks: string[];
+  groupSelected: boolean;
 }
 
-const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBooks }) => {
+const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, groupSelected }) => {
   const { appService } = useEnv();
   const iconSize15 = useResponsiveSize(15);
 
@@ -30,12 +30,12 @@ const GroupItem: React.FC<GroupItemProps> = ({ group, isSelectMode, selectedBook
             </div>
           ))}
         </div>
-        {selectedBooks.includes(group.id) && (
+        {groupSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
         {isSelectMode && (
           <div className='absolute bottom-1 right-1'>
-            {selectedBooks.includes(group.id) ? (
+            {groupSelected ? (
               <MdCheckCircle className='fill-blue-500' />
             ) : (
               <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />

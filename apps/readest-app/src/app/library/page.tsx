@@ -470,70 +470,78 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }));
   }, 500);
 
-  const handleBookUpload = async (book: Book) => {
-    try {
-      await appService?.uploadBook(book, (progress) => {
-        updateBookTransferProgress(book.hash, progress);
-      });
-      await updateBook(envConfig, book);
-      pushLibrary();
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        timeout: 2000,
-        message: _('Book uploaded: {{title}}', {
-          title: book.title,
-        }),
-      });
-      return true;
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('Not authenticated') && settings.keepLogin) {
-          settings.keepLogin = false;
-          setSettings(settings);
-          navigateToLogin(router);
-          return false;
-        } else if (err.message.includes('Insufficient storage quota')) {
-          eventDispatcher.dispatch('toast', {
-            type: 'error',
-            message: _('Insufficient storage quota'),
-          });
-          return false;
+  const handleBookUpload = useCallback(
+    async (book: Book) => {
+      try {
+        await appService?.uploadBook(book, (progress) => {
+          updateBookTransferProgress(book.hash, progress);
+        });
+        await updateBook(envConfig, book);
+        pushLibrary();
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          timeout: 2000,
+          message: _('Book uploaded: {{title}}', {
+            title: book.title,
+          }),
+        });
+        return true;
+      } catch (err) {
+        if (err instanceof Error) {
+          if (err.message.includes('Not authenticated') && settings.keepLogin) {
+            settings.keepLogin = false;
+            setSettings(settings);
+            navigateToLogin(router);
+            return false;
+          } else if (err.message.includes('Insufficient storage quota')) {
+            eventDispatcher.dispatch('toast', {
+              type: 'error',
+              message: _('Insufficient storage quota'),
+            });
+            return false;
+          }
         }
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to upload book: {{title}}', {
+            title: book.title,
+          }),
+        });
+        return false;
       }
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: _('Failed to upload book: {{title}}', {
-          title: book.title,
-        }),
-      });
-      return false;
-    }
-  };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appService],
+  );
 
-  const handleBookDownload = async (book: Book, redownload = false) => {
-    try {
-      await appService?.downloadBook(book, false, redownload, (progress) => {
-        updateBookTransferProgress(book.hash, progress);
-      });
-      await updateBook(envConfig, book);
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        timeout: 2000,
-        message: _('Book downloaded: {{title}}', {
-          title: book.title,
-        }),
-      });
-      return true;
-    } catch {
-      eventDispatcher.dispatch('toast', {
-        message: _('Failed to download book: {{title}}', {
-          title: book.title,
-        }),
-        type: 'error',
-      });
-      return false;
-    }
-  };
+  const handleBookDownload = useCallback(
+    async (book: Book, redownload = false) => {
+      try {
+        await appService?.downloadBook(book, false, redownload, (progress) => {
+          updateBookTransferProgress(book.hash, progress);
+        });
+        await updateBook(envConfig, book);
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          timeout: 2000,
+          message: _('Book downloaded: {{title}}', {
+            title: book.title,
+          }),
+        });
+        return true;
+      } catch {
+        eventDispatcher.dispatch('toast', {
+          message: _('Failed to download book: {{title}}', {
+            title: book.title,
+          }),
+          type: 'error',
+        });
+        return false;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appService],
+  );
 
   const handleBookDelete = async (book: Book) => {
     try {

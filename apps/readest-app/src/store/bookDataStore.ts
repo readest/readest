@@ -72,6 +72,7 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const book = library.splice(bookIndex, 1)[0]!;
     book.progress = config.progress;
     book.updatedAt = Date.now();
+    book.downloadedAt = book.downloadedAt || Date.now();
     library.unshift(book);
     setLibrary(library);
     config.updatedAt = Date.now();
