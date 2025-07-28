@@ -8,6 +8,7 @@ import {
   HighlightStyle,
 } from '@/types/book';
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
+import { sanitizeString } from './sanitize';
 
 export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DBBookConfig => {
   const { bookHash, progress, location, searchConfig, viewSettings, updatedAt } =
@@ -58,14 +59,14 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     user_id: userId,
     book_hash: hash,
     format,
-    title,
+    title: sanitizeString(title)!,
     author,
     group_id: groupId,
     group_name: groupName,
     tags: tags,
     progress: progress,
-    source_title: sourceTitle,
-    metadata: metadata ? JSON.stringify(metadata) : null,
+    source_title: sanitizeString(sourceTitle),
+    metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
     deleted_at: deletedAt ? new Date(deletedAt).toISOString() : null,
@@ -119,7 +120,7 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     id,
     type,
     cfi,
-    text,
+    text: sanitizeString(text),
     style,
     color,
     note,
