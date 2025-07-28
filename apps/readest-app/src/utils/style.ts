@@ -143,6 +143,8 @@ const getColorStyles = (
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     /* override inline hardcoded text color */
+    font[color="#000000"], font[color="#000"], font[color="black"],
+    font[color="rgb(0,0,0)"], font[color="rgb(0, 0, 0)"],
     *[style*="color: rgb(0,0,0)"], *[style*="color: rgb(0, 0, 0)"],
     *[style*="color: #000"], *[style*="color: #000000"], *[style*="color: black"],
     *[style*="color:rgb(0,0,0)"], *[style*="color:rgb(0, 0, 0)"],
