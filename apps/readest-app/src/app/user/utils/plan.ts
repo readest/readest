@@ -110,9 +110,9 @@ export const getPlanDetails = (
             ),
           },
           {
-            label: _('2 GB Cloud Sync Storage'),
+            label: _('Cloud Sync Storage'),
             description: _(
-              'Securely store and access your entire reading collection with up to 2 GB of cloud storage.',
+              'Securely store and access your entire reading collection with up to 5 GB of cloud storage.',
             ),
           },
           {
@@ -123,7 +123,7 @@ export const getPlanDetails = (
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '2 GB',
+          [_('Cloud Sync Storage')]: '5 GB',
           [_('AI Translations (per day)')]: '100K',
         },
       };
@@ -160,14 +160,14 @@ export const getPlanDetails = (
             ),
           },
           {
-            label: _('10 GB Cloud Sync Storage'),
+            label: _('Cloud Sync Storage'),
             description: _(
-              'Securely store and access your entire reading collection with up to 10 GB of cloud storage.',
+              'Securely store and access your entire reading collection with up to 20 GB of cloud storage.',
             ),
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '10 GB',
+          [_('Cloud Sync Storage')]: '20 GB',
           [_('AI Translations (per day)')]: '500K',
         },
       };

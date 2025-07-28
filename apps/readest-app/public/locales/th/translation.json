@@ -344,8 +344,7 @@
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "ปลดล็อกความสามารถการแปลที่เพิ่มขึ้นพร้อมโควตารายวันและตัวเลือกขั้นสูง",
   "DeepL Pro Access": "การเข้าถึง DeepL Pro",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "แปลได้สูงสุด 100,000 อักขระต่อวันด้วยเครื่องมือแปลที่แม่นยำที่สุด",
-  "2 GB Cloud Sync Storage": "พื้นที่ซิงค์คลาวด์ 2 GB",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "จัดเก็บและเข้าถึงคอลเลคชันการอ่านอย่างปลอดภัยด้วยพื้นที่คลาวด์ 2 GB",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "จัดเก็บและเข้าถึงคอลเลคชันการอ่านอย่างปลอดภัยด้วยพื้นที่คลาวด์ 5 GB",
   "Priority Support": "การสนับสนุนแบบพิเศษ",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "รับการตอบสนองที่รวดเร็วและความช่วยเหลือเฉพาะเมื่อต้องการ",
   "Pro Plan": "แผน Pro",
@@ -355,8 +354,7 @@
   "Advanced AI Tools": "เครื่องมือ AI ขั้นสูง",
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "ใช้เครื่องมือ AI อันทรงพลังเพื่อการอ่าน การแปล และการค้นหาเนื้อหาที่ฉลาดขึ้น",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "แปลได้สูงสุด 500,000 อักขระต่อวันด้วยเครื่องมือแปลที่แม่นยำที่สุด",
-  "10 GB Cloud Sync Storage": "พื้นที่ซิงค์คลาวด์ 10 GB",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "จัดเก็บและเข้าถึงคอลเลคชันการอ่านอย่างปลอดภัยด้วยพื้นที่คลาวด์ 10 GB",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "จัดเก็บและเข้าถึงคอลเลคชันการอ่านอย่างปลอดภัยด้วยพื้นที่คลาวด์ 20 GB",
   "Version {{version}}": "เวอร์ชัน {{version}}",
   "Check Update": "ตรวจสอบอัปเดต",
   "Already the latest version": "เป็นเวอร์ชันล่าสุดแล้ว",
@@ -455,5 +453,6 @@
   "Failed to manage subscription.": "ไม่สามารถจัดการการสมัครสมาชิกได้",
   "Failed to load subscription plans.": "ไม่สามารถโหลดแผนการสมัครสมาชิกได้",
   "year": "ปี",
-  "Failed to create checkout session": "ไม่สามารถสร้างเซสชันการชำระเงินได้"
+  "Failed to create checkout session": "ไม่สามารถสร้างเซสชันการชำระเงินได้",
+  "Storage": "พื้นที่เก็บข้อมูล"
 }

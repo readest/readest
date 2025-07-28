@@ -407,7 +407,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "Słuchaj bez ograniczeń—przekształć tyle tekstu, ile chcesz, w wciągające audio.",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "Odblokuj ulepszone możliwości tłumaczenia z większym dziennym użyciem i zaawansowanymi opcjami.",
   "DeepL Pro Access": "Dostęp do DeepL Pro",
-  "2 GB Cloud Sync Storage": "2 GB Pamięci Cloud Sync",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "Ciesz się szybszymi odpowiedziami i dedykowaną pomocą, kiedy tylko potrzebujesz wsparcia.",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "Osiągnięto dzienny limit tłumaczeń. Uaktualnij swój plan, aby kontynuować korzystanie z tłumaczeń AI.",
   "Includes All Plus Plan Benefits": "Zawiera Wszystkie Korzyści Planu Plus",
@@ -417,9 +416,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "Wykorzystuj potężne narzędzia AI do inteligentnego czytania, tłumaczenia i odkrywania treści.",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "Tłumacz do 100 000 znaków dziennie z najdokładniejszą dostępną maszyną tłumaczeniową.",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Tłumacz do 500 000 znaków dziennie z najdokładniejszą dostępną maszyną tłumaczeniową.",
-  "10 GB Cloud Sync Storage": "10 GB Pamięci Cloud Sync",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 2 GB pamięci w chmurze.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 10 GB pamięci w chmurze.",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 5 GB pamięci w chmurze.",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 20 GB pamięci w chmurze.",
   "Deleted cloud backup of the book: {{title}}": "Usunięto kopię zapasową książki w chmurze: {{title}}",
   "Failed to delete cloud backup of the book": "Nie udało się usunąć kopii zapasowej książki w chmurze.",
   "Are you sure to delete the cloud backup of the selected book?": "Czy na pewno chcesz usunąć kopię zapasową chmury wybranej książki?",
@@ -467,5 +465,6 @@
   "Failed to manage subscription.": "Nie udało się zarządzać subskrypcją.",
   "Failed to load subscription plans.": "Nie udało się załadować planów subskrypcyjnych.",
   "year": "rok",
-  "Failed to create checkout session": "Nie udało się utworzyć sesji zakupu"
+  "Failed to create checkout session": "Nie udało się utworzyć sesji zakupu",
+  "Storage": "Przechowywanie"
 }

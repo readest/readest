@@ -50,7 +50,7 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
               <div className='lg:tooltip lg:tooltip-right' data-tip={quota.tooltip}>
                 <span className='truncate'>{quota.name}</span>
               </div>
-              <div className='text-right text-xs'>
+              <div className='text-right text-sm'>
                 {quota.used} / {quota.total} {quota.unit}
               </div>
             </div>

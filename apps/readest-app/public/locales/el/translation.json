@@ -399,7 +399,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "Απεριόριστη μετατροπή κειμένου σε ήχο.",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "Περισσότερες μεταφράσεις και δυνατότητες.",
   "DeepL Pro Access": "Πρόσβαση στο DeepL Pro",
-  "2 GB Cloud Sync Storage": "2 GB αποθήκευση στο cloud",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "Γρήγορη και άμεση υποστήριξη.",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "Έχετε φτάσει το ημερήσιο όριο. Κάντε αναβάθμιση για περισσότερες μεταφράσεις.",
   "Includes All Plus Plan Benefits": "Περιλαμβάνει Όλα τα Οφέλη του Plus Πλάνου",
@@ -409,9 +408,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "Αξιοποιήστε ισχυρά εργαλεία AI για εξυπνότερη ανάγνωση, μετάφραση και ανακάλυψη περιεχομένου.",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "Μεταφράστε έως 100.000 χαρακτήρες ημερησίως με τη πιο ακριβή μηχανή μετάφρασης.",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "Μεταφράστε έως 500.000 χαρακτήρες ημερησίως με τη πιο ακριβή μηχανή μετάφρασης.",
-  "10 GB Cloud Sync Storage": "10 GB Αποθήκευση Cloud Sync",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 2 GB ασφαλή cloud αποθήκευση.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 10 GB ασφαλή cloud αποθήκευση.",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 5 GB ασφαλή cloud αποθήκευση.",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 20 GB ασφαλή cloud αποθήκευση.",
   "Deleted cloud backup of the book: {{title}}": "Διαγράφηκε το αντίγραφο ασφαλείας του βιβλίου: {{title}}",
   "Failed to delete cloud backup of the book": "Αποτυχία διαγραφής του αντιγράφου ασφαλείας του βιβλίου",
   "Are you sure to delete the cloud backup of the selected book?": "Είστε σίγουροι ότι θέλετε να διαγράψετε το αντίγραφο ασφαλείας του επιλεγμένου βιβλίου;",
@@ -459,5 +457,6 @@
   "Failed to manage subscription.": "Αποτυχία διαχείρισης συνδρομής.",
   "Failed to load subscription plans.": "Αποτυχία φόρτωσης σχεδίων συνδρομής.",
   "year": "έτος",
-  "Failed to create checkout session": "Αποτυχία δημιουργίας συνεδρίας πληρωμής"
+  "Failed to create checkout session": "Αποτυχία δημιουργίας συνεδρίας πληρωμής",
+  "Storage": "Αποθήκευση"
 }

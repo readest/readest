@@ -399,7 +399,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "जितना चाहें उतना ऑडियो में सुनें।",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "अधिक अनुवाद और उन्नत विकल्प पाएं।",
   "DeepL Pro Access": "DeepL प्रो एक्सेस",
-  "2 GB Cloud Sync Storage": "2 जीबी क्लाउड स्टोरेज",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "प्राथमिक सहायता पाएं।",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "दैनिक सीमा पूरी हुई। योजना बढ़ाएं।",
   "Includes All Plus Plan Benefits": "सभी प्लस प्लान लाभ शामिल",
@@ -409,9 +408,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "स्मार्ट पढ़ने, अनुवाद और कंटेंट खोजने के लिए शक्तिशाली AI उपकरण का उपयोग करें।",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "सबसे सटीक अनुवाद इंजन के साथ दैनिक 1 लाख तक अक्षर अनुवाद करें।",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "सबसे सटीक अनुवाद इंजन के साथ दैनिक 5 लाख तक अक्षर अनुवाद करें।",
-  "10 GB Cloud Sync Storage": "10 GB क्लाउड सिंक स्टोरेज",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "2 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "10 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "5 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "20 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
   "Deleted cloud backup of the book: {{title}}": "पुस्तक का क्लाउड बैकअप हटाया गया: {{title}}",
   "Failed to delete cloud backup of the book": "पुस्तक का क्लाउड बैकअप हटाने में विफल",
   "Are you sure to delete the cloud backup of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक का क्लाउड बैकअप हटाना चाहते हैं?",
@@ -459,5 +457,6 @@
   "Failed to manage subscription.": "सदस्यता प्रबंधित करने में विफल।",
   "Failed to load subscription plans.": "सदस्यता योजनाएँ लोड करने में विफल।",
   "year": "वर्ष",
-  "Failed to create checkout session": "चेकआउट सत्र बनाने में विफल"
+  "Failed to create checkout session": "चेकआउट सत्र बनाने में विफल",
+  "Storage": "भंडारण"
 }

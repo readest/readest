@@ -556,8 +556,8 @@ export const ZOOM_STEP = 10;
 
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
-  plus: 2 * 1024 * 1024 * 1024,
-  pro: 10 * 1024 * 1024 * 1024,
+  plus: 5 * 1024 * 1024 * 1024,
+  pro: 20 * 1024 * 1024 * 1024,
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {

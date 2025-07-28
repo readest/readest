@@ -33,7 +33,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { userPlan, quotas } = useQuotaStats();
+  const { userPlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -192,7 +192,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           }
         >
           <ul>
-            <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
+            <div onClick={handleUserProfile} className='cursor-pointer'>
+              <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
+            </div>
             <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
           </ul>
         </MenuItem>

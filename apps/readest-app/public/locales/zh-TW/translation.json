@@ -395,7 +395,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "無限制聆聽——將任意數量的文字轉換為沉浸式音訊。",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "解鎖增強翻譯功能，享受更多翻譯用量和進階選項。",
   "DeepL Pro Access": "DeepL Pro 存取權限",
-  "2 GB Cloud Sync Storage": "2GB 雲端同步儲存",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "享受更快回應和專屬幫助，隨時獲得所需支援。",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "已達每日翻譯配額。升級方案以繼續使用 AI 翻譯。",
   "Includes All Plus Plan Benefits": "包含所有 Plus 方案優惠",
@@ -405,9 +404,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "運用強大的 AI 工具實現智慧閱讀、翻譯和內容探索。",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達10萬字元。",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達50萬字元。",
-  "10 GB Cloud Sync Storage": "10GB 雲端同步儲存",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "使用多達 2GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多達 10GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "使用多達 5GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "使用多達 20GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
   "Deleted cloud backup of the book: {{title}}": "已刪除書籍的雲端備份：{{title}}",
   "Failed to delete cloud backup of the book": "無法刪除書籍的雲端備份。",
   "Are you sure to delete the cloud backup of the selected book?": "您確定要刪除所選書籍的雲端備份嗎？",
@@ -455,5 +453,6 @@
   "Failed to manage subscription.": "管理訂閱失敗。",
   "Failed to load subscription plans.": "加載訂閱計劃失敗。",
   "year": "年",
-  "Failed to create checkout session": "創建結帳會話失敗"
+  "Failed to create checkout session": "創建結帳會話失敗",
+  "Storage": "雲同步空間"
 }

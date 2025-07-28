@@ -395,7 +395,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "制限なくテキストを音声化。",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "高度な翻訳機能を利用可能に。",
   "DeepL Pro Access": "DeepL Pro利用",
-  "2 GB Cloud Sync Storage": "2GBクラウド保存",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "優先サポートを利用可能。",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "翻訳上限に達しました。アップグレードで継続可能です。",
   "Includes All Plus Plan Benefits": "Plusプランの全特典を含む",
@@ -405,9 +404,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "スマートな読書、翻訳、コンテンツ発見のための強力なAIツールを活用。",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "最も正確な翻訳エンジンで1日最大10万文字を翻訳。",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "最も正確な翻訳エンジンで1日最大50万文字を翻訳。",
-  "10 GB Cloud Sync Storage": "10GBクラウド同期ストレージ",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "最大2GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "最大10GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "最大5GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "最大20GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
   "Deleted cloud backup of the book: {{title}}": "書籍のクラウドバックアップを削除しました：{{title}}",
   "Failed to delete cloud backup of the book": "書籍のクラウドバックアップを削除できませんでした",
   "Are you sure to delete the cloud backup of the selected book?": "選択した書籍のクラウドバックアップを削除してもよろしいですか？",
@@ -455,5 +453,6 @@
   "Failed to manage subscription.": "サブスクリプションの管理に失敗しました。",
   "Failed to load subscription plans.": "サブスクリプションプランの読み込みに失敗しました。",
   "year": "年",
-  "Failed to create checkout session": "チェックアウトセッションの作成に失敗しました"
+  "Failed to create checkout session": "チェックアウトセッションの作成に失敗しました",
+  "Storage": "ストレージ"
 }

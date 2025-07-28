@@ -395,7 +395,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "将任意数量的文本转换为沉浸式音频。",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "增强翻译功能、更多翻译用量和高级选项。",
   "DeepL Pro Access": "DeepL Pro 访问权限",
-  "2 GB Cloud Sync Storage": "2GB 云同步存储",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "享受更快响应和专属帮助，随时获得支持。",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "已达每日翻译配额。升级套餐以继续使用 AI 翻译。",
   "Includes All Plus Plan Benefits": "包含所有 Plus 套餐功能",
@@ -405,9 +404,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "利用强大的 AI 工具实现智能阅读、翻译和内容发现。",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "使用最精准的翻译引擎每天可翻译10万字。",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "使用最精准的翻译引擎每天可翻译50万字。",
-  "10 GB Cloud Sync Storage": "10GB 云同步存储",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "使用多达 2GB 的安全云存储保存和访问您的整个阅读收藏。",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "使用多达 10GB 的安全云存储保存和访问您的整个阅读收藏。",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "使用多达 5GB 的安全云存储保存和访问您的整个阅读收藏。",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "使用多达 20GB 的安全云存储保存和访问您的整个阅读收藏。",
   "Deleted cloud backup of the book: {{title}}": "已删除书籍云备份：{{title}}",
   "Failed to delete cloud backup of the book": "无法删除书籍云备份。",
   "Are you sure to delete the cloud backup of the selected book?": "您确定要删除所选书籍的云备份吗？",
@@ -455,5 +453,6 @@
   "Failed to manage subscription.": "管理订阅失败。",
   "Failed to load subscription plans.": "加载订阅计划失败。",
   "year": "年",
-  "Failed to create checkout session": "创建结账会话失败"
+  "Failed to create checkout session": "创建结账会话失败",
+  "Storage": "云同步空间"
 }

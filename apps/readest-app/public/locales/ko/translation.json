@@ -395,7 +395,6 @@
   "Listen without limits—convert as much text as you like into immersive audio.": "제한 없이 텍스트를 음성으로 변환하세요.",
   "Unlock enhanced translation capabilities with more daily usage and advanced options.": "고급 번역 기능을 더 많이 이용하세요.",
   "DeepL Pro Access": "DeepL Pro 이용",
-  "2 GB Cloud Sync Storage": "2GB 클라우드 저장소",
   "Enjoy faster responses and dedicated assistance whenever you need help.": "우선 지원을 이용하세요.",
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "일일 번역 한도에 도달했습니다. 업그레이드하여 계속 사용하세요.",
   "Includes All Plus Plan Benefits": "모든 플러스 플랜 혜택 포함",
@@ -405,9 +404,8 @@
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "스마트한 독서, 번역, 콘텐츠 발견을 위한 강력한 AI 도구를 활용하세요.",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "가장 정확한 번역 엔진으로 매일 최대 10만 자를 번역하세요.",
   "Translate up to 500,000 characters daily with the most accurate translation engine available.": "가장 정확한 번역 엔진으로 매일 최대 50만 자를 번역하세요.",
-  "10 GB Cloud Sync Storage": "10GB 클라우드 동기화 저장소",
-  "Securely store and access your entire reading collection with up to 2 GB of cloud storage.": "최대 2GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
-  "Securely store and access your entire reading collection with up to 10 GB of cloud storage.": "최대 10GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
+  "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "최대 5GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
+  "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "최대 20GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
   "Deleted cloud backup of the book: {{title}}": "책의 클라우드 백업이 삭제됨: {{title}}",
   "Failed to delete cloud backup of the book": "책의 클라우드 백업을 삭제하지 못했습니다.",
   "Are you sure to delete the cloud backup of the selected book?": "선택한 책의 클라우드 백업을 삭제하시겠습니까?",
@@ -455,5 +453,6 @@
   "Failed to manage subscription.": "구독 관리에 실패했습니다.",
   "Failed to load subscription plans.": "구독 플랜 로드에 실패했습니다.",
   "year": "년",
-  "Failed to create checkout session": "체크아웃 세션 생성 실패"
+  "Failed to create checkout session": "체크아웃 세션 생성 실패",
+  "Storage": "저장소"
 }
