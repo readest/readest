@@ -34,6 +34,54 @@ const generateCacheKey = (text: string, sourceLang: string, targetLang: string):
   return `tr:${hash}`;
 };
 
+const getDailyUsageKey = (userId?: string, token?: string) => {
+  let dailyUsageKey = '';
+  if (userId && token) {
+    const currentDate = new Date().toISOString().split('T')[0]!;
+    dailyUsageKey = `daily_usage:${currentDate}:${userId}`;
+  }
+  return dailyUsageKey;
+};
+
+const checkDailyUsage = async (
+  userId: string,
+  token: string,
+  chars: number,
+  translationsKV?: KVNamespace,
+) => {
+  const usageKey = getDailyUsageKey(userId, token);
+  const dailyUsage = (await translationsKV?.get(usageKey)) || '0';
+  const { quota: dailyQuota } = getDailyTranslationPlanData(token);
+  const dailyUsageChars = parseInt(dailyUsage);
+  if (dailyQuota <= dailyUsageChars + chars) {
+    throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
+  }
+  return dailyUsageChars;
+};
+
+const updateDailyUsage = async (
+  userId: string | undefined,
+  token: string | undefined,
+  newUsage: number,
+  translationsKV?: KVNamespace,
+) => {
+  const usageKey = getDailyUsageKey(userId, token);
+  if (!usageKey) return 0;
+
+  try {
+    const dailyUsage = (await translationsKV?.get(usageKey)) || '0';
+    const newDailyUsage = parseInt(dailyUsage) + newUsage;
+    await translationsKV?.put(usageKey, newDailyUsage.toString(), {
+      expirationTtl: 86400 * 30,
+    });
+    return newDailyUsage;
+  } catch (cacheError) {
+    console.error('Update daily usage error:', cacheError);
+  }
+
+  return 0;
+};
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -71,7 +119,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const translations = await Promise.all(
       text.map(async (singleText) => {
         if (!singleText?.trim()) {
-          return { text: '' };
+          return { text: '', daily_usage: 0 };
         }
         if (useCache && hasKVCache) {
           try {
@@ -81,6 +129,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             if (cachedTranslation) {
               return {
                 text: cachedTranslation,
+                daily_usage: 0,
                 detected_source_language: sourceLang,
               };
             }
@@ -90,10 +139,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
+        await checkDailyUsage(user?.id, token, singleText.length, env['TRANSLATIONS_KV']);
 
         return await callDeepLAPI(
-          user?.id,
-          token,
           singleText,
           sourceLang,
           targetLang,
@@ -104,6 +152,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         );
       }),
     );
+    const originalCharsCount = text.reduce((a, b) => a + b.length, 0);
+    const translatedCharsCount = translations.reduce((a, b) => a + (b?.text.length || 0), 0);
+    const newDailyUsage = await updateDailyUsage(
+      user?.id,
+      token,
+      originalCharsCount + translatedCharsCount,
+      env['TRANSLATIONS_KV'],
+    );
+    translations.forEach((translation) => {
+      if (translation && translation.text) {
+        translation.daily_usage = newDailyUsage;
+      }
+    });
     return res.status(200).json({ translations });
   } catch (error) {
     console.error('Error proxying DeepL request:', error);
@@ -115,8 +176,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 async function callDeepLAPI(
-  userId: string | undefined,
-  token: string | undefined,
   text: string,
   sourceLang: string,
   targetLang: string,
@@ -125,17 +184,6 @@ async function callDeepLAPI(
   translationsKV: KVNamespace | undefined,
   useCache: boolean,
 ) {
-  let dailyUsageKey = '';
-  if (userId && token) {
-    const { quota: dailyQuota } = getDailyTranslationPlanData(token);
-    const currentDate = new Date().toISOString().split('T')[0]!;
-    dailyUsageKey = `daily_usage:${currentDate}:${userId}`;
-    const dailyUsage = (await translationsKV?.get(dailyUsageKey)) || '0';
-    if (dailyQuota <= parseInt(dailyUsage) + text.length) {
-      throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
-    }
-  }
-
   const isV2Api = apiUrl.endsWith('/v2/translate');
 
   // TODO: this should be processed in the client, but for now, we need to do it here
@@ -177,20 +225,6 @@ async function callDeepLAPI(
     translatedText = data.data;
   }
 
-  let newDailyUsage = 0;
-  if (dailyUsageKey && translationsKV) {
-    try {
-      const usage = translatedText.length + text.length;
-      const dailyUsage = (await translationsKV.get(dailyUsageKey)) || '0';
-      newDailyUsage = parseInt(dailyUsage) + usage;
-      await translationsKV.put(dailyUsageKey, newDailyUsage.toString(), {
-        expirationTtl: 86400 * 30,
-      });
-    } catch (cacheError) {
-      console.error('Cache storage error:', cacheError);
-    }
-  }
-
   if (useCache && translationsKV && translatedText) {
     try {
       const cacheKey = generateCacheKey(text, sourceLang, targetLang);
@@ -202,7 +236,7 @@ async function callDeepLAPI(
 
   return {
     text: translatedText,
-    daily_usage: newDailyUsage,
+    daily_usage: 0,
     detected_source_language: detectedSourceLanguage,
   };
 }
