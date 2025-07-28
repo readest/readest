@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewVersion } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
+import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
 import Link from './Link';
 
@@ -122,6 +123,7 @@ export const AboutWindow = () => {
           <p className='text-neutral-content text-sm'>
             © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
           </p>
+
           <p className='text-neutral-content mt-2 text-xs'>
             This software is licensed under the{' '}
             <Link
@@ -140,6 +142,8 @@ export const AboutWindow = () => {
             </Link>
             .
           </p>
+
+          <LegalLinks />
         </div>
       </div>
     </Dialog>

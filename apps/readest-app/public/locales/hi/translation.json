@@ -458,5 +458,7 @@
   "Failed to load subscription plans.": "सदस्यता योजनाएँ लोड करने में विफल।",
   "year": "वर्ष",
   "Failed to create checkout session": "चेकआउट सत्र बनाने में विफल",
-  "Storage": "भंडारण"
+  "Storage": "भंडारण",
+  "Terms of Service": "सेवा की शर्तें",
+  "Privacy Policy": "गोपनीयता नीति"
 }

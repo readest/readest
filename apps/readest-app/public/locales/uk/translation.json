@@ -466,5 +466,7 @@
   "Failed to load subscription plans.": "Не вдалося завантажити плани підписки.",
   "year": "рік",
   "Failed to create checkout session": "Не вдалося створити сесію оформлення замовлення",
-  "Storage": "Сховище"
+  "Storage": "Сховище",
+  "Terms of Service": "Умови обслуговування",
+  "Privacy Policy": "Політика конфіденційності"
 }

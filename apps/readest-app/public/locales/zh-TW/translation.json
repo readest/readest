@@ -454,5 +454,7 @@
   "Failed to load subscription plans.": "加載訂閱計劃失敗。",
   "year": "年",
   "Failed to create checkout session": "創建結帳會話失敗",
-  "Storage": "雲同步空間"
+  "Storage": "雲同步空間",
+  "Terms of Service": "服務條款",
+  "Privacy Policy": "隱私政策"
 }

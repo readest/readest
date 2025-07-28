@@ -22,6 +22,7 @@ import { getAccessToken } from '@/utils/access';
 import { IAPService, IAPProduct } from '@/utils/iap';
 import { getPlanDetails } from './utils/plan';
 import { Toast } from '@/components/Toast';
+import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
 import ProfileHeader from './components/Header';
 import UserInfo from './components/UserInfo';
@@ -392,6 +393,7 @@ const ProfilePage = () => {
                     onManageSubscription={handleManageSubscription}
                   />
                 </div>
+                <LegalLinks />
               </div>
             </div>
           )}

@@ -453,6 +453,8 @@
   "Failed to manage subscription.": "Gagal mengelola langganan.",
   "Failed to load subscription plans.": "Gagal memuat rencana langganan.",
   "year": "tahun",
-  "Failed to create checkout session": "Failed to create checkout session",
-  "Storage": "Penyimpanan"
+  "Failed to create checkout session": "Gagal membuat sesi checkout",
+  "Storage": "Penyimpanan",
+  "Terms of Service": "Ketentuan Layanan",
+  "Privacy Policy": "Kebijakan Privasi"
 }

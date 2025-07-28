@@ -458,5 +458,7 @@
   "Failed to load subscription plans.": "Abonelik planlarını yükleme başarısız oldu.",
   "year": "yıl",
   "Failed to create checkout session": "Ödeme oturumu oluşturma başarısız oldu",
-  "Storage": "Depolama"
+  "Storage": "Depolama",
+  "Terms of Service": "Hizmet Şartları",
+  "Privacy Policy": "Gizlilik Politikası"
 }

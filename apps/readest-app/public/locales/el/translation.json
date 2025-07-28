@@ -458,5 +458,7 @@
   "Failed to load subscription plans.": "Αποτυχία φόρτωσης σχεδίων συνδρομής.",
   "year": "έτος",
   "Failed to create checkout session": "Αποτυχία δημιουργίας συνεδρίας πληρωμής",
-  "Storage": "Αποθήκευση"
+  "Storage": "Αποθήκευση",
+  "Terms of Service": "Όροι χρήσης",
+  "Privacy Policy": "Πολιτική απορρήτου"
 }

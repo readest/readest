@@ -454,5 +454,7 @@
   "Failed to load subscription plans.": "Tải kế hoạch đăng ký không thành công.",
   "year": "năm",
   "Failed to create checkout session": "Không thể tạo phiên làm việc thanh toán",
-  "Storage": "Lưu trữ"
+  "Storage": "Lưu trữ",
+  "Terms of Service": "Điều khoản dịch vụ",
+  "Privacy Policy": "Chính sách bảo mật"
 }

@@ -466,5 +466,7 @@
   "Failed to load subscription plans.": "Не удалось загрузить планы подписки.",
   "year": "год",
   "Failed to create checkout session": "Не удалось создать сессию оформления заказа",
-  "Storage": "Хранилище"
+  "Storage": "Хранилище",
+  "Terms of Service": "Условия использования",
+  "Privacy Policy": "Политика конфиденциальности"
 }

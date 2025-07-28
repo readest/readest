@@ -458,5 +458,7 @@
   "Failed to load subscription plans.": "Laden van abonnement plannen is mislukt.",
   "year": "jaar",
   "Failed to create checkout session": "Kon de afreken sessie niet aanmaken",
-  "Storage": "Opslag"
+  "Storage": "Opslag",
+  "Terms of Service": "Gebruiksvoorwaarden",
+  "Privacy Policy": "Privacybeleid"
 }

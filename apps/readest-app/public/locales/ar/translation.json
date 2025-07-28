@@ -474,5 +474,7 @@
   "Failed to load subscription plans.": "فشل في تحميل خطط الاشتراك.",
   "year": "سنة",
   "Failed to create checkout session": "فشل في إنشاء جلسة الدفع",
-  "Storage": "التخزين"
+  "Storage": "التخزين",
+  "Terms of Service": "شروط الخدمة",
+  "Privacy Policy": "سياسة الخصوصية"
 }

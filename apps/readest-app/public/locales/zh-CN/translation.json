@@ -454,5 +454,7 @@
   "Failed to load subscription plans.": "加载订阅计划失败。",
   "year": "年",
   "Failed to create checkout session": "创建结账会话失败",
-  "Storage": "云同步空间"
+  "Storage": "云同步空间",
+  "Terms of Service": "服务条款",
+  "Privacy Policy": "隐私政策"
 }

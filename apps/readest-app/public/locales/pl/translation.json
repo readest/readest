@@ -466,5 +466,7 @@
   "Failed to load subscription plans.": "Nie udało się załadować planów subskrypcyjnych.",
   "year": "rok",
   "Failed to create checkout session": "Nie udało się utworzyć sesji zakupu",
-  "Storage": "Przechowywanie"
+  "Storage": "Przechowywanie",
+  "Terms of Service": "Warunki korzystania z usługi",
+  "Privacy Policy": "Polityka prywatności"
 }

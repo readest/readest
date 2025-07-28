@@ -462,5 +462,7 @@
   "Failed to load subscription plans.": "Impossibile caricare i piani di abbonamento.",
   "year": "anno",
   "Failed to create checkout session": "Impossibile creare la sessione di checkout",
-  "Storage": "Archiviazione"
+  "Storage": "Archiviazione",
+  "Terms of Service": "Termini di servizio",
+  "Privacy Policy": "Informativa sulla privacy"
 }

@@ -454,5 +454,7 @@
   "Failed to load subscription plans.": "구독 플랜 로드에 실패했습니다.",
   "year": "년",
   "Failed to create checkout session": "체크아웃 세션 생성 실패",
-  "Storage": "저장소"
+  "Storage": "저장소",
+  "Terms of Service": "서비스 약관",
+  "Privacy Policy": "개인정보 보호정책"
 }

@@ -462,5 +462,7 @@
   "Failed to load subscription plans.": "Error al cargar los planes de suscripción.",
   "year": "año",
   "Failed to create checkout session": "Error al crear la sesión de pago",
-  "Storage": "Almacenamiento"
+  "Storage": "Almacenamiento",
+  "Terms of Service": "Condiciones del servicio",
+  "Privacy Policy": "Política de privacidad"
 }
