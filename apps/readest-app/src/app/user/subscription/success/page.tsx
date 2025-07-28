@@ -118,7 +118,7 @@ const SuccessPageWithSearchParams = () => {
         }
 
         setSessionStatus({
-          status: purchase.status === 'active' ? 'complete' : 'processing',
+          status: purchase.status === 'active' ? 'complete' : 'failed',
           customerEmail: purchase.customerEmail || '',
           subscriptionId: purchase.subscriptionId,
           planName: purchase.planName,
