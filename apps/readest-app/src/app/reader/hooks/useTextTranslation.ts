@@ -54,7 +54,7 @@ export function useTextTranslation(
     if (!view || !enabled.current) return;
     const observer = createTranslationObserver();
     observerRef.current = observer;
-    const nodes = walkTextNodes(view);
+    const nodes = walkTextNodes(view, ['pre', 'code', 'math']);
     console.log('Observing text nodes for translation:', nodes.length);
     allTextNodes.current = nodes;
     nodes.forEach((el) => observer.observe(el));
