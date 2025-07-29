@@ -167,9 +167,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
     return res.status(200).json({ translations });
   } catch (error) {
-    console.error('Error proxying DeepL request:', error);
     if (error instanceof Error && error.message.includes(ErrorCodes.DAILY_QUOTA_EXCEEDED)) {
       return res.status(429).json({ error: ErrorCodes.DAILY_QUOTA_EXCEEDED });
+    } else {
+      console.error('Error proxying DeepL request:', error);
     }
     return res.status(500).json({ error: ErrorCodes.INTERNAL_SERVER_ERROR });
   }

@@ -25,9 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verify the file belongs to the user
     const supabase = createSupabaseClient(token);
-    const { data: fileRecord, error: fileError } = await supabase
+    let { data: fileRecord, error: fileError } = await supabase
       .from('files')
-      .select('user_id')
+      .select('user_id, file_key')
       .eq('user_id', user.id)
       .eq('file_key', fileKey) // index idx_files_file_key_deleted_at on public.files
       .is('deleted_at', null)
@@ -35,15 +35,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (fileError || !fileRecord) {
-      return res.status(404).json({ error: 'File not found' });
+      // Fallback for corrupted file names, using book hash and file extension to match fileKey
+      if (fileKey.includes('Readest/Book')) {
+        const parts = fileKey.split('/');
+        if (parts.length === 5) {
+          const bookHash = parts[3]!;
+          const filename = parts[4]!;
+          const fileExtension = filename.split('.').pop() || '';
+
+          const { data: fileRecords, error: fileError } = await supabase
+            .from('files')
+            .select('user_id, file_key')
+            .eq('user_id', user.id)
+            .eq('book_hash', bookHash)
+            .is('deleted_at', null);
+
+          if (!fileError && fileRecords && fileRecords.length > 0) {
+            const matchedFile = fileRecords.find((f) => f.file_key.endsWith(`.${fileExtension}`));
+            if (matchedFile) {
+              fileRecord = matchedFile;
+            }
+          } else {
+            return res.status(404).json({ error: 'File not found' });
+          }
+        }
+      }
     }
 
-    if (fileRecord.user_id !== user.id) {
+    if (fileRecord?.user_id !== user.id) {
       return res.status(403).json({ error: 'Unauthorized access to the file' });
     }
 
     try {
-      const downloadUrl = await getDownloadSignedUrl(fileKey, 1800);
+      const downloadUrl = await getDownloadSignedUrl(fileRecord.file_key, 1800);
 
       res.status(200).json({
         downloadUrl,
