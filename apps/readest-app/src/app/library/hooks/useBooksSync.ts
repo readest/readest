@@ -72,6 +72,7 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       if (matchingBook) {
         if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.coverDownloadedAt) {
           await appService?.downloadBook(oldBook, true);
+          oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
         }
         const mergedBook =
           matchingBook.updatedAt > oldBook.updatedAt
@@ -92,7 +93,6 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
             console.error('Failed to download book:', newBook);
           } finally {
             newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
-            newBook.coverImageUrl += '?timestamp=' + Date.now();
             updatedLibrary.push(newBook);
             setLibrary(updatedLibrary);
           }
