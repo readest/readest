@@ -62,7 +62,11 @@ export class TxtToEpubConverter {
     const authorMatch =
       fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
       fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
-    const author = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    try {
+      matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+    } catch {}
+    const author = matchedAuthor || providedAuthor || '';
     const language = providedLanguage || this.detectLanguage(fileHeader);
     const identifier = await partialMD5(txtFile);
     const metadata = { bookTitle, author, language, identifier };

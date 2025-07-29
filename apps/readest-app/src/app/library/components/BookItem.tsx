@@ -66,12 +66,7 @@ const BookItem: React.FC<BookItemProps> = ({
           mode === 'list' && 'min-w-20',
         )}
       >
-        <BookCover
-          mode={mode}
-          book={book}
-          coverFit={coverFit}
-          showSpine={book.format !== 'PDF' || !!book.metadata?.publisher}
-        />
+        <BookCover mode={mode} book={book} coverFit={coverFit} showSpine={false} />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
