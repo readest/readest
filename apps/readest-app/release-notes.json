@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.68": {
+      "date": "2025-07-30",
+      "notes": [
+        "Reader: Files now open in a new window by default on Desktop",
+        "Translation: Skips translating content inside <pre>, <code>, and <math> tags",
+        "Performance: Improved multi-part downloading for large books",
+        "Sync: Resolved issue preventing some PDF files from syncing",
+        "CSS: Resolved issue with fixed font color in some EPUB files",
+        "TXT: Enhanced TXT parsing for better compatibility"
+      ]
+    },
     "0.9.67": {
       "date": "2025-07-22",
       "notes": [
