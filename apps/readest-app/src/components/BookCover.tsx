@@ -63,46 +63,50 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     return (
       <div
         ref={coverRef}
-        className={clsx(
-          'book-cover-container relative flex w-full',
-          coverFit === 'crop' && 'h-full',
-          className,
-        )}
+        className={clsx('book-cover-container relative flex h-full w-full', className)}
       >
         {coverFit === 'crop' ? (
-          <Image
-            src={book.metadata?.coverImageUrl || book.coverImageUrl!}
-            alt={book.title}
-            fill={true}
-            className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        ) : (
-          <div
-            className={clsx(
-              'flex w-full justify-center',
-              mode === 'grid' ? 'h-full items-end' : 'items-center',
-            )}
-          >
+          <>
             <Image
               src={book.metadata?.coverImageUrl || book.coverImageUrl!}
               alt={book.title}
-              width={0}
-              height={0}
-              sizes='100vw'
-              className={clsx(
-                'cover-image fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
-                imageClassName,
-              )}
+              fill={true}
+              className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
               onLoad={handleImageLoad}
               onError={handleImageError}
             />
+            <div
+              className={`book-spine absolute inset-0 ${shouldShowSpine ? 'visible' : 'invisible'}`}
+            />
+          </>
+        ) : (
+          <div
+            className={clsx(
+              'flex h-full w-full justify-center',
+              mode === 'grid' ? 'items-end' : 'items-center',
+            )}
+          >
+            <div className='relative inline-block'>
+              <Image
+                src={book.metadata?.coverImageUrl || book.coverImageUrl!}
+                alt={book.title}
+                width={0}
+                height={0}
+                sizes='100vw'
+                className={clsx(
+                  'cover-image fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
+                  imageClassName,
+                )}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+              <div
+                className={`book-spine absolute inset-0 ${shouldShowSpine ? 'visible' : 'invisible'}`}
+              />
+            </div>
           </div>
         )}
-        <div
-          className={`book-spine absolute inset-0 ${shouldShowSpine ? 'visible' : 'invisible'}`}
-        />
+
         <div
           className={clsx(
             'fallback-cover invisible absolute inset-0 rounded-none p-2',

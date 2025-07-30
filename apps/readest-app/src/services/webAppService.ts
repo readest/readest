@@ -51,7 +51,6 @@ const indexedDBFileSystem: FileSystem = {
       const content = await this.readFile(path, base, 'binary');
       return URL.createObjectURL(new Blob([content]));
     } catch {
-      console.warn(`Failed to get Blob URL for path: ${path} in base: ${base}`);
       return path;
     }
   },
