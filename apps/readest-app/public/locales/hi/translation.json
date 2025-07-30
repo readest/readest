@@ -460,5 +460,6 @@
   "Failed to create checkout session": "चेकआउट सत्र बनाने में विफल",
   "Storage": "भंडारण",
   "Terms of Service": "सेवा की शर्तें",
-  "Privacy Policy": "गोपनीयता नीति"
+  "Privacy Policy": "गोपनीयता नीति",
+  "Disable Double Click": "डबल क्लिक अक्षम करें"
 }

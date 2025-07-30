@@ -476,5 +476,6 @@
   "Failed to create checkout session": "فشل في إنشاء جلسة الدفع",
   "Storage": "التخزين",
   "Terms of Service": "شروط الخدمة",
-  "Privacy Policy": "سياسة الخصوصية"
+  "Privacy Policy": "سياسة الخصوصية",
+  "Disable Double Click": "تعطيل النقر المزدوج"
 }

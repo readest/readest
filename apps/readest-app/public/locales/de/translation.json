@@ -460,5 +460,6 @@
   "Failed to create checkout session": "Fehler beim Erstellen der Checkout-Sitzung",
   "Storage": "Speicher",
   "Terms of Service": "Allgemeine Geschäftsbedingungen",
-  "Privacy Policy": "Datenschutzbestimmungen"
+  "Privacy Policy": "Datenschutzbestimmungen",
+  "Disable Double Click": "Doppelklick deaktivieren"
 }

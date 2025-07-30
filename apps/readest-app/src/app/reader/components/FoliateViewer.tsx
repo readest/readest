@@ -66,6 +66,7 @@ const FoliateViewer: React.FC<{
   const viewRef = useRef<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isViewCreated = useRef(false);
+  const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
@@ -159,7 +160,7 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('keydown', handleKeydown.bind(null, bookKey));
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
-        detail.doc.addEventListener('click', handleClick.bind(null, bookKey));
+        detail.doc.addEventListener('click', handleClick.bind(null, bookKey, doubleClickDisabled));
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
@@ -256,6 +257,7 @@ const FoliateViewer: React.FC<{
       view.renderer.setStyles?.(getStyles(viewSettings));
       applyTranslationStyle(viewSettings);
 
+      doubleClickDisabled.current = viewSettings.disableDoubleClick!;
       const animated = viewSettings.animated!;
       const maxColumnCount = viewSettings.maxColumnCount!;
       const maxInlineSize = getMaxInlineSize(viewSettings);
@@ -324,6 +326,12 @@ const FoliateViewer: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode, isDarkMode, viewSettings?.overrideColor, viewSettings?.invertImgColorInDark]);
+
+  useEffect(() => {
+    if (viewRef.current && viewRef.current.renderer) {
+      doubleClickDisabled.current = !!viewSettings?.disableDoubleClick;
+    }
+  }, [viewSettings?.disableDoubleClick]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer && viewSettings) {

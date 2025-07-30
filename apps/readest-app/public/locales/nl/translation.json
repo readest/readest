@@ -460,5 +460,6 @@
   "Failed to create checkout session": "Kon de afreken sessie niet aanmaken",
   "Storage": "Opslag",
   "Terms of Service": "Gebruiksvoorwaarden",
-  "Privacy Policy": "Privacybeleid"
+  "Privacy Policy": "Privacybeleid",
+  "Disable Double Click": "Dubbelklikken uitschakelen"
 }

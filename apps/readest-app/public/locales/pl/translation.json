@@ -468,5 +468,6 @@
   "Failed to create checkout session": "Nie udało się utworzyć sesji zakupu",
   "Storage": "Przechowywanie",
   "Terms of Service": "Warunki korzystania z usługi",
-  "Privacy Policy": "Polityka prywatności"
+  "Privacy Policy": "Polityka prywatności",
+  "Disable Double Click": "Wyłącz podwójne kliknięcie"
 }

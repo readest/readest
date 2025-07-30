@@ -464,5 +464,6 @@
   "Failed to create checkout session": "Échec de la création de la session de paiement",
   "Storage": "Stockage",
   "Terms of Service": "Conditions d'utilisation",
-  "Privacy Policy": "Politique de confidentialité"
+  "Privacy Policy": "Politique de confidentialité",
+  "Disable Double Click": "Désactiver le double-clic"
 }

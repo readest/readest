@@ -27,6 +27,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip!);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
+  const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(
+    viewSettings.disableDoubleClick!,
+  );
   const [animated, setAnimated] = useState(viewSettings.animated!);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript!);
 
@@ -89,6 +92,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'disableDoubleClick', isDisableDoubleClick, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDisableDoubleClick]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea, false, false);
@@ -170,6 +178,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 checked={swapClickArea}
                 disabled={isDisableClick}
                 onChange={() => setSwapClickArea(!swapClickArea)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Disable Double Click')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={isDisableDoubleClick}
+                onChange={() => setIsDisableDoubleClick(!isDisableDoubleClick)}
               />
             </div>
             {appService?.isMobileApp && (

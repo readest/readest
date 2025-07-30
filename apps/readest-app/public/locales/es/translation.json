@@ -464,5 +464,6 @@
   "Failed to create checkout session": "Error al crear la sesión de pago",
   "Storage": "Almacenamiento",
   "Terms of Service": "Condiciones del servicio",
-  "Privacy Policy": "Política de privacidad"
+  "Privacy Policy": "Política de privacidad",
+  "Disable Double Click": "Deshabilitar Doble Clic"
 }

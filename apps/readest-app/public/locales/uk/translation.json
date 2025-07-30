@@ -468,5 +468,6 @@
   "Failed to create checkout session": "Не вдалося створити сесію оформлення замовлення",
   "Storage": "Сховище",
   "Terms of Service": "Умови обслуговування",
-  "Privacy Policy": "Політика конфіденційності"
+  "Privacy Policy": "Політика конфіденційності",
+  "Disable Double Click": "Вимкнути подвійне клацання"
 }

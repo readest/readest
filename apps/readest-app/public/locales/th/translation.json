@@ -456,5 +456,6 @@
   "Failed to create checkout session": "ไม่สามารถสร้างเซสชันการชำระเงินได้",
   "Storage": "พื้นที่เก็บข้อมูล",
   "Terms of Service": "ข้อกำหนดในการให้บริการ",
-  "Privacy Policy": "นโยบายความเป็นส่วนตัว"
+  "Privacy Policy": "นโยบายความเป็นส่วนตัว",
+  "Disable Double Click": "ปิดการคลิกสองครั้ง"
 }

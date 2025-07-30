@@ -460,5 +460,6 @@
   "Failed to create checkout session": "Ödeme oturumu oluşturma başarısız oldu",
   "Storage": "Depolama",
   "Terms of Service": "Hizmet Şartları",
-  "Privacy Policy": "Gizlilik Politikası"
+  "Privacy Policy": "Gizlilik Politikası",
+  "Disable Double Click": "Çift Tıklamayı Devre Dışı Bırak"
 }

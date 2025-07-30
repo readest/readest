@@ -468,5 +468,6 @@
   "Failed to create checkout session": "Не удалось создать сессию оформления заказа",
   "Storage": "Хранилище",
   "Terms of Service": "Условия использования",
-  "Privacy Policy": "Политика конфиденциальности"
+  "Privacy Policy": "Политика конфиденциальности",
+  "Disable Double Click": "Отключить двойной клик"
 }

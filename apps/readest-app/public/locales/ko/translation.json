@@ -456,5 +456,6 @@
   "Failed to create checkout session": "체크아웃 세션 생성 실패",
   "Storage": "저장소",
   "Terms of Service": "서비스 약관",
-  "Privacy Policy": "개인정보 보호정책"
+  "Privacy Policy": "개인정보 보호정책",
+  "Disable Double Click": "더블 클릭 비활성화"
 }

@@ -105,6 +105,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   scrolled: false,
   disableClick: false,
   swapClickArea: false,
+  disableDoubleClick: false,
   volumeKeysToFlip: false,
   continuousScroll: false,
   maxColumnCount: 2,
@@ -143,6 +144,7 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   animated: true,
   defaultFont: 'Sans-serif',
   marginBottomPx: 16,
+  disableDoubleClick: true,
 };
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {

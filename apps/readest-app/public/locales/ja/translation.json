@@ -456,5 +456,6 @@
   "Failed to create checkout session": "チェックアウトセッションの作成に失敗しました",
   "Storage": "ストレージ",
   "Terms of Service": "利用規約",
-  "Privacy Policy": "プライバシーポリシー"
+  "Privacy Policy": "プライバシーポリシー",
+  "Disable Double Click": "ダブルクリック無効"
 }

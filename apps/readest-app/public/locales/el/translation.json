@@ -460,5 +460,6 @@
   "Failed to create checkout session": "Αποτυχία δημιουργίας συνεδρίας πληρωμής",
   "Storage": "Αποθήκευση",
   "Terms of Service": "Όροι χρήσης",
-  "Privacy Policy": "Πολιτική απορρήτου"
+  "Privacy Policy": "Πολιτική απορρήτου",
+  "Disable Double Click": "Απενεργοποίηση διπλού κλικ"
 }

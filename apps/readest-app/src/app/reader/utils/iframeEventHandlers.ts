@@ -1,13 +1,5 @@
-import {
-  DISABLE_DOUBLE_CLICK_ON_MOBILE,
-  DOUBLE_CLICK_INTERVAL_THRESHOLD_MS,
-  LONG_HOLD_THRESHOLD,
-} from '@/services/constants';
+import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
-import { getOSPlatform } from '@/utils/misc';
-
-const doubleClickEnabled =
-  !DISABLE_DOUBLE_CLICK_ON_MOBILE || !['android', 'ios'].includes(getOSPlatform());
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -93,10 +85,14 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
   );
 };
 
-export const handleClick = (bookKey: string, event: MouseEvent) => {
+export const handleClick = (
+  bookKey: string,
+  doubleClickDisabled: React.MutableRefObject<boolean>,
+  event: MouseEvent,
+) => {
   const now = Date.now();
 
-  if (doubleClickEnabled && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
+  if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
     window.postMessage(
       {
@@ -156,7 +152,7 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
       '*',
     );
   };
-  if (doubleClickEnabled) {
+  if (!doubleClickDisabled.current) {
     setTimeout(() => {
       if (Date.now() - lastClickTime >= DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
         postSingleClick();
