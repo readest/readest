@@ -129,8 +129,7 @@ export const getAppleIAPVerifier = () => {
         process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '',
         'base64',
       ).toString('utf-8'),
-      environment: 'sandbox',
-      // environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
     });
   }
   return defaultIAPVerifier;
