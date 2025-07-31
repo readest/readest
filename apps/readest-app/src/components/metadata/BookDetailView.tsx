@@ -16,7 +16,6 @@ import {
   formatFileSize,
   formatLanguage,
   formatPublisher,
-  formatSubject,
   formatTitle,
 } from '@/utils/book';
 import BookCover from '@/components/BookCover';
@@ -120,7 +119,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Subjects')}</span>
             <p className='text-neutral-content line-clamp-3 text-sm'>
-              {formatSubject(metadata.subject) || _('Unknown')}
+              {formatAuthors(metadata.subject || '') || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>

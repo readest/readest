@@ -90,7 +90,7 @@ export const getBookLangCode = (lang: string | string[] | undefined) => {
 };
 
 export const formatAuthors = (
-  contributors: string | Contributor | [string | Contributor],
+  contributors: string | string[] | Contributor | Contributor[],
   bookLang?: string | string[],
 ) => {
   const langCode = getBookLangCode(bookLang) || 'en';
@@ -139,11 +139,6 @@ export const formatDate = (date: string | number | Date | null | undefined, isUT
   } catch {
     return;
   }
-};
-
-export const formatSubject = (subject: string | string[] | undefined) => {
-  if (!subject) return '';
-  return Array.isArray(subject) ? subject.join(', ') : subject;
 };
 
 export const formatFileSize = (size: number | null) => {
