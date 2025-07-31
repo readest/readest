@@ -3,6 +3,7 @@ import { POST } from '@/app/api/apple/iap-verify/route';
 import { NextRequest } from 'next/server';
 import { setupSupabaseMocks } from '../helpers/supabase-mock';
 
+const SKIP_IAP_API_TESTS = !process.env['ENABLE_IAP_API_TESTS'];
 vi.mock('@/utils/supabase', () => ({
   supabase: {
     auth: {
@@ -14,7 +15,7 @@ vi.mock('@/utils/supabase', () => ({
   createSupabaseAdminClient: vi.fn(),
 }));
 
-describe('/api/apple/iap-verify', () => {
+describe.skipIf(SKIP_IAP_API_TESTS)('/api/apple/iap-verify', () => {
   it('should verify a valid transaction', async () => {
     setupSupabaseMocks();
     const request = new NextRequest('http://localhost:3000/api/apple/iap-verify', {

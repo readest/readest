@@ -1,5 +1,6 @@
-import { getBaseFilename } from './book';
 import { partialMD5 } from './md5';
+import { getBaseFilename } from './book';
+import { detectLanguage } from './lang';
 
 interface Metadata {
   bookTitle: string;
@@ -11,6 +12,7 @@ interface Metadata {
 interface Chapter {
   title: string;
   content: string;
+  text: string;
 }
 
 interface Txt2EpubOptions {
@@ -67,7 +69,8 @@ export class TxtToEpubConverter {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
     const author = matchedAuthor || providedAuthor || '';
-    const language = providedLanguage || this.detectLanguage(fileHeader);
+    const language = providedLanguage || detectLanguage(fileHeader);
+    console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
     const metadata = { bookTitle, author, language, identifier };
 
@@ -176,7 +179,7 @@ export class TxtToEpubConverter {
       const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
       if (!trimmedSegment) continue;
 
-      const segmentChapters = [];
+      const segmentChapters: Chapter[] = [];
       let matches: string[] = [];
       for (const chapterRegex of chapterRegexps) {
         const tryMatches = trimmedSegment.split(chapterRegex);
@@ -194,7 +197,7 @@ export class TxtToEpubConverter {
           const formattedSegment = formatSegment(chunks.join('\n'));
           const title = `${chapters.length + 1}`;
           const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-          chapters.push({ title, content });
+          chapters.push({ title, content, text: chunks.join('\n') });
         }
         continue;
       }
@@ -215,6 +218,7 @@ export class TxtToEpubConverter {
         segmentChapters.push({
           title: escapeXml(title),
           content: `${headTitle}<p>${formattedSegment}</p>`,
+          text: content,
         });
       }
 
@@ -228,6 +232,7 @@ export class TxtToEpubConverter {
         segmentChapters.unshift({
           title: escapeXml(segmentTitle),
           content: `<h3></h3><p>${formattedSegment}</p>`,
+          text: initialContent,
         });
       }
       chapters.push(...segmentChapters);
@@ -322,9 +327,10 @@ export class TxtToEpubConverter {
     // Add chapter files
     for (let i = 0; i < chapters.length; i++) {
       const chapter = chapters[i]!;
+      const lang = detectLanguage(chapter.text);
       const chapterContent = `<?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-        <html xmlns="http://www.w3.org/1999/xhtml" lang="zh">
+        <html xmlns="http://www.w3.org/1999/xhtml" lang="${lang}" xml:lang="${lang}">
           <head>
             <title>${chapter.title}</title>
             <link rel="stylesheet" type="text/css" href="../style.css"/>
@@ -424,26 +430,6 @@ export class TxtToEpubConverter {
     }
 
     return 'utf-8';
-  }
-
-  private detectLanguage(fileHeader: string): string {
-    const sample = fileHeader;
-    let chineseCount = 0;
-    for (let i = 0; i < sample.length; i++) {
-      const code = sample.charCodeAt(i);
-      if (
-        (code >= 0x4e00 && code <= 0x9fff) ||
-        (code >= 0x3400 && code <= 0x4dbf) ||
-        (code >= 0x20000 && code <= 0x2a6df)
-      ) {
-        chineseCount++;
-      }
-    }
-    if (chineseCount / sample.length > 0.05) {
-      return 'zh';
-    }
-
-    return 'en';
   }
 
   private extractBookTitle(filename: string): string {

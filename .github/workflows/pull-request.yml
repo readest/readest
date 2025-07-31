@@ -58,6 +58,11 @@ jobs:
         run: |
           pnpm install && pnpm setup-pdfjs
 
+      - name: run tests
+        working-directory: apps/readest-app
+        run: |
+          pnpm test -- --watchAll=false
+
       - name: build the web App
         if: matrix.config.platform == 'web'
         working-directory: apps/readest-app

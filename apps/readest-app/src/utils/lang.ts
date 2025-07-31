@@ -1,4 +1,6 @@
+import { franc } from 'franc-min';
 import { iso6392 } from 'iso-639-2';
+import { iso6393To1 } from 'iso-639-3';
 
 export const isCJKStr = (str: string) => {
   return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(str ?? '');
@@ -79,6 +81,23 @@ export const code6392to6391 = (code: string): string => {
   return lang?.iso6391 || '';
 };
 
+const commonIndivToMacro: Record<string, string> = {
+  cmn: 'zho',
+  arb: 'ara',
+  arz: 'ara',
+  ind: 'msa',
+  zsm: 'msa',
+  nob: 'nor',
+  nno: 'nor',
+  pes: 'fas',
+  quy: 'que',
+};
+
+export const code6393to6391 = (code: string): string => {
+  const macro = commonIndivToMacro[code] || code;
+  return iso6393To1[macro] || '';
+};
+
 export const getLanguageName = (code: string): string => {
   const lang = normalizedLangCode(code);
   const language = iso6392.find((l) => l.iso6391 === lang || l.iso6392B === lang);
@@ -96,4 +115,15 @@ export const inferLangFromScript = (text: string, lang: string): string => {
     }
   }
   return lang;
+};
+
+export const detectLanguage = (content: string): string => {
+  try {
+    const iso6393Lang = franc(content.substring(0, 1000));
+    const iso6391Lang = code6393to6391(iso6393Lang) || 'en';
+    return iso6391Lang;
+  } catch {
+    console.warn('Language detection failed, defaulting to en.');
+    return 'en';
+  }
 };
