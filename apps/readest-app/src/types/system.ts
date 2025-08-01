@@ -19,7 +19,7 @@ export interface FileSystem {
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   removeDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   exists(path: string, base: BaseDir): Promise<boolean>;
-  getPrefix(base: BaseDir): string | null;
+  getPrefix(base: BaseDir): Promise<string>;
 }
 
 export interface AppService {

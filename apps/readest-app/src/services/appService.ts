@@ -46,6 +46,13 @@ import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 
+export type ResolvedPath = {
+  baseDir: number;
+  basePrefix: () => Promise<string>;
+  fp: string;
+  base: BaseDir;
+};
+
 export abstract class BaseAppService implements AppService {
   osPlatform: OsPlatform = getOSPlatform();
   appPlatform: AppPlatform = 'tauri';
@@ -70,11 +77,9 @@ export abstract class BaseAppService implements AppService {
 
   abstract fs: FileSystem;
 
-  abstract resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string };
+  abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
   abstract getCoverImageUrl(book: Book): string;
   abstract getCoverImageBlobUrl(book: Book): Promise<string>;
-  abstract getInitBooksDir(): Promise<string>;
-  abstract getCacheDir(): Promise<string>;
   abstract selectDirectory(): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
 
@@ -102,7 +107,7 @@ export abstract class BaseAppService implements AppService {
       settings = JSON.parse(txt as string);
       const version = settings.version ?? 0;
       if (this.isAppDataSandbox || version < SYSTEM_SETTINGS_VERSION) {
-        settings.localBooksDir = await this.getInitBooksDir();
+        settings.localBooksDir = await this.fs.getPrefix('Books');
         settings.version = SYSTEM_SETTINGS_VERSION;
       }
       settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
@@ -115,7 +120,7 @@ export abstract class BaseAppService implements AppService {
       settings = {
         ...DEFAULT_SYSTEM_SETTINGS,
         version: SYSTEM_SETTINGS_VERSION,
-        localBooksDir: await this.getInitBooksDir(),
+        localBooksDir: await this.fs.getPrefix('Books'),
         globalReadSettings: {
           ...DEFAULT_READSETTINGS,
           ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
@@ -129,15 +134,6 @@ export abstract class BaseAppService implements AppService {
     }
 
     this.localBooksDir = settings.localBooksDir;
-    const cacheDir = await this.getCacheDir();
-    this.fs.getPrefix = (baseDir: BaseDir) => {
-      if (baseDir === 'Books') {
-        return this.localBooksDir;
-      } else if (baseDir === 'Cache') {
-        return cacheDir;
-      }
-      return null;
-    };
     return settings;
   }
 
@@ -414,12 +410,15 @@ export abstract class BaseAppService implements AppService {
         const lfp = getCoverFilename(book);
         const cfp = `${CLOUD_BOOKS_SUBDIR}/${lfp}`;
         await this.downloadCloudFile(lfp, cfp, handleProgress);
-        completedFiles.count++;
         bookCoverDownloaded = true;
       }
     } catch (error) {
       // don't throw error here since some books may not have cover images at all
       console.log(`Failed to download cover file for book: '${book.title}'`, error);
+    } finally {
+      if (needDownCover) {
+        completedFiles.count++;
+      }
     }
 
     if (needDownBook) {

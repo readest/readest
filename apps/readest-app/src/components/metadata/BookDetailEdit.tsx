@@ -180,8 +180,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       files = (await selectImageFileTauri()) as string[];
       if (appService && files.length > 0) {
         metadata.coverImageFile = files[0]!;
-        const tempName = 'cover-temp.png';
-        const cachePrefix = appService.fs.getPrefix('Cache');
+        const tempName = `cover-${Date.now()}.png`;
+        const cachePrefix = await appService.fs.getPrefix('Cache');
         await appService.fs.copyFile(files[0]!, tempName, 'Cache');
         metadata.coverImageUrl = await appService.fs.getURL(`${cachePrefix}/${tempName}`);
         setNewCoverImageUrl(metadata.coverImageUrl!);
@@ -224,7 +224,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
                 'border border-gray-300 bg-white hover:bg-gray-50',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 'text-sm sm:text-xs',
-                isCoverLocked && '!text-base-content !bg-base-200',
+                isCoverLocked ? '!text-base-content !bg-base-200' : '!text-gray-500',
               )}
               title={_('Change cover image')}
             >

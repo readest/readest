@@ -106,6 +106,7 @@ export const UpdaterContent = ({
       }
     };
     const checkAndroidUpdate = async () => {
+      if (!appService) return;
       const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
       const response = await fetch(READEST_UPDATER_FILE);
       const data = await response.json();
@@ -114,7 +115,7 @@ export const UpdaterContent = ({
         const platformKey = OS_ARCH === 'aarch64' ? 'android-arm64' : 'android-universal';
         const arch = OS_ARCH === 'aarch64' ? 'arm64' : 'universal';
         const downloadUrl = data.platforms[platformKey]?.url as string;
-        const cachePrefix = appService?.fs.getPrefix('Cache');
+        const cachePrefix = await appService.fs.getPrefix('Cache');
         const apkFilePath = `${cachePrefix}/Readest_${data.version}_${arch}.apk`;
         setUpdate({
           currentVersion,

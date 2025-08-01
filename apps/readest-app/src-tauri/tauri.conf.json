@@ -28,6 +28,7 @@
           "allow": [
             "$RESOURCE/**",
             "$APPDATA/**/*",
+            "$APPCACHE/**/*",
             "$TEMP/**/*",
             "/private/var/mobile/Containers/Data/Application/**/*"
           ],

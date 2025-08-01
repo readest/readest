@@ -143,6 +143,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     return (
       prevProps.book.coverImageUrl === nextProps.book.coverImageUrl &&
       prevProps.book.metadata?.coverImageUrl === nextProps.book.metadata?.coverImageUrl &&
+      prevProps.book.updatedAt === nextProps.book.updatedAt &&
       prevProps.mode === nextProps.mode &&
       prevProps.coverFit === nextProps.coverFit &&
       prevProps.isPreview === nextProps.isPreview &&

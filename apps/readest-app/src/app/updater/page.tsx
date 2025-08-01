@@ -16,7 +16,7 @@ const UpdaterPage = () => {
         </div>
       }
     >
-      <div className='px-12 py-4'>
+      <div className='bg-base-100 px-12 py-4'>
         <UpdaterContent />
       </div>
     </Suspense>

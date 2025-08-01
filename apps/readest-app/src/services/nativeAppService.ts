@@ -14,17 +14,25 @@ import {
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { join, basename, appDataDir, appCacheDir } from '@tauri-apps/api/path';
+import {
+  join,
+  basename,
+  appDataDir,
+  appConfigDir,
+  appCacheDir,
+  appLogDir,
+  tempDir,
+} from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
 
 import { Book } from '@/types/book';
 import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
-import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getCoverFilename, getFilename } from '@/utils/book';
 import { copyURIToPath } from '@/utils/bridge';
 import { NativeFile, RemoteFile } from '@/utils/file';
 
-import { BaseAppService } from './appService';
+import { BaseAppService, ResolvedPath } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
 
 declare global {
@@ -36,38 +44,49 @@ declare global {
 
 const OS_TYPE = osType();
 
-const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } => {
+// Usage:
+// 1. baseDir + fp
+// 2. basePrefix + fp or the getPrefix util in FileSystem
+const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
   switch (base) {
     case 'Settings':
-      return { baseDir: BaseDirectory.AppConfig, fp, base };
+      return { baseDir: BaseDirectory.AppConfig, basePrefix: appConfigDir, fp: path, base };
     case 'Data':
-      return { baseDir: BaseDirectory.AppData, fp, base };
+      return { baseDir: BaseDirectory.AppData, basePrefix: appDataDir, fp: path, base };
     case 'Cache':
-      return { baseDir: BaseDirectory.AppCache, fp, base };
+      return { baseDir: BaseDirectory.AppCache, basePrefix: appCacheDir, fp: path, base };
     case 'Log':
-      return { baseDir: BaseDirectory.AppLog, fp, base };
+      return { baseDir: BaseDirectory.AppLog, basePrefix: appLogDir, fp: path, base };
     case 'Books':
       return {
         baseDir: BaseDirectory.AppData,
-        fp: `${LOCAL_BOOKS_SUBDIR}/${fp}`,
+        basePrefix: appDataDir,
+        fp: `${LOCAL_BOOKS_SUBDIR}/${path}`,
         base,
       };
     case 'None':
       return {
         baseDir: 0,
-        fp,
+        basePrefix: async () => '',
+        fp: path,
         base,
       };
     default:
       return {
         baseDir: BaseDirectory.Temp,
-        fp,
+        basePrefix: tempDir,
+        fp: path,
         base,
       };
   }
 };
 
 export const nativeFileSystem: FileSystem = {
+  async getPrefix(base: BaseDir) {
+    const { basePrefix, fp } = resolvePath('', base);
+    const basePath = await basePrefix();
+    return fp ? await join(basePath, fp) : basePath;
+  },
   getURL(path: string) {
     return isValidURL(path) ? path : convertFileSrc(path);
   },
@@ -89,8 +108,8 @@ export const nativeFileSystem: FileSystem = {
       } else {
         // Otherwise, for content:// URIs (e.g. from MediaStore, Drive, or third-party apps),
         // we cannot access the file directly — so we copy it to a temporary cache location.
-        const prefix = this.getPrefix('Cache');
-        const dst = `${prefix}/${fname}`;
+        const prefix = await this.getPrefix('Cache');
+        const dst = await join(prefix, fname);
         const res = await copyURIToPath({ uri: path, dst });
         if (!res.success) {
           console.error('Failed to open file:', res);
@@ -99,8 +118,11 @@ export const nativeFileSystem: FileSystem = {
         return await new NativeFile(dst, fname, base ? baseDir : null).open();
       }
     } else {
-      const prefix = this.getPrefix(base);
-      const absolutePath = path.startsWith('/') ? path : prefix ? await join(prefix, path) : null;
+      const prefix = await this.getPrefix(base);
+      if (isFileURI(path)) {
+        path = path.replace(/^file:\/\//, '');
+      }
+      const absolutePath = path.startsWith('/') ? path : await join(prefix, path);
       if (absolutePath && OS_TYPE !== 'android') {
         // NOTE: RemoteFile currently performs about 2× faster than NativeFile
         // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
@@ -114,13 +136,13 @@ export const nativeFileSystem: FileSystem = {
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
     if (isContentURI(srcPath)) {
-      const prefix = this.getPrefix(base);
+      const prefix = await this.getPrefix(base);
       if (!prefix) {
         throw new Error('Invalid base directory');
       }
       const res = await copyURIToPath({
         uri: srcPath,
-        dst: `${prefix}/${dstPath}`,
+        dst: await join(prefix, dstPath),
       });
       if (!res.success) {
         console.error('Failed to copy file:', res);
@@ -201,9 +223,6 @@ export const nativeFileSystem: FileSystem = {
       return false;
     }
   },
-  getPrefix() {
-    return null;
-  },
 };
 
 export class NativeAppService extends BaseAppService {
@@ -232,16 +251,8 @@ export class NativeAppService extends BaseAppService {
     (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
   override distChannel = process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest';
 
-  override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
+  override resolvePath(fp: string, base: BaseDir): ResolvedPath {
     return resolvePath(fp, base);
-  }
-
-  async getInitBooksDir(): Promise<string> {
-    return join(await appDataDir(), LOCAL_BOOKS_SUBDIR);
-  }
-
-  async getCacheDir(): Promise<string> {
-    return await appCacheDir();
   }
 
   async selectDirectory(): Promise<string> {

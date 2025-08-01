@@ -3,19 +3,20 @@ import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getCoverFilename } from '@/utils/book';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { RemoteFile } from '@/utils/file';
-
 import { isPWA } from './environment';
-import { BaseAppService } from './appService';
+import { BaseAppService, ResolvedPath } from './appService';
 import { LOCAL_BOOKS_SUBDIR } from './constants';
 
-const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } => {
+const basePrefix = async () => '';
+
+const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
   switch (base) {
     case 'Books':
-      return { baseDir: 0, fp: `${LOCAL_BOOKS_SUBDIR}/${fp}`, base };
+      return { baseDir: 0, basePrefix, fp: `${LOCAL_BOOKS_SUBDIR}/${path}`, base };
     case 'None':
-      return { baseDir: 0, fp, base };
+      return { baseDir: 0, basePrefix, fp: path, base };
     default:
-      return { baseDir: 0, fp: `${base}/${fp}`, base };
+      return { baseDir: 0, basePrefix, fp: `${base}/${path}`, base };
   }
 };
 
@@ -188,8 +189,10 @@ const indexedDBFileSystem: FileSystem = {
       request.onerror = () => reject(request.error);
     });
   },
-  getPrefix() {
-    return null;
+  async getPrefix(base: BaseDir) {
+    const { basePrefix, fp } = resolvePath('', base);
+    const basePath = await basePrefix();
+    return fp ? `${basePath}/${fp}` : basePath;
   },
 };
 
@@ -199,16 +202,8 @@ export class WebAppService extends BaseAppService {
   override appPlatform = 'web' as AppPlatform;
   override hasSafeAreaInset = isPWA();
 
-  override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
+  override resolvePath(fp: string, base: BaseDir): ResolvedPath {
     return resolvePath(fp, base);
-  }
-
-  async getInitBooksDir(): Promise<string> {
-    return LOCAL_BOOKS_SUBDIR;
-  }
-
-  async getCacheDir(): Promise<string> {
-    return 'Cache';
   }
 
   async selectDirectory(): Promise<string> {
