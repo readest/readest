@@ -38,7 +38,8 @@
     "upload": "NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "check:optional-chaining": "count=$(grep -rno '\\?\\.[a-zA-Z_$]' .next/static/chunks/* out/_next/static/chunks/* | wc -l); if [ \"$count\" -gt 0 ]; then echo '❌ Optional chaining found in output!'; exit 1; else echo '✅ No optional chaining found.'; fi",
-    "check:all": "pnpm check:optional-chaining",
+    "check:translations": "count=$(grep -rno '__STRING_NOT_TRANSLATED__' public/locales/* | wc -l); if [ \"$count\" -gt 0 ]; then echo '❌ Untranslated strings found!'; exit 1; else echo '✅ All strings translated.'; fi",
+    "check:all": "pnpm check:optional-chaining && pnpm check:translations",
     "build-check": "pnpm build && pnpm build-web && pnpm check:all"
   },
   "dependencies": {

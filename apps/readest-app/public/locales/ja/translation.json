@@ -95,7 +95,6 @@
   "Speak": "読み上げ",
   "Subjects": "主題",
   "System Fonts": "システムフォント",
-  "TTS not supported in this device": "このデバイスではTTSがサポートされていません",
   "Theme Color": "テーマカラー",
   "Theme Mode": "テーマモード",
   "Translate": "翻訳",
@@ -457,5 +456,6 @@
   "Storage": "ストレージ",
   "Terms of Service": "利用規約",
   "Privacy Policy": "プライバシーポリシー",
-  "Disable Double Click": "ダブルクリック無効"
+  "Disable Double Click": "ダブルクリック無効",
+  "TTS not supported for this document": "TTSはこのドキュメントではサポートされていません"
 }

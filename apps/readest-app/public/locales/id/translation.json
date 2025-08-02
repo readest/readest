@@ -95,7 +95,6 @@
   "Speak": "Bicara",
   "Subjects": "Subjek",
   "System Fonts": "Font Sistem",
-  "TTS not supported in this device": "TTS tidak didukung di perangkat ini",
   "Theme Color": "Warna Tema",
   "Theme Mode": "Mode Tema",
   "Translate": "Terjemahkan",
@@ -457,5 +456,6 @@
   "Storage": "Penyimpanan",
   "Terms of Service": "Ketentuan Layanan",
   "Privacy Policy": "Kebijakan Privasi",
-  "Disable Double Click": "Nonaktifkan Klik Ganda"
+  "Disable Double Click": "Nonaktifkan Klik Ganda",
+  "TTS not supported for this document": "TTS tidak didukung untuk dokumen ini"
 }

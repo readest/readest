@@ -95,7 +95,6 @@
   "Speak": "बोलें",
   "Subjects": "विषय",
   "System Fonts": "सिस्टम फ़ॉन्ट्स",
-  "TTS not supported in this device": "यह डिवाइस TTS का समर्थन नहीं करता",
   "Theme Color": "थीम रंग",
   "Theme Mode": "थीम मोड",
   "Translate": "अनुवाद करें",
@@ -461,5 +460,6 @@
   "Storage": "भंडारण",
   "Terms of Service": "सेवा की शर्तें",
   "Privacy Policy": "गोपनीयता नीति",
-  "Disable Double Click": "डबल क्लिक अक्षम करें"
+  "Disable Double Click": "डबल क्लिक अक्षम करें",
+  "TTS not supported for this document": "TTS इस दस्तावेज़ के लिए समर्थित नहीं है"
 }

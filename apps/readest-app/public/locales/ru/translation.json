@@ -95,7 +95,6 @@
   "Speak": "Произнести",
   "Subjects": "Темы",
   "System Fonts": "Системные шрифты",
-  "TTS not supported in this device": "TTS не поддерживается на этом устройстве",
   "Theme Color": "Цвет темы",
   "Theme Mode": "Режим темы",
   "Translate": "Перевести",
@@ -469,5 +468,6 @@
   "Storage": "Хранилище",
   "Terms of Service": "Условия использования",
   "Privacy Policy": "Политика конфиденциальности",
-  "Disable Double Click": "Отключить двойной клик"
+  "Disable Double Click": "Отключить двойной клик",
+  "TTS not supported for this document": "TTS не поддерживается для этого документа"
 }

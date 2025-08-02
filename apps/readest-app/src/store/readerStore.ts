@@ -13,10 +13,11 @@ import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { DocumentLoader, TOCItem } from '@/libs/document';
 import { updateToc } from '@/utils/toc';
+import { formatTitle, getBaseFilename, getPrimaryLanguage } from '@/utils/book';
+import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
-import { formatTitle, getBaseFilename, getPrimaryLanguage } from '@/utils/book';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -137,6 +138,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         console.log('Loading book', key);
         const { book: bookDoc } = await new DocumentLoader(file).open();
         updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
+        // Correct language codes mistakenly set with language names
+        if (typeof bookDoc.metadata?.language === 'string') {
+          if (bookDoc.metadata.language in SUPPORTED_LANGNAMES) {
+            bookDoc.metadata.language = SUPPORTED_LANGNAMES[bookDoc.metadata.language]!;
+          }
+        }
         // Set the book's language for formerly imported books, newly imported books have this field set
         if (!bookDoc.metadata.title) {
           bookDoc.metadata.title = getBaseFilename(file.name);

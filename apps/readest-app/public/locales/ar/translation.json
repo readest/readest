@@ -94,7 +94,6 @@
   "Speak": "تحدث",
   "Subjects": "المواضيع",
   "System Fonts": "خطوط النظام",
-  "TTS not supported in this device": "القراءة الصوتية غير مدعومة في هذا الجهاز",
   "Theme Color": "لون السمة",
   "Theme Mode": "وضع السمة",
   "Translate": "ترجمة",
@@ -477,5 +476,6 @@
   "Storage": "التخزين",
   "Terms of Service": "شروط الخدمة",
   "Privacy Policy": "سياسة الخصوصية",
-  "Disable Double Click": "تعطيل النقر المزدوج"
+  "Disable Double Click": "تعطيل النقر المزدوج",
+  "TTS not supported for this document": "تكنولوجيا تحويل النص إلى كلام غير مدعومة لهذا المستند."
 }

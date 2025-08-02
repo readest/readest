@@ -95,7 +95,6 @@
   "Speak": "Озвучити",
   "Subjects": "Теми",
   "System Fonts": "Системні шрифти",
-  "TTS not supported in this device": "TTS не підтримується на цьому пристрої",
   "Theme Color": "Колір теми",
   "Theme Mode": "Режим теми",
   "Translate": "Перекласти",
@@ -469,5 +468,6 @@
   "Storage": "Сховище",
   "Terms of Service": "Умови обслуговування",
   "Privacy Policy": "Політика конфіденційності",
-  "Disable Double Click": "Вимкнути подвійне клацання"
+  "Disable Double Click": "Вимкнути подвійне клацання",
+  "TTS not supported for this document": "TTS не підтримується для цього документа"
 }

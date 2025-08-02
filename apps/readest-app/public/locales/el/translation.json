@@ -95,7 +95,6 @@
   "Speak": "Ομιλία",
   "Subjects": "Θέματα",
   "System Fonts": "Γραμματοσειρές συστήματος",
-  "TTS not supported in this device": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται σε αυτή τη συσκευή",
   "Theme Color": "Χρώμα θέματος",
   "Theme Mode": "Λειτουργία θέματος",
   "Translate": "Μετάφραση",
@@ -461,5 +460,6 @@
   "Storage": "Αποθήκευση",
   "Terms of Service": "Όροι χρήσης",
   "Privacy Policy": "Πολιτική απορρήτου",
-  "Disable Double Click": "Απενεργοποίηση διπλού κλικ"
+  "Disable Double Click": "Απενεργοποίηση διπλού κλικ",
+  "TTS not supported for this document": "Η τεχνολογία TTS δεν υποστηρίζεται για αυτό το έγγραφο."
 }

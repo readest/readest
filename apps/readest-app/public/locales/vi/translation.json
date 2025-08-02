@@ -95,7 +95,6 @@
   "Speak": "Đọc",
   "Subjects": "Chủ đề",
   "System Fonts": "Phông chữ hệ thống",
-  "TTS not supported in this device": "TTS không được hỗ trợ trên thiết bị này",
   "Theme Color": "Màu chủ đề",
   "Theme Mode": "Chế độ chủ đề",
   "Translate": "Dịch",
@@ -457,5 +456,6 @@
   "Storage": "Lưu trữ",
   "Terms of Service": "Điều khoản dịch vụ",
   "Privacy Policy": "Chính sách bảo mật",
-  "Disable Double Click": "Tắt Nhấp Đôi"
+  "Disable Double Click": "Tắt Nhấp Đôi",
+  "TTS not supported for this document": "TTS không được hỗ trợ cho tài liệu này"
 }

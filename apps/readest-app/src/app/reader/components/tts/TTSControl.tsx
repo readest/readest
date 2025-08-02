@@ -196,9 +196,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
       ttsControllerRef.current = null;
     }
 
-    setTTSEnabled(bookKey, true);
-    setShowIndicator(true);
-
     try {
       if (appService?.isIOSApp) {
         await invokeUseBackgroundAudio({ enabled: true });
@@ -223,9 +220,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
         setTtsController(ttsController);
       }
       setTtsClientsInitialized(true);
+      setTTSEnabled(bookKey, true);
+      setShowIndicator(true);
     } catch (error) {
       eventDispatcher.dispatch('toast', {
-        message: _('TTS not supported in this device'),
+        message: _('TTS not supported for this document'),
         type: 'error',
       });
       console.error(error);

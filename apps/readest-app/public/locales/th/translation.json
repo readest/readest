@@ -280,7 +280,6 @@
   "Disable Translation": "ปิดการแปล",
   "Translation Not Available": "ไม่มีการแปล",
   "TTS not supported for PDF": "ไม่รองรับ TTS สำหรับ PDF",
-  "TTS not supported in this device": "อุปกรณ์นี้ไม่รองรับ TTS",
   "No Timeout": "ไม่จำกัดเวลา",
   "{{value}} minute": "{{value}} นาที",
   "{{value}} minutes": "{{value}} นาที",
@@ -457,5 +456,6 @@
   "Storage": "พื้นที่เก็บข้อมูล",
   "Terms of Service": "ข้อกำหนดในการให้บริการ",
   "Privacy Policy": "นโยบายความเป็นส่วนตัว",
-  "Disable Double Click": "ปิดการคลิกสองครั้ง"
+  "Disable Double Click": "ปิดการคลิกสองครั้ง",
+  "TTS not supported for this document": "ไม่รองรับ TTS สำหรับเอกสารนี้"
 }

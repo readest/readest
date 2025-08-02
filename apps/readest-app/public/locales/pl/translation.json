@@ -95,7 +95,6 @@
   "Speak": "Czytaj",
   "Subjects": "Tematy",
   "System Fonts": "Czcionki systemowe",
-  "TTS not supported in this device": "TTS nie jest obsługiwane na tym urządzeniu",
   "Theme Color": "Kolor motywu",
   "Theme Mode": "Tryb motywu",
   "Translate": "Tłumacz",
@@ -469,5 +468,6 @@
   "Storage": "Przechowywanie",
   "Terms of Service": "Warunki korzystania z usługi",
   "Privacy Policy": "Polityka prywatności",
-  "Disable Double Click": "Wyłącz podwójne kliknięcie"
+  "Disable Double Click": "Wyłącz podwójne kliknięcie",
+  "TTS not supported for this document": "TTS nie jest obsługiwane dla tego dokumentu"
 }

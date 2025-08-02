@@ -213,7 +213,6 @@
   "TOC": "Inhoudsopgave",
   "Sidebar": "Zijbalk",
   "TTS not supported for PDF": "TTS niet ondersteund voor PDF",
-  "TTS not supported in this device": "TTS niet ondersteund op dit apparaat",
   "No Timeout": "Geen time-out",
   "{{value}} minute": "{{value}} minuut",
   "{{value}} minutes": "{{value}} minuten",
@@ -303,7 +302,7 @@
   "Security": "Beveiliging",
   "Allow JavaScript": "JavaScript toestaan",
   "Enable only if you trust the file.": "Schakel alleen in als u het bestand vertrouwt.",
-  "Sort TOC by Page": "__STRING_NOT_TRANSLATED__",
+  "Sort TOC by Page": "TOC sorteren op pagina",
   "Search in {{count}} Book(s)..._one": "Zoeken in {{count}} Boek...",
   "Search in {{count}} Book(s)..._other": "Zoeken in {{count}} Boeken...",
   "No notes match your search": "Geen notities gevonden",
@@ -461,5 +460,6 @@
   "Storage": "Opslag",
   "Terms of Service": "Gebruiksvoorwaarden",
   "Privacy Policy": "Privacybeleid",
-  "Disable Double Click": "Dubbelklikken uitschakelen"
+  "Disable Double Click": "Dubbelklikken uitschakelen",
+  "TTS not supported for this document": "TTS niet ondersteund voor dit document"
 }
