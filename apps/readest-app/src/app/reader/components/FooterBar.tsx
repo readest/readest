@@ -183,10 +183,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
       />
       <div
         className={clsx(
-          'footer-bar shadow-xs absolute bottom-0 z-50 flex w-full flex-col',
+          'footer-bar shadow-xs bottom-0 z-50 flex w-full flex-col',
           'sm:h-[52px] sm:justify-center',
           'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
           'transition-[opacity,transform] duration-300',
+          appService?.isMobile ? 'fixed' : 'absolute',
           appService?.hasRoundedWindow && 'rounded-window-bottom-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
           isHoveredAnim && 'hover-bar-anim',
@@ -203,7 +204,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         {/* Mobile footer bar */}
         <div
           className={clsx(
-            'bg-base-200 absolute bottom-16 flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
+            'footerbar-progress-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
             actionTab === 'progress'
               ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
@@ -257,7 +258,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         </div>
         <div
           className={clsx(
-            'bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
+            'footerbar-font-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
             actionTab === 'font'
               ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
