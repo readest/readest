@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
-import { TRANSLATED_LANGS } from '@/services/constants';
+import { TRANSLATOR_LANGS } from '@/services/constants';
 import { UseTranslatorOptions, getTranslators } from '@/services/translators';
 import Select from '@/components/Select';
 
@@ -13,11 +13,11 @@ const notSupportedLangs = [''];
 
 const generateTranslatorLangs = () => {
   return Object.fromEntries(
-    Object.entries(TRANSLATED_LANGS).filter(([code]) => !notSupportedLangs.includes(code)),
+    Object.entries(TRANSLATOR_LANGS).filter(([code]) => !notSupportedLangs.includes(code)),
   );
 };
 
-const TRANSLATOR_LANGS = generateTranslatorLangs();
+const translatorLangs = generateTranslatorLangs();
 
 interface TranslatorPopupProps {
   text: string;
@@ -47,9 +47,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   const [targetLang, setTargetLang] = useState(settings.globalReadSettings.translateTargetLang);
   const [provider, setProvider] = useState(settings.globalReadSettings.translationProvider);
   const [translation, setTranslation] = useState<string | null>(null);
-  const [detectedSourceLang, setDetectedSourceLang] = useState<
-    keyof typeof TRANSLATOR_LANGS | null
-  >(null);
+  const [detectedSourceLang, setDetectedSourceLang] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,12 +151,12 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               onChange={handleSourceLangChange}
               options={[
                 { value: 'AUTO', label: _('Auto Detect') },
-                ...Object.entries(TRANSLATOR_LANGS)
+                ...Object.entries(translatorLangs)
                   .sort((a, b) => a[1].localeCompare(b[1]))
                   .map(([code, name]) => {
                     const label =
                       detectedSourceLang && sourceLang === 'AUTO' && code === 'AUTO'
-                        ? `${TRANSLATOR_LANGS[detectedSourceLang] || detectedSourceLang} ` +
+                        ? `${translatorLangs[detectedSourceLang] || detectedSourceLang} ` +
                           _('(detected)')
                         : name;
                     return { value: code, label };
@@ -178,7 +176,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               className='bg-gray-600 text-white/75'
               value={targetLang}
               onChange={handleTargetLangChange}
-              options={Object.entries(TRANSLATOR_LANGS)
+              options={Object.entries(translatorLangs)
                 .sort((a, b) => a[1].localeCompare(b[1]))
                 .map(([code, name]) => ({ value: code, label: name }))}
             />

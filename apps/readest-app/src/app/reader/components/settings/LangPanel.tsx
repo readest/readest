@@ -7,7 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { getTranslators } from '@/services/translators';
-import { TRANSLATED_LANGS } from '@/services/constants';
+import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useResetViewSettings } from '../../hooks/useResetSettings';
 import { saveAndReload } from '@/utils/reload';
@@ -54,8 +54,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     };
   };
 
-  const getLangOptions = () => {
-    const langs = TRANSLATED_LANGS as Record<string, string>;
+  const getLangOptions = (langs: Record<string, string>) => {
     const options = Object.entries(langs).map(([value, label]) => ({ value, label }));
     options.sort((a, b) => a.label.localeCompare(b.label));
     options.unshift({ value: '', label: _('System Language') });
@@ -103,7 +102,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   const getCurrentTargetLangOption = () => {
     const value = translateTargetLang;
-    const availableOptions = getLangOptions();
+    const availableOptions = getLangOptions(TRANSLATOR_LANGS);
     return availableOptions.find((o) => o.value === value) || availableOptions[0]!;
   };
 
@@ -153,7 +152,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               <Select
                 value={getCurrentUILangOption().value}
                 onChange={handleSelectUILang}
-                options={getLangOptions()}
+                options={getLangOptions(TRANSLATED_LANGS)}
               />
             </div>
           </div>
@@ -200,7 +199,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               <Select
                 value={getCurrentTargetLangOption().value}
                 onChange={handleSelectTargetLang}
-                options={getLangOptions()}
+                options={getLangOptions(TRANSLATOR_LANGS)}
                 disabled={!translationEnabled}
               />
             </div>

@@ -658,6 +658,22 @@ export const TRANSLATED_LANGS = {
   'zh-TW': '正體中文',
 };
 
+export const TRANSLATOR_LANGS: Record<string, string> = {
+  ...TRANSLATED_LANGS,
+  no: 'Norsk',
+  sv: 'Svenska',
+  fi: 'Suomi',
+  da: 'Dansk',
+  cs: 'Čeština',
+  hu: 'Magyar',
+  ro: 'Română',
+  bg: 'Български',
+  hr: 'Hrvatski',
+  lt: 'Lietuvių',
+  sl: 'Slovenščina',
+  sk: 'Slovenčina',
+};
+
 export const SUPPORTED_LANGS: Record<string, string> = { ...TRANSLATED_LANGS, zh: '中文' };
 
 export const SUPPORTED_LANGNAMES: Record<string, string> = Object.fromEntries(
