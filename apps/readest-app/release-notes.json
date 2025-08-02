@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.9.69": {
+      "date": "2025-08-02",
+      "notes": [
+        "Updater: Fixed permission issue when updating in standalone reader window",
+        "Config: Added option to disable double‑click actions",
+        "EPUB: Fixed missing images in some EPUB files",
+        "EPUB: Corrected formatting for book subjects",
+        "TXT: Improved language detection when parsing TXT files",
+        "CSS: Resolved issue where custom font colors could not be applied",
+        "Layout: Corrected cover image width display in 'Fit' mode for list view",
+        "Layout: Fixed unintended scrolling in reader view when highlighting text"
+      ]
+    },
     "0.9.68": {
       "date": "2025-07-30",
       "notes": [
