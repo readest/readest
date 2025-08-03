@@ -4,6 +4,7 @@ import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getDailyTranslationPlanData, getUserPlan, validateUserAndToken } from '@/utils/access';
 import { ErrorCodes } from '@/services/translators';
+import { UsageStatsManager } from '@/utils/usage';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
@@ -34,47 +35,36 @@ const generateCacheKey = (text: string, sourceLang: string, targetLang: string):
   return `tr:${hash}`;
 };
 
-const getDailyUsageKey = (userId?: string, token?: string) => {
-  let dailyUsageKey = '';
-  if (userId && token) {
-    const currentDate = new Date().toISOString().split('T')[0]!;
-    dailyUsageKey = `daily_usage:${currentDate}:${userId}`;
-  }
-  return dailyUsageKey;
-};
-
-const checkDailyUsage = async (
-  userId: string,
-  token: string,
-  chars: number,
-  translationsKV?: KVNamespace,
-) => {
-  const usageKey = getDailyUsageKey(userId, token);
-  const dailyUsage = (await translationsKV?.get(usageKey)) || '0';
+const checkDailyUsage = async (userId: string, token: string, chars: number) => {
   const { quota: dailyQuota } = getDailyTranslationPlanData(token);
-  const dailyUsageChars = parseInt(dailyUsage);
-  if (dailyQuota <= dailyUsageChars + chars) {
+  const dailyUsage = await UsageStatsManager.getCurrentUsage(userId, 'translation_chars', 'daily');
+
+  if (dailyQuota <= dailyUsage + chars) {
     throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
   }
-  return dailyUsageChars;
+  return dailyUsage;
 };
 
 const updateDailyUsage = async (
   userId: string | undefined,
   token: string | undefined,
-  newUsage: number,
-  translationsKV?: KVNamespace,
+  incrementUsage: number,
 ) => {
-  const usageKey = getDailyUsageKey(userId, token);
-  if (!usageKey) return 0;
+  if (!userId || !token) return 0;
 
   try {
-    const dailyUsage = (await translationsKV?.get(usageKey)) || '0';
-    const newDailyUsage = parseInt(dailyUsage) + newUsage;
-    await translationsKV?.put(usageKey, newDailyUsage.toString(), {
-      expirationTtl: 86400 * 30,
-    });
-    return newDailyUsage;
+    const userPlan = getUserPlan(token);
+    const newUsage = await UsageStatsManager.trackUsage(
+      userId,
+      'translation_chars',
+      incrementUsage,
+      {
+        plan_type: userPlan,
+        source: 'deepl_api',
+      },
+    );
+
+    return newUsage;
   } catch (cacheError) {
     console.error('Update daily usage error:', cacheError);
   }
@@ -139,7 +129,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
-        await checkDailyUsage(user?.id, token, singleText.length, env['TRANSLATIONS_KV']);
+        await checkDailyUsage(user?.id, token, singleText.length);
 
         return await callDeepLAPI(
           singleText,
@@ -158,7 +148,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       user?.id,
       token,
       originalCharsCount + translatedCharsCount,
-      env['TRANSLATIONS_KV'],
     );
     translations.forEach((translation) => {
       if (translation && translation.text) {
