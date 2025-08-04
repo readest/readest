@@ -12,7 +12,7 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { UserPlan } from '@/types/user';
-import { navigateToLibrary } from '@/utils/nav';
+import { navigateToLibrary, navigateToResetPassword } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
 import { getStripe } from '@/libs/stripe/client';
@@ -89,6 +89,10 @@ const ProfilePage = () => {
     setSettings(settings);
     saveSettings(envConfig, settings);
     navigateToLibrary(router);
+  };
+
+  const handleResetPassword = () => {
+    navigateToResetPassword(router);
   };
 
   const handleConfirmDelete = async () => {
@@ -388,6 +392,7 @@ const ProfilePage = () => {
                   <AccountActions
                     userPlan={userPlan}
                     onLogout={handleLogout}
+                    onResetPassword={handleResetPassword}
                     onConfirmDelete={handleConfirmDelete}
                     onRestorePurchase={handleIAPRestorePurchase}
                     onManageSubscription={handleManageSubscription}
