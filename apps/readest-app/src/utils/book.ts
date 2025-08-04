@@ -1,9 +1,10 @@
 import { EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
+import { SUPPORTED_LANGS } from '@/services/constants';
 import { getUserLang, isContentURI, isFileURI, isValidURL, makeSafeFilename } from './misc';
 import { getStorageType } from './storage';
 import { getDirFromLanguage } from './rtl';
-import { SUPPORTED_LANGS } from '@/services/constants';
+import { code6392to6391, isValidLang, normalizedLangCode } from './lang';
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;
@@ -137,8 +138,14 @@ export const formatLanguage = (lang: string | string[] | undefined): string => {
     : langCodeToLangName(lang || '');
 };
 
+// Should return valid ISO-639-1 language code, fallback to 'en' if not valid
 export const getPrimaryLanguage = (lang: string | string[] | undefined) => {
-  return Array.isArray(lang) ? lang[0] : lang;
+  const primaryLang = Array.isArray(lang) ? lang[0] : lang;
+  if (isValidLang(primaryLang)) {
+    const normalizedLang = normalizedLangCode(primaryLang);
+    return code6392to6391(normalizedLang) || normalizedLang;
+  }
+  return 'en';
 };
 
 export const formatDate = (date: string | number | Date | null | undefined, isUTC = false) => {

@@ -138,6 +138,10 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         console.log('Loading book', key);
         const { book: bookDoc } = await new DocumentLoader(file).open();
         updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
+        if (!bookDoc.metadata.title) {
+          bookDoc.metadata.title = getBaseFilename(file.name);
+        }
+        book.sourceTitle = formatTitle(bookDoc.metadata.title);
         // Correct language codes mistakenly set with language names
         if (typeof bookDoc.metadata?.language === 'string') {
           if (bookDoc.metadata.language in SUPPORTED_LANGNAMES) {
@@ -145,10 +149,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
         }
         // Set the book's language for formerly imported books, newly imported books have this field set
-        if (!bookDoc.metadata.title) {
-          bookDoc.metadata.title = getBaseFilename(file.name);
-        }
-        book.sourceTitle = formatTitle(bookDoc.metadata.title);
         const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
         book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
         book.metadata = book.metadata ?? bookDoc.metadata;
