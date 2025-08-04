@@ -65,7 +65,7 @@ export class NativeFile extends File implements ClosableFile {
   #type: string = '';
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 1024;
-  static MAX_CACHE_ITEMS_SIZE = 20;
+  static MAX_CACHE_ITEMS_SIZE = 50;
   #cache: Map<number, ArrayBuffer> = new Map();
   #order: number[] = [];
 
@@ -149,7 +149,7 @@ export class NativeFile extends File implements ClosableFile {
     }
 
     const chunkStart = Math.max(0, start - 1024);
-    const chunkEnd = Math.min(this.size, chunkStart + NativeFile.MAX_CACHE_CHUNK_SIZE);
+    const chunkEnd = Math.min(this.size, start + NativeFile.MAX_CACHE_CHUNK_SIZE);
     const chunkSize = chunkEnd - chunkStart;
 
     await this.#handle.seek(chunkStart, SeekMode.Start);
