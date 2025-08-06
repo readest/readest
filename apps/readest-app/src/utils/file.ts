@@ -122,46 +122,54 @@ export class NativeFile extends File implements ClosableFile {
 
   // exclusive reading of the end: [start, end)
   async readData(start: number, end: number): Promise<ArrayBuffer> {
-    if (!this.#handle) {
+    // PDF.js workers might call readData concurrently
+    // make readData thread-safe by always opening and closing the file handle
+    const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
+    if (!handle) {
       throw new Error('File handle is not open');
     }
-    start = Math.max(0, start);
-    end = Math.max(start, Math.min(this.size, end));
-    const size = end - start;
 
-    if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
-      await this.#handle.seek(start, SeekMode.Start);
-      const buffer = new Uint8Array(size);
-      await this.#handle.read(buffer);
-      return buffer.buffer;
+    try {
+      start = Math.max(0, start);
+      end = Math.max(start, Math.min(this.size, end));
+      const size = end - start;
+
+      if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
+        await handle.seek(start, SeekMode.Start);
+        const buffer = new Uint8Array(size);
+        await handle.read(buffer);
+        return buffer.buffer;
+      }
+
+      const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
+        const buffer = this.#cache.get(chunkStart)!;
+        return start >= chunkStart && end <= chunkStart + buffer.byteLength;
+      });
+
+      if (cachedChunkStart !== undefined) {
+        this.#updateAccessOrder(cachedChunkStart);
+        const buffer = this.#cache.get(cachedChunkStart)!;
+        const offset = start - cachedChunkStart;
+        return buffer.slice(offset, offset + size);
+      }
+
+      const chunkStart = Math.max(0, start - 1024);
+      const chunkEnd = Math.min(this.size, start + NativeFile.MAX_CACHE_CHUNK_SIZE);
+      const chunkSize = chunkEnd - chunkStart;
+
+      await handle.seek(chunkStart, SeekMode.Start);
+      const buffer = new Uint8Array(chunkSize);
+      await handle.read(buffer);
+
+      this.#cache.set(chunkStart, buffer.buffer);
+      this.#updateAccessOrder(chunkStart);
+      this.#ensureCacheSize();
+
+      const offset = start - chunkStart;
+      return buffer.buffer.slice(offset, offset + size);
+    } finally {
+      await handle.close();
     }
-
-    const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
-      const buffer = this.#cache.get(chunkStart)!;
-      return start >= chunkStart && end <= chunkStart + buffer.byteLength;
-    });
-
-    if (cachedChunkStart !== undefined) {
-      this.#updateAccessOrder(cachedChunkStart);
-      const buffer = this.#cache.get(cachedChunkStart)!;
-      const offset = start - cachedChunkStart;
-      return buffer.slice(offset, offset + size);
-    }
-
-    const chunkStart = Math.max(0, start - 1024);
-    const chunkEnd = Math.min(this.size, start + NativeFile.MAX_CACHE_CHUNK_SIZE);
-    const chunkSize = chunkEnd - chunkStart;
-
-    await this.#handle.seek(chunkStart, SeekMode.Start);
-    const buffer = new Uint8Array(chunkSize);
-    await this.#handle.read(buffer);
-
-    this.#cache.set(chunkStart, buffer.buffer);
-    this.#updateAccessOrder(chunkStart);
-    this.#ensureCacheSize();
-
-    const offset = start - chunkStart;
-    return buffer.buffer.slice(offset, offset + size);
   }
 
   #updateAccessOrder(chunkStart: number) {
