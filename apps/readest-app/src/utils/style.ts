@@ -82,6 +82,9 @@ const getFontStyles = (
     font[size="7"] {
       font-size: ${fontSize * 3}px;
     }
+    pre, code, kbd {
+      font-family: var(--monospace);
+    }
     /* hardcoded inline font size */
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
@@ -521,10 +524,11 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     })
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
     .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
-    .replace(/[\s;]color\s*:\s*black/gi, 'color: var(--theme-fg-color)')
-    .replace(/[\s;]color\s*:\s*#000000/gi, 'color: var(--theme-fg-color)')
-    .replace(/[\s;]color\s*:\s*#000/gi, 'color: var(--theme-fg-color)')
-    .replace(/[\s;]color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, 'color: var(--theme-fg-color)');
+    .replace(/([\s;])font-family\s*:\s*monospace/gi, '$1font-family: var(--monospace)')
+    .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
+    .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
+    .replace(/([\s;])color\s*:\s*#000/gi, '$1color: var(--theme-fg-color)')
+    .replace(/([\s;])color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, '$1color: var(--theme-fg-color)');
   return css;
 };
 
