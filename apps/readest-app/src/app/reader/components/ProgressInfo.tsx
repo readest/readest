@@ -42,9 +42,11 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
 	const total = pageinfo?.total ?? -1;
 
 	const shouldShowReadingProgress =
-		!["PDF", "CBZ"].includes(bookFormat) &&
-		pageinfo?.current >= 0 &&
-		pageinfo?.total > 0;
+		typeof pageinfo?.current === "number" &&
+		typeof pageinfo?.total === "number" &&
+		pageinfo.current >= 0 &&
+		pageinfo.total > 0 &&
+		!["PDF", "CBZ"].includes(bookFormat);
 	const pageInfo = shouldShowReadingProgress
 		? ["PDF", "CBZ"].includes(bookFormat)
 			? section
