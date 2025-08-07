@@ -120,7 +120,7 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
-    div, p, font, h1, h2, h3, h4, h5, h6 {
+    section, div, p, font, h1, h2, h3, h4, h5, h6 {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
     }
@@ -140,6 +140,13 @@ const getColorStyles = (
     img {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
+    }
+    /* horizontal rule */
+    *:has(hr) {
+      background-color: ${bg};
+    }
+    hr {
+      mix-blend-mode: multiply;
     }
     /* inline images */
     p img, span img, sup img {
