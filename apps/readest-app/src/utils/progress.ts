@@ -6,6 +6,7 @@ export function formatReadingProgress(
 	if (style === "fraction") {
 		return `${current + 1} / ${total}`;
 	} else {
-		return `${Math.round(((current + 1) / total) * 100)}%`;
+		const progress = current / total;
+		return `${(progress * 100).toFixed(1)}%`;
 	}
 }
