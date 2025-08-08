@@ -5,6 +5,7 @@ import { useEnv } from "@/context/EnvContext";
 import { useReaderStore } from "@/store/readerStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { PageInfo, TimeInfo } from "@/types/book";
+
 import { formatReadingProgress } from "@/utils/progress";
 interface PageInfoProps {
 	bookKey: string;
