@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { AppService } from '@/types/system';
 import { getThemeCode, ThemeCode } from '@/utils/style';
+import { getSystemColorScheme } from '@/utils/bridge';
 import { CustomTheme, Palette, ThemeMode } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
@@ -27,6 +29,7 @@ interface ThemeState {
     theme: CustomTheme,
     isDelete?: boolean,
   ) => void;
+  handleSystemThemeChange: (isDark: boolean) => void;
 }
 
 const getInitialThemeMode = (): ThemeMode => {
@@ -51,17 +54,6 @@ export const useThemeStore = create<ThemeState>((set, get) => {
   const isDarkMode =
     initialThemeMode === 'dark' || (initialThemeMode === 'auto' && systemIsDarkMode);
   const themeCode = getThemeCode();
-
-  if (typeof window !== 'undefined') {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemThemeChange = () => {
-      const mode = get().themeMode;
-      const isDarkMode = mode === 'dark' || (mode === 'auto' && mediaQuery.matches);
-      set({ systemIsDarkMode: mediaQuery.matches, isDarkMode });
-    };
-
-    mediaQuery?.addEventListener('change', handleSystemThemeChange);
-  }
 
   return {
     themeMode: initialThemeMode,
@@ -125,5 +117,30 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       const appService = await envConfig.getAppService();
       await appService.saveSettings(settings);
     },
+    handleSystemThemeChange: (systemIsDarkMode) => {
+      const mode = get().themeMode;
+      const isDarkMode = mode === 'dark' || (mode === 'auto' && systemIsDarkMode);
+      set({ systemIsDarkMode, isDarkMode });
+    },
   };
 });
+
+export const initSystemThemeListener = (appService: AppService) => {
+  if (typeof window === 'undefined' || !appService) return;
+
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const update = async () => {
+    let systemIsDarkMode;
+    if (appService.isIOSApp) {
+      const res = await getSystemColorScheme();
+      systemIsDarkMode = res.colorScheme === 'dark';
+    } else {
+      systemIsDarkMode = mediaQuery.matches;
+    }
+    useThemeStore.getState().handleSystemThemeChange(systemIsDarkMode);
+  };
+
+  mediaQuery?.addEventListener('change', update);
+  document.addEventListener('visibilitychange', update);
+  update();
+};

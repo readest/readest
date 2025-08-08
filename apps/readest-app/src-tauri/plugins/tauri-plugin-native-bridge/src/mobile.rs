@@ -147,11 +147,17 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn iap_restore_purchases(
-        &self,
-    ) -> crate::Result<IAPRestorePurchasesResponse> {
+    pub fn iap_restore_purchases(&self) -> crate::Result<IAPRestorePurchasesResponse> {
         self.0
             .run_mobile_plugin("iap_restore_purchases", ())
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn get_system_color_scheme(&self) -> crate::Result<GetSystemColorSchemeResponse> {
+        self.0
+            .run_mobile_plugin("get_system_color_scheme", ())
             .map_err(Into::into)
     }
 }

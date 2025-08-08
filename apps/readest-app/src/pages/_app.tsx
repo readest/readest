@@ -1,5 +1,6 @@
 import { AppProps } from 'next/app';
 import Head from 'next/head';
+import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
 
 import '../styles/globals.css';
@@ -25,9 +26,11 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name='theme-color' content='white' />
         <link rel='manifest' href='/manifest.json' />
       </Head>
-      <Providers>
-        <Component {...pageProps} />
-      </Providers>
+      <EnvProvider>
+        <Providers>
+          <Component {...pageProps} />
+        </Providers>
+      </EnvProvider>
     </>
   );
 }

@@ -98,4 +98,8 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn iap_restore_purchases(&self) -> crate::Result<IAPRestorePurchasesResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn get_system_color_scheme(&self) -> crate::Result<GetSystemColorSchemeResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

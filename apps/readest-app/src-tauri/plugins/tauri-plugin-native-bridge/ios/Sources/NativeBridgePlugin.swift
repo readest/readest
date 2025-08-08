@@ -533,6 +533,12 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve(["purchases": restored])
     }
   }
+
+  @objc public func get_system_color_scheme(_ invoke: Invoke) {
+    let userInterfaceStyle = UITraitCollection.current.userInterfaceStyle
+    let colorScheme = (userInterfaceStyle == .dark) ? "dark" : "light"
+    invoke.resolve(["colorScheme": colorScheme])
+  }
 }
 
 @_cdecl("init_plugin_native_bridge")

@@ -18,6 +18,7 @@ Default permissions for the plugin
 - `allow-iap-fetch-products`
 - `allow-iap-purchase-product`
 - `allow-iap-restore-purchases`
+- `allow-get-system-color-scheme`
 
 ## Permission Table
 
@@ -154,6 +155,32 @@ Enables the get_sys_fonts_list command without any pre-configured scope.
 <td>
 
 Denies the get_sys_fonts_list command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-system-color-scheme`
+
+</td>
+<td>
+
+Enables the get_system_color_scheme command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-system-color-scheme`
+
+</td>
+<td>
+
+Denies the get_system_color_scheme command without any pre-configured scope.
 
 </td>
 </tr>
