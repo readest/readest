@@ -112,3 +112,10 @@ pub(crate) async fn iap_restore_purchases<R: Runtime>(
 ) -> Result<IAPRestorePurchasesResponse> {
     app.native_bridge().iap_restore_purchases()
 }
+
+#[command]
+pub(crate) async fn get_system_color_scheme<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetSystemColorSchemeResponse> {
+    app.native_bridge().get_system_color_scheme()
+}

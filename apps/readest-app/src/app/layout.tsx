@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
 
 import '../styles/globals.css';
@@ -69,7 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name='twitter:image' content={previewImage} />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <EnvProvider>
+          <Providers>{children}</Providers>
+        </EnvProvider>
       </body>
     </html>
   );

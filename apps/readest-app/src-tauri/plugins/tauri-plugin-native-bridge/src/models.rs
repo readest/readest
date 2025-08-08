@@ -107,7 +107,7 @@ pub struct Purchase {
     pub purchase_date: String,
     pub original_transaction_id: String,
     pub purchase_state: String, // "purchased", "pending", "cancelled"
-    pub platform: String, // "ios" or "android"
+    pub platform: String,       // "ios" or "android"
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,4 +151,10 @@ pub struct IAPPurchaseProductResponse {
 #[serde(rename_all = "camelCase")]
 pub struct IAPRestorePurchasesResponse {
     pub purchases: Vec<Purchase>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSystemColorSchemeResponse {
+    pub color_scheme: String, // "light" or "dark"
 }

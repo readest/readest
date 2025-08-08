@@ -15,4 +15,5 @@ permissions = [
   "allow-iap-fetch-products",
   "allow-iap-purchase-product",
   "allow-iap-restore-purchases",
+  "allow-get-system-color-scheme",
 ]
