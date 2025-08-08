@@ -48,13 +48,22 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
     pageinfo.current >= 0 &&
     pageinfo.total > 0 &&
     !['PDF', 'CBZ'].includes(bookFormat);
+
   const pageInfo = shouldShowReadingProgress
     ? ['PDF', 'CBZ'].includes(bookFormat)
       ? section
-        ? formatReadingProgress(section.current, section.total, readingProgressStyle)
+        ? readingProgressStyle === 'fraction'
+          ? isVertical
+            ? `Loc. ${section.current + 1} · ${section.total}`
+            : `Loc. ${section.current + 1} / ${section.total}`
+          : formatReadingProgress(section.current, section.total, readingProgressStyle)
         : ''
       : current >= 0 && total > 0
-        ? formatReadingProgress(current, total, readingProgressStyle)
+        ? readingProgressStyle === 'fraction'
+          ? isVertical
+            ? `Loc. ${current + 1} · ${total}`
+            : `Loc. ${current + 1} / ${total}`
+          : formatReadingProgress(current, total, readingProgressStyle)
         : ''
     : '';
   const timeLeft = timeinfo

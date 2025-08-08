@@ -322,7 +322,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [showRemainingPages]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingProgressStyle', readingProgressStyle);
+    saveViewSettings(envConfig, bookKey, 'showPageNumber', showPageNumber, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPageNumber]);
 
