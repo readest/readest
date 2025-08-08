@@ -70,7 +70,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
 
   const [readingProgressStyle, setReadingProgressStyle] = useState<'percentage' | 'fraction'>(
-    viewSettings.readingProgressStyle ?? 'percentage',
+    viewSettings.readingProgressStyle,
   );
   const resetToDefaults = useResetViewSettings();
 
@@ -327,8 +327,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [showPageNumber]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingProgressStyle', readingProgressStyle); // adding state
+    saveViewSettings(envConfig, bookKey, 'readingProgressStyle', readingProgressStyle, false, false);
   }, [readingProgressStyle]);
+
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
     if (showHeader && !viewSettings.vertical) {

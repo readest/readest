@@ -675,10 +675,7 @@ export const TRANSLATOR_LANGS: Record<string, string> = {
   sk: 'Slovenčina',
 };
 
-export const SUPPORTED_LANGS: Record<string, string> = {
-  ...TRANSLATED_LANGS,
-  zh: '中文',
-};
+export const SUPPORTED_LANGS: Record<string, string> = { ...TRANSLATED_LANGS, zh: '中文' };
 
 export const SUPPORTED_LANGNAMES: Record<string, string> = Object.fromEntries(
   Object.entries(SUPPORTED_LANGS).map(([code, name]) => [name, code]),
