@@ -22,6 +22,7 @@ interface BookDetailModalProps {
   handleBookUpload?: (book: Book) => void;
   handleBookDelete?: (book: Book) => void;
   handleBookDeleteCloudBackup?: (book: Book) => void;
+  handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
 }
 
@@ -33,12 +34,14 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookUpload,
   handleBookDelete,
   handleBookDeleteCloudBackup,
+  handleBookDeleteLocalCopy,
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showDeleteCloudBackupAlert, setShowDeleteCloudBackupAlert] = useState(false);
+  const [showDeleteLocalCopyAlert, setShowDeleteLocalCopyAlert] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -113,6 +116,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     setShowDeleteCloudBackupAlert(true);
   };
 
+  const handleDeleteLocalCopy = () => {
+    setShowDeleteLocalCopyAlert(true);
+  };
+
   const confirmDelete = async () => {
     handleClose();
     setShowDeleteAlert(false);
@@ -126,6 +133,13 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     setShowDeleteCloudBackupAlert(false);
     if (handleBookDeleteCloudBackup) {
       handleBookDeleteCloudBackup(book);
+    }
+  };
+  const confirmDeleteLocalCopy = async () => {
+    handleClose();
+    setShowDeleteLocalCopyAlert(false);
+    if (handleBookDeleteLocalCopy) {
+      handleBookDeleteLocalCopy(book);
     }
   };
 
@@ -194,6 +208,9 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDeleteCloudBackup={
                   handleBookDeleteCloudBackup ? handleDeleteCloudBackup : undefined
                 }
+                onDeleteLocalCopy={
+                  handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined
+                }
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
               />
@@ -237,6 +254,21 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
               message={_('Are you sure to delete the cloud backup of the selected book?')}
               onCancel={() => setShowDeleteCloudBackupAlert(false)}
               onConfirm={confirmDeleteCloudBackup}
+            />
+          </div>
+        )}
+        {showDeleteLocalCopyAlert && (
+          <div
+            className={clsx(
+              'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
+              'pb-[calc(env(safe-area-inset-bottom)+16px)]',
+            )}
+          >
+            <Alert
+              title={_('Confirm Deletion')}
+              message={_('Are you sure to delete the local copy of the selected book?')}
+              onCancel={() => setShowDeleteLocalCopyAlert(false)}
+              onConfirm={confirmDeleteLocalCopy}
             />
           </div>
         )}

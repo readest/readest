@@ -8,7 +8,7 @@ import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overl
 import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
-import { AppService } from '@/types/system';
+import { AppService, StorageType } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
 import {
   formatAuthors,
@@ -543,53 +543,40 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     [appService],
   );
 
-  const handleBookDelete = async (book: Book) => {
-    try {
-      await appService?.deleteBook(book, !!book.uploadedAt, true);
-      await updateBook(envConfig, book);
-      pushLibrary();
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        timeout: 2000,
-        message: _('Book deleted: {{title}}', {
-          title: book.title,
-        }),
-      });
-      return true;
-    } catch {
-      eventDispatcher.dispatch('toast', {
-        message: _('Failed to delete book: {{title}}', {
-          title: book.title,
-        }),
-        type: 'error',
-      });
-      return false;
-    }
-  };
-
-  const handleBookDeleteCloudBackup = async (book: Book) => {
-    try {
-      await appService?.deleteBook(book, !!book.uploadedAt, false);
-      await updateBook(envConfig, book);
-      pushLibrary();
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        timeout: 2000,
-        message: _('Deleted cloud backup of the book: {{title}}', {
-          title: book.title,
-        }),
-      });
-      return true;
-    } catch (e) {
-      console.error(e);
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: _('Failed to delete cloud backup of the book', {
-          title: book.title,
-        }),
-      });
-      return false;
-    }
+  const handleBookDelete = (storageType: StorageType) => {
+    return async (book: Book) => {
+      const deletionMessages = {
+        'Both': 'Book deleted: {{title}}',
+        'Cloud': 'Deleted cloud backup of the book: {{title}}',
+        'Local': 'Deleted local copy of the book: {{title}}',
+      };
+      const deletionFailMessages = {
+        'Both': 'Failed to delete book: {{title}}',
+        'Cloud': 'Failed to delete cloud backup of the book',
+        'Local': 'Failed to delete local copy of the book: {{title}}',
+      };
+      try {
+        await appService?.deleteBook(book, storageType);
+        await updateBook(envConfig, book);
+        pushLibrary();
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          timeout: 2000,
+          message: _(deletionMessages[storageType], {
+            title: book.title,
+          }),
+        });
+        return true;
+      } catch {
+        eventDispatcher.dispatch('toast', {
+          message: _(deletionFailMessages[storageType], {
+            title: book.title,
+          }),
+          type: 'error',
+        });
+        return false;
+      }
+    };
   };
 
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
@@ -731,7 +718,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleImportBooks={handleImportBooks}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete}
+                handleBookDelete={handleBookDelete('Both')}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
                 booksTransferProgress={booksTransferProgress}
@@ -763,8 +750,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onClose={() => setShowDetailsBook(null)}
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
-          handleBookDelete={handleBookDelete}
-          handleBookDeleteCloudBackup={handleBookDeleteCloudBackup}
+          handleBookDelete={handleBookDelete('Both')}
+          handleBookDeleteCloudBackup={handleBookDelete('Cloud')}
+          handleBookDeleteLocalCopy={handleBookDelete('Local')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
       )}
