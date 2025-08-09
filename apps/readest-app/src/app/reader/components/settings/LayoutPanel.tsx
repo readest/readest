@@ -326,6 +326,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressStyle]);
 
   useEffect(() => {
