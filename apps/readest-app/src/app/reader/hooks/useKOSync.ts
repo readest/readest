@@ -202,7 +202,7 @@ export const useKOSync = (bookKey: string) => {
           if (view && remote.progress) {
             if (PAGINATED_FORMATS.has(book.format)) {
               const pageToGo = parseInt(remote.progress, 10);
-              if (!isNaN(pageToGo)) view.goTo((pageToGo - 1).toString());
+              if (!isNaN(pageToGo)) view.select(pageToGo - 1);
             } else {
               const isXPointer = remote.progress.startsWith('/body');
 
@@ -324,7 +324,7 @@ export const useKOSync = (bookKey: string) => {
 
         if (!isNaN(remotePage) && Math.abs(localTotalPages - remoteTotalPages) <= 1) {
           console.log('Going to remote page:', remotePage);
-          view.goTo((remotePage - 1).toString());
+          view.select(remotePage - 1);
         } else if (remote.percentage !== undefined && remote.percentage !== null) {
           console.log('Going to remote percentage:', remote.percentage);
           view.goToFraction(remote.percentage);
