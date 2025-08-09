@@ -2,6 +2,7 @@ import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, BaseDir } from '@/types/system';
+import { v4 as uuidv4 } from 'uuid';
 import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
 import {
   getDir,
@@ -116,11 +117,17 @@ export abstract class BaseAppService implements AppService {
         ...this.getDefaultViewSettings(),
         ...settings.globalViewSettings,
       };
+
+      if (!settings.koreaderSyncDeviceId) {
+        settings.koreaderSyncDeviceId = uuidv4();
+        await this.fs.writeFile(fp, base, JSON.stringify(settings));
+      }
     } catch {
       settings = {
         ...DEFAULT_SYSTEM_SETTINGS,
         version: SYSTEM_SETTINGS_VERSION,
         localBooksDir: await this.fs.getPrefix('Books'),
+        koreaderSyncDeviceId: uuidv4(),
         globalReadSettings: {
           ...DEFAULT_READSETTINGS,
           ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
