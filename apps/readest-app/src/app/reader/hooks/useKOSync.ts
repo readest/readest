@@ -10,6 +10,7 @@ import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
+import { XCFI } from '@/utils/xcfi';
 
 const PAGINATED_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
@@ -65,13 +66,30 @@ export const useKOSync = (bookKey: string) => {
       percentage = totalPages > 0 ? page / totalPages : 0;
     } else {
       progressStr = currentProgress.location;
+      const view = getView(bookKey);
+
+      if (view && progressStr) {
+        try {
+          const content = view.renderer.getContents()[0];
+          if (content) {
+            const { doc, index: spineIndex } = content;
+            const converter = new XCFI(doc, spineIndex || 0);
+            const xpointerResult = converter.cfiToXPointer(progressStr);
+
+            progressStr = xpointerResult.xpointer;
+          }
+        } catch (error) {
+          console.error("Failed to convert CFI to XPointer. Progress will be sent as percentage only.", error);
+        }
+      }
+
       const page = currentProgress.pageinfo?.current ?? 0;
       const totalPages = currentProgress.pageinfo?.total ?? 0;
       percentage = totalPages > 0 ? (page + 1) / totalPages : 0;
     }
 
     return { progressStr, percentage };
-  }, [bookKey, getProgress, getBookData]);
+  }, [bookKey, getProgress, getBookData, getView]);
 
   const pushProgress = useCallback(debounce(async () => {
     const { settings: currentSettings } = useSettingsStore.getState();
@@ -186,12 +204,30 @@ export const useKOSync = (bookKey: string) => {
               const pageToGo = parseInt(remote.progress, 10);
               if (!isNaN(pageToGo)) view.goTo((pageToGo - 1).toString());
             } else {
-              const isCFI = remote.progress.startsWith('epubcfi');
+              const isXPointer = remote.progress.startsWith('/body');
 
-              if (isCFI) {
-                view.goTo(remote.progress);
-              } else if (remote.percentage !== undefined && remote.percentage !== null) {
-                view.goToFraction(remote.percentage);
+              if (isXPointer) {
+                try {
+                  const content = view.renderer.getContents()[0];
+                  if (content) {
+                    const { doc, index: spineIndex } = content;
+
+                    const converter = new XCFI(doc, spineIndex || 0);
+                    const cfi = converter.xPointerToCFI(remote.progress);
+
+                    view.goTo(cfi);
+                    eventDispatcher.dispatch('toast', { message: _('Reading Progress Synced'), type: 'info' });
+                  }
+                } catch (error) {
+                  console.error("Failed to convert XPointer to CFI, falling back to percentage.", error);
+                  if (remote.percentage !== undefined && remote.percentage !== null) {
+                    view.goToFraction(remote.percentage);
+                  }
+                }
+              } else {
+                if (remote.percentage !== undefined && remote.percentage !== null) {
+                  view.goToFraction(remote.percentage);
+                }
               }
             }
             eventDispatcher.dispatch('toast', { message: _('Reading Progress Synced'), type: 'info' });
@@ -294,8 +330,27 @@ export const useKOSync = (bookKey: string) => {
           view.goToFraction(remote.percentage);
         }
       } else {
+        const isXPointer = remote.progress.startsWith('/body');
         const isCFI = remote.progress.startsWith('epubcfi');
-        if (isCFI) {
+
+        if (isXPointer) {
+          try {
+            const content = view.renderer.getContents()[0];
+            if (content) {
+              const { doc, index: spineIndex } = content;
+
+              const converter = new XCFI(doc, spineIndex || 0);
+              const cfi = converter.xPointerToCFI(remote.progress);
+
+              view.goTo(cfi);
+            }
+          } catch (error) {
+            console.error("Failed to convert XPointer to CFI, falling back to percentage.", error);
+            if (remote.percentage !== undefined && remote.percentage !== null) {
+              view.goToFraction(remote.percentage);
+            }
+          }
+        } else if (isCFI) {
           view.goTo(remote.progress);
         } else if (remote.percentage !== undefined && remote.percentage !== null) {
           view.goToFraction(remote.percentage);
