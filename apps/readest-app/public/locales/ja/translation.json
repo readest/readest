@@ -309,7 +309,6 @@
   "Synced at {{time}}": "{{time}} に同期済み",
   "Never synced": "まだ同期されていません",
   "Show Remaining Time": "残り時間を表示",
-  "Show Page Number": "ページ番号を表示",
   "{{time}} min left in chapter": "{{time}}分残り",
   "Override Book Color": "書籍の色を上書き",
   "Login Required": "ログイン必須",
@@ -458,5 +457,9 @@
   "Privacy Policy": "プライバシーポリシー",
   "Disable Double Click": "ダブルクリック無効",
   "TTS not supported for this document": "TTSはこのドキュメントではサポートされていません",
-  "Reset Password": "パスワードをリセット"
+  "Reset Password": "パスワードをリセット",
+  "Show Reading Progress": "読書進捗を表示",
+  "Reading Progress Style": "読書進捗スタイル",
+  "Page Number": "ページ番号",
+  "Percentage": "パーセンテージ"
 }

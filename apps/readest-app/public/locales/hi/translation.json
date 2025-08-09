@@ -311,7 +311,6 @@
   "Synced at {{time}}": "{{time}} पर सिंक किया गया",
   "Never synced": "कभी सिंक नहीं किया गया",
   "Show Remaining Time": "शेष समय दिखाएं",
-  "Show Page Number": "पृष्ठ संख्या दिखाएं",
   "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में",
   "Override Book Color": "पुस्तक रंग ओवरराइड करें",
   "Login Required": "लॉगिन ज़रूरी",
@@ -462,5 +461,9 @@
   "Privacy Policy": "गोपनीयता नीति",
   "Disable Double Click": "डबल क्लिक अक्षम करें",
   "TTS not supported for this document": "TTS इस दस्तावेज़ के लिए समर्थित नहीं है",
-  "Reset Password": "पासवर्ड रीसेट करें"
+  "Reset Password": "पासवर्ड रीसेट करें",
+  "Show Reading Progress": "पढ़ने की प्रगति दिखाएं",
+  "Reading Progress Style": "पढ़ने की प्रगति शैली",
+  "Page Number": "पृष्ठ संख्या",
+  "Percentage": "प्रतिशत"
 }

@@ -311,7 +311,6 @@
   "Synced at {{time}}": "Gesynchroniseerd om {{time}}",
   "Never synced": "Nooit gesynchroniseerd",
   "Show Remaining Time": "Toon resterende tijd",
-  "Show Page Number": "Toon paginanummer",
   "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk",
   "Override Book Color": "Boekkleur overschrijven",
   "Login Required": "Inloggen vereist",
@@ -462,5 +461,9 @@
   "Privacy Policy": "Privacybeleid",
   "Disable Double Click": "Dubbelklikken uitschakelen",
   "TTS not supported for this document": "TTS niet ondersteund voor dit document",
-  "Reset Password": "Wachtwoord resetten"
+  "Reset Password": "Wachtwoord resetten",
+  "Show Reading Progress": "Leesvoortgang weergeven",
+  "Reading Progress Style": "Stijl van leesvoortgang",
+  "Page Number": "Pagina nummer",
+  "Percentage": "Percentage"
 }

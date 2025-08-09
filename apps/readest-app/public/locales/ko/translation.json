@@ -309,7 +309,6 @@
   "Synced at {{time}}": "{{time}}에 동기화됨",
   "Never synced": "동기화된 적 없음",
   "Show Remaining Time": "남은 시간 표시",
-  "Show Page Number": "페이지 번호 표시",
   "{{time}} min left in chapter": "{{time}}분 남음",
   "Override Book Color": "책 색상 덮어쓰기",
   "Login Required": "로그인 필요",
@@ -458,5 +457,9 @@
   "Privacy Policy": "개인정보 보호정책",
   "Disable Double Click": "더블 클릭 비활성화",
   "TTS not supported for this document": "TTS가 이 문서에서 지원되지 않습니다",
-  "Reset Password": "비밀번호 재설정"
+  "Reset Password": "비밀번호 재설정",
+  "Show Reading Progress": "읽기 진행 상황 표시",
+  "Reading Progress Style": "읽기 진행 상황 스타일",
+  "Page Number": "페이지 번호",
+  "Percentage": "백분율"
 }

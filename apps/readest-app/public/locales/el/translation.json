@@ -311,7 +311,6 @@
   "Synced at {{time}}": "Συγχρονίστηκε στις {{time}}",
   "Never synced": "Ποτέ δεν συγχρονίστηκε",
   "Show Remaining Time": "Εμφάνιση υπολειπόμενου χρόνου",
-  "Show Page Number": "Εμφάνιση αριθμού σελίδας",
   "{{time}} min left in chapter": "{{time}} λεπτά απομένουν στο κεφάλαιο",
   "Override Book Color": "Παράκαμψη χρώματος βιβλίου",
   "Login Required": "Απαιτείται σύνδεση",
@@ -462,5 +461,9 @@
   "Privacy Policy": "Πολιτική απορρήτου",
   "Disable Double Click": "Απενεργοποίηση διπλού κλικ",
   "TTS not supported for this document": "Η τεχνολογία TTS δεν υποστηρίζεται για αυτό το έγγραφο.",
-  "Reset Password": "Επαναφορά κωδικού"
+  "Reset Password": "Επαναφορά κωδικού",
+  "Show Reading Progress": "Εμφάνιση προόδου ανάγνωσης",
+  "Reading Progress Style": "Στυλ προόδου ανάγνωσης",
+  "Page Number": "Αριθμός σελίδας",
+  "Percentage": "Ποσοστό"
 }

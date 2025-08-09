@@ -311,7 +311,6 @@
   "Synced at {{time}}": "{{time}}'de eşzlendi",
   "Never synced": "Hiç eşzlenmedi",
   "Show Remaining Time": "Kalan Süreyi Göster",
-  "Show Page Number": "Sayfa Numarasını Göster",
   "{{time}} min left in chapter": "{{time}} dakika bölümde kaldı",
   "Override Book Color": "Kitap Rengini Geçersiz Kıl",
   "Login Required": "Giriş gerekli",
@@ -462,5 +461,9 @@
   "Privacy Policy": "Gizlilik Politikası",
   "Disable Double Click": "Çift Tıklamayı Devre Dışı Bırak",
   "TTS not supported for this document": "TTS bu belge için desteklenmiyor",
-  "Reset Password": "Şifreyi Sıfırla"
+  "Reset Password": "Şifreyi Sıfırla",
+  "Show Reading Progress": "Okuma İlerlemesini Göster",
+  "Reading Progress Style": "Okuma İlerlemesi Stili",
+  "Page Number": "Sayfa Numarası",
+  "Percentage": "Yüzde"
 }

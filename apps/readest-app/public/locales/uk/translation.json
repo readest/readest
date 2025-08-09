@@ -315,7 +315,6 @@
   "Synced at {{time}}": "Синхр. о {{time}}",
   "Never synced": "Ніколи не синхр.",
   "Show Remaining Time": "Показати залишок часу",
-  "Show Page Number": "Показати номер сторінки",
   "{{time}} min left in chapter": "{{time}} хв до кінця розділу",
   "Override Book Color": "Перевизначити колір книги",
   "Login Required": "Потрібен вхід",
@@ -470,5 +469,9 @@
   "Privacy Policy": "Політика конфіденційності",
   "Disable Double Click": "Вимкнути подвійне натискання",
   "TTS not supported for this document": "TTS не підтримується в цьому документі",
-  "Reset Password": "Скинути пароль"
+  "Reset Password": "Скинути пароль",
+  "Show Reading Progress": "Показати прогрес читання",
+  "Reading Progress Style": "Стиль прогресу читання",
+  "Page Number": "Номер сторінки",
+  "Percentage": "Процент"
 }

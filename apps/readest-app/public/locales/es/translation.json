@@ -313,7 +313,6 @@
   "Synced at {{time}}": "Sincronizado a las {{time}}",
   "Never synced": "Nunca sincronizado",
   "Show Remaining Time": "Mostrar tiempo restante",
-  "Show Page Number": "Mostrar número de página",
   "{{time}} min left in chapter": "{{time}} min restantes en el capítulo",
   "Override Book Color": "Sobre escribir color del libro",
   "Login Required": "Iniciar sesión",
@@ -469,5 +468,6 @@
   "Reset Password": "Restablecer contraseña",
   "Reading Progress Style": "Estilo de progreso de lectura",
   "Percentage": "Porcentaje",
-  "Fraction": "Número de página"
+  "Show Reading Progress": "Mostrar progreso de lectura",
+  "Page Number": "Número de página"
 }

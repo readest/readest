@@ -309,7 +309,6 @@
   "Synced at {{time}}": "Đã đồng bộ lúc {{time}}",
   "Never synced": "Chưa từng đồng bộ",
   "Show Remaining Time": "Hiển thị thời gian còn lại",
-  "Show Page Number": "Hiển thị số trang",
   "{{time}} min left in chapter": "{{time}} phút còn lại trong chương",
   "Override Book Color": "Đổi màu sách",
   "Login Required": "Cần đăng nhập",
@@ -458,5 +457,9 @@
   "Privacy Policy": "Chính sách bảo mật",
   "Disable Double Click": "Tắt Nhấp Đôi",
   "TTS not supported for this document": "TTS không được hỗ trợ cho tài liệu này",
-  "Reset Password": "Đặt lại mật khẩu"
+  "Reset Password": "Đặt lại mật khẩu",
+  "Show Reading Progress": "Hiển thị tiến độ đọc",
+  "Reading Progress Style": "Phong cách tiến độ đọc",
+  "Page Number": "Số trang",
+  "Percentage": "Phần trăm"
 }

@@ -237,7 +237,6 @@
   "Show Footer": "แสดงท้ายกระดาษ",
   "Show Remaining Time": "แสดงเวลาที่เหลือ",
   "Show Remaining Pages": "แสดงหน้าที่เหลือ",
-  "Show Page Number": "แสดงเลขหน้า",
   "Apply also in Scrolled Mode": "ใช้ในโหมดเลื่อนด้วย",
   "Screen": "หน้าจอ",
   "Orientation": "การวางแนว",
@@ -458,5 +457,9 @@
   "Privacy Policy": "นโยบายความเป็นส่วนตัว",
   "Disable Double Click": "ปิดการคลิกสองครั้ง",
   "TTS not supported for this document": "ไม่รองรับ TTS สำหรับเอกสารนี้",
-  "Reset Password": "รีเซ็ตพาสเวิร์ด"
+  "Reset Password": "รีเซ็ตพาสเวิร์ด",
+  "Show Reading Progress": "แสดงความคืบหน้าในการอ่าน",
+  "Reading Progress Style": "สไตล์ความก้าวหน้าในการอ่าน",
+  "Page Number": "หมายเลขหน้า",
+  "Percentage": "เปอร์เซ็นต์"
 }

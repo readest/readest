@@ -309,7 +309,6 @@
   "Synced at {{time}}": "Disinkronkan pada {{time}}",
   "Never synced": "Belum pernah disinkronkan",
   "Show Remaining Time": "Perlihatkan Waktu Tersisa",
-  "Show Page Number": "Perlihatkan Nomor Halaman",
   "{{time}} min left in chapter": "{{time}} menit tersisa di bab",
   "Override Book Color": "Ubah Warna Buku",
   "Login Required": "Perlu masuk",
@@ -458,5 +457,9 @@
   "Privacy Policy": "Kebijakan Privasi",
   "Disable Double Click": "Nonaktifkan Klik Ganda",
   "TTS not supported for this document": "TTS tidak didukung untuk dokumen ini",
-  "Reset Password": "Reset Kata Sandi"
+  "Reset Password": "Reset Kata Sandi",
+  "Show Reading Progress": "Perlihatkan Progres Membaca",
+  "Reading Progress Style": "Gaya Progres Membaca",
+  "Page Number": "Nomor Halaman",
+  "Percentage": "Persentase"
 }

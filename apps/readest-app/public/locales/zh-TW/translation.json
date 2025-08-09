@@ -309,7 +309,6 @@
   "Synced at {{time}}": "同步於：{{time}}",
   "Never synced": "從未同步",
   "Show Remaining Time": "顯示剩餘時間",
-  "Show Page Number": "顯示頁碼",
   "{{time}} min left in chapter": "本章剩餘 {{time}} 分鐘",
   "Override Book Color": "覆蓋書籍顏色",
   "Login Required": "需登入",
@@ -458,5 +457,9 @@
   "Privacy Policy": "隱私政策",
   "Disable Double Click": "禁用雙擊",
   "TTS not supported for this document": "TTS 不支援此文件",
-  "Reset Password": "重設密碼"
+  "Reset Password": "重設密碼",
+  "Show Reading Progress": "顯示閱讀進度",
+  "Reading Progress Style": "閱讀進度樣式",
+  "Page Number": "頁碼",
+  "Percentage": "百分比"
 }

@@ -318,7 +318,6 @@
   "Synced at {{time}}": "تمت المزامنة في {{time}}",
   "Never synced": "لم تتم المزامنة بعد",
   "Show Remaining Time": "إظهار الوقت المتبقي",
-  "Show Page Number": "إظهار رقم الصفحة",
   "{{time}} min left in chapter": "{{time}} دقيقة متبقية حتى نهاية الفصل",
   "Override Book Color": "تجاوز لون الكتاب",
   "Login Required": "يتطلب الأمر تسجيل الدخول",
@@ -478,5 +477,9 @@
   "Privacy Policy": "سياسة الخصوصية",
   "Disable Double Click": "تعطيل النقر المزدوج",
   "TTS not supported for this document": "تكنولوجيا تحويل النص إلى كلام غير مدعومة لهذا المستند.",
-  "Reset Password": "إعادة تعيين"
+  "Reset Password": "إعادة تعيين",
+  "Show Reading Progress": "إظهار تقدم القراءة",
+  "Reading Progress Style": "نمط تقدم القراءة",
+  "Page Number": "رقم الصفحة",
+  "Percentage": "النسبة المئوية"
 }

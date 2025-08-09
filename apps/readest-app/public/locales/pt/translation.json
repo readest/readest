@@ -313,7 +313,6 @@
   "Synced at {{time}}": "Sincronizado às {{time}}",
   "Never synced": "Nunca sincronizado",
   "Show Remaining Time": "Mostrar Tempo Restante",
-  "Show Page Number": "Mostrar Número da Página",
   "{{time}} min left in chapter": "{{time}} min restantes no capítulo",
   "Override Book Color": "Substituir Cor do Livro",
   "Login Required": "Login necessário",
@@ -466,5 +465,9 @@
   "Privacy Policy": "Política de Privacidade",
   "Disable Double Click": "Desativar Clique Duplo",
   "TTS not supported for this document": "TTS não suportado para este documento",
-  "Reset Password": "Redefinir Senha"
+  "Reset Password": "Redefinir Senha",
+  "Show Reading Progress": "Mostrar Progresso de Leitura",
+  "Reading Progress Style": "Estilo de Progresso de Leitura",
+  "Page Number": "Número da Página",
+  "Percentage": "Porcentagem"
 }

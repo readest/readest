@@ -18,6 +18,7 @@ import { saveViewSettings } from '../../utils/viewSettingsHelper';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import Select from '@/components/Select';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -66,12 +67,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll!);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime!);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages!);
-  const [showPageNumber, setShowPageNumber] = useState(viewSettings.showPageNumber!);
+  const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo!);
+  const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation!);
-
-  const [readingProgressStyle, setReadingProgressStyle] = useState<'percentage' | 'fraction'>(
-    viewSettings.readingProgressStyle,
-  );
   const resetToDefaults = useResetViewSettings();
 
   const handleReset = () => {
@@ -103,7 +101,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showBarsOnScroll: setShowBarsOnScroll,
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
-      showPageNumber: setShowPageNumber,
+      showProgressInfo: setShowProgressInfo,
     });
   };
 
@@ -322,13 +320,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [showRemainingPages]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showPageNumber', showPageNumber, false, false);
+    saveViewSettings(envConfig, bookKey, 'showProgressInfo', showProgressInfo, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPageNumber]);
+  }, [showProgressInfo]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingProgressStyle', readingProgressStyle, false, false);
-  }, [readingProgressStyle]);
+    saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
+  }, [progressStyle]);
 
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
@@ -661,28 +659,26 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               />
             </div>
             <div className='config-item'>
-              <span className=''>{_('Show Page Number')}</span>
+              <span className=''>{_('Show Reading Progress')}</span>
               <input
                 type='checkbox'
                 className='toggle'
-                checked={showPageNumber}
+                checked={showProgressInfo}
                 disabled={!showFooter}
-                onChange={() => setShowPageNumber(!showPageNumber)}
+                onChange={() => setShowProgressInfo(!showProgressInfo)}
               />
             </div>
             <div className='config-item'>
               <span className=''>{_('Reading Progress Style')}</span>
-              <select
-                className='select w-full'
-                value={readingProgressStyle}
-                disabled={!showFooter}
-                onChange={(e) =>
-                  setReadingProgressStyle(e.target.value as 'percentage' | 'fraction')
-                }
-              >
-                <option value='percentage'>{_('Percentage')}</option>
-                <option value='fraction'>{_('Fraction')}</option>
-              </select>
+              <Select
+                value={progressStyle}
+                onChange={(e) => setProgressStyle(e.target.value as 'percentage' | 'fraction')}
+                options={[
+                  { value: 'fraction', label: _('Page Number') },
+                  { value: 'percentage', label: _('Percentage') },
+                ]}
+                disabled={!showProgressInfo}
+              />
             </div>
             <div className='config-item'>
               <span className=''>{_('Apply also in Scrolled Mode')}</span>
