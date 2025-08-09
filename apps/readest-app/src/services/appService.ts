@@ -1,7 +1,7 @@
 import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
-import { FileSystem, BaseDir } from '@/types/system';
+import { FileSystem, BaseDir, StorageType } from '@/types/system';
 import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
 import {
   getDir,
@@ -273,16 +273,19 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async deleteBook(book: Book, includingUploaded = false, includingLocal = true): Promise<void> {
-    if (includingLocal) {
+  async deleteBook(book: Book, storageType: StorageType): Promise<void> {
+    if (storageType == 'Local' || storageType == 'Both') {
       const localDeleteFps = [getLocalBookFilename(book), getCoverFilename(book)];
       for (const fp of localDeleteFps) {
         if (await this.fs.exists(fp, 'Books')) {
           await this.fs.removeFile(fp, 'Books');
         }
       }
+      book.deletedAt = Date.now();
+      book.downloadedAt = null;
+      book.coverDownloadedAt = null;
     }
-    if (includingUploaded) {
+    if (storageType == 'Cloud' || storageType == 'Both') {
       const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
       for (const fp of fps) {
         console.log('Deleting uploaded file:', fp);
@@ -293,14 +296,6 @@ export abstract class BaseAppService implements AppService {
           console.log('Failed to delete uploaded file:', error);
         }
       }
-    }
-
-    if (includingLocal) {
-      book.deletedAt = Date.now();
-      book.downloadedAt = null;
-      book.coverDownloadedAt = null;
-    }
-    if (includingUploaded) {
       book.uploadedAt = null;
     }
   }
