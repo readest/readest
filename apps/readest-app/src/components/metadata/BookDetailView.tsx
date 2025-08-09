@@ -1,10 +1,11 @@
 import React from 'react';
 import {
-  MdOutlineDelete,
   MdOutlineCloudDownload,
-  MdOutlineCloudUpload,
   MdOutlineCloudOff,
+  MdOutlineCloudUpload,
+  MdOutlineDelete,
   MdOutlineEdit,
+  MdOutlineFileDownloadOff,
 } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -27,6 +28,7 @@ interface BookDetailViewProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
+  onDeleteLocalCopy?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
 }
@@ -38,6 +40,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onEdit,
   onDelete,
   onDeleteCloudBackup,
+  onDeleteLocalCopy,
   onDownload,
   onUpload,
 }) => {
@@ -82,6 +85,11 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             {book.downloadedAt && onUpload && (
               <button onClick={onUpload}>
                 <MdOutlineCloudUpload className='fill-base-content' />
+              </button>
+            )}
+            {book.uploadedAt && onDeleteLocalCopy && (
+              <button onClick={onDeleteLocalCopy}>
+                <MdOutlineFileDownloadOff className='fill-red-500' />
               </button>
             )}
           </div>
