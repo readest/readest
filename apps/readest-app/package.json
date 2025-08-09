@@ -98,6 +98,7 @@
     "semver": "^7.7.1",
     "stripe": "^18.2.1",
     "tinycolor2": "^1.6.0",
+    "uuid": "^11.1.0",
     "zod": "^4.0.8",
     "zustand": "5.0.6"
   },
@@ -116,6 +117,7 @@
     "@types/react-window": "^1.8.8",
     "@types/semver": "^7.7.0",
     "@types/tinycolor2": "^1.4.6",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "cpx2": "^8.0.0",
