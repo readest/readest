@@ -53,6 +53,16 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   librarySortAscending: false,
   libraryCoverFit: 'crop',
 
+  koreaderSyncEnabled: false,
+  koreaderSyncServerUrl: 'https://sync.koreader.rocks/', // https://kosync.ak-team.com:3042/
+  koreaderSyncUsername: '',
+  koreaderSyncUserkey: '',
+  koreaderSyncDeviceId: '',
+  koreaderSyncDeviceName: '',
+  koreaderSyncChecksumMethod: 'binary',
+  koreaderSyncStrategy: 'prompt',
+  koreaderSyncPercentageTolerance: 0.00001,
+
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
