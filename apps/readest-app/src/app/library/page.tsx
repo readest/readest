@@ -592,6 +592,30 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
+  const handleBookDeleteLocalCopy = async (book: Book) => {
+    try {
+      await appService?.deleteBook(book, false, true);
+      await updateBook(envConfig, book);
+      pushLibrary();
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 2000,
+        message: _('Local copy of book deleted: {{title}}', {
+          title: book.title,
+        }),
+      });
+      return true;
+    } catch {
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to delete local copy of book: {{title}}', {
+          title: book.title,
+        }),
+        type: 'error',
+      });
+      return false;
+    }
+  }
+
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
     book.metadata = metadata;
     book.title = formatTitle(metadata.title);
@@ -765,6 +789,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDownload={handleBookDownload}
           handleBookDelete={handleBookDelete}
           handleBookDeleteCloudBackup={handleBookDeleteCloudBackup}
+          handleBookDeleteLocalCopy={handleBookDeleteLocalCopy}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
       )}
