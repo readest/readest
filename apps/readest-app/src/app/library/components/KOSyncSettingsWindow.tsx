@@ -159,12 +159,12 @@ export const KOSyncSettingsWindow: React.FC = () => {
     if (result.success) {
       const newSettings = {
         ...settings,
-        koreaderSyncEnabled: true,
         koreaderSyncServerUrl: url,
         koreaderSyncUsername: username,
         koreaderSyncUserkey: md5(password),
         koreaderSyncDeviceId: deviceId,
         koreaderSyncDeviceName: deviceName,
+        koreaderSyncStrategy: settings.koreaderSyncStrategy === 'disable' ? 'prompt' : settings.koreaderSyncStrategy,
       };
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
@@ -186,7 +186,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
   const handleDisconnect = async () => {
     const newSettings = {
       ...settings,
-      koreaderSyncEnabled: false,
+      koreaderSyncStrategy: 'disable' as KoreaderSyncStrategy,
       koreaderSyncUsername: '',
       koreaderSyncUserkey: '',
     };

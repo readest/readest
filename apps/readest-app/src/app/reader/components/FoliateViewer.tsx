@@ -13,6 +13,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -42,6 +43,7 @@ import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
+import ConfirmSyncDialog from './ConfirmSyncDialog';
 
 declare global {
   interface Window {
@@ -77,6 +79,12 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
+  const {
+    syncState,
+    conflictDetails,
+    resolveConflictWithLocal,
+    resolveConflictWithRemote,
+  } = useKOSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
@@ -349,12 +357,22 @@ const FoliateViewer: React.FC<{
   ]);
 
   return (
-    <div
-      ref={containerRef}
-      className='foliate-viewer h-[100%] w-[100%]'
-      {...mouseHandlers}
-      {...touchHandlers}
-    />
+    <>
+      <div
+        ref={containerRef}
+        className='foliate-viewer h-[100%] w-[100%]'
+        {...mouseHandlers}
+        {...touchHandlers}
+      />
+      {syncState === 'conflict' && conflictDetails && (
+        <ConfirmSyncDialog
+          details={conflictDetails}
+          onConfirmLocal={resolveConflictWithLocal}
+          onConfirmRemote={resolveConflictWithRemote}
+          onClose={resolveConflictWithLocal}
+        />
+      )}
+    </>
   );
 };
 

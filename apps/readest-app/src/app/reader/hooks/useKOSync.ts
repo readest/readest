@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { md5 } from 'js-md5';
 import { type as osType } from '@tauri-apps/plugin-os';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -91,11 +91,12 @@ export const useKOSync = (bookKey: string) => {
     return { progressStr, percentage };
   }, [bookKey, getProgress, getBookData, getView]);
 
-  const pushProgress = useCallback(debounce(async () => {
+  const pushProgress = useMemo(() => debounce(async () => {
     const { settings: currentSettings } = useSettingsStore.getState();
     const currentBook = getBookData(bookKey)?.book;
 
-    if (!currentSettings.koreaderSyncEnabled || ['receive', 'disable'].includes(currentSettings.koreaderSyncStrategy) || !currentBook) return;
+    const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = currentSettings;
+    if (!koreaderSyncUsername || !koreaderSyncUserkey || ['receive', 'disable'].includes(koreaderSyncStrategy) || !currentBook) return;
 
     const getDocumentDigest = (bookToDigest: Book): string => {
       if (currentSettings.koreaderSyncChecksumMethod === 'filename') {
@@ -130,9 +131,10 @@ export const useKOSync = (bookKey: string) => {
 
   useEffect(() => {
     const performInitialSync = async () => {
-      if (!book || !progress || !settings.koreaderSyncEnabled) return;
+      const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = settings;
+      if (!book || !progress || !koreaderSyncUsername || !koreaderSyncUserkey || koreaderSyncStrategy === 'disable') return;
 
-      if (['send', 'disable'].includes(settings.koreaderSyncStrategy)) {
+      if (koreaderSyncStrategy === 'send') {
         syncCompletedForKey.current = bookKey;
         setSyncState('synced');
         return;
@@ -293,7 +295,7 @@ export const useKOSync = (bookKey: string) => {
       syncCompletedForKey.current = bookKey;
       performInitialSync();
     }
-  }, [bookKey, book, progress, settings, appService, getBookData, getProgress, getView, mapProgressToServerFormat, pushProgress, _]);
+  }, [bookKey, book, progress, settings, appService, getBookData, getProgress, getView, mapProgressToServerFormat, pushProgress, _, bookData?.config?.updatedAt]);
 
   useEffect(() => {
     if (syncState === 'synced' && progress) {
@@ -302,6 +304,12 @@ export const useKOSync = (bookKey: string) => {
       }
     }
   }, [progress, syncState, settings.koreaderSyncStrategy, pushProgress]);
+
+  useEffect(() => {
+    return () => {
+      pushProgress.flush();
+    };
+  }, [pushProgress]);
 
   const resolveConflictWithLocal = () => {
     pushProgress();

@@ -43,7 +43,6 @@ export interface SystemSettings {
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
 
-  koreaderSyncEnabled: boolean;
   koreaderSyncServerUrl: string;
   koreaderSyncUsername: string;
   koreaderSyncUserkey: string;

@@ -34,11 +34,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: clientBody ? JSON.stringify(clientBody) : null,
     });
 
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Invalid sync server response: Unexpected Content-Type.');
+    }
+
     const data = await response.text();
     res.status(response.status);
     try {
       res.json(JSON.parse(data));
-    } catch (e) {
+    } catch {
       res.send(data);
     }
   } catch (error) {

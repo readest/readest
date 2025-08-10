@@ -1,8 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Book } from '@/types/book';
@@ -26,12 +25,10 @@ import { BookDetailModal } from '@/components/metadata';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
-import { useKOSync } from '../hooks/useKOSync';
 import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
-import ConfirmSyncDialog from './ConfirmSyncDialog';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const router = useRouter();
@@ -46,21 +43,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
-  const [activeBookKey, setActiveBookKey] = useState<string | null>(null);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
-
-  useEffect(() => {
-    setActiveBookKey(sideBarBookKey || (bookKeys.length > 0 ? bookKeys[0]! : null));
-  }, [sideBarBookKey, bookKeys]);
-
-  const {
-    syncState,
-    conflictDetails,
-    resolveConflictWithLocal,
-    resolveConflictWithRemote,
-    pushProgress,
-  } = useKOSync(activeBookKey || '');
 
   useEffect(() => {
     if (isInitiating.current) return;
@@ -92,8 +76,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     eventDispatcher.onSync('show-book-details', handleShowBookDetails);
 
     return () => {
-        eventDispatcher.offSync('show-book-details', handleShowBookDetails);
-    }
+      eventDispatcher.offSync('show-book-details', handleShowBookDetails);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -119,14 +103,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       unlistenOnCloseWindow?.then((fn) => fn());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKeys, pushProgress]);
+  }, [bookKeys]);
 
   const saveBookConfig = async (bookKey: string) => {
     const config = getConfig(bookKey);
     const { book } = getBookData(bookKey) || {};
     const { isPrimary } = getViewState(bookKey) || {};
     if (isPrimary && book && config) {
-      const settings = useSettingsStore.getState().settings;
       await saveConfig(envConfig, bookKey, config, settings);
     }
   };
@@ -151,7 +134,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
-    (pushProgress as any).flush?.();
     await Promise.all(bookKeys.map(key => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
   }, 200);
@@ -201,15 +183,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
       <Notebook />
-
-      {syncState === 'conflict' && conflictDetails && (
-        <ConfirmSyncDialog
-          details={conflictDetails}
-          onConfirmLocal={resolveConflictWithLocal}
-          onConfirmRemote={resolveConflictWithRemote}
-          onClose={resolveConflictWithLocal}
-        />
-      )}
       {showDetailsBook && (
         <BookDetailModal
           isOpen={!!showDetailsBook}
