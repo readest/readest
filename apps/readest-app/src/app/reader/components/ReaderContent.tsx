@@ -134,6 +134,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
+    eventDispatcher.dispatch('flush-koreader-sync');
     await Promise.all(bookKeys.map(key => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
   }, 200);
@@ -144,6 +145,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   const handleCloseBook = async (bookKey: string) => {
+    eventDispatcher.dispatch('flush-koreader-sync');
     saveConfigAndCloseBook(bookKey);
     if (sideBarBookKey === bookKey) {
       setSideBarBookKey(getNextBookKey(sideBarBookKey));

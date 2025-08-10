@@ -130,6 +130,21 @@ export const useKOSync = (bookKey: string) => {
   }, 5000), [bookKey, appService, getBookData, mapProgressToServerFormat]);
 
   useEffect(() => {
+    const handleFlush = () => {
+      if (bookKey) {
+        pushProgress.flush();
+      }
+    };
+
+    eventDispatcher.on('flush-koreader-sync', handleFlush);
+
+    return () => {
+      eventDispatcher.off('flush-koreader-sync', handleFlush);
+      pushProgress.flush();
+    };
+  }, [bookKey, pushProgress]);
+
+  useEffect(() => {
     const performInitialSync = async () => {
       const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = settings;
       if (!book || !progress || !koreaderSyncUsername || !koreaderSyncUserkey || koreaderSyncStrategy === 'disable') return;
