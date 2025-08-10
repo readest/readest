@@ -546,14 +546,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const handleBookDelete = (storageType: StorageType) => {
     return async (book: Book) => {
       const deletionMessages = {
-        'Both': 'Book deleted: {{title}}',
-        'Cloud': 'Deleted cloud backup of the book: {{title}}',
-        'Local': 'Deleted local copy of the book: {{title}}',
+        'Both': _('Book deleted: {{title}}', { title: book.title }),
+        'Cloud': _('Deleted cloud backup of the book: {{title}}', { title: book.title }),
+        'Local': _('Deleted local copy of the book: {{title}}', { title: book.title }),
       };
       const deletionFailMessages = {
-        'Both': 'Failed to delete book: {{title}}',
-        'Cloud': 'Failed to delete cloud backup of the book',
-        'Local': 'Failed to delete local copy of the book: {{title}}',
+        'Both': _('Failed to delete book: {{title}}', { title: book.title }),
+        'Cloud': _('Failed to delete cloud backup of the book', { title: book.title }),
+        'Local': _('Failed to delete local copy of the book: {{title}}', { title: book.title }),
       };
       try {
         await appService?.deleteBook(book, storageType);
@@ -562,16 +562,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: _(deletionMessages[storageType], {
-            title: book.title,
-          }),
+          message: deletionMessages[storageType],
         });
         return true;
       } catch {
         eventDispatcher.dispatch('toast', {
-          message: _(deletionFailMessages[storageType], {
-            title: book.title,
-          }),
+          message: deletionFailMessages[storageType],
           type: 'error',
         });
         return false;
