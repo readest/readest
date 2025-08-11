@@ -405,7 +405,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "使用多達 5GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "使用多達 20GB 的安全雲端儲存保存和存取您的整個閱讀收藏。",
   "Deleted cloud backup of the book: {{title}}": "已刪除書籍的雲端備份：{{title}}",
-  "Failed to delete cloud backup of the book": "無法刪除書籍的雲端備份。",
   "Are you sure to delete the cloud backup of the selected book?": "您確定要刪除所選書籍的雲端備份嗎？",
   "What's New in Readest": "Readest 更新功能",
   "Enter book title": "輸入書名",
@@ -461,5 +460,12 @@
   "Show Reading Progress": "顯示閱讀進度",
   "Reading Progress Style": "閱讀進度樣式",
   "Page Number": "頁碼",
-  "Percentage": "百分比"
+  "Percentage": "百分比",
+  "Deleted local copy of the book: {{title}}": "已刪除書籍的本地副本：{{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "未能刪除書籍的雲端備份：{{title}}",
+  "Failed to delete local copy of the book: {{title}}": "未能刪除書籍的本地副本：{{title}}",
+  "Are you sure to delete the local copy of the selected book?": "您確定要刪除所選書籍的本地副本嗎？",
+  "Remove from Cloud & Device": "從雲端和設備中移除",
+  "Remove from Cloud Only": "僅從雲端移除",
+  "Remove from Device Only": "僅從設備中移除"
 }

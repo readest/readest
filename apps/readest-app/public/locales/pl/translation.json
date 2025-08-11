@@ -417,7 +417,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 5 GB pamięci w chmurze.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Bezpiecznie przechowuj i uzyskuj dostęp do całej kolekcji czytelniczej z do 20 GB pamięci w chmurze.",
   "Deleted cloud backup of the book: {{title}}": "Usunięto kopię zapasową książki w chmurze: {{title}}",
-  "Failed to delete cloud backup of the book": "Nie udało się usunąć kopii zapasowej książki w chmurze.",
   "Are you sure to delete the cloud backup of the selected book?": "Czy na pewno chcesz usunąć kopię zapasową chmury wybranej książki?",
   "What's New in Readest": "Co nowego w Readest",
   "Enter book title": "Wprowadź tytuł książki",
@@ -473,5 +472,12 @@
   "Show Reading Progress": "Pokazuj postęp czytania",
   "Reading Progress Style": "Styl postępu czytania",
   "Page Number": "Numer strony",
-  "Percentage": "Procent"
+  "Percentage": "Procent",
+  "Deleted local copy of the book: {{title}}": "Usunięto lokalną kopię książki: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Nie udało się usunąć kopii zapasowej w chmurze książki: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Nie udało się usunąć lokalnej kopii książki: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Czy na pewno chcesz usunąć lokalną kopię wybranej książki?",
+  "Remove from Cloud & Device": "Usuń z chmury i urządzenia",
+  "Remove from Cloud Only": "Usuń tylko z chmury",
+  "Remove from Device Only": "Usuń tylko z urządzenia"
 }

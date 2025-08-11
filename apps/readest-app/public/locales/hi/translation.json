@@ -409,7 +409,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "5 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "20 GB सुरक्षित क्लाउड स्टोरेज के साथ अपना संपूर्ण पठन संग्रह संग्रहीत करें।",
   "Deleted cloud backup of the book: {{title}}": "पुस्तक का क्लाउड बैकअप हटाया गया: {{title}}",
-  "Failed to delete cloud backup of the book": "पुस्तक का क्लाउड बैकअप हटाने में विफल",
   "Are you sure to delete the cloud backup of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक का क्लाउड बैकअप हटाना चाहते हैं?",
   "What's New in Readest": "Readest में नया क्या है",
   "Enter book title": "पुस्तक का शीर्षक दर्ज करें",
@@ -465,5 +464,12 @@
   "Show Reading Progress": "पढ़ने की प्रगति दिखाएं",
   "Reading Progress Style": "पढ़ने की प्रगति शैली",
   "Page Number": "पृष्ठ संख्या",
-  "Percentage": "प्रतिशत"
+  "Percentage": "प्रतिशत",
+  "Deleted local copy of the book: {{title}}": "पुस्तक की स्थानीय प्रति हटाई गई: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "पुस्तक का क्लाउड बैकअप हटाने में विफल: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "पुस्तक की स्थानीय प्रति हटाने में विफल: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "क्या आप सुनिश्चित हैं कि आप चयनित पुस्तक की स्थानीय प्रति हटाना चाहते हैं?",
+  "Remove from Cloud & Device": "क्लाउड और डिवाइस से हटाएँ",
+  "Remove from Cloud Only": "केवल क्लाउड से हटाएँ",
+  "Remove from Device Only": "केवल डिवाइस से हटाएँ"
 }

@@ -114,7 +114,6 @@
   "Book deleted: {{title}}": "ลบหนังสือแล้ว: {{title}}",
   "Failed to delete book: {{title}}": "ไม่สามารถลบหนังสือ: {{title}}",
   "Deleted cloud backup of the book: {{title}}": "ลบสำรองบนคลาวด์แล้ว: {{title}}",
-  "Failed to delete cloud backup of the book": "ไม่สามารถลบสำรองบนคลาวด์",
   "Welcome to your library. You can import your books here and read them anytime.": "ยินดีต้อนรับสู่คลังหนังสือ คุณสามารถนำเข้าหนังสือและอ่านได้ตลอดเวลา",
   "Copied to notebook": "คัดลอกไปยังสมุดบันทึก",
   "No annotations to export": "ไม่มีบันทึกให้ส่งออก",
@@ -461,5 +460,12 @@
   "Show Reading Progress": "แสดงความคืบหน้าในการอ่าน",
   "Reading Progress Style": "สไตล์ความก้าวหน้าในการอ่าน",
   "Page Number": "หมายเลขหน้า",
-  "Percentage": "เปอร์เซ็นต์"
+  "Percentage": "เปอร์เซ็นต์",
+  "Deleted local copy of the book: {{title}}": "ลบสำเนาในเครื่องแล้ว: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "ไม่สามารถลบสำเนาสำรองในคลาวด์ของหนังสือ: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "ไม่สามารถลบสำเนาในเครื่องของหนังสือ: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "คุณแน่ใจหรือไม่ว่าต้องการลบสำเนาในเครื่องของหนังสือที่เลือก?",
+  "Remove from Cloud & Device": "ลบจากคลาวด์และอุปกรณ์",
+  "Remove from Cloud Only": "ลบจากคลาวด์เท่านั้น",
+  "Remove from Device Only": "ลบจากอุปกรณ์เท่านั้น"
 }

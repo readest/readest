@@ -405,7 +405,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 5 GB.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Simpan dan akses koleksi bacaan lengkap dengan aman menggunakan penyimpanan cloud 20 GB.",
   "Deleted cloud backup of the book: {{title}}": "Cadangan cloud buku dihapus: {{title}}",
-  "Failed to delete cloud backup of the book": "Cadangan cloud buku gagal dihapus",
   "Are you sure to delete the cloud backup of the selected book?": "Apakah Anda yakin ingin menghapus cadangan cloud dari buku yang dipilih?",
   "What's New in Readest": "Yang Baru di Readest",
   "Enter book title": "Masukkan judul buku",
@@ -461,5 +460,13 @@
   "Show Reading Progress": "Perlihatkan Progres Membaca",
   "Reading Progress Style": "Gaya Progres Membaca",
   "Page Number": "Nomor Halaman",
-  "Percentage": "Persentase"
+  "Percentage": "Persentase",
+  "Deleted local copy of the book: {{title}}": "Salinan lokal buku dihapus: {{title}}",
+
+  "Failed to delete cloud backup of the book: {{title}}": "Gagal menghapus cadangan cloud buku: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Gagal menghapus salinan lokal buku: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Apakah Anda yakin ingin menghapus salinan lokal buku yang dipilih?",
+  "Remove from Cloud & Device": "Hapus dari Cloud & Perangkat",
+  "Remove from Cloud Only": "Hapus dari Cloud Saja",
+  "Remove from Device Only": "Hapus dari Perangkat Saja"
 }

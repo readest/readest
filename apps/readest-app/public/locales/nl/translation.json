@@ -409,7 +409,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Sla je hele leesverzameling veilig op en benader deze met tot 5 GB cloudopslag.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Sla je hele leesverzameling veilig op en benader deze met tot 20 GB cloudopslag.",
   "Deleted cloud backup of the book: {{title}}": "Verwijderde cloudback-up van het boek: {{title}}",
-  "Failed to delete cloud backup of the book": "Verwijderen van cloudback-up van het boek is mislukt.",
   "Are you sure to delete the cloud backup of the selected book?": "Weet je zeker dat je de cloudback-up van het geselecteerde boek wilt verwijderen?",
   "What's New in Readest": "Wat is er nieuw in Readest",
   "Enter book title": "Voer boektitel in",
@@ -465,5 +464,12 @@
   "Show Reading Progress": "Leesvoortgang weergeven",
   "Reading Progress Style": "Stijl van leesvoortgang",
   "Page Number": "Pagina nummer",
-  "Percentage": "Percentage"
+  "Percentage": "Percentage",
+  "Deleted local copy of the book: {{title}}": "Verwijderde lokale kopie van het boek: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Verwijderen van cloudback-up van het boek is mislukt: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Verwijderen van lokale kopie van het boek is mislukt: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Weet je zeker dat je de lokale kopie van het geselecteerde boek wilt verwijderen?",
+  "Remove from Cloud & Device": "Verwijder uit Cloud & Apparaat",
+  "Remove from Cloud Only": "Verwijder alleen uit Cloud",
+  "Remove from Device Only": "Verwijder alleen uit Apparaat"
 }

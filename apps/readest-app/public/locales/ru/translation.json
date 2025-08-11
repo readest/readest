@@ -417,7 +417,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Безопасно храните и получайте доступ ко всей коллекции чтения с до 5 ГБ облачного хранилища.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Безопасно храните и получайте доступ ко всей коллекции чтения с до 20 ГБ облачного хранилища.",
   "Deleted cloud backup of the book: {{title}}": "Удалено облачное резервное копирование книги: {{title}}",
-  "Failed to delete cloud backup of the book": "Не удалось удалить облачное резервное копирование книги.",
   "Are you sure to delete the cloud backup of the selected book?": "Вы уверены, что хотите удалить облачное резервное копирование выбранной книги?",
   "What's New in Readest": "Что нового в Readest",
   "Enter book title": "Введите название книги",
@@ -473,5 +472,12 @@
   "Show Reading Progress": "Показать прогресс чтения",
   "Reading Progress Style": "Стиль прогресса чтения",
   "Page Number": "Номер страницы",
-  "Percentage": "Процент"
+  "Percentage": "Процент",
+  "Deleted local copy of the book: {{title}}": "Удалена локальная копия книги: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Не удалось удалить резервную копию книги в облаке: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Не удалось удалить локальную копию книги: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Вы уверены, что хотите удалить локальную копию выбранной книги?",
+  "Remove from Cloud & Device": "Удалить из облака и устройства",
+  "Remove from Cloud Only": "Удалить только из облака",
+  "Remove from Device Only": "Удалить только с устройства"
 }

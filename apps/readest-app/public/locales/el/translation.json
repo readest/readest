@@ -409,7 +409,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 5 GB ασφαλή cloud αποθήκευση.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Αποθηκεύστε και αποκτήστε πρόσβαση στη συλλογή ανάγνωσης με έως 20 GB ασφαλή cloud αποθήκευση.",
   "Deleted cloud backup of the book: {{title}}": "Διαγράφηκε το αντίγραφο ασφαλείας του βιβλίου: {{title}}",
-  "Failed to delete cloud backup of the book": "Αποτυχία διαγραφής του αντιγράφου ασφαλείας του βιβλίου",
   "Are you sure to delete the cloud backup of the selected book?": "Είστε σίγουροι ότι θέλετε να διαγράψετε το αντίγραφο ασφαλείας του επιλεγμένου βιβλίου;",
   "What's New in Readest": "Τι νέο υπάρχει στο Readest",
   "Enter book title": "Εισάγετε τίτλο βιβλίου",
@@ -465,5 +464,12 @@
   "Show Reading Progress": "Εμφάνιση προόδου ανάγνωσης",
   "Reading Progress Style": "Στυλ προόδου ανάγνωσης",
   "Page Number": "Αριθμός σελίδας",
-  "Percentage": "Ποσοστό"
+  "Percentage": "Ποσοστό",
+  "Deleted local copy of the book: {{title}}": "Διαγράφηκε το τοπικό αντίγραφο του βιβλίου: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Αποτυχία διαγραφής του αντιγράφου ασφαλείας του βιβλίου: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Αποτυχία διαγραφής της τοπικής αντιγράφου του βιβλίου: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Είστε σίγουροι ότι θέλετε να διαγράψετε την τοπική αντιγραφή του επιλεγμένου βιβλίου;",
+  "Remove from Cloud & Device": "Αφαίρεση από το Cloud & Device",
+  "Remove from Cloud Only": "Αφαίρεση μόνο από το Cloud",
+  "Remove from Device Only": "Αφαίρεση μόνο από το Device"
 }

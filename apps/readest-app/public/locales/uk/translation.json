@@ -417,7 +417,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 5 ГБ хмарного сховища.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Безпечно зберігайте та отримуйте доступ до всієї колекції читання з до 20 ГБ хмарного сховища.",
   "Deleted cloud backup of the book: {{title}}": "Видалено хмарну резервну копію книги: {{title}}",
-  "Failed to delete cloud backup of the book": "Не вдалося видалити хмарну резервну копію.",
   "Are you sure to delete the cloud backup of the selected book?": "Ви впевнені, що хочете видалити хмарну резервну копію вибраної книги?",
   "What's New in Readest": "Що нового в Readest",
   "Enter book title": "Введіть назву книги",
@@ -473,5 +472,12 @@
   "Show Reading Progress": "Показати прогрес читання",
   "Reading Progress Style": "Стиль прогресу читання",
   "Page Number": "Номер сторінки",
-  "Percentage": "Процент"
+  "Percentage": "Процент",
+  "Deleted local copy of the book: {{title}}": "Видалено локальну копію книги: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Не вдалося видалити резервну копію книги в хмарі: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Не вдалося видалити локальну копію книги: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Ви впевнені, що хочете видалити локальну копію вибраної книги?",
+  "Remove from Cloud & Device": "Видалити з хмари та пристрою",
+  "Remove from Cloud Only": "Видалити тільки з хмари",
+  "Remove from Device Only": "Видалити тільки з пристрою"
 }

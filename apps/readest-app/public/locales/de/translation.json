@@ -409,7 +409,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Speichern und greifen Sie sicher auf Ihre gesamte Lesekollektion mit bis zu 5 GB Cloud-Speicher zu.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Speichern und greifen Sie sicher auf Ihre gesamte Lesekollektion mit bis zu 20 GB Cloud-Speicher zu.",
   "Deleted cloud backup of the book: {{title}}": "Gelöschte Cloud-Sicherung des Buches: {{title}}",
-  "Failed to delete cloud backup of the book": "Fehler beim Löschen der Cloud-Sicherung des Buches",
   "Are you sure to delete the cloud backup of the selected book?": "Sind Sie sicher, dass Sie die Cloud-Sicherung des ausgewählten Buches löschen möchten?",
   "What's New in Readest": "Was gibt es Neues in Readest",
   "Enter book title": "Buchtitel eingeben",
@@ -465,5 +464,12 @@
   "Show Reading Progress": "Lesefortschritt anzeigen",
   "Reading Progress Style": "Lesefortschritt-Stil",
   "Page Number": "Seitenzahl",
-  "Percentage": "Prozentsatz"
+  "Percentage": "Prozentsatz",
+  "Deleted local copy of the book: {{title}}": "Gelöschte lokale Kopie des Buches: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Fehler beim Löschen der Cloud-Sicherung des Buches: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Fehler beim Löschen der lokalen Kopie des Buches: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Sind Sie sicher, dass Sie die lokale Kopie des ausgewählten Buches löschen möchten?",
+  "Remove from Cloud & Device": "Aus Cloud & Gerät entfernen",
+  "Remove from Cloud Only": "Nur aus der Cloud entfernen",
+  "Remove from Device Only": "Nur vom Gerät entfernen"
 }

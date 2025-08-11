@@ -409,7 +409,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 5 GB'a kadar güvenli bulut depolamayla saklayın ve erişin.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Tüm okuma koleksiyonunuzu 20 GB'a kadar güvenli bulut depolamayla saklayın ve erişin.",
   "Deleted cloud backup of the book: {{title}}": "Kitabın bulut yedeği silindi: {{title}}",
-  "Failed to delete cloud backup of the book": "Kitabın bulut yedeğini silme işlemi başarısız oldu.",
   "Are you sure to delete the cloud backup of the selected book?": "Seçilen kitabın bulut yedeğini silmek istediğinize emin misiniz?",
   "What's New in Readest": "Readest'te Neler Yeni",
   "Enter book title": "Kitap başlığını girin",
@@ -465,5 +464,12 @@
   "Show Reading Progress": "Okuma İlerlemesini Göster",
   "Reading Progress Style": "Okuma İlerlemesi Stili",
   "Page Number": "Sayfa Numarası",
-  "Percentage": "Yüzde"
+  "Percentage": "Yüzde",
+  "Deleted local copy of the book: {{title}}": "Kitabın yerel kopyası silindi: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Kitabın bulut yedeğini silme başarısız oldu: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Kitabın yerel kopyasını silme başarısız oldu: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Seçilen kitabın yerel kopyasını silmek istediğinize emin misiniz?",
+  "Remove from Cloud & Device": "Buluttan ve Cihazdan Kaldır",
+  "Remove from Cloud Only": "Sadece Buluttan Kaldır",
+  "Remove from Device Only": "Sadece Cihazdan Kaldır"
 }

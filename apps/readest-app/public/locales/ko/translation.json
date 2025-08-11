@@ -405,7 +405,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "최대 5GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "최대 20GB의 안전한 클라우드 저장소로 전체 독서 컬렉션을 저장하고 액세스하세요.",
   "Deleted cloud backup of the book: {{title}}": "책의 클라우드 백업이 삭제됨: {{title}}",
-  "Failed to delete cloud backup of the book": "책의 클라우드 백업을 삭제하지 못했습니다.",
   "Are you sure to delete the cloud backup of the selected book?": "선택한 책의 클라우드 백업을 삭제하시겠습니까?",
   "What's New in Readest": "Readest의 새로운 기능",
   "Enter book title": "도서 제목 입력",
@@ -461,5 +460,12 @@
   "Show Reading Progress": "읽기 진행 상황 표시",
   "Reading Progress Style": "읽기 진행 상황 스타일",
   "Page Number": "페이지 번호",
-  "Percentage": "백분율"
+  "Percentage": "백분율",
+  "Deleted local copy of the book: {{title}}": "책의 로컬 사본이 삭제됨: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "책의 클라우드 백업 삭제에 실패했습니다: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "책의 로컬 사본 삭제에 실패했습니다: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "선택한 책의 로컬 사본을 삭제하시겠습니까?",
+  "Remove from Cloud & Device": "클라우드 및 장치에서 제거",
+  "Remove from Cloud Only": "클라우드에서만 제거",
+  "Remove from Device Only": "장치에서만 제거"
 }

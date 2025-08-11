@@ -405,7 +405,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "Lưu trữ và truy cập an toàn toàn bộ bộ sưu tập đọc với tới 5 GB lưu trữ đám mây.",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "Lưu trữ và truy cập an toàn toàn bộ bộ sưu tập đọc với tới 20 GB lưu trữ đám mây.",
   "Deleted cloud backup of the book: {{title}}": "Đã xóa bản sao lưu đám mây của sách: {{title}}",
-  "Failed to delete cloud backup of the book": "Không thể xóa bản sao lưu đám mây của sách.",
   "Are you sure to delete the cloud backup of the selected book?": "Bạn có chắc chắn muốn xóa bản sao lưu đám mây của sách đã chọn không?",
   "What's New in Readest": "Những gì mới trong Readest",
   "Enter book title": "Nhập tiêu đề sách",
@@ -461,5 +460,12 @@
   "Show Reading Progress": "Hiển thị tiến độ đọc",
   "Reading Progress Style": "Phong cách tiến độ đọc",
   "Page Number": "Số trang",
-  "Percentage": "Phần trăm"
+  "Percentage": "Phần trăm",
+  "Deleted local copy of the book: {{title}}": "Đã xóa bản sao cục bộ của sách: {{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "Không thể xóa bản sao lưu đám mây của sách: {{title}}",
+  "Failed to delete local copy of the book: {{title}}": "Không thể xóa bản sao cục bộ của sách: {{title}}",
+  "Are you sure to delete the local copy of the selected book?": "Bạn có chắc chắn muốn xóa bản sao cục bộ của cuốn sách đã chọn không?",
+  "Remove from Cloud & Device": "Xóa khỏi Đám mây & Thiết bị",
+  "Remove from Cloud Only": "Xóa chỉ khỏi Đám mây",
+  "Remove from Device Only": "Xóa chỉ khỏi Thiết bị"
 }

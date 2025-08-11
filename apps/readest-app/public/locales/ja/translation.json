@@ -405,7 +405,6 @@
   "Securely store and access your entire reading collection with up to 5 GB of cloud storage.": "最大5GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
   "Securely store and access your entire reading collection with up to 20 GB of cloud storage.": "最大20GBの安全なクラウドストレージで読書コレクション全体を保存・アクセス。",
   "Deleted cloud backup of the book: {{title}}": "書籍のクラウドバックアップを削除しました：{{title}}",
-  "Failed to delete cloud backup of the book": "書籍のクラウドバックアップを削除できませんでした",
   "Are you sure to delete the cloud backup of the selected book?": "選択した書籍のクラウドバックアップを削除してもよろしいですか？",
   "What's New in Readest": "Readestの新機能",
   "Enter book title": "本のタイトルを入力",
@@ -461,5 +460,12 @@
   "Show Reading Progress": "読書進捗を表示",
   "Reading Progress Style": "読書進捗スタイル",
   "Page Number": "ページ番号",
-  "Percentage": "パーセンテージ"
+  "Percentage": "パーセンテージ",
+  "Deleted local copy of the book: {{title}}": "書籍のローカルコピーを削除しました：{{title}}",
+  "Failed to delete cloud backup of the book: {{title}}": "書籍のクラウドバックアップの削除に失敗しました：{{title}}",
+  "Failed to delete local copy of the book: {{title}}": "書籍のローカルコピーの削除に失敗しました：{{title}}",
+  "Are you sure to delete the local copy of the selected book?": "選択した書籍のローカルコピーを削除してもよろしいですか？",
+  "Remove from Cloud & Device": "クラウドとデバイスから削除",
+  "Remove from Cloud Only": "クラウドからのみ削除",
+  "Remove from Device Only": "デバイスからのみ削除"
 }
