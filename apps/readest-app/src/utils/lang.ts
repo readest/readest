@@ -42,6 +42,7 @@ export const normalizeToFullLang = (langCode: string): string => {
     lt: 'lt-LT',
     sl: 'sl-SI',
     sk: 'sk-SK',
+    bo: 'bo-CN',
     zh: 'zh-Hans',
     'zh-cn': 'zh-Hans',
     'zh-tw': 'zh-Hant',
