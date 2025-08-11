@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "클라우드 및 장치에서 제거",
   "Remove from Cloud Only": "클라우드에서만 제거",
   "Remove from Device Only": "장치에서만 제거",
-  "Error": "오류",
   "Disconnected": "연결 끊김",
   "KOReader Sync Settings": "KOReader Sync 설정",
-  "Connected as {{username}}": "{{username}}로 연결됨",
-  "Disconnect": "연결 끊기",
   "Sync Strategy": "동기화 전략",
   "Ask on conflict": "충돌 시 묻기",
   "Always use latest": "항상 최신 버전 사용",
@@ -484,7 +481,6 @@
   "File Name": "파일 이름",
   "Device Name": "장치 이름",
   "Sync Tolerance": "동기화 허용 오차",
-  "Precision: {{precision}} decimal places": "정밀도: {{precision}} 소수 자리",
   "Connect to your KOReader Sync server.": "KOReader Sync 서버에 연결합니다.",
   "Server URL": "서버 URL",
   "Username": "사용자 이름",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "페이지 {{page}} / {{total}} ({{percentage}}%)",
   "Current position": "현재 위치",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "대략 페이지 {{page}} / {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "대략 {{percentage}}%"
+  "Approximately {{percentage}}%": "대략 {{percentage}}%",
+  "Failed to connect": "연결 실패",
+  "Sync Server Connected": "동기화 서버에 연결됨",
+  "Precision: {{precision}} digits after the decimal": "정밀도: {{precision}} 자리의 소수점 이하",
+  "Sync as {{userDisplayName}}": "{{userDisplayName}}로 동기화"
 }

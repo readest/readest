@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "Hapus dari Cloud & Perangkat",
   "Remove from Cloud Only": "Hapus dari Cloud Saja",
   "Remove from Device Only": "Hapus dari Perangkat Saja",
-  "Error": "Kesalahan",
   "Disconnected": "Terputus",
   "KOReader Sync Settings": "Pengaturan Sinkronisasi KOReader",
-  "Connected as {{username}}": "Terhubung sebagai {{username}}",
-  "Disconnect": "Putuskan Koneksi",
   "Sync Strategy": "Strategi Sinkronisasi",
   "Ask on conflict": "Tanya saat terjadi konflik",
   "Always use latest": "Selalu gunakan yang terbaru",
@@ -484,7 +481,6 @@
   "File Name": "Nama File",
   "Device Name": "Nama Perangkat",
   "Sync Tolerance": "Toleransi Sinkronisasi",
-  "Precision: {{precision}} decimal places": "Presisi: {{precision}} tempat desimal",
   "Connect to your KOReader Sync server.": "Hubungkan ke server Sinkronisasi KOReader Anda.",
   "Server URL": "URL Server",
   "Username": "Nama Pengguna",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Halaman {{page}} dari {{total}} ({{percentage}}%)",
   "Current position": "Posisi Saat Ini",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Sekitar halaman {{page}} dari {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Sekitar {{percentage}}%"
+  "Approximately {{percentage}}%": "Sekitar {{percentage}}%",
+  "Failed to connect": "Gagal terhubung",
+  "Sync Server Connected": "Server sinkronisasi terhubung",
+  "Precision: {{precision}} digits after the decimal": "Presisi: {{precision}} digit setelah desimal",
+  "Sync as {{userDisplayName}}": "Sinkronkan sebagai {{userDisplayName}}"
 }

@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "ลบจากคลาวด์และอุปกรณ์",
   "Remove from Cloud Only": "ลบจากคลาวด์เท่านั้น",
   "Remove from Device Only": "ลบจากอุปกรณ์เท่านั้น",
-  "Error": "เกิดข้อผิดพลาด",
   "Disconnected": "ตัดการเชื่อมต่อ",
   "KOReader Sync Settings": "การตั้งค่าการซิงค์ KOReader",
-  "Connected as {{username}}": "เชื่อมต่อเป็น {{username}}",
-  "Disconnect": "ตัดการเชื่อมต่อ",
   "Sync Strategy": "กลยุทธ์การซิงค์",
   "Ask on conflict": "ถามเมื่อเกิดความขัดแย้ง",
   "Always use latest": "ใช้เวอร์ชันล่าสุดเสมอ",
@@ -484,7 +481,6 @@
   "File Name": "ชื่อไฟล์",
   "Device Name": "ชื่ออุปกรณ์",
   "Sync Tolerance": "ความทนทานต่อการซิงค์",
-  "Precision: {{precision}} decimal places": "ความแม่นยำ: {{precision}} ตำแหน่งทศนิยม",
   "Connect to your KOReader Sync server.": "เชื่อมต่อกับเซิร์ฟเวอร์ KOReader Sync ของคุณ",
   "Server URL": "URL ของเซิร์ฟเวอร์",
   "Username": "ชื่อผู้ใช้",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "หน้า {{page}} จาก {{total}} ({{percentage}}%)",
   "Current position": "ตำแหน่งปัจจุบัน",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "ประมาณหน้า {{page}} จาก {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "ประมาณ {{percentage}}%"
+  "Approximately {{percentage}}%": "ประมาณ {{percentage}}%",
+  "Failed to connect": "ไม่สามารถเชื่อมต่อได้",
+  "Sync Server Connected": "เซิร์ฟเวอร์ซิงค์เชื่อมต่อแล้ว",
+  "Precision: {{precision}} digits after the decimal": "ความแม่นยำ: {{precision}} หลักหลังจุดทศนิยม",
+  "Sync as {{userDisplayName}}": "ซิงค์เป็น {{userDisplayName}}"
 }

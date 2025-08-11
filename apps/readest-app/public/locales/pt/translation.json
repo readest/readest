@@ -476,11 +476,8 @@
   "Remove from Cloud & Device": "Remover da Nuvem & Dispositivo",
   "Remove from Cloud Only": "Remover apenas da Nuvem",
   "Remove from Device Only": "Remover apenas do Dispositivo",
-  "Error": "Erro",
   "Disconnected": "Desconectado",
   "KOReader Sync Settings": "Configurações de Sincronização KOReader",
-  "Connected as {{username}}": "Conectado como {{username}}",
-  "Disconnect": "Desconectar",
   "Sync Strategy": "Estratégia de Sincronização",
   "Ask on conflict": "Perguntar em caso de conflito",
   "Always use latest": "Sempre usar o mais recente",
@@ -492,7 +489,6 @@
   "File Name": "Nome do Arquivo",
   "Device Name": "Nome do Dispositivo",
   "Sync Tolerance": "Tolerância de Sincronização",
-  "Precision: {{precision}} decimal places": "Precisão: {{precision}} casas decimais",
   "Connect to your KOReader Sync server.": "Conectar ao seu servidor KOReader Sync.",
   "Server URL": "URL do Servidor",
   "Username": "Nome de Usuário",
@@ -508,5 +504,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Página {{page}} de {{total}} ({{percentage}}%)",
   "Current position": "Posição Atual",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Aproximadamente página {{page}} de {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Aproximadamente {{percentage}}%"
+  "Approximately {{percentage}}%": "Aproximadamente {{percentage}}%",
+  "Failed to connect": "Falha ao conectar",
+  "Sync Server Connected": "Servidor de Sincronização Conectado",
+  "Precision: {{precision}} digits after the decimal": "Precisão: {{precision}} dígitos após a vírgula",
+  "Sync as {{userDisplayName}}": "Sincronizar como {{userDisplayName}}"
 }

@@ -472,11 +472,8 @@
   "Remove from Cloud & Device": "Αφαίρεση από το Cloud & Device",
   "Remove from Cloud Only": "Αφαίρεση μόνο από το Cloud",
   "Remove from Device Only": "Αφαίρεση μόνο από το Device",
-  "Error": "Σφάλμα",
   "Disconnected": "Αποσυνδεδεμένο",
   "KOReader Sync Settings": "Ρυθμίσεις συγχρονισμού KOReader",
-  "Connected as {{username}}": "Συνδεδεμένος ως {{username}}",
-  "Disconnect": "Αποσύνδεση",
   "Sync Strategy": "Στρατηγική συγχρονισμού",
   "Ask on conflict": "Ρώτησε σε περίπτωση σύγκρουσης",
   "Always use latest": "Χρησιμοποίησε πάντα την τελευταία έκδοση",
@@ -488,7 +485,6 @@
   "File Name": "Όνομα αρχείου",
   "Device Name": "Όνομα συσκευής",
   "Sync Tolerance": "Ανοχή συγχρονισμού",
-  "Precision: {{precision}} decimal places": "Ακρίβεια: {{precision}} δεκαδικά ψηφία",
   "Connect to your KOReader Sync server.": "Συνδεθείτε στον διακομιστή συγχρονισμού KOReader.",
   "Server URL": "Διεύθυνση URL διακομιστή",
   "Username": "Όνομα χρήστη",
@@ -504,5 +500,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Σελίδα {{page}} από {{total}} ({{percentage}}%)",
   "Current position": "Τρέχουσα θέση",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Περίπου σελίδα {{page}} από {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Περίπου {{percentage}}%"
+  "Approximately {{percentage}}%": "Περίπου {{percentage}}%",
+  "Failed to connect": "Αποτυχία σύνδεσης",
+  "Sync Server Connected": "Ο διακομιστής συγχρονισμού είναι συνδεδεμένος",
+  "Precision: {{precision}} digits after the decimal": "Ακρίβεια: {{precision}} ψηφία μετά την υποδιαστολή",
+  "Sync as {{userDisplayName}}": "Συγχρονισμός ως {{userDisplayName}}"
 }

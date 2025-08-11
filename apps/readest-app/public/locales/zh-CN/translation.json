@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "从云端和设备中移除",
   "Remove from Cloud Only": "仅从云端移除",
   "Remove from Device Only": "仅从设备中移除",
-  "Error": "错误",
   "Disconnected": "已断开连接",
   "KOReader Sync Settings": "KOReader 同步设置",
-  "Connected as {{username}}": "已连接为 {{username}}",
-  "Disconnect": "断开连接",
   "Sync Strategy": "同步策略",
   "Ask on conflict": "发生冲突时询问",
   "Always use latest": "始终使用最新",
@@ -484,7 +481,6 @@
   "File Name": "文件名",
   "Device Name": "设备名称",
   "Sync Tolerance": "同步容忍度",
-  "Precision: {{precision}} decimal places": "精度：{{precision}} 位小数",
   "Connect to your KOReader Sync server.": "连接到您的 KOReader 同步服务器。",
   "Server URL": "服务器 URL",
   "Username": "用户名",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "第 {{page}} 页，共 {{total}} 页 ({{percentage}}%)",
   "Current position": "当前位置",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "大约第 {{page}} 页，共 {{total}} 页 ({{percentage}}%)",
-  "Approximately {{percentage}}%": "大约 {{percentage}}%"
+  "Approximately {{percentage}}%": "大约 {{percentage}}%",
+  "Failed to connect": "连接失败",
+  "Sync Server Connected": "同步服务器已连接",
+  "Precision: {{precision}} digits after the decimal": "精度：{{precision}} 位小数",
+  "Sync as {{userDisplayName}}": "以 {{userDisplayName}} 身份同步"
 }

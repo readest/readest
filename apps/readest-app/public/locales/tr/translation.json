@@ -472,11 +472,8 @@
   "Remove from Cloud & Device": "Buluttan ve Cihazdan Kaldır",
   "Remove from Cloud Only": "Sadece Buluttan Kaldır",
   "Remove from Device Only": "Sadece Cihazdan Kaldır",
-  "Error": "Hata",
   "Disconnected": "Bağlantı Kesildi",
   "KOReader Sync Settings": "KOReader Senkronizasyon Ayarları",
-  "Connected as {{username}}": "{{username}} olarak bağlandı",
-  "Disconnect": "Bağlantıyı Kes",
   "Sync Strategy": "Senkronizasyon Stratejisi",
   "Ask on conflict": "Çatışmada Sor",
   "Always use latest": "Her Zaman En Sonunu Kullan",
@@ -488,7 +485,6 @@
   "File Name": "Dosya Adı",
   "Device Name": "Cihaz Adı",
   "Sync Tolerance": "Senkronizasyon Toleransı",
-  "Precision: {{precision}} decimal places": "Hassasiyet: {{precision}} ondalık basamak",
   "Connect to your KOReader Sync server.": "KOReader Senkronizasyon sunucunuza bağlanın.",
   "Server URL": "Sunucu URL'si",
   "Username": "Kullanıcı Adı",
@@ -504,5 +500,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Sayfa {{page}} / {{total}} ({{percentage}}%)",
   "Current position": "Mevcut konum",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Yaklaşık sayfa {{page}} / {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Yaklaşık {{percentage}}%"
+  "Approximately {{percentage}}%": "Yaklaşık {{percentage}}%",
+  "Failed to connect": "Bağlanma başarısız oldu",
+  "Sync Server Connected": "Senkronizasyon Sunucusu Bağlandı",
+  "Precision: {{precision}} digits after the decimal": "Hassasiyet: {{precision}} ondalık basamaktan sonra",
+  "Sync as {{userDisplayName}}": "Senkronize et {{userDisplayName}} olarak"
 }

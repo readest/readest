@@ -480,11 +480,8 @@
   "Remove from Cloud & Device": "Видалити з хмари та пристрою",
   "Remove from Cloud Only": "Видалити тільки з хмари",
   "Remove from Device Only": "Видалити тільки з пристрою",
-  "Error": "Помилка",
   "Disconnected": "Відключено",
   "KOReader Sync Settings": "Налаштування синхронізації KOReader",
-  "Connected as {{username}}": "Підключено як {{username}}",
-  "Disconnect": "Відключити",
   "Sync Strategy": "Стратегія синхронізації",
   "Ask on conflict": "Запитувати при конфлікті",
   "Always use latest": "Завжди використовувати останню версію",
@@ -496,7 +493,6 @@
   "File Name": "Ім'я файлу",
   "Device Name": "Ім'я пристрою",
   "Sync Tolerance": "Допустима похибка синхронізації",
-  "Precision: {{precision}} decimal places": "Точність: {{precision}} десяткових знаків",
   "Connect to your KOReader Sync server.": "Підключіться до свого сервера синхронізації KOReader.",
   "Server URL": "URL сервера",
   "Username": "Ім'я користувача",
@@ -512,5 +508,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Сторінка {{page}} з {{total}} ({{percentage}}%)",
   "Current position": "Поточна позиція",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Приблизно сторінка {{page}} з {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Приблизно {{percentage}}%"
+  "Approximately {{percentage}}%": "Приблизно {{percentage}}%",
+  "Failed to connect": "Не вдалося підключитися",
+  "Sync Server Connected": "Сервер синхронізації підключено",
+  "Precision: {{precision}} digits after the decimal": "Точність: {{precision}} знаків після коми",
+  "Sync as {{userDisplayName}}": "Синхронізувати як {{userDisplayName}}"
 }

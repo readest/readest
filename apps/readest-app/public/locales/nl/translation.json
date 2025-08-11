@@ -472,11 +472,8 @@
   "Remove from Cloud & Device": "Verwijder uit Cloud & Apparaat",
   "Remove from Cloud Only": "Verwijder alleen uit Cloud",
   "Remove from Device Only": "Verwijder alleen uit Apparaat",
-  "Error": "Fout",
   "Disconnected": "Verbroken",
   "KOReader Sync Settings": "KOReader Sync-instellingen",
-  "Connected as {{username}}": "Verbonden als {{username}}",
-  "Disconnect": "Verbreken",
   "Sync Strategy": "Synchronisatiestrategie",
   "Ask on conflict": "Vraag bij conflict",
   "Always use latest": "Altijd de nieuwste gebruiken",
@@ -488,7 +485,6 @@
   "File Name": "Bestandsnaam",
   "Device Name": "Apparaatnaam",
   "Sync Tolerance": "Synchronisatietolerantie",
-  "Precision: {{precision}} decimal places": "Precisie: {{precision}} decimalen",
   "Connect to your KOReader Sync server.": "Verbind met je KOReader Sync-server.",
   "Server URL": "Server-URL",
   "Username": "Gebruikersnaam",
@@ -504,5 +500,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Pagina {{page}} van {{total}} ({{percentage}}%)",
   "Current position": "Huidige positie",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Ongeveer pagina {{page}} van {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Ongeveer {{percentage}}%"
+  "Approximately {{percentage}}%": "Ongeveer {{percentage}}%",
+  "Failed to connect": "Verbinding mislukt",
+  "Sync Server Connected": "Synchronisatie server verbonden",
+  "Precision: {{precision}} digits after the decimal": "Precisie: {{precision}} cijfers na de komma",
+  "Sync as {{userDisplayName}}": "Synchroniseren als {{userDisplayName}}"
 }

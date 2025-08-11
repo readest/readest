@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "クラウドとデバイスから削除",
   "Remove from Cloud Only": "クラウドからのみ削除",
   "Remove from Device Only": "デバイスからのみ削除",
-  "Error": "エラー",
   "Disconnected": "切断されました",
   "KOReader Sync Settings": "KOReader Sync設定",
-  "Connected as {{username}}": "{{username}}として接続されています",
-  "Disconnect": "切断",
   "Sync Strategy": "同期戦略",
   "Ask on conflict": "競合時に確認",
   "Always use latest": "最新を常に使用",
@@ -484,7 +481,6 @@
   "File Name": "ファイル名",
   "Device Name": "デバイス名",
   "Sync Tolerance": "同期許容範囲",
-  "Precision: {{precision}} decimal places": "精度: {{precision}} 小数点以下",
   "Connect to your KOReader Sync server.": "KOReader Syncサーバーに接続します。",
   "Server URL": "サーバーURL",
   "Username": "ユーザー名",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "ページ {{page}} / {{total}} ({{percentage}}%)",
   "Current position": "現在の位置",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "おおよそページ {{page}} / {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "おおよそ {{percentage}}%"
+  "Approximately {{percentage}}%": "おおよそ {{percentage}}%",
+  "Failed to connect": "接続に失敗しました",
+  "Sync Server Connected": "同期サーバーに接続されました",
+  "Precision: {{precision}} digits after the decimal": "精度: {{precision}} 桁の小数点以下",
+  "Sync as {{userDisplayName}}": "{{userDisplayName}} として同期"
 }

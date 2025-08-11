@@ -468,11 +468,8 @@
   "Remove from Cloud & Device": "Xóa khỏi Đám mây & Thiết bị",
   "Remove from Cloud Only": "Xóa chỉ khỏi Đám mây",
   "Remove from Device Only": "Xóa chỉ khỏi Thiết bị",
-  "Error": "Lỗi",
   "Disconnected": "Mất kết nối",
   "KOReader Sync Settings": "Cài đặt đồng bộ KOReader",
-  "Connected as {{username}}": "Đã kết nối với {{username}}",
-  "Disconnect": "Ngắt kết nối",
   "Sync Strategy": "Chiến lược đồng bộ",
   "Ask on conflict": "Hỏi khi có xung đột",
   "Always use latest": "Luôn sử dụng phiên bản mới nhất",
@@ -484,7 +481,6 @@
   "File Name": "Tên tệp",
   "Device Name": "Tên thiết bị",
   "Sync Tolerance": "Độ dung sai đồng bộ",
-  "Precision: {{precision}} decimal places": "Độ chính xác: {{precision}} chữ số thập phân",
   "Connect to your KOReader Sync server.": "Kết nối với máy chủ đồng bộ KOReader của bạn.",
   "Server URL": "URL máy chủ",
   "Username": "Tên người dùng",
@@ -500,5 +496,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Trang {{page}} của {{total}} ({{percentage}}%)",
   "Current position": "Vị trí hiện tại",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Khoảng trang {{page}} của {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Khoảng {{percentage}}%"
+  "Approximately {{percentage}}%": "Khoảng {{percentage}}%",
+  "Failed to connect": "Không thể kết nối",
+  "Sync Server Connected": "Máy chủ đồng bộ đã kết nối",
+  "Precision: {{precision}} digits after the decimal": "Độ chính xác: {{precision}} chữ số sau dấu thập phân",
+  "Sync as {{userDisplayName}}": "Đồng bộ dưới tên {{userDisplayName}}"
 }

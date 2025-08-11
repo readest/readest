@@ -180,14 +180,10 @@ export const KOSyncSettingsWindow: React.FC = () => {
       };
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
-      eventDispatcher.dispatch('toast', {
-        message: _(result.message || 'Successfully connected!'),
-        type: 'success',
-      });
     } else {
       setConnectionStatus('');
       eventDispatcher.dispatch('toast', {
-        message: `${_('Error')}: ${_(result.message || 'Connection error')}`,
+        message: `${_('Failed to connect')}: ${_(result.message || 'Connection error')}`,
         type: 'error',
       });
     }
@@ -239,17 +235,28 @@ export const KOSyncSettingsWindow: React.FC = () => {
       onClose={() => setIsOpen(false)}
       title={_('KOReader Sync Settings')}
       boxClassName='sm:!min-w-[520px] sm:h-auto'
+      bgClassName='!bg-black/60'
     >
-      <div className='flex flex-col gap-4 p-2 sm:p-4'>
+      <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
         {isConfigured ? (
           <>
             <div className='text-center'>
-              <p className='text-base-content/80 py-2 text-sm'>
-                {_('Connected as {{username}}', { username: settings.koreaderSyncUsername })}
+              <p className='text-base-content/80 text-sm'>
+                {_('Sync as {{userDisplayName}}', {
+                  userDisplayName: settings.koreaderSyncUsername,
+                })}
               </p>
-              <button className='btn btn-warning h-12 min-h-12 w-full' onClick={handleDisconnect}>
-                {_('Disconnect')}
-              </button>
+            </div>
+            <div className='flex h-14 items-center justify-between'>
+              <span className='text-base-content/80'>
+                {_('Sync Server Connected', { username: settings.koreaderSyncUsername })}
+              </span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={settings.koreaderSyncStrategy !== 'disabled'}
+                onChange={() => handleDisconnect()}
+              />
             </div>
             <div className='form-control w-full'>
               <label className='label py-1'>
@@ -292,26 +299,31 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 onChange={handleDeviceNameChange}
               />
             </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Sync Tolerance')}</span>
-              </label>
-              <input
-                type='range'
-                min='0'
-                max='15'
-                value={toleranceSliderValue}
-                onChange={handleToleranceChange}
-                className='range range-primary'
-              />
-              <div className='text-base-content/70 mt-2 text-center text-xs'>
-                {_('Precision: {{precision}} decimal places', { precision: toleranceSliderValue })}
+            {/* Hidden to avoid confusing users with technical details */}
+            {false && (
+              <div className='form-control w-full'>
+                <label className='label py-1'>
+                  <span className='label-text font-medium'>{_('Sync Tolerance')}</span>
+                </label>
+                <input
+                  type='range'
+                  min='0'
+                  max='15'
+                  value={toleranceSliderValue}
+                  onChange={handleToleranceChange}
+                  className='range range-primary'
+                />
+                <div className='text-base-content/70 mt-2 text-center text-xs'>
+                  {_('Precision: {{precision}} digits after the decimal', {
+                    precision: toleranceSliderValue,
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </>
         ) : (
           <>
-            <p className='text-base-content/70 pt-2 text-center text-sm'>
+            <p className='text-base-content/70 text-center text-sm'>
               {_('Connect to your KOReader Sync server.')}
             </p>
             <div className='form-control w-full'>
@@ -321,7 +333,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
               <input
                 type='text'
                 placeholder='https://koreader.sync.server'
-                className='input input-bordered h-12 w-full'
+                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
               />
@@ -333,7 +345,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
               <input
                 type='text'
                 placeholder={_('Your Username')}
-                className='input input-bordered h-12 w-full'
+                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -345,7 +357,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
               <input
                 type='password'
                 placeholder={_('Your Password')}
-                className='input input-bordered h-12 w-full'
+                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

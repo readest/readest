@@ -472,11 +472,8 @@
   "Remove from Cloud & Device": "क्लाउड और डिवाइस से हटाएँ",
   "Remove from Cloud Only": "केवल क्लाउड से हटाएँ",
   "Remove from Device Only": "केवल डिवाइस से हटाएँ",
-  "Error": "त्रुटि",
   "Disconnected": "अविचलित",
   "KOReader Sync Settings": "KOReader सिंक सेटिंग्स",
-  "Connected as {{username}}": "जुड़ा हुआ {{username}} के रूप में",
-  "Disconnect": "अविचलित करें",
   "Sync Strategy": "सिंक रणनीति",
   "Ask on conflict": "संघर्ष पर पूछें",
   "Always use latest": "हमेशा नवीनतम का उपयोग करें",
@@ -488,7 +485,6 @@
   "File Name": "फाइल नाम",
   "Device Name": "डिवाइस नाम",
   "Sync Tolerance": "सिंक सहिष्णुता",
-  "Precision: {{precision}} decimal places": "सटीकता: {{precision}} दशमलव स्थान",
   "Connect to your KOReader Sync server.": "अपने KOReader सिंक सर्वर से कनेक्ट करें।",
   "Server URL": "सर्वर यूआरएल",
   "Username": "उपयोगकर्ता नाम",
@@ -504,5 +500,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "पृष्ठ {{page}} कुल {{total}} ({{percentage}}%)",
   "Current position": "वर्तमान स्थिति",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "लगभग पृष्ठ {{page}} कुल {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "लगभग {{percentage}}%"
+  "Approximately {{percentage}}%": "लगभग {{percentage}}%",
+  "Failed to connect": "कनेक्ट करने में विफल",
+  "Sync Server Connected": "सिंक सर्वर कनेक्टेड",
+  "Precision: {{precision}} digits after the decimal": "सटीकता: {{precision}} दशमलव के बाद अंक",
+  "Sync as {{userDisplayName}}": "सिंक के रूप में {{userDisplayName}}"
 }

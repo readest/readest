@@ -480,11 +480,8 @@
   "Remove from Cloud & Device": "Удалить из облака и устройства",
   "Remove from Cloud Only": "Удалить только из облака",
   "Remove from Device Only": "Удалить только с устройства",
-  "Error": "Ошибка",
   "Disconnected": "Отключено",
   "KOReader Sync Settings": "Настройки синхронизации KOReader",
-  "Connected as {{username}}": "Подключено как {{username}}",
-  "Disconnect": "Отключить",
   "Sync Strategy": "Стратегия синхронизации",
   "Ask on conflict": "Спрашивать при конфликте",
   "Always use latest": "Всегда использовать последнюю",
@@ -496,7 +493,6 @@
   "File Name": "Имя файла",
   "Device Name": "Имя устройства",
   "Sync Tolerance": "Допуск синхронизации",
-  "Precision: {{precision}} decimal places": "Точность: {{precision}} десятичных знаков",
   "Connect to your KOReader Sync server.": "Подключитесь к вашему серверу синхронизации KOReader.",
   "Server URL": "URL сервера",
   "Username": "Имя пользователя",
@@ -512,5 +508,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "Страница {{page}} из {{total}} ({{percentage}}%)",
   "Current position": "Текущая позиция",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "Приблизительно страница {{page}} из {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "Приблизительно {{percentage}}%"
+  "Approximately {{percentage}}%": "Приблизительно {{percentage}}%",
+  "Failed to connect": "Не удалось подключиться",
+  "Sync Server Connected": "Сервер синхронизации подключен",
+  "Precision: {{precision}} digits after the decimal": "Точность: {{precision}} знаков после запятой",
+  "Sync as {{userDisplayName}}": "Синхронизировать как {{userDisplayName}}"
 }

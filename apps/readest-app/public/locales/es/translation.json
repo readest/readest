@@ -73,14 +73,11 @@
   "KOReader Sync Settings": "Ajustes de Sincronización con KOReader",
   "Your Username": "Tu nombre de usuario",
   "Connect to your KOReader Sync server.": "Conéctate a tu servidor de KOReader Sync.",
-  "Connected as {{username}}": "Conectado como {{username}}",
   "Server URL": "URL del Servidor",
   "Username": "Usuario",
   "Password": "Contraseña",
   "Connect": "Conectar",
-  "Disconnect": "Desconectar",
   "Disconnected": "Desconectado",
-  "Error": "Error",
   "Sync Strategy": "Estrategia de sincronización",
   "Ask on conflict": "Preguntar en caso de conflicto",
   "Always use latest": "Usar siempre el más reciente",
@@ -92,7 +89,6 @@
   "File Name": "Nombre del archivo",
   "Device Name": "Nombre del dispositivo",
   "Sync Tolerance": "Tolerancia de sincronización",
-  "Precision: {{precision}} decimal places": "Precisión: {{precision}} decimales",
   "Reading Progress Synced": "Progreso de lectura sincronizado",
   "Sync Conflict": "Conflicto de sincronización",
   "Sync reading progress from \"{{deviceName}}\"?": "¿Quieres sincronizar el progreso de lectura desde el dispositivo \"{{deviceName}}\"?",
@@ -508,5 +504,9 @@
   "Are you sure to delete the local copy of the selected book?": "¿Está seguro de que desea eliminar la copia local del libro seleccionado?",
   "Remove from Cloud & Device": "Eliminar de la nube y del dispositivo",
   "Remove from Cloud Only": "Eliminar solo de la nube",
-  "Remove from Device Only": "Eliminar solo del dispositivo"
+  "Remove from Device Only": "Eliminar solo del dispositivo",
+  "Failed to connect": "Error al conectar",
+  "Sync Server Connected": "Servidor de sincronización conectado",
+  "Precision: {{precision}} digits after the decimal": "Precisión: {{precision}} dígitos después del decimal",
+  "Sync as {{userDisplayName}}": "Sincronizar como {{userDisplayName}}"
 }

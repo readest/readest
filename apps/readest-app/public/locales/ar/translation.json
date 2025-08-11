@@ -488,11 +488,8 @@
   "Remove from Cloud & Device": "إزالة من السحابة والجهاز",
   "Remove from Cloud Only": "إزالة من السحابة فقط",
   "Remove from Device Only": "إزالة من الجهاز فقط",
-  "Error": "خطأ",
   "Disconnected": "غير متصل",
   "KOReader Sync Settings": "إعدادات مزامنة KOReader",
-  "Connected as {{username}}": "متصل كـ {{username}}",
-  "Disconnect": "قطع الاتصال",
   "Sync Strategy": "استراتيجية المزامنة",
   "Ask on conflict": "اسأل عند حدوث تعارض",
   "Always use latest": "استخدام الأحدث دائمًا",
@@ -504,7 +501,6 @@
   "File Name": "اسم الملف",
   "Device Name": "اسم الجهاز",
   "Sync Tolerance": "تحمل المزامنة",
-  "Precision: {{precision}} decimal places": "الدقة: {{precision}} منزلة عشرية",
   "Connect to your KOReader Sync server.": "الاتصال بخادم مزامنة KOReader الخاص بك.",
   "Server URL": "عنوان URL للخادم",
   "Username": "اسم المستخدم",
@@ -520,5 +516,9 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "الصفحة {{page}} من {{total}} ({{percentage}}%)",
   "Current position": "الموقع الحالي",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "تقريبًا الصفحة {{page}} من {{total}} ({{percentage}}%)",
-  "Approximately {{percentage}}%": "تقريبًا {{percentage}}%"
+  "Approximately {{percentage}}%": "تقريبًا {{percentage}}%",
+  "Failed to connect": "فشل في الاتصال",
+  "Sync Server Connected": "تم الاتصال بخادم المزامنة",
+  "Precision: {{precision}} digits after the decimal": "الدقة: {{precision}} أرقام بعد الفاصلة",
+  "Sync as {{userDisplayName}}": "المزامنة كـ {{userDisplayName}}"
 }
