@@ -20,20 +20,30 @@ export class XCFI {
     this.spineItemIndex = spineIndex;
   }
 
-  static extractSpineIndex(cfi: string): number {
+  static extractSpineIndex(cfiOrXPath: string): number {
     try {
-      const collapsed = collapse(parse(cfi));
-      const spineStep = collapsed[0]?.[1]?.index;
-      if (spineStep === undefined) {
-        throw new Error('Cannot extract spine index from CFI');
-      }
+      if (cfiOrXPath.startsWith('epubcfi(')) {
+        const collapsed = collapse(parse(cfiOrXPath));
+        const spineStep = collapsed[0]?.[1]?.index;
+        if (spineStep === undefined) {
+          throw new Error('Cannot extract spine index from CFI');
+        }
 
-      // Convert CFI spine step to 0-based index
-      // CFI uses even numbers starting from 2: 2, 4, 6, 8, ...
-      // Convert to 0-based: (step - 2) / 2 = 0, 1, 2, 3, ...
-      return Math.floor((spineStep - 2) / 2);
+        // Convert CFI spine step to 0-based index
+        // CFI uses even numbers starting from 2: 2, 4, 6, 8, ...
+        // Convert to 0-based: (step - 2) / 2 = 0, 1, 2, 3, ...
+        return Math.floor((spineStep - 2) / 2);
+      } else if (cfiOrXPath.startsWith('/body/DocFragment[')) {
+        const match = cfiOrXPath.match(/DocFragment\[(\d+)\]/);
+        if (match) {
+          return parseInt(match[1]!, 10) - 1;
+        }
+        throw new Error('Cannot extract spine index from XPath');
+      } else {
+        throw new Error('Unsupported format for spine index extraction');
+      }
     } catch (error) {
-      throw new Error(`Cannot extract spine index from CFI: ${cfi} - ${error}`);
+      throw new Error(`Cannot extract spine index from CFI/XPointer: ${cfiOrXPath} - ${error}`);
     }
   }
 
@@ -205,13 +215,26 @@ export class XCFI {
 
     const segments = elementPath.split('/').filter(Boolean);
     for (const segment of segments) {
-      const segmentMatch = segment.match(/^(\w+)\[(\d+)\]$/);
-      if (!segmentMatch) {
+      // Match both formats: tag[index] or just tag
+      const segmentWithIndexMatch = segment.match(/^(\w+)\[(\d+)\]$/);
+      const segmentWithoutIndexMatch = segment.match(/^(\w+)$/);
+
+      let tagName: string;
+      let index: number;
+
+      if (segmentWithIndexMatch) {
+        // Format: tag[index]
+        const [, tag, indexStr] = segmentWithIndexMatch;
+        tagName = tag!;
+        index = parseInt(indexStr!, 10);
+      } else if (segmentWithoutIndexMatch) {
+        // Format: tag (implicit index 0)
+        const [, tag] = segmentWithoutIndexMatch;
+        tagName = tag!;
+        index = 0;
+      } else {
         throw new Error(`Invalid XPointer segment: ${segment}`);
       }
-
-      const [, tagName, indexStr] = segmentMatch;
-      const index = parseInt(indexStr!, 10);
 
       // Find child elements with matching tag name
       const children = Array.from(current.children).filter(
@@ -295,6 +318,12 @@ export class XCFI {
     } else if (container.nodeType === Node.ELEMENT_NODE) {
       const element = container as Element;
       if (offset === 0) {
+        if (element.childNodes.length > 0) {
+          const firstChild = element.childNodes[0] as Element;
+          if (firstChild.nodeType === Node.ELEMENT_NODE) {
+            return this.buildXPointerPath(element.childNodes[0] as Element);
+          }
+        }
         return this.buildXPointerPath(element);
       } else {
         // Offset points to a child node
@@ -334,20 +363,28 @@ export class XCFI {
       const tagName = current.tagName.toLowerCase();
       // Count preceding siblings with same tag name (0-based for CREngine)
       let siblingIndex = 0;
+      let totalSameTagSiblings = 0;
       for (const sibling of Array.from(parent.children)) {
-        if (sibling === current) break;
         if (sibling.tagName.toLowerCase() === tagName) {
-          siblingIndex++;
+          if (sibling === current) {
+            siblingIndex = totalSameTagSiblings;
+          }
+          totalSameTagSiblings++;
         }
       }
 
       // Format as tag[index] (0-based for CREngine)
-      pathParts.unshift(`${tagName}[${siblingIndex}]`);
+      // Omit [0] if there's only one element with this tag name
+      if (totalSameTagSiblings === 1) {
+        pathParts.unshift(tagName);
+      } else {
+        pathParts.unshift(`${tagName}[${siblingIndex}]`);
+      }
       current = parent;
     }
 
-    let xpointer = `/body/DocFragment[${this.spineItemIndex}]`;
-    if (pathParts.length > 0 && pathParts[0]!.startsWith('body[')) {
+    let xpointer = `/body/DocFragment[${this.spineItemIndex + 1}]`;
+    if (pathParts.length > 0 && pathParts[0]!.startsWith('body')) {
       pathParts.shift();
     }
     xpointer += '/body';
