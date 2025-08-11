@@ -96,7 +96,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     eventDispatcher.on('beforereload', handleCloseBooks);
     eventDispatcher.on('quit-app', handleCloseBooks);
     return () => {
-      handleCloseBooks();
       window.removeEventListener('beforeunload', handleCloseBooks);
       eventDispatcher.off('beforereload', handleCloseBooks);
       eventDispatcher.off('quit-app', handleCloseBooks);
@@ -110,6 +109,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     const { book } = getBookData(bookKey) || {};
     const { isPrimary } = getViewState(bookKey) || {};
     if (isPrimary && book && config) {
+      const settings = useSettingsStore.getState().settings;
+      eventDispatcher.dispatch('sync-book-progress', { bookKey });
+      eventDispatcher.dispatch('flush-koreader-sync', { bookKey });
       await saveConfig(envConfig, bookKey, config, settings);
     }
   };
@@ -134,8 +136,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
-    eventDispatcher.dispatch('flush-koreader-sync');
-    await Promise.all(bookKeys.map(key => saveConfigAndCloseBook(key)));
+    await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
   }, 200);
 
@@ -145,7 +146,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   const handleCloseBook = async (bookKey: string) => {
-    eventDispatcher.dispatch('flush-koreader-sync');
     saveConfigAndCloseBook(bookKey);
     if (sideBarBookKey === bookKey) {
       setSideBarBookKey(getNextBookKey(sideBarBookKey));

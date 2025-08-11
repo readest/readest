@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: method,
       headers: {
         ...clientHeaders,
-        'Accept': 'application/vnd.koreader.v1+json',
+        Accept: 'application/vnd.koreader.v1+json',
         'Content-Type': 'application/json',
       },
       body: clientBody ? JSON.stringify(clientBody) : null,

@@ -8,7 +8,7 @@ import { TbSunMoon } from 'react-icons/tb';
 import { BiMoon, BiSun } from 'react-icons/bi';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { setKOSyncSettingsWindowVisible } from './KOSyncSettingsWindow';
+import { setKOSyncSettingsWindowVisible } from './KOSyncSettings';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
@@ -174,14 +174,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
 
   return (
-    <>
-      <div
-        tabIndex={0}
-        className={clsx(
-          'settings-menu dropdown-content no-triangle border-base-100',
-          'z-20 mt-2 max-w-[90vw] shadow-2xl',
-        )}
-      >
+    <div
+      tabIndex={0}
+      className={clsx(
+        'settings-menu dropdown-content no-triangle border-base-100',
+        'z-20 mt-2 max-w-[90vw] shadow-2xl',
+      )}
+    >
       {user ? (
         <MenuItem
           label={
@@ -275,10 +274,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={cycleThemeMode}
       />
       <hr className='border-base-200 my-1' />
-      <MenuItem
-        label={_('KOReader Sync')}
-        onClick={showKoSyncSettingsWindow}
-      />
+      <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
+      <hr className='border-base-200 my-1' />
       {user && userPlan === 'free' && !appService?.isIOSApp && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
       )}
@@ -290,8 +287,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={isTelemetryEnabled ? MdCheck : undefined}
         onClick={toggleTelemetry}
       />
-      </div>
-    </>
+    </div>
   );
 };
 

@@ -48,7 +48,7 @@ import {
 } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
-import { KOSyncSettingsWindow } from './components/KOSyncSettingsWindow';
+import { KOSyncSettingsWindow } from './components/KOSyncSettings';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { BookMetadata } from '@/libs/document';
 import { BookDetailModal } from '@/components/metadata';

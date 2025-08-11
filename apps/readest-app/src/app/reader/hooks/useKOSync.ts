@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { md5 } from 'js-md5';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { KOSyncClient, KoSyncProgress } from '@/services/sync/KOSyncClient';
 import { Book, BookFormat } from '@/types/book';
+import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useEnv } from '@/context/EnvContext';
-import { XCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
 
 const PAGINATED_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
@@ -18,6 +19,7 @@ type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
 export interface SyncDetails {
   book: Book;
+  bookDoc: BookDoc;
   local: {
     cfi?: string;
     preview: string;
@@ -44,6 +46,7 @@ export const useKOSync = (bookKey: string) => {
   const lastPushedCfiRef = useRef<string | null>(null);
   const bookData = getBookData(bookKey);
   const book = bookData?.book;
+  const bookDoc = bookData?.bookDoc;
 
   useEffect(() => {
     lastPushedCfiRef.current = null;
@@ -79,7 +82,10 @@ export const useKOSync = (bookKey: string) => {
             progressStr = xpointerResult.xpointer;
           }
         } catch (error) {
-          console.error("Failed to convert CFI to XPointer. Progress will be sent as percentage only.", error);
+          console.error(
+            'Failed to convert CFI to XPointer. Progress will be sent as percentage only.',
+            error,
+          );
         }
       }
 
@@ -91,53 +97,71 @@ export const useKOSync = (bookKey: string) => {
     return { progressStr, percentage };
   }, [bookKey, getProgress, getBookData, getView]);
 
-  const pushProgress = useMemo(() => debounce(async () => {
-    const { settings: currentSettings } = useSettingsStore.getState();
-    const currentBook = getBookData(bookKey)?.book;
+  const pushProgress = useMemo(
+    () =>
+      debounce(async () => {
+        const { settings: currentSettings } = useSettingsStore.getState();
+        const currentBook = getBookData(bookKey)?.book;
 
-    const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = currentSettings;
-    if (!koreaderSyncUsername || !koreaderSyncUserkey || ['receive', 'disable'].includes(koreaderSyncStrategy) || !currentBook) return;
+        const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = currentSettings;
+        if (
+          !koreaderSyncUsername ||
+          !koreaderSyncUserkey ||
+          ['receive', 'disable'].includes(koreaderSyncStrategy) ||
+          !currentBook
+        )
+          return;
 
-    const getDocumentDigest = (bookToDigest: Book): string => {
-      if (currentSettings.koreaderSyncChecksumMethod === 'filename') {
-        const filename = bookToDigest.sourceTitle || bookToDigest.title;
-        const normalizedPath = filename.replace(/\\/g, '/');
-        return md5(normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || normalizedPath);
-      }
-      return bookToDigest.hash;
-    };
+        const getDocumentDigest = (bookToDigest: Book): string => {
+          if (currentSettings.koreaderSyncChecksumMethod === 'filename') {
+            const filename = bookToDigest.sourceTitle || bookToDigest.title;
+            const normalizedPath = filename.replace(/\\/g, '/');
+            return md5(
+              normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || normalizedPath,
+            );
+          }
+          return bookToDigest.hash;
+        };
 
-    const getDeviceName = async () => {
-      if (currentSettings.koreaderSyncDeviceName) return currentSettings.koreaderSyncDeviceName;
-      if (appService?.appPlatform === 'tauri') {
-        const name = await osType();
-        return `Readest (${name.charAt(0).toUpperCase() + name.slice(1)})`;
-      }
-      return 'Readest';
-    };
+        const getDeviceName = async () => {
+          if (currentSettings.koreaderSyncDeviceName) return currentSettings.koreaderSyncDeviceName;
+          if (appService?.appPlatform === 'tauri') {
+            const name = await osType();
+            return `Readest (${name.charAt(0).toUpperCase() + name.slice(1)})`;
+          }
+          return 'Readest';
+        };
 
-    const digest = getDocumentDigest(currentBook);
-    const progressData = mapProgressToServerFormat();
-    if (!digest || !progressData) return;
+        const digest = getDocumentDigest(currentBook);
+        const progressData = mapProgressToServerFormat();
+        if (!digest || !progressData) return;
 
-    if (progressData.progressStr === lastPushedCfiRef.current) return;
+        if (progressData.progressStr === lastPushedCfiRef.current) return;
 
-    const deviceName = await getDeviceName();
-    const client = new KOSyncClient(currentSettings.koreaderSyncServerUrl, currentSettings.koreaderSyncUsername, currentSettings.koreaderSyncUserkey, currentSettings.koreaderSyncChecksumMethod, currentSettings.koreaderSyncDeviceId, deviceName);
+        const deviceName = await getDeviceName();
+        const client = new KOSyncClient(
+          currentSettings.koreaderSyncServerUrl,
+          currentSettings.koreaderSyncUsername,
+          currentSettings.koreaderSyncUserkey,
+          currentSettings.koreaderSyncChecksumMethod,
+          currentSettings.koreaderSyncDeviceId,
+          deviceName,
+        );
 
-    await client.updateProgress(currentBook, progressData.progressStr, progressData.percentage);
-    lastPushedCfiRef.current = progressData.progressStr;
-  }, 5000), [bookKey, appService, getBookData, mapProgressToServerFormat]);
+        await client.updateProgress(currentBook, progressData.progressStr, progressData.percentage);
+        lastPushedCfiRef.current = progressData.progressStr;
+      }, 5000),
+    [bookKey, appService, getBookData, mapProgressToServerFormat],
+  );
 
   useEffect(() => {
-    const handleFlush = () => {
-      if (bookKey) {
+    const handleFlush = (event: CustomEvent) => {
+      const { bookKey: syncBookKey } = event.detail;
+      if (syncBookKey === bookKey) {
         pushProgress.flush();
       }
     };
-
     eventDispatcher.on('flush-koreader-sync', handleFlush);
-
     return () => {
       eventDispatcher.off('flush-koreader-sync', handleFlush);
       pushProgress.flush();
@@ -147,7 +171,15 @@ export const useKOSync = (bookKey: string) => {
   useEffect(() => {
     const performInitialSync = async () => {
       const { koreaderSyncUsername, koreaderSyncUserkey, koreaderSyncStrategy } = settings;
-      if (!book || !progress || !koreaderSyncUsername || !koreaderSyncUserkey || koreaderSyncStrategy === 'disable') return;
+      if (
+        !book ||
+        !bookDoc ||
+        !progress ||
+        !koreaderSyncUsername ||
+        !koreaderSyncUserkey ||
+        koreaderSyncStrategy === 'disabled'
+      )
+        return;
 
       if (koreaderSyncStrategy === 'send') {
         syncCompletedForKey.current = bookKey;
@@ -167,7 +199,14 @@ export const useKOSync = (bookKey: string) => {
       };
 
       const deviceName = await getDeviceName();
-      const client = new KOSyncClient(settings.koreaderSyncServerUrl, settings.koreaderSyncUsername, settings.koreaderSyncUserkey, settings.koreaderSyncChecksumMethod, settings.koreaderSyncDeviceId, deviceName);
+      const client = new KOSyncClient(
+        settings.koreaderSyncServerUrl,
+        settings.koreaderSyncUsername,
+        settings.koreaderSyncUserkey,
+        settings.koreaderSyncChecksumMethod,
+        settings.koreaderSyncDeviceId,
+        deviceName,
+      );
       const remote = await client.getProgress(book);
       lastPushedCfiRef.current = progress.location;
 
@@ -184,10 +223,16 @@ export const useKOSync = (bookKey: string) => {
       const localTimestamp = bookData?.config?.updatedAt || book.updatedAt;
       const remoteIsNewer = remote.timestamp * 1000 > localTimestamp;
 
-      const localIdentifier = PAGINATED_FORMATS.has(book.format) ? progress.section?.current.toString() : progress.location;
+      const localIdentifier = PAGINATED_FORMATS.has(book.format)
+        ? progress.section?.current.toString()
+        : progress.location;
       const isLocalCFI = localIdentifier?.startsWith('epubcfi');
 
-      const remoteIdentifier = PAGINATED_FORMATS.has(book.format) ? (parseInt(remote.progress, 10) - 1).toString() : (remote.progress.startsWith('epubcfi') ? remote.progress : null);
+      const remoteIdentifier = PAGINATED_FORMATS.has(book.format)
+        ? (parseInt(remote.progress, 10) - 1).toString()
+        : remote.progress.startsWith('epubcfi')
+          ? remote.progress
+          : null;
       const isRemoteCFI = remoteIdentifier?.startsWith('epubcfi');
 
       let isProgressIdentical = false;
@@ -213,8 +258,11 @@ export const useKOSync = (bookKey: string) => {
         return;
       }
 
-      if (settings.koreaderSyncStrategy === 'receive' || (settings.koreaderSyncStrategy === 'silent' && remoteIsNewer)) {
-        const applyRemoteProgress = () => {
+      if (
+        settings.koreaderSyncStrategy === 'receive' ||
+        (settings.koreaderSyncStrategy === 'silent' && remoteIsNewer)
+      ) {
+        const applyRemoteProgress = async () => {
           const view = getView(bookKey);
           if (view && remote.progress) {
             if (PAGINATED_FORMATS.has(book.format)) {
@@ -222,21 +270,23 @@ export const useKOSync = (bookKey: string) => {
               if (!isNaN(pageToGo)) view.select(pageToGo - 1);
             } else {
               const isXPointer = remote.progress.startsWith('/body');
-
               if (isXPointer) {
                 try {
                   const content = view.renderer.getContents()[0];
                   if (content) {
-                    const { doc, index: spineIndex } = content;
-
-                    const converter = new XCFI(doc, spineIndex || 0);
-                    const cfi = converter.xPointerToCFI(remote.progress);
-
+                    const { doc, index } = content;
+                    const cfi = await getCFIFromXPointer(remote.progress, doc, index || 0, bookDoc);
                     view.goTo(cfi);
-                    eventDispatcher.dispatch('toast', { message: _('Reading Progress Synced'), type: 'info' });
+                    eventDispatcher.dispatch('toast', {
+                      message: _('Reading Progress Synced'),
+                      type: 'info',
+                    });
                   }
                 } catch (error) {
-                  console.error("Failed to convert XPointer to CFI, falling back to percentage.", error);
+                  console.error(
+                    'Failed to convert XPointer to CFI, falling back to percentage.',
+                    error,
+                  );
                   if (remote.percentage !== undefined && remote.percentage !== null) {
                     view.goToFraction(remote.percentage);
                   }
@@ -247,7 +297,10 @@ export const useKOSync = (bookKey: string) => {
                 }
               }
             }
-            eventDispatcher.dispatch('toast', { message: _('Reading Progress Synced'), type: 'info' });
+            eventDispatcher.dispatch('toast', {
+              message: _('Reading Progress Synced'),
+              type: 'info',
+            });
           }
         };
 
@@ -261,8 +314,17 @@ export const useKOSync = (bookKey: string) => {
 
         if (PAGINATED_FORMATS.has(book.format)) {
           const localPageInfo = progress.section;
-          const localPercentage = localPageInfo && localPageInfo.total > 0 ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100) : 0;
-          localPreview = localPageInfo ? _('Page {{page}} of {{total}} ({{percentage}}%)', { page: localPageInfo.current + 1, total: localPageInfo.total, percentage: localPercentage }) : _('Current position');
+          const localPercentage =
+            localPageInfo && localPageInfo.total > 0
+              ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100)
+              : 0;
+          localPreview = localPageInfo
+            ? _('Page {{page}} of {{total}} ({{percentage}}%)', {
+                page: localPageInfo.current + 1,
+                total: localPageInfo.total,
+                percentage: localPercentage,
+              })
+            : _('Current position');
 
           const remotePage = parseInt(remote.progress, 10);
           if (!isNaN(remotePage) && remotePercentage > 0) {
@@ -274,30 +336,38 @@ export const useKOSync = (bookKey: string) => {
               remotePreview = _('Page {{page}} of {{total}} ({{percentage}}%)', {
                 page: remotePage,
                 total: remoteTotalPages,
-                percentage: Math.round(remotePercentage * 100)
+                percentage: Math.round(remotePercentage * 100),
               });
             } else {
               remotePreview = _('Approximately page {{page}} of {{total}} ({{percentage}}%)', {
                 page: remotePage,
                 total: remoteTotalPages,
-                percentage: Math.round(remotePercentage * 100)
+                percentage: Math.round(remotePercentage * 100),
               });
             }
           } else {
-            remotePreview = _('Approximately {{percentage}}%', { percentage: Math.round(remotePercentage * 100) });
+            remotePreview = _('Approximately {{percentage}}%', {
+              percentage: Math.round(remotePercentage * 100),
+            });
           }
         } else {
           const localPageInfo = progress.pageinfo;
-          const localPercentage = localPageInfo && localPageInfo.total > 0 ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100) : 0;
+          const localPercentage =
+            localPageInfo && localPageInfo.total > 0
+              ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100)
+              : 0;
           localPreview = `${progress.sectionLabel} (${localPercentage}%)`;
 
-          remotePreview = _('Approximately {{percentage}}%', { percentage: Math.round(remotePercentage * 100) });
+          remotePreview = _('Approximately {{percentage}}%', {
+            percentage: Math.round(remotePercentage * 100),
+          });
         }
 
         setConflictDetails({
           book,
+          bookDoc,
           local: { cfi: progress.location, preview: localPreview },
-          remote: { ...remote, preview: remotePreview, percentage: remote.percentage }
+          remote: { ...remote, preview: remotePreview, percentage: remote.percentage },
         });
         setSyncState('conflict');
       } else {
@@ -310,11 +380,28 @@ export const useKOSync = (bookKey: string) => {
       syncCompletedForKey.current = bookKey;
       performInitialSync();
     }
-  }, [bookKey, book, progress, settings, appService, getBookData, getProgress, getView, mapProgressToServerFormat, pushProgress, _, bookData?.config?.updatedAt]);
+  }, [
+    bookKey,
+    book,
+    bookDoc,
+    progress,
+    settings,
+    appService,
+    getBookData,
+    getProgress,
+    getView,
+    mapProgressToServerFormat,
+    pushProgress,
+    _,
+    bookData?.config?.updatedAt,
+  ]);
 
   useEffect(() => {
     if (syncState === 'synced' && progress) {
-      if (settings.koreaderSyncStrategy !== 'receive' && settings.koreaderSyncStrategy !== 'disable') {
+      if (
+        settings.koreaderSyncStrategy !== 'receive' &&
+        settings.koreaderSyncStrategy !== 'disabled'
+      ) {
         pushProgress();
       }
     }
@@ -333,17 +420,19 @@ export const useKOSync = (bookKey: string) => {
     setConflictDetails(null);
   };
 
-  const resolveConflictWithRemote = () => {
+  const resolveConflictWithRemote = async () => {
     const view = getView(bookKey);
     const remote = conflictDetails?.remote;
     const currentBook = conflictDetails?.book;
+    const bookDoc = conflictDetails?.bookDoc;
 
     if (view && remote?.progress && currentBook) {
       if (PAGINATED_FORMATS.has(currentBook.format)) {
         const localTotalPages = getProgress(bookKey)?.section?.total ?? 0;
         const remotePage = parseInt(remote.progress, 10);
         const remotePercentage = remote.percentage || 0;
-        const remoteTotalPages = remotePercentage > 0 ? Math.round(remotePage / remotePercentage) : 0;
+        const remoteTotalPages =
+          remotePercentage > 0 ? Math.round(remotePage / remotePercentage) : 0;
 
         if (!isNaN(remotePage) && Math.abs(localTotalPages - remoteTotalPages) <= 1) {
           console.log('Going to remote page:', remotePage);
@@ -360,15 +449,12 @@ export const useKOSync = (bookKey: string) => {
           try {
             const content = view.renderer.getContents()[0];
             if (content) {
-              const { doc, index: spineIndex } = content;
-
-              const converter = new XCFI(doc, spineIndex || 0);
-              const cfi = converter.xPointerToCFI(remote.progress);
-
+              const { doc, index } = content;
+              const cfi = await getCFIFromXPointer(remote.progress, doc, index || 0, bookDoc);
               view.goTo(cfi);
             }
           } catch (error) {
-            console.error("Failed to convert XPointer to CFI, falling back to percentage.", error);
+            console.error('Failed to convert XPointer to CFI, falling back to percentage.', error);
             if (remote.percentage !== undefined && remote.percentage !== null) {
               view.goToFraction(remote.percentage);
             }

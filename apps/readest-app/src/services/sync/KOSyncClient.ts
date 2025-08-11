@@ -82,7 +82,10 @@ export class KOSyncClient {
    * @param password - The password for authentication
    * @returns Promise with success status and optional message
    */
-  async connect(username: string, password: string): Promise<{ success: boolean; message?: string }> {
+  async connect(
+    username: string,
+    password: string,
+  ): Promise<{ success: boolean; message?: string }> {
     const userkey = md5(password);
 
     try {
@@ -142,7 +145,9 @@ export class KOSyncClient {
       const response = await this.request(`/syncs/progress/${documentHash}`);
 
       if (!response.ok) {
-        console.error(`KOSync: Failed to get progress for ${book.title}. Status: ${response.status}`);
+        console.error(
+          `KOSync: Failed to get progress for ${book.title}. Status: ${response.status}`,
+        );
         return null;
       }
 
@@ -182,7 +187,9 @@ export class KOSyncClient {
       });
 
       if (!response.ok) {
-        console.error(`KOSync: Failed to update progress for ${book.title}. Status: ${response.status}`);
+        console.error(
+          `KOSync: Failed to update progress for ${book.title}. Status: ${response.status}`,
+        );
         return false;
       }
       return true;
@@ -204,7 +211,8 @@ export class KOSyncClient {
     // Normalize path by replacing backslashes with forward slashes for cross-platform consistency
     const normalizedPath = fullPath.replace(/\\/g, '/');
     // Get the last part of the path and remove the extension
-    const baseName = normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || normalizedPath;
+    const baseName =
+      normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || normalizedPath;
     return baseName;
   }
 }

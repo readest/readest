@@ -3,6 +3,7 @@
  * Converts between Readest (foliate-js) CFI format and KOReader CREngine XPointer format
  */
 
+import { BookDoc } from '@/libs/document';
 import { parse, fake, collapse, fromRange, toRange, toElement } from 'foliate-js/epubcfi.js';
 
 type XPointer = {
@@ -498,3 +499,23 @@ export class XCFI {
     return !inlineElements.has(tagName);
   }
 }
+
+export const getCFIFromXPointer = async (
+  xpointer: string,
+  doc: Document,
+  index: number,
+  bookDoc?: BookDoc,
+) => {
+  const xSpineIndex = XCFI.extractSpineIndex(xpointer);
+  let converter: XCFI;
+  if (index === xSpineIndex) {
+    converter = new XCFI(doc, index || 0);
+  } else {
+    const doc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
+    if (!doc) throw new Error('Failed to load document for XPointer conversion.');
+    converter = new XCFI(doc, xSpineIndex || 0);
+  }
+
+  const cfi = converter.xPointerToCFI(xpointer);
+  return cfi;
+};

@@ -7,7 +7,7 @@ export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'si
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export type KoreaderSyncChecksumMethod = 'binary' | 'filename';
-export type KoreaderSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive' | 'disable';
+export type KoreaderSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive' | 'disabled';
 
 export interface ReadSettings {
   sideBarWidth: string;
