@@ -180,8 +180,9 @@ export class EdgeTTSClient implements TTSClient {
         } as TTSMessageEvent;
         break;
       }
-
-      await this.stopInternal();
+      
+      // Note: stopInternal() call removed to prevent pauses between sentences
+      // The next audio will start playing immediately after this one ends
     }
   }
 
