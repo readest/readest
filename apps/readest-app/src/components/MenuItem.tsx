@@ -12,9 +12,11 @@ interface MenuItemProps {
   shortcut?: string;
   disabled?: boolean;
   noIcon?: boolean;
+  transient?: boolean; // For transient items the dropdown will close on click
   Icon?: React.ReactNode | IconType;
   children?: React.ReactNode;
   onClick?: () => void;
+  setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
@@ -26,9 +28,11 @@ const MenuItem: React.FC<MenuItemProps> = ({
   shortcut,
   disabled,
   noIcon = false,
+  transient = false,
   Icon,
   children,
   onClick,
+  setIsDropdownOpen,
 }) => {
   const iconSize = useResponsiveSize(16);
   const menuButton = (
@@ -38,8 +42,14 @@ const MenuItem: React.FC<MenuItemProps> = ({
         disabled && 'btn-disabled text-gray-400',
         buttonClass,
       )}
+      aria-label={label}
       data-tip={tooltip ? tooltip : ''}
-      onClick={onClick}
+      onClick={() => {
+        onClick?.();
+        if (transient) {
+          setIsDropdownOpen?.(false);
+        }
+      }}
       disabled={disabled}
     >
       <div className='flex w-full items-center justify-between'>

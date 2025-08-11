@@ -8,7 +8,7 @@ import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overl
 import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
-import { AppService, StorageType } from '@/types/system';
+import { AppService, DeleteAction } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
 import {
   formatAuthors,
@@ -543,31 +543,31 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     [appService],
   );
 
-  const handleBookDelete = (storageType: StorageType) => {
+  const handleBookDelete = (deleteAction: DeleteAction) => {
     return async (book: Book) => {
       const deletionMessages = {
-        'Both': _('Book deleted: {{title}}', { title: book.title }),
-        'Cloud': _('Deleted cloud backup of the book: {{title}}', { title: book.title }),
-        'Local': _('Deleted local copy of the book: {{title}}', { title: book.title }),
+        both: _('Book deleted: {{title}}', { title: book.title }),
+        cloud: _('Deleted cloud backup of the book: {{title}}', { title: book.title }),
+        local: _('Deleted local copy of the book: {{title}}', { title: book.title }),
       };
       const deletionFailMessages = {
-        'Both': _('Failed to delete book: {{title}}', { title: book.title }),
-        'Cloud': _('Failed to delete cloud backup of the book', { title: book.title }),
-        'Local': _('Failed to delete local copy of the book: {{title}}', { title: book.title }),
+        both: _('Failed to delete book: {{title}}', { title: book.title }),
+        cloud: _('Failed to delete cloud backup of the book: {{title}}', { title: book.title }),
+        local: _('Failed to delete local copy of the book: {{title}}', { title: book.title }),
       };
       try {
-        await appService?.deleteBook(book, storageType);
+        await appService?.deleteBook(book, deleteAction);
         await updateBook(envConfig, book);
         pushLibrary();
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: deletionMessages[storageType],
+          message: deletionMessages[deleteAction],
         });
         return true;
       } catch {
         eventDispatcher.dispatch('toast', {
-          message: deletionFailMessages[storageType],
+          message: deletionFailMessages[deleteAction],
           type: 'error',
         });
         return false;
@@ -714,7 +714,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleImportBooks={handleImportBooks}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete('Both')}
+                handleBookDelete={handleBookDelete('both')}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
                 booksTransferProgress={booksTransferProgress}
@@ -746,9 +746,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onClose={() => setShowDetailsBook(null)}
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
-          handleBookDelete={handleBookDelete('Both')}
-          handleBookDeleteCloudBackup={handleBookDelete('Cloud')}
-          handleBookDeleteLocalCopy={handleBookDelete('Local')}
+          handleBookDelete={handleBookDelete('both')}
+          handleBookDeleteCloudBackup={handleBookDelete('cloud')}
+          handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
       )}

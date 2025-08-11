@@ -1,7 +1,7 @@
 import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 
 import { SystemSettings } from '@/types/settings';
-import { FileSystem, BaseDir, StorageType } from '@/types/system';
+import { FileSystem, BaseDir, DeleteAction } from '@/types/system';
 import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
 import {
   getDir,
@@ -273,19 +273,27 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async deleteBook(book: Book, storageType: StorageType): Promise<void> {
-    if (storageType == 'Local' || storageType == 'Both') {
-      const localDeleteFps = [getLocalBookFilename(book), getCoverFilename(book)];
+  async deleteBook(book: Book, deleteAction: DeleteAction): Promise<void> {
+    console.log('Deleting book with action:', deleteAction, book.title);
+    if (deleteAction === 'local' || deleteAction === 'both') {
+      const localDeleteFps =
+        deleteAction === 'local'
+          ? [getLocalBookFilename(book)]
+          : [getLocalBookFilename(book), getCoverFilename(book)];
       for (const fp of localDeleteFps) {
         if (await this.fs.exists(fp, 'Books')) {
           await this.fs.removeFile(fp, 'Books');
         }
       }
-      book.deletedAt = Date.now();
-      book.downloadedAt = null;
-      book.coverDownloadedAt = null;
+      if (deleteAction === 'local') {
+        book.downloadedAt = null;
+      } else {
+        book.deletedAt = Date.now();
+        book.downloadedAt = null;
+        book.coverDownloadedAt = null;
+      }
     }
-    if (storageType == 'Cloud' || storageType == 'Both') {
+    if (deleteAction === 'cloud' || deleteAction === 'both') {
       const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
       for (const fp of fps) {
         console.log('Deleting uploaded file:', fp);

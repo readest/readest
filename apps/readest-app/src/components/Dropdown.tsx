@@ -1,14 +1,53 @@
 import clsx from 'clsx';
-import React, { useState, isValidElement, ReactElement } from 'react';
+import React, { useState, isValidElement, ReactElement, ReactNode } from 'react';
+import MenuItem from './MenuItem';
 
 interface DropdownProps {
   className?: string;
   menuClassName?: string;
   buttonClassName?: string;
   toggleButton: React.ReactNode;
-  children: ReactElement<{ setIsDropdownOpen: (isOpen: boolean) => void; menuClassName?: string }>;
+  children: ReactElement<{
+    setIsDropdownOpen: (isOpen: boolean) => void;
+    menuClassName?: string;
+    children: ReactNode;
+  }>;
   onToggle?: (isOpen: boolean) => void;
 }
+
+const enhanceMenuItems = (
+  children: ReactNode,
+  setIsDropdownOpen: (isOpen: boolean) => void,
+): ReactNode => {
+  const processNode = (node: ReactNode): ReactNode => {
+    if (!isValidElement(node)) {
+      return node;
+    }
+
+    const element = node as ReactElement;
+    const isMenuItem =
+      element.type === MenuItem ||
+      (typeof element.type === 'function' && element.type.name === 'MenuItem');
+
+    const clonedElement = isMenuItem
+      ? React.cloneElement(element, {
+          setIsDropdownOpen,
+          ...element.props,
+        })
+      : element;
+
+    if (clonedElement.props?.children) {
+      return React.cloneElement(clonedElement, {
+        ...clonedElement.props,
+        children: React.Children.map(clonedElement.props.children, processNode),
+      });
+    }
+
+    return clonedElement;
+  };
+
+  return React.Children.map(children, processNode);
+};
 
 const Dropdown: React.FC<DropdownProps> = ({
   className,
@@ -32,7 +71,13 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const childrenWithToggle = isValidElement(children)
-    ? React.cloneElement(children, { setIsDropdownOpen, menuClassName })
+    ? React.cloneElement(children, {
+        ...(typeof children.type !== 'string' && {
+          setIsDropdownOpen,
+          menuClassName,
+        }),
+        children: enhanceMenuItems(children.props?.children, setIsDropdownOpen),
+      })
     : children;
 
   return (

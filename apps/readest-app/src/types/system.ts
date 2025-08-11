@@ -6,7 +6,7 @@ import { ProgressHandler } from '@/utils/transfer';
 export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Log' | 'Cache' | 'None';
-export type StorageType = 'Cloud' | 'Local' | 'Both';
+export type DeleteAction = 'cloud' | 'local' | 'both';
 
 export interface FileSystem {
   getURL(path: string): string;
@@ -58,7 +58,7 @@ export interface AppService {
     overwrite?: boolean,
     transient?: boolean,
   ): Promise<Book | null>;
-  deleteBook(book: Book, storageType: StorageType): Promise<void>;
+  deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
   downloadBook(
     book: Book,
