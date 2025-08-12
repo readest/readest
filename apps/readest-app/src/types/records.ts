@@ -21,6 +21,7 @@ export interface DBBookConfig {
   user_id: string;
   book_hash: string;
   location?: string;
+  xpointer?: string;
   progress?: string;
   search_config?: string;
   view_settings?: string;

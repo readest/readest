@@ -108,6 +108,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
     [settings.koreaderSyncUserkey],
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSaveDeviceName = useCallback(
     debounce((newDeviceName: string) => {
       const newSettings = { ...settings, koreaderSyncDeviceName: newDeviceName };

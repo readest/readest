@@ -502,13 +502,13 @@ export class XCFI {
 
 export const getCFIFromXPointer = async (
   xpointer: string,
-  doc: Document,
-  index: number,
+  doc?: Document,
+  index?: number,
   bookDoc?: BookDoc,
 ) => {
   const xSpineIndex = XCFI.extractSpineIndex(xpointer);
   let converter: XCFI;
-  if (index === xSpineIndex) {
+  if (index === xSpineIndex && doc) {
     converter = new XCFI(doc, index || 0);
   } else {
     const doc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
@@ -518,4 +518,24 @@ export const getCFIFromXPointer = async (
 
   const cfi = converter.xPointerToCFI(xpointer);
   return cfi;
+};
+
+export const getXPointerFromCFI = async (
+  cfi: string,
+  doc?: Document,
+  index?: number,
+  bookDoc?: BookDoc,
+): Promise<XPointer> => {
+  const xSpineIndex = XCFI.extractSpineIndex(cfi);
+  let converter: XCFI;
+  if (index === xSpineIndex && doc) {
+    converter = new XCFI(doc, index || 0);
+  } else {
+    const doc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
+    if (!doc) throw new Error('Failed to load document for CFI conversion.');
+    converter = new XCFI(doc, xSpineIndex || 0);
+  }
+
+  const xpointer = converter.cfiToXPointer(cfi);
+  return xpointer;
 };

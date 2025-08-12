@@ -1,10 +1,10 @@
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local time = require("ui/time")
 local util = require("util")
@@ -19,7 +19,7 @@ local ReadestSync = WidgetContainer:new{
     settings = nil,
 }
 
-local API_CALL_DEBOUNCE_DELAY = time.s(30)
+local API_CALL_DEBOUNCE_DELAY = 30
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
@@ -27,6 +27,7 @@ ReadestSync.default_settings = {
     supabase_anon_key = sha2.base64_to_bin(SUPABAE_ANON_KEY_BASE64),
     auto_sync = false,
     user_email = nil,
+    user_name = nil,
     user_id = nil,
     access_token = nil,
     refresh_token = nil,
@@ -47,6 +48,29 @@ function ReadestSync:onDispatcherRegisterActions()
    --
 end
 
+function ReadestSync:needsLogin()
+    return not self.settings.access_token or not self.settings.expires_at
+        or self.settings.expires_at < os.time() + 60
+end
+
+function ReadestSync:tryRefreshToken()
+    if self.settings.refresh_token and self.settings.expires_at
+        and self.settings.expires_at < os.time() - self.settings.expires_in / 2 then
+        local client = self:getSupabaseAuthClient()
+        client:refresh_token(self.settings.refresh_token, function(success, response)
+            if success then
+                self.settings.access_token = response.access_token
+                self.settings.refresh_token = response.refresh_token
+                self.settings.expires_at = response.expires_at
+                self.settings.expires_in = response.expires_in
+                G_reader_settings:writeSetting("readest_sync", self.settings)
+            else
+                logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
+            end
+        end)
+    end
+end
+
 function ReadestSync:addToMainMenu(menu_items)
     menu_items.readest_sync = {
         sorting_hint = "tools",
@@ -54,17 +78,17 @@ function ReadestSync:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    return self.settings.access_token and (_("Logout"))
-                        or _("Login with Readest Account")
+                    return self:needsLogin() and _("Log in Readest Account")
+                        or _("Log out as ") .. (self.settings.user_name or "")
                 end,
                 callback_func = function()
-                    if self.settings.access_token then
+                    if self:needsLogin() then
                         return function(menu)
-                            self:logout(menu)
+                            self:login(menu)
                         end
                     else
                         return function(menu)
-                            self:login(menu)
+                            self:logout(menu)
                         end
                     end
                 end,
@@ -200,10 +224,12 @@ function ReadestSync:doLogin(email, password, menu)
     if success then
         self.settings.user_email = email
         self.settings.user_id = response.user.id
+        self.settings.user_name = response.user.user_metadata.user_name or email
         self.settings.access_token = response.access_token
         self.settings.refresh_token = response.refresh_token
         self.settings.expires_at = response.expires_at
         self.settings.expires_in = response.expires_in
+        G_reader_settings:writeSetting("readest_sync", self.settings)
         
         if menu then
             menu:updateItems()
@@ -235,6 +261,7 @@ function ReadestSync:logout(menu)
     self.settings.refresh_token = nil
     self.settings.expires_at = nil
     self.settings.expires_in = nil
+    G_reader_settings:writeSetting("readest_sync", self.settings)
 
     if menu then
         menu:updateItems()
@@ -250,26 +277,78 @@ function ReadestSync:getDocumentIdentifier()
     return self.ui.doc_settings:readSetting("partial_md5_checksum")
 end
 
+function ReadestSync:showSyncedMessage()
+    UIManager:show(InfoMessage:new{
+        text = _("Progress has been synchronized."),
+        timeout = 3,
+    })
+end
+
 function ReadestSync:applyBookConfig(config)
     logger.dbg("ReadestSync: Applying book config:", config)
-    local location_xp = config.location_xp
+    local xpointer = config.xpointer
     local progress = config.progress
+    local has_pages = self.ui.document.info.has_pages
     -- Check if it's the bracket format: [page,total_pages]
     local progress_pattern = "^%[(%d+),(%d+)%]$"
-    local page, total_pages = progress:match(progress_pattern)
-    if location_xp then
-        -- TODO
-        return
-    end
-    if page and total_pages then
-        local percentage = tonumber(page) / tonumber(total_pages)
-        local current_page = self.ui.document:getCurrentPage()
-        local page_count = self.ui.document:getPageCount()
-        if page_count > 0 and current_page / page_count < percentage then
+    if has_pages and progress then
+        local page, total_pages = progress:match(progress_pattern)
+        local current_page = self.ui:getCurrentPage()
+        local new_page = tonumber(page)
+        if new_page > current_page then
             self.ui.link:addCurrentLocationToStack()
-            self.ui:handleEvent(Event:new("GotoPercent", percentage * 100))
+            self.ui:handleEvent(Event:new("GotoPage", new_page))
+            self:showSyncedMessage()
         end
     end
+    if not has_pages and xpointer then
+        local last_xpointer = self.ui.rolling:getLastProgress()
+        local working_xpointer = xpointer
+        local cmp_result = self.document:compareXPointers(last_xpointer, working_xpointer)
+        -- FIXME: Crengine is not very good at comparing XPointers, so we need to reduce the path
+        while cmp_result == nil and working_xpointer do
+            local last_slash_pos = working_xpointer:match("^.*()/")
+            if last_slash_pos and last_slash_pos > 1 then
+                working_xpointer = working_xpointer:sub(1, last_slash_pos - 1)
+                cmp_result = self.document:compareXPointers(last_xpointer, working_xpointer)
+            else
+                break
+            end
+        end
+        if cmp_result > 0 then
+            self.ui.link:addCurrentLocationToStack()
+            self.ui:handleEvent(Event:new("GotoXPointer", working_xpointer))
+            self:showSyncedMessage()
+        end
+    end
+end
+
+function ReadestSync:getCurrentBookConfig()
+    local book_hash = self:getDocumentIdentifier()
+    if not book_hash then
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot identify the current book"),
+            timeout = 2,
+        })
+        return nil
+    end
+
+    local config = {
+        bookHash = book_hash,
+        progress = "",
+        xpointer = "",
+        updatedAt = os.time() * 1000,
+    }
+
+    local current_page = self.ui:getCurrentPage()
+    local page_count = self.ui.document:getPageCount()
+    config.progress = {current_page, page_count}
+
+    if not self.ui.document.info.has_pages then
+        config.xpointer = self.ui.rolling:getLastProgress()
+    end
+
+    return config
 end
 
 function ReadestSync:pushBookConfig(interactive)
@@ -283,14 +362,11 @@ function ReadestSync:pushBookConfig(interactive)
         return
     end
 
-    local now = UIManager:getElapsedTimeSinceBoot()
+    local now = os.time()
     if not interactive and now - self.last_sync_timestamp <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("ReadestSync: Debouncing push request")
         return
     end
-
-    local book_hash = self:getDocumentIdentifier()
-    if not book_hash then return end
 
     local config = self:getCurrentBookConfig()
     if not config then return end
@@ -299,25 +375,18 @@ function ReadestSync:pushBookConfig(interactive)
         return
     end
 
-    -- Use Supabase REST API to upsert book config
-    local url = self.settings.supabase_url .. "/rest/v1/book_configs"
-    local payload = {
-        user_id = self.user_id,
-        hash = document_id,
-        config = config,
-        updated_at = os.date("!%Y-%m-%dT%H:%M:%SZ")
-    }
-
     local client = self:getReadestSyncClient()
     if not client then
         if interactive then
             UIManager:show(InfoMessage:new{
-                text = _("Please configure Supabase settings first"),
+                text = _("Please configure Readest settings first"),
                 timeout = 3,
             })
         end
         return
     end
+
+    self:tryRefreshToken()
 
     if interactive then
         UIManager:show(InfoMessage:new{
@@ -326,10 +395,15 @@ function ReadestSync:pushBookConfig(interactive)
         })
     end
 
+    local payload = {
+      books = {},
+      notes = {},
+      configs = { config }
+    }
+
     client:pushChanges(
-        config,
+        payload,
         function(success, response)
-            logger.dbg("ReadestSync: Push result:", success, response)
             if interactive then
                 if success then
                     UIManager:show(InfoMessage:new{
@@ -344,7 +418,7 @@ function ReadestSync:pushBookConfig(interactive)
                 end
             end
             if success then
-                self.last_sync_timestamp = time.now()
+                self.last_sync_timestamp = os.time()
             end
         end
     )
@@ -373,12 +447,14 @@ function ReadestSync:pullBookConfig(interactive)
     if not client then
         if interactive then
             UIManager:show(InfoMessage:new{
-                text = _("Please configure Supabase settings first"),
+                text = _("Please configure Readest settings first"),
                 timeout = 3,
             })
         end
         return
     end
+
+    self:tryRefreshToken()
 
     if interactive then
         UIManager:show(InfoMessage:new{
@@ -394,8 +470,17 @@ function ReadestSync:pullBookConfig(interactive)
             book = book_hash,
         },
         function(success, response)
-            logger.dbg("ReadestSync: Pull result:", success, response)
             if not success then
+                if response and response.error == "Not authenticated" then
+                    if interactive then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Authentication failed, please login again"),
+                            timeout = 2,
+                        })
+                    end
+                    self:logout()
+                    return
+                end
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("Failed to pull book config"),
@@ -448,8 +533,9 @@ end
 
 function ReadestSync:onPageUpdate(page)
     if self.settings.auto_sync and self.settings.access_token and page then
-        -- Schedule a delayed push to avoid too frequent updates
-        UIManager:unschedule(self.delayed_push_task)
+        if self.delayed_push_task then
+            UIManager:unschedule(self.delayed_push_task)
+        end
         self.delayed_push_task = function()
             self:pushBookConfig(false)
         end

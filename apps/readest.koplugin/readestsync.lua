@@ -96,23 +96,28 @@ function ReadestSyncClient:pullChanges(params, callback)
     socketutil:reset_timeout()
 end
 
-function ReadestSyncClient:pushChanges(changes)
+function ReadestSyncClient:pushChanges(changes, callback)
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("ReadestHeaders", {})
     self.client:enable("ReadestAuth", {})
 
     socketutil:set_timeout(SYNC_TIMEOUTS[1], SYNC_TIMEOUTS[2])
-    local ok, res = pcall(function()
-        return self.client:pushChanges(changes or {})
+    local co = coroutine.create(function()
+        local ok, res = pcall(function()
+            return self.client:pushChanges(changes or {})
+        end)
+        if ok then
+            callback(res.status == 200, res.body)
+        else
+            logger.dbg("ReadestSyncClient:pushChanges failure:", res)
+            callback(false, res.body)
+        end
     end)
+    self.client:enable("AsyncHTTP", {thread = co})
+    coroutine.resume(co)
+    if UIManager.looper then UIManager:setInputTimeout() end
     socketutil:reset_timeout()
-    if ok then
-        return res.status == 200 or res.status == 201, res.body
-    else
-        logger.dbg("ReadestSyncClient:pushChanges failure:", res)
-        return false, res.body
-    end
 end
 
 return ReadestSyncClient

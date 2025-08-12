@@ -7,13 +7,11 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { KOSyncClient, KoSyncProgress } from '@/services/sync/KOSyncClient';
-import { Book, BookFormat } from '@/types/book';
+import { Book, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
-
-const PAGINATED_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
@@ -62,7 +60,7 @@ export const useKOSync = (bookKey: string) => {
     let progressStr: string;
     let percentage: number;
 
-    if (PAGINATED_FORMATS.has(currentBook.format)) {
+    if (FIXED_LAYOUT_FORMATS.has(currentBook.format)) {
       const page = (currentProgress.section?.current ?? 0) + 1;
       const totalPages = currentProgress.section?.total ?? 0;
       progressStr = page.toString();
@@ -223,12 +221,12 @@ export const useKOSync = (bookKey: string) => {
       const localTimestamp = bookData?.config?.updatedAt || book.updatedAt;
       const remoteIsNewer = remote.timestamp * 1000 > localTimestamp;
 
-      const localIdentifier = PAGINATED_FORMATS.has(book.format)
+      const localIdentifier = FIXED_LAYOUT_FORMATS.has(book.format)
         ? progress.section?.current.toString()
         : progress.location;
       const isLocalCFI = localIdentifier?.startsWith('epubcfi');
 
-      const remoteIdentifier = PAGINATED_FORMATS.has(book.format)
+      const remoteIdentifier = FIXED_LAYOUT_FORMATS.has(book.format)
         ? (parseInt(remote.progress, 10) - 1).toString()
         : remote.progress.startsWith('epubcfi')
           ? remote.progress
@@ -265,7 +263,7 @@ export const useKOSync = (bookKey: string) => {
         const applyRemoteProgress = async () => {
           const view = getView(bookKey);
           if (view && remote.progress) {
-            if (PAGINATED_FORMATS.has(book.format)) {
+            if (FIXED_LAYOUT_FORMATS.has(book.format)) {
               const pageToGo = parseInt(remote.progress, 10);
               if (!isNaN(pageToGo)) view.select(pageToGo - 1);
             } else {
@@ -312,7 +310,7 @@ export const useKOSync = (bookKey: string) => {
         let remotePreview = '';
         const remotePercentage = remote.percentage || 0;
 
-        if (PAGINATED_FORMATS.has(book.format)) {
+        if (FIXED_LAYOUT_FORMATS.has(book.format)) {
           const localPageInfo = progress.section;
           const localPercentage =
             localPageInfo && localPageInfo.total > 0
@@ -427,7 +425,7 @@ export const useKOSync = (bookKey: string) => {
     const bookDoc = conflictDetails?.bookDoc;
 
     if (view && remote?.progress && currentBook) {
-      if (PAGINATED_FORMATS.has(currentBook.format)) {
+      if (FIXED_LAYOUT_FORMATS.has(currentBook.format)) {
         const localTotalPages = getProgress(bookKey)?.section?.total ?? 0;
         const remotePage = parseInt(remote.progress, 10);
         const remotePercentage = remote.percentage || 0;
