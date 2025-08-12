@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.9.71": {
+      "date": "2025-08-13",
+      "notes": [
+        "Sync: Added two ways to sync reading progress with Koreader devices",
+        "EPUB: Applied monospace font settings",
+        "EPUB: Fixed initial text alignment for some EPUB files",
+        "PDF: Fixed issue opening large PDF files on Android",
+        "TTS: Improved book language detection when language code is invalid",
+        "iOS: Fixed applying system color scheme in auto theme mode",
+        "Config: Added option to choose reading progress display style (percentage or page number)",
+        "Library: Added option to delete only the local copy of a book",
+        "Account: Added 'Reset Password' button in the account page"
+      ]
+    },
     "0.9.69": {
       "date": "2025-08-02",
       "notes": [
