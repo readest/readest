@@ -63,7 +63,7 @@ function ReadestSync:tryRefreshToken()
                 self.settings.refresh_token = response.refresh_token
                 self.settings.expires_at = response.expires_at
                 self.settings.expires_in = response.expires_in
-                G_reader_settings:writeSetting("readest_sync", self.settings)
+                G_reader_settings:saveSetting("readest_sync", self.settings)
             else
                 logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
             end
@@ -229,8 +229,8 @@ function ReadestSync:doLogin(email, password, menu)
         self.settings.refresh_token = response.refresh_token
         self.settings.expires_at = response.expires_at
         self.settings.expires_in = response.expires_in
-        G_reader_settings:writeSetting("readest_sync", self.settings)
-        
+        G_reader_settings:saveSetting("readest_sync", self.settings)
+
         if menu then
             menu:updateItems()
         end
@@ -261,7 +261,7 @@ function ReadestSync:logout(menu)
     self.settings.refresh_token = nil
     self.settings.expires_at = nil
     self.settings.expires_in = nil
-    G_reader_settings:writeSetting("readest_sync", self.settings)
+    G_reader_settings:saveSetting("readest_sync", self.settings)
 
     if menu then
         menu:updateItems()
