@@ -163,6 +163,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       isOpen={true}
       onClose={handleClose}
       className='modal-open'
+      bgClassName='sm:!bg-black/20'
       boxClassName={clsx('sm:min-w-[520px]', appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4')}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={

@@ -236,7 +236,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
       onClose={() => setIsOpen(false)}
       title={_('KOReader Sync Settings')}
       boxClassName='sm:!min-w-[520px] sm:h-auto'
-      bgClassName='!bg-black/60'
     >
       <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
         {isConfigured ? (

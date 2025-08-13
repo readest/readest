@@ -161,7 +161,7 @@ const Dialog: React.FC<DialogProps> = ({
     >
       <div
         className={clsx(
-          'overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20',
+          'overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/50',
           appService?.hasRoundedWindow && 'rounded-window',
           bgClassName,
         )}

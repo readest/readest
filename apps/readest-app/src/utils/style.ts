@@ -131,9 +131,6 @@ const getColorStyles = (
       ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: none;
     }
-    p:has(img), span:has(img) {
-      background-color: ${bg};
-    }
     body.pbg {
       ${isDarkMode ? `background-color: ${bg} !important;` : ''}
     }
@@ -142,7 +139,7 @@ const getColorStyles = (
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
     /* horizontal rule */
-    *:has(hr) {
+    *:has(> hr[class]) {
       background-color: ${bg};
     }
     hr {
@@ -324,7 +321,7 @@ const getLayoutStyles = (
     width: auto;
     height: auto;
   }
-  .duokan-footnote img {
+  .duokan-footnote img:not([class]) {
     width: 0.8em;
     height: 0.8em;
   }

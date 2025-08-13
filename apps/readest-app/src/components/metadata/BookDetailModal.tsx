@@ -187,7 +187,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
           title={editMode ? _('Edit Metadata') : _('Book Details')}
           isOpen={isOpen}
           onClose={handleClose}
-          bgClassName='sm:bg-black/50'
           boxClassName={clsx(
             editMode ? 'sm:min-w-[600px] sm:max-w-[600px]' : 'sm:min-w-[480px] sm:max-w-[480px]',
             'sm:h-auto sm:max-h-[90%]',
