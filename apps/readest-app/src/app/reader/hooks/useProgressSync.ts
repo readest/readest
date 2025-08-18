@@ -59,7 +59,7 @@ export const useProgressSync = (bookKey: string) => {
             config.xpointer = xpointerResult.xpointer;
           }
         } catch (error) {
-          console.error('Failed to convert CFI to XPointer', error);
+          console.warn('Failed to convert CFI to XPointer', error);
         }
         pushConfig(bookKey, config);
       }

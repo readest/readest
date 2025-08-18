@@ -264,7 +264,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
                     onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}
                     options={CODE_LANGUAGES.map((lang) => ({
                       value: lang,
-                      label: lang,
+                      label: lang === 'auto-detect' ? _('Auto') : lang,
                     }))}
                     disabled={!codeHighlighting}
                   />
