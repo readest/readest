@@ -1,4 +1,5 @@
 import { md5 } from 'js-md5';
+import { createHash } from 'crypto';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
@@ -6,6 +7,7 @@ import { genSSML } from '@/utils/ssml';
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const CHROMIUM_FULL_VERSION = '130.0.2849.68';
 const EDGE_TTS_VOICES = {
   'af-ZA': ['af-ZA-AdriNeural', 'af-ZA-WillemNeural'],
   'am-ET': ['am-ET-AmehaNeural', 'am-ET-MekdesNeural'],
@@ -120,6 +122,31 @@ const EDGE_TTS_VOICES = {
   'zh-TW': ['zh-TW-HsiaoChenNeural', 'zh-TW-HsiaoYuNeural', 'zh-TW-YunJheNeural'],
 };
 
+/**
+ * Generates the Sec-MS-GEC token value.
+ * This function generates a token value based on the current time in Windows file time format
+ * adjusted for clock skew, and rounded down to the nearest 5 minutes. The token is then hashed
+ * using SHA256 and returned as an uppercased hex digest.
+ *
+ * @returns The generated Sec-MS-GEC token value.
+ * @see https://github.com/rany2/edge-tts/issues/290#issuecomment-2464956570
+ */
+const WIN_EPOCH_OFFSET = 11644473600; // Windows epoch offset in seconds (1601 to 1970)
+const S_TO_NS = 1000000000; // Seconds to nanoseconds conversion
+const generateSecMsGec = () => {
+  let ticks = Math.floor(Date.now() / 1000);
+  // Switch to Windows file time epoch (1601-01-01 00:00:00 UTC)
+  ticks += WIN_EPOCH_OFFSET;
+  // Round down to the nearest 5 minutes (300 seconds)
+  ticks -= ticks % 300;
+  // Convert the ticks to 100-nanosecond intervals (Windows file time format)
+  ticks *= S_TO_NS / 100;
+  // Create the string to hash by concatenating the ticks and the trusted client token
+  const strToHash = `${ticks.toFixed(0)}${EDGE_API_TOKEN}`;
+  // Compute the SHA256 hash and return the uppercased hex digest
+  return createHash('sha256').update(strToHash, 'ascii').digest('hex').toUpperCase();
+};
+
 const genVoiceList = (voices: Record<string, string[]>) => {
   return Object.entries(voices).flatMap(([lang, voices]) => {
     return voices.map((id) => {
@@ -150,7 +177,13 @@ export class EdgeSpeechTTS {
 
   async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
     const connectId = randomMd5();
-    const url = `${EDGE_SPEECH_URL}?ConnectionId=${connectId}&TrustedClientToken=${EDGE_API_TOKEN}`;
+    const params = new URLSearchParams({
+      ConnectionId: connectId,
+      TrustedClientToken: EDGE_API_TOKEN,
+      'Sec-MS-GEC': generateSecMsGec(),
+      'Sec-MS-GEC-Version': `1-${CHROMIUM_FULL_VERSION}`,
+    });
+    const url = `${EDGE_SPEECH_URL}?${params.toString()}`;
     const date = new Date().toString();
     const configHeaders = {
       'Content-Type': 'application/json; charset=utf-8',
