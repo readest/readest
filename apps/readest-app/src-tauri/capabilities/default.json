@@ -87,6 +87,12 @@
         },
         {
           "url": "https://translate.googleapis.com"
+        },
+        {
+          "url": "http://*:*"
+        },
+        {
+          "url": "https://*:*"
         }
       ]
     },

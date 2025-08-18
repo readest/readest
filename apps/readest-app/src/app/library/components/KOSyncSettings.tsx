@@ -16,6 +16,7 @@ import { getOSPlatform } from '@/utils/misc';
 type Option = {
   value: string;
   label: string;
+  disabled?: boolean;
 };
 
 type SelectProps = {
@@ -43,8 +44,8 @@ const StyledSelect: React.FC<SelectProps> = ({
       )}
       disabled={disabled}
     >
-      {options.map(({ value, label }) => (
-        <option key={value} value={value}>
+      {options.map(({ value, label, disabled = false }) => (
+        <option key={value} value={value} disabled={disabled}>
           {label}
         </option>
       ))}
@@ -83,6 +84,12 @@ export const KOSyncSettingsWindow: React.FC = () => {
 
   // Get the OS name once
   useEffect(() => {
+    const formatOsName = (name: string): string => {
+      if (!name) return '';
+      if (name.toLowerCase() === 'macos') return 'macOS';
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+
     const getOsName = async () => {
       let name = '';
       if (appService?.appPlatform === 'tauri') {
@@ -93,7 +100,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
           name = platform;
         }
       }
-      setOsName(name ? name.charAt(0).toUpperCase() + name.slice(1) : '');
+      setOsName(formatOsName(name));
     };
     getOsName();
   }, [appService]);
@@ -283,7 +290,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 onChange={handleChecksumMethodChange}
                 options={[
                   { value: 'binary', label: _('File Content (recommended)') },
-                  { value: 'filename', label: _('File Name') },
+                  { value: 'filename', label: _('File Name'), disabled: true },
                 ]}
               />
             </div>
@@ -334,6 +341,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 type='text'
                 placeholder='https://koreader.sync.server'
                 className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                spellCheck='false'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
               />
@@ -346,6 +354,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 type='text'
                 placeholder={_('Your Username')}
                 className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                spellCheck='false'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />

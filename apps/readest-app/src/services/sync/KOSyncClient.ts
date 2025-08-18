@@ -1,8 +1,10 @@
 import { md5 } from 'js-md5';
 import { Book } from '@/types/book';
 import { KoreaderSyncChecksumMethod } from '@/types/settings';
-import { getAPIBaseUrl } from '../environment';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
+import { isLanAddress } from '@/utils/network';
+import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 /**
  * Interface for KOSync progress response from the server
@@ -23,6 +25,7 @@ export class KOSyncClient {
   private checksumMethod: KoreaderSyncChecksumMethod;
   private deviceId: string;
   private deviceName: string;
+  private isLanServer: boolean;
 
   constructor(
     serverUrl: string,
@@ -38,6 +41,7 @@ export class KOSyncClient {
     this.checksumMethod = checksumMethod;
     this.deviceId = deviceId;
     this.deviceName = deviceName;
+    this.isLanServer = isLanAddress(this.serverUrl);
   }
 
   private async request(
@@ -55,6 +59,24 @@ export class KOSyncClient {
     if (useAuth) {
       headers.set('X-Auth-User', this.username);
       headers.set('X-Auth-Key', this.userkey);
+    }
+
+    if (this.isLanServer) {
+      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+      const directUrl = `${this.serverUrl}${endpoint}`;
+
+      return fetch(directUrl, {
+        method,
+        headers: {
+          accept: 'application/vnd.koreader.v1+json',
+          ...Object.fromEntries(headers.entries()),
+        },
+        body,
+        danger: {
+          acceptInvalidCerts: true,
+          acceptInvalidHostnames: true,
+        },
+      });
     }
 
     const proxyUrl = `${getAPIBaseUrl()}/kosync`;

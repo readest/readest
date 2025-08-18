@@ -41,7 +41,7 @@ tauri-plugin-log = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-os = "2"
-tauri-plugin-http = "2"
+tauri-plugin-http = { version = "2", features = ["dangerous-settings"] }
 tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 tauri-plugin-oauth = "2"
