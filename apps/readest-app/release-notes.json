@@ -1,9 +1,18 @@
 {
   "releases": {
+    "0.9.72": {
+      "date": "2025-08-18",
+      "notes": [
+        "Fixed Edge TTS voice playback for EPUBs",
+        "Reduced accidental page flips when toggling toolbars",
+        "Fixed images with background colors not displaying correctly in some books",
+        "Added support for custom KOReader Sync Servers on your local network (LAN)"
+      ]
+    },
     "0.9.71": {
       "date": "2025-08-13",
       "notes": [
-        "Sync: Added two ways to sync reading progress with Koreader devices",
+        "Sync: Added two ways to sync reading progress with KOReader devices",
         "EPUB: Applied monospace font settings",
         "EPUB: Fixed initial text alignment for some EPUB files",
         "PDF: Fixed issue opening large PDF files on Android",
