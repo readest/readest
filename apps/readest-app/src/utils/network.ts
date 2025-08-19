@@ -34,6 +34,9 @@ export const isLanAddress = (url: string) => {
 
       // 169.254.0.0/16 (link-local addresses)
       if (a === 169 && b === 254) return true;
+
+      // Tailscale IPv4 range: 100.64.0.0/10 (100.64.0.0 to 100.127.255.255)
+      if (a === 100 && b >= 64 && b <= 127) return true;
     }
 
     // Check for IPv6 private addresses (simplified check)

@@ -40,3 +40,6 @@ next-env.d.ts
 target
 
 fastlane/report.xml
+
+*.koplugin.zip
+
