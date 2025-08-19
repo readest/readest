@@ -13,12 +13,17 @@ import { getContentMd5 } from '@/utils/misc';
 import { useTextTranslation } from '../../hooks/useTextTranslation';
 import { FlatTOCItem, StaticListRow, VirtualListRow } from './TOCItem';
 
+const getItemIdentifier = (item: TOCItem) => {
+  const href = item.href || '';
+  return `toc-item-${item.id}-${href}`;
+};
+
 const useFlattenedTOC = (toc: TOCItem[], expandedItems: Set<string>) => {
   return useMemo(() => {
     const flattenTOC = (items: TOCItem[], depth = 0): FlatTOCItem[] => {
       const result: FlatTOCItem[] = [];
       items.forEach((item, index) => {
-        const isExpanded = expandedItems.has(item.href || '');
+        const isExpanded = expandedItems.has(getItemIdentifier(item));
         result.push({ item, depth, index, isExpanded });
         if (item.subitems && isExpanded) {
           result.push(...flattenTOC(item.subitems, depth + 1));
@@ -126,13 +131,13 @@ const TOCView: React.FC<{
   }, [flatItems, activeHref]);
 
   const handleToggleExpand = useCallback((item: TOCItem) => {
-    const href = item.href || '';
+    const itemId = getItemIdentifier(item);
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(href)) {
-        newSet.delete(href);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
       } else {
-        newSet.add(href);
+        newSet.add(itemId);
       }
       return newSet;
     });
@@ -149,9 +154,10 @@ const TOCView: React.FC<{
   );
 
   const expandParents = useCallback((toc: TOCItem[], href: string) => {
-    const parentPath = findParentPath(toc, href).map((item) => item.href);
-    const parentHrefs = parentPath.filter(Boolean) as string[];
-    setExpandedItems(new Set(parentHrefs));
+    const parentItems = findParentPath(toc, href)
+      .map((item) => getItemIdentifier(item))
+      .filter(Boolean);
+    setExpandedItems(new Set(parentItems));
   }, []);
 
   const scrollToActiveItem = useCallback(() => {
@@ -176,7 +182,7 @@ const TOCView: React.FC<{
         (activeItem as HTMLElement).setAttribute('aria-current', 'page');
       }
     }
-  }, [activeHref, flatItems]);
+  }, [activeHref]);
 
   const virtualItemSize = useMemo(() => {
     return window.innerWidth >= 640 && !viewSettings?.translationEnabled ? 37 : 57;
@@ -210,7 +216,7 @@ const TOCView: React.FC<{
       setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flatItems, scrollToActiveItem]);
+  }, [scrollToActiveItem]);
 
   return flatItems.length > 256 ? (
     <div
