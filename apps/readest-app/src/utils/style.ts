@@ -82,17 +82,16 @@ const getFontStyles = (
     font[size="7"] {
       font-size: ${fontSize * 3}px;
     }
-    pre, code, kbd {
-      font-family: var(--monospace);
-    }
     /* hardcoded inline font size */
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
     }
-    body * {
+    pre, code, kbd {
+      font-family: var(--monospace);
+    }
+    body *:not(pre):not(code):not(kbd):not(pre *):not(code *):not(kbd *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
-    
   `;
   return fontStyles;
 };
