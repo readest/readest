@@ -13,14 +13,18 @@ const TTSIcon: React.FC<TTSIconProps> = ({ isPlaying, ttsInited, onClick }) => {
   return (
     <div
       className={clsx(
-        'relative h-full w-full',
+        'relative h-full w-full rounded-full',
         ttsInited ? 'cursor-pointer' : 'cursor-not-allowed',
       )}
+      style={{
+        maskImage: 'radial-gradient(circle, white 100%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(circle, white 100%, transparent 100%)',
+      }}
       onClick={onClick}
     >
       <div className='absolute inset-0 overflow-hidden rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500'>
         <div
-          className='absolute -inset-full bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500'
+          className='absolute -inset-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500'
           style={{
             animation: isPlaying && ttsInited ? 'moveGradient 2s alternate infinite' : 'none',
           }}

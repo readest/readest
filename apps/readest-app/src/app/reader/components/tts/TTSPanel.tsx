@@ -248,6 +248,7 @@ const TTSPanel = ({
           <button
             tabIndex={0}
             className='flex flex-col items-center justify-center rounded-full p-1'
+            onClick={(e) => e.currentTarget.focus()}
           >
             <MdAlarm size={iconSize32} />
             {timeoutCountdown && (
@@ -290,7 +291,11 @@ const TTSPanel = ({
         </div>
 
         <div className='dropdown dropdown-top'>
-          <button tabIndex={0} className='rounded-full p-1'>
+          <button
+            tabIndex={0}
+            className='rounded-full p-1'
+            onClick={(e) => e.currentTarget.focus()}
+          >
             <RiVoiceAiFill size={iconSize32} />
           </button>
           <ul
