@@ -187,7 +187,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
           'sm:h-[52px] sm:justify-center',
           'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
           'transition-[opacity,transform] duration-300',
-          appService?.isMobile ? 'fixed' : 'absolute',
+          // See: https://github.com/readest/readest/issues/1716
+          appService?.isAndroidApp && window.innerWidth < 640 ? 'fixed' : 'absolute',
           appService?.hasRoundedWindow && 'rounded-window-bottom-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
           isHoveredAnim && 'hover-bar-anim',
@@ -366,7 +367,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           </span>
           <input
             type='range'
-            className='text-base-content mx-2 w-full'
+            className='text-base-content mx-2 min-w-0 flex-1'
             min={0}
             max={100}
             value={progressValid ? progressFraction * 100 : 0}
