@@ -57,8 +57,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/readest-app/.next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('apps/readest-app/package.json', 'pnpm-lock.yaml') }}
-          restore-keys: nextjs-${{ runner.os }}-
+          key: nextjs-${{ matrix.config.platform }}-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            nextjs-${{ matrix.config.platform }}-${{ github.sha }}-
+            nextjs-${{ matrix.config.platform }}-
 
       - name: install Dependencies
         working-directory: apps/readest-app
