@@ -346,31 +346,35 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 onChange={(e) => setUrl(e.target.value)}
               />
             </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Username')}</span>
-              </label>
-              <input
-                type='text'
-                placeholder={_('Your Username')}
-                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                spellCheck='false'
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Password')}</span>
-              </label>
-              <input
-                type='password'
-                placeholder={_('Your Password')}
-                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            <form className='flex flex-col gap-4'>
+              <div className='form-control w-full'>
+                <label className='label py-1'>
+                  <span className='label-text font-medium'>{_('Username')}</span>
+                </label>
+                <input
+                  type='text'
+                  placeholder={_('Your Username')}
+                  className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                  spellCheck='false'
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete='username'
+                />
+              </div>
+              <div className='form-control w-full'>
+                <label className='label py-1'>
+                  <span className='label-text font-medium'>{_('Password')}</span>
+                </label>
+                <input
+                  type='password'
+                  placeholder={_('Your Password')}
+                  className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete='current-password'
+                />
+              </div>
+            </form>
             <button
               className='btn btn-primary mt-2 h-12 min-h-12 w-full'
               onClick={handleConnect}
