@@ -137,8 +137,8 @@ const getColorStyles = (
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
-    /* horizontal rule */
-    *:has(> hr[class]) {
+    /* horizontal rule #1649 */
+    *:has(> hr[class]):not(body) {
       background-color: ${bg};
     }
     hr {
