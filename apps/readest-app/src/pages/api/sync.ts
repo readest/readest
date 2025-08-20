@@ -239,7 +239,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       response = await POST(nextReq);
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
-      return res.status(405).end(`Method ${req.method} Not Allowed`);
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     res.status(response.status);
