@@ -129,7 +129,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
     fetchTranslation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, token, sourceLang, targetLang, provider]);
+  }, [text, token, sourceLang, targetLang, provider, translate]);
 
   return (
     <div>
