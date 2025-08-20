@@ -187,7 +187,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           </div>
 
           <div className='flex items-center justify-between'>
-            <h2 className=''>{_('Override Book Color')}</h2>
+            <h2 className='font-medium'>{_('Override Book Color')}</h2>
             <input
               type='checkbox'
               className='toggle'

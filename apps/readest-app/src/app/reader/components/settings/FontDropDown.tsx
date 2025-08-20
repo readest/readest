@@ -34,12 +34,7 @@ const FontItem: React.FC<FontItemProps> = ({ index, style, data }) => {
   const option = options[index]!;
 
   return (
-    <li
-      className='px-1 sm:px-2'
-      key={option.option}
-      style={style}
-      onClick={() => onSelect(option.option)}
-    >
+    <li className='px-2' key={option.option} style={style} onClick={() => onSelect(option.option)}>
       <div className='flex w-full items-center overflow-hidden !px-0 text-sm'>
         <span style={{ minWidth: `${iconSize16}px` }}>
           {selected === option.option && (
@@ -138,7 +133,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
 
         {/* More options with nested dropdown */}
         {moreOptions && moreOptions.length > 0 && (
-          <li className='dropdown dropdown-left dropdown-top px-1 sm:px-2'>
+          <li className='dropdown dropdown-left dropdown-top px-2'>
             <div className='flex items-center px-0 text-sm'>
               <span style={{ minWidth: `${iconSize}px` }}>
                 <FiChevronLeft size={iconSize} />

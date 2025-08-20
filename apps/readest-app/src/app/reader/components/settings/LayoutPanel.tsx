@@ -370,7 +370,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='flex items-center justify-between'>
-        <h2 className=''>{_('Override Book Layout')}</h2>
+        <h2 className='font-medium'>{_('Override Book Layout')}</h2>
         <input
           type='checkbox'
           className='toggle'
