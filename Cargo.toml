@@ -38,6 +38,7 @@ rust-version = "1.77.2"
 tauri = { path = "packages/tauri/crates/tauri" }
 tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
 tauri-build = { path = "packages/tauri/crates/tauri-build" }
+tauri-plugin-os = { path = "packages/tauri-plugins/plugins/os" }
 tauri-plugin-fs = { path = "packages/tauri-plugins/plugins/fs" }
 tauri-plugin-dialog = { path = "packages/tauri-plugins/plugins/dialog" }
 tauri-plugin-deep-link = { path = "packages/tauri-plugins/plugins/deep-link" }
