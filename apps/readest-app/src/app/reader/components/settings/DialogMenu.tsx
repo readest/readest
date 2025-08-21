@@ -14,10 +14,16 @@ interface DialogMenuProps {
   resetLabel?: string;
 }
 
-const DialogMenu: React.FC<DialogMenuProps> = ({ setIsDropdownOpen, onReset, resetLabel }) => {
+const DialogMenu: React.FC<DialogMenuProps> = ({
+  activePanel,
+  setIsDropdownOpen,
+  onReset,
+  resetLabel,
+}) => {
   const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
-  const { isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } = useSettingsStore();
+  const { setFontPanelView, isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } =
+    useSettingsStore();
 
   const handleToggleGlobal = () => {
     setFontLayoutSettingsGlobal(!isFontLayoutSettingsGlobal);
@@ -26,6 +32,11 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ setIsDropdownOpen, onReset, res
 
   const handleResetToDefaults = () => {
     onReset();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleManageCustomFont = () => {
+    setFontPanelView('custom-fonts');
     setIsDropdownOpen?.(false);
   };
 
@@ -49,6 +60,9 @@ const DialogMenu: React.FC<DialogMenuProps> = ({ setIsDropdownOpen, onReset, res
         onClick={handleToggleGlobal}
       />
       <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
+      {activePanel === 'Font' && (
+        <MenuItem label={_('Manage Custom Fonts')} onClick={handleManageCustomFont} />
+      )}
     </div>
   );
 };

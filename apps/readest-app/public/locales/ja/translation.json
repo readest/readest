@@ -500,5 +500,17 @@
   "Failed to connect": "接続に失敗しました",
   "Sync Server Connected": "同期サーバーに接続されました",
   "Precision: {{precision}} digits after the decimal": "精度: {{precision}} 桁の小数点以下",
-  "Sync as {{userDisplayName}}": "{{userDisplayName}} として同期"
+  "Sync as {{userDisplayName}}": "{{userDisplayName}} として同期",
+  "Custom Fonts": "カスタムフォント",
+  "Cancel Delete": "削除をキャンセル",
+  "Import Font": "フォントをインポート",
+  "Delete Font": "フォントを削除",
+  "Tips": "ヒント",
+  "Custom fonts can be selected from the Font Face menu": "カスタムフォントは書体メニューから選択できます",
+  "Manage Custom Fonts": "カスタムフォント管理",
+  "Select Files": "ファイルを選択",
+  "Select Image": "画像を選択",
+  "Select Video": "動画を選択",
+  "Select Audio": "音声を選択",
+  "Select Fonts": "フォントを選択"
 }

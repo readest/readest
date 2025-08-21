@@ -17,8 +17,9 @@ import { stubTranslation as _ } from '@/utils/misc';
 
 export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
 export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
+export const LOCAL_FONTS_SUBDIR = 'Readest/Fonts';
 
-export const SUPPORTED_FILE_EXTS = [
+export const SUPPORTED_BOOK_EXTS = [
   'epub',
   'mobi',
   'azw',
@@ -29,7 +30,7 @@ export const SUPPORTED_FILE_EXTS = [
   'pdf',
   'txt',
 ];
-export const FILE_ACCEPT_FORMATS = SUPPORTED_FILE_EXTS.map((ext) => `.${ext}`).join(', ');
+export const BOOK_ACCEPT_FORMATS = SUPPORTED_BOOK_EXTS.map((ext) => `.${ext}`).join(', ');
 export const BOOK_UNGROUPED_NAME = '';
 export const BOOK_UNGROUPED_ID = '';
 
@@ -495,7 +496,6 @@ export const ANDROID_FONTS = [
   'XiHeiti',
 ];
 
-export const CJK_NAMES_PATTENS = /[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/;
 export const CJK_EXCLUDE_PATTENS = new RegExp(
   ['AlBayan', 'STIX', 'Kailasa', 'ITCTT', 'Luminari', 'Myanmar'].join('|'),
   'i',

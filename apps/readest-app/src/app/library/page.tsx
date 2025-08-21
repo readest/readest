@@ -10,20 +10,15 @@ import 'overlayscrollbars/overlayscrollbars.css';
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import { navigateToLogin, navigateToReader } from '@/utils/nav';
-import {
-  formatAuthors,
-  formatTitle,
-  getFilename,
-  getPrimaryLanguage,
-  listFormater,
-} from '@/utils/book';
+import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
+import { getFilename } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
-import { FILE_ACCEPT_FORMATS, SUPPORTED_FILE_EXTS } from '@/services/constants';
+import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 
@@ -153,12 +148,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       } else {
         fileExt = file.name.split('.').pop()?.toLowerCase();
       }
-      return FILE_ACCEPT_FORMATS.includes(`.${fileExt}`);
+      return BOOK_ACCEPT_FORMATS.includes(`.${fileExt}`);
     });
     if (supportedFiles.length === 0) {
       eventDispatcher.dispatch('toast', {
         message: _('No supported files found. Supported formats: {{formats}}', {
-          formats: FILE_ACCEPT_FORMATS,
+          formats: BOOK_ACCEPT_FORMATS,
         }),
         type: 'error',
       });
@@ -437,12 +432,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const selectFilesTauri = async () => {
-    const exts = appService?.isIOSApp ? [] : SUPPORTED_FILE_EXTS;
+    const exts = appService?.isIOSApp ? [] : SUPPORTED_BOOK_EXTS;
     const files = (await appService?.selectFiles(_('Select Books'), exts)) || [];
     if (appService?.isIOSApp) {
       return files.filter((file) => {
         const fileExt = file.split('.').pop()?.toLowerCase() || 'unknown';
-        return SUPPORTED_FILE_EXTS.includes(fileExt);
+        return SUPPORTED_BOOK_EXTS.includes(fileExt);
       });
     }
     return files;
@@ -452,7 +447,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     return new Promise((resolve) => {
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
-      fileInput.accept = FILE_ACCEPT_FORMATS;
+      fileInput.accept = BOOK_ACCEPT_FORMATS;
       fileInput.multiple = true;
       fileInput.click();
 

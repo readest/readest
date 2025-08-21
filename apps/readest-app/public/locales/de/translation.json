@@ -504,5 +504,17 @@
   "Failed to connect": "Verbindung fehlgeschlagen",
   "Sync Server Connected": "Sync-Server verbunden",
   "Precision: {{precision}} digits after the decimal": "Präzision: {{precision}} Nachkommastellen",
-  "Sync as {{userDisplayName}}": "Sync als {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Sync als {{userDisplayName}}",
+  "Custom Fonts": "Benutzerdefinierte Schriftarten",
+  "Cancel Delete": "Löschen abbrechen",
+  "Import Font": "Schriftart importieren",
+  "Delete Font": "Schriftart löschen",
+  "Tips": "Tipps",
+  "Custom fonts can be selected from the Font Face menu": "Benutzerdefinierte Schriftarten können aus dem Schriftart-Menü ausgewählt werden",
+  "Manage Custom Fonts": "Benutzerdefinierte Schriftarten verwalten",
+  "Select Files": "Dateien auswählen",
+  "Select Image": "Bild auswählen",
+  "Select Video": "Video auswählen",
+  "Select Audio": "Audio auswählen",
+  "Select Fonts": "Schriftarten auswählen"
 }

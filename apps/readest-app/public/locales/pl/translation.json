@@ -512,5 +512,17 @@
   "Failed to connect": "Nie udało się połączyć",
   "Sync Server Connected": "Serwer synchronizacji połączony",
   "Precision: {{precision}} digits after the decimal": "Precyzja: {{precision}} cyfr po przecinku",
-  "Sync as {{userDisplayName}}": "Synchronizuj jako {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Synchronizuj jako {{userDisplayName}}",
+  "Custom Fonts": "Niestandardowe Czcionki",
+  "Cancel Delete": "Anuluj Usuwanie",
+  "Import Font": "Importuj Czcionkę",
+  "Delete Font": "Usuń Czcionkę",
+  "Tips": "Wskazówki",
+  "Custom fonts can be selected from the Font Face menu": "Niestandardowe czcionki można wybrać z menu Czcionka",
+  "Manage Custom Fonts": "Zarządzaj Niestandardowymi Czcionkami",
+  "Select Files": "Wybierz Pliki",
+  "Select Image": "Wybierz Obraz",
+  "Select Video": "Wybierz Wideo",
+  "Select Audio": "Wybierz Audio",
+  "Select Fonts": "Wybierz Czcionki"
 }

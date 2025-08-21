@@ -1,112 +1,157 @@
-import { isCJKEnv } from './misc';
+import { getUserLang } from './misc';
 
-const basicGoogleFonts = [
-  { family: 'Bitter', weights: 'ital,wght@0,100..900;1,100..900' },
-  { family: 'Fira Code', weights: 'wght@300..700' },
-  { family: 'Literata', weights: 'ital,opsz,wght@0,7..72,200..900;1,7..72,200..900' },
-  { family: 'Merriweather', weights: 'ital,opsz,wght@0,18..144,300..900;1,18..144,300..900' },
-  { family: 'Noto Sans', weights: 'ital,wght@0,100..900;1,100..900' },
-  { family: 'Open Sans', weights: 'ital,wght@0,300..800;1,300..800' },
-  { family: 'Roboto', weights: 'ital,wght@0,100..900;1,100..900' },
-  { family: 'Vollkorn', weights: 'ital,wght@0,400..900;1,400..900' },
-];
-
-const cjkGoogleFonts = [
-  { family: 'LXGW WenKai TC', weights: '' },
-  { family: 'Noto Sans SC', weights: '' },
-  { family: 'Noto Sans TC', weights: '' },
-  { family: 'Noto Serif JP', weights: '' },
-];
-
-const getAdditionalBasicFontLinks = () => `
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${basicGoogleFonts
-    .map(
-      ({ family, weights }) =>
-        `family=${encodeURIComponent(family)}${weights ? `:${weights}` : ''}`,
-    )
-    .join('&')}&display=swap" crossorigin="anonymous">
-`;
-
-const getAdditionalCJKFontLinks = () => `
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-gb-screen@1.0.6/font.min.css" crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/jhlst/dist/%E4%BA%AC%E8%8F%AF%E8%80%81%E5%AE%8B%E4%BD%93v2_002/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/syst/dist/SourceHanSerifCN/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${cjkGoogleFonts
-    .map(
-      ({ family, weights }) =>
-        `family=${encodeURIComponent(family)}${weights ? `:${weights}` : ''}`,
-    )
-    .join('&')}&display=swap" crossorigin="anonymous" />
-`;
-
-const getAdditionalCJKFontFaces = () => `
-  @font-face {
-    font-family: "FangSong";
-    font-display: swap;
-    src: local("Fang Song"), local("FangSong"), local("Noto Serif CJK"), local("Source Han Serif SC VF"), url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.eot");
-    src: url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.eot?#iefix") format("embedded-opentype"),
-    url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.woff2") format("woff2"),
-    url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.woff") format("woff"),
-    url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.ttf") format("truetype"),
-    url("https://db.onlinewebfonts.com/t/2ecbfe1d9bfc191c6f15c0ccc23cbd43.svg#FangSong") format("svg");
-  }
-  @font-face {
-    font-family: "Kaiti";
-    font-display: swap;
-    src: local("Kai"), local("KaiTi"), local("AR PL UKai"), local("LXGW WenKai GB Screen"), url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.eot");
-    src: url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.eot?#iefix")format("embedded-opentype"),
-    url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.woff2")format("woff2"),
-    url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.woff")format("woff"),
-    url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.ttf")format("truetype"),
-    url("https://db.onlinewebfonts.com/t/1ee9941f1b8c128110ca4307dda59917.svg#STKaiti")format("svg");
-  }
-  @font-face {
-    font-family: "Heiti";
-    font-display: swap;
-    src: local("Hei"), local("SimHei"), local("WenQuanYi Zen Hei"), local("Source Han Sans SC VF"), url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.eot");
-    src: url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.eot?#iefix")format("embedded-opentype"),
-    url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.woff2")format("woff2"),
-    url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.woff")format("woff"),
-    url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.ttf")format("truetype"),
-    url("https://db.onlinewebfonts.com/t/a4948b9d43a91468825a5251df1ec58d.svg#WenQuanYi Micro Hei")format("svg");
-  }
-  @font-face {
-    font-family: "XiHeiti";
-    font-display: swap;
-    src: local("PingFang SC"), local("Microsoft YaHei"), local("WenQuanYi Micro Hei"), local("FZHei-B01"), url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot");
-    src: url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.eot?#iefix")format("embedded-opentype"),
-    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff2")format("woff2"),
-    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.woff")format("woff"),
-    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.ttf")format("truetype"),
-    url("https://db.onlinewebfonts.com/t/4f0b783ba4a1b381fc7e7af81ecab481.svg#STHeiti J Light")format("svg");
-}
-`;
-
-export const mountAdditionalFonts = (document: Document, isCJK = false) => {
-  const mountCJKFonts = isCJK || isCJKEnv();
-  let links = getAdditionalBasicFontLinks();
-  if (mountCJKFonts) {
-    const style = document.createElement('style');
-    style.textContent = getAdditionalCJKFontFaces();
-    document.head.appendChild(style);
-
-    links = `${links}\n${getAdditionalCJKFontLinks()}`;
-  }
-
-  const parser = new DOMParser();
-  const parsedDocument = parser.parseFromString(links, 'text/html');
-
-  Array.from(parsedDocument.head.children).forEach((child) => {
-    if (child.tagName === 'LINK') {
-      const link = document.createElement('link');
-      link.rel = child.getAttribute('rel') || '';
-      link.href = child.getAttribute('href') || '';
-      link.crossOrigin = child.getAttribute('crossorigin') || '';
-
-      document.head.appendChild(link);
+function parseUnicodeString(dataView: DataView, offset: number, length: number): string {
+  const chars: string[] = [];
+  for (let i = 0; i < length; i += 2) {
+    const charCode = dataView.getUint16(offset + i, false);
+    if (charCode !== 0) {
+      chars.push(String.fromCharCode(charCode));
     }
-  });
+  }
+  return chars.join('');
+}
+
+function parseMacintoshString(dataView: DataView, offset: number, length: number): string {
+  const chars: string[] = [];
+  for (let i = 0; i < length; i++) {
+    const charCode = dataView.getUint8(offset + i);
+    chars.push(String.fromCharCode(charCode));
+  }
+  return chars.join('');
+}
+
+function getLanguagePriority(platformID: number, languageID: number, userLanguage: string): number {
+  let priority = 0;
+
+  // Base priority by platform (Unicode/Microsoft preferred)
+  if (platformID === 0)
+    priority += 100; // Unicode
+  else if (platformID === 3)
+    priority += 90; // Microsoft
+  else if (platformID === 1) priority += 50; // Macintosh
+
+  // Language-specific priorities
+  const userLang = userLanguage.toLowerCase();
+
+  if (platformID === 0 || platformID === 3) {
+    if (userLang.startsWith('zh')) {
+      if (languageID === 0x0804)
+        priority += 50; // Simplified Chinese
+      else if (languageID === 0x0404)
+        priority += 45; // Traditional Chinese
+      else if (languageID === 0x0c04)
+        priority += 40; // Traditional Chinese
+      else if (languageID === 0x1004) priority += 35; // Simplified Chinese
+    } else if (userLang.startsWith('ja')) {
+      if (languageID === 0x0411) priority += 50; // Japanese
+    } else if (userLang.startsWith('ko')) {
+      if (languageID === 0x0412) priority += 50; // Korean
+    } else if (userLang.startsWith('en')) {
+      if (languageID === 0x0409)
+        priority += 50; // English (US)
+      else if (languageID === 0x0809) priority += 45; // English (UK)
+    }
+
+    // Fallback: English
+    if (languageID === 0x0409) priority += 10; // English fallback
+  } else if (platformID === 1) {
+    // Macintosh platform language codes
+    if (userLang.startsWith('zh')) {
+      if (languageID === 33)
+        priority += 50; // Chinese (Simplified)
+      else if (languageID === 19) priority += 45; // Chinese (Traditional)
+    } else if (userLang.startsWith('ja')) {
+      if (languageID === 11) priority += 50; // Japanese
+    } else if (userLang.startsWith('ko')) {
+      if (languageID === 23) priority += 50; // Korean
+    } else if (userLang.startsWith('en')) {
+      if (languageID === 0) priority += 50; // English
+    }
+
+    // Fallback: English
+    if (languageID === 0) priority += 10; // English fallback
+  }
+
+  return priority;
+}
+
+export const parseFontFamily = (fontData: ArrayBuffer, filename: string) => {
+  const fallbackName = filename.replace(/\.[^/.]+$/, '');
+  try {
+    const dataView = new DataView(fontData);
+    const signature = dataView.getUint32(0, false);
+    if (signature !== 0x00010000 && signature !== 0x74727565 && signature !== 0x4f54544f) {
+      throw new Error('Unsupported font format');
+    }
+    const numTables = dataView.getUint16(4, false);
+    let nameTableOffset = 0;
+    for (let i = 0; i < numTables; i++) {
+      const tableOffset = 12 + i * 16;
+      const tag = String.fromCharCode(
+        dataView.getUint8(tableOffset),
+        dataView.getUint8(tableOffset + 1),
+        dataView.getUint8(tableOffset + 2),
+        dataView.getUint8(tableOffset + 3),
+      );
+
+      if (tag === 'name') {
+        nameTableOffset = dataView.getUint32(tableOffset + 8, false);
+        break;
+      }
+    }
+
+    if (nameTableOffset === 0) {
+      throw new Error('Name table not found');
+    }
+
+    const count = dataView.getUint16(nameTableOffset + 2, false);
+    const stringOffset = dataView.getUint16(nameTableOffset + 4, false);
+
+    const userLanguage = getUserLang();
+    const fontNames: Array<{
+      name: string;
+      platformID: number;
+      languageID: number;
+      priority: number;
+    }> = [];
+    for (let i = 0; i < count; i++) {
+      const recordOffset = nameTableOffset + 6 + i * 12;
+      const platformID = dataView.getUint16(recordOffset, false);
+      const languageID = dataView.getUint16(recordOffset + 4, false);
+      const nameID = dataView.getUint16(recordOffset + 6, false);
+      const nameLength = dataView.getUint16(recordOffset + 8, false);
+      const nameOffsetInTable = dataView.getUint16(recordOffset + 10, false);
+
+      if (nameID === 1) {
+        const stringStart = nameTableOffset + stringOffset + nameOffsetInTable;
+        let familyName = '';
+
+        if (platformID === 0 || platformID === 3) {
+          // Unicode/Microsoft platform
+          familyName = parseUnicodeString(dataView, stringStart, nameLength);
+        } else if (platformID === 1) {
+          // Macintosh platform
+          familyName = parseMacintoshString(dataView, stringStart, nameLength);
+        }
+
+        if (familyName && familyName.trim()) {
+          const priority = getLanguagePriority(platformID, languageID, userLanguage);
+          fontNames.push({
+            name: familyName.trim(),
+            platformID,
+            languageID,
+            priority,
+          });
+        }
+      }
+    }
+    if (fontNames.length === 0) {
+      throw new Error('Font family name not found');
+    }
+    fontNames.sort((a, b) => b.priority - a.priority);
+    return fontNames[0]!.name;
+  } catch (error) {
+    console.warn(`Failed to parse font: ${error}`);
+    return fallbackName;
+  }
 };

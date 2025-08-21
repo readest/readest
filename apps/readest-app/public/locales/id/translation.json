@@ -500,5 +500,17 @@
   "Failed to connect": "Gagal terhubung",
   "Sync Server Connected": "Server sinkronisasi terhubung",
   "Precision: {{precision}} digits after the decimal": "Presisi: {{precision}} digit setelah desimal",
-  "Sync as {{userDisplayName}}": "Sinkronkan sebagai {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Sinkronkan sebagai {{userDisplayName}}",
+  "Custom Fonts": "Font Kustom",
+  "Cancel Delete": "Batal Hapus",
+  "Import Font": "Impor Font",
+  "Delete Font": "Hapus Font",
+  "Tips": "Tips",
+  "Custom fonts can be selected from the Font Face menu": "Font kustom dapat dipilih dari menu Font Face",
+  "Manage Custom Fonts": "Kelola Font Kustom",
+  "Select Files": "Pilih File",
+  "Select Image": "Pilih Gambar",
+  "Select Video": "Pilih Video",
+  "Select Audio": "Pilih Audio",
+  "Select Fonts": "Pilih Font"
 }

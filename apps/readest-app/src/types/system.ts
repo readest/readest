@@ -5,7 +5,7 @@ import { ProgressHandler } from '@/utils/transfer';
 
 export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
-export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Log' | 'Cache' | 'None';
+export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
 
 export interface FileSystem {

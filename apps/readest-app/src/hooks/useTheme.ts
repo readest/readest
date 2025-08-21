@@ -94,7 +94,7 @@ export const useTheme = ({
       applyCustomTheme(customTheme);
     });
     localStorage.setItem('customThemes', JSON.stringify(customThemes));
-  }, [settings]);
+  }, [settings.globalReadSettings?.customThemes]);
 
   useEffect(() => {
     const colorScheme = isDarkMode ? 'dark' : 'light';

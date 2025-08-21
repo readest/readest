@@ -504,5 +504,17 @@
   "Failed to connect": "Verbinding mislukt",
   "Sync Server Connected": "Synchronisatie server verbonden",
   "Precision: {{precision}} digits after the decimal": "Precisie: {{precision}} cijfers na de komma",
-  "Sync as {{userDisplayName}}": "Synchroniseren als {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Synchroniseren als {{userDisplayName}}",
+  "Custom Fonts": "Aangepaste Lettertypen",
+  "Cancel Delete": "Verwijderen Annuleren",
+  "Import Font": "Lettertype Importeren",
+  "Delete Font": "Lettertype Verwijderen",
+  "Tips": "Tips",
+  "Custom fonts can be selected from the Font Face menu": "Aangepaste lettertypen kunnen worden geselecteerd vanuit het Lettertype menu",
+  "Manage Custom Fonts": "Aangepaste Lettertypen Beheren",
+  "Select Files": "Bestanden Selecteren",
+  "Select Image": "Afbeelding Selecteren",
+  "Select Video": "Video Selecteren",
+  "Select Audio": "Audio Selecteren",
+  "Select Fonts": "Lettertypen Selecteren"
 }

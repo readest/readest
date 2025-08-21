@@ -504,5 +504,17 @@
   "Failed to connect": "कनेक्ट करने में विफल",
   "Sync Server Connected": "सिंक सर्वर कनेक्टेड",
   "Precision: {{precision}} digits after the decimal": "सटीकता: {{precision}} दशमलव के बाद अंक",
-  "Sync as {{userDisplayName}}": "सिंक के रूप में {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "सिंक के रूप में {{userDisplayName}}",
+  "Custom Fonts": "कस्टम फ़ॉन्ट",
+  "Cancel Delete": "डिलीट रद्द करें",
+  "Import Font": "फ़ॉन्ट आयात करें",
+  "Delete Font": "फ़ॉन्ट डिलीट करें",
+  "Tips": "सुझाव",
+  "Custom fonts can be selected from the Font Face menu": "कस्टम फ़ॉन्ट को फ़ॉन्ट फेस मेनू से चुना जा सकता है",
+  "Manage Custom Fonts": "कस्टम फ़ॉन्ट प्रबंधन",
+  "Select Files": "फ़ाइलें चुनें",
+  "Select Image": "छवि चुनें",
+  "Select Video": "वीडियो चुनें",
+  "Select Audio": "ऑडियो चुनें",
+  "Select Fonts": "फ़ॉन्ट चुनें"
 }

@@ -1,4 +1,5 @@
 import { CustomTheme } from '@/styles/themes';
+import { CustomFont } from '@/styles/fonts';
 import { HighlightColor, HighlightStyle, ViewSettings } from './book';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
@@ -42,6 +43,7 @@ export interface SystemSettings {
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
+  customFonts: CustomFont[];
 
   koreaderSyncServerUrl: string;
   koreaderSyncUsername: string;

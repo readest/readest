@@ -498,7 +498,19 @@
   "Remote Progress": "བརྒྱབ་འབྱུང་ཁུངས།",
   "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
   "Page {{page}} of {{total}} ({{percentage}}%)": "ཤོག་ {{page}} དང་ {{total}} ({{percentage}}%)",
-  "Current position": "ད་ལྟ་བཞིན་འདེམས་པ།",
-  "Approximately page {{page}} of {{total}} ({{percentage}}%)": "ད་ལྟ་བཞིན་འདེམས་པ།",
-  "Approximately {{percentage}}%": "ད་ལྟ་བཞིན་འདེམས་པ།"
+  "Current position": "ད་ལྟའི་གནས་ས།",
+  "Approximately page {{page}} of {{total}} ({{percentage}}%)": "ཕྲན་བུ་ཤོག་ངོས་ {{page}} / {{total}} ({{percentage}}%)",
+  "Approximately {{percentage}}%": "ཕྲན་བུ་ {{percentage}}%",
+  "Custom Fonts": "རང་བཞིན་ཡིག་གཟུགས།",
+  "Cancel Delete": "སུབ་པ་འདོར་བ།",
+  "Import Font": "ཡིག་གཟུགས་འདྲེན་འཇུག",
+  "Delete Font": "ཡིག་གཟུགས་སུབ་པ།",
+  "Tips": "གསལ་འདེབས།",
+  "Custom fonts can be selected from the Font Face menu": "རང་བཞིན་ཡིག་གཟུགས་ནི་ཡིག་གཟུགས་ངོ་བོའི་ཟ་འབྲིང་ནས་འདེམས་ཆོག",
+  "Manage Custom Fonts": "རང་བཞིན་ཡིག་གཟུགས་འཛིན་སྐྱོང་།",
+  "Select Files": "ཡིག་ཆ་འདེམས་པ།",
+  "Select Image": "རི་མོ་འདེམས་པ།",
+  "Select Video": "བརྙན་ཟློས་འདེམས་པ།",
+  "Select Audio": "སྒྲ་ཟློས་འདེམས་པ།",
+  "Select Fonts": "ཡིག་གཟུགས་འདེམས་པ།"
 }

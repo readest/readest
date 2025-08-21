@@ -93,6 +93,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
             .filter((book) => book.format !== 'PDF' && book.format !== 'CBZ')
+            .filter((book) => !!book.downloadedAt)
             .slice(0, 20)
             .map((book) => (
               <MenuItem

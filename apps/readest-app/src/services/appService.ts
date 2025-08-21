@@ -7,18 +7,17 @@ import {
   getDir,
   getLocalBookFilename,
   getRemoteBookFilename,
-  getBaseFilename,
   getCoverFilename,
   getConfigFilename,
   getLibraryFilename,
   INIT_BOOK_CONFIG,
   formatTitle,
   formatAuthors,
-  getFilename,
   getPrimaryLanguage,
   getLibraryBackupFilename,
 } from '@/utils/book';
 import { partialMD5 } from '@/utils/md5';
+import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
 import {
   DEFAULT_BOOK_LAYOUT,

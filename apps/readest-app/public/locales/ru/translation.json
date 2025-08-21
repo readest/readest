@@ -512,5 +512,17 @@
   "Failed to connect": "Не удалось подключиться",
   "Sync Server Connected": "Сервер синхронизации подключен",
   "Precision: {{precision}} digits after the decimal": "Точность: {{precision}} знаков после запятой",
-  "Sync as {{userDisplayName}}": "Синхронизировать как {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Синхронизировать как {{userDisplayName}}",
+  "Custom Fonts": "Пользовательские Шрифты",
+  "Cancel Delete": "Отменить Удаление",
+  "Import Font": "Импортировать Шрифт",
+  "Delete Font": "Удалить Шрифт",
+  "Tips": "Советы",
+  "Custom fonts can be selected from the Font Face menu": "Пользовательские шрифты можно выбрать в меню Шрифт",
+  "Manage Custom Fonts": "Управление Пользовательскими Шрифтами",
+  "Select Files": "Выбрать Файлы",
+  "Select Image": "Выбрать Изображение",
+  "Select Video": "Выбрать Видео",
+  "Select Audio": "Выбрать Аудио",
+  "Select Fonts": "Выбрать Шрифты"
 }

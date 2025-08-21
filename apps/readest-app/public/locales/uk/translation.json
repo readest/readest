@@ -512,5 +512,17 @@
   "Failed to connect": "Не вдалося під'єднатися",
   "Sync Server Connected": "Сервер синхронізації під'єднано",
   "Precision: {{precision}} digits after the decimal": "Точність: {{precision}} знаків після коми",
-  "Sync as {{userDisplayName}}": "Синхронізувати як {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Синхронізувати як {{userDisplayName}}",
+  "Custom Fonts": "Користувацькі Шрифти",
+  "Cancel Delete": "Скасувати Видалення",
+  "Import Font": "Імпортувати Шрифт",
+  "Delete Font": "Видалити Шрифт",
+  "Tips": "Поради",
+  "Custom fonts can be selected from the Font Face menu": "Користувацькі шрифти можна вибрати з меню Шрифт",
+  "Manage Custom Fonts": "Керування Користувацькими Шрифтами",
+  "Select Files": "Вибрати Файли",
+  "Select Image": "Вибрати Зображення",
+  "Select Video": "Вибрати Відео",
+  "Select Audio": "Вибрати Аудіо",
+  "Select Fonts": "Вибрати Шрифти"
 }

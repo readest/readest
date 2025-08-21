@@ -504,5 +504,17 @@
   "Failed to connect": "Αποτυχία σύνδεσης",
   "Sync Server Connected": "Ο διακομιστής συγχρονισμού είναι συνδεδεμένος",
   "Precision: {{precision}} digits after the decimal": "Ακρίβεια: {{precision}} ψηφία μετά την υποδιαστολή",
-  "Sync as {{userDisplayName}}": "Συγχρονισμός ως {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Συγχρονισμός ως {{userDisplayName}}",
+  "Custom Fonts": "Προσαρμοσμένες Γραμματοσειρές",
+  "Cancel Delete": "Ακύρωση Διαγραφής",
+  "Import Font": "Εισαγωγή Γραμματοσειράς",
+  "Delete Font": "Διαγραφή Γραμματοσειράς",
+  "Tips": "Συμβουλές",
+  "Custom fonts can be selected from the Font Face menu": "Οι προσαρμοσμένες γραμματοσειρές μπορούν να επιλεγούν από το μενού Γραμματοσειράς",
+  "Manage Custom Fonts": "Διαχείριση Προσαρμοσμένων Γραμματοσειρών",
+  "Select Files": "Επιλογή Αρχείων",
+  "Select Image": "Επιλογή Εικόνας",
+  "Select Video": "Επιλογή Βίντεο",
+  "Select Audio": "Επιλογή Ήχου",
+  "Select Fonts": "Επιλογή Γραμματοσειρών"
 }

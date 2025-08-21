@@ -28,12 +28,13 @@ import { type as osType } from '@tauri-apps/plugin-os';
 import { Book } from '@/types/book';
 import { FileSystem, BaseDir, AppPlatform } from '@/types/system';
 import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
-import { getCoverFilename, getFilename } from '@/utils/book';
+import { getCoverFilename } from '@/utils/book';
+import { getFilename } from '@/utils/path';
 import { copyURIToPath } from '@/utils/bridge';
 import { NativeFile, RemoteFile } from '@/utils/file';
 
 import { BaseAppService, ResolvedPath } from './appService';
-import { LOCAL_BOOKS_SUBDIR } from './constants';
+import { LOCAL_BOOKS_SUBDIR, LOCAL_FONTS_SUBDIR } from './constants';
 
 declare global {
   interface Window {
@@ -64,6 +65,13 @@ const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
         fp: `${LOCAL_BOOKS_SUBDIR}/${path}`,
         base,
       };
+    case 'Fonts':
+      return {
+        baseDir: BaseDirectory.AppData,
+        basePrefix: appDataDir,
+        fp: `${LOCAL_FONTS_SUBDIR}/${path}`,
+        base,
+      };
     case 'None':
       return {
         baseDir: 0,
@@ -71,6 +79,7 @@ const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
         fp: path,
         base,
       };
+    case 'Temp':
     default:
       return {
         baseDir: BaseDirectory.Temp,

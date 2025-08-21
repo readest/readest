@@ -508,5 +508,17 @@
   "Failed to connect": "Error al conectar",
   "Sync Server Connected": "Servidor de sincronización conectado",
   "Precision: {{precision}} digits after the decimal": "Precisión: {{precision}} dígitos después del decimal",
-  "Sync as {{userDisplayName}}": "Sincronizar como {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Sincronizar como {{userDisplayName}}",
+  "Custom Fonts": "Fuentes Personalizadas",
+  "Cancel Delete": "Cancelar Eliminación",
+  "Import Font": "Importar Fuente",
+  "Delete Font": "Eliminar Fuente",
+  "Tips": "Consejos",
+  "Custom fonts can be selected from the Font Face menu": "Las fuentes personalizadas se pueden seleccionar desde el menú de Tipografía",
+  "Manage Custom Fonts": "Administrar Fuentes Personalizadas",
+  "Select Files": "Seleccionar Archivos",
+  "Select Image": "Seleccionar Imagen",
+  "Select Video": "Seleccionar Video",
+  "Select Audio": "Seleccionar Audio",
+  "Select Fonts": "Seleccionar Fuentes"
 }

@@ -508,5 +508,17 @@
   "Failed to connect": "Échec de la connexion",
   "Sync Server Connected": "Serveur de synchronisation connecté",
   "Precision: {{precision}} digits after the decimal": "Précision : {{precision}} chiffres après la virgule",
-  "Sync as {{userDisplayName}}": "Synchroniser en tant que {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "Synchroniser en tant que {{userDisplayName}}",
+  "Custom Fonts": "Polices Personnalisées",
+  "Cancel Delete": "Annuler la Suppression",
+  "Import Font": "Importer une Police",
+  "Delete Font": "Supprimer la Police",
+  "Tips": "Conseils",
+  "Custom fonts can be selected from the Font Face menu": "Les polices personnalisées peuvent être sélectionnées depuis le menu Police",
+  "Manage Custom Fonts": "Gérer les Polices Personnalisées",
+  "Select Files": "Sélectionner des Fichiers",
+  "Select Image": "Sélectionner une Image",
+  "Select Video": "Sélectionner une Vidéo",
+  "Select Audio": "Sélectionner un Audio",
+  "Select Fonts": "Sélectionner des Polices"
 }

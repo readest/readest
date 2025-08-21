@@ -7,6 +7,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { usePagination } from '../hooks/usePagination';
@@ -21,7 +23,7 @@ import {
   getStyles,
   transformStylesheet,
 } from '@/utils/style';
-import { mountAdditionalFonts } from '@/utils/font';
+import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
@@ -57,12 +59,14 @@ const FoliateViewer: React.FC<{
   config: BookConfig;
   contentInsets: Insets;
 }> = ({ bookKey, bookDoc, config, contentInsets: insets }) => {
+  const { appService, envConfig } = useEnv();
+  const { themeCode, isDarkMode } = useThemeStore();
+  const { settings } = useSettingsStore();
+  const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
-  const { appService } = useEnv();
-  const { themeCode, isDarkMode } = useThemeStore();
   const viewSettings = getViewSettings(bookKey);
 
   const viewRef = useRef<FoliateView | null>(null);
@@ -79,12 +83,8 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
-  const {
-    syncState,
-    conflictDetails,
-    resolveConflictWithLocal,
-    resolveConflictWithRemote,
-  } = useKOSync(bookKey);
+  const { syncState, conflictDetails, resolveConflictWithLocal, resolveConflictWithRemote } =
+    useKOSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
@@ -143,6 +143,10 @@ const FoliateViewer: React.FC<{
       setViewSettings(bookKey, { ...viewSettings });
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+
+      getLoadedFonts().forEach((font) => {
+        mountCustomFont(detail.doc, font);
+      });
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings);
@@ -334,6 +338,21 @@ const FoliateViewer: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode, isDarkMode, viewSettings?.overrideColor, viewSettings?.invertImgColorInDark]);
+
+  useEffect(() => {
+    const mountCustomFonts = async () => {
+      await loadCustomFonts(envConfig);
+      getLoadedFonts().forEach((font) => {
+        mountCustomFont(document, font);
+        const docs = viewRef.current?.renderer.getContents();
+        docs?.forEach(({ doc }) => mountCustomFont(doc, font));
+      });
+    };
+    if (settings.customFonts) {
+      mountCustomFonts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.customFonts, envConfig]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {

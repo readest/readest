@@ -87,6 +87,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
     const formatOsName = (name: string): string => {
       if (!name) return '';
       if (name.toLowerCase() === 'macos') return 'macOS';
+      if (name.toLowerCase() === 'ios') return 'iOS';
       return name.charAt(0).toUpperCase() + name.slice(1);
     };
 

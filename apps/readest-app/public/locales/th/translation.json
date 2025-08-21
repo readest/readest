@@ -500,5 +500,17 @@
   "Failed to connect": "ไม่สามารถเชื่อมต่อได้",
   "Sync Server Connected": "เซิร์ฟเวอร์ซิงค์เชื่อมต่อแล้ว",
   "Precision: {{precision}} digits after the decimal": "ความแม่นยำ: {{precision}} หลักหลังจุดทศนิยม",
-  "Sync as {{userDisplayName}}": "ซิงค์เป็น {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "ซิงค์เป็น {{userDisplayName}}",
+  "Custom Fonts": "ฟอนต์กำหนดเอง",
+  "Cancel Delete": "ยกเลิกการลบ",
+  "Import Font": "นำเข้าฟอนต์",
+  "Delete Font": "ลบฟอนต์",
+  "Tips": "เคล็ดลับ",
+  "Custom fonts can be selected from the Font Face menu": "ฟอนต์กำหนดเองสามารถเลือกได้จากเมนูฟอนต์",
+  "Manage Custom Fonts": "จัดการฟอนต์กำหนดเอง",
+  "Select Files": "เลือกไฟล์",
+  "Select Image": "เลือกรูปภาพ",
+  "Select Video": "เลือกวิดีโอ",
+  "Select Audio": "เลือกเสียง",
+  "Select Fonts": "เลือกฟอนต์"
 }

@@ -500,5 +500,17 @@
   "Failed to connect": "连接失败",
   "Sync Server Connected": "同步服务器已连接",
   "Precision: {{precision}} digits after the decimal": "精度：{{precision}} 位小数",
-  "Sync as {{userDisplayName}}": "以 {{userDisplayName}} 身份同步"
+  "Sync as {{userDisplayName}}": "以 {{userDisplayName}} 身份同步",
+  "Custom Fonts": "自定义字体",
+  "Cancel Delete": "取消删除",
+  "Import Font": "导入字体",
+  "Delete Font": "删除字体",
+  "Tips": "提示",
+  "Custom fonts can be selected from the Font Face menu": "可以从字形菜单中选择自定义字体",
+  "Manage Custom Fonts": "管理自定义字体",
+  "Select Files": "选择文件",
+  "Select Image": "选择图片",
+  "Select Video": "选择视频",
+  "Select Audio": "选择音频",
+  "Select Fonts": "选择字体"
 }

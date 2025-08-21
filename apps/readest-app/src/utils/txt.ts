@@ -1,5 +1,5 @@
 import { partialMD5 } from './md5';
-import { getBaseFilename } from './book';
+import { getBaseFilename } from './path';
 import { detectLanguage } from './lang';
 
 interface Metadata {

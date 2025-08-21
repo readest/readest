@@ -520,5 +520,17 @@
   "Failed to connect": "فشل في الاتصال",
   "Sync Server Connected": "تم الاتصال بخادم المزامنة",
   "Precision: {{precision}} digits after the decimal": "الدقة: {{precision}} أرقام بعد الفاصلة",
-  "Sync as {{userDisplayName}}": "المزامنة كـ {{userDisplayName}}"
+  "Sync as {{userDisplayName}}": "المزامنة كـ {{userDisplayName}}",
+  "Custom Fonts": "الخطوط المخصصة",
+  "Cancel Delete": "إلغاء الحذف",
+  "Import Font": "استيراد خط",
+  "Delete Font": "حذف الخط",
+  "Tips": "نصائح",
+  "Custom fonts can be selected from the Font Face menu": "يمكن اختيار الخطوط المخصصة من قائمة نوع الخط",
+  "Manage Custom Fonts": "إدارة الخطوط المخصصة",
+  "Select Files": "حدد الملفات",
+  "Select Image": "حدد صورة",
+  "Select Video": "حدد فيديو",
+  "Select Audio": "حدد صوت",
+  "Select Fonts": "حدد الخطوط"
 }

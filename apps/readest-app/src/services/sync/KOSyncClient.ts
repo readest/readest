@@ -4,6 +4,7 @@ import { KoreaderSyncChecksumMethod } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
+import { getBaseFilename } from '@/utils/path';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 /**
@@ -223,18 +224,9 @@ export class KOSyncClient {
 
   private getDocumentDigest(book: Book): string | undefined {
     if (this.checksumMethod === 'filename') {
-      const filename = this.getBaseFilename(book.sourceTitle || book.title);
+      const filename = getBaseFilename(book.sourceTitle || book.title);
       return md5(filename);
     }
     return book.hash;
-  }
-
-  private getBaseFilename(fullPath: string): string {
-    // Normalize path by replacing backslashes with forward slashes for cross-platform consistency
-    const normalizedPath = fullPath.replace(/\\/g, '/');
-    // Get the last part of the path and remove the extension
-    const baseName =
-      normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || normalizedPath;
-    return baseName;
   }
 }

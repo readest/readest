@@ -504,5 +504,17 @@
   "Failed to connect": "Bağlanma başarısız oldu",
   "Sync Server Connected": "Senkronizasyon Sunucusu Bağlandı",
   "Precision: {{precision}} digits after the decimal": "Hassasiyet: {{precision}} ondalık basamaktan sonra",
-  "Sync as {{userDisplayName}}": "Senkronize et {{userDisplayName}} olarak"
+  "Sync as {{userDisplayName}}": "Senkronize et {{userDisplayName}} olarak",
+  "Custom Fonts": "Özel Yazı Tipleri",
+  "Cancel Delete": "Silmeyi İptal Et",
+  "Import Font": "Yazı Tipi İçe Aktar",
+  "Delete Font": "Yazı Tipini Sil",
+  "Tips": "İpuçları",
+  "Custom fonts can be selected from the Font Face menu": "Özel yazı tipleri Yazı Tipi menüsünden seçilebilir",
+  "Manage Custom Fonts": "Özel Yazı Tiplerini Yönet",
+  "Select Files": "Dosyaları Seç",
+  "Select Image": "Resim Seç",
+  "Select Video": "Video Seç",
+  "Select Audio": "Ses Seç",
+  "Select Fonts": "Yazı Tiplerini Seç"
 }
