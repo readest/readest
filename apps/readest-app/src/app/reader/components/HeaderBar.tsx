@@ -40,6 +40,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { appService } = useEnv();
   const headerRef = useRef<HTMLDivElement>(null);
   const {
+    isTrafficLightVisible,
     trafficLightInFullscreen,
     setTrafficLightVisibility,
     initializeTrafficLightStore,
@@ -51,6 +52,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible } = useSidebarStore();
   const iconSize16 = useResponsiveSize(16);
+
+  const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
 
   const handleToggleDropdown = (isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
@@ -133,9 +136,19 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <TranslationToggler bookKey={bookKey} />
         </div>
 
-        <div className='header-title z-15 bg-base-100 pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
-          <h2 className='line-clamp-1 max-w-[50%] text-center text-xs font-semibold'>
-            {bookTitle}
+        <div
+          className={clsx(
+            'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
+            !windowButtonVisible && 'absolute inset-0',
+          )}
+        >
+          <h2
+            className={clsx(
+              'line-clamp-1 text-center text-xs font-semibold',
+              !windowButtonVisible && 'max-w-[50%]',
+            )}
+          >
+            {bookTitle} {bookTitle} {bookTitle} {bookTitle}
           </h2>
         </div>
 
@@ -154,16 +167,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <WindowButtons
             className='window-buttons flex h-full items-center'
             headerRef={headerRef}
-            showMinimize={
-              bookKeys.length == 1 &&
-              !appService?.hasTrafficLight &&
-              appService?.appPlatform !== 'web'
-            }
-            showMaximize={
-              bookKeys.length == 1 &&
-              !appService?.hasTrafficLight &&
-              appService?.appPlatform !== 'web'
-            }
+            showMinimize={bookKeys.length == 1 && windowButtonVisible}
+            showMaximize={bookKeys.length == 1 && windowButtonVisible}
             onClose={() => {
               setHoveredBookKey(null);
               onCloseBook(bookKey);
