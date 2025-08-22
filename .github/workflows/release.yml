@@ -322,7 +322,7 @@ jobs:
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
 
   upload-to-r2:
-    needs: [get-release, update-release]
+    needs: [get-release, build-tauri]
     uses: ./.github/workflows/upload-to-r2.yml
     with:
       tag: ${{ needs.get-release.outputs.release_tag }}
