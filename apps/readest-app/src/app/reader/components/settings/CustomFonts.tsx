@@ -172,7 +172,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                   fontFamily: font.loaded ? `"${font.name}", sans-serif` : 'sans-serif',
                   fontWeight: 400,
                 }}
-                className='text-base-content line-clamp-1 max-w-[90%]'
+                className='text-base-content line-clamp-1'
               >
                 {font.name}
               </div>
@@ -191,9 +191,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
       </div>
 
       <div className='bg-base-200/30 my-8 rounded-lg p-4'>
-        <div className='text-base-content/70'>
-          <div className='mb-1 text-xs font-medium'>{_('Tips')}:</div>
-          <ul className='list-inside list-disc space-y-1 text-sm sm:text-xs'>
+        <div className='text-base-content/70 text-sm sm:text-xs'>
+          <div className='mb-1 indent-2 font-medium'>{_('Tips')}:</div>
+          <ul className='list-outside list-disc space-y-1 ps-2'>
             <li>{_('Supported font formats: .ttf, .odf, .woff, .woff2')}</li>
             <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
           </ul>
