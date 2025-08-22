@@ -110,7 +110,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar bg-base-200 z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px] sm:pr-6',
+        'titlebar bg-base-200 z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
+        windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
       style={{
