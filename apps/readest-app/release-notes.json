@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.9.75": {
+      "date": "2025-08-22",
+      "notes": [
+        "Fonts: Added support for importing local TTF and ODF fonts",
+        "TTS: Reduced the pause between sentences when using Edge TTS",
+        "TTS: Fixed an issue where voices list could not be opened on older versions of iOS",
+        "TOC: Fixed an issue where nested TOC items would not collapse properly in some books",
+        "Translator: Fixed an issue where translations in the popup did not refresh correctly",
+        "Library: Added option to sort authors with last name first",
+        "Layout: Fixed mismatch in close button position between the reader and library pages",
+        "Layout: Book title now remains centered in the available space",
+        "Layout: Fixed footer bar layout in landscape mode"
+      ]
+    },
     "0.9.72": {
       "date": "2025-08-18",
       "notes": [

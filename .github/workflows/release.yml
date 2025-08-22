@@ -48,6 +48,39 @@ jobs:
             core.setOutput('release_version', version);
             core.setOutput('release_note', releaseNote);
 
+  update-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: get-release
+
+    steps:
+      - name: update release
+        id: update-release
+        uses: actions/github-script@v7
+        env:
+          release_id: ${{ needs.get-release.outputs.release_id }}
+          release_tag: ${{ needs.get-release.outputs.release_tag }}
+          release_note: ${{ needs.get-release.outputs.release_note }}
+        with:
+          script: |
+            const { data } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: process.env.release_tag,
+            })
+            const notes = process.env.release_note.split(/(?:\d\.\s)/).filter(Boolean);
+            const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
+            const body = `## Release Highlight\n${formattedNotes}\n\n${data.body}`;
+            github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id,
+              body: body,
+              draft: false,
+              prerelease: false
+            })
+
   build-tauri:
     needs: get-release
     permissions:
@@ -287,39 +320,6 @@ jobs:
 
           echo "Uploading $bin_file to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
-
-  update-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    needs: [get-release, build-tauri]
-
-    steps:
-      - name: update release
-        id: update-release
-        uses: actions/github-script@v7
-        env:
-          release_id: ${{ needs.get-release.outputs.release_id }}
-          release_tag: ${{ needs.get-release.outputs.release_tag }}
-          release_note: ${{ needs.get-release.outputs.release_note }}
-        with:
-          script: |
-            const { data } = await github.rest.repos.generateReleaseNotes({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: process.env.release_tag,
-            })
-            const notes = process.env.release_note.split(/(?:\d\.\s)/).filter(Boolean);
-            const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
-            const body = `## Release Highlight\n${formattedNotes}\n\n${data.body}`;
-            github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: process.env.release_id,
-              body: body,
-              draft: false,
-              prerelease: false
-            })
 
   upload-to-r2:
     needs: [get-release, update-release]
