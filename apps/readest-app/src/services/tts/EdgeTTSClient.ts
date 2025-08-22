@@ -63,15 +63,32 @@ export class EdgeTTSClient implements TTSClient {
     const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
 
     if (preload) {
-      for (const mark of marks) {
+      // preload the first 2 marks immediately and the rest in the background
+      const maxImmediate = 2;
+      for (let i = 0; i < Math.min(maxImmediate, marks.length); i++) {
+        const mark = marks[i]!;
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#currentVoiceId = voiceId;
         await this.#edgeTTS
           .createAudio(this.getPayload(voiceLang, mark.text, voiceId))
           .catch((err) => {
-            console.warn('Error preloading mark', mark.name, err);
+            console.warn('Error preloading mark', i, err);
           });
+      }
+      if (marks.length > maxImmediate) {
+        (async () => {
+          for (let i = maxImmediate; i < marks.length; i++) {
+            const mark = marks[i]!;
+            try {
+              const { language: voiceLang } = mark;
+              const voiceId = await this.getVoiceIdFromLang(voiceLang);
+              await this.#edgeTTS.createAudio(this.getPayload(voiceLang, mark.text, voiceId));
+            } catch (err) {
+              console.warn('Error preloading mark (bg)', i, err);
+            }
+          }
+        })();
       }
 
       yield {
@@ -82,31 +99,23 @@ export class EdgeTTSClient implements TTSClient {
       return;
     }
 
-    await this.stopInternal(); // Full stop before starting new speech
+    await this.stopInternal();
+    // Reuse the same Audio element inside the ssml session
     this.#audioElement = new Audio();
     const audio = this.#audioElement;
     audio.setAttribute('x-webkit-airplay', 'deny');
     audio.preload = 'auto';
-    audio.playbackRate = this.#rate;
 
     for (const mark of marks) {
-      if (signal.aborted) {
-        yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;
-        break;
-      }
-
+      let abortHandler: null | (() => void) = null;
       try {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#speakingLang = voiceLang;
-
         const blob = await this.#edgeTTS.createAudio(
           this.getPayload(voiceLang, mark.text, voiceId),
         );
-
-        const url = URL.createObjectURL(blob);
-        audio.src = url;
-        audio.playbackRate = this.#rate;
+        audio.src = URL.createObjectURL(blob);
 
         this.controller?.dispatchSpeakMark(mark);
 
@@ -121,32 +130,30 @@ export class EdgeTTSClient implements TTSClient {
             audio.onended = null;
             audio.onerror = null;
             audio.pause();
-            if (audio.src?.startsWith('blob:')) {
+            if (audio.src) {
               URL.revokeObjectURL(audio.src);
+              audio.removeAttribute('src');
             }
-            audio.removeAttribute('src'); // Prevent loading stale blobs
           };
-
+          abortHandler = () => {
+            cleanUp();
+            resolve({ code: 'error', message: 'Aborted' });
+          };
+          if (signal.aborted) {
+            abortHandler();
+            return;
+          } else {
+            signal.addEventListener('abort', abortHandler);
+          }
           audio.onended = () => {
             cleanUp();
-            resolve({
-              code: 'end',
-              message: `Chunk finished: ${mark.name}`,
-            });
+            resolve({ code: 'end', message: `Chunk finished: ${mark.name}` });
           };
-
           audio.onerror = (e) => {
             cleanUp();
             console.warn('Audio playback error:', e);
             resolve({ code: 'error', message: 'Audio playback error' });
           };
-
-          if (signal.aborted) {
-            cleanUp();
-            resolve({ code: 'error', message: 'Aborted' });
-            return;
-          }
-
           this.#isPlaying = true;
           audio.play().catch((err) => {
             cleanUp();
@@ -154,20 +161,24 @@ export class EdgeTTSClient implements TTSClient {
             resolve({ code: 'error', message: 'Playback failed: ' + err.message });
           });
         });
-
         yield result;
       } catch (error) {
+        if (error instanceof Error && error.message === 'No audio data received.') {
+          console.warn('No audio data received for:', mark.text);
+          yield { code: 'end', message: `Chunk finished: ${mark.name}` } as TTSMessageEvent;
+          continue;
+        }
         const message = error instanceof Error ? error.message : String(error);
         console.warn('TTS error for mark:', mark.text, message);
-        yield {
-          code: 'error',
-          message,
-        } as TTSMessageEvent;
+        yield { code: 'error', message } as TTSMessageEvent;
         break;
+      } finally {
+        if (abortHandler) {
+          signal.removeEventListener('abort', abortHandler);
+        }
       }
     }
-
-    await this.stopInternal(); // Cleanup at end
+    await this.stopInternal();
   }
 
   async pause() {
@@ -209,10 +220,8 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async setRate(rate: number) {
+    // The Edge TTS API uses rate in [0.5 .. 2.0].
     this.#rate = rate;
-    if (this.#audioElement) {
-      this.#audioElement.playbackRate = rate;
-    }
   }
 
   async setPitch(pitch: number) {
