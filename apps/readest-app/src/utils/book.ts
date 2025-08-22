@@ -91,21 +91,38 @@ export const flattenContributors = (
       : formatLanguageMap(contributors?.name);
 };
 
+// prettier-ignore
+const LASTNAME_AUTHOR_SORT_LANGS = [ 'ar', 'bo', 'de', 'en', 'es', 'fr', 'hi', 'it', 'nl', 'pl', 'pt', 'ru', 'th', 'tr', 'uk' ];
+
+const formatAuthorName = (name: string, lastNameFirst: boolean) => {
+  if (!name) return '';
+  const parts = name.split(' ');
+  if (lastNameFirst && parts.length > 1) {
+    return `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}`;
+  }
+  return name;
+};
+
 export const formatAuthors = (
   contributors: string | string[] | Contributor | Contributor[],
   bookLang?: string | string[],
+  sortAs?: boolean,
 ) => {
   const langCode = getBookLangCode(bookLang) || 'en';
+  const lastNameFirst = !!sortAs && LASTNAME_AUTHOR_SORT_LANGS.includes(langCode);
   return Array.isArray(contributors)
     ? listFormater(langCode === 'zh', langCode).format(
         contributors.map((contributor) =>
-          typeof contributor === 'string' ? contributor : formatLanguageMap(contributor?.name),
+          typeof contributor === 'string'
+            ? formatAuthorName(contributor, lastNameFirst)
+            : formatAuthorName(formatLanguageMap(contributor?.name), lastNameFirst),
         ),
       )
     : typeof contributors === 'string'
-      ? contributors
-      : formatLanguageMap(contributors?.name);
+      ? formatAuthorName(contributors, lastNameFirst)
+      : formatAuthorName(formatLanguageMap(contributors?.name), lastNameFirst);
 };
+
 export const formatTitle = (title: string | LanguageMap) => {
   return typeof title === 'string' ? title : formatLanguageMap(title);
 };
