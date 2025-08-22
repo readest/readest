@@ -512,5 +512,6 @@
   "Select Image": "选择图片",
   "Select Video": "选择视频",
   "Select Audio": "选择音频",
-  "Select Fonts": "选择字体"
+  "Select Fonts": "选择字体",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "支持的字体格式：.ttf, .odf, .woff, .woff2"
 }

@@ -1,19 +1,23 @@
+import clsx from 'clsx';
 import React, { useState } from 'react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { useEnv } from '@/context/EnvContext';
+import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import { mountCustomFont } from '@/styles/fonts';
 import { parseFontFamily } from '@/utils/font';
 import { getFilename } from '@/utils/path';
+import { saveViewSettings } from '../../utils/viewSettingsHelper';
 
 interface CustomFontsProps {
+  bookKey: string;
   onBack: () => void;
 }
 
-const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
+const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
   const {
@@ -24,9 +28,17 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
     getAvailableFonts,
     saveCustomFonts,
   } = useCustomFontStore();
+  const { getViewSettings } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey)!;
   const [isDeleteMode, setIsDeleteMode] = useState(false);
 
   const { selectFiles } = useFileSelector(appService, _);
+
+  const currentDefaultFont =
+    viewSettings.defaultFont.toLowerCase() === 'serif' ? 'serif' : 'sans-serif';
+
+  const currentFontFamily =
+    currentDefaultFont === 'serif' ? viewSettings.serifFont : viewSettings.sansSerifFont;
 
   const handleImportFont = () => {
     selectFiles({ ...FILE_SELECTION_PRESETS.fonts, multiple: true }).then(async (result) => {
@@ -76,6 +88,17 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
     }
   };
 
+  const handleSelectFont = (fontId: string) => {
+    const font = customFonts.find((f) => f.id === fontId);
+    if (font) {
+      if (currentDefaultFont === 'serif') {
+        saveViewSettings(envConfig, bookKey, 'serifFont', font.name);
+      } else {
+        saveViewSettings(envConfig, bookKey, 'sansSerifFont', font.name);
+      }
+    }
+  };
+
   const toggleDeleteMode = () => {
     setIsDeleteMode(!isDeleteMode);
   };
@@ -87,12 +110,14 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
   return (
     <div className='w-full'>
       <div className='mb-6 flex h-8 items-center justify-between'>
-        <div className='breadcrumbs py-1 text-sm font-medium'>
+        <div className='breadcrumbs py-1'>
           <ul>
             <li>
-              <a onClick={onBack}>{_('Font')}</a>
+              <a className='font-semibold' onClick={onBack}>
+                {_('Font')}
+              </a>
             </li>
-            <li>{_('Custom Fonts')}</li>
+            <li className='font-medium'>{_('Custom Fonts')}</li>
           </ul>
         </div>
         {availableFonts.length > 0 && (
@@ -131,11 +156,20 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
         </div>
 
         {availableFonts.map((font) => (
-          <div key={font.id} className='card border-base-200 bg-base-200 h-12 border shadow-sm'>
+          <div
+            key={font.id}
+            className={clsx(
+              'card h-12 border shadow-sm',
+              currentFontFamily === font.name
+                ? 'border-primary/50 bg-primary/50'
+                : 'border-base-200 bg-base-200 cursor-pointer',
+            )}
+            onClick={() => handleSelectFont(font.id)}
+          >
             <div className='card-body flex items-center justify-center p-2'>
               <div
                 style={{
-                  fontFamily: font.loaded ? `"${font.name}", serif` : 'serif',
+                  fontFamily: font.loaded ? `"${font.name}", sans-serif` : 'sans-serif',
                   fontWeight: 400,
                 }}
                 className='text-base-content line-clamp-1 max-w-[90%]'
@@ -159,7 +193,8 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ onBack }) => {
       <div className='bg-base-200/30 my-8 rounded-lg p-4'>
         <div className='text-base-content/70'>
           <div className='mb-1 text-xs font-medium'>{_('Tips')}:</div>
-          <ul className='list-inside list-disc space-y-1 text-xs'>
+          <ul className='list-inside list-disc space-y-1 text-sm sm:text-xs'>
+            <li>{_('Supported font formats: .ttf, .odf, .woff, .woff2')}</li>
             <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
           </ul>
         </div>

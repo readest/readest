@@ -516,5 +516,6 @@
   "Select Image": "Resim Seç",
   "Select Video": "Video Seç",
   "Select Audio": "Ses Seç",
-  "Select Fonts": "Yazı Tiplerini Seç"
+  "Select Fonts": "Yazı Tiplerini Seç",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Desteklenen yazı tipi formatları: .ttf, .odf, .woff, .woff2"
 }

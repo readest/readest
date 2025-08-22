@@ -512,5 +512,6 @@
   "Select Image": "เลือกรูปภาพ",
   "Select Video": "เลือกวิดีโอ",
   "Select Audio": "เลือกเสียง",
-  "Select Fonts": "เลือกฟอนต์"
+  "Select Fonts": "เลือกฟอนต์",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "รูปแบบฟอนต์ที่รองรับ: .ttf, .odf, .woff, .woff2"
 }

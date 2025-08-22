@@ -512,5 +512,6 @@
   "Select Image": "Chọn Hình Ảnh",
   "Select Video": "Chọn Video",
   "Select Audio": "Chọn Âm Thanh",
-  "Select Fonts": "Chọn Phông Chữ"
+  "Select Fonts": "Chọn Phông Chữ",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Định dạng phông chữ được hỗ trợ: .ttf, .odf, .woff, .woff2"
 }

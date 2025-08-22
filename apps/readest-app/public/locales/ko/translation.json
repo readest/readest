@@ -512,5 +512,6 @@
   "Select Image": "이미지 선택",
   "Select Video": "동영상 선택",
   "Select Audio": "오디오 선택",
-  "Select Fonts": "글꼴 선택"
+  "Select Fonts": "글꼴 선택",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "지원되는 글꼴 형식: .ttf, .odf, .woff, .woff2"
 }

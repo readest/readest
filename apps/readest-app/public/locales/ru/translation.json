@@ -524,5 +524,6 @@
   "Select Image": "Выбрать Изображение",
   "Select Video": "Выбрать Видео",
   "Select Audio": "Выбрать Аудио",
-  "Select Fonts": "Выбрать Шрифты"
+  "Select Fonts": "Выбрать Шрифты",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Поддерживаемые форматы шрифтов: .ttf, .odf, .woff, .woff2"
 }

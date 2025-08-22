@@ -512,5 +512,6 @@
   "Select Image": "Pilih Gambar",
   "Select Video": "Pilih Video",
   "Select Audio": "Pilih Audio",
-  "Select Fonts": "Pilih Font"
+  "Select Fonts": "Pilih Font",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Format font yang didukung: .ttf, .odf, .woff, .woff2"
 }

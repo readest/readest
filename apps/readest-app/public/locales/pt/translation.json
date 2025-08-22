@@ -520,5 +520,6 @@
   "Select Image": "Selecionar Imagem",
   "Select Video": "Selecionar Vídeo",
   "Select Audio": "Selecionar Áudio",
-  "Select Fonts": "Selecionar Fontes"
+  "Select Fonts": "Selecionar Fontes",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Formatos de fonte suportados: .ttf, .odf, .woff, .woff2"
 }

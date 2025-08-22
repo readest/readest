@@ -516,5 +516,6 @@
   "Select Image": "Bild auswählen",
   "Select Video": "Video auswählen",
   "Select Audio": "Audio auswählen",
-  "Select Fonts": "Schriftarten auswählen"
+  "Select Fonts": "Schriftarten auswählen",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Unterstützte Schriftartenformate: .ttf, .odf, .woff, .woff2"
 }

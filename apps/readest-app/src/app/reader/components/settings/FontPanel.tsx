@@ -22,6 +22,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getOSPlatform, isCJKEnv } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/bridge';
 import { isCJKStr } from '@/utils/lang';
@@ -32,7 +33,6 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 import CustomFonts from './CustomFonts';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const genCJKFontsList = (sysFonts: string[]) => {
   return Array.from(new Set([...sysFonts, ...CJK_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]))
@@ -186,6 +186,12 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   }, [allCustomFonts, getFontFamilies]);
 
   useEffect(() => {
+    setSerifFont(viewSettings.serifFont);
+    setSansSerifFont(viewSettings.sansSerifFont);
+    setMonospaceFont(viewSettings.monospaceFont);
+  }, [viewSettings.serifFont, viewSettings.sansSerifFont, viewSettings.monospaceFont]);
+
+  useEffect(() => {
     if (isTauriAppPlatform()) {
       getSysFontsList().then((res) => {
         if (res.error || Object.keys(res.fonts).length === 0) {
@@ -273,7 +279,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   if (fontPanelView === 'custom-fonts') {
     return (
       <div className='my-4 w-full'>
-        <CustomFonts onBack={handleBackToMain} />
+        <CustomFonts bookKey={bookKey} onBack={handleBackToMain} />
       </div>
     );
   }

@@ -176,9 +176,12 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               className='bg-gray-600 text-white/75'
               value={targetLang}
               onChange={handleTargetLangChange}
-              options={Object.entries(translatorLangs)
-                .sort((a, b) => a[1].localeCompare(b[1]))
-                .map(([code, name]) => ({ value: code, label: name }))}
+              options={[
+                { value: '', label: _('System Language') },
+                ...Object.entries(translatorLangs)
+                  .sort((a, b) => a[1].localeCompare(b[1]))
+                  .map(([code, name]) => ({ value: code, label: name })),
+              ]}
             />
           </div>
           {loading ? (

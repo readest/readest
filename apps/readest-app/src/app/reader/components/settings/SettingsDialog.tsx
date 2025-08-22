@@ -40,7 +40,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { setFontPanelView, setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
   const tabConfig = [
     {
@@ -85,6 +85,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
 
   const handleSetActivePanel = (tab: SettingsPanelType) => {
     setActivePanel(tab);
+    setFontPanelView('main-fonts');
     localStorage.setItem('lastConfigPanel', tab);
   };
 
@@ -115,6 +116,8 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
   };
 
   useEffect(() => {
+    setFontPanelView('main-fonts');
+
     const container = tabsRef.current;
     if (!container) return;
 

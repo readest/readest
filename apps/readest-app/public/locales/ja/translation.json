@@ -512,5 +512,6 @@
   "Select Image": "画像を選択",
   "Select Video": "動画を選択",
   "Select Audio": "音声を選択",
-  "Select Fonts": "フォントを選択"
+  "Select Fonts": "フォントを選択",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "サポートされているフォント形式：.ttf, .odf, .woff, .woff2"
 }

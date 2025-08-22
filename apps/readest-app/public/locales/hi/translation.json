@@ -516,5 +516,6 @@
   "Select Image": "छवि चुनें",
   "Select Video": "वीडियो चुनें",
   "Select Audio": "ऑडियो चुनें",
-  "Select Fonts": "फ़ॉन्ट चुनें"
+  "Select Fonts": "फ़ॉन्ट चुनें",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "समर्थित फ़ॉन्ट प्रारूप: .ttf, .odf, .woff, .woff2"
 }

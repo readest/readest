@@ -516,5 +516,6 @@
   "Select Image": "Επιλογή Εικόνας",
   "Select Video": "Επιλογή Βίντεο",
   "Select Audio": "Επιλογή Ήχου",
-  "Select Fonts": "Επιλογή Γραμματοσειρών"
+  "Select Fonts": "Επιλογή Γραμματοσειρών",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "Υποστηριζόμενες μορφές γραμματοσειρών: .ttf, .odf, .woff, .woff2"
 }

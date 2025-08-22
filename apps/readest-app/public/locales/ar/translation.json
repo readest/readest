@@ -532,5 +532,6 @@
   "Select Image": "حدد صورة",
   "Select Video": "حدد فيديو",
   "Select Audio": "حدد صوت",
-  "Select Fonts": "حدد الخطوط"
+  "Select Fonts": "حدد الخطوط",
+  "Supported font formats: .ttf, .odf, .woff, .woff2": "تنسيقات الخط المدعومة: .ttf، .odf، .woff، .woff2"
 }
