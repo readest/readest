@@ -9,6 +9,7 @@ RUN npm install --global pnpm
 RUN apt update -y && apt install -y --no-install-recommends \
     libwebkit2gtk-4.1-dev \
     build-essential \
+    git \
     curl \
     wget \
     file \
@@ -26,6 +27,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 COPY . /app
 
 WORKDIR /app
+
+RUN git submodule update --init --recursive
 
 RUN pnpm install
 
