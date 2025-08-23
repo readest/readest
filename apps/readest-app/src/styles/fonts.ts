@@ -118,6 +118,8 @@ export const mountAdditionalFonts = (document: Document, isCJK = false) => {
 export interface CustomFont {
   id: string;
   name: string;
+  family?: string;
+  style?: string;
   path: string;
   downloadedAt?: number;
   deletedAt?: number;
@@ -189,10 +191,12 @@ export function createCustomFont(
   path: string,
   options?: {
     name?: string;
+    family?: string;
+    style?: string;
   },
 ): CustomFont {
   const name = options?.name || getFontName(path);
-  return { id: getFontId(name), name, path };
+  return { id: getFontId(name), name, family: options?.family, style: options?.style, path };
 }
 
 export const mountCustomFont = (document: Document, font: CustomFont) => {

@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import { mountCustomFont } from '@/styles/fonts';
-import { parseFontFamily } from '@/utils/font';
+import { parseFontName } from '@/utils/font';
 import { getFilename } from '@/utils/path';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 
@@ -62,9 +62,11 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         } else {
           continue;
         }
-        const fontFamily = parseFontFamily(await fontFile.arrayBuffer(), fontPath);
+        const fontName = parseFontName(await fontFile.arrayBuffer(), fontPath);
         const customFont = addFont(fontPath, {
-          name: fontFamily,
+          name: fontName.name,
+          family: fontName.family,
+          style: fontName.style,
         });
         if (customFont && !customFont.error) {
           const loadedFont = await loadFont(envConfig, customFont.id);
@@ -148,7 +150,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
               <div className='flex items-center justify-center'>
                 <MdAdd className='text-primary/85 group-hover:text-primary h-6 w-6' />
               </div>
-              <div className='text-primary/85 group-hover:text-primary font-medium'>
+              <div className='text-primary/85 group-hover:text-primary line-clamp-1 font-medium'>
                 {_('Import Font')}
               </div>
             </div>
@@ -165,6 +167,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                 : 'border-base-200 bg-base-200 cursor-pointer',
             )}
             onClick={() => handleSelectFont(font.id)}
+            title={font.name}
           >
             <div className='card-body flex items-center justify-center p-2'>
               <div
@@ -174,7 +177,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                 }}
                 className='text-base-content line-clamp-1'
               >
-                {font.name}
+                {font.family || font.name}
               </div>
               {isDeleteMode && (
                 <button

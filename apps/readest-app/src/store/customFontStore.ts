@@ -8,7 +8,10 @@ interface FontStoreState {
   loading: boolean;
 
   setFonts: (fonts: CustomFont[]) => void;
-  addFont: (path: string, options?: { name?: string }) => CustomFont;
+  addFont: (
+    path: string,
+    options?: { name?: string; family?: string; style?: string },
+  ) => CustomFont;
   removeFont: (id: string) => boolean;
   updateFont: (id: string, updates: Partial<CustomFont>) => boolean;
   getFont: (id: string) => CustomFont | undefined;
@@ -45,20 +48,18 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
     const font = createCustomFont(path, options);
     const existingFont = get().fonts.find((f) => f.id === font.id);
     if (existingFont) {
-      if (existingFont.deletedAt) {
-        get().updateFont(font.id, {
-          path: font.path,
-          downloadedAt: Date.now(),
-          deletedAt: undefined,
-          loaded: false,
-          blobUrl: undefined,
-          error: undefined,
-        });
-        set((state) => ({
-          fonts: [...state.fonts],
-        }));
-        return existingFont;
-      }
+      get().updateFont(font.id, {
+        ...font,
+        path: font.path,
+        downloadedAt: Date.now(),
+        deletedAt: undefined,
+        loaded: false,
+        blobUrl: undefined,
+        error: undefined,
+      });
+      set((state) => ({
+        fonts: [...state.fonts],
+      }));
       return existingFont;
     }
 

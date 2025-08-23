@@ -75,7 +75,14 @@ function getLanguagePriority(platformID: number, languageID: number, userLanguag
   return priority;
 }
 
-export const parseFontFamily = (fontData: ArrayBuffer, filename: string) => {
+type FontNameType = {
+  name: string;
+  platformID: number;
+  languageID: number;
+  priority: number;
+};
+
+export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
   const fallbackName = filename.replace(/\.[^/.]+$/, '');
   try {
     const dataView = new DataView(fontData);
@@ -108,12 +115,8 @@ export const parseFontFamily = (fontData: ArrayBuffer, filename: string) => {
     const stringOffset = dataView.getUint16(nameTableOffset + 4, false);
 
     const userLanguage = getUserLang();
-    const fontNames: Array<{
-      name: string;
-      platformID: number;
-      languageID: number;
-      priority: number;
-    }> = [];
+    const fontFamilyNames: Array<FontNameType> = [];
+    const fontStyleNames: Array<FontNameType> = [];
     for (let i = 0; i < count; i++) {
       const recordOffset = nameTableOffset + 6 + i * 12;
       const platformID = dataView.getUint16(recordOffset, false);
@@ -122,36 +125,54 @@ export const parseFontFamily = (fontData: ArrayBuffer, filename: string) => {
       const nameLength = dataView.getUint16(recordOffset + 8, false);
       const nameOffsetInTable = dataView.getUint16(recordOffset + 10, false);
 
-      if (nameID === 1) {
+      // nameID 1 = Font Family name, nameID 2 = Font Subfamily name (style)
+      if (nameID === 1 || nameID === 2) {
         const stringStart = nameTableOffset + stringOffset + nameOffsetInTable;
-        let familyName = '';
+        let fontName = '';
 
         if (platformID === 0 || platformID === 3) {
           // Unicode/Microsoft platform
-          familyName = parseUnicodeString(dataView, stringStart, nameLength);
+          fontName = parseUnicodeString(dataView, stringStart, nameLength);
         } else if (platformID === 1) {
           // Macintosh platform
-          familyName = parseMacintoshString(dataView, stringStart, nameLength);
+          fontName = parseMacintoshString(dataView, stringStart, nameLength);
         }
 
-        if (familyName && familyName.trim()) {
+        if (fontName && fontName.trim()) {
           const priority = getLanguagePriority(platformID, languageID, userLanguage);
-          fontNames.push({
-            name: familyName.trim(),
+          const nameEntry = {
+            name: fontName.trim(),
             platformID,
             languageID,
             priority,
-          });
+          };
+
+          if (nameID === 1) {
+            fontFamilyNames.push(nameEntry);
+          } else if (nameID === 2) {
+            fontStyleNames.push(nameEntry);
+          }
         }
       }
     }
-    if (fontNames.length === 0) {
+    if (fontFamilyNames.length === 0) {
       throw new Error('Font family name not found');
     }
-    fontNames.sort((a, b) => b.priority - a.priority);
-    return fontNames[0]!.name;
+    fontFamilyNames.sort((a, b) => b.priority - a.priority);
+    fontStyleNames.sort((a, b) => b.priority - a.priority);
+    const familyName = fontFamilyNames[0]!.name;
+    const styleName = fontStyleNames.length > 0 ? fontStyleNames[0]!.name : '';
+    return {
+      name: styleName ? `${familyName} ${styleName}` : familyName,
+      family: familyName,
+      style: styleName,
+    };
   } catch (error) {
     console.warn(`Failed to parse font: ${error}`);
-    return fallbackName;
+    return {
+      name: fallbackName,
+      family: fallbackName,
+      style: '',
+    };
   }
 };
