@@ -557,7 +557,7 @@ export const applyFixedlayoutStyles = (
   const { bg, fg, primary, isDarkMode } = themeCode;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
-
+  const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
   const existingStyleId = 'fixed-layout-styles';
   let style = document.getElementById(existingStyleId) as HTMLStyleElement;
   if (style) {
@@ -576,9 +576,15 @@ export const applyFixedlayoutStyles = (
       position: relative;
       background-color: var(--theme-bg-color);
     }
+    #canvas {
+      display: inline-block;
+      width: fit-content;
+      height: fit-content;
+      background-color: var(--theme-bg-color);
+    }
     img, canvas {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-      ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
+      ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {
       position: relative;
