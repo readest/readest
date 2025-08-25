@@ -513,5 +513,5 @@
   "Select Video": "བརྙན་ཟློས་འདེམས་པ།",
   "Select Audio": "སྒྲ་ཟློས་འདེམས་པ།",
   "Select Fonts": "ཡིག་གཟུགས་འདེམས་པ།",
-  "Supported font formats: .ttf, .odf, .woff, .woff2": "ཡིག་གཟུགས་འདེམས་པ་བྱས་ནས་བསྐྱར་བརྗེ་བ། ཡིག་གཟུགས་ཀྱི་སྒྲ་སྐད། .ttf, .odf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "ཡིག་གཟུགས་འདེམས་པ་བྱས་ནས་བསྐྱར་བརྗེ་བ། ཡིག་གཟུགས་ཀྱི་སྒྲ་སྐད། .ttf, .otf, .woff, .woff2"
 }

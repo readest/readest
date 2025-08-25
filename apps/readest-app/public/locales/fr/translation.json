@@ -521,5 +521,5 @@
   "Select Video": "Sélectionner une Vidéo",
   "Select Audio": "Sélectionner un Audio",
   "Select Fonts": "Sélectionner des Polices",
-  "Supported font formats: .ttf, .odf, .woff, .woff2": "Formats de police pris en charge : .ttf, .odf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Formats de police pris en charge : .ttf, .otf, .woff, .woff2"
 }

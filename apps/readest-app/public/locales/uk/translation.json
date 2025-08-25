@@ -525,5 +525,5 @@
   "Select Video": "Вибрати Відео",
   "Select Audio": "Вибрати Аудіо",
   "Select Fonts": "Вибрати Шрифти",
-  "Supported font formats: .ttf, .odf, .woff, .woff2": "Підтримувані формати шрифтів: .ttf, .odf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Підтримувані формати шрифтів: .ttf, .otf, .woff, .woff2"
 }

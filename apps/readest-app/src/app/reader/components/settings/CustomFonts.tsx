@@ -197,7 +197,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         <div className='text-base-content/70 text-sm sm:text-xs'>
           <div className='mb-1 indent-2 font-medium'>{_('Tips')}:</div>
           <ul className='list-outside list-disc space-y-1 ps-2'>
-            <li>{_('Supported font formats: .ttf, .odf, .woff, .woff2')}</li>
+            <li>{_('Supported font formats: .ttf, .otf, .woff, .woff2')}</li>
             <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
           </ul>
         </div>

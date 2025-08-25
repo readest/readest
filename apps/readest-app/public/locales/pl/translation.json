@@ -525,5 +525,5 @@
   "Select Video": "Wybierz Wideo",
   "Select Audio": "Wybierz Audio",
   "Select Fonts": "Wybierz Czcionki",
-  "Supported font formats: .ttf, .odf, .woff, .woff2": "Obsługiwane formaty czcionek: .ttf, .odf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Obsługiwane formaty czcionek: .ttf, .otf, .woff, .woff2"
 }

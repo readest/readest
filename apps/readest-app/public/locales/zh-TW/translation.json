@@ -513,5 +513,5 @@
   "Select Video": "選擇影片",
   "Select Audio": "選擇音訊",
   "Select Fonts": "選擇字型",
-  "Supported font formats: .ttf, .odf, .woff, .woff2": "支援的字型格式：.ttf, .odf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "支援的字型格式：.ttf, .otf, .woff, .woff2"
 }
