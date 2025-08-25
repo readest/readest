@@ -1,4 +1,5 @@
 import { useRouter, redirect } from 'next/navigation';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
@@ -6,7 +7,10 @@ import { AppService } from '@/types/system';
 
 let readerWindowsCount = 0;
 const createReaderWindow = (appService: AppService, url: string) => {
-  const win = new WebviewWindow(`reader-${readerWindowsCount}`, {
+  const currentWindow = getCurrentWindow();
+  const label = currentWindow.label;
+  const newLabelPrefix = label === 'main' ? 'reader' : label;
+  const win = new WebviewWindow(`${newLabelPrefix}-${readerWindowsCount}`, {
     url,
     width: 800,
     height: 600,

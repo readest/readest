@@ -157,7 +157,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       resizeObserver.disconnect();
       mutationObserver.disconnect();
     };
-  }, []);
+  }, [setFontPanelView]);
 
   const currentPanel = tabConfig.find((tab) => tab.tab === activePanel);
 

@@ -16,7 +16,14 @@ export const useSafeAreaInsets = () => {
   const { updateSafeAreaInsets } = useThemeStore();
 
   const onUpdateInsets = useCallback(() => {
-    if (!appService?.hasSafeAreaInset) return;
+    if (!appService) return;
+
+    if (!appService.hasSafeAreaInset) {
+      updateSafeAreaInsets(insets);
+      setUpdated(true);
+      return;
+    }
+
     const rootStyles = getComputedStyle(document.documentElement);
     const hasCustomProperties = rootStyles.getPropertyValue('--safe-area-inset-top');
     const isWebView139 = /Chrome\/139/.test(navigator.userAgent);
@@ -49,6 +56,7 @@ export const useSafeAreaInsets = () => {
       updateSafeAreaInsets(insets);
       setUpdated(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
 
   useEffect(() => {
