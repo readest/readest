@@ -41,7 +41,7 @@ const Dialog: React.FC<DialogProps> = ({
   onClose,
 }) => {
   const { appService } = useEnv();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, safeAreaInsets } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
@@ -179,7 +179,7 @@ const Dialog: React.FC<DialogProps> = ({
         style={{
           paddingTop:
             appService?.hasSafeAreaInset && isFullHeightInMobile
-              ? `max(env(safe-area-inset-top), ${systemUIVisible ? statusBarHeight : 0}px)`
+              ? `${Math.max(safeAreaInsets?.top || 0, systemUIVisible ? statusBarHeight : 0)}px`
               : '0px',
           ...(isMobile ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 } : {}),
         }}

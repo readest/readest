@@ -25,7 +25,7 @@ const MAX_NOTEBOOK_WIDTH = 0.45;
 
 const Notebook: React.FC = ({}) => {
   const _ = useTranslation();
-  const { updateAppTheme } = useThemeStore();
+  const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
@@ -196,7 +196,6 @@ const Notebook: React.FC = ({}) => {
           'notebook-container bg-base-200 right-0 z-20 flex min-w-60 select-none flex-col',
           'font-sans text-base font-normal sm:text-sm',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
-          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           !isNotebookPinned && 'shadow-2xl',
         )}
@@ -205,6 +204,7 @@ const Notebook: React.FC = ({}) => {
           width: `${notebookWidth}`,
           maxWidth: `${MAX_NOTEBOOK_WIDTH * 100}%`,
           position: isNotebookPinned ? 'relative' : 'absolute',
+          paddingTop: `${safeAreaInsets?.top || 0}px`,
         }}
       >
         <style jsx>{`

@@ -29,7 +29,7 @@ const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
   const { appService } = useEnv();
-  const { updateAppTheme } = useThemeStore();
+  const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
   const { getBookData } = useBookDataStore();
@@ -186,7 +186,6 @@ const SideBar: React.FC<{
           'sidebar-container bg-base-200 z-20 flex min-w-60 select-none flex-col',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           'transition-[padding-top] duration-300',
-          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           !isSideBarPinned && 'shadow-2xl',
         )}
@@ -195,6 +194,7 @@ const SideBar: React.FC<{
           width: `${sideBarWidth}`,
           maxWidth: `${MAX_SIDEBAR_WIDTH * 100}%`,
           position: isSideBarPinned ? 'relative' : 'absolute',
+          paddingTop: `${safeAreaInsets?.top || 0}px`,
         }}
       >
         <style jsx>{`

@@ -161,3 +161,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn get_safe_area_insets(&self) -> crate::Result<GetSafeAreaInsetsResponse> {
+        self.0
+            .run_mobile_plugin("get_safe_area_insets", ())
+            .map_err(Into::into)
+    }
+}

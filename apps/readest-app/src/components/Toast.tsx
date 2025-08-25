@@ -1,10 +1,12 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
+import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
 export const Toast = () => {
+  const { safeAreaInsets } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
   const toastType = useRef<ToastType>('info');
   const toastTimeout = useRef(5000);
@@ -52,9 +54,12 @@ export const Toast = () => {
         className={clsx(
           'toast toast-center toast-middle z-50 w-auto max-w-screen-sm',
           toastClassMap[toastType.current],
-          toastClassMap[toastType.current].includes('toast-top') &&
-            'top-[calc(44px+env(safe-area-inset-top))]',
         )}
+        style={{
+          top: toastClassMap[toastType.current].includes('toast-top')
+            ? `${(safeAreaInsets?.top || 0) + 44}px`
+            : undefined,
+        }}
       >
         <div
           className={clsx(

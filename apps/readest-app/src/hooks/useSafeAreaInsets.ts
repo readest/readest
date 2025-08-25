@@ -1,6 +1,10 @@
+import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
+import { getSafeAreaInsets } from '@/utils/bridge';
 import { useState, useEffect, useCallback } from 'react';
 
 export const useSafeAreaInsets = () => {
+  const { appService } = useEnv();
   const [updated, setUpdated] = useState(false);
   const [insets, setInsets] = useState({
     top: 0,
@@ -9,27 +13,51 @@ export const useSafeAreaInsets = () => {
     left: 0,
   });
 
-  const updateSafeAreaInsets = useCallback(() => {
+  const { updateSafeAreaInsets } = useThemeStore();
+
+  const onUpdateInsets = useCallback(() => {
+    if (!appService?.hasSafeAreaInset) return;
     const rootStyles = getComputedStyle(document.documentElement);
     const hasCustomProperties = rootStyles.getPropertyValue('--safe-area-inset-top');
-    if (hasCustomProperties) {
-      setInsets({
+    const isWebView139 = /Chrome\/139/.test(navigator.userAgent);
+    // safe-area-inset-* values in css are always 0px in some versions of webview 139
+    // due to https://issues.chromium.org/issues/40699457
+    if (appService.isAndroidApp && isWebView139) {
+      getSafeAreaInsets().then((response) => {
+        if (response.error) {
+          console.error('Error getting safe area insets from native bridge:', response.error);
+        } else {
+          const insets = {
+            top: response.top,
+            right: response.right,
+            bottom: response.bottom,
+            left: response.left,
+          };
+          setInsets(insets);
+          updateSafeAreaInsets(insets);
+          setUpdated(true);
+        }
+      });
+    } else if (hasCustomProperties) {
+      const insets = {
         top: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-top')) || 0,
         right: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-right')) || 0,
         bottom: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-bottom')) || 0,
         left: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-left')) || 0,
-      });
+      };
+      setInsets(insets);
+      updateSafeAreaInsets(insets);
+      setUpdated(true);
     }
-    setUpdated(true);
-  }, []);
+  }, [appService]);
 
   useEffect(() => {
-    updateSafeAreaInsets();
-    window.addEventListener('resize', updateSafeAreaInsets);
+    onUpdateInsets();
+    window.addEventListener('resize', onUpdateInsets);
     return () => {
-      window.removeEventListener('resize', updateSafeAreaInsets);
+      window.removeEventListener('resize', onUpdateInsets);
     };
-  }, [updateSafeAreaInsets]);
+  }, [onUpdateInsets]);
 
   return updated ? insets : null;
 };

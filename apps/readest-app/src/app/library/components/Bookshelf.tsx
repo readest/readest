@@ -8,6 +8,7 @@ import { PiPlus } from 'react-icons/pi';
 import { Book, BooksGroup } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -53,6 +54,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
+  const { safeAreaInsets } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -346,7 +348,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      <div className='fixed bottom-0 left-0 right-0 z-40 pb-[calc(env(safe-area-inset-bottom)+16px)]'>
+      <div
+        className='fixed bottom-0 left-0 right-0 z-40'
+        style={{
+          paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
+        }}
+      >
         {isSelectMode && showSelectModeActions && (
           <div
             className={clsx(
@@ -425,10 +432,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       )}
       {showDeleteAlert && (
         <div
-          className={clsx(
-            'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
-            'pb-[calc(env(safe-area-inset-bottom)+16px)]',
-          )}
+          className={clsx('fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
+          style={{
+            paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
+          }}
         >
           <Alert
             title={_('Confirm Deletion')}

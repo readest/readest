@@ -158,3 +158,12 @@ pub struct IAPRestorePurchasesResponse {
 pub struct GetSystemColorSchemeResponse {
     pub color_scheme: String, // "light" or "dark"
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSafeAreaInsetsResponse {
+    pub top: f64,
+    pub bottom: f64,
+    pub left: f64,
+    pub right: f64,
+}

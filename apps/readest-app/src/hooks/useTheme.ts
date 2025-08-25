@@ -38,7 +38,7 @@ export const useTheme = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [appService?.isAndroidApp]);
 
   const handleSystemUIVisibility = useCallback(() => {
     if (!appService?.isMobileApp) return;

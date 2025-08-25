@@ -67,7 +67,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { isDarkMode } = useThemeStore();
+  const { isDarkMode, safeAreaInsets } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -351,10 +351,10 @@ export default function AuthPage() {
       )}
     >
       <div
-        className={clsx(
-          'flex h-full w-full flex-col items-center overflow-y-auto',
-          appService?.hasSafeAreaInset && 'pt-[env(safe-area-inset-top)]',
-        )}
+        className={clsx('flex h-full w-full flex-col items-center overflow-y-auto')}
+        style={{
+          paddingTop: `${safeAreaInsets?.top || 0}px`,
+        }}
       >
         <div
           ref={headerRef}

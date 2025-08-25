@@ -119,3 +119,10 @@ pub(crate) async fn get_system_color_scheme<R: Runtime>(
 ) -> Result<GetSystemColorSchemeResponse> {
     app.native_bridge().get_system_color_scheme()
 }
+
+#[command]
+pub(crate) async fn get_safe_area_insets<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetSafeAreaInsetsResponse> {
+    app.native_bridge().get_safe_area_insets()
+}

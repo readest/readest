@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
@@ -45,6 +46,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
+  const { safeAreaInsets } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -239,10 +241,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
         {activeDeleteAction && currentDeleteConfig && (
           <div
-            className={clsx(
-              'fixed bottom-0 left-0 right-0 z-50 flex justify-center',
-              'pb-[calc(env(safe-area-inset-bottom)+16px)]',
-            )}
+            className={clsx('fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
+            style={{
+              paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
+            }}
           >
             <Alert
               title={currentDeleteConfig.title}

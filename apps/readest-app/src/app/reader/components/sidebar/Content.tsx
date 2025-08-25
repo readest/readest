@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
-import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -15,7 +15,7 @@ const SidebarContent: React.FC<{
   bookDoc: BookDoc;
   sideBarBookKey: string;
 }> = ({ bookDoc, sideBarBookKey }) => {
-  const { appService } = useEnv();
+  const { safeAreaInsets } = useThemeStore();
   const { getConfig, setConfig } = useBookDataStore();
   const config = getConfig(sideBarBookKey);
   const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
@@ -75,10 +75,10 @@ const SidebarContent: React.FC<{
         </OverlayScrollbarsComponent>
       </div>
       <div
-        className={clsx(
-          'flex-shrink-0',
-          appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom)/2)]',
-        )}
+        className='flex-shrink-0'
+        style={{
+          paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px`,
+        }}
       >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>

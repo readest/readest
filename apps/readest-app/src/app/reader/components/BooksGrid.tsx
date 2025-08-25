@@ -2,11 +2,11 @@ import clsx from 'clsx';
 import React, { useEffect } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getViewInsets } from '@/utils/insets';
 import FoliateViewer from './FoliateViewer';
@@ -34,7 +34,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { sideBarBookKey } = useSidebarStore();
   const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
 
-  const screenInsets = useSafeAreaInsets();
+  const { safeAreaInsets: screenInsets } = useThemeStore();
   const aspectRatio = window.innerWidth / window.innerHeight;
   const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio);
 

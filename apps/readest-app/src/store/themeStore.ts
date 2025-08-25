@@ -5,6 +5,7 @@ import { getSystemColorScheme } from '@/utils/bridge';
 import { CustomTheme, Palette, ThemeMode } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
+import { Insets } from '@/types/misc';
 
 interface ThemeState {
   themeMode: ThemeMode;
@@ -15,6 +16,7 @@ interface ThemeState {
   systemUIVisible: boolean;
   statusBarHeight: number;
   systemUIAlwaysHidden: boolean;
+  safeAreaInsets: Insets | null;
   setSystemUIAlwaysHidden: (hidden: boolean) => void;
   setStatusBarHeight: (height: number) => void;
   showSystemUI: () => void;
@@ -30,6 +32,7 @@ interface ThemeState {
     isDelete?: boolean,
   ) => void;
   handleSystemThemeChange: (isDark: boolean) => void;
+  updateSafeAreaInsets: (insets: Insets) => void;
 }
 
 const getInitialThemeMode = (): ThemeMode => {
@@ -64,6 +67,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     systemUIVisible: false,
     statusBarHeight: 24,
     systemUIAlwaysHidden: false,
+    safeAreaInsets: null,
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
     setStatusBarHeight: (height: number) => set({ statusBarHeight: height }),
@@ -121,6 +125,9 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       const mode = get().themeMode;
       const isDarkMode = mode === 'dark' || (mode === 'auto' && systemIsDarkMode);
       set({ systemIsDarkMode, isDarkMode });
+    },
+    updateSafeAreaInsets: (insets) => {
+      set({ safeAreaInsets: insets });
     },
   };
 });

@@ -102,4 +102,8 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn get_system_color_scheme(&self) -> crate::Result<GetSystemColorSchemeResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn get_safe_area_insets(&self) -> crate::Result<GetSafeAreaInsetsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

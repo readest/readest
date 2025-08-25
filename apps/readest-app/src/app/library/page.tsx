@@ -24,6 +24,7 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -32,7 +33,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { lockScreenOrientation } from '@/utils/bridge';
@@ -73,7 +73,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setCheckLastOpenBooks,
   } = useLibraryStore();
   const _ = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { safeAreaInsets: insets } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);

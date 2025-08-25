@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -27,6 +28,7 @@ interface TTSControlProps {
 const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { safeAreaInsets } = useThemeStore();
   const { getBookData } = useBookDataStore();
   const { getView, getProgress, getViewSettings } = useReaderStore();
   const { setViewSettings, setTTSEnabled } = useReaderStore();
@@ -429,10 +431,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
           className={clsx(
             'absolute h-12 w-12',
             viewSettings?.rtl ? 'left-6' : 'right-6',
-            appService?.hasSafeAreaInset
-              ? 'bottom-[calc(env(safe-area-inset-bottom)+70px)]'
-              : 'bottom-[70px] sm:bottom-14',
+            !appService?.hasSafeAreaInset && 'bottom-[70px] sm:bottom-14',
           )}
+          style={{
+            bottom: appService?.hasSafeAreaInset
+              ? `${(safeAreaInsets?.bottom || 0) + 70}px`
+              : undefined,
+          }}
         >
           <TTSIcon isPlaying={isPlaying} ttsInited={ttsClientsInited} onClick={togglePopup} />
         </div>

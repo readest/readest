@@ -13,7 +13,6 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
 import { debounce } from '@/utils/debounce';
@@ -59,7 +58,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
   const iconSize20 = useResponsiveSize(20);
-  const insets = useSafeAreaInsets();
+  const { safeAreaInsets: insets } = useThemeStore();
 
   useShortcuts({
     onToggleSelectMode,
