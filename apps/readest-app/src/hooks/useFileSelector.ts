@@ -71,7 +71,7 @@ const processTauriFiles = (files: string[]): SelectedFile[] => {
 export const useFileSelector = (appService: AppService | null, _: (key: string) => string) => {
   const selectFiles = async (options: FileSelectorOptions = {}) => {
     if (!appService) {
-      return { files: [], error: 'App service is not available' };
+      return { files: [] as SelectedFile[], error: 'App service is not available' };
     }
     try {
       if (isTauriAppPlatform()) {
@@ -120,5 +120,10 @@ export const FILE_SELECTION_PRESETS = {
     accept: '.ttf, .otf, .woff, .woff2',
     extensions: ['ttf', 'otf', 'woff', 'woff2'],
     dialogTitle: _('Select Fonts'),
+  },
+  covers: {
+    accept: '.png, .jpg, .jpeg, .gif',
+    extensions: ['png', 'jpg', 'jpeg', 'gif'],
+    dialogTitle: _('Select Image'),
   },
 };

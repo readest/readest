@@ -8,8 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { flattenContributors, formatAuthors, formatPublisher, formatTitle } from '@/utils/book';
 import { FormField } from './FormField';
-import { IMAGE_ACCEPT_FORMATS, SUPPORTED_IMAGE_EXTS } from '@/services/constants';
-import { isTauriAppPlatform } from '@/services/environment';
+import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import BookCover from '@/components/BookCover';
 
 interface BookDetailEditProps {
@@ -47,6 +46,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { selectFiles } = useFileSelector(appService, _);
 
   const hasLockedFields = Object.values(lockedFields).some((locked) => locked);
   const allFieldsLocked = Object.values(lockedFields).every((locked) => locked);
@@ -148,51 +148,23 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     },
   ];
 
-  const selectImageFileWeb = () => {
-    return new Promise((resolve) => {
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = IMAGE_ACCEPT_FORMATS;
-      fileInput.multiple = false;
-      fileInput.click();
-
-      fileInput.onchange = () => {
-        resolve(fileInput.files);
-      };
-    });
-  };
-
-  const selectImageFileTauri = async () => {
-    const exts = appService?.isMobileApp ? [] : SUPPORTED_IMAGE_EXTS;
-    const files = (await appService?.selectFiles(_('Select Cover Image'), exts)) || [];
-    if (appService?.isIOSApp) {
-      return files.filter((file) => {
-        const fileExt = file.split('.').pop()?.toLowerCase() || 'unknown';
-        return SUPPORTED_IMAGE_EXTS.includes(fileExt);
-      });
-    }
-    return files;
-  };
-
   const handleSelectLocalImage = async () => {
-    let files;
-    if (isTauriAppPlatform()) {
-      files = (await selectImageFileTauri()) as string[];
-      if (appService && files.length > 0) {
-        metadata.coverImageFile = files[0]!;
+    selectFiles({ ...FILE_SELECTION_PRESETS.covers, multiple: false }).then(async (result) => {
+      if (result.error || result.files.length === 0) return;
+      const selectedFile = result.files[0]!;
+      if (selectedFile.path && appService) {
+        const filePath = selectedFile.path;
+        metadata.coverImageFile = filePath;
         const tempName = `cover-${Date.now()}.png`;
         const cachePrefix = await appService.fs.getPrefix('Cache');
-        await appService.fs.copyFile(files[0]!, tempName, 'Cache');
+        await appService.fs.copyFile(filePath, tempName, 'Cache');
         metadata.coverImageUrl = await appService.fs.getURL(`${cachePrefix}/${tempName}`);
         setNewCoverImageUrl(metadata.coverImageUrl!);
-      }
-    } else {
-      files = (await selectImageFileWeb()) as File[];
-      if (files.length > 0) {
-        metadata.coverImageBlobUrl = URL.createObjectURL(files[0]!);
+      } else if (selectedFile.file) {
+        metadata.coverImageBlobUrl = URL.createObjectURL(selectedFile.file);
         setNewCoverImageUrl(metadata.coverImageBlobUrl!);
       }
-    }
+    });
   };
 
   return (
