@@ -20,6 +20,8 @@ function parseMacintoshString(dataView: DataView, offset: number, length: number
   return chars.join('');
 }
 
+const NO_STYLE_LANGUAGE_IDS = new Set([0x0404, 0x0804, 0x0c04, 0x1004, 19, 33]);
+
 function getLanguagePriority(platformID: number, languageID: number, userLanguage: string): number {
   let priority = 0;
 
@@ -160,10 +162,14 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
     }
     fontFamilyNames.sort((a, b) => b.priority - a.priority);
     fontStyleNames.sort((a, b) => b.priority - a.priority);
+    const fontStyleName = fontStyleNames[0];
     const familyName = fontFamilyNames[0]!.name;
-    const styleName = fontStyleNames.length > 0 ? fontStyleNames[0]!.name : '';
+    const styleName = fontStyleName?.name || '';
     return {
-      name: styleName ? `${familyName} ${styleName}` : familyName,
+      name:
+        fontStyleName && !NO_STYLE_LANGUAGE_IDS.has(fontStyleName.languageID)
+          ? `${familyName} ${styleName}`
+          : familyName,
       family: familyName,
       style: styleName,
     };

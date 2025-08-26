@@ -89,10 +89,16 @@ const FontFace = ({
 
 const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
   const { fontPanelView, setFontPanelView } = useSettingsStore();
-  const { fonts: allCustomFonts, getFontFamilies } = useCustomFontStore();
+  const {
+    fonts: allCustomFonts,
+    getAllFonts,
+    getFontFamilies,
+    removeFont,
+    saveCustomFonts,
+  } = useCustomFontStore();
   const viewSettings = getViewSettings(bookKey)!;
   const view = getView(bookKey)!;
   const iconSize18 = useResponsiveSize(18);
@@ -159,6 +165,12 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       monospaceFont: setMonospaceFont,
       fontWeight: setFontWeight,
     });
+    getAllFonts().forEach((font) => {
+      if (removeFont(font.id)) {
+        appService!.fs.removeFile(font.path, 'Fonts');
+      }
+    });
+    saveCustomFonts(envConfig);
   };
 
   const handleManageCustomFonts = () => {
@@ -172,7 +184,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   useEffect(() => {
     onRegisterReset(handleReset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [appService]);
 
   useEffect(() => {
     setCJKFonts((prev) => {

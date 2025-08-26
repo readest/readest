@@ -41,7 +41,11 @@ const FontItem: React.FC<FontItemProps> = ({ index, style, data }) => {
             <MdCheck className='text-base-content' size={iconSize16} />
           )}
         </span>
-        <span style={{ fontFamily: onGetFontFamily(option.option, family) }}>
+        <span
+          className='line-clamp-1 overflow-visible break-all leading-loose'
+          style={{ fontFamily: onGetFontFamily(option.option, family) }}
+          title={option.label || option.option}
+        >
           {option.label || option.option}
         </span>
       </div>
@@ -100,7 +104,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
       >
         <div className='flex items-center gap-x-1'>
           <span
-            className='text-ellipsis'
+            className='line-clamp-1 overflow-visible break-all leading-loose'
             style={{
               fontFamily: onGetFontFamily(selectedOption.option, family ?? ''),
             }}
