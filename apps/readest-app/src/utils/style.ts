@@ -363,6 +363,19 @@ export const getFootnoteStyles = () => `
     margin: unset !important;
     text-indent: unset !important;
   }
+
+  div {
+    margin: unset !important;
+    padding: unset !important;
+  }
+
+  .epubtype-footnote,
+  aside[epub|type~="endnote"],
+  aside[epub|type~="footnote"],
+  aside[epub|type~="note"],
+  aside[epub|type~="rearnote"] {
+    display: block;
+  }
 `;
 
 const getTranslationStyles = (showSource: boolean) => `

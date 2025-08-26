@@ -218,6 +218,7 @@ export abstract class BaseAppService implements AppService {
       };
       // update book metadata when reimporting the same book
       if (existingBook) {
+        existingBook.format = book.format;
         existingBook.title = existingBook.title ?? book.title;
         existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
         existingBook.author = existingBook.author ?? book.author;
