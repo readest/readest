@@ -1,7 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { getStoragePlanData, validateUserAndToken } from '@/utils/access';
+import {
+  getStoragePlanData,
+  validateUserAndToken,
+  STORAGE_QUOTA_GRACE_BYTES,
+} from '@/utils/access';
 import { getUploadSignedUrl } from '@/utils/object';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -23,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { usage, quota } = getStoragePlanData(token);
-    if (usage + fileSize > quota) {
+    if (usage + fileSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
       return res.status(403).json({ error: 'Insufficient storage quota', usage });
     }
 

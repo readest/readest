@@ -16,6 +16,8 @@ export const getUserPlan = (token: string): UserPlan => {
   return data['plan'] || 'free';
 };
 
+export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
+
 export const getStoragePlanData = (token: string) => {
   const data = jwtDecode<Token>(token) || {};
   const plan = data['plan'] || 'free';
