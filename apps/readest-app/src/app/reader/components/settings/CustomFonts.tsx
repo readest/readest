@@ -175,7 +175,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                   fontFamily: font.loaded ? `"${font.name}", sans-serif` : 'sans-serif',
                   fontWeight: 400,
                 }}
-                className='text-base-content line-clamp-1'
+                className='text-base-content line-clamp-1 break-all'
               >
                 {font.family || font.name}
               </div>
