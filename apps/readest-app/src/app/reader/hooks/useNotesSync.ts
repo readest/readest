@@ -33,14 +33,14 @@ export const useNotesSync = (bookKey: string) => {
       const newNotes = getNewNotes();
       syncNotes(newNotes, bookHash, 'both');
     }, SYNC_NOTES_INTERVAL_SEC * 1000),
-    [lastSyncedAtNotes],
+    [syncNotes],
   );
 
   useEffect(() => {
     if (!config?.location || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]);
+  }, [config, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {

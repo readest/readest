@@ -253,7 +253,6 @@ export const useKOSync = (bookKey: string) => {
       eventDispatcher.off('push-kosync', handlePushProgress);
       eventDispatcher.off('flush-kosync', handleFlush);
       pushProgress.flush();
-      console.log('useKOSync cleanup done for', bookKey);
     };
   }, [bookKey, pushProgress]);
 

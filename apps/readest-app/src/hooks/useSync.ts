@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
@@ -47,7 +47,7 @@ export function useSync(bookKey?: string) {
   const [lastSyncedAtBooks, setLastSyncedAtBooks] = useState<number>(0);
   const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(0);
   const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(0);
-  const lastSyncedAtInited = useRef(false);
+  const [lastSyncedAtInited, setLastSyncedAtInited] = useState(false);
 
   const [syncing, setSyncing] = useState(false);
   // null means unsynced, empty array means synced no changes
@@ -63,17 +63,19 @@ export function useSync(bookKey?: string) {
   const { syncClient } = useSyncContext();
 
   useEffect(() => {
-    if (!settings || !config) return;
-    if (lastSyncedAtInited.current) return;
-    lastSyncedAtInited.current = true;
+    if (!settings.version) return;
+    if (bookKey && !config?.location) return;
+    if (lastSyncedAtInited) return;
 
     const lastSyncedBooksAt = settings.lastSyncedAtBooks ?? 0;
     const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
     const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
-    setLastSyncedAtBooks(lastSyncedBooksAt > 0 ? lastSyncedBooksAt - SEVEN_DAYS_IN_MS : 0);
+    setLastSyncedAtBooks(lastSyncedBooksAt > 0 ? lastSyncedBooksAt : 0);
     setLastSyncedAtConfigs(lastSyncedConfigsAt > 0 ? lastSyncedConfigsAt - SEVEN_DAYS_IN_MS : 0);
     setLastSyncedAtNotes(lastSyncedNotesAt > 0 ? lastSyncedNotesAt - SEVEN_DAYS_IN_MS : 0);
-  }, [settings, config]);
+    setLastSyncedAtInited(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, settings, config]);
 
   // bookId is for configs and notes only, if bookId is provided, only pull changes for that book
   // and update the lastSyncedAt for that book in the book config
@@ -158,38 +160,60 @@ export function useSync(bookKey?: string) {
     }
   };
 
-  const syncBooks = async (books?: Book[], op: SyncOp = 'both') => {
-    if ((op === 'push' || op === 'both') && books?.length) {
-      await pushChanges({ books });
-    }
-    if (op === 'pull' || op === 'both') {
-      await pullChanges('books', lastSyncedAtBooks, setLastSyncedAtBooks, setSyncingBooks);
-    }
-  };
+  const syncBooks = useCallback(
+    async (books?: Book[], op: SyncOp = 'both') => {
+      if (!lastSyncedAtInited) return;
+      if ((op === 'push' || op === 'both') && books?.length) {
+        await pushChanges({ books });
+      }
+      if (op === 'pull' || op === 'both') {
+        await pullChanges('books', lastSyncedAtBooks, setLastSyncedAtBooks, setSyncingBooks);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lastSyncedAtInited, lastSyncedAtBooks],
+  );
 
-  const syncConfigs = async (bookConfigs?: BookConfig[], bookId?: string, op: SyncOp = 'both') => {
-    if ((op === 'push' || op === 'both') && bookConfigs?.length) {
-      await pushChanges({ configs: bookConfigs });
-    }
-    if (op === 'pull' || op === 'both') {
-      await pullChanges(
-        'configs',
-        lastSyncedAtConfigs,
-        setLastSyncedAtConfigs,
-        setSyncingConfigs,
-        bookId,
-      );
-    }
-  };
+  const syncConfigs = useCallback(
+    async (bookConfigs?: BookConfig[], bookId?: string, op: SyncOp = 'both') => {
+      if (!lastSyncedAtInited) return;
+      if ((op === 'push' || op === 'both') && bookConfigs?.length) {
+        await pushChanges({ configs: bookConfigs });
+      }
+      if (op === 'pull' || op === 'both') {
+        await pullChanges(
+          'configs',
+          lastSyncedAtConfigs,
+          setLastSyncedAtConfigs,
+          setSyncingConfigs,
+          bookId,
+        );
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lastSyncedAtInited, lastSyncedAtConfigs],
+  );
 
-  const syncNotes = async (bookNotes?: BookNote[], bookId?: string, op: SyncOp = 'both') => {
-    if ((op === 'push' || op === 'both') && bookNotes?.length) {
-      await pushChanges({ notes: bookNotes });
-    }
-    if (op === 'pull' || op === 'both') {
-      await pullChanges('notes', lastSyncedAtNotes, setLastSyncedAtNotes, setSyncingNotes, bookId);
-    }
-  };
+  const syncNotes = useCallback(
+    async (bookNotes?: BookNote[], bookId?: string, op: SyncOp = 'both') => {
+      if (!lastSyncedAtInited) return;
+      if ((op === 'push' || op === 'both') && bookNotes?.length) {
+        await pushChanges({ notes: bookNotes });
+      }
+      if (op === 'pull' || op === 'both') {
+        await pullChanges(
+          'notes',
+          lastSyncedAtNotes,
+          setLastSyncedAtNotes,
+          setSyncingNotes,
+          bookId,
+        );
+      }
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lastSyncedAtInited, lastSyncedAtNotes],
+  );
 
   useEffect(() => {
     if (!syncing && syncResult) {

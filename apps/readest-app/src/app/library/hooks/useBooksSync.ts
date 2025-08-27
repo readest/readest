@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
 import { useLibraryStore } from '@/store/libraryStore';
 import { Book } from '@/types/book';
-import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { debounce } from '@/utils/debounce';
+import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 
 export interface UseBooksSyncProps {
   onSyncStart?: () => void;
@@ -17,12 +17,11 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   const { appService } = useEnv();
   const { library, setLibrary } = useLibraryStore();
   const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
-  const syncBooksPullingRef = useRef(false);
 
-  const pullLibrary = async () => {
+  const pullLibrary = useCallback(async () => {
     if (!user) return;
-    syncBooks([], 'pull');
-  };
+    await syncBooks([], 'pull');
+  }, [user, syncBooks]);
 
   const pushLibrary = async () => {
     if (!user) return;
@@ -32,15 +31,13 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
 
   useEffect(() => {
     if (!user) return;
-    if (syncBooksPullingRef.current) return;
-    syncBooksPullingRef.current = true;
-
     pullLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const getNewBooks = () => {
     if (!user) return [];
+    const library = useLibraryStore.getState().library;
     const newBooks = library.filter(
       (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
     );
@@ -53,14 +50,14 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       const newBooks = getNewBooks();
       syncBooks(newBooks, 'both');
     }, SYNC_BOOKS_INTERVAL_SEC * 1000),
-    [library, lastSyncedAtBooks],
+    [syncBooks],
   );
 
   useEffect(() => {
     if (!user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library]);
+  }, [library, handleAutoSync]);
 
   const updateLibrary = async () => {
     if (!syncedBooks?.length) return;
