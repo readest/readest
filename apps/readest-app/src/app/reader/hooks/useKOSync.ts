@@ -9,7 +9,7 @@ import { Book, BookProgress, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, normalizeProgressXPointer, XCFI } from '@/utils/xcfi';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
@@ -72,7 +72,7 @@ export const useKOSync = (bookKey: string) => {
           const { doc, index: spineIndex } = content;
           const converter = new XCFI(doc, spineIndex || 0);
           const xpointerResult = converter.cfiToXPointer(cfi);
-          koProgress = xpointerResult.xpointer;
+          koProgress = normalizeProgressXPointer(xpointerResult.xpointer);
         }
       } catch (error) {
         console.error('Failed to convert CFI to XPointer', error);
@@ -194,7 +194,7 @@ export const useKOSync = (bookKey: string) => {
         await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
       }, 5000),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bookKey, appService, kosyncClient, generateKOProgress],
+    [bookKey, appService, kosyncClient],
   );
 
   const pullProgress = useCallback(
@@ -239,10 +239,6 @@ export const useKOSync = (bookKey: string) => {
   );
 
   useEffect(() => {
-    const handlePullProgress = (event: CustomEvent) => {
-      if (event.detail.bookKey !== bookKey) return;
-      pullProgress();
-    };
     const handlePushProgress = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
       pushProgress();
@@ -251,16 +247,26 @@ export const useKOSync = (bookKey: string) => {
       if (event.detail.bookKey !== bookKey) return;
       pushProgress.flush();
     };
-    eventDispatcher.on('pull-kosync', handlePullProgress);
     eventDispatcher.on('push-kosync', handlePushProgress);
     eventDispatcher.on('flush-kosync', handleFlush);
     return () => {
-      eventDispatcher.off('pull-kosync', handlePullProgress);
       eventDispatcher.off('push-kosync', handlePushProgress);
       eventDispatcher.off('flush-kosync', handleFlush);
       pushProgress.flush();
+      console.log('useKOSync cleanup done for', bookKey);
     };
-  }, [bookKey, pushProgress, pullProgress]);
+  }, [bookKey, pushProgress]);
+
+  useEffect(() => {
+    const handlePullProgress = (event: CustomEvent) => {
+      if (event.detail.bookKey !== bookKey) return;
+      pullProgress();
+    };
+    eventDispatcher.on('pull-kosync', handlePullProgress);
+    return () => {
+      eventDispatcher.off('pull-kosync', handlePullProgress);
+    };
+  }, [bookKey, pullProgress]);
 
   // Pull: pull progress once when the book is opened
   useEffect(() => {

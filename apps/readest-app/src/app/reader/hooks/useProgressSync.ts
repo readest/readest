@@ -11,7 +11,7 @@ import { CFI } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
-import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, getXPointerFromCFI, normalizeProgressXPointer } from '@/utils/xcfi';
 
 export const useProgressSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -56,7 +56,7 @@ export const useProgressSync = (bookKey: string) => {
           if (content && !FIXED_LAYOUT_FORMATS.has(book.format)) {
             const { doc, index } = content;
             const xpointerResult = await getXPointerFromCFI(config.location!, doc, index || 0);
-            config.xpointer = xpointerResult.xpointer;
+            config.xpointer = normalizeProgressXPointer(xpointerResult.xpointer);
           }
         } catch (error) {
           console.warn('Failed to convert CFI to XPointer', error);
