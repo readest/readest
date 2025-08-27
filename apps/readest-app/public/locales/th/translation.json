@@ -439,7 +439,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "นิยาย, วิทยาศาสตร์, ประวัติศาสตร์",
-  "Select Cover Image": "เลือกภาพปก",
   "Open Book in New Window": "เปิดหนังสือในหน้าต่างใหม่",
   "Voices for {{lang}}": "เสียงสำหรับ {{lang}}",
   "Yandex Translate": "Yandex Translate",
@@ -480,7 +479,6 @@
   "File Content (recommended)": "เนื้อหาไฟล์ (แนะนำ)",
   "File Name": "ชื่อไฟล์",
   "Device Name": "ชื่ออุปกรณ์",
-  "Sync Tolerance": "ความทนทานต่อการซิงค์",
   "Connect to your KOReader Sync server.": "เชื่อมต่อกับเซิร์ฟเวอร์ KOReader Sync ของคุณ",
   "Server URL": "URL ของเซิร์ฟเวอร์",
   "Username": "ชื่อผู้ใช้",
@@ -499,7 +497,6 @@
   "Approximately {{percentage}}%": "ประมาณ {{percentage}}%",
   "Failed to connect": "ไม่สามารถเชื่อมต่อได้",
   "Sync Server Connected": "เซิร์ฟเวอร์ซิงค์เชื่อมต่อแล้ว",
-  "Precision: {{precision}} digits after the decimal": "ความแม่นยำ: {{precision}} หลักหลังจุดทศนิยม",
   "Sync as {{userDisplayName}}": "ซิงค์เป็น {{userDisplayName}}",
   "Custom Fonts": "ฟอนต์กำหนดเอง",
   "Cancel Delete": "ยกเลิกการลบ",
@@ -513,5 +510,7 @@
   "Select Video": "เลือกวิดีโอ",
   "Select Audio": "เลือกเสียง",
   "Select Fonts": "เลือกฟอนต์",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "รูปแบบฟอนต์ที่รองรับ: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "รูปแบบฟอนต์ที่รองรับ: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "ส่งความคืบหน้า",
+  "Pull Progress": "ดึงความคืบหน้า"
 }

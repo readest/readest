@@ -438,7 +438,6 @@
   "Google Books": "Google དཔེ་མཛོད།",
   "Open Library": "སྒོ་འབྱེད་དཔེ་ཁང་།",
   "Fiction, Science, History": "སྒྲུང་གཏམ། ཚན་རིག ལོ་རྒྱུས།",
-  "Select Cover Image": "སྟོང་ངོས་ཀྱི་པར་རིས་འདེམས་པ།",
   "Open Book in New Window": "སྒེའུ་ཁུང་གསར་པའི་ནང་དཔེ་དེབ་ཁ་ཕྱེ་བ།",
   "Voices for {{lang}}": "{{lang}} གྱི་སྒྲ་སྐད།",
   "Yandex Translate": "Yandex སྒྱུར་བཅོས།",
@@ -482,8 +481,6 @@
   "File Content (recommended)": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
   "File Name": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
   "Device Name": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
-  "Sync Tolerance": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
-  "Precision: {{precision}} digits after the decimal": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
   "Connect to your KOReader Sync server.": "ཁྱེད་ཀྱིས KOReader སྤྲི་དོན་སང་བཞིན་འདེམས་པ།",
   "Server URL": "སང་བཞིན་འདེམས་པའི URL",
   "Username": "ཁྱེད་ཀྱིས་འབྱུང་ཁུངས་འདེམས་པ།",
@@ -513,5 +510,7 @@
   "Select Video": "བརྙན་ཟློས་འདེམས་པ།",
   "Select Audio": "སྒྲ་ཟློས་འདེམས་པ།",
   "Select Fonts": "ཡིག་གཟུགས་འདེམས་པ།",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "ཡིག་གཟུགས་འདེམས་པ་བྱས་ནས་བསྐྱར་བརྗེ་བ། ཡིག་གཟུགས་ཀྱི་སྒྲ་སྐད། .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "ཡིག་གཟུགས་འདེམས་པ་བྱས་ནས་བསྐྱར་བརྗེ་བ། ཡིག་གཟུགས་ཀྱི་སྒྲ་སྐད། .ttf, .otf, .woff, .woff2",
+  "Push Progress": "འདེགས་པའི་འཕེལ་རིམ།",
+  "Pull Progress": "འདྲུད་པའི་འཕེལ་རིམ།"
 }

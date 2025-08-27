@@ -443,7 +443,6 @@
   "Google Books": "गूगल बुक्स",
   "Open Library": "ओपन लाइब्रेरी",
   "Fiction, Science, History": "काल्पनिक, विज्ञान, इतिहास",
-  "Select Cover Image": "कवर इमेज चुनें",
   "Open Book in New Window": "नई विंडो में पुस्तक खोलें",
   "Voices for {{lang}}": "{{lang}} के लिए आवाज़ें",
   "Yandex Translate": "यांडेक्स अनुवाद",
@@ -484,7 +483,6 @@
   "File Content (recommended)": "फाइल सामग्री (अनुशंसित)",
   "File Name": "फाइल नाम",
   "Device Name": "डिवाइस नाम",
-  "Sync Tolerance": "सिंक सहिष्णुता",
   "Connect to your KOReader Sync server.": "अपने KOReader सिंक सर्वर से कनेक्ट करें।",
   "Server URL": "सर्वर यूआरएल",
   "Username": "उपयोगकर्ता नाम",
@@ -503,7 +501,6 @@
   "Approximately {{percentage}}%": "लगभग {{percentage}}%",
   "Failed to connect": "कनेक्ट करने में विफल",
   "Sync Server Connected": "सिंक सर्वर कनेक्टेड",
-  "Precision: {{precision}} digits after the decimal": "सटीकता: {{precision}} दशमलव के बाद अंक",
   "Sync as {{userDisplayName}}": "सिंक के रूप में {{userDisplayName}}",
   "Custom Fonts": "कस्टम फ़ॉन्ट",
   "Cancel Delete": "डिलीट रद्द करें",
@@ -517,5 +514,7 @@
   "Select Video": "वीडियो चुनें",
   "Select Audio": "ऑडियो चुनें",
   "Select Fonts": "फ़ॉन्ट चुनें",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "समर्थित फ़ॉन्ट प्रारूप: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "समर्थित फ़ॉन्ट प्रारूप: .ttf, .otf, .woff, .woff2",
+  "Push progress": "पुश प्रगति",
+  "Pull progress": "पुल प्रगति"
 }

@@ -88,7 +88,6 @@
   "File Content (recommended)": "Contenido del archivo (recomendado)",
   "File Name": "Nombre del archivo",
   "Device Name": "Nombre del dispositivo",
-  "Sync Tolerance": "Tolerancia de sincronización",
   "Reading Progress Synced": "Progreso de lectura sincronizado",
   "Sync Conflict": "Conflicto de sincronización",
   "Sync reading progress from \"{{deviceName}}\"?": "¿Quieres sincronizar el progreso de lectura desde el dispositivo \"{{deviceName}}\"?",
@@ -476,7 +475,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Ficción, Ciencia, Historia",
-  "Select Cover Image": "Seleccionar imagen de portada",
   "Open Book in New Window": "Abre el libro en una nueva ventana",
   "Voices for {{lang}}": "Voces para {{lang}}",
   "Yandex Translate": "Yandex Translate",
@@ -507,7 +505,6 @@
   "Remove from Device Only": "Eliminar solo del dispositivo",
   "Failed to connect": "Error al conectar",
   "Sync Server Connected": "Servidor de sincronización conectado",
-  "Precision: {{precision}} digits after the decimal": "Precisión: {{precision}} dígitos después del decimal",
   "Sync as {{userDisplayName}}": "Sincronizar como {{userDisplayName}}",
   "Custom Fonts": "Fuentes Personalizadas",
   "Cancel Delete": "Cancelar Eliminación",
@@ -521,5 +518,7 @@
   "Select Video": "Seleccionar Video",
   "Select Audio": "Seleccionar Audio",
   "Select Fonts": "Seleccionar Fuentes",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Formatos de fuente compatibles: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Formatos de fuente compatibles: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Empujar progreso",
+  "Pull Progress": "Tirar progreso"
 }

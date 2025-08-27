@@ -116,8 +116,8 @@ export abstract class BaseAppService implements AppService {
         ...settings.globalViewSettings,
       };
 
-      if (!settings.koreaderSyncDeviceId) {
-        settings.koreaderSyncDeviceId = uuidv4();
+      if (!settings.kosync.deviceId) {
+        settings.kosync.deviceId = uuidv4();
         await this.fs.writeFile(fp, base, JSON.stringify(settings));
       }
     } catch {

@@ -44,7 +44,6 @@ import {
 } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
-import { KOSyncSettingsWindow } from './components/KOSyncSettings';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { BookMetadata } from '@/libs/document';
 import { BookDetailModal } from '@/components/metadata';
@@ -730,7 +729,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         />
       )}
       <AboutWindow />
-      <KOSyncSettingsWindow />
       <UpdaterWindow />
       <Toast />
     </div>

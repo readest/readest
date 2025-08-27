@@ -439,7 +439,6 @@
   "Google Books": "구글 북스",
   "Open Library": "오픈 라이브러리",
   "Fiction, Science, History": "소설, 과학, 역사",
-  "Select Cover Image": "표지 이미지 선택",
   "Open Book in New Window": "새 창에서 책 열기",
   "Voices for {{lang}}": "{{lang}}의 음성",
   "Yandex Translate": "Yandex 번역",
@@ -480,7 +479,6 @@
   "File Content (recommended)": "파일 내용 (권장)",
   "File Name": "파일 이름",
   "Device Name": "장치 이름",
-  "Sync Tolerance": "동기화 허용 오차",
   "Connect to your KOReader Sync server.": "KOReader Sync 서버에 연결합니다.",
   "Server URL": "서버 URL",
   "Username": "사용자 이름",
@@ -499,7 +497,6 @@
   "Approximately {{percentage}}%": "대략 {{percentage}}%",
   "Failed to connect": "연결 실패",
   "Sync Server Connected": "동기화 서버에 연결됨",
-  "Precision: {{precision}} digits after the decimal": "정밀도: {{precision}} 자리의 소수점 이하",
   "Sync as {{userDisplayName}}": "{{userDisplayName}}로 동기화",
   "Custom Fonts": "사용자 정의 글꼴",
   "Cancel Delete": "삭제 취소",
@@ -513,5 +510,7 @@
   "Select Video": "동영상 선택",
   "Select Audio": "오디오 선택",
   "Select Fonts": "글꼴 선택",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "지원되는 글꼴 형식: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "지원되는 글꼴 형식: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "진행 상황 푸시",
+  "Pull Progress": "진행 상황 끌어오기"
 }

@@ -443,7 +443,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Kurgu, Bilim, Tarih",
-  "Select Cover Image": "Kapak Resmi Seç",
   "Open Book in New Window": "Kitabı Yeni Pencerede Aç",
   "Voices for {{lang}}": "{{lang}} için Sesler",
   "Yandex Translate": "Yandex Çeviri",
@@ -484,7 +483,6 @@
   "File Content (recommended)": "Dosya İçeriği (önerilen)",
   "File Name": "Dosya Adı",
   "Device Name": "Cihaz Adı",
-  "Sync Tolerance": "Senkronizasyon Toleransı",
   "Connect to your KOReader Sync server.": "KOReader Senkronizasyon sunucunuza bağlanın.",
   "Server URL": "Sunucu URL'si",
   "Username": "Kullanıcı Adı",
@@ -503,7 +501,6 @@
   "Approximately {{percentage}}%": "Yaklaşık {{percentage}}%",
   "Failed to connect": "Bağlanma başarısız oldu",
   "Sync Server Connected": "Senkronizasyon Sunucusu Bağlandı",
-  "Precision: {{precision}} digits after the decimal": "Hassasiyet: {{precision}} ondalık basamaktan sonra",
   "Sync as {{userDisplayName}}": "Senkronize et {{userDisplayName}} olarak",
   "Custom Fonts": "Özel Yazı Tipleri",
   "Cancel Delete": "Silmeyi İptal Et",
@@ -517,5 +514,7 @@
   "Select Video": "Video Seç",
   "Select Audio": "Ses Seç",
   "Select Fonts": "Yazı Tiplerini Seç",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Desteklenen yazı tipi formatları: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Desteklenen yazı tipi formatları: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "İlerlemeyi Gönder",
+  "Pull Progress": "İlerlemeyi Al"
 }

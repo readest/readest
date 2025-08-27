@@ -111,7 +111,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     if (isPrimary && book && config) {
       const settings = useSettingsStore.getState().settings;
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
-      eventDispatcher.dispatch('flush-koreader-sync', { bookKey });
+      eventDispatcher.dispatch('flush-kosync', { bookKey });
       await saveConfig(envConfig, bookKey, config, settings);
     }
   };

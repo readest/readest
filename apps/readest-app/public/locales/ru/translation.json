@@ -451,7 +451,6 @@
   "Google Books": "Google Книги",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Художественная литература, Наука, История",
-  "Select Cover Image": "Выбрать изображение обложки",
   "Open Book in New Window": "Открыть книгу в новом окне",
   "Voices for {{lang}}": "Голоса для {{lang}}",
   "Yandex Translate": "Yandex Translate",
@@ -492,7 +491,6 @@
   "File Content (recommended)": "Содержимое файла (рекомендуется)",
   "File Name": "Имя файла",
   "Device Name": "Имя устройства",
-  "Sync Tolerance": "Допуск синхронизации",
   "Connect to your KOReader Sync server.": "Подключитесь к вашему серверу синхронизации KOReader.",
   "Server URL": "URL сервера",
   "Username": "Имя пользователя",
@@ -511,7 +509,6 @@
   "Approximately {{percentage}}%": "Приблизительно {{percentage}}%",
   "Failed to connect": "Не удалось подключиться",
   "Sync Server Connected": "Сервер синхронизации подключен",
-  "Precision: {{precision}} digits after the decimal": "Точность: {{precision}} знаков после запятой",
   "Sync as {{userDisplayName}}": "Синхронизировать как {{userDisplayName}}",
   "Custom Fonts": "Пользовательские Шрифты",
   "Cancel Delete": "Отменить Удаление",
@@ -525,5 +522,7 @@
   "Select Video": "Выбрать Видео",
   "Select Audio": "Выбрать Аудио",
   "Select Fonts": "Выбрать Шрифты",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Поддерживаемые форматы шрифтов: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Поддерживаемые форматы шрифтов: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Отправить прогресс",
+  "Pull Progress": "Получить прогресс"
 }

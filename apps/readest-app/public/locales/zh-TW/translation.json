@@ -439,7 +439,6 @@
   "Google Books": "Google 圖書",
   "Open Library": "開放圖書館",
   "Fiction, Science, History": "小說，科學，歷史",
-  "Select Cover Image": "選擇封面圖片",
   "Open Book in New Window": "在新視窗中打開書籍",
   "Voices for {{lang}}": "{{lang}} 的語音",
   "Yandex Translate": "Yandex 翻譯",
@@ -480,7 +479,6 @@
   "File Content (recommended)": "文件內容（推薦）",
   "File Name": "文件名",
   "Device Name": "設備名稱",
-  "Sync Tolerance": "同步容忍度",
   "Connect to your KOReader Sync server.": "連接到您的 KOReader 同步伺服器。",
   "Server URL": "伺服器 URL",
   "Username": "用戶名",
@@ -499,7 +497,6 @@
   "Approximately {{percentage}}%": "大約 {{percentage}}%",
   "Failed to connect": "連接失敗",
   "Sync Server Connected": "同步伺服器已連接",
-  "Precision: {{precision}} digits after the decimal": "精度: {{precision}} 位小數",
   "Sync as {{userDisplayName}}": "以 {{userDisplayName}} 身份同步",
   "Custom Fonts": "自訂字型",
   "Cancel Delete": "取消刪除",
@@ -513,5 +510,7 @@
   "Select Video": "選擇影片",
   "Select Audio": "選擇音訊",
   "Select Fonts": "選擇字型",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "支援的字型格式：.ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "支援的字型格式：.ttf, .otf, .woff, .woff2",
+  "Push Progress": "推送閱讀進度",
+  "Pull Progress": "拉取閱讀進度"
 }

@@ -443,7 +443,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Fictie, Wetenschap, Geschiedenis",
-  "Select Cover Image": "Selecteer omslagafbeelding",
   "Open Book in New Window": "Open boek in nieuw venster",
   "Voices for {{lang}}": "Stemmen voor {{lang}}",
   "Yandex Translate": "Yandex Vertalen",
@@ -484,7 +483,6 @@
   "File Content (recommended)": "Bestandsinhoud (aanbevolen)",
   "File Name": "Bestandsnaam",
   "Device Name": "Apparaatnaam",
-  "Sync Tolerance": "Synchronisatietolerantie",
   "Connect to your KOReader Sync server.": "Verbind met je KOReader Sync-server.",
   "Server URL": "Server-URL",
   "Username": "Gebruikersnaam",
@@ -503,7 +501,6 @@
   "Approximately {{percentage}}%": "Ongeveer {{percentage}}%",
   "Failed to connect": "Verbinding mislukt",
   "Sync Server Connected": "Synchronisatie server verbonden",
-  "Precision: {{precision}} digits after the decimal": "Precisie: {{precision}} cijfers na de komma",
   "Sync as {{userDisplayName}}": "Synchroniseren als {{userDisplayName}}",
   "Custom Fonts": "Aangepaste Lettertypen",
   "Cancel Delete": "Verwijderen Annuleren",
@@ -517,5 +514,7 @@
   "Select Video": "Video Selecteren",
   "Select Audio": "Audio Selecteren",
   "Select Fonts": "Lettertypen Selecteren",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Ondersteunde lettertypeformaten: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Ondersteunde lettertypeformaten: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Voortgang pushen",
+  "Pull Progress": "Voortgang pullen"
 }

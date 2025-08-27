@@ -1,17 +1,16 @@
+import clsx from 'clsx';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { md5 } from 'js-md5';
-import clsx from 'clsx';
 import { type as osType } from '@tauri-apps/plugin-os';
-import Dialog from '@/components/Dialog';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { KOSyncClient } from '@/services/sync/KOSyncClient';
-import { KoreaderSyncChecksumMethod, KoreaderSyncStrategy } from '@/types/settings';
-import { v4 as uuidv4 } from 'uuid';
+import { KOSyncChecksumMethod, KOSyncStrategy } from '@/types/settings';
 import { debounce } from '@/utils/debounce';
 import { getOSPlatform } from '@/utils/misc';
+import Dialog from '@/components/Dialog';
 
 type Option = {
   value: string;
@@ -69,18 +68,13 @@ export const KOSyncSettingsWindow: React.FC = () => {
   const { envConfig, appService } = useEnv();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [url, setUrl] = useState(settings.koreaderSyncServerUrl || '');
-  const [username, setUsername] = useState(settings.koreaderSyncUsername || '');
+  const [url, setUrl] = useState(settings.kosync.serverUrl || '');
+  const [username, setUsername] = useState(settings.kosync.username || '');
   const [password, setPassword] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('');
   const [deviceName, setDeviceName] = useState('');
   const [osName, setOsName] = useState('');
-
-  const [toleranceSliderValue, setToleranceSliderValue] = useState(() => {
-    const tolerance = settings.koreaderSyncPercentageTolerance;
-    return tolerance && tolerance > 0 ? Math.round(-Math.log10(tolerance)) : 4;
-  });
 
   // Get the OS name once
   useEffect(() => {
@@ -108,13 +102,10 @@ export const KOSyncSettingsWindow: React.FC = () => {
 
   useEffect(() => {
     const defaultName = osName ? `Readest (${osName})` : 'Readest';
-    setDeviceName(settings.koreaderSyncDeviceName || defaultName);
-  }, [settings.koreaderSyncDeviceName, osName]);
+    setDeviceName(settings.kosync.deviceName || defaultName);
+  }, [settings.kosync.deviceName, osName]);
 
-  const isConfigured = useMemo(
-    () => !!settings.koreaderSyncUserkey,
-    [settings.koreaderSyncUserkey],
-  );
+  const isConfigured = useMemo(() => !!settings.kosync.userkey, [settings.kosync.userkey]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSaveDeviceName = useCallback(
@@ -136,15 +127,10 @@ export const KOSyncSettingsWindow: React.FC = () => {
     const handleCustomEvent = (event: CustomEvent) => {
       setIsOpen(event.detail.visible);
       if (event.detail.visible) {
-        setUrl(settings.koreaderSyncServerUrl || '');
-        setUsername(settings.koreaderSyncUsername || '');
+        setUrl(settings.kosync.serverUrl || '');
+        setUsername(settings.kosync.username || '');
         setPassword('');
         setConnectionStatus('');
-        // Sync the slider with the current settings when opening
-        const tolerance = settings.koreaderSyncPercentageTolerance;
-        setToleranceSliderValue(
-          tolerance && tolerance > 0 ? Math.round(-Math.log10(tolerance)) : 4,
-        );
       }
     };
     const el = document.getElementById('kosync_settings_window');
@@ -152,40 +138,26 @@ export const KOSyncSettingsWindow: React.FC = () => {
     return () => {
       el?.removeEventListener('setKOSyncSettingsVisibility', handleCustomEvent as EventListener);
     };
-  }, [
-    settings.koreaderSyncServerUrl,
-    settings.koreaderSyncUsername,
-    settings.koreaderSyncPercentageTolerance,
-  ]);
+  }, [settings.kosync.serverUrl, settings.kosync.username]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
 
-    let deviceId = settings.koreaderSyncDeviceId;
-    if (!deviceId) {
-      deviceId = uuidv4().replace(/-/g, '').toUpperCase();
-    }
-
-    const client = new KOSyncClient(
-      url,
+    const config = {
+      ...settings.kosync,
+      serverUrl: url,
       username,
-      md5(password),
-      settings.koreaderSyncChecksumMethod,
-      deviceId,
+      userkey: md5(password),
       deviceName,
-    );
+      enabled: true,
+    };
+    const client = new KOSyncClient(config);
     const result = await client.connect(username, password);
 
     if (result.success) {
       const newSettings = {
         ...settings,
-        koreaderSyncServerUrl: url,
-        koreaderSyncUsername: username,
-        koreaderSyncUserkey: md5(password),
-        koreaderSyncDeviceId: deviceId,
-        koreaderSyncDeviceName: deviceName,
-        koreaderSyncStrategy:
-          settings.koreaderSyncStrategy === 'disabled' ? 'prompt' : settings.koreaderSyncStrategy,
+        kosync: config,
       };
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
@@ -201,11 +173,12 @@ export const KOSyncSettingsWindow: React.FC = () => {
   };
 
   const handleDisconnect = async () => {
-    const newSettings = {
-      ...settings,
-      koreaderSyncStrategy: 'disabled' as KoreaderSyncStrategy,
-      koreaderSyncUserkey: '',
+    const kosync = {
+      ...settings.kosync,
+      userkey: '',
+      enabled: false,
     };
+    const newSettings = { ...settings, kosync };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
     setUsername('');
@@ -213,26 +186,23 @@ export const KOSyncSettingsWindow: React.FC = () => {
   };
 
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStrategy = e.target.value as KoreaderSyncStrategy;
-    const newSettings = { ...settings, koreaderSyncStrategy: newStrategy };
+    const kosync = {
+      ...settings.kosync,
+      strategy: e.target.value as KOSyncStrategy,
+    };
+
+    const newSettings = { ...settings, kosync };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
   };
 
   const handleChecksumMethodChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newMethod = e.target.value as KoreaderSyncChecksumMethod;
-    const newSettings = { ...settings, koreaderSyncChecksumMethod: newMethod };
-    setSettings(newSettings);
-    await saveSettings(envConfig, newSettings);
-  };
+    const kosync = {
+      ...settings.kosync,
+      checksumMethod: e.target.value as KOSyncChecksumMethod,
+    };
 
-  const handleToleranceChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const sliderValue = parseInt(e.target.value, 10);
-    setToleranceSliderValue(sliderValue);
-    // Calculate the actual tolerance from the slider value (e.g., 4 -> 0.0001)
-    const newTolerance = Math.pow(10, -sliderValue);
-
-    const newSettings = { ...settings, koreaderSyncPercentageTolerance: newTolerance };
+    const newSettings = { ...settings, kosync };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
   };
@@ -251,18 +221,16 @@ export const KOSyncSettingsWindow: React.FC = () => {
             <div className='text-center'>
               <p className='text-base-content/80 text-sm'>
                 {_('Sync as {{userDisplayName}}', {
-                  userDisplayName: settings.koreaderSyncUsername,
+                  userDisplayName: settings.kosync.username,
                 })}
               </p>
             </div>
             <div className='flex h-14 items-center justify-between'>
-              <span className='text-base-content/80'>
-                {_('Sync Server Connected', { username: settings.koreaderSyncUsername })}
-              </span>
+              <span className='text-base-content/80'>{_('Sync Server Connected')}</span>
               <input
                 type='checkbox'
                 className='toggle'
-                checked={settings.koreaderSyncStrategy !== 'disabled'}
+                checked={settings.kosync.enabled}
                 onChange={() => handleDisconnect()}
               />
             </div>
@@ -271,14 +239,13 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 <span className='label-text font-medium'>{_('Sync Strategy')}</span>
               </label>
               <StyledSelect
-                value={settings.koreaderSyncStrategy}
+                value={settings.kosync.strategy}
                 onChange={handleStrategyChange}
                 options={[
                   { value: 'prompt', label: _('Ask on conflict') },
                   { value: 'silent', label: _('Always use latest') },
                   { value: 'send', label: _('Send changes only') },
                   { value: 'receive', label: _('Receive changes only') },
-                  { value: 'disable', label: _('Disabled') },
                 ]}
               />
             </div>
@@ -287,7 +254,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 <span className='label-text font-medium'>{_('Checksum Method')}</span>
               </label>
               <StyledSelect
-                value={settings.koreaderSyncChecksumMethod}
+                value={settings.kosync.checksumMethod}
                 onChange={handleChecksumMethodChange}
                 options={[
                   { value: 'binary', label: _('File Content (recommended)') },
@@ -307,27 +274,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 onChange={handleDeviceNameChange}
               />
             </div>
-            {/* Hidden to avoid confusing users with technical details */}
-            {false && (
-              <div className='form-control w-full'>
-                <label className='label py-1'>
-                  <span className='label-text font-medium'>{_('Sync Tolerance')}</span>
-                </label>
-                <input
-                  type='range'
-                  min='0'
-                  max='15'
-                  value={toleranceSliderValue}
-                  onChange={handleToleranceChange}
-                  className='range range-primary'
-                />
-                <div className='text-base-content/70 mt-2 text-center text-xs'>
-                  {_('Precision: {{precision}} digits after the decimal', {
-                    precision: toleranceSliderValue,
-                  })}
-                </div>
-              </div>
-            )}
           </>
         ) : (
           <>

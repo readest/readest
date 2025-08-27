@@ -10,7 +10,7 @@ import {
   ViewConfig,
   ViewSettings,
 } from '@/types/book';
-import { ReadSettings, SystemSettings } from '@/types/settings';
+import { KOSyncSettings, ReadSettings, SystemSettings } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/user';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -37,6 +37,17 @@ export const BOOK_UNGROUPED_ID = '';
 export const SUPPORTED_IMAGE_EXTS = ['png', 'jpg', 'jpeg'];
 export const IMAGE_ACCEPT_FORMATS = SUPPORTED_IMAGE_EXTS.map((ext) => `.${ext}`).join(', ');
 
+export const DEFAULT_KOSYNC_SETTINGS = {
+  serverUrl: 'https://sync.koreader.rocks/', // https://kosync.ak-team.com:3042/
+  username: '',
+  userkey: '',
+  deviceId: '',
+  deviceName: '',
+  checksumMethod: 'binary',
+  strategy: 'prompt',
+  enabled: false,
+} as KOSyncSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -54,14 +65,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   librarySortAscending: false,
   libraryCoverFit: 'crop',
 
-  koreaderSyncServerUrl: 'https://sync.koreader.rocks/', // https://kosync.ak-team.com:3042/
-  koreaderSyncUsername: '',
-  koreaderSyncUserkey: '',
-  koreaderSyncDeviceId: '',
-  koreaderSyncDeviceName: '',
-  koreaderSyncChecksumMethod: 'binary',
-  koreaderSyncStrategy: 'prompt',
-  koreaderSyncPercentageTolerance: 0.00001,
+  kosync: DEFAULT_KOSYNC_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,

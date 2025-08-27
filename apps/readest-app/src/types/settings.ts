@@ -7,8 +7,8 @@ export type LibraryViewModeType = 'grid' | 'list';
 export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'size' | 'format';
 export type LibraryCoverFitType = 'crop' | 'fit';
 
-export type KoreaderSyncChecksumMethod = 'binary' | 'filename';
-export type KoreaderSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive' | 'disabled';
+export type KOSyncChecksumMethod = 'binary' | 'filename';
+export type KOSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive';
 
 export interface ReadSettings {
   sideBarWidth: string;
@@ -22,6 +22,17 @@ export interface ReadSettings {
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
   customThemes: CustomTheme[];
+}
+
+export interface KOSyncSettings {
+  enabled: boolean;
+  serverUrl: string;
+  username: string;
+  userkey: string;
+  deviceId: string;
+  deviceName: string;
+  checksumMethod: KOSyncChecksumMethod;
+  strategy: KOSyncStrategy;
 }
 
 export interface SystemSettings {
@@ -45,14 +56,7 @@ export interface SystemSettings {
   libraryCoverFit: LibraryCoverFitType;
   customFonts: CustomFont[];
 
-  koreaderSyncServerUrl: string;
-  koreaderSyncUsername: string;
-  koreaderSyncUserkey: string;
-  koreaderSyncDeviceId: string;
-  koreaderSyncDeviceName: string;
-  koreaderSyncChecksumMethod: KoreaderSyncChecksumMethod;
-  koreaderSyncStrategy: KoreaderSyncStrategy;
-  koreaderSyncPercentageTolerance: number;
+  kosync: KOSyncSettings;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

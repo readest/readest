@@ -459,7 +459,6 @@
   "Google Books": "كتب جوجل",
   "Open Library": "المكتبة المفتوحة",
   "Fiction, Science, History": "خيال، علوم، تاريخ",
-  "Select Cover Image": "اختر صورة الغلاف",
   "Open Book in New Window": "فتح الكتاب في نافذة جديدة",
   "Voices for {{lang}}": "الأصوات لـ {{lang}}",
   "Yandex Translate": "ترجمة Yandex",
@@ -500,7 +499,6 @@
   "File Content (recommended)": "محتوى الملف (موصى به)",
   "File Name": "اسم الملف",
   "Device Name": "اسم الجهاز",
-  "Sync Tolerance": "تحمل المزامنة",
   "Connect to your KOReader Sync server.": "الاتصال بخادم مزامنة KOReader الخاص بك.",
   "Server URL": "عنوان URL للخادم",
   "Username": "اسم المستخدم",
@@ -519,7 +517,6 @@
   "Approximately {{percentage}}%": "تقريبًا {{percentage}}%",
   "Failed to connect": "فشل في الاتصال",
   "Sync Server Connected": "تم الاتصال بخادم المزامنة",
-  "Precision: {{precision}} digits after the decimal": "الدقة: {{precision}} أرقام بعد الفاصلة",
   "Sync as {{userDisplayName}}": "المزامنة كـ {{userDisplayName}}",
   "Custom Fonts": "الخطوط المخصصة",
   "Cancel Delete": "إلغاء الحذف",
@@ -533,5 +530,7 @@
   "Select Video": "حدد فيديو",
   "Select Audio": "حدد صوت",
   "Select Fonts": "حدد الخطوط",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "تنسيقات الخط المدعومة: .ttf، .otf، .woff، .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "تنسيقات الخط المدعومة: .ttf، .otf، .woff، .woff2",
+  "Push Progress": "تقدم الدفع",
+  "Pull Progress": "تقدم السحب"
 }

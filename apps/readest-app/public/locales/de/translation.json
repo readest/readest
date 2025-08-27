@@ -443,7 +443,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Belletristik, Wissenschaft, Geschichte",
-  "Select Cover Image": "Coverbild auswählen",
   "Open Book in New Window": "Buch in neuem Fenster öffnen",
   "Voices for {{lang}}": "Stimmen für {{lang}}",
   "Yandex Translate": "Yandex Übersetzer",
@@ -484,7 +483,6 @@
   "File Content (recommended)": "Dateiinhalte (empfohlen)",
   "File Name": "Dateiname",
   "Device Name": "Gerätename",
-  "Sync Tolerance": "Sync-Toleranz",
   "Connect to your KOReader Sync server.": "Mit Ihrem KOReader Sync-Server verbinden.",
   "Server URL": "Server-URL",
   "Username": "Benutzername",
@@ -503,7 +501,6 @@
   "Approximately {{percentage}}%": "Ungefähr {{percentage}}%",
   "Failed to connect": "Verbindung fehlgeschlagen",
   "Sync Server Connected": "Sync-Server verbunden",
-  "Precision: {{precision}} digits after the decimal": "Präzision: {{precision}} Nachkommastellen",
   "Sync as {{userDisplayName}}": "Sync als {{userDisplayName}}",
   "Custom Fonts": "Benutzerdefinierte Schriftarten",
   "Cancel Delete": "Löschen abbrechen",
@@ -517,5 +514,7 @@
   "Select Video": "Video auswählen",
   "Select Audio": "Audio auswählen",
   "Select Fonts": "Schriftarten auswählen",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Unterstützte Schriftartenformate: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Unterstützte Schriftartenformate: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Fortschritt senden",
+  "Pull Progress": "Fortschritt empfangen"
 }

@@ -439,7 +439,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "小説、科学、歴史",
-  "Select Cover Image": "表紙画像を選択",
   "Open Book in New Window": "新しいウィンドウで本を開く",
   "Voices for {{lang}}": "{{lang}}の音声",
   "Yandex Translate": "Yandex翻訳",
@@ -480,7 +479,6 @@
   "File Content (recommended)": "ファイル内容（推奨）",
   "File Name": "ファイル名",
   "Device Name": "デバイス名",
-  "Sync Tolerance": "同期許容範囲",
   "Connect to your KOReader Sync server.": "KOReader Syncサーバーに接続します。",
   "Server URL": "サーバーURL",
   "Username": "ユーザー名",
@@ -499,7 +497,6 @@
   "Approximately {{percentage}}%": "おおよそ {{percentage}}%",
   "Failed to connect": "接続に失敗しました",
   "Sync Server Connected": "同期サーバーに接続されました",
-  "Precision: {{precision}} digits after the decimal": "精度: {{precision}} 桁の小数点以下",
   "Sync as {{userDisplayName}}": "{{userDisplayName}} として同期",
   "Custom Fonts": "カスタムフォント",
   "Cancel Delete": "削除をキャンセル",
@@ -513,5 +510,7 @@
   "Select Video": "動画を選択",
   "Select Audio": "音声を選択",
   "Select Fonts": "フォントを選択",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "サポートされているフォント形式：.ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "サポートされているフォント形式：.ttf, .otf, .woff, .woff2",
+  "Push Progress": "進捗をプッシュ",
+  "Pull Progress": "進捗をプル"
 }

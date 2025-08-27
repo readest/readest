@@ -8,7 +8,6 @@ import { TbSunMoon } from 'react-icons/tb';
 import { BiMoon, BiSun } from 'react-icons/bi';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { setKOSyncSettingsWindowVisible } from './KOSyncSettings';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
@@ -159,11 +158,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsTelemetryEnabled(settings.telemetryEnabled);
   };
 
-  const showKoSyncSettingsWindow = () => {
-    setKOSyncSettingsWindowVisible(true);
-    setIsDropdownOpen?.(false);
-  };
-
   const handleUpgrade = () => {
     navigateToProfile(router);
     setIsDropdownOpen?.(false);
@@ -273,8 +267,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
-      <hr className='border-base-200 my-1' />
-      <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
       <hr className='border-base-200 my-1' />
       {user && userPlan === 'free' && !appService?.isIOSApp && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />

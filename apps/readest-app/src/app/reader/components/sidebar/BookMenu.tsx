@@ -8,10 +8,12 @@ import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
 
@@ -22,6 +24,7 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
+  const { settings } = useSettingsStore();
   const { bookKeys, getViewSettings, setViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
@@ -67,6 +70,18 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   };
   const handleUnsetParallel = () => {
     unsetParallel(bookKeys);
+    setIsDropdownOpen?.(false);
+  };
+  const showKoSyncSettingsWindow = () => {
+    setKOSyncSettingsWindowVisible(true);
+    setIsDropdownOpen?.(false);
+  };
+  const handlePullKOSync = () => {
+    eventDispatcher.dispatch('pull-kosync', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handlePushKOSync = () => {
+    eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
 
@@ -117,6 +132,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             ))}
         </ul>
       </MenuItem>
+      <hr className='border-base-200 my-1' />
+      <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
+      {settings.kosync.enabled && (
+        <>
+          <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
+          <MenuItem label={_('Pull Progress')} onClick={handlePullKOSync} />
+        </>
+      )}
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
       <MenuItem

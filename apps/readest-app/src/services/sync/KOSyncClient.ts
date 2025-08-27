@@ -1,10 +1,9 @@
 import { md5 } from 'js-md5';
 import { Book } from '@/types/book';
-import { KoreaderSyncChecksumMethod } from '@/types/settings';
+import { KOSyncSettings } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
-import { getBaseFilename } from '@/utils/path';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 /**
@@ -20,29 +19,13 @@ export interface KoSyncProgress {
 }
 
 export class KOSyncClient {
-  private serverUrl: string;
-  private username: string;
-  private userkey: string;
-  private checksumMethod: KoreaderSyncChecksumMethod;
-  private deviceId: string;
-  private deviceName: string;
+  private config: KOSyncSettings;
   private isLanServer: boolean;
 
-  constructor(
-    serverUrl: string,
-    username: string,
-    userkey: string,
-    checksumMethod: KoreaderSyncChecksumMethod,
-    deviceId: string,
-    deviceName: string,
-  ) {
-    this.serverUrl = serverUrl.replace(/\/$/, '');
-    this.username = username;
-    this.userkey = userkey;
-    this.checksumMethod = checksumMethod;
-    this.deviceId = deviceId;
-    this.deviceName = deviceName;
-    this.isLanServer = isLanAddress(this.serverUrl);
+  constructor(config: KOSyncSettings) {
+    this.config = config;
+    this.config.serverUrl = config.serverUrl.replace(/\/$/, '');
+    this.isLanServer = isLanAddress(this.config.serverUrl);
   }
 
   private async request(
@@ -58,13 +41,13 @@ export class KOSyncClient {
 
     const headers = new Headers(additionalHeaders || {});
     if (useAuth) {
-      headers.set('X-Auth-User', this.username);
-      headers.set('X-Auth-Key', this.userkey);
+      headers.set('X-Auth-User', this.config.username);
+      headers.set('X-Auth-Key', this.config.userkey);
     }
 
     if (this.isLanServer) {
       const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-      const directUrl = `${this.serverUrl}${endpoint}`;
+      const directUrl = `${this.config.serverUrl}${endpoint}`;
 
       return fetch(directUrl, {
         method,
@@ -83,7 +66,7 @@ export class KOSyncClient {
     const proxyUrl = `${getAPIBaseUrl()}/kosync`;
 
     const proxyBody: KoSyncProxyPayload = {
-      serverUrl: this.serverUrl,
+      serverUrl: this.config.serverUrl,
       endpoint,
       method,
       headers: Object.fromEntries(headers.entries()),
@@ -159,7 +142,7 @@ export class KOSyncClient {
    * @returns Promise with the progress data or null if not found
    */
   async getProgress(book: Book): Promise<KoSyncProgress | null> {
-    if (!this.userkey) return null;
+    if (!this.config.userkey) return null;
 
     const documentHash = this.getDocumentDigest(book);
     if (!documentHash) return null;
@@ -190,17 +173,17 @@ export class KOSyncClient {
    * @returns Promise with boolean indicating success
    */
   async updateProgress(book: Book, progress: string, percentage: number): Promise<boolean> {
-    if (!this.userkey) return false;
+    if (!this.config.userkey) return false;
 
     const documentHash = this.getDocumentDigest(book);
     if (!documentHash) return false;
 
     const payload = {
       document: documentHash,
-      progress: progress.toString(),
+      progress,
       percentage,
-      device: this.deviceName,
-      device_id: this.deviceId,
+      device: this.config.deviceName,
+      device_id: this.config.deviceId,
     };
 
     try {
@@ -222,10 +205,9 @@ export class KOSyncClient {
     }
   }
 
-  private getDocumentDigest(book: Book): string | undefined {
-    if (this.checksumMethod === 'filename') {
-      const filename = getBaseFilename(book.sourceTitle || book.title);
-      return md5(filename);
+  getDocumentDigest(book: Book): string {
+    if (this.config.checksumMethod === 'filename') {
+      console.warn('This is not possible anymore, using md5 instead.');
     }
     return book.hash;
   }

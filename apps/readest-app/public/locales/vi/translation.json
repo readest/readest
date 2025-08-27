@@ -439,7 +439,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Tiểu thuyết, Khoa học, Lịch sử",
-  "Select Cover Image": "Chọn ảnh bìa",
   "Open Book in New Window": "Mở Sách trong Cửa sổ Mới",
   "Voices for {{lang}}": "Giọng nói cho {{lang}}",
   "Yandex Translate": "Yandex Dịch",
@@ -480,7 +479,6 @@
   "File Content (recommended)": "Nội dung tệp (được khuyến nghị)",
   "File Name": "Tên tệp",
   "Device Name": "Tên thiết bị",
-  "Sync Tolerance": "Độ dung sai đồng bộ",
   "Connect to your KOReader Sync server.": "Kết nối với máy chủ đồng bộ KOReader của bạn.",
   "Server URL": "URL máy chủ",
   "Username": "Tên người dùng",
@@ -499,7 +497,6 @@
   "Approximately {{percentage}}%": "Khoảng {{percentage}}%",
   "Failed to connect": "Không thể kết nối",
   "Sync Server Connected": "Máy chủ đồng bộ đã kết nối",
-  "Precision: {{precision}} digits after the decimal": "Độ chính xác: {{precision}} chữ số sau dấu thập phân",
   "Sync as {{userDisplayName}}": "Đồng bộ dưới tên {{userDisplayName}}",
   "Custom Fonts": "Phông Chữ Tùy Chỉnh",
   "Cancel Delete": "Hủy Xóa",
@@ -513,5 +510,7 @@
   "Select Video": "Chọn Video",
   "Select Audio": "Chọn Âm Thanh",
   "Select Fonts": "Chọn Phông Chữ",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Định dạng phông chữ được hỗ trợ: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Định dạng phông chữ được hỗ trợ: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Đẩy tiến độ",
+  "Pull Progress": "Kéo tiến độ"
 }

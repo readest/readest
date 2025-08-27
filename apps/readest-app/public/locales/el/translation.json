@@ -443,7 +443,6 @@
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Fiction, Science, History": "Μυθοπλασία, Επιστήμη, Ιστορία",
-  "Select Cover Image": "Επιλέξτε εικόνα εξωφύλλου",
   "Open Book in New Window": "Άνοιγμα βιβλίου σε νέο παράθυρο",
   "Voices for {{lang}}": "Φωνές για {{lang}}",
   "Yandex Translate": "Μετάφραση Yandex",
@@ -484,7 +483,6 @@
   "File Content (recommended)": "Περιεχόμενο αρχείου (συνιστάται)",
   "File Name": "Όνομα αρχείου",
   "Device Name": "Όνομα συσκευής",
-  "Sync Tolerance": "Ανοχή συγχρονισμού",
   "Connect to your KOReader Sync server.": "Συνδεθείτε στον διακομιστή συγχρονισμού KOReader.",
   "Server URL": "Διεύθυνση URL διακομιστή",
   "Username": "Όνομα χρήστη",
@@ -503,7 +501,6 @@
   "Approximately {{percentage}}%": "Περίπου {{percentage}}%",
   "Failed to connect": "Αποτυχία σύνδεσης",
   "Sync Server Connected": "Ο διακομιστής συγχρονισμού είναι συνδεδεμένος",
-  "Precision: {{precision}} digits after the decimal": "Ακρίβεια: {{precision}} ψηφία μετά την υποδιαστολή",
   "Sync as {{userDisplayName}}": "Συγχρονισμός ως {{userDisplayName}}",
   "Custom Fonts": "Προσαρμοσμένες Γραμματοσειρές",
   "Cancel Delete": "Ακύρωση Διαγραφής",
@@ -517,5 +514,7 @@
   "Select Video": "Επιλογή Βίντεο",
   "Select Audio": "Επιλογή Ήχου",
   "Select Fonts": "Επιλογή Γραμματοσειρών",
-  "Supported font formats: .ttf, .otf, .woff, .woff2": "Υποστηριζόμενες μορφές γραμματοσειρών: .ttf, .otf, .woff, .woff2"
+  "Supported font formats: .ttf, .otf, .woff, .woff2": "Υποστηριζόμενες μορφές γραμματοσειρών: .ttf, .otf, .woff, .woff2",
+  "Push Progress": "Αποστολή προόδου",
+  "Pull Progress": "Λήψη προόδου"
 }
