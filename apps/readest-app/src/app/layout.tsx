@@ -37,7 +37,6 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: 'white',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -45,6 +44,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html>
       <head>
         <title>{title}</title>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              const themeMode = localStorage.getItem('themeMode');
+              const themeColor = localStorage.getItem('themeColor');
+              if (themeMode && themeColor) {
+                document.documentElement.setAttribute('data-theme', \`\${themeColor}-\${themeMode}\`);
+              }
+            `,
+          }}
+        />
         <meta
           name='viewport'
           content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'

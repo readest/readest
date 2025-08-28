@@ -6,6 +6,7 @@ extern crate cocoa;
 #[macro_use]
 extern crate objc;
 
+use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
@@ -240,7 +241,8 @@ pub fn run() {
                 eprintln!("Failed to initialize tauri_plugin_log: {e}");
             };
 
-            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default());
+            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+                .background_throttling(BackgroundThrottlingPolicy::Disabled);
 
             #[cfg(desktop)]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);

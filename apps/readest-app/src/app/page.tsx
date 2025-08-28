@@ -1,14 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import LibraryPage from './library/page';
 
 export default function HomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/library');
-  }, [router]);
-
-  return null;
+  return <LibraryPage />;
 }

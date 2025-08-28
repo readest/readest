@@ -618,18 +618,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setShowDetailsBook(book);
   };
 
-  if (!appService || !insets) {
-    return null;
-  }
-
-  if (checkOpenWithBooks || checkLastOpenBooks) {
-    return (
-      loading && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <Spinner loading />
-        </div>
-      )
-    );
+  if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
+    return <div className='bg-base-200 inset-0 flex h-[100vh] items-center justify-center'></div>;
   }
 
   return (
@@ -740,9 +730,7 @@ const LibraryPage = () => {
   return (
     <Suspense
       fallback={
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <Spinner loading />
-        </div>
+        <div className='bg-base-200 inset-0 flex h-[100vh] items-center justify-center'></div>
       }
     >
       <LibraryPageWithSearchParams />
