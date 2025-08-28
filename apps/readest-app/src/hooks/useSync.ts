@@ -176,7 +176,7 @@ export function useSync(bookKey?: string) {
 
   const syncConfigs = useCallback(
     async (bookConfigs?: BookConfig[], bookId?: string, op: SyncOp = 'both') => {
-      if (!lastSyncedAtInited) return;
+      if (!bookId && !lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && bookConfigs?.length) {
         await pushChanges({ configs: bookConfigs });
       }

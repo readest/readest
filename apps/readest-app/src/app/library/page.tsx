@@ -35,7 +35,7 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { FILE_SELECTION_PRESETS, SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
+import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
 import { lockScreenOrientation } from '@/utils/bridge';
 import {
   tauriHandleSetAlwaysOnTop,
@@ -589,7 +589,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const handleImportBooks = async () => {
     setIsSelectMode(false);
     console.log('Importing books...');
-    selectFiles({ ...FILE_SELECTION_PRESETS.books, multiple: true }).then((result) => {
+    selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
       importBooks(result.files);
     });
@@ -662,6 +662,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <OverlayScrollbarsComponent
             defer
             ref={osRef}
+            className='flex-grow'
             options={{ scrollbars: { autoHide: 'scroll' } }}
             events={{
               initialized: (instance) => {

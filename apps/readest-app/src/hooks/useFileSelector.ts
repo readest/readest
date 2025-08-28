@@ -1,9 +1,11 @@
 import { AppService } from '@/types/system';
 import { isTauriAppPlatform } from '@/services/environment';
+import { basename } from '@tauri-apps/api/path';
 import { stubTranslation as _ } from '@/utils/misc';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 
 export interface FileSelectorOptions {
+  type: SelectionType;
   accept?: string;
   multiple?: boolean;
   extensions?: string[];
@@ -42,15 +44,24 @@ const selectFileTauri = async (
   appService: AppService,
   _: (key: string) => string,
 ): Promise<string[]> => {
-  const exts = appService?.isIOSApp ? [] : options.extensions || [];
+  const noFilter = appService?.isIOSApp || (appService?.isAndroidApp && options.type === 'books');
+  const exts = noFilter ? [] : options.extensions || [];
   const title = options.dialogTitle || _('Select Files');
-  const files = (await appService?.selectFiles(_(title), exts)) || [];
+  let files = (await appService?.selectFiles(_(title), exts)) || [];
 
-  if (appService?.isIOSApp && options.extensions) {
-    return files.filter((file: string) => {
-      const fileExt = file.split('.').pop()?.toLowerCase() || 'unknown';
-      return options.extensions!.includes(fileExt);
-    });
+  if (noFilter && options.extensions) {
+    files = await Promise.all(
+      files.map(async (file: string) => {
+        let processedFile = file;
+        if (appService?.isAndroidApp && file.startsWith('content://')) {
+          processedFile = await basename(file);
+        }
+        const fileExt = processedFile.split('.').pop()?.toLowerCase() || 'unknown';
+        const extensions = options.extensions!;
+        const shouldInclude = extensions.includes(fileExt) || extensions.includes('*');
+        return shouldInclude ? file : null;
+      }),
+    ).then((results) => results.filter((file) => file !== null));
   }
 
   return files;
@@ -69,7 +80,8 @@ const processTauriFiles = (files: string[]): SelectedFile[] => {
 };
 
 export const useFileSelector = (appService: AppService | null, _: (key: string) => string) => {
-  const selectFiles = async (options: FileSelectorOptions = {}) => {
+  const selectFiles = async (options: FileSelectorOptions = { type: 'generic' }) => {
+    options = { ...FILE_SELECTION_PRESETS[options.type], ...options };
     if (!appService) {
       return { files: [] as SelectedFile[], error: 'App service is not available' };
     }
@@ -96,6 +108,11 @@ export const useFileSelector = (appService: AppService | null, _: (key: string) 
 };
 
 export const FILE_SELECTION_PRESETS = {
+  generic: {
+    accept: '*/*',
+    extensions: ['*'],
+    dialogTitle: _('Select Files'),
+  },
   images: {
     accept: 'image/*',
     extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
@@ -127,3 +144,5 @@ export const FILE_SELECTION_PRESETS = {
     dialogTitle: _('Select Image'),
   },
 };
+
+export type SelectionType = keyof typeof FILE_SELECTION_PRESETS;

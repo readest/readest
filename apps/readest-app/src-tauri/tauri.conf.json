@@ -86,9 +86,16 @@
       },
       {
         "name": "azw",
-        "ext": ["azw", "azw3"],
+        "ext": ["azw"],
         "description": "AZW file",
         "mimeType": "application/vnd.amazon.ebook",
+        "role": "Viewer"
+      },
+      {
+        "name": "azw3",
+        "ext": ["azw3"],
+        "description": "AZW3 file",
+        "mimeType": "application/vnd.amazon.mobi8-ebook",
         "role": "Viewer"
       },
       {

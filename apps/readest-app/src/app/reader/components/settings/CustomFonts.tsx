@@ -6,7 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomFontStore } from '@/store/customFontStore';
-import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
+import { useFileSelector } from '@/hooks/useFileSelector';
 import { mountCustomFont } from '@/styles/fonts';
 import { parseFontName } from '@/utils/font';
 import { getFilename } from '@/utils/path';
@@ -41,7 +41,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     currentDefaultFont === 'serif' ? viewSettings.serifFont : viewSettings.sansSerifFont;
 
   const handleImportFont = () => {
-    selectFiles({ ...FILE_SELECTION_PRESETS.fonts, multiple: true }).then(async (result) => {
+    selectFiles({ type: 'fonts', multiple: true }).then(async (result) => {
       if (result.error || result.files.length === 0) return;
       if (!(await appService!.fs.exists('', 'Fonts'))) {
         await appService!.fs.createDir('', 'Fonts');
@@ -164,9 +164,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
               'card h-12 border shadow-sm',
               currentFontFamily === font.name
                 ? 'border-primary/50 bg-primary/50'
-                : 'border-base-200 bg-base-200 cursor-pointer',
+                : `border-base-200 bg-base-200 ${isDeleteMode ? '' : 'cursor-pointer'}`,
             )}
-            onClick={() => handleSelectFont(font.id)}
+            onClick={!isDeleteMode ? () => handleSelectFont(font.id) : undefined}
             title={font.name}
           >
             <div className='card-body flex items-center justify-center p-2'>

@@ -7,8 +7,8 @@ import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { flattenContributors, formatAuthors, formatPublisher, formatTitle } from '@/utils/book';
+import { useFileSelector } from '@/hooks/useFileSelector';
 import { FormField } from './FormField';
-import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import BookCover from '@/components/BookCover';
 
 interface BookDetailEditProps {
@@ -149,7 +149,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   ];
 
   const handleSelectLocalImage = async () => {
-    selectFiles({ ...FILE_SELECTION_PRESETS.covers, multiple: false }).then(async (result) => {
+    selectFiles({ type: 'covers', multiple: false }).then(async (result) => {
       if (result.error || result.files.length === 0) return;
       const selectedFile = result.files[0]!;
       if (selectedFile.path && appService) {
