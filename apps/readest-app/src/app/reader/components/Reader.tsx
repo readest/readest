@@ -107,25 +107,25 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
-  return (
-    libraryLoaded &&
-    settings.globalReadSettings && (
-      <div
-        className={clsx(
-          `reader-page text-base-content select-none overflow-hidden`,
-          appService?.isLinuxApp && 'window-border',
-          appService?.hasRoundedWindow && 'rounded-window',
-        )}
-      >
-        <Suspense>
-          <ReaderContent ids={ids} settings={settings} />
-          <AboutWindow />
-          <UpdaterWindow />
-          <KOSyncSettingsWindow />
-          <Toast />
-        </Suspense>
-      </div>
-    )
+  return libraryLoaded && settings.globalReadSettings ? (
+    <div
+      className={clsx(
+        `reader-page bg-base-100 text-base-content select-none overflow-hidden`,
+        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        appService?.isLinuxApp && 'window-border',
+        appService?.hasRoundedWindow && 'rounded-window',
+      )}
+    >
+      <Suspense fallback={<div className='h-[100vh]'></div>}>
+        <ReaderContent ids={ids} settings={settings} />
+        <AboutWindow />
+        <UpdaterWindow />
+        <KOSyncSettingsWindow />
+        <Toast />
+      </Suspense>
+    </div>
+  ) : (
+    <div className='bg-base-100 h-[100vh]'></div>
   );
 };
 

@@ -242,7 +242,8 @@ pub fn run() {
             };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .background_throttling(BackgroundThrottlingPolicy::Disabled);
+                .background_throttling(BackgroundThrottlingPolicy::Disabled)
+                .background_color(tauri::window::Color(50, 49, 48, 255));
 
             #[cfg(desktop)]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);

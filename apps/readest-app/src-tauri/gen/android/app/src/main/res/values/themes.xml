@@ -2,9 +2,7 @@
   <!-- Base application theme. -->
   <style name="Theme.readest" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <!-- Customize your theme here. -->
-    <item name="android:windowSplashScreenBackground">@android:color/transparent</item>
-    <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@null</item>
-
+    <item name="android:windowBackground">@drawable/splash_background</item>
     <item name="android:statusBarColor">@android:color/transparent</item>
     <item name="android:navigationBarColor">@android:color/transparent</item>
     <item name="android:windowTranslucentStatus">false</item>

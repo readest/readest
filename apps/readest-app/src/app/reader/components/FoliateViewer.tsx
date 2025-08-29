@@ -45,6 +45,7 @@ import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
+import Spinner from '@/components/Spinner';
 import ConfirmSyncDialog from './ConfirmSyncDialog';
 
 declare global {
@@ -74,6 +75,8 @@ const FoliateViewer: React.FC<{
   const isViewCreated = useRef(false);
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const docLoaded = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
@@ -127,6 +130,8 @@ const FoliateViewer: React.FC<{
   };
 
   const docLoadHandler = (event: Event) => {
+    setLoading(false);
+    docLoaded.current = true;
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
     if (detail.doc) {
@@ -227,6 +232,8 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     if (isViewCreated.current) return;
     isViewCreated.current = true;
+
+    setTimeout(() => setLoading(true), 200);
 
     const openBook = async () => {
       console.log('Opening book', bookKey);
@@ -383,6 +390,7 @@ const FoliateViewer: React.FC<{
         {...mouseHandlers}
         {...touchHandlers}
       />
+      {!docLoaded.current && loading && <Spinner loading={true} />}
       {syncState === 'conflict' && conflictDetails && (
         <ConfirmSyncDialog
           details={conflictDetails}
