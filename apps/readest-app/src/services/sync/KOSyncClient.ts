@@ -53,6 +53,7 @@ export class KOSyncClient {
         method,
         headers: {
           accept: 'application/vnd.koreader.v1+json',
+          ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
           ...Object.fromEntries(headers.entries()),
         },
         body,

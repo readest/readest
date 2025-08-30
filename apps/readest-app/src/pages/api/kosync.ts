@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
+const validEndpoints = [/\/users\/create/, /\/users\/auth/, /\/syncs\/progress/];
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -21,6 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'serverUrl and endpoint are required' });
   }
 
+  if (!validEndpoints.some((regex) => regex.test(endpoint))) {
+    return res.status(400).json({ error: 'Invalid endpoint' });
+  }
+
   const targetUrl = `${serverUrl.replace(/\/$/, '')}${endpoint}`;
 
   try {
@@ -33,11 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       body: clientBody ? JSON.stringify(clientBody) : null,
     });
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error('Invalid sync server response: Unexpected Content-Type.');
-    }
 
     const data = await response.text();
     res.status(response.status);
