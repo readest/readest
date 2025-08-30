@@ -100,13 +100,13 @@ foliate-view {
 
 .window-border {
   border-radius: 10px;
-  z-index: 999;
+  z-index: 99;
   position: relative;
 }
 
 .window-border::before {
   content: '';
-  z-index: 1000;
+  z-index: 999;
   position: absolute;
   top: 0;
   left: 0;
