@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.9.76": {
+      "date": "2025-08-30",
+      "notes": [
+        "Sync: Moved KOReader sync controls into the reader sidebar with a manual push/pull option",
+        "Sync: Improved tolerance and reliability for KOReader sync operations",
+        "Sync: Added support for more KOReader server implementations",
+        "Fonts: Added support for importing multiple styles within a font family",
+        "Reader: Fixed an issue where footnotes are empty in some EPUB files",
+        "Theme: Applied theme background color for PDFs on macOS",
+        "Reader: Added support for importing AZW3 files on Android",
+        "Reader: Reduced screen flash when launching the app and opening books",
+        "Layout: Fixed an issue where the grouping modal would not appear on Linux"
+      ]
+    },
     "0.9.75": {
       "date": "2025-08-22",
       "notes": [
