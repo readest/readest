@@ -370,25 +370,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
       invoke.resolve()
     }
 
-    private fun getStatusBarHeightInternal(): Int {
-        val resourceId = activity.resources.getIdentifier("status_bar_height", "dimen", "android")
-        return if (resourceId > 0) activity.resources.getDimensionPixelSize(resourceId) else 0
-    }
-
-    private fun getNavigationBarHeight(): Int {
-        val resourceId = activity.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-        return if (resourceId > 0) activity.resources.getDimensionPixelSize(resourceId) else 0
-    }
-
-    private fun hasNavigationBar(): Boolean {
-        val resourceId = activity.resources.getIdentifier("config_showNavigationBar", "bool", "android")
-        return if (resourceId > 0) {
-            activity.resources.getBoolean(resourceId)
-        } else {
-            !android.view.ViewConfiguration.get(activity).hasPermanentMenuKey()
-        }
-    }
-
     @Command
     fun get_safe_area_insets(invoke: Invoke) {
         val ret = JSObject()
@@ -396,7 +377,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             val rootView = activity.findViewById<View>(android.R.id.content)
             val windowInsets = androidx.core.view.ViewCompat.getRootWindowInsets(rootView)
 
-            if (windowInsets != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (windowInsets != null) {
                 val insets = windowInsets.getInsets(
                     WindowInsetsCompat.Type.systemBars() or
                     WindowInsetsCompat.Type.displayCutout()
@@ -407,12 +388,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 ret.put("bottom", insets.bottom / density)
                 ret.put("left", insets.left / density)
             } else {
-                val statusBarHeight = getStatusBarHeightInternal()
-                val navBarHeight = getNavigationBarHeight()
-                val density = activity.resources.displayMetrics.density
-                ret.put("top", statusBarHeight / density)
+                ret.put("top", 0)
                 ret.put("right", 0)
-                ret.put("bottom", if (hasNavigationBar()) navBarHeight / density else 0)
+                ret.put("bottom", 0)
                 ret.put("left", 0)
             }
         } catch (e: Exception) {
