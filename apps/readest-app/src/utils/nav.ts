@@ -81,7 +81,7 @@ export const navigateToLibrary = (
   queryParams?: string,
   navOptions?: { scroll?: boolean },
 ) => {
-  router.push(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
+  router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
 };
 
 export const redirectToLibrary = () => {

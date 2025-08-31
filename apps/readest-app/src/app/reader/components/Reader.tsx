@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import * as React from 'react';
 import { useEffect, Suspense, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -28,12 +29,13 @@ import { initDayjs } from '@/utils/time';
 import ReaderContent from './ReaderContent';
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
+  const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { setLibrary } = useLibraryStore();
   const { hoveredBookKey } = useReaderStore();
   const { settings, setSettings } = useSettingsStore();
-  const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
-  const { isNotebookVisible, setNotebookVisible } = useNotebookStore();
+  const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
+  const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, showSystemUI, dismissSystemUI } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -49,12 +51,24 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       setTimeout(getSysFontsList, 3000);
     }
     initDayjs(getLocale());
+
+    acquireBackKeyInterception();
+    return () => {
+      releaseBackKeyInterception();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleKeyDown = (event: CustomEvent) => {
     if (event.detail.keyName === 'Back') {
-      setSideBarVisible(false);
-      setNotebookVisible(false);
+      if (getIsSideBarVisible()) {
+        setSideBarVisible(false);
+      } else if (getIsNotebookVisible()) {
+        setNotebookVisible(false);
+      } else {
+        eventDispatcher.dispatch('close-reader');
+        router.back();
+      }
       return true;
     }
     return false;
@@ -62,22 +76,14 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   useEffect(() => {
     if (!appService?.isAndroidApp) return;
-    if (isSideBarVisible || isNotebookVisible) {
-      acquireBackKeyInterception();
-      eventDispatcher.onSync('native-key-down', handleKeyDown);
-    }
-    if (!isSideBarVisible && !isNotebookVisible) {
-      releaseBackKeyInterception();
-      eventDispatcher.offSync('native-key-down', handleKeyDown);
-    }
+    eventDispatcher.onSync('native-key-down', handleKeyDown);
     return () => {
       if (appService?.isAndroidApp) {
-        releaseBackKeyInterception();
         eventDispatcher.offSync('native-key-down', handleKeyDown);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSideBarVisible, isNotebookVisible]);
+  }, [appService?.isAndroidApp, isSideBarVisible, isNotebookVisible]);
 
   useEffect(() => {
     if (isInitiating.current) return;
