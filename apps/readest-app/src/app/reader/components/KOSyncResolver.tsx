@@ -3,17 +3,17 @@ import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SyncDetails } from '../hooks/useKOSync';
 
-interface ConfirmSyncDialogProps {
+interface KOSyncConflictResolverProps {
   details: SyncDetails | null;
-  onConfirmLocal: () => void;
-  onConfirmRemote: () => void;
+  onResolveWithLocal: () => void;
+  onResolveWithRemote: () => void;
   onClose: () => void;
 }
 
-const ConfirmSyncDialog: React.FC<ConfirmSyncDialogProps> = ({
+const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
   details,
-  onConfirmLocal,
-  onConfirmRemote,
+  onResolveWithLocal,
+  onResolveWithRemote,
   onClose,
 }) => {
   const _ = useTranslation();
@@ -28,7 +28,10 @@ const ConfirmSyncDialog: React.FC<ConfirmSyncDialogProps> = ({
         })}
       </p>
       <div className='mt-4 space-y-4'>
-        <button className='btn h-auto w-full flex-col items-start py-2' onClick={onConfirmLocal}>
+        <button
+          className='btn h-auto w-full flex-col items-start py-2'
+          onClick={onResolveWithLocal}
+        >
           <span>{_('Local Progress')}</span>
           <span className='text-xs font-normal normal-case text-gray-500'>
             {details.local.preview}
@@ -36,7 +39,7 @@ const ConfirmSyncDialog: React.FC<ConfirmSyncDialogProps> = ({
         </button>
         <button
           className='btn btn-primary h-auto w-full flex-col items-start py-2'
-          onClick={onConfirmRemote}
+          onClick={onResolveWithRemote}
         >
           <span>{_('Remote Progress')}</span>
           <span className='text-xs font-normal normal-case'>{details.remote.preview}</span>
@@ -46,4 +49,4 @@ const ConfirmSyncDialog: React.FC<ConfirmSyncDialogProps> = ({
   );
 };
 
-export default ConfirmSyncDialog;
+export default KOSyncConflictResolver;

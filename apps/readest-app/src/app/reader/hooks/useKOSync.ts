@@ -285,14 +285,14 @@ export const useKOSync = (bookKey: string) => {
     }
   }, [progress, syncState, settings.kosync, pushProgress]);
 
-  const resolveConflictWithLocal = () => {
+  const resolveWithLocal = () => {
     pushProgress();
     pushProgress.flush();
     setSyncState('synced');
     setConflictDetails(null);
   };
 
-  const resolveConflictWithRemote = async () => {
+  const resolveWithRemote = async () => {
     const view = getView(bookKey);
     const remote = conflictDetails?.remote;
     const book = conflictDetails?.book;
@@ -311,7 +311,7 @@ export const useKOSync = (bookKey: string) => {
     errorMessage,
     pushProgress,
     pullProgress,
-    resolveConflictWithLocal,
-    resolveConflictWithRemote,
+    resolveWithLocal,
+    resolveWithRemote,
   };
 };

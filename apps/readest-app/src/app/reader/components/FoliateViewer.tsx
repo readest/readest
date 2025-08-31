@@ -46,7 +46,7 @@ import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import Spinner from '@/components/Spinner';
-import ConfirmSyncDialog from './ConfirmSyncDialog';
+import KOSyncConflictResolver from './KOSyncResolver';
 
 declare global {
   interface Window {
@@ -86,8 +86,7 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
-  const { syncState, conflictDetails, resolveConflictWithLocal, resolveConflictWithRemote } =
-    useKOSync(bookKey);
+  const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
@@ -392,11 +391,11 @@ const FoliateViewer: React.FC<{
       />
       {!docLoaded.current && loading && <Spinner loading={true} />}
       {syncState === 'conflict' && conflictDetails && (
-        <ConfirmSyncDialog
+        <KOSyncConflictResolver
           details={conflictDetails}
-          onConfirmLocal={resolveConflictWithLocal}
-          onConfirmRemote={resolveConflictWithRemote}
-          onClose={resolveConflictWithLocal}
+          onResolveWithLocal={resolveWithLocal}
+          onResolveWithRemote={resolveWithRemote}
+          onClose={resolveWithLocal}
         />
       )}
     </>
