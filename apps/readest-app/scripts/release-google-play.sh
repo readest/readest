@@ -23,6 +23,8 @@ VERSION_CODE=$((10#$MAJOR * 10000 + 10#$MINOR * 1000 + 10#$PATCH))
 echo "🔢 Computed versionCode: $VERSION_CODE"
 
 PROPERTIES_FILE="./src-tauri/gen/android/app/tauri.properties"
+MANIFEST="./src-tauri/gen/android/app/src/main/AndroidManifest.xml"
+PERMISSION_LINE='<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>'
 
 if [[ ! -f "$PROPERTIES_FILE" ]]; then
   echo "❌ File not found: $PROPERTIES_FILE"
@@ -36,8 +38,30 @@ mv "$tmpfile" "$PROPERTIES_FILE"
 
 echo "✅ Updated $PROPERTIES_FILE"
 
+# --- REMOVE PERMISSION BEFORE BUILD ---
+if grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then
+  echo "🧹 Removing REQUEST_INSTALL_PACKAGES from AndroidManifest.xml"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "/REQUEST_INSTALL_PACKAGES/d" "$MANIFEST"
+  else
+    sed -i "/REQUEST_INSTALL_PACKAGES/d" "$MANIFEST"
+  fi
+fi
+
 echo "🚀 Running: pnpm tauri android build"
 pnpm tauri android build
+
+# --- ADD PERMISSION BACK AFTER BUILD ---
+if ! grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then
+  echo "♻️  Restoring REQUEST_INSTALL_PACKAGES in AndroidManifest.xml"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "/android.permission.INTERNET/a\\
+    $PERMISSION_LINE
+    " "$MANIFEST"
+  else
+    sed -i "/android.permission.INTERNET/a \    $PERMISSION_LINE" "$MANIFEST"
+  fi
+fi
 
 source .env.google-play.local
 if [[ -z "$GOOGLE_PLAY_JSON_KEY_FILE" ]]; then
