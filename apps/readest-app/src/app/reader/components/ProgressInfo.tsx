@@ -62,7 +62,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
       className={clsx(
         'progressinfo absolute bottom-0 flex items-center justify-between',
         'text-neutral-content font-sans text-xs font-extralight',
-        isVertical ? 'writing-vertical-rl' : 'h-[52px] w-full',
+        isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}
       style={
@@ -78,16 +78,23 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           : {
               paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
               paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
-              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.67}px` : 0,
+              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
             }
       }
     >
-      {viewSettings.showRemainingTime ? (
-        <span className='text-start'>{timeLeft}</span>
-      ) : viewSettings.showRemainingPages ? (
-        <span className='text-start'>{pageLeft}</span>
-      ) : null}
-      {viewSettings.showProgressInfo && <span className='ms-auto text-end'>{progressInfo}</span>}
+      <div
+        className={clsx(
+          'flex items-center justify-center',
+          isVertical ? 'h-full' : 'h-[52px] w-full',
+        )}
+      >
+        {viewSettings.showRemainingTime ? (
+          <span className='text-start'>{timeLeft}</span>
+        ) : viewSettings.showRemainingPages ? (
+          <span className='text-start'>{pageLeft}</span>
+        ) : null}
+        {viewSettings.showProgressInfo && <span className='ms-auto text-end'>{progressInfo}</span>}
+      </div>
     </div>
   );
 };

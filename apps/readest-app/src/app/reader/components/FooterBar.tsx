@@ -183,7 +183,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       />
       <div
         className={clsx(
-          'footer-bar shadow-xs bottom-0 z-50 flex w-full flex-col',
+          'footer-bar shadow-xs bottom-0 z-30 flex w-full flex-col',
           'sm:h-[52px] sm:justify-center',
           'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
           'transition-[opacity,transform] duration-300',
@@ -211,7 +211,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
           )}
           style={{
-            bottom: isMobile ? `${gridInsets.bottom + 64}px` : '64px',
+            bottom: isMobile ? `${gridInsets.bottom * 0.33 + 64}px` : '64px',
           }}
         >
           <div className='flex w-full items-center justify-between gap-x-6'>
@@ -265,7 +265,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
           )}
           style={{
-            bottom: isMobile ? `${gridInsets.bottom + 64}px` : '64px',
+            bottom: isMobile ? `${gridInsets.bottom * 0.33 + 64}px` : '64px',
           }}
         >
           <Slider
@@ -304,10 +304,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
         </div>
         <div
           className={clsx(
-            'bg-base-200 z-50 mt-auto flex w-full justify-between px-8 py-4 sm:hidden',
+            'bg-base-200 z-30 mt-auto flex w-full justify-between px-8 py-4 sm:hidden',
           )}
           style={{
-            paddingBottom: isMobile ? `${gridInsets.bottom + 16}px` : '0px',
+            paddingBottom: isMobile ? `${gridInsets.bottom * 0.33 + 16}px` : '0px',
           }}
         >
           <Button
@@ -337,7 +337,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <div
           className='absolute hidden h-full w-full items-center gap-x-4 px-4 sm:flex'
           style={{
-            bottom: isMobile ? `${gridInsets.bottom / 2}px` : '0px',
+            bottom: isMobile ? `${gridInsets.bottom * 0.33}px` : '0px',
           }}
         >
           <Button
@@ -392,7 +392,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           />
         </div>
       </div>
-      <TTSControl bookKey={bookKey} />
+      <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
     </>
   );
 };

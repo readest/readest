@@ -67,10 +67,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         if (index === 0) setSideBarBookKey(key);
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
     const handleShowBookDetails = (event: CustomEvent) => {
-      const book = event.detail as Book;
-      setShowDetailsBook(book);
+      setShowDetailsBook(event.detail as Book);
       return true;
     };
     eventDispatcher.onSync('show-book-details', handleShowBookDetails);
@@ -78,7 +80,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     return () => {
       eventDispatcher.offSync('show-book-details', handleShowBookDetails);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

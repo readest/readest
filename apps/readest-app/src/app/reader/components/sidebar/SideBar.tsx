@@ -181,13 +181,19 @@ const SideBar: React.FC<{
 
   return isSideBarVisible ? (
     <>
+      {!isSideBarPinned && (
+        <div
+          className='overlay fixed inset-0 z-[45] bg-black/50 sm:bg-black/20'
+          onClick={handleClickOverlay}
+        />
+      )}
       <div
         className={clsx(
-          'sidebar-container bg-base-200 z-20 flex min-w-60 select-none flex-col',
+          'sidebar-container bg-base-200 flex min-w-60 select-none flex-col',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           'transition-[padding-top] duration-300',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
-          !isSideBarPinned && 'shadow-2xl',
+          isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
         )}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
@@ -266,12 +272,6 @@ const SideBar: React.FC<{
           onTouchStart={handleHorizontalDragStart}
         ></div>
       </div>
-      {!isSideBarPinned && (
-        <div
-          className='overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/20'
-          onClick={handleClickOverlay}
-        />
-      )}
     </>
   ) : null;
 };

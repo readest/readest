@@ -160,6 +160,7 @@ export interface TTSConfig {
   ttsRate: number;
   ttsVoice: string;
   ttsLocation: string;
+  showTTSBar: boolean;
 }
 
 export interface TranslatorConfig {

@@ -13,30 +13,35 @@ import { parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { CFI } from '@/libs/document';
+import { Insets } from '@/types/misc';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
+import TTSBar from './TTSBar';
 
 const POPUP_WIDTH = 282;
-const POPUP_HEIGHT = 160;
+const POPUP_HEIGHT = 180;
 const POPUP_PADDING = 10;
 
 interface TTSControlProps {
   bookKey: string;
+  gridInsets: Insets;
 }
 
-const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
+const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
   const { getBookData } = useBookDataStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
   const { setViewSettings, setTTSEnabled } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey);
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+  const [showTTSBar, setShowTTSBar] = useState(() => !!viewSettings?.showTTSBar);
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
 
@@ -44,7 +49,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
   const [timeoutTimestamp, setTimeoutTimestamp] = useState(0);
   const [timeoutFunc, setTimeoutFunc] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const viewSettings = getViewSettings(bookKey);
   const popupPadding = useResponsiveSize(POPUP_PADDING);
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
@@ -363,6 +367,16 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
     }
   };
 
+  const handleToggleTTSBar = () => {
+    const viewSettings = getViewSettings(bookKey)!;
+    viewSettings.showTTSBar = !viewSettings.showTTSBar;
+    setShowTTSBar(viewSettings.showTTSBar);
+    if (viewSettings.showTTSBar) {
+      setShowPanel(false);
+    }
+    setViewSettings(bookKey, viewSettings);
+  };
+
   const updatePanelPosition = () => {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect();
@@ -430,12 +444,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
           ref={iconRef}
           className={clsx(
             'absolute h-12 w-12',
-            viewSettings?.rtl ? 'left-6' : 'right-6',
+            'transition-transform duration-300',
+            viewSettings?.rtl ? 'left-8' : 'right-6',
             !appService?.hasSafeAreaInset && 'bottom-[70px] sm:bottom-14',
           )}
           style={{
             bottom: appService?.hasSafeAreaInset
-              ? `${(safeAreaInsets?.bottom || 0) + 70}px`
+              ? `${(safeAreaInsets?.bottom || 0) * 0.33 + (hoveredBookKey ? 70 : 52)}px`
               : undefined,
           }}
         >
@@ -464,8 +479,19 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
             onSetVoice={handleSetVoice}
             onGetVoiceId={handleGetVoiceId}
             onSelectTimeout={handleSelectTimeout}
+            onToogleTTSBar={handleToggleTTSBar}
           />
         </Popup>
+      )}
+      {showIndicator && showTTSBar && ttsClientsInited && (
+        <TTSBar
+          bookKey={bookKey}
+          isPlaying={isPlaying}
+          onBackward={handleBackward}
+          onTogglePlay={handleTogglePlay}
+          onForward={handleForward}
+          gridInsets={gridInsets}
+        />
       )}
     </>
   );

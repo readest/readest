@@ -28,6 +28,27 @@ import { getLocale } from '@/utils/misc';
 import { initDayjs } from '@/utils/time';
 import ReaderContent from './ReaderContent';
 
+/*
+Z-Index Layering Guide:
+---------------------------------
+99 – Window Border (Linux only)
+     • Ensures the border stays on top of all UI elements.
+50 – Loading Progress / Toast Notifications / Dialogs
+     • Includes Settings, About, Updater, and KOSync dialogs.
+45 – Sidebar / Notebook (Unpinned)
+     • Floats above the content but below global dialogs.
+40 – TTS Bar
+     • Mini controls for TTS playback on top of the TTS Control.
+30 – Footbar (TTS Control)
+     • Persistent bottom controls and the TTS icon/panel.
+20 – Menu / Sidebar / Notebook (Pinned)
+     • Docked navigation or note views.
+10 – Headerbar / Ribbon
+     • Top toolbar and ribbon elements.
+ 0 – Base Content
+     • Main reading area or background content.
+*/
+
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();

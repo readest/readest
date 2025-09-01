@@ -189,15 +189,15 @@ const Notebook: React.FC = ({}) => {
   return isNotebookVisible ? (
     <>
       {!isNotebookPinned && (
-        <div className='overlay fixed inset-0 z-10 bg-black/20' onClick={handleClickOverlay} />
+        <div className='overlay fixed inset-0 z-[45] bg-black/20' onClick={handleClickOverlay} />
       )}
       <div
         className={clsx(
-          'notebook-container bg-base-200 right-0 z-20 flex min-w-60 select-none flex-col',
+          'notebook-container bg-base-200 right-0 flex min-w-60 select-none flex-col',
           'font-sans text-base font-normal sm:text-sm',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
-          !isNotebookPinned && 'shadow-2xl',
+          isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
         )}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
