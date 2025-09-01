@@ -1,3 +1,4 @@
+import { FontStyle } from '@/styles/fonts';
 import { getUserLang } from './misc';
 
 function parseUnicodeString(dataView: DataView, offset: number, length: number): string {
@@ -77,6 +78,74 @@ function getLanguagePriority(platformID: number, languageID: number, userLanguag
   return priority;
 }
 
+function parseOS2Weight(dataView: DataView, os2TableOffset: number): number {
+  // OS/2 table usWeightClass is at offset 4
+  return dataView.getUint16(os2TableOffset + 4, false);
+}
+
+function parseOS2Selection(dataView: DataView, os2TableOffset: number): number {
+  // OS/2 table fsSelection is at offset 62
+  return dataView.getUint16(os2TableOffset + 62, false);
+}
+
+function weightClassToCSSWeight(weightClass: number): number {
+  // Map OpenType weight class to CSS weight
+  if (weightClass >= 1 && weightClass <= 100) return 100;
+  if (weightClass >= 101 && weightClass <= 200) return 200;
+  if (weightClass >= 201 && weightClass <= 300) return 300;
+  if (weightClass >= 301 && weightClass <= 400) return 400;
+  if (weightClass >= 401 && weightClass <= 500) return 500;
+  if (weightClass >= 501 && weightClass <= 600) return 600;
+  if (weightClass >= 601 && weightClass <= 700) return 700;
+  if (weightClass >= 701 && weightClass <= 800) return 800;
+  if (weightClass >= 801 && weightClass <= 900) return 900;
+  return 400; // Default to normal weight
+}
+
+function inferWeightFromStyleName(styleName: string): number {
+  const lowerStyle = styleName.toLowerCase();
+
+  // Check for specific weight keywords
+  if (lowerStyle.includes('thin') || lowerStyle.includes('hairline')) return 100;
+  if (lowerStyle.includes('extralight') || lowerStyle.includes('ultralight')) return 200;
+  if (
+    lowerStyle.includes('light') &&
+    !lowerStyle.includes('extralight') &&
+    !lowerStyle.includes('ultralight')
+  )
+    return 300;
+  if (lowerStyle.includes('medium')) return 500;
+  if (lowerStyle.includes('semibold') || lowerStyle.includes('demibold')) return 600;
+  if (lowerStyle.includes('extrabold') || lowerStyle.includes('ultrabold')) return 800;
+  if (lowerStyle.includes('black') || lowerStyle.includes('heavy')) return 900;
+  if (
+    lowerStyle.includes('bold') &&
+    !lowerStyle.includes('semibold') &&
+    !lowerStyle.includes('extrabold') &&
+    !lowerStyle.includes('ultrabold')
+  )
+    return 700;
+
+  return 400; // Default to normal weight
+}
+
+function inferStyleFromName(
+  styleName: string,
+  fsSelection: number,
+): 'normal' | 'italic' | 'oblique' {
+  const lowerStyle = styleName.toLowerCase();
+
+  // Check fsSelection flags first (bit 0 = italic, bit 9 = oblique)
+  if (fsSelection & 0x200) return 'oblique'; // Bit 9
+  if (fsSelection & 0x1) return 'italic'; // Bit 0
+
+  // Fallback to style name analysis
+  if (lowerStyle.includes('oblique')) return 'oblique';
+  if (lowerStyle.includes('italic') || lowerStyle.includes('slant')) return 'italic';
+
+  return 'normal';
+}
+
 type FontNameType = {
   name: string;
   platformID: number;
@@ -84,7 +153,7 @@ type FontNameType = {
   priority: number;
 };
 
-export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
+export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
   const fallbackName = filename.replace(/\.[^/.]+$/, '');
   try {
     const dataView = new DataView(fontData);
@@ -94,6 +163,7 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
     }
     const numTables = dataView.getUint16(4, false);
     let nameTableOffset = 0;
+    let os2TableOffset = 0;
     for (let i = 0; i < numTables; i++) {
       const tableOffset = 12 + i * 16;
       const tag = String.fromCharCode(
@@ -105,7 +175,8 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
 
       if (tag === 'name') {
         nameTableOffset = dataView.getUint32(tableOffset + 8, false);
-        break;
+      } else if (tag === 'OS/2') {
+        os2TableOffset = dataView.getUint32(tableOffset + 8, false);
       }
     }
 
@@ -119,6 +190,8 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
     const userLanguage = getUserLang();
     const fontFamilyNames: Array<FontNameType> = [];
     const fontStyleNames: Array<FontNameType> = [];
+    const preferredFamilyNames: Array<FontNameType> = [];
+    const preferredStyleNames: Array<FontNameType> = [];
     for (let i = 0; i < count; i++) {
       const recordOffset = nameTableOffset + 6 + i * 12;
       const platformID = dataView.getUint16(recordOffset, false);
@@ -128,7 +201,8 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
       const nameOffsetInTable = dataView.getUint16(recordOffset + 10, false);
 
       // nameID 1 = Font Family name, nameID 2 = Font Subfamily name (style)
-      if (nameID === 1 || nameID === 2) {
+      // nameID 16 = Typographic Family name, nameID 17 = Typographic Subfamily name
+      if (nameID === 1 || nameID === 2 || nameID === 16 || nameID === 17) {
         const stringStart = nameTableOffset + stringOffset + nameOffsetInTable;
         let fontName = '';
 
@@ -153,6 +227,10 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
             fontFamilyNames.push(nameEntry);
           } else if (nameID === 2) {
             fontStyleNames.push(nameEntry);
+          } else if (nameID === 16) {
+            preferredFamilyNames.push(nameEntry);
+          } else if (nameID === 17) {
+            preferredStyleNames.push(nameEntry);
           }
         }
       }
@@ -162,23 +240,55 @@ export const parseFontName = (fontData: ArrayBuffer, filename: string) => {
     }
     fontFamilyNames.sort((a, b) => b.priority - a.priority);
     fontStyleNames.sort((a, b) => b.priority - a.priority);
-    const fontStyleName = fontStyleNames[0];
-    const familyName = fontFamilyNames[0]!.name;
+    preferredFamilyNames.sort((a, b) => b.priority - a.priority);
+    preferredStyleNames.sort((a, b) => b.priority - a.priority);
+
+    // Prefer typographic names if available
+    const familyName = (preferredFamilyNames[0] || fontFamilyNames[0])!.name;
+    const fontStyleName = preferredStyleNames[0] || fontStyleNames[0];
     const styleName = fontStyleName?.name || '';
+
+    // Parse weight and style information
+    let fontWeight = 400;
+    let fontStyle: FontStyle = 'normal';
+    let fsSelection = 0;
+
+    if (os2TableOffset > 0) {
+      try {
+        const weightClass = parseOS2Weight(dataView, os2TableOffset);
+        fontWeight = weightClassToCSSWeight(weightClass);
+        fsSelection = parseOS2Selection(dataView, os2TableOffset);
+      } catch {
+        console.warn('Failed to parse OS/2 table, falling back to style name analysis');
+      }
+    }
+
+    // If OS/2 table weight is default (400) or unavailable, try to infer from style name
+    if (fontWeight === 400 && styleName) {
+      const inferredWeight = inferWeightFromStyleName(styleName);
+      if (inferredWeight !== 400) {
+        fontWeight = inferredWeight;
+      }
+    }
+
+    fontStyle = inferStyleFromName(styleName, fsSelection);
+
     return {
       name:
         fontStyleName && !NO_STYLE_LANGUAGE_IDS.has(fontStyleName.languageID)
           ? `${familyName} ${styleName}`
           : familyName,
       family: familyName,
-      style: styleName,
+      weight: fontWeight,
+      style: fontStyle,
     };
   } catch (error) {
     console.warn(`Failed to parse font: ${error}`);
     return {
       name: fallbackName,
       family: fallbackName,
-      style: '',
+      weight: 400,
+      style: 'normal' as FontStyle,
     };
   }
 };

@@ -7,8 +7,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useFileSelector } from '@/hooks/useFileSelector';
-import { mountCustomFont } from '@/styles/fonts';
-import { parseFontName } from '@/utils/font';
+import { CustomFont, mountCustomFont } from '@/styles/fonts';
+import { parseFontInfo } from '@/utils/font';
 import { getFilename } from '@/utils/path';
 import { saveViewSettings } from '../../utils/viewSettingsHelper';
 
@@ -16,6 +16,11 @@ interface CustomFontsProps {
   bookKey: string;
   onBack: () => void;
 }
+
+type FontFamily = {
+  name: string;
+  fonts: CustomFont[];
+};
 
 const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const _ = useTranslation();
@@ -62,12 +67,14 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         } else {
           continue;
         }
-        const fontName = parseFontName(await fontFile.arrayBuffer(), fontPath);
+        const fontInfo = parseFontInfo(await fontFile.arrayBuffer(), fontPath);
         const customFont = addFont(fontPath, {
-          name: fontName.name,
-          family: fontName.family,
-          style: fontName.style,
+          name: fontInfo.name,
+          family: fontInfo.family,
+          style: fontInfo.style,
+          weight: fontInfo.weight,
         });
+        console.log('Added custom font:', customFont);
         if (customFont && !customFont.error) {
           const loadedFont = await loadFont(envConfig, customFont.id);
           mountCustomFont(document, loadedFont);
@@ -77,27 +84,25 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     });
   };
 
-  const handleDeleteFont = (fontId: string) => {
-    const font = customFonts.find((f) => f.id === fontId);
-    if (font) {
-      if (removeFont(fontId)) {
-        appService!.fs.removeFile(font.path, 'Fonts');
-        saveCustomFonts(envConfig);
-        if (getAvailableFonts().length === 0) {
-          setIsDeleteMode(false);
+  const handleDeleteFamily = (family: FontFamily) => {
+    for (const font of family.fonts) {
+      if (font) {
+        if (removeFont(font.id)) {
+          appService!.fs.removeFile(font.path, 'Fonts');
+          saveCustomFonts(envConfig);
+          if (getAvailableFonts().length === 0) {
+            setIsDeleteMode(false);
+          }
         }
       }
     }
   };
 
-  const handleSelectFont = (fontId: string) => {
-    const font = customFonts.find((f) => f.id === fontId);
-    if (font) {
-      if (currentDefaultFont === 'serif') {
-        saveViewSettings(envConfig, bookKey, 'serifFont', font.name);
-      } else {
-        saveViewSettings(envConfig, bookKey, 'sansSerifFont', font.name);
-      }
+  const handleSelectFamily = (family: FontFamily) => {
+    if (currentDefaultFont === 'serif') {
+      saveViewSettings(envConfig, bookKey, 'serifFont', family.name);
+    } else {
+      saveViewSettings(envConfig, bookKey, 'sansSerifFont', family.name);
     }
   };
 
@@ -105,9 +110,28 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     setIsDeleteMode(!isDeleteMode);
   };
 
+  const getAvailableFamilies = (fonts: CustomFont[]): FontFamily[] => {
+    const familyMap = new Map<string, string[]>();
+
+    for (const font of fonts) {
+      const family = font.family || font.name;
+      if (!familyMap.has(family)) {
+        familyMap.set(family, []);
+      }
+      familyMap.get(family)!.push(font.id);
+    }
+
+    return Array.from(familyMap.entries()).map(([family, ids]) => ({
+      name: family,
+      fonts: ids.map((id) => fonts.find((f) => f.id === id)!).filter((f): f is CustomFont => !!f),
+    }));
+  };
+
   const availableFonts = customFonts
     .filter((font) => !font.deletedAt)
     .sort((a, b) => (b.downloadedAt || 0) - (a.downloadedAt || 0));
+
+  const availableFamilies = getAvailableFamilies(availableFonts);
 
   return (
     <div className='w-full'>
@@ -157,31 +181,31 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           </div>
         </div>
 
-        {availableFonts.map((font) => (
+        {availableFamilies.map((family) => (
           <div
-            key={font.id}
+            key={family.name}
             className={clsx(
               'card h-12 border shadow-sm',
-              currentFontFamily === font.name
+              currentFontFamily === family.name
                 ? 'border-primary/50 bg-primary/50'
                 : `border-base-200 bg-base-200 ${isDeleteMode ? '' : 'cursor-pointer'}`,
             )}
-            onClick={!isDeleteMode ? () => handleSelectFont(font.id) : undefined}
-            title={font.name}
+            onClick={!isDeleteMode ? () => handleSelectFamily(family) : undefined}
+            title={family.fonts.map((f) => f.name).join('\n')}
           >
             <div className='card-body flex items-center justify-center p-2'>
               <div
                 style={{
-                  fontFamily: font.loaded ? `"${font.name}", sans-serif` : 'sans-serif',
+                  fontFamily: `"${family.name}", sans-serif`,
                   fontWeight: 400,
                 }}
                 className='text-base-content line-clamp-1 break-all'
               >
-                {font.family || font.name}
+                {family.name}
               </div>
               {isDeleteMode && (
                 <button
-                  onClick={() => handleDeleteFont(font.id)}
+                  onClick={() => handleDeleteFamily(family)}
                   className='btn btn-ghost btn-xs absolute right-[-10px] top-[-10px] h-6 min-h-0 w-6 p-0 hover:bg-transparent'
                   title={_('Delete Font')}
                 >

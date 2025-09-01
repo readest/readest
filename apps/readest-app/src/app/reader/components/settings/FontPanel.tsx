@@ -74,7 +74,7 @@ const FontFace = ({
   const _ = useTranslation();
   return (
     <div className={clsx('config-item', className)}>
-      <span className='min-w-10'>{label}</span>
+      <span className='line-clamp-2 min-w-10'>{label}</span>
       <FontDropdown
         family={family}
         options={options.map((option) => ({ option, label: _(option) }))}

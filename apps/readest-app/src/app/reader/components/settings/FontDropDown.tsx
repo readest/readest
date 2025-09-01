@@ -104,7 +104,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
       >
         <div className='flex items-center gap-x-1'>
           <span
-            className='line-clamp-1 overflow-visible break-all leading-loose'
+            className='line-clamp-1 break-all leading-loose'
             style={{
               fontFamily: onGetFontFamily(selectedOption.option, family ?? ''),
             }}

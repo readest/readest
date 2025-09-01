@@ -115,11 +115,14 @@ export const mountAdditionalFonts = (document: Document, isCJK = false) => {
   });
 };
 
+export type FontStyle = 'normal' | 'italic' | 'oblique';
+
 export interface CustomFont {
   id: string;
   name: string;
   family?: string;
   style?: string;
+  weight?: number;
   path: string;
   downloadedAt?: number;
   deletedAt?: number;
@@ -171,7 +174,9 @@ export function createFontFamily(name: string): string {
 export function createFontCSS(font: CustomFont): string {
   const format = getFontFormat(font.path);
   const cssFormat = getCSSFormatString(format);
-  const fontFamily = createFontFamily(font.name);
+  const fontFamily = createFontFamily(font.family || font.name);
+  const fontStyle = font.style || 'normal';
+  const fontWeight = font.weight || 400;
   if (!font.blobUrl) {
     throw new Error(`Blob URL not available for font: ${font.name}`);
   }
@@ -179,6 +184,8 @@ export function createFontCSS(font: CustomFont): string {
   const css = `
     @font-face {
       font-family: "${fontFamily}";
+      font-style: ${fontStyle};
+      font-weight: ${fontWeight};
       src: url("${font.blobUrl}") format("${cssFormat}");
       font-display: swap;
     }
@@ -193,10 +200,18 @@ export function createCustomFont(
     name?: string;
     family?: string;
     style?: string;
+    weight?: number;
   },
 ): CustomFont {
   const name = options?.name || getFontName(path);
-  return { id: getFontId(name), name, family: options?.family, style: options?.style, path };
+  return {
+    id: getFontId(name),
+    name,
+    family: options?.family,
+    style: options?.style,
+    weight: options?.weight,
+    path,
+  };
 }
 
 export const mountCustomFont = (document: Document, font: CustomFont) => {

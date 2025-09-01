@@ -10,7 +10,7 @@ interface FontStoreState {
   setFonts: (fonts: CustomFont[]) => void;
   addFont: (
     path: string,
-    options?: { name?: string; family?: string; style?: string },
+    options?: { name?: string; family?: string; style?: string; weight?: number },
   ) => CustomFont;
   removeFont: (id: string) => boolean;
   updateFont: (id: string, updates: Partial<CustomFont>) => boolean;
@@ -240,7 +240,9 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
     return get()
       .getAvailableFonts()
       .filter((font) => font.loaded && !font.error)
-      .map((font) => font.name);
+      .map((font) => font.family || font.name)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort((a, b) => a.localeCompare(b));
   },
 
   getLoadedFonts: () => {
