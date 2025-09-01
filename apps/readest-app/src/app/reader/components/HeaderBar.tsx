@@ -148,7 +148,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               !windowButtonVisible && 'max-w-[50%]',
             )}
           >
-            {bookTitle} {bookTitle} {bookTitle} {bookTitle}
+            {bookTitle}
           </h2>
         </div>
 

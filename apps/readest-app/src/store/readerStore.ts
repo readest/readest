@@ -327,7 +327,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       },
     })),
 
-  getGridInsets: (key: string) => get().viewStates[key]?.gridInsets || null,
+  getGridInsets: (key: string) =>
+    get().viewStates[key]?.gridInsets || { top: 0, right: 0, bottom: 0, left: 0 },
   setGridInsets: (key: string, insets: Insets | null) =>
     set((state) => ({
       viewStates: {
