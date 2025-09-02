@@ -58,16 +58,18 @@ const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
   config: BookConfig;
+  gridInsets: Insets;
   contentInsets: Insets;
-}> = ({ bookKey, bookDoc, config, contentInsets: insets }) => {
+}> = ({ bookKey, bookDoc, config, gridInsets, contentInsets: insets }) => {
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
   const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setProgress } = useReaderStore();
-  const { getViewSettings, setViewSettings } = useReaderStore();
+  const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
+  const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
   const viewRef = useRef<FoliateView | null>(null);
@@ -308,6 +310,7 @@ const FoliateViewer: React.FC<{
 
   const applyMarginAndGap = () => {
     const viewSettings = getViewSettings(bookKey)!;
+    const viewState = getViewState(bookKey);
     const viewInsets = getViewInsets(viewSettings);
     const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
     const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
@@ -315,7 +318,11 @@ const FoliateViewer: React.FC<{
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     const showBottomFooter = viewSettings.showFooter && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 44 - insets.top) : 0;
-    const moreBottomInset = showBottomFooter ? Math.max(0, 44 - insets.bottom) : 0;
+    const ttsBarHeight =
+      viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
+    const moreBottomInset = showBottomFooter
+      ? Math.max(0, Math.max(ttsBarHeight, 44) - insets.bottom)
+      : Math.max(0, ttsBarHeight);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
     const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
@@ -379,6 +386,8 @@ const FoliateViewer: React.FC<{
     viewSettings?.doubleBorder,
     viewSettings?.showHeader,
     viewSettings?.showFooter,
+    viewSettings?.showTTSBar,
+    viewState?.ttsEnabled,
   ]);
 
   return (

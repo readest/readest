@@ -219,6 +219,7 @@ export class TTSController extends EventTarget {
     await this.initViewTTS();
     this.#speak(ssml).catch((e) => this.error(e));
     this.preloadNextSSML();
+    this.dispatchSpeakMark();
   }
 
   play() {
@@ -357,8 +358,8 @@ export class TTSController extends EventTarget {
     return this.ttsClient.getSpeakingLang();
   }
 
-  dispatchSpeakMark(mark: TTSMark) {
-    this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark }));
+  dispatchSpeakMark(mark?: TTSMark) {
+    this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
   }
 
   error(e: unknown) {

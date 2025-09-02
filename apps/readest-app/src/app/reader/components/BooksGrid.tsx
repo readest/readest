@@ -123,6 +123,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               bookKey={bookKey}
               bookDoc={bookDoc}
               config={config}
+              gridInsets={gridInsets}
               contentInsets={contentInsets}
             />
             {viewSettings.vertical && viewSettings.scrolled && (
