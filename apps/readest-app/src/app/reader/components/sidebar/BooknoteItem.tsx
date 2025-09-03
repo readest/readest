@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 
 import { marked } from 'marked';
 import { useEnv } from '@/context/EnvContext';
@@ -13,6 +13,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
 import useScrollToItem from '../../hooks/useScrollToItem';
+import TextButton from '@/components/TextButton';
+import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -26,9 +28,13 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
-  const separatorWidth = useResponsiveSize(3);
 
   const { text, cfi, note } = item;
+  const editorRef = useRef<TextEditorRef>(null);
+  const editorDraftRef = useRef<string>(text || '');
+  const [inlineEditMode, setInlineEditMode] = useState(false);
+  const separatorWidth = useResponsiveSize(3);
+
   const progress = getProgress(bookKey);
   const { isCurrent, viewRef } = useScrollToItem(cfi, progress);
 
@@ -64,6 +70,57 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
     setNotebookVisible(true);
     setNotebookEditAnnotation(note);
   };
+
+  const editBookmark = () => {
+    setInlineEditMode(true);
+  };
+
+  const handleSaveBookmark = () => {
+    setInlineEditMode(false);
+    const config = getConfig(bookKey);
+    if (!config || !editorDraftRef.current) return;
+
+    const { booknotes: annotations = [] } = config;
+    const existingIndex = annotations.findIndex((annotation) => item.id === annotation.id);
+    if (existingIndex === -1) return;
+    annotations[existingIndex]!.updatedAt = Date.now();
+    annotations[existingIndex]!.text = editorDraftRef.current;
+    const updatedConfig = updateBooknotes(bookKey, annotations);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
+  };
+
+  if (inlineEditMode) {
+    return (
+      <div
+        className={clsx(
+          'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
+          isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',
+          'transition-all duration-300 ease-in-out',
+        )}
+      >
+        <div className='flex w-full'>
+          <TextEditor
+            className='!leading-normal'
+            ref={editorRef}
+            value={editorDraftRef.current}
+            onChange={(value) => (editorDraftRef.current = value)}
+            onSave={handleSaveBookmark}
+            onEscape={() => setInlineEditMode(false)}
+            autoFocus={true}
+            spellCheck={false}
+          />
+        </div>
+        <div className='flex justify-end space-x-3 p-2' dir='ltr'>
+          <TextButton onClick={() => setInlineEditMode(false)}>{_('Cancel')}</TextButton>
+          <TextButton onClick={handleSaveBookmark} disabled={!editorDraftRef.current}>
+            {_('Save')}
+          </TextButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <li
@@ -120,7 +177,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
       </div>
       <div
         className={clsx(
-          'max-h-0 overflow-hidden p-0 text-xs',
+          'max-h-0 overflow-hidden p-0',
           'transition-[max-height] duration-300 ease-in-out',
           'group-hover:max-h-8 group-hover:overflow-visible',
         )}
@@ -138,46 +195,23 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
             </span>
           </div>
           <div className='flex items-center justify-end space-x-3 p-2' dir='ltr'>
-            {item.note && (
-              <div
-                className={clsx(
-                  'content settings-content cursor-pointer',
-                  'flex items-end p-0 hover:bg-transparent',
-                )}
-                onClick={editNote.bind(null, item)}
+            {(item.note || item.type === 'bookmark') && (
+              <TextButton
+                onClick={item.type === 'bookmark' ? editBookmark : editNote.bind(null, item)}
+                variant='primary'
+                className='opacity-0 transition duration-300 ease-in-out group-hover:opacity-100'
               >
-                <div
-                  className={clsx(
-                    'align-bottom text-blue-500',
-                    'transition duration-300 ease-in-out',
-                    'content font-size-sm',
-                    'opacity-0 group-hover:opacity-100',
-                    'hover:text-blue-600',
-                  )}
-                >
-                  {_('Edit')}
-                </div>
-              </div>
+                {_('Edit')}
+              </TextButton>
             )}
-            <div
-              className={clsx(
-                'content settings-content cursor-pointer',
-                'flex items-end p-0 hover:bg-transparent',
-              )}
+
+            <TextButton
               onClick={deleteNote.bind(null, item)}
+              variant='danger'
+              className='opacity-0 transition duration-300 ease-in-out group-hover:opacity-100'
             >
-              <div
-                className={clsx(
-                  'align-bottom text-red-500',
-                  'transition duration-300 ease-in-out',
-                  'content font-size-sm',
-                  'opacity-0 group-hover:opacity-100',
-                  'hover:text-red-600',
-                )}
-              >
-                {_('Delete')}
-              </div>
-            </div>
+              {_('Delete')}
+            </TextButton>
           </div>
         </div>
       </div>
