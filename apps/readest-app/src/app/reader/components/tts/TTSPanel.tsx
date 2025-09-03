@@ -203,7 +203,7 @@ const TTSPanel = ({
   const timeoutOptions = getTTSTimeoutOptions(_);
 
   return (
-    <div className='flex w-full flex-col items-center justify-center gap-2 rounded-2xl px-4 pt-4'>
+    <div className='flex w-full flex-col items-center justify-center gap-2 rounded-2xl px-4 pt-4 sm:gap-1'>
       <div className='flex w-full flex-col items-center gap-0.5'>
         <input
           className='range'
@@ -362,7 +362,7 @@ const TTSPanel = ({
           </ul>
         </div>
       </div>
-      <div className='flex h-6 items-center justify-center opacity-60 transition-transform duration-200 hover:scale-105 hover:opacity-100'>
+      <div className='flex h-4 items-center justify-center opacity-60 transition-transform duration-200 hover:scale-105 hover:opacity-100'>
         <button onClick={onToogleTTSBar} className='p-0'>
           {viewSettings?.showTTSBar ? (
             <TbChevronCompactUp size={iconSize48} style={{ transform: 'scaleY(0.85)' }} />

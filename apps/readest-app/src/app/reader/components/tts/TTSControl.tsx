@@ -20,7 +20,7 @@ import TTSIcon from './TTSIcon';
 import TTSBar from './TTSBar';
 
 const POPUP_WIDTH = 282;
-const POPUP_HEIGHT = 180;
+const POPUP_HEIGHT = 160;
 const POPUP_PADDING = 10;
 
 interface TTSControlProps {
