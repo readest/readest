@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ErrorCodes, getTranslator, getTranslators, TranslatorName } from '@/services/translators';
-import { getFromCache, storeInCache, polish, UseTranslatorOptions } from '@/services/translators';
+import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
+import { polish, preprocess } from '@/services/translators';
 import { eventDispatcher } from '@/utils/event';
 import { useTranslation } from './useTranslation';
 
@@ -10,6 +11,7 @@ export function useTranslator({
   sourceLang = 'AUTO',
   targetLang = 'EN',
   enablePolishing = true,
+  enablePreprocessing = true,
 }: UseTranslatorOptions = {}) {
   const _ = useTranslation();
   const { token } = useAuth();
@@ -42,7 +44,7 @@ export function useTranslator({
       const sourceLanguage = options?.source || sourceLang;
       const targetLanguage = options?.target || targetLang;
       const useCache = options?.useCache ?? false;
-      const textsToTranslate = input;
+      const textsToTranslate = enablePreprocessing ? preprocess(input) : input;
 
       if (textsToTranslate.length === 0 || textsToTranslate.every((t) => !t?.trim())) {
         return textsToTranslate;

@@ -23,6 +23,7 @@ export interface UseTranslatorOptions {
   sourceLang?: string;
   targetLang?: string;
   enablePolishing?: boolean;
+  enablePreprocessing?: boolean;
 }
 
 export const ErrorCodes = {

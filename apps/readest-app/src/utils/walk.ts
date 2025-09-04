@@ -30,7 +30,11 @@ export const walkTextNodes = (root: HTMLElement, rejectTags: string[] = []): HTM
           if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
             return true;
           }
-          if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'SPAN') {
+          if (
+            node.nodeType === Node.ELEMENT_NODE &&
+            (node as HTMLElement).tagName === 'SPAN' &&
+            node.textContent?.trim()
+          ) {
             return true;
           }
           return false;
