@@ -486,7 +486,6 @@
   "Always use latest": "Всегда использовать последнюю",
   "Send changes only": "Отправлять только изменения",
   "Receive changes only": "Получать только изменения",
-  "Disabled": "Отключено",
   "Checksum Method": "Метод контрольной суммы",
   "File Content (recommended)": "Содержимое файла (рекомендуется)",
   "File Name": "Имя файла",

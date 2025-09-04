@@ -474,7 +474,6 @@
   "Always use latest": "ใช้เวอร์ชันล่าสุดเสมอ",
   "Send changes only": "ส่งการเปลี่ยนแปลงเท่านั้น",
   "Receive changes only": "รับการเปลี่ยนแปลงเท่านั้น",
-  "Disabled": "ปิดใช้งาน",
   "Checksum Method": "วิธีการตรวจสอบความถูกต้อง",
   "File Content (recommended)": "เนื้อหาไฟล์ (แนะนำ)",
   "File Name": "ชื่อไฟล์",

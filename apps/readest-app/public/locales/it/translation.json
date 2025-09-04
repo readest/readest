@@ -482,7 +482,6 @@
   "Always use latest": "Usa sempre l'ultima versione",
   "Send changes only": "Invia solo le modifiche",
   "Receive changes only": "Ricevi solo le modifiche",
-  "Disabled": "Disabilitato",
   "Checksum Method": "Metodo di Controllo",
   "File Content (recommended)": "Contenuto del File (consigliato)",
   "File Name": "Nome del File",
@@ -519,6 +518,6 @@
   "Select Audio": "Seleziona Audio",
   "Select Fonts": "Seleziona Font",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Formati di font supportati: .ttf, .otf, .woff, .woff2",
-  "Push progress": "Progresso push",
-  "Pull progress": "Progresso pull"
+  "Push Progress": "Progresso push",
+  "Pull Progress": "Progresso pull"
 }

@@ -670,6 +670,9 @@ export const TRANSLATED_LANGS = {
   vi: 'Tiếng Việt',
   th: 'ภาษาไทย',
   bo: 'བོད་སྐད་',
+  bn: 'বাংলা',
+  ta: 'தமிழ்',
+  si: 'සිංහල',
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
 };
