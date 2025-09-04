@@ -1,19 +1,30 @@
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { Insets } from '@/types/misc';
 import { getSafeAreaInsets } from '@/utils/bridge';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
   const [updated, setUpdated] = useState(false);
-  const [insets, setInsets] = useState({
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  });
+  const [insets, setInsets] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
+  const currentInsets = useRef(insets);
 
   const { updateSafeAreaInsets } = useThemeStore();
+
+  const updateInsets = (insets: Insets) => {
+    const { top, right, bottom, left } = currentInsets.current;
+    if (
+      insets.top !== top ||
+      insets.right !== right ||
+      insets.bottom !== bottom ||
+      insets.left !== left
+    ) {
+      currentInsets.current = insets;
+      setInsets(insets);
+      updateSafeAreaInsets(insets);
+    }
+  };
 
   const onUpdateInsets = useCallback(() => {
     if (!appService) return;
@@ -40,10 +51,9 @@ export const useSafeAreaInsets = () => {
             bottom: response.bottom,
             left: response.left,
           };
-          setInsets(insets);
-          updateSafeAreaInsets(insets);
-          setUpdated(true);
+          updateInsets(insets);
         }
+        setUpdated(true);
       });
     } else if (hasCustomProperties) {
       const insets = {
@@ -52,8 +62,7 @@ export const useSafeAreaInsets = () => {
         bottom: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-bottom')) || 0,
         left: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-left')) || 0,
       };
-      setInsets(insets);
-      updateSafeAreaInsets(insets);
+      updateInsets(insets);
       setUpdated(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

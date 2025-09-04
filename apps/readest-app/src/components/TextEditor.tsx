@@ -74,6 +74,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         editorRef.current.value = value;
         adjustHeight();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value]);
 
     const adjustHeight = () => {

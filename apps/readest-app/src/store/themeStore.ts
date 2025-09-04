@@ -67,7 +67,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     systemUIVisible: false,
     statusBarHeight: 24,
     systemUIAlwaysHidden: false,
-    safeAreaInsets: null,
+    safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
     setStatusBarHeight: (height: number) => set({ statusBarHeight: height }),
