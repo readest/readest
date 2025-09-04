@@ -112,8 +112,8 @@ export class TxtToEpubConverter {
           String.raw`(?:^|\n)\s*` +
             '(' +
             [
-              String.raw`第[零〇一二三四五六七八九十0-9][零〇一二三四五六七八九十百千万0-9]*(?:[章卷节回讲篇封])(?:[：:、 　\(\)0-9]*[^\n-]{0,24})(?!\S)`,
-              String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论)(?:[：: 　][^\n-]{0,24})?(?!\S)`,
+              String.raw`第[零〇一二三四五六七八九十0-9][零〇一二三四五六七八九十百千万0-9]*(?:[章节回讲篇封])(?:[：:、 　\(\)0-9]*[^\n-]{0,24})(?!\S)`,
+              String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记)(?:[：: 　][^\n-]{0,24})?(?!\S)`,
             ].join('|') +
             ')',
           'gu',
@@ -208,7 +208,7 @@ export class TxtToEpubConverter {
 
         let isVolume = false;
         if (language === 'zh') {
-          isVolume = /第[零〇一二三四五六七八九十百千万0-9]+卷/.test(title);
+          isVolume = /第[零〇一二三四五六七八九十百千万0-9]+(卷|本|册|部)/.test(title);
         } else {
           isVolume = /\b(Part|Volume|Book)\b/i.test(title);
         }
