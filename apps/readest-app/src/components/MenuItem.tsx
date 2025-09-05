@@ -57,7 +57,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
           {!noIcon && (
             <span style={{ minWidth: `${iconSize}px` }}>
               {typeof Icon === 'function' ? (
-                <Icon className='text-base-content' size={iconSize} />
+                <Icon
+                  className={disabled ? 'text-gray-400' : 'text-base-content'}
+                  size={iconSize}
+                />
               ) : (
                 Icon
               )}
@@ -73,8 +76,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
         {shortcut && (
           <kbd
             className={clsx(
-              'border-base-300/40 bg-base-300/75 text-neutral-content hidden rounded-md border shadow-sm sm:flex',
+              'border-base-300/40 bg-base-300/75 hidden rounded-md border shadow-sm sm:flex',
               'shrink-0 px-1.5 py-0.5 text-xs font-medium',
+              disabled ? 'text-gray-400' : 'text-neutral-content',
             )}
           >
             {shortcut}

@@ -126,6 +126,11 @@ export interface BookStyle {
   codeLanguage: string;
   userStylesheet: string;
   userUIStylesheet: string;
+
+  // fixed-layout specific
+  zoomMode: 'fit-page' | 'fit-width' | 'original-size' | 'custom';
+  spreadMode: 'auto' | 'none';
+  keepCoverSpread: boolean;
 }
 
 export interface BookFont {
