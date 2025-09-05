@@ -151,6 +151,10 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   codeLanguage: 'auto-detect',
   userStylesheet: '',
   userUIStylesheet: '',
+
+  zoomMode: 'fit-page',
+  spreadMode: 'auto',
+  keepCoverSpread: true,
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {

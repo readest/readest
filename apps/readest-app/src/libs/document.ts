@@ -57,6 +57,7 @@ export interface SectionItem {
   size: number;
   linear: string;
   location?: Location;
+  pageSpread?: 'left' | 'right' | 'center' | '';
 
   createDocument: () => Promise<Document>;
 }
@@ -87,6 +88,7 @@ export interface BookDoc {
   metadata: BookMetadata;
   rendition?: {
     layout?: 'pre-paginated' | 'reflowable';
+    spread?: 'auto' | 'none';
     viewport?: { width: number; height: number };
   };
   dir: string;
