@@ -531,5 +531,11 @@
   "Select Fonts": "حدد الخطوط",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "تنسيقات الخط المدعومة: .ttf، .otf، .woff، .woff2",
   "Push Progress": "تقدم الدفع",
-  "Pull Progress": "تقدم السحب"
+  "Pull Progress": "تقدم السحب",
+  "Previous Paragraph": "الفقرة السابقة",
+  "Previous Sentence": "الجملة السابقة",
+  "Pause": "إيقاف مؤقت",
+  "Play": "تشغيل",
+  "Next Sentence": "الجملة التالية",
+  "Next Paragraph": "الفقرة التالية"
 }

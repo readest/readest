@@ -515,5 +515,11 @@
   "Sunset": "சூரிய அஸ்தமனம்",
   "Reveal in Finder": "Finder இல் காட்டவும்",
   "Reveal in File Explorer": "File Explorer இல் காட்டவும்",
-  "Reveal in Folder": "கோப்புறையில் காட்டவும்"
+  "Reveal in Folder": "கோப்புறையில் காட்டவும்",
+  "Previous Paragraph": "முந்தைய பத்தி",
+  "Previous Sentence": "முந்தைய வாக்கியம்",
+  "Pause": "இடைநிறுத்தம்",
+  "Play": "இயக்கு",
+  "Next Sentence": "அடுத்த வாக்கியம்",
+  "Next Paragraph": "அடுத்த பத்தி"
 }

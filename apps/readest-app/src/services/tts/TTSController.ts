@@ -271,30 +271,36 @@ export class TTSController extends EventTarget {
     this.state = 'stopped';
   }
 
-  // goto previous paragraph
-  async backward() {
+  // goto previous mark/paragraph
+  async backward(byMark = false) {
     await this.initViewTTS();
     if (this.state === 'playing') {
       await this.stop();
-      this.#speak(this.view.tts?.prev());
+      if (byMark) this.#speak(this.view.tts?.prevMark());
+      else this.#speak(this.view.tts?.prev());
     } else {
       await this.stop();
       this.state = 'backward-paused';
-      this.view.tts?.prev(true);
+      if (byMark) this.view.tts?.prevMark(true);
+      else this.view.tts?.prev(true);
     }
   }
 
-  // goto next paragraph
-  async forward() {
+  // goto next mark/paragraph
+  async forward(byMark = false) {
     await this.initViewTTS();
     if (this.state === 'playing') {
       await this.stop();
-      this.#speak(this.view.tts?.next());
-      this.preloadNextSSML();
+      if (byMark) this.#speak(this.view.tts?.nextMark());
+      else {
+        this.#speak(this.view.tts?.next());
+        this.preloadNextSSML();
+      }
     } else {
       await this.stop();
       this.state = 'forward-paused';
-      this.view.tts?.next(true);
+      if (byMark) this.view.tts?.nextMark(true);
+      else this.view.tts?.next(true);
     }
   }
 

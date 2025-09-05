@@ -515,5 +515,11 @@
   "Sunset": "හිරු බැස්ම",
   "Reveal in Finder": "Finder හි පෙන්වන්න",
   "Reveal in File Explorer": "File Explorer හි පෙන්වන්න",
-  "Reveal in Folder": "ෆෝල්ඩරයේ පෙන්වන්න"
+  "Reveal in Folder": "ෆෝල්ඩරයේ පෙන්වන්න",
+  "Previous Paragraph": "කලින් ඡේදය",
+  "Previous Sentence": "කලින් වාක්‍යය",
+  "Pause": "විරාමය",
+  "Play": "වාදනය කරන්න",
+  "Next Sentence": "මීළඟ වාක්‍යය",
+  "Next Paragraph": "මීළඟ ඡේදය"
 }

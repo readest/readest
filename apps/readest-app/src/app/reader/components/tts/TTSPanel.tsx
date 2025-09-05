@@ -237,12 +237,16 @@ const TTSPanel = ({
         <button
           onClick={onBackward}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Previous Paragraph')}
+          aria-label={_('Previous Paragraph')}
         >
           <MdFastRewind size={iconSize32} />
         </button>
         <button
           onClick={onTogglePlay}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={isPlaying ? _('Pause') : _('Play')}
+          aria-label={isPlaying ? _('Pause') : _('Play')}
         >
           {isPlaying ? (
             <MdPauseCircle size={iconSize48} className='fill-primary' />
@@ -253,6 +257,8 @@ const TTSPanel = ({
         <button
           onClick={onForward}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Next Paragraph')}
+          aria-label={_('Next Paragraph')}
         >
           <MdFastForward size={iconSize32} />
         </button>

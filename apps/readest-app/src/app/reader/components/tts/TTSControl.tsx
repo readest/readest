@@ -260,17 +260,17 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     }
   }, [isPlaying, isPaused]);
 
-  const handleBackward = useCallback(async () => {
+  const handleBackward = useCallback(async (byMark = false) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      await ttsController.backward();
+      await ttsController.backward(byMark);
     }
   }, []);
 
-  const handleForward = useCallback(async () => {
+  const handleForward = useCallback(async (byMark = false) => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
-      await ttsController.forward();
+      await ttsController.forward(byMark);
     }
   }, []);
 
