@@ -511,5 +511,11 @@
   "Select Fonts": "เลือกฟอนต์",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "รูปแบบฟอนต์ที่รองรับ: .ttf, .otf, .woff, .woff2",
   "Push Progress": "ส่งความคืบหน้า",
-  "Pull Progress": "ดึงความคืบหน้า"
+  "Pull Progress": "ดึงความคืบหน้า",
+  "Previous Paragraph": "ย่อหน้าก่อนหน้า",
+  "Previous Sentence": "ประโยคก่อนหน้า",
+  "Pause": "หยุดชั่วคราว",
+  "Play": "เล่น",
+  "Next Sentence": "ประโยคถัดไป",
+  "Next Paragraph": "ย่อหน้าถัดไป"
 }

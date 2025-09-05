@@ -519,5 +519,11 @@
   "Select Fonts": "Seleziona Font",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Formati di font supportati: .ttf, .otf, .woff, .woff2",
   "Push Progress": "Progresso push",
-  "Pull Progress": "Progresso pull"
+  "Pull Progress": "Progresso pull",
+  "Previous Paragraph": "Paragrafo precedente",
+  "Previous Sentence": "Frase precedente",
+  "Pause": "Pausa",
+  "Play": "Riproduci",
+  "Next Sentence": "Frase successiva",
+  "Next Paragraph": "Paragrafo successivo"
 }

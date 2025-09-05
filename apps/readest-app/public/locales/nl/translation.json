@@ -515,5 +515,11 @@
   "Select Fonts": "Lettertypen Selecteren",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Ondersteunde lettertypeformaten: .ttf, .otf, .woff, .woff2",
   "Push Progress": "Voortgang pushen",
-  "Pull Progress": "Voortgang pullen"
+  "Pull Progress": "Voortgang pullen",
+  "Previous Paragraph": "Vorige alinea",
+  "Previous Sentence": "Vorige zin",
+  "Pause": "Pauzeren",
+  "Play": "Afspelen",
+  "Next Sentence": "Volgende zin",
+  "Next Paragraph": "Volgende alinea"
 }

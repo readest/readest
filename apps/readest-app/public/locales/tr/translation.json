@@ -515,5 +515,11 @@
   "Select Fonts": "Yazı Tiplerini Seç",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Desteklenen yazı tipi formatları: .ttf, .otf, .woff, .woff2",
   "Push Progress": "İlerlemeyi Gönder",
-  "Pull Progress": "İlerlemeyi Al"
+  "Pull Progress": "İlerlemeyi Al",
+  "Previous Paragraph": "Önceki Paragraf",
+  "Previous Sentence": "Önceki Cümle",
+  "Pause": "Duraklat",
+  "Play": "Oynat",
+  "Next Sentence": "Sonraki Cümle",
+  "Next Paragraph": "Sonraki Paragraf"
 }

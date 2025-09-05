@@ -511,5 +511,11 @@
   "Select Fonts": "選擇字型",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "支援的字型格式：.ttf, .otf, .woff, .woff2",
   "Push Progress": "推送閱讀進度",
-  "Pull Progress": "拉取閱讀進度"
+  "Pull Progress": "拉取閱讀進度",
+  "Previous Paragraph": "上一段",
+  "Previous Sentence": "上一句",
+  "Pause": "暫停",
+  "Play": "播放",
+  "Next Sentence": "下一句",
+  "Next Paragraph": "下一段"
 }

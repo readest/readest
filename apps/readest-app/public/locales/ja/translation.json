@@ -511,5 +511,11 @@
   "Select Fonts": "フォントを選択",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "サポートされているフォント形式：.ttf, .otf, .woff, .woff2",
   "Push Progress": "進捗をプッシュ",
-  "Pull Progress": "進捗をプル"
+  "Pull Progress": "進捗をプル",
+  "Previous Paragraph": "前の段落",
+  "Previous Sentence": "前の文",
+  "Pause": "一時停止",
+  "Play": "再生",
+  "Next Sentence": "次の文",
+  "Next Paragraph": "次の段落"
 }

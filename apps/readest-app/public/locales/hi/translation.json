@@ -515,5 +515,11 @@
   "Select Fonts": "फ़ॉन्ट चुनें",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "समर्थित फ़ॉन्ट प्रारूप: .ttf, .otf, .woff, .woff2",
   "Push Progress": "पुश प्रगति",
-  "Pull Progress": "पुल प्रगति"
+  "Pull Progress": "पुल प्रगति",
+  "Previous Paragraph": "पिछला पैराग्राफ",
+  "Previous Sentence": "पिछला वाक्य",
+  "Pause": "रोकें",
+  "Play": "चलाएं",
+  "Next Sentence": "अगला वाक्य",
+  "Next Paragraph": "अगला पैराग्राफ"
 }

@@ -523,5 +523,11 @@
   "Select Fonts": "Wybierz Czcionki",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Obsługiwane formaty czcionek: .ttf, .otf, .woff, .woff2",
   "Push Progress": "Wyślij postęp",
-  "Pull Progress": "Pobierz postęp"
+  "Pull Progress": "Pobierz postęp",
+  "Previous Paragraph": "Poprzedni akapit",
+  "Previous Sentence": "Poprzednie zdanie",
+  "Pause": "Pauza",
+  "Play": "Odtwórz",
+  "Next Sentence": "Następne zdanie",
+  "Next Paragraph": "Następny akapit"
 }

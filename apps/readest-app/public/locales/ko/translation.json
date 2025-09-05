@@ -511,5 +511,11 @@
   "Select Fonts": "글꼴 선택",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "지원되는 글꼴 형식: .ttf, .otf, .woff, .woff2",
   "Push Progress": "진행 상황 푸시",
-  "Pull Progress": "진행 상황 끌어오기"
+  "Pull Progress": "진행 상황 끌어오기",
+  "Previous Paragraph": "이전 단락",
+  "Previous Sentence": "이전 문장",
+  "Pause": "일시정지",
+  "Play": "재생",
+  "Next Sentence": "다음 문장",
+  "Next Paragraph": "다음 단락"
 }

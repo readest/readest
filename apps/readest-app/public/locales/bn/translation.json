@@ -515,5 +515,11 @@
   "Sunset": "সূর্যাস্ত",
   "Reveal in Finder": "ফাইন্ডারে দেখান",
   "Reveal in File Explorer": "ফাইল এক্সপ্লোরারে দেখান",
-  "Reveal in Folder": "ফোল্ডারে দেখান"
+  "Reveal in Folder": "ফোল্ডারে দেখান",
+  "Previous Paragraph": "পূর্ববর্তী অনুচ্ছেদ",
+  "Previous Sentence": "পূর্ববর্তী বাক্য",
+  "Pause": "বিরতি",
+  "Play": "চালান",
+  "Next Sentence": "পরবর্তী বাক্য",
+  "Next Paragraph": "পরবর্তী অনুচ্ছেদ"
 }

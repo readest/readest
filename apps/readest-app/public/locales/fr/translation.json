@@ -519,5 +519,11 @@
   "Select Fonts": "Sélectionner des Polices",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Formats de police pris en charge : .ttf, .otf, .woff, .woff2",
   "Push Progress": "Pousser la Progression",
-  "Pull Progress": "Tirer la Progression"
+  "Pull Progress": "Tirer la Progression",
+  "Previous Paragraph": "Paragraphe précédent",
+  "Previous Sentence": "Phrase précédente",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next Sentence": "Phrase suivante",
+  "Next Paragraph": "Paragraphe suivant"
 }

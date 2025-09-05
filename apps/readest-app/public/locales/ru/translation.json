@@ -523,5 +523,11 @@
   "Select Fonts": "Выбрать Шрифты",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Поддерживаемые форматы шрифтов: .ttf, .otf, .woff, .woff2",
   "Push Progress": "Отправить прогресс",
-  "Pull Progress": "Получить прогресс"
+  "Pull Progress": "Получить прогресс",
+  "Previous Paragraph": "Предыдущий абзац",
+  "Previous Sentence": "Предыдущее предложение",
+  "Pause": "Пауза",
+  "Play": "Воспроизвести",
+  "Next Sentence": "Следующее предложение",
+  "Next Paragraph": "Следующий абзац"
 }
