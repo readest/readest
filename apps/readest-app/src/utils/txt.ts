@@ -198,7 +198,7 @@ export class TxtToEpubConverter {
           const formattedSegment = formatSegment(chunks.join('\n'));
           const title = `${chapters.length + 1}`;
           const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-          chapters.push({ title, content, text: chunks.join('\n'), isVolume: false});
+          chapters.push({ title, content, text: chunks.join('\n'), isVolume: false });
         }
         continue;
       }
@@ -220,7 +220,7 @@ export class TxtToEpubConverter {
           title: escapeXml(title),
           content: `${headTitle}<p>${formattedSegment}</p>`,
           text: content,
-          isVolume: isVolume
+          isVolume: isVolume,
         });
       }
 
@@ -235,7 +235,7 @@ export class TxtToEpubConverter {
           title: escapeXml(segmentTitle),
           content: `<h3></h3><p>${formattedSegment}</p>`,
           text: initialContent,
-          isVolume: false
+          isVolume: false,
         });
       }
       chapters.push(...segmentChapters);
@@ -273,13 +273,13 @@ export class TxtToEpubConverter {
         navPoints += `</navPoint>\n`;
         isNested = !isNested;
       }
-      navPoints += `<navPoint id="navPoint-${id}" playOrder="${playOrder}">\n` +
-                   `<navLabel><text>${chapters[i]!.title}</text></navLabel>\n` +
-                   `<content src="./OEBPS/${id}.xhtml" />\n`;
+      navPoints +=
+        `<navPoint id="navPoint-${id}" playOrder="${playOrder}">\n` +
+        `<navLabel><text>${chapters[i]!.title}</text></navLabel>\n` +
+        `<content src="./OEBPS/${id}.xhtml" />\n`;
       if (chapters[i]!.isVolume && !isNested) {
         isNested = !isNested;
-      }
-      else {
+      } else {
         navPoints += `</navPoint>\n`;
       }
     }
