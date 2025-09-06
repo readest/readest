@@ -116,8 +116,9 @@ export const useProgressSync = (bookKey: string) => {
       const view = getView(bookKey);
       if (xPointer && view && bookData && bookData.bookDoc) {
         const content = view.renderer.getContents()[0];
+        const koProgress = normalizeProgressXPointer(xPointer);
         const candidateCFI = await getCFIFromXPointer(
-          xPointer,
+          koProgress,
           content?.doc,
           content?.index,
           bookData.bookDoc,

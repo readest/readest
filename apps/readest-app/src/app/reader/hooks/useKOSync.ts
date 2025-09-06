@@ -96,12 +96,8 @@ export const useKOSync = (bookKey: string) => {
       if (!remote.progress?.startsWith('/body')) return;
       try {
         const content = view?.renderer.getContents()[0];
-        const cfi = await getCFIFromXPointer(
-          remote.progress!,
-          content?.doc,
-          content?.index,
-          bookDoc,
-        );
+        const koProgress = normalizeProgressXPointer(remote.progress);
+        const cfi = await getCFIFromXPointer(koProgress, content?.doc, content?.index, bookDoc);
         view?.goTo(cfi);
       } catch (error) {
         console.error('Failed to convert XPointer to CFI', error);
@@ -242,6 +238,7 @@ export const useKOSync = (bookKey: string) => {
     const handlePushProgress = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
       pushProgress();
+      pushProgress.flush();
     };
     const handleFlush = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
