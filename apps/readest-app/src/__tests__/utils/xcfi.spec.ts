@@ -88,7 +88,7 @@ describe('CFIToXPointerConverter', () => {
 
       expect(originalCfi).toEqual(convertedCfi);
       expect(xpointer).toEqual({
-        xpointer: '/body/DocFragment[2]/body/div/p[0]',
+        xpointer: '/body/DocFragment[2]/body/div/p[1]',
       });
     });
 
@@ -99,7 +99,7 @@ describe('CFIToXPointerConverter', () => {
 
       expect(originalCfi).toEqual(convertedCfi);
       expect(xpointer).toEqual({
-        xpointer: '/body/DocFragment[2]/body/div/p[1]',
+        xpointer: '/body/DocFragment[2]/body/div/p[2]',
       });
     });
 
@@ -110,7 +110,7 @@ describe('CFIToXPointerConverter', () => {
 
       expect(originalCfi).toEqual(convertedCfi);
       expect(xpointer).toEqual({
-        xpointer: '/body/DocFragment[2]/body/div/p[2]',
+        xpointer: '/body/DocFragment[2]/body/div/p[3]',
       });
     });
   });
@@ -126,9 +126,9 @@ describe('CFIToXPointerConverter', () => {
       const convertedCfi = converter.xPointerToCFI(xpointer.pos0!, xpointer.pos1!);
 
       expect(originalCfi).toEqual(convertedCfi);
-      expect(xpointer.xpointer).toEqual('/body/DocFragment[3]/body/div/p[0]/text().6');
-      expect(xpointer.pos0).toEqual('/body/DocFragment[3]/body/div/p[0]/text().6');
-      expect(xpointer.pos1).toEqual('/body/DocFragment[3]/body/div/p[1]/text().16');
+      expect(xpointer.xpointer).toEqual('/body/DocFragment[3]/body/div/p[1]/text().6');
+      expect(xpointer.pos0).toEqual('/body/DocFragment[3]/body/div/p[1]/text().6');
+      expect(xpointer.pos1).toEqual('/body/DocFragment[3]/body/div/p[2]/text().16');
     });
 
     it('should convert range CFI within same element', () => {
@@ -147,8 +147,8 @@ describe('CFIToXPointerConverter', () => {
       const convertedCfi = converter.xPointerToCFI(xpointer.pos0!, xpointer.pos1!);
 
       expect(originalCfi).toEqual(convertedCfi);
-      expect(xpointer.pos0).toMatch(/p\[0\]/);
-      expect(xpointer.pos1).toMatch(/p\[2\]/);
+      expect(xpointer.pos0).toMatch(/p\[1\]/);
+      expect(xpointer.pos1).toMatch(/p\[3\]/);
     });
   });
 
@@ -163,7 +163,7 @@ describe('CFIToXPointerConverter', () => {
       const convertedCfi = converter.xPointerToCFI(xpointer.xpointer);
 
       expect(originalCfi).toEqual(convertedCfi);
-      expect(xpointer.xpointer).toMatch(/\/body\/section\[0\]/);
+      expect(xpointer.xpointer).toMatch(/\/body\/section\[1\]/);
     });
 
     it('should handle elements with IDs', () => {
@@ -172,7 +172,7 @@ describe('CFIToXPointerConverter', () => {
       const convertedCfi = converter.xPointerToCFI(xpointer.xpointer);
 
       expect(originalCfi).toEqual(convertedCfi);
-      expect(xpointer.xpointer).toMatch(/\/body\/section\[1\]\/p\[0\]/);
+      expect(xpointer.xpointer).toMatch(/\/body\/section\[2\]\/p\[1\]/);
     });
 
     it('should handle inline elements', () => {
@@ -181,7 +181,7 @@ describe('CFIToXPointerConverter', () => {
       const convertedCfi = converter.xPointerToCFI(xpointer.xpointer);
 
       expect(originalCfi).toEqual(convertedCfi);
-      expect(xpointer.xpointer).toMatch(/\/body\/section\[1\]\/p\[1\]/);
+      expect(xpointer.xpointer).toMatch(/\/body\/section\[2\]\/p\[2\]/);
     });
   });
 
@@ -212,7 +212,7 @@ describe('CFIToXPointerConverter', () => {
     });
 
     it('should convert XPointer to CFI for first element', () => {
-      const xpointer = '/body/DocFragment[2]/body/div/p[0]';
+      const xpointer = '/body/DocFragment[2]/body/div/p[1]';
       const cfi = converter.xPointerToCFI(xpointer);
 
       // Verify by converting back to XPointer
@@ -221,7 +221,7 @@ describe('CFIToXPointerConverter', () => {
     });
 
     it('should convert XPointer to CFI for second element', () => {
-      const xpointer = '/body/DocFragment[2]/body/div/p[1]';
+      const xpointer = '/body/DocFragment[2]/body/div/p[2]';
       const cfi = converter.xPointerToCFI(xpointer);
 
       const backToXPointer = converter.cfiToXPointer(cfi);
@@ -229,14 +229,14 @@ describe('CFIToXPointerConverter', () => {
     });
 
     it('should convert XPointer with text offset to CFI', () => {
-      const xpointer = '/body/DocFragment[2]/body/div[0]/p[0]/text().6';
+      const xpointer = '/body/DocFragment[2]/body/div[0]/p[1]/text().6';
       const cfi = converter.xPointerToCFI(xpointer);
       expect(cfi).toBe('epubcfi(/6/4!/4/2/2/1:6)');
     });
 
     it('should convert range XPointer to CFI', () => {
-      const pos0 = '/body/DocFragment[2]/body/div/p[0]/text().6';
-      const pos1 = '/body/DocFragment[2]/body/div/p[1]/text().16';
+      const pos0 = '/body/DocFragment[2]/body/div/p[1]/text().6';
+      const pos1 = '/body/DocFragment[2]/body/div/p[2]/text().16';
       const cfi = converter.xPointerToCFI(pos0, pos1);
       const xpointer = converter.cfiToXPointer(cfi);
 
@@ -269,7 +269,7 @@ describe('CFIToXPointerConverter', () => {
     it('should handle CFI without spine step prefix', () => {
       // Test the adjustSpineIndex method handles CFIs that don't start with /6/n!
       const converter = new XCFI(simpleDoc, 3); // Use different spine index
-      const xpointer = '/body/DocFragment[4]/body/div/p[0]';
+      const xpointer = '/body/DocFragment[4]/body/div/p[1]';
       const cfi = converter.xPointerToCFI(xpointer);
 
       // Verify the spine step is correctly added/adjusted
@@ -331,7 +331,7 @@ describe('CFIToXPointerConverter', () => {
       const cfi = 'epubcfi(/6/6!/4/2/2)'; // Empty p element
       const result = converter.cfiToXPointer(cfi);
 
-      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/p[0]');
+      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/p[1]');
     });
 
     it('should handle whitespace-only text nodes', () => {
@@ -353,7 +353,7 @@ describe('CFIToXPointerConverter', () => {
       const cfi = 'epubcfi(/6/6!/4/2/4)'; // Second p element
       const result = converter.cfiToXPointer(cfi);
 
-      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/p[1]');
+      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/p[2]');
     });
 
     it('should handle deeply nested elements', () => {
@@ -379,7 +379,7 @@ describe('CFIToXPointerConverter', () => {
       const cfi = 'epubcfi(/6/6!/4/2/2/2/2)'; // Deeply nested p
       const result = converter.cfiToXPointer(cfi);
 
-      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/section/article/p[0]');
+      expect(result.xpointer).toBe('/body/DocFragment[3]/body/div/section/article/p[1]');
     });
   });
 });

@@ -35,6 +35,8 @@ export class XCFI {
         // Convert to 0-based: (step - 2) / 2 = 0, 1, 2, 3, ...
         return Math.floor((spineStep - 2) / 2);
       } else if (cfiOrXPath.startsWith('/body/DocFragment[')) {
+        // Note that all indices in XPointer/XPath are 1-based
+        // but the text() offsets are 0-based
         const match = cfiOrXPath.match(/DocFragment\[(\d+)\]/);
         if (match) {
           return parseInt(match[1]!, 10) - 1;
@@ -224,10 +226,10 @@ export class XCFI {
       let index: number;
 
       if (segmentWithIndexMatch) {
-        // Format: tag[index]
+        // Format: tag[index] (1-based index)
         const [, tag, indexStr] = segmentWithIndexMatch;
         tagName = tag!;
-        index = parseInt(indexStr!, 10);
+        index = Math.max(0, parseInt(indexStr!, 10) - 1);
       } else if (segmentWithoutIndexMatch) {
         // Format: tag (implicit index 0)
         const [, tag] = segmentWithoutIndexMatch;
@@ -379,7 +381,7 @@ export class XCFI {
       if (totalSameTagSiblings === 1) {
         pathParts.unshift(tagName);
       } else {
-        pathParts.unshift(`${tagName}[${siblingIndex}]`);
+        pathParts.unshift(`${tagName}[${siblingIndex + 1}]`); // Convert to 1-based index for XPointer
       }
       current = parent;
     }
@@ -545,7 +547,7 @@ export const getXPointerFromCFI = async (
 // This has neglectable effect on position accuracy as the XPointer still point to the correct element
 // while offset within the text node is usually ignored by pagination.
 export const normalizeProgressXPointer = (xpointer: string): string => {
-  const tailingTextRange = /\/text\(\)\.\d+$/;
+  const tailingTextRange = /\/text\(\).*$/;
   if (xpointer.match(tailingTextRange)) {
     xpointer = xpointer.replace(tailingTextRange, '');
   }
