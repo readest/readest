@@ -30,7 +30,7 @@ export const useSafeAreaInsets = () => {
     if (!appService) return;
 
     if (!appService.hasSafeAreaInset) {
-      updateSafeAreaInsets(insets);
+      updateInsets(insets);
       setUpdated(true);
       return;
     }
