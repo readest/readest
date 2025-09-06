@@ -1,5 +1,23 @@
 {
   "releases": {
+    "0.9.78": {
+      "date": "2025-09-06",
+      "notes": [
+        "TTS: Added option to keep a persistent TTS bar at the bottom of the screen",
+        "TTS: Added previous/next sentence navigation controls in the TTS bar",
+        "TTS: Added media control support on iOS lock screen and AirPods",
+        "TTS: Fixed an issue where headings could not be highlighted for TTS",
+        "Sync: Fixed occasional sync failures between KOReader and Readest",
+        "Fonts: Grouped font styles into custom font families for easier selection",
+        "Reader: Improved text selection sensitivity when using a stylus",
+        "Reader: Books can now be properly closed using the system back button on Android",
+        "EPUB: Fixed parsing to correctly detect the front cover in some EPUB files",
+        "PDF: Added zoom level, zoom mode, and spread mode settings for PDFs",
+        "Reader: Bookmarks can now be edited directly in the sidebar",
+        "Layout: Prevented layout shift when the virtual keyboard appears on Android",
+        "TXT: Improved chapter detection and added support for nested table of contents in TXT files"
+      ]
+    },
     "0.9.76": {
       "date": "2025-08-30",
       "notes": [
