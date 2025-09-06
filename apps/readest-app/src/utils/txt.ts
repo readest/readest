@@ -270,26 +270,22 @@ export class TxtToEpubConverter {
       const id = `chapter${i + 1}`;
       const playOrder = i + 1;
       if (chapters[i]!.isVolume && isNested) {
-        navPoints += `\n</navPoint>`;
+        navPoints += `</navPoint>\n`;
         isNested = !isNested;
       }
-      navPoints += `
-<navPoint id="navPoint-${id}" playOrder="${playOrder}">
-<navLabel>
-<text>${chapters[i]!.title}</text>
-</navLabel>
-<content src="./OEBPS/${id}.xhtml" />`;
+      navPoints += `<navPoint id="navPoint-${id}" playOrder="${playOrder}">\n` +
+                   `<navLabel><text>${chapters[i]!.title}</text></navLabel>\n` +
+                   `<content src="./OEBPS/${id}.xhtml" />\n`;
       if (chapters[i]!.isVolume && !isNested) {
         isNested = !isNested;
       }
       else {
-        navPoints += `\n</navPoint>`;
+        navPoints += `</navPoint>\n`;
       }
     }
     if (isNested) {
-      navPoints += `\n</navPoint>`;
+      navPoints += `</navPoint>`;
     }
-    navPoints = navPoints.trim();
 
     // Add NCX file (table of contents)
     const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
