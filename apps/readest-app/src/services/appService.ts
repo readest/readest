@@ -2,7 +2,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { SystemSettings } from '@/types/settings';
 import { AppPlatform, AppService, OsPlatform } from '@/types/system';
 import { FileSystem, BaseDir, DeleteAction } from '@/types/system';
-import { Book, BookConfig, BookContent, BookFormat, ViewSettings } from '@/types/book';
+import {
+  Book,
+  BookConfig,
+  BookContent,
+  BookFormat,
+  FIXED_LAYOUT_FORMATS,
+  ViewSettings,
+} from '@/types/book';
 import {
   getDir,
   getLocalBookFilename,
@@ -35,6 +42,7 @@ import {
   DEFAULT_MOBILE_READSETTINGS,
   DEFAULT_SCREEN_CONFIG,
   DEFAULT_TRANSLATOR_CONFIG,
+  DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS,
 } from './constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
@@ -503,7 +511,10 @@ export abstract class BaseAppService implements AppService {
   }
 
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
-    const { globalViewSettings } = settings;
+    const globalViewSettings = {
+      ...settings.globalViewSettings,
+      ...(FIXED_LAYOUT_FORMATS.has(book.format) ? DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS : {}),
+    };
     try {
       let str = '{}';
       if (await this.fs.exists(getConfigFilename(book), 'Books')) {
@@ -532,7 +543,10 @@ export abstract class BaseAppService implements AppService {
   async saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings) {
     let serializedConfig: string;
     if (settings) {
-      const { globalViewSettings } = settings;
+      const globalViewSettings = {
+        ...settings.globalViewSettings,
+        ...(FIXED_LAYOUT_FORMATS.has(book.format) ? DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS : {}),
+      };
       serializedConfig = serializeConfig(config, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
     } else {
       serializedConfig = JSON.stringify(config);
