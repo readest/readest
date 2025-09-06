@@ -13,6 +13,7 @@ interface Chapter {
   title: string;
   content: string;
   text: string;
+  isVolume: boolean;
 }
 
 interface Txt2EpubOptions {
@@ -197,7 +198,7 @@ export class TxtToEpubConverter {
           const formattedSegment = formatSegment(chunks.join('\n'));
           const title = `${chapters.length + 1}`;
           const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-          chapters.push({ title, content, text: chunks.join('\n') });
+          chapters.push({ title, content, text: chunks.join('\n'), isVolume: false });
         }
         continue;
       }
@@ -219,6 +220,7 @@ export class TxtToEpubConverter {
           title: escapeXml(title),
           content: `${headTitle}<p>${formattedSegment}</p>`,
           text: content,
+          isVolume: isVolume,
         });
       }
 
@@ -233,6 +235,7 @@ export class TxtToEpubConverter {
           title: escapeXml(segmentTitle),
           content: `<h3></h3><p>${formattedSegment}</p>`,
           text: initialContent,
+          isVolume: false,
         });
       }
       chapters.push(...segmentChapters);
@@ -261,20 +264,28 @@ export class TxtToEpubConverter {
     await zipWriter.add('META-INF/container.xml', new TextReader(containerXml), zipWriteOptions);
 
     // Create navigation points for TOC
-    const navPoints = chapters
-      .map((chapter, index) => {
-        const id = `chapter${index + 1}`;
-        const playOrder = index + 1;
-        return `
-        <navPoint id="navPoint-${id}" playOrder="${playOrder}">
-          <navLabel>
-            <text>${chapter.title}</text>
-          </navLabel>
-          <content src="./OEBPS/${id}.xhtml" />
-        </navPoint>
-      `.trim();
-      })
-      .join('\n');
+    let isNested = false;
+    let navPoints = ``;
+    for (let i = 0; i < chapters.length; i++) {
+      const id = `chapter${i + 1}`;
+      const playOrder = i + 1;
+      if (chapters[i]!.isVolume && isNested) {
+        navPoints += `</navPoint>\n`;
+        isNested = !isNested;
+      }
+      navPoints +=
+        `<navPoint id="navPoint-${id}" playOrder="${playOrder}">\n` +
+        `<navLabel><text>${chapters[i]!.title}</text></navLabel>\n` +
+        `<content src="./OEBPS/${id}.xhtml" />\n`;
+      if (chapters[i]!.isVolume && !isNested) {
+        isNested = !isNested;
+      } else {
+        navPoints += `</navPoint>\n`;
+      }
+    }
+    if (isNested) {
+      navPoints += `</navPoint>`;
+    }
 
     // Add NCX file (table of contents)
     const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
