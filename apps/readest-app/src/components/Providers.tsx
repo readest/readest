@@ -21,6 +21,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     }
   }, [appService]);
 
+  // Make sure appService is available in all children components
+  if (!appService) return;
+
   return (
     <CSPostHogProvider>
       <AuthProvider>

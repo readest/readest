@@ -619,7 +619,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
-    return <div className='bg-base-200 h-[100vh]' />;
+    return <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
 
   const showBookshelf = libraryLoaded || libraryBooks.length > 0;
@@ -730,7 +730,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
 const LibraryPage = () => {
   return (
-    <Suspense fallback={<div className='bg-base-200 h-[100vh]' />}>
+    <Suspense fallback={<div className='h-[100vh]' />}>
       <LibraryPageWithSearchParams />
     </Suspense>
   );
