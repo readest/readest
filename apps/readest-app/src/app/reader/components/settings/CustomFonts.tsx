@@ -56,7 +56,8 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         let fontFile: File;
         if (selectedFile.path) {
           const filePath = selectedFile.path;
-          fontPath = getFilename(filePath);
+          const fileobj = await appService!.fs.openFile(filePath, 'None');
+          fontPath = fileobj.name || getFilename(filePath);
           await appService!.fs.copyFile(filePath, fontPath, 'Fonts');
           fontFile = await appService!.fs.openFile(fontPath, 'Fonts');
         } else if (selectedFile.file) {
