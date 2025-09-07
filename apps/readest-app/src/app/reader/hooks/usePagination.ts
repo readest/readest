@@ -3,6 +3,7 @@ import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -38,6 +39,7 @@ export const usePagination = (
   containerRef: React.RefObject<HTMLDivElement>,
 ) => {
   const { appService } = useEnv();
+  const { getBookData } = useBookDataStore();
   const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
@@ -46,7 +48,8 @@ export const usePagination = (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
     const viewState = getViewState(bookKey);
-    if (!viewState?.inited) return;
+    const bookData = getBookData(bookKey);
+    if (!viewState?.inited || !bookData) return;
 
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
@@ -121,14 +124,27 @@ export const usePagination = (
         }
       }
     } else if (msg instanceof CustomEvent) {
-      const { keyName } = msg.detail;
       const viewSettings = getViewSettings(bookKey);
-      if (viewSettings?.volumeKeysToFlip) {
+      if (msg.type === 'native-key-down' && viewSettings?.volumeKeysToFlip) {
+        const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
           viewPagination(viewRef.current, viewSettings, 'left');
         } else if (keyName === 'VolumeDown') {
           viewPagination(viewRef.current, viewSettings, 'right');
+        }
+      } else if (
+        msg.type === 'touch-swipe' &&
+        bookData.bookDoc?.rendition?.layout === 'pre-paginated' &&
+        viewSettings?.zoomLevel === 100
+      ) {
+        const { deltaX, deltaY } = msg.detail;
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+          if (deltaX > 0) {
+            viewPagination(viewRef.current, viewSettings, 'left');
+          } else {
+            viewPagination(viewRef.current, viewSettings, 'right');
+          }
         }
       }
     } else {
@@ -150,6 +166,10 @@ export const usePagination = (
   const handleContinuousScroll = (mode: ScrollSource, scrollDelta: number, threshold: number) => {
     const renderer = viewRef.current?.renderer;
     const viewSettings = getViewSettings(bookKey)!;
+    const bookData = getBookData(bookKey)!;
+    // Currently continuous scroll is not supported in pre-paginated layout
+    if (bookData.bookDoc?.rendition?.layout === 'pre-paginated') return;
+
     if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
       const doScroll = () => {
         // may have overscroll where the start is greater than 0

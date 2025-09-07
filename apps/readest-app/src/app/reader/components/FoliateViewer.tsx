@@ -222,7 +222,7 @@ const FoliateViewer: React.FC<{
 
   const { handlePageFlip, handleContinuousScroll } = usePagination(bookKey, viewRef, containerRef);
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip, handleContinuousScroll);
-  const touchHandlers = useTouchEvent(bookKey, handleContinuousScroll);
+  const touchHandlers = useTouchEvent(bookKey, handlePageFlip, handleContinuousScroll);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,

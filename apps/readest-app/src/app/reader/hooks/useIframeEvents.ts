@@ -58,6 +58,7 @@ interface IframeTouchEvent {
 
 export const useTouchEvent = (
   bookKey: string,
+  handlePageFlip: (msg: CustomEvent) => void,
   handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
   const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
@@ -120,6 +121,18 @@ export const useTouchEvent = (
           setHoveredBookKey(null);
         }
       }
+      handlePageFlip(
+        new CustomEvent('touch-swipe', {
+          detail: {
+            deltaX,
+            deltaY,
+            startX: touchStart.screenX,
+            startY: touchStart.screenY,
+            endX: touchEnd.screenX,
+            endY: touchEnd.screenY,
+          },
+        }),
+      );
       handleContinuousScroll('touch', deltaY, 30);
     }
 
