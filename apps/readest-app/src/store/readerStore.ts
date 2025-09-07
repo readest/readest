@@ -26,6 +26,7 @@ interface ViewState {
   view: FoliateView | null;
   isPrimary: boolean;
   loading: boolean;
+  inited: boolean;
   error: string | null;
   progress: BookProgress | null;
   ribbonVisible: boolean;
@@ -73,6 +74,7 @@ interface ReaderStore {
   getViewState: (key: string) => ViewState | null;
   getGridInsets: (key: string) => Insets | null;
   setGridInsets: (key: string, insets: Insets | null) => void;
+  setViewInited: (key: string, inited: boolean) => void;
 }
 
 export const useReaderStore = create<ReaderStore>((set, get) => ({
@@ -116,6 +118,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           view: null,
           isPrimary: false,
           loading: true,
+          inited: false,
           error: null,
           progress: null,
           ribbonVisible: false,
@@ -173,6 +176,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             view: null,
             isPrimary,
             loading: false,
+            inited: false,
             error: null,
             progress: null,
             ribbonVisible: false,
@@ -193,6 +197,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             view: null,
             isPrimary: false,
             loading: false,
+            inited: false,
             error: 'Failed to load book.',
             progress: null,
             ribbonVisible: false,
@@ -336,6 +341,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           gridInsets: insets,
+        },
+      },
+    })),
+
+  setViewInited: (key: string, inited: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          inited,
         },
       },
     })),

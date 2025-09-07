@@ -65,7 +65,7 @@ const FoliateViewer: React.FC<{
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
   const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
-  const { getView, setView: setFoliateView, setProgress } = useReaderStore();
+  const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
   const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
@@ -314,6 +314,7 @@ const FoliateViewer: React.FC<{
       } else {
         await view.goToFraction(0);
       }
+      setViewInited(bookKey, true);
     };
 
     openBook();

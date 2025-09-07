@@ -268,7 +268,9 @@ pub fn run() {
                 }
                 #[cfg(target_os = "linux")]
                 {
-                    builder = builder.transparent(true).background_color(tauri::window::Color(0, 0, 0, 0));
+                    builder = builder
+                        .transparent(true)
+                        .background_color(tauri::window::Color(0, 0, 0, 0));
                 }
 
                 builder
