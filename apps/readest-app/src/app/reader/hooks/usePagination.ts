@@ -38,13 +38,16 @@ export const usePagination = (
   containerRef: React.RefObject<HTMLDivElement>,
 ) => {
   const { appService } = useEnv();
-  const { getViewSettings } = useReaderStore();
+  const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
+    const viewState = getViewState(bookKey);
+    if (!viewState?.inited) return;
+
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
