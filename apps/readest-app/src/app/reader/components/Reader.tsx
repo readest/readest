@@ -155,7 +155,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       </Suspense>
     </div>
   ) : (
-    <div className='bg-base-100 h-[100vh]'></div>
+    <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-100')}></div>
   );
 };
 
