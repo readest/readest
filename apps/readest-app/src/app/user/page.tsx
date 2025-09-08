@@ -59,7 +59,7 @@ const ProfilePage = () => {
   const { envConfig, appService } = useEnv();
   const { token, user, logout } = useAuth();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { safeAreaInsets } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const [loading, setLoading] = useState(false);
   const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
@@ -342,8 +342,7 @@ const ProfilePage = () => {
       className={clsx(
         'bg-base-100 inset-0 select-none overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
-        appService?.isLinuxApp && 'window-border',
-        appService?.hasRoundedWindow && 'rounded-window',
+        appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div

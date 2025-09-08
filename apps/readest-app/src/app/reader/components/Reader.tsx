@@ -57,7 +57,8 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { settings, setSettings } = useSettingsStore();
   const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
   const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
-  const { isDarkMode, systemUIAlwaysHidden, showSystemUI, dismissSystemUI } = useThemeStore();
+  const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
+  const { showSystemUI, dismissSystemUI } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const isInitiating = useRef(false);
@@ -142,8 +143,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       className={clsx(
         `reader-page bg-base-100 text-base-content select-none overflow-hidden`,
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
-        appService?.isLinuxApp && 'window-border',
-        appService?.hasRoundedWindow && 'rounded-window',
+        appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <Suspense fallback={<div className='h-[100vh]'></div>}>

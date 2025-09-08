@@ -67,7 +67,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { isDarkMode, safeAreaInsets } = useThemeStore();
+  const { isDarkMode, safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -346,8 +346,7 @@ export default function AuthPage() {
       className={clsx(
         'bg-base-100 inset-0 flex select-none flex-col items-center overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
-        appService?.isLinuxApp && 'window-border',
-        appService?.hasRoundedWindow && 'rounded-window',
+        appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div

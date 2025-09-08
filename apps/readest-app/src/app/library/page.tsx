@@ -74,7 +74,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   } = useLibraryStore();
   const _ = useTranslation();
   const { selectFiles } = useFileSelector(appService, _);
-  const { safeAreaInsets: insets } = useThemeStore();
+  const { safeAreaInsets: insets, isRoundedWindow } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const isInitiating = useRef(false);
@@ -630,8 +630,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       className={clsx(
         'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
-        appService?.isLinuxApp && 'window-border',
-        appService?.hasRoundedWindow && 'rounded-window',
+        appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div className='top-0 z-40 w-full'>
