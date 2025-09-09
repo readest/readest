@@ -8,10 +8,7 @@ interface FontStoreState {
   loading: boolean;
 
   setFonts: (fonts: CustomFont[]) => void;
-  addFont: (
-    path: string,
-    options?: { name?: string; family?: string; style?: string; weight?: number },
-  ) => CustomFont;
+  addFont: (path: string, options?: Partial<Omit<CustomFont, 'id' | 'path'>>) => CustomFont;
   removeFont: (id: string) => boolean;
   updateFont: (id: string, updates: Partial<CustomFont>) => boolean;
   getFont: (id: string) => CustomFont | undefined;

@@ -74,6 +74,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           family: fontInfo.family,
           style: fontInfo.style,
           weight: fontInfo.weight,
+          variable: fontInfo.variable,
         });
         console.log('Added custom font:', customFont);
         if (customFont && !customFont.error) {

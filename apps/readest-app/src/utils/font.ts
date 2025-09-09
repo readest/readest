@@ -88,6 +88,59 @@ function parseOS2Selection(dataView: DataView, os2TableOffset: number): number {
   return dataView.getUint16(os2TableOffset + 62, false);
 }
 
+interface VariableFontAxis {
+  tag: string;
+  minValue: number;
+  defaultValue: number;
+  maxValue: number;
+  name?: string;
+}
+
+function parseVariableFontAxes(dataView: DataView, fvarTableOffset: number): VariableFontAxis[] {
+  try {
+    // fvar table structure:
+    // version (4 bytes) + axisCount (2 bytes) + axisSize (2 bytes) + instanceCount (2 bytes) + instanceSize (2 bytes)
+    const axisCount = dataView.getUint16(fvarTableOffset + 4, false);
+    const axisSize = dataView.getUint16(fvarTableOffset + 6, false);
+
+    const axes: VariableFontAxis[] = [];
+
+    // Each axis record starts at offset 16 from table start
+    let axisOffset = fvarTableOffset + 16;
+
+    for (let i = 0; i < axisCount; i++) {
+      // Axis record structure:
+      // axisTag (4 bytes) + minValue (4 bytes) + defaultValue (4 bytes) + maxValue (4 bytes) + flags (2 bytes) + axisNameID (2 bytes)
+
+      const tag = String.fromCharCode(
+        dataView.getUint8(axisOffset),
+        dataView.getUint8(axisOffset + 1),
+        dataView.getUint8(axisOffset + 2),
+        dataView.getUint8(axisOffset + 3),
+      );
+
+      // Fixed-point values (16.16 format)
+      const minValue = dataView.getInt32(axisOffset + 4, false) / 65536;
+      const defaultValue = dataView.getInt32(axisOffset + 8, false) / 65536;
+      const maxValue = dataView.getInt32(axisOffset + 12, false) / 65536;
+
+      axes.push({
+        tag,
+        minValue,
+        defaultValue,
+        maxValue,
+      });
+
+      axisOffset += axisSize;
+    }
+
+    return axes;
+  } catch (error) {
+    console.warn('Failed to parse fvar table:', error);
+    return [];
+  }
+}
+
 function weightClassToCSSWeight(weightClass: number): number {
   // Map OpenType weight class to CSS weight
   if (weightClass >= 1 && weightClass <= 100) return 100;
@@ -164,6 +217,7 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
     const numTables = dataView.getUint16(4, false);
     let nameTableOffset = 0;
     let os2TableOffset = 0;
+    let fvarTableOffset = 0;
     for (let i = 0; i < numTables; i++) {
       const tableOffset = 12 + i * 16;
       const tag = String.fromCharCode(
@@ -177,6 +231,8 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
         nameTableOffset = dataView.getUint32(tableOffset + 8, false);
       } else if (tag === 'OS/2') {
         os2TableOffset = dataView.getUint32(tableOffset + 8, false);
+      } else if (tag === 'fvar') {
+        fvarTableOffset = dataView.getUint32(tableOffset + 8, false);
       }
     }
 
@@ -263,6 +319,14 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
       }
     }
 
+    let isVariable = false;
+    if (fvarTableOffset > 0) {
+      const axes = parseVariableFontAxes(dataView, fvarTableOffset);
+      if (axes && axes.length > 0) {
+        isVariable = true;
+      }
+    }
+
     // If OS/2 table weight is default (400) or unavailable, try to infer from style name
     if (fontWeight === 400 && styleName) {
       const inferredWeight = inferWeightFromStyleName(styleName);
@@ -281,6 +345,7 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
       family: familyName,
       weight: fontWeight,
       style: fontStyle,
+      variable: isVariable,
     };
   } catch (error) {
     console.warn(`Failed to parse font: ${error}`);
@@ -289,6 +354,7 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
       family: fallbackName,
       weight: 400,
       style: 'normal' as FontStyle,
+      variable: false,
     };
   }
 };
