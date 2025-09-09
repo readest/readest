@@ -120,10 +120,12 @@ export type FontStyle = 'normal' | 'italic' | 'oblique';
 export interface CustomFont {
   id: string;
   name: string;
+  path: string;
   family?: string;
   style?: string;
   weight?: number;
-  path: string;
+  variable?: boolean;
+
   downloadedAt?: number;
   deletedAt?: number;
 
@@ -177,6 +179,7 @@ export function createFontCSS(font: CustomFont): string {
   const fontFamily = createFontFamily(font.family || font.name);
   const fontStyle = font.style || 'normal';
   const fontWeight = font.weight || 400;
+  const variable = font.variable || false;
   if (!font.blobUrl) {
     throw new Error(`Blob URL not available for font: ${font.name}`);
   }
@@ -184,8 +187,8 @@ export function createFontCSS(font: CustomFont): string {
   const css = `
     @font-face {
       font-family: "${fontFamily}";
-      font-style: ${fontStyle};
-      font-weight: ${fontWeight};
+      ${variable ? '' : `font-style: ${fontStyle};`}
+      ${variable ? '' : `font-weight: ${fontWeight};`}
       src: url("${font.blobUrl}") format("${cssFormat}");
       font-display: swap;
     }
@@ -196,12 +199,7 @@ export function createFontCSS(font: CustomFont): string {
 
 export function createCustomFont(
   path: string,
-  options?: {
-    name?: string;
-    family?: string;
-    style?: string;
-    weight?: number;
-  },
+  options?: Partial<Omit<CustomFont, 'id' | 'path'>>,
 ): CustomFont {
   const name = options?.name || getFontName(path);
   return {
@@ -210,6 +208,7 @@ export function createCustomFont(
     family: options?.family,
     style: options?.style,
     weight: options?.weight,
+    variable: options?.variable,
     path,
   };
 }
