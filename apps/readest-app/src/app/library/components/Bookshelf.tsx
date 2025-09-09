@@ -19,7 +19,7 @@ import { isMd5 } from '@/utils/md5';
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
-import BookshelfItem, { generateGridItems, generateListItems } from './BookshelfItem';
+import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
 import GroupingModal from './GroupingModal';
 
 interface BookshelfProps {
@@ -72,8 +72,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
-  const allBookshelfItems =
-    viewMode === 'grid' ? generateGridItems(libraryBooks) : generateListItems(libraryBooks);
+  const allBookshelfItems = generateBookshelfItems(libraryBooks);
 
   useEffect(() => {
     if (isImportingBook.current) return;
