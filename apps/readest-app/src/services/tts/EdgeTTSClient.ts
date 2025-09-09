@@ -23,6 +23,7 @@ export class EdgeTTSClient implements TTSClient {
   #isPlaying = false;
   #pausedAt = 0;
   #startedAt = 0;
+  #fadeCompensation: number | null = null;
 
   constructor(controller?: TTSController) {
     this.controller = controller;
@@ -189,8 +190,25 @@ export class EdgeTTSClient implements TTSClient {
     return true;
   }
 
+  #getFadeCompensation() {
+    if (this.#fadeCompensation !== null) return this.#fadeCompensation;
+
+    const userAgent = navigator.userAgent;
+    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    if (isSafari || isIOS) {
+      this.#fadeCompensation = 0.2;
+    } else {
+      this.#fadeCompensation = 0.0;
+    }
+
+    return this.#fadeCompensation;
+  }
+
   async resume() {
     if (this.#isPlaying || !this.#audioElement) return true;
+    const fadeCompensation = this.#getFadeCompensation();
+    this.#audioElement.currentTime = Math.max(0, this.#audioElement.currentTime - fadeCompensation);
     await this.#audioElement.play();
     this.#isPlaying = true;
     this.#startedAt = this.#audioElement.currentTime - this.#pausedAt;
