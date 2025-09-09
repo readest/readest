@@ -11,25 +11,33 @@ import { tauriGetWindowLogicalPosition } from '@/utils/window';
 
 export type ScrollSource = 'touch' | 'mouse';
 
+type PaginationSide = 'left' | 'right' | 'up' | 'down';
+
+const swapLeftRight = (side: PaginationSide) => {
+  if (side === 'left') return 'right';
+  if (side === 'right') return 'left';
+  return side;
+};
+
 export const viewPagination = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
-  side: 'left' | 'right',
+  side: PaginationSide,
 ) => {
   if (!view || !viewSettings) return;
   const renderer = view.renderer;
+  if (view.book.dir === 'rtl') {
+    side = swapLeftRight(side);
+  }
   if (renderer.scrolled) {
-    if (view.book.dir === 'rtl') {
-      side = side === 'left' ? 'right' : 'left';
-    }
     const { size } = renderer;
     const showHeader = viewSettings.showHeader && viewSettings.showBarsOnScroll;
     const showFooter = viewSettings.showFooter && viewSettings.showBarsOnScroll;
     const scrollingOverlap = viewSettings.scrollingOverlap;
     const distance = size - scrollingOverlap - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
-    return side === 'left' ? view.prev(distance) : view.next(distance);
+    return side === 'left' || side === 'up' ? view.prev(distance) : view.next(distance);
   } else {
-    return side === 'left' ? view.goLeft() : view.goRight();
+    return side === 'left' || side === 'up' ? view.prev() : view.next();
   }
 };
 
@@ -129,9 +137,9 @@ export const usePagination = (
         const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
-          viewPagination(viewRef.current, viewSettings, 'left');
+          viewPagination(viewRef.current, viewSettings, 'up');
         } else if (keyName === 'VolumeDown') {
-          viewPagination(viewRef.current, viewSettings, 'right');
+          viewPagination(viewRef.current, viewSettings, 'down');
         }
       } else if (
         msg.type === 'touch-swipe' &&
