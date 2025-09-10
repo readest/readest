@@ -3,6 +3,7 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { getStyles } from '@/utils/style';
 import { tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
@@ -20,6 +21,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
   const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { getBookData } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
   const viewSettings = getViewSettings(sideBarBookKey ?? '');
@@ -104,36 +106,36 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('search', { term: '' });
   };
 
-  const zoomIn = () => {
+  const applyZoomLevel = (zoomLevel: number) => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
-    if (!view?.renderer?.setStyles) return;
+    const bookData = getBookData(sideBarBookKey);
     const viewSettings = getViewSettings(sideBarBookKey)!;
-    const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP;
-    viewSettings!.zoomLevel = Math.min(zoomLevel, MAX_ZOOM_LEVEL);
+    viewSettings!.zoomLevel = zoomLevel;
     setViewSettings(sideBarBookKey, viewSettings!);
     view?.renderer.setStyles?.(getStyles(viewSettings!));
+    if (bookData?.bookDoc?.rendition?.layout === 'pre-paginated') {
+      view?.renderer.setAttribute('scale-factor', zoomLevel);
+    }
+  };
+
+  const zoomIn = () => {
+    if (!sideBarBookKey) return;
+    const viewSettings = getViewSettings(sideBarBookKey)!;
+    const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP;
+    applyZoomLevel(Math.min(zoomLevel, MAX_ZOOM_LEVEL));
   };
 
   const zoomOut = () => {
     if (!sideBarBookKey) return;
-    const view = getView(sideBarBookKey);
-    if (!view?.renderer?.setStyles) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
     const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP;
-    viewSettings!.zoomLevel = Math.max(zoomLevel, MIN_ZOOM_LEVEL);
-    setViewSettings(sideBarBookKey, viewSettings!);
-    view?.renderer.setStyles?.(getStyles(viewSettings!));
+    applyZoomLevel(Math.max(zoomLevel, MIN_ZOOM_LEVEL));
   };
 
   const resetZoom = () => {
     if (!sideBarBookKey) return;
-    const view = getView(sideBarBookKey);
-    if (!view?.renderer?.setStyles) return;
-    const viewSettings = getViewSettings(sideBarBookKey)!;
-    viewSettings!.zoomLevel = 100;
-    setViewSettings(sideBarBookKey, viewSettings!);
-    view?.renderer.setStyles?.(getStyles(viewSettings!));
+    applyZoomLevel(100);
   };
 
   const toggleTTS = () => {
