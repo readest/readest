@@ -85,67 +85,71 @@ export const AboutWindow = () => {
       onClose={handleClose}
       boxClassName='sm:!w-96 sm:h-auto'
     >
-      <div className='about-content flex h-full flex-col items-center justify-center'>
-        <div className='flex flex-col items-center gap-2 px-8'>
-          <div className='mb-2 mt-8'>
-            <Image src='/icon.png' alt='App Logo' className='h-20 w-20' width={64} height={64} />
+      {isOpen && (
+        <div className='about-content flex h-full flex-col items-center justify-center'>
+          <div className='flex flex-col items-center gap-2 px-8'>
+            <div className='mb-2 mt-8'>
+              <Image src='/icon.png' alt='App Logo' className='h-20 w-20' width={64} height={64} />
+            </div>
+            <div className='flex select-text flex-col items-center'>
+              <h2 className='mb-2 text-2xl font-bold'>Readest</h2>
+              <p className='text-neutral-content text-center text-sm'>
+                {_('Version {{version}}', { version: getAppVersion() })} {`(${browserInfo})`}
+              </p>
+            </div>
+            <div className='h-5'>
+              {!updateStatus && (
+                <button
+                  className='badge badge-primary cursor-pointer p-2'
+                  onClick={appService?.hasUpdater ? handleCheckUpdate : handleShowRecentUpdates}
+                >
+                  {_('Check Update')}
+                </button>
+              )}
+              {updateStatus === 'updated' && (
+                <p className='text-neutral-content mt-2 text-xs'>
+                  {_('Already the latest version')}
+                </p>
+              )}
+              {updateStatus === 'checking' && (
+                <p className='text-neutral-content mt-2 text-xs'>{_('Checking for updates...')}</p>
+              )}
+              {updateStatus === 'error' && (
+                <p className='text-error mt-2 text-xs'>{_('Error checking for updates')}</p>
+              )}
+            </div>
           </div>
-          <div className='flex select-text flex-col items-center'>
-            <h2 className='mb-2 text-2xl font-bold'>Readest</h2>
-            <p className='text-neutral-content text-center text-sm'>
-              {_('Version {{version}}', { version: getAppVersion() })} {`(${browserInfo})`}
+
+          <div className='divider py-16 sm:py-2'></div>
+
+          <div className='flex flex-col items-center px-4 text-center' dir='ltr'>
+            <p className='text-neutral-content text-sm'>
+              © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
             </p>
-          </div>
-          <div className='h-5'>
-            {!updateStatus && (
-              <span
-                className='badge badge-primary cursor-pointer p-2'
-                onClick={appService?.hasUpdater ? handleCheckUpdate : handleShowRecentUpdates}
+
+            <p className='text-neutral-content mt-2 text-xs'>
+              This software is licensed under the{' '}
+              <Link
+                href='https://www.gnu.org/licenses/agpl-3.0.html'
+                className='text-blue-500 underline'
               >
-                {_('Check Update')}
-              </span>
-            )}
-            {updateStatus === 'updated' && (
-              <p className='text-neutral-content mt-2 text-xs'>{_('Already the latest version')}</p>
-            )}
-            {updateStatus === 'checking' && (
-              <p className='text-neutral-content mt-2 text-xs'>{_('Checking for updates...')}</p>
-            )}
-            {updateStatus === 'error' && (
-              <p className='text-error mt-2 text-xs'>{_('Error checking for updates')}</p>
-            )}
+                GNU Affero General Public License v3.0
+              </Link>
+              . You are free to use, modify, and distribute this software under the terms of the
+              AGPL v3 license. Please see the license for more details.
+            </p>
+            <p className='text-neutral-content my-2 text-xs'>
+              Source code is available at{' '}
+              <Link href='https://github.com/readest/readest' className='text-blue-500 underline'>
+                GitHub
+              </Link>
+              .
+            </p>
+
+            <LegalLinks />
           </div>
         </div>
-
-        <div className='divider py-16 sm:py-2'></div>
-
-        <div className='flex flex-col items-center px-4 text-center' dir='ltr'>
-          <p className='text-neutral-content text-sm'>
-            © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
-          </p>
-
-          <p className='text-neutral-content mt-2 text-xs'>
-            This software is licensed under the{' '}
-            <Link
-              href='https://www.gnu.org/licenses/agpl-3.0.html'
-              className='text-blue-500 underline'
-            >
-              GNU Affero General Public License v3.0
-            </Link>
-            . You are free to use, modify, and distribute this software under the terms of the AGPL
-            v3 license. Please see the license for more details.
-          </p>
-          <p className='text-neutral-content my-2 text-xs'>
-            Source code is available at{' '}
-            <Link href='https://github.com/readest/readest' className='text-blue-500 underline'>
-              GitHub
-            </Link>
-            .
-          </p>
-
-          <LegalLinks />
-        </div>
-      </div>
+      )}
     </Dialog>
   );
 };

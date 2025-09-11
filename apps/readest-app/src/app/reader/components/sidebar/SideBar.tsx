@@ -1,24 +1,26 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
-import { useDrag } from '@/hooks/useDrag';
+import { DragKey, useDrag } from '@/hooks/useDrag';
 import { useThemeStore } from '@/store/themeStore';
+import { Overlay } from '@/components/Overlay';
+import useShortcuts from '@/hooks/useShortcuts';
 import SidebarHeader from './Header';
 import SidebarContent from './Content';
 import BookCard from './BookCard';
 import useSidebar from '../../hooks/useSidebar';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
-import useShortcuts from '@/hooks/useShortcuts';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
@@ -28,6 +30,7 @@ const VELOCITY_THRESHOLD = 0.5;
 const SideBar: React.FC<{
   onGoToLibrary: () => void;
 }> = ({ onGoToLibrary }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
@@ -37,11 +40,13 @@ const SideBar: React.FC<{
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const sidebarHeight = useRef(1.0);
   const isMobile = window.innerWidth < 640;
   const {
     sideBarWidth,
     isSideBarPinned,
     isSideBarVisible,
+    getSideBarWidth,
     setSideBarVisible,
     handleSideBarResize,
     handleSideBarTogglePin,
@@ -89,6 +94,7 @@ const SideBar: React.FC<{
 
     const heightFraction = data.clientY / window.innerHeight;
     const newTop = Math.max(0.0, Math.min(1, heightFraction));
+    sidebarHeight.current = newTop;
 
     const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
     const overlay = document.querySelector('.overlay') as HTMLElement;
@@ -135,11 +141,29 @@ const SideBar: React.FC<{
     handleSideBarResize(`${Math.round(newWidth * 10000) / 100}%`);
   };
 
+  const handleHorizontalDragKeyDown = (data: { key: DragKey; step: number }) => {
+    const currentWidth = parseFloat(getSideBarWidth()) / 100;
+    let newWidth = currentWidth;
+
+    if (data.key === 'ArrowLeft') {
+      newWidth = Math.max(MIN_SIDEBAR_WIDTH, currentWidth - data.step);
+    } else if (data.key === 'ArrowRight') {
+      newWidth = Math.min(MAX_SIDEBAR_WIDTH, currentWidth + data.step);
+    }
+    handleSideBarResize(`${Math.round(newWidth * 10000) / 100}%`);
+  };
+
+  const handleVerticalDragKeyDown = () => {};
+
   const { handleDragStart: handleVerticalDragStart } = useDrag(
     handleVerticalDragMove,
+    handleVerticalDragKeyDown,
     handleVerticalDragEnd,
   );
-  const { handleDragStart: handleHorizontalDragStart } = useDrag(handleHorizontalDragMove);
+  const { handleDragStart: handleHorizontalDragStart, handleDragKeyDown } = useDrag(
+    handleHorizontalDragMove,
+    handleHorizontalDragKeyDown,
+  );
 
   const handleClickOverlay = () => {
     setSideBarVisible(false);
@@ -182,10 +206,7 @@ const SideBar: React.FC<{
   return isSideBarVisible ? (
     <>
       {!isSideBarPinned && (
-        <div
-          className='overlay fixed inset-0 z-[45] bg-black/50 sm:bg-black/20'
-          onClick={handleClickOverlay}
-        />
+        <Overlay className='z-[45] bg-black/50 sm:bg-black/20' onDismiss={handleClickOverlay} />
       )}
       <div
         className={clsx(
@@ -222,6 +243,11 @@ const SideBar: React.FC<{
         <div className='flex-shrink-0'>
           {isMobile && (
             <div
+              role='slider'
+              tabIndex={0}
+              aria-label={_('Resize Sidebar')}
+              aria-orientation='vertical'
+              aria-valuenow={sidebarHeight.current}
               className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
               onMouseDown={handleVerticalDragStart}
               onTouchStart={handleVerticalDragStart}
@@ -265,11 +291,17 @@ const SideBar: React.FC<{
         )}
         <div
           className={clsx(
-            'drag-bar absolute right-0 top-0 -m-2 h-full w-0.5 cursor-col-resize bg-transparent p-2',
+            'drag-bar absolute -right-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
             isMobile && 'hidden',
           )}
+          role='slider'
+          tabIndex={0}
+          aria-label={_('Resize Sidebar')}
+          aria-orientation='horizontal'
+          aria-valuenow={parseFloat(sideBarWidth)}
           onMouseDown={handleHorizontalDragStart}
           onTouchStart={handleHorizontalDragStart}
+          onKeyDown={handleDragKeyDown}
         ></div>
       </div>
     </>

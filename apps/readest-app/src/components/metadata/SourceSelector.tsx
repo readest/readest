@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MdOutlineCheck, MdOutlineEdit } from 'react-icons/md';
 
 import { BookMetadata } from '@/libs/document';
@@ -24,6 +24,13 @@ interface SourceSelectorProps {
 
 const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSelect, onClose }) => {
   const _ = useTranslation();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
 
   const getConfidenceIcon = (confidence: number) => {
     if (confidence >= 90) return <MdOutlineCheck className='text-green-500' />;
@@ -34,16 +41,23 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
-      <div className='bg-base-100 mx-4 max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg p-6'>
+    <div className='source-selector fixed inset-0 z-[60] flex items-center justify-center bg-black/50'>
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        role='dialog'
+        aria-modal='true'
+        className='bg-base-100 mx-4 max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg p-6'
+      >
         <h3 className='mb-4 text-lg font-semibold'>{_('Select Metadata Source')}</h3>
 
         <div className='space-y-3'>
           {sources.map((source, index) => (
-            <div
+            <button
+              tabIndex={0}
               key={index}
               onClick={() => onSelect(source)}
-              className='hover:bg-base-200 cursor-pointer rounded-md border p-3 transition-colors'
+              className='hover:bg-base-300/75 bg-base-200 border-base-200 cursor-pointer rounded-md border p-3 transition-colors'
             >
               <div className='flex items-start gap-4'>
                 <div className='aspect-[28/41] h-full w-[40%] max-w-32 shadow-md'>
@@ -86,18 +100,19 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           ))}
 
-          <div
+          <button
+            tabIndex={0}
             onClick={onClose}
-            className='hover:bg-base-200 cursor-pointer rounded-md border p-3 transition-colors'
+            className='hover:bg-base-300/75 border-base-200 bg-base-200 cursor-pointer rounded-md border p-3 transition-colors'
           >
             <div className='flex items-center gap-2'>
               <MdOutlineEdit className='h-4 w-4' />
               <span className='font-medium'>{_('Keep manual input')}</span>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className='mt-6 flex justify-end gap-2'>

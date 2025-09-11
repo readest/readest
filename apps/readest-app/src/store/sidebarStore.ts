@@ -6,6 +6,7 @@ interface SidebarState {
   isSideBarVisible: boolean;
   isSideBarPinned: boolean;
   getIsSideBarVisible: () => boolean;
+  getSideBarWidth: () => string;
   setSideBarBookKey: (key: string) => void;
   setSideBarWidth: (width: string) => void;
   toggleSideBar: () => void;
@@ -20,6 +21,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   isSideBarVisible: false,
   isSideBarPinned: false,
   getIsSideBarVisible: () => get().isSideBarVisible,
+  getSideBarWidth: () => get().sideBarWidth,
   setSideBarBookKey: (key: string) => set({ sideBarBookKey: key }),
   setSideBarWidth: (width: string) => set({ sideBarWidth: width }),
   toggleSideBar: () => set((state) => ({ isSideBarVisible: !state.isSideBarVisible })),

@@ -281,6 +281,7 @@ const TTSPanel = ({
             )}
           </button>
           <ul
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
             tabIndex={0}
             className={clsx(
               'dropdown-content bgcolor-base-200 no-triangle menu menu-vertical rounded-box absolute right-0 z-[1] shadow',
@@ -288,6 +289,7 @@ const TTSPanel = ({
             )}
           >
             {timeoutOptions.map((option, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
               <li
                 key={`${index}-${option.value}`}
                 onClick={() => onSelectTimeout(bookKey, option.value)}
@@ -317,6 +319,7 @@ const TTSPanel = ({
             <RiVoiceAiFill size={iconSize32} />
           </button>
           <ul
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
             tabIndex={0}
             className={clsx(
               'dropdown-content bgcolor-base-200 no-triangle menu menu-vertical rounded-box absolute right-0 z-[1] shadow',
@@ -338,6 +341,7 @@ const TTSPanel = ({
                     </span>
                   </div>
                   {voiceGroup.voices.map((voice, voiceIndex) => (
+                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                     <li
                       key={`${index}-${voiceGroup.id}-${voiceIndex}`}
                       onClick={() => !voice.disabled && handleSelectVoice(voice.id, voice.lang)}

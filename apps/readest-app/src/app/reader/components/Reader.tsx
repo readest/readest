@@ -39,12 +39,12 @@ Z-Index Layering Guide:
      • Floats above the content but below global dialogs.
 40 – TTS Bar
      • Mini controls for TTS playback on top of the TTS Control.
-30 – Footbar (TTS Control)
-     • Persistent bottom controls and the TTS icon/panel.
+30 – TTS Control
+     • Persistent TTS icon/panel.
 20 – Menu / Sidebar / Notebook (Pinned)
      • Docked navigation or note views.
-10 – Headerbar / Ribbon
-     • Top toolbar and ribbon elements.
+10 – Headerbar / Footbar / Ribbon
+     • Top toolbar, bottom footbar and ribbon elements.
  0 – Base Content
      • Main reading area or background content.
 */

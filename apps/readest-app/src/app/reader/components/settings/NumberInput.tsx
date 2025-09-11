@@ -72,19 +72,27 @@ const NumberInput: React.FC<NumberInputProps> = ({
         <input
           type='text'
           inputMode='decimal'
+          disabled={disabled}
           value={localValue}
           onChange={handleChange}
           onBlur={handleOnBlur}
-          className='input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent py-1 pe-3 ps-1 text-right !outline-none'
+          className={clsx(
+            'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent py-1 pe-3 ps-1 text-right !outline-none',
+            disabled && 'input-disabled cursor-not-allowed disabled:bg-transparent',
+          )}
           onFocus={(e) => e.target.select()}
         />
         <button
+          tabIndex={disabled ? -1 : 0}
+          onKeyDown={(e) => e.stopPropagation()}
           onClick={decrement}
           className={`btn btn-circle btn-sm ${value <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
           <FiMinus className='h-4 w-4' />
         </button>
         <button
+          tabIndex={disabled ? -1 : 0}
+          onKeyDown={(e) => e.stopPropagation()}
           onClick={increment}
           className={`btn btn-circle btn-sm ${value >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >

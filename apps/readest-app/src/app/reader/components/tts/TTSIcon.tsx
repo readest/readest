@@ -11,7 +11,7 @@ const TTSIcon: React.FC<TTSIconProps> = ({ isPlaying, ttsInited, onClick }) => {
   const bars = [1, 2, 3, 4];
 
   return (
-    <div
+    <button
       className={clsx(
         'relative h-full w-full rounded-full',
         ttsInited ? 'cursor-pointer' : 'cursor-not-allowed',
@@ -59,7 +59,7 @@ const TTSIcon: React.FC<TTSIconProps> = ({ isPlaying, ttsInited, onClick }) => {
           ))}
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 

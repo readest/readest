@@ -141,9 +141,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         <div className='breadcrumbs py-1'>
           <ul>
             <li>
-              <a className='font-semibold' onClick={onBack}>
+              <button className='font-semibold' onClick={onBack}>
                 {_('Font')}
-              </a>
+              </button>
             </li>
             <li className='font-medium'>{_('Custom Fonts')}</li>
           </ul>
@@ -168,7 +168,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
 
       <div className='grid grid-cols-2 gap-4'>
         <div className='card border-primary/50 hover:border-primary/75 group h-12 border-2 transition-colors'>
-          <div
+          <button
             className='card-body flex cursor-pointer items-center justify-center p-2 text-center'
             onClick={handleImportFont}
           >
@@ -180,11 +180,11 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                 {_('Import Font')}
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         {availableFamilies.map((family) => (
-          <div
+          <button
             key={family.name}
             className={clsx(
               'card h-12 border shadow-sm',
@@ -215,7 +215,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                 </button>
               )}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

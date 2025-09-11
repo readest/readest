@@ -173,17 +173,20 @@ const FooterBar: React.FC<FooterBarProps> = ({
   return (
     <>
       <div
+        role='button'
+        tabIndex={0}
         className={clsx(
           'absolute bottom-0 left-0 z-10 hidden w-full sm:flex sm:h-[52px]',
           // show scroll bar when vertical and scrolled in desktop
           viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
         )}
+        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
       <div
         className={clsx(
-          'footer-bar shadow-xs bottom-0 z-30 flex w-full flex-col',
+          'footer-bar shadow-xs bottom-0 z-10 flex w-full flex-col',
           'sm:h-[52px] sm:justify-center',
           'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
           'transition-[opacity,transform] duration-300',

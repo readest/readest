@@ -125,6 +125,7 @@
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.0.3",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "i18next-scanner": "^4.6.0",
     "jsdom": "^26.1.0",
     "mkdirp": "^3.0.1",

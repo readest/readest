@@ -92,10 +92,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   return (
-    <div
-      tabIndex={0}
-      className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
-    >
+    <div className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'>
       {viewOptions.map((option) => (
         <MenuItem
           key={option.value}
