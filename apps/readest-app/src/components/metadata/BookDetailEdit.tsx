@@ -171,7 +171,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
     <div className='bg-base-100 relative w-full rounded-lg'>
       <div className='mb-6 flex items-start gap-4'>
         <div className='flex w-[30%] max-w-32 flex-col gap-2'>
-          <div
+          <button
             className='aspect-[28/41] h-full shadow-md'
             onClick={!isCoverLocked ? handleSelectLocalImage : undefined}
           >
@@ -186,7 +186,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
                 ...(newCoverImageUrl ? { coverImageUrl: newCoverImageUrl } : {}),
               }}
             />
-          </div>
+          </button>
           <div className='flex w-full gap-1'>
             <button
               onClick={handleSelectLocalImage}

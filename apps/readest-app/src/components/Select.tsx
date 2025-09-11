@@ -25,11 +25,8 @@ export default function Select({
     <select
       value={value}
       onChange={onChange}
-      className={clsx(
-        'select h-8 min-h-8 rounded-md border-none text-sm',
-        'bg-base-200 focus:outline-none focus:ring-0',
-        className,
-      )}
+      onKeyDown={(e) => e.stopPropagation()}
+      className={clsx('select bg-base-200 h-8 min-h-8 rounded-md border-none text-sm', className)}
       disabled={disabled}
       style={{
         textAlignLast: 'end',

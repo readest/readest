@@ -150,29 +150,26 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         <h2 className='text-center text-lg font-bold'>{_('Group Books')}</h2>
         <div className={clsx('mt-4 grid grid-cols-1 gap-2 text-base md:grid-cols-2')}>
           {isSelectedBooksHasGroup && (
-            <div
+            <button
               onClick={handleRemoveFromGroup}
-              role='button'
               className='flex items-center space-x-2 p-2 text-blue-500'
             >
               <HiOutlineFolderRemove size={iconSize} />
               <span>{_('Remove From Group')}</span>
-            </div>
+            </button>
           )}
-          <div
+          <button
             onClick={handleCreateGroup}
-            role='button'
             className='flex items-center space-x-2 p-2 text-blue-500'
           >
             <HiOutlineFolderAdd size={iconSize} />
             <span>{_('Create New Group')}</span>
-          </div>
+          </button>
         </div>
         {showInput && (
           <div className='mt-4 flex items-center gap-2'>
             <input
               type='text'
-              autoFocus
               ref={editorRef}
               value={editGroupName}
               onChange={(e) => setEditGroupName(e.target.value)}

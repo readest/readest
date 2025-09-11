@@ -135,6 +135,16 @@ export const useThemeStore = create<ThemeState>((set, get) => {
   };
 });
 
+export const loadDataTheme = () => {
+  if (typeof localStorage === 'undefined' || typeof document === 'undefined') return;
+
+  const themeMode = localStorage.getItem('themeMode');
+  const themeColor = localStorage.getItem('themeColor');
+  if (themeMode && themeColor) {
+    document.documentElement.setAttribute('data-theme', `${themeColor}-${themeMode}`);
+  }
+};
+
 export const initSystemThemeListener = (appService: AppService) => {
   if (typeof window === 'undefined' || !appService) return;
 

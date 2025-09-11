@@ -9,6 +9,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { eventDispatcher } from '@/utils/event';
+import { Overlay } from './Overlay';
 
 const VELOCITY_THRESHOLD = 0.5;
 const SNAP_THRESHOLD = 0.2;
@@ -146,7 +147,9 @@ const Dialog: React.FC<DialogProps> = ({
     }
   };
 
-  const { handleDragStart } = useDrag(handleDragMove, handleDragEnd);
+  const handleDragKeyDown = () => {};
+
+  const { handleDragStart } = useDrag(handleDragMove, handleDragKeyDown, handleDragEnd);
 
   return (
     <dialog
@@ -159,13 +162,13 @@ const Dialog: React.FC<DialogProps> = ({
       )}
       dir={isRtl ? 'rtl' : undefined}
     >
-      <div
+      <Overlay
         className={clsx(
-          'overlay fixed inset-0 z-10 bg-black/50 sm:bg-black/50',
+          'z-10 bg-black/50 sm:bg-black/50',
           appService?.hasRoundedWindow && 'rounded-window',
           bgClassName,
         )}
-        onClick={onClose}
+        onDismiss={onClose}
       />
       <div
         className={clsx(
@@ -184,6 +187,7 @@ const Dialog: React.FC<DialogProps> = ({
           ...(isMobile ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 } : {}),
         }}
       >
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           className={clsx(
             'drag-handle h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center',

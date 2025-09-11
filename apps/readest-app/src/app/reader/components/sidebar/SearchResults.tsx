@@ -23,12 +23,22 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 
   return (
     <li
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
+      role='button'
       ref={viewRef}
       className={clsx(
         'my-2 cursor-pointer rounded-lg p-2 text-sm',
         isCurrent ? 'bg-base-300 hover:bg-gray-300/70' : 'hover:bg-base-300 bg-base-100',
       )}
+      tabIndex={0}
       onClick={() => onSelectResult(cfi)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onSelectResult(cfi);
+        } else {
+          e.stopPropagation();
+        }
+      }}
     >
       <div className='line-clamp-3'>
         <span className=''>{excerpt.pre}</span>

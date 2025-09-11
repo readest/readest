@@ -11,6 +11,7 @@ import { mountAdditionalFonts } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
+import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 
 interface FootnotePopupProps {
@@ -226,13 +227,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
   return (
     <div>
-      {showPopup && (
-        <div
-          className='fixed inset-0'
-          onClick={handleDismissPopup}
-          onContextMenu={handleDismissPopup}
-        />
-      )}
+      {showPopup && <Overlay onDismiss={handleDismissPopup} />}
       <Popup
         width={responsiveWidth}
         height={responsiveHeight}

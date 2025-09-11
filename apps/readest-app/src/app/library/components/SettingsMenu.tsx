@@ -104,7 +104,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setSettings(settings);
     saveSettings(envConfig, settings);
     setIsAlwaysShowStatusBar(settings.alwaysShowStatusBar);
-    setIsDropdownOpen?.(false);
   };
 
   const toggleAutoUploadBooks = () => {
@@ -169,7 +168,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
 
   return (
     <div
-      tabIndex={0}
       className={clsx(
         'settings-menu dropdown-content no-triangle border-base-100',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
@@ -191,10 +189,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
             )
           }
         >
-          <ul>
-            <div onClick={handleUserProfile} className='cursor-pointer'>
+          <ul className='flex flex-col'>
+            <button onClick={handleUserProfile} className='w-full'>
               <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
-            </div>
+            </button>
             <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
           </ul>
         </MenuItem>

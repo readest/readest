@@ -232,12 +232,14 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
         </Dialog>
 
         {/* Source Selection Modal */}
-        <SourceSelector
-          sources={availableSources}
-          isOpen={showSourceSelection}
-          onSelect={handleSourceSelection}
-          onClose={handleCloseSourceSelection}
-        />
+        {showSourceSelection && (
+          <SourceSelector
+            sources={availableSources}
+            isOpen={showSourceSelection}
+            onSelect={handleSourceSelection}
+            onClose={handleCloseSourceSelection}
+          />
+        )}
 
         {activeDeleteAction && currentDeleteConfig && (
           <div

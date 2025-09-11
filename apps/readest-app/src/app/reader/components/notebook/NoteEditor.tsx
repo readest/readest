@@ -109,7 +109,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
           onSave={handleSaveNote}
           onEscape={handleEscape}
           placeholder={_('Add your notes here...')}
-          autoFocus={true}
           spellCheck={false}
         />
       </div>

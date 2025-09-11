@@ -1,5 +1,5 @@
-import { AppProps } from 'next/app';
 import Head from 'next/head';
+import { AppProps } from 'next/app';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
 

@@ -75,10 +75,9 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 toggleButton={<MdOutlineDelete className='fill-red-500' />}
               >
                 <div
-                  tabIndex={0}
                   className={clsx(
                     'delete-menu dropdown-content dropdown-center no-triangle',
-                    'border-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                    'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >
                   <MenuItem

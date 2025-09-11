@@ -14,6 +14,7 @@ import { throttle } from '@/utils/throttle';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { CFI } from '@/libs/document';
 import { Insets } from '@/types/misc';
+import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -464,13 +465,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
   return (
     <>
-      {showPanel && (
-        <div
-          className='fixed inset-0'
-          onClick={handleDismissPopup}
-          onContextMenu={handleDismissPopup}
-        />
-      )}
+      {showPanel && <Overlay onDismiss={handleDismissPopup} />}
       {showIndicator && (
         <div
           ref={iconRef}

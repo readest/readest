@@ -1,5 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, isValidElement, ReactElement, ReactNode } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Overlay } from './Overlay';
 import MenuItem from './MenuItem';
 
 interface DropdownProps {
@@ -57,12 +59,12 @@ const Dropdown: React.FC<DropdownProps> = ({
   children,
   onToggle,
 }) => {
+  const _ = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleDropdown = () => {
     const newIsOpen = !isOpen;
-    setIsOpen(newIsOpen);
-    onToggle?.(newIsOpen);
+    setIsDropdownOpen(newIsOpen);
   };
 
   const setIsDropdownOpen = (isOpen: boolean) => {
@@ -82,12 +84,24 @@ const Dropdown: React.FC<DropdownProps> = ({
 
   return (
     <div className='dropdown-container flex'>
-      {isOpen && (
-        <div className='fixed inset-0 bg-transparent' onClick={() => setIsDropdownOpen(false)} />
-      )}
-      <div className={clsx('dropdown', className)}>
+      {isOpen && <Overlay onDismiss={() => setIsDropdownOpen(false)} />}
+      <div
+        tabIndex={0}
+        role='button'
+        aria-label={_('Menu')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (!isOpen) toggleDropdown();
+          } else if (e.key === 'Escape' && isOpen) {
+            toggleDropdown();
+          } else {
+            e.stopPropagation();
+          }
+        }}
+        className={clsx('dropdown', className)}
+      >
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
         <div
-          tabIndex={-1}
           onClick={toggleDropdown}
           className={clsx('dropdown-toggle', buttonClassName, isOpen && 'bg-base-300/50')}
         >

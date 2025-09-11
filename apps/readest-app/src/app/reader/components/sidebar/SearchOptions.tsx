@@ -46,7 +46,6 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
 
   return (
     <div
-      tabIndex={0}
       className={clsx(
         'book-menu dropdown-content dropdown-center border-base-200 z-20 w-56 border shadow-2xl',
         menuClassName,

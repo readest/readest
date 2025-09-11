@@ -72,6 +72,11 @@ jobs:
         run: |
           pnpm test -- --watch=false
 
+      - name: run lint
+        working-directory: apps/readest-app
+        run: |
+          pnpm lint
+
       - name: build the web App
         if: matrix.config.platform == 'web'
         working-directory: apps/readest-app

@@ -330,16 +330,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         ))}
         {viewMode === 'grid' && !navBooksGroup && allBookshelfItems.length > 0 && (
-          <div
+          <button
             className={clsx(
               'border-1 bg-base-100 hover:bg-base-300/50 flex items-center justify-center',
               'mx-0 my-4 aspect-[28/41] sm:mx-4',
             )}
-            role='button'
             onClick={handleImportBooks}
           >
             <PiPlus className='size-10' color='gray' />
-          </div>
+          </button>
         )}
       </div>
       {loading && (

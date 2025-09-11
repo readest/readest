@@ -45,6 +45,7 @@ import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
+import { removeTabIndex } from '@/utils/a11y';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 
@@ -159,6 +160,8 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
+
+      removeTabIndex(detail.doc);
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {

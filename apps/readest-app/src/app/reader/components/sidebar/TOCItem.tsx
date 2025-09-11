@@ -49,7 +49,7 @@ const TOCItemView = React.memo<{
   );
 
   const handleClickItem = useCallback(
-    (event: React.MouseEvent) => {
+    (event: React.MouseEvent | React.KeyboardEvent) => {
       event.preventDefault();
       onItemClick(item);
     },
@@ -58,9 +58,10 @@ const TOCItemView = React.memo<{
 
   return (
     <div
+      tabIndex={0}
       role='treeitem'
-      tabIndex={-1}
       onClick={item.href ? handleClickItem : undefined}
+      onKeyDown={item.href ? (e) => e.key === 'Enter' && handleClickItem(e) : undefined}
       aria-expanded={flatItem.isExpanded ? 'true' : 'false'}
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
@@ -76,8 +77,11 @@ const TOCItemView = React.memo<{
       }}
     >
       {item.subitems && (
-        <div
+        <button
           onClick={handleToggleExpand}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
           className='inline-block cursor-pointer'
           style={{
             padding: '12px',
@@ -85,7 +89,7 @@ const TOCItemView = React.memo<{
           }}
         >
           {createExpanderIcon(flatItem.isExpanded || false)}
-        </div>
+        </button>
       )}
       <div
         className='ms-2 truncate text-ellipsis'

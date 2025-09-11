@@ -41,8 +41,9 @@ const BookCard = ({ book }: { book: Book }) => {
       <button
         className='btn btn-ghost hover:bg-base-300 h-6 min-h-6 w-6 rounded-full p-0 transition-colors'
         aria-label={_('More Info')}
+        onClick={showBookDetails}
       >
-        <MdInfoOutline size={iconSize18} className='fill-base-content' onClick={showBookDetails} />
+        <MdInfoOutline size={iconSize18} className='fill-base-content' />
       </button>
     </div>
   );
