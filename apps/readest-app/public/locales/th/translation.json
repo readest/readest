@@ -518,5 +518,10 @@
   "Play": "เล่น",
   "Next Sentence": "ประโยคถัดไป",
   "Next Paragraph": "ย่อหน้าถัดไป",
-  "Separate Cover Page": "หน้าปกแยกต่างหาก"
+  "Separate Cover Page": "หน้าปกแยกต่างหาก",
+  "Resize Notebook": "ปรับขนาดสมุดบันทึก",
+  "Resize Sidebar": "ปรับขนาดแถบข้าง",
+  "Menu": "เมนู",
+  "Dismiss": "ปิด",
+  "Get Help from the Readest Community": "รับความช่วยเหลือจากชุมชน Readest"
 }

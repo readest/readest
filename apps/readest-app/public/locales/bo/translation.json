@@ -518,5 +518,10 @@
   "Play": "གཏོང་བ།",
   "Next Sentence": "རྗེས་ཀྱི་ཚིག་གྲུབ།",
   "Next Paragraph": "རྗེས་ཀྱི་དོན་ཚན།",
-  "Separate Cover Page": "སྟོང་ངོས་གི་ཤོག་དཀར་པ།"
+  "Separate Cover Page": "སྟོང་ངོས་གི་ཤོག་དཀར་པ།",
+  "Resize Notebook": "དེབ་སྣོད་གཅོད་སྒྲིག",
+  "Resize Sidebar": "གཡས་སྒོ་གཅོད་སྒྲིག",
+  "Menu": "སྒེའུ་ཁུང་།",
+  "Dismiss": "བརྟེན་སྒྲིག",
+  "Get Help from the Readest Community": "Readest མཛའ་བརྩེའི་རོགས་རམ་ལོངས་སུ་རོགས་རམ་ཐོབ།"
 }
