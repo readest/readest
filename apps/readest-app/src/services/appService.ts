@@ -658,7 +658,11 @@ export abstract class BaseAppService implements AppService {
   }
 
   async updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void> {
-    const arrayBuffer = await this.imageToArrayBuffer(imageUrl, imageFile);
-    await this.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
+    if (imageUrl === '_blank') {
+      await this.fs.removeFile(getCoverFilename(book), 'Books');
+    } else if (imageUrl || imageFile) {
+      const arrayBuffer = await this.imageToArrayBuffer(imageUrl, imageFile);
+      await this.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
+    }
   }
 }
