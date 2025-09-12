@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdEdit, MdLock, MdLockOpen, MdOutlineSearch } from 'react-icons/md';
+import { MdEdit, MdDelete, MdLock, MdLockOpen, MdOutlineSearch } from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
@@ -27,6 +27,8 @@ interface BookDetailEditProps {
   onReset: () => void;
   onSave: () => void;
 }
+
+const emptyCoverImageUrl = '_blank';
 
 const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   book,
@@ -169,8 +171,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
 
   return (
     <div className='bg-base-100 relative w-full rounded-lg'>
-      <div className='mb-6 flex items-start gap-4'>
-        <div className='flex w-[30%] max-w-32 flex-col gap-2'>
+      <div className='mb-6 flex items-stretch gap-4'>
+        <div className='cover-field flex w-[30%] max-w-32 flex-col gap-2'>
           <button
             className='aspect-[28/41] h-full shadow-md'
             onClick={!isCoverLocked ? handleSelectLocalImage : undefined}
@@ -187,44 +189,64 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               }}
             />
           </button>
-          <div className='flex w-full gap-1'>
+          <div className='flex w-full justify-between gap-1'>
             <button
               onClick={handleSelectLocalImage}
               disabled={isCoverLocked}
               className={clsx(
-                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1',
-                'border border-gray-300 bg-white hover:bg-gray-50',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                'text-sm sm:text-xs',
-                isCoverLocked ? '!text-base-content !bg-base-200' : '!text-gray-500',
+                'flex w-1/2 min-w-0 items-center justify-center gap-1 rounded p-1 sm:w-3/5',
+                'text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:text-xs',
+                isCoverLocked ? '!text-base-content bg-base-200' : 'bg-gray-100 !text-gray-500',
               )}
               title={_('Change cover image')}
             >
               <MdEdit
                 className={clsx(
-                  'h-5 w-5 sm:h-4 sm:w-4',
+                  'h-5 w-5 flex-shrink-0 sm:h-4 sm:w-4',
                   isCoverLocked ? 'fill-base-content' : 'fill-gray-600',
                 )}
               />
-              <span className='hidden sm:inline'>{_('Replace')}</span>
+              <span className='hidden truncate sm:inline'>{_('Replace')}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setNewCoverImageUrl(emptyCoverImageUrl);
+                metadata.coverImageUrl = emptyCoverImageUrl;
+                metadata.coverImageFile = undefined;
+                metadata.coverImageBlobUrl = undefined;
+              }}
+              disabled={isCoverLocked}
+              className={clsx(
+                'flex w-1/4 items-center justify-center rounded p-1 sm:w-1/5',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                'text-red-500 hover:bg-red-50 hover:text-red-600',
+                isCoverLocked ? '!text-base-content bg-base-200' : 'bg-gray-100',
+              )}
+              title={_('Remove cover image')}
+            >
+              <MdDelete className='h-5 w-5 sm:h-4 sm:w-4' />
             </button>
 
             <button
               onClick={() => onToggleFieldLock('coverImageUrl')}
               className={clsx(
-                'flex items-center justify-center rounded px-2 py-1 text-xs',
-                'border border-gray-300 hover:bg-gray-50',
+                'flex w-1/4 items-center justify-center rounded p-1 hover:bg-gray-50 sm:w-1/5',
                 isCoverLocked
                   ? 'bg-green-100 text-green-500 hover:bg-green-200'
-                  : 'bg-white text-gray-500',
+                  : 'bg-gray-100 text-gray-500',
               )}
               title={isCoverLocked ? _('Unlock cover') : _('Lock cover')}
             >
-              {isCoverLocked ? <MdLock className='h-3 w-3' /> : <MdLockOpen className='h-3 w-3' />}
+              {isCoverLocked ? (
+                <MdLock className='h-5 w-5 sm:h-4 sm:w-4' />
+              ) : (
+                <MdLockOpen className='h-5 w-5 sm:h-4 sm:w-4' />
+              )}
             </button>
           </div>
         </div>
-        <div className='flex-1 space-y-4'>
+        <div className='title-fields flex flex-1 flex-col justify-between'>
           {titleAuthorFields.map(({ field, label, required, value, placeholder }) => (
             <FormField
               key={field}
@@ -295,7 +317,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
             {searchLoading ? (
               <span className='loading loading-spinner h-4 w-4'></span>
             ) : (
-              <MdOutlineSearch className='h-4 w-4' />
+              <MdOutlineSearch className='mt-[1px] h-4 w-4' />
             )}
             <span className='sm:hidden'>{_('Auto')}</span>
             <span className='hidden sm:inline'>{_('Auto-Retrieve')}</span>
