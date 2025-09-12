@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 
 import { Insets } from '@/types/misc';
@@ -83,6 +83,16 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, isSideBarVisible, hoveredBookKey]);
 
+  // Check if mouse is outside header area to avoid false positive event of MouseLeave when clicking inside header on Windows
+  const isMouseOutsideHeader = useCallback((clientX: number, clientY: number) => {
+    if (!headerRef.current) return true;
+
+    const rect = headerRef.current.getBoundingClientRect();
+    return (
+      clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom
+    );
+  }, []);
+
   const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
   const trafficLightInHeader =
     appService?.hasTrafficLight && !trafficLightInFullscreen && !isSideBarVisible && isTopLeft;
@@ -129,7 +139,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             ? `${Math.max(gridInsets.top, statusBarHeight)}px`
             : `${gridInsets.top}px`,
         }}
-        onMouseLeave={() => !appService?.isMobile && setHoveredBookKey('')}
+        onMouseLeave={(e) => {
+          if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
+            setHoveredBookKey('');
+          }
+        }}
       >
         <div className='bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2'>
           <div className='hidden sm:flex'>
