@@ -14,6 +14,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { formatAuthors, formatTitle } from '@/utils/book';
+import { eventDispatcher } from '@/utils/event';
 import { isMd5 } from '@/utils/md5';
 
 import Alert from '@/components/Alert';
@@ -57,6 +58,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { safeAreaInsets } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
+  const [bookIdsToDelete, setBookIdsToDelete] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
   const [queryTerm, setQueryTerm] = useState<string | null>(null);
@@ -189,8 +191,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const getBooksToDelete = () => {
     const booksToDelete: Book[] = [];
-    const selectedBooks = getSelectedBooks();
-    selectedBooks.forEach((id) => {
+    bookIdsToDelete.forEach((id) => {
       for (const book of libraryBooks.filter((book) => book.hash === id || book.groupId === id)) {
         if (book && !book.deletedAt) {
           booksToDelete.push(book);
@@ -210,6 +211,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const deleteSelectedBooks = () => {
+    setBookIdsToDelete(getSelectedBooks());
     setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };
@@ -217,6 +219,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const groupSelectedBooks = () => {
     setShowSelectModeActions(false);
     setShowGroupingModal(true);
+  };
+
+  const handleDeleteBooksIntent = (event: CustomEvent) => {
+    const { ids } = event.detail;
+    setBookIdsToDelete(ids);
+    setShowSelectModeActions(false);
+    setShowDeleteAlert(true);
   };
 
   const bookFilter = (item: Book, queryTerm: string) => {
@@ -294,6 +303,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelectMode, isSelectAll, isSelectNone]);
+
+  useEffect(() => {
+    eventDispatcher.on('delete-books', handleDeleteBooksIntent);
+    return () => {
+      eventDispatcher.off('delete-books', handleDeleteBooksIntent);
+    };
+  }, []);
 
   const selectedBooks = getSelectedBooks();
 
