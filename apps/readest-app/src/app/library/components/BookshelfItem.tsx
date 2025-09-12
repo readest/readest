@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
@@ -94,7 +95,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   toggleSelection,
   handleBookUpload,
   handleBookDownload,
-  handleBookDelete,
   handleSetSelectMode,
   handleShowDetailsBook,
 }) => {
@@ -212,7 +212,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const deleteBookMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        await handleBookDelete(book);
+        eventDispatcher.dispatch('delete-books', { ids: [book.hash] });
       },
     });
     const menu = await Menu.new();
@@ -241,9 +241,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const deleteGroupMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        for (const book of group.books) {
-          await handleBookDelete(book);
-        }
+        eventDispatcher.dispatch('delete-books', { ids: [group.id] });
       },
     });
     const menu = await Menu.new();
