@@ -47,15 +47,24 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const { appService } = useEnv();
 
-  const handleMouseDown = async (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
+  const touchState = useRef({
+    lastTouchTime: 0,
+    touchStartPosition: { x: 0, y: 0 },
+  });
 
-    if (
+  const isExcludedElement = (target: HTMLElement) => {
+    return (
       target.closest('.btn') ||
       target.closest('.window-button') ||
       target.closest('.dropdown-container') ||
       target.closest('.exclude-title-bar-mousedown')
-    ) {
+    );
+  };
+
+  const handleMouseDown = async (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+
+    if (isExcludedElement(target)) {
       return;
     }
 
@@ -69,13 +78,65 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     }
   };
 
+  const handleTouchStart = async (e: TouchEvent) => {
+    const target = e.target as HTMLElement;
+    const touch = e.touches[0]!;
+
+    if (isExcludedElement(target)) {
+      return;
+    }
+
+    const currentTime = Date.now();
+    const timeDiff = currentTime - touchState.current.lastTouchTime;
+
+    touchState.current.touchStartPosition = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+
+    if (timeDiff < 300) {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      getCurrentWindow().toggleMaximize();
+      return;
+    }
+
+    touchState.current.lastTouchTime = currentTime;
+  };
+
+  const handleTouchMove = async (e: TouchEvent) => {
+    const target = e.target as HTMLElement;
+    const touch = e.touches[0]!;
+
+    if (isExcludedElement(target)) {
+      return;
+    }
+
+    const deltaX = Math.abs(touch.clientX - touchState.current.touchStartPosition.x);
+    const deltaY = Math.abs(touch.clientY - touchState.current.touchStartPosition.y);
+
+    if (deltaX > 5 || deltaY > 5) {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().startDragging();
+      } catch (error) {
+        console.warn('Failed to start window dragging:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
     const headerElement = headerRef?.current;
-    headerElement?.addEventListener('mousedown', handleMouseDown);
+    if (!headerElement) return;
+
+    headerElement.addEventListener('mousedown', handleMouseDown);
+    headerElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    headerElement.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
-      headerElement?.removeEventListener('mousedown', handleMouseDown);
+      headerElement.removeEventListener('mousedown', handleMouseDown);
+      headerElement.removeEventListener('touchstart', handleTouchStart);
+      headerElement.removeEventListener('touchmove', handleTouchMove);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
