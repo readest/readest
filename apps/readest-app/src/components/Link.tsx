@@ -3,6 +3,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
+  title?: string;
 }
 
 const Link: React.FC<LinkProps> = ({ href, children, ...props }) => {

@@ -530,5 +530,10 @@
   "Play": "Воспроизвести",
   "Next Sentence": "Следующее предложение",
   "Next Paragraph": "Следующий абзац",
-  "Separate Cover Page": "Отдельная страница обложки"
+  "Separate Cover Page": "Отдельная страница обложки",
+  "Resize Notebook": "Изменить размер блокнота",
+  "Resize Sidebar": "Изменить размер боковой панели",
+  "Menu": "Меню",
+  "Dismiss": "Закрыть",
+  "Get Help from the Readest Community": "Получить помощь от сообщества Readest"
 }

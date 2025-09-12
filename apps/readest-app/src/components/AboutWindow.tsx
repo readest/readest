@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewVersion } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
+import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
 import Link from './Link';
@@ -83,7 +84,7 @@ export const AboutWindow = () => {
       isOpen={isOpen}
       title={_('About Readest')}
       onClose={handleClose}
-      boxClassName='sm:!w-96 sm:h-auto'
+      boxClassName='sm:!w-[480px] sm:!max-w-screen-sm sm:h-auto'
     >
       {isOpen && (
         <div className='about-content flex h-full flex-col items-center justify-center'>
@@ -97,7 +98,7 @@ export const AboutWindow = () => {
                 {_('Version {{version}}', { version: getAppVersion() })} {`(${browserInfo})`}
               </p>
             </div>
-            <div className='h-5'>
+            <div className='my-1 h-5'>
               {!updateStatus && (
                 <button
                   className='badge badge-primary cursor-pointer p-2'
@@ -122,12 +123,12 @@ export const AboutWindow = () => {
 
           <div className='divider py-16 sm:py-2'></div>
 
-          <div className='flex flex-col items-center px-4 text-center' dir='ltr'>
+          <div className='flex flex-col items-center gap-2 px-4 text-center' dir='ltr'>
             <p className='text-neutral-content text-sm'>
               © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
             </p>
 
-            <p className='text-neutral-content mt-2 text-xs'>
+            <p className='text-neutral-content text-xs'>
               This software is licensed under the{' '}
               <Link
                 href='https://www.gnu.org/licenses/agpl-3.0.html'
@@ -138,7 +139,7 @@ export const AboutWindow = () => {
               . You are free to use, modify, and distribute this software under the terms of the
               AGPL v3 license. Please see the license for more details.
             </p>
-            <p className='text-neutral-content my-2 text-xs'>
+            <p className='text-neutral-content text-xs'>
               Source code is available at{' '}
               <Link href='https://github.com/readest/readest' className='text-blue-500 underline'>
                 GitHub
@@ -147,6 +148,7 @@ export const AboutWindow = () => {
             </p>
 
             <LegalLinks />
+            <SupportLinks />
           </div>
         </div>
       )}
