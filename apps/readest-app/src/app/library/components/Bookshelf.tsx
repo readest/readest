@@ -9,6 +9,7 @@ import { Book, BooksGroup } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -75,6 +76,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
   const allBookshelfItems = generateBookshelfItems(libraryBooks);
+
+  const autofocusRef = useAutoFocus<HTMLDivElement>();
 
   useEffect(() => {
     if (isImportingBook.current) return;
@@ -316,12 +319,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   return (
     <div className='bookshelf'>
       <div
+        ref={autofocusRef}
+        tabIndex={-1}
         className={clsx(
-          'bookshelf-items transform-wrapper',
+          'bookshelf-items transform-wrapper focus:outline-none',
           viewMode === 'grid' && 'grid flex-1 grid-cols-3 gap-x-4 px-4 sm:gap-x-0 sm:px-2',
           viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
           viewMode === 'list' && 'flex flex-col',
         )}
+        role='list'
+        aria-label={_('Bookshelf')}
       >
         {filteredBookshelfItems.map((item) => (
           <BookshelfItem
@@ -347,6 +354,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         ))}
         {viewMode === 'grid' && !navBooksGroup && allBookshelfItems.length > 0 && (
           <button
+            aria-label={_('Import Books')}
             className={clsx(
               'border-1 bg-base-100 hover:bg-base-300/50 flex items-center justify-center',
               'mx-0 my-4 aspect-[28/41] sm:mx-4',

@@ -26,7 +26,11 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     }
 
     return (
-      <div className='text-neutral-content/70 flex justify-between text-xs'>
+      <div
+        className='text-neutral-content/70 flex justify-between text-xs'
+        role='status'
+        aria-label={`${progressPercentage}%`}
+      >
         <span>{progressPercentage}%</span>
       </div>
     );

@@ -206,6 +206,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
         <div className='bg-base-300 flex h-8 w-8 items-center rounded-r-lg'>
           <Dropdown
+            label={_('Search Options')}
             className={clsx(
               window.innerWidth < 640 && 'dropdown-end',
               'dropdown-bottom flex justify-center',

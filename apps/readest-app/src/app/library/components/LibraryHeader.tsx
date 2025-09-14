@@ -172,34 +172,27 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             )}
             <span className='bg-base-content/50 mx-2 h-4 w-[0.5px]'></span>
             <Dropdown
+              label={_('Import Books')}
               className={clsx(
                 'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
                 appService?.isMobile ? 'dropdown-end' : 'dropdown-center',
               )}
               buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
-              toggleButton={
-                <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Import Books')}>
-                  <PiPlus className='m-0.5 h-5 w-5' />
-                </div>
-              }
+              toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu onImportBooks={onImportBooks} />
             </Dropdown>
             {appService?.isMobile ? null : (
               <button
                 onClick={onToggleSelectMode}
-                aria-label={_('Select Multiple Books')}
+                aria-label={_('Select Books')}
+                title={_('Select Books')}
                 className='h-6'
               >
-                <div
-                  className='lg:tooltip lg:tooltip-bottom cursor-pointer'
-                  data-tip={_('Select Books')}
-                >
-                  <PiSelectionAllDuotone
-                    role='button'
-                    className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}
-                  />
-                </div>
+                <PiSelectionAllDuotone
+                  role='button'
+                  className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}
+                />
               </button>
             )}
           </div>
@@ -224,16 +217,18 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         ) : (
           <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
             <Dropdown
+              label={_('View Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-              toggleButton={<PiDotsThreeCircle size={iconSize18} />}
+              toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
             >
               <ViewMenu />
             </Dropdown>
             <Dropdown
+              label={_('Settings Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-              toggleButton={<MdOutlineMenu size={iconSize18} />}
+              toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
             >
               <SettingsMenu />
             </Dropdown>

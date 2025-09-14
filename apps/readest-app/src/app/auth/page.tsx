@@ -363,6 +363,7 @@ export default function AuthPage() {
           )}
         >
           <button
+            aria-label={_('Go Back')}
             onClick={handleGoBack}
             className={clsx('btn btn-ghost h-12 min-h-12 w-12 p-0 sm:h-8 sm:min-h-8 sm:w-8')}
           >

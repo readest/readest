@@ -5,6 +5,7 @@ import { FiSearch } from 'react-icons/fi';
 import { MdOutlineMenu, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { MdArrowBackIosNew } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import Dropdown from '@/components/Dropdown';
@@ -18,6 +19,7 @@ const SidebarHeader: React.FC<{
   onTogglePin: () => void;
   onToggleSearchBar: () => void;
 }> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const {
     isTrafficLightVisible,
@@ -75,6 +77,7 @@ const SidebarHeader: React.FC<{
           <FiSearch size={iconSize18} className='text-base-content' />
         </button>
         <Dropdown
+          label={_('Book Menu')}
           className={clsx(
             window.innerWidth < 640 && 'dropdown-end',
             'dropdown-bottom flex justify-center',

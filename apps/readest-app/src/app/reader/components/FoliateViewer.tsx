@@ -15,6 +15,8 @@ import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import { useAutoFocus } from '@/hooks/useAutoFocus';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
@@ -62,6 +64,7 @@ const FoliateViewer: React.FC<{
   gridInsets: Insets;
   contentInsets: Insets;
 }> = ({ bookKey, bookDoc, config, gridInsets, contentInsets: insets }) => {
+  const _ = useTranslation();
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
@@ -80,6 +83,8 @@ const FoliateViewer: React.FC<{
   const [toastMessage, setToastMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const docLoaded = useRef(false);
+
+  useAutoFocus<HTMLDivElement>({ ref: containerRef });
 
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
@@ -410,7 +415,10 @@ const FoliateViewer: React.FC<{
     <>
       <div
         ref={containerRef}
-        className='foliate-viewer h-[100%] w-[100%]'
+        tabIndex={-1}
+        role='document'
+        aria-label={_('Book Content')}
+        className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
         {...mouseHandlers}
         {...touchHandlers}
       />

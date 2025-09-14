@@ -1,12 +1,12 @@
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import MenuItem from '@/components/MenuItem';
+import Menu from '@/components/Menu';
 
 interface ViewMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
@@ -92,13 +92,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   return (
-    <div className='settings-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'>
+    <Menu
+      label={_('View Menu')}
+      className='view-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
+    >
       {viewOptions.map((option) => (
         <MenuItem
           key={option.value}
           label={option.label}
           buttonClass='h-8'
-          Icon={viewMode === option.value ? MdCheck : undefined}
+          toggled={viewMode === option.value}
           onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
         />
       ))}
@@ -114,7 +117,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           key={option.value}
           label={option.label}
           buttonClass='h-8'
-          Icon={coverFit === option.value ? MdCheck : undefined}
+          toggled={coverFit === option.value}
           onClick={() => handleToggleCropCovers(option.value as LibraryCoverFitType)}
         />
       ))}
@@ -130,7 +133,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           key={option.value}
           label={option.label}
           buttonClass='h-8'
-          Icon={sortBy === option.value ? MdCheck : undefined}
+          toggled={sortBy === option.value}
           onClick={() => handleSetSortBy(option.value as LibrarySortByType)}
         />
       ))}
@@ -140,11 +143,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           key={option.value.toString()}
           label={option.label}
           buttonClass='h-8'
-          Icon={isAscending === option.value ? MdCheck : undefined}
+          toggled={isAscending === option.value}
           onClick={() => handleSetSortAscending(option.value)}
         />
       ))}
-    </div>
+    </Menu>
   );
 };
 

@@ -212,6 +212,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
               <Dropdown
+                label={_('Settings Menu')}
                 className='dropdown-bottom dropdown-end'
                 buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
                 toggleButton={<PiDotsThreeVerticalBold />}

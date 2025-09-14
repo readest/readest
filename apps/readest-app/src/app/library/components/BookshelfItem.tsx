@@ -322,6 +322,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'scale-95' : 'scale-100',
         )}
+        role='group'
+        aria-label={'format' in item ? item.title : item.name}
         style={{
           transition: 'transform 0.2s',
         }}

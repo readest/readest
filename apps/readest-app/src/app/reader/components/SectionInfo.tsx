@@ -51,6 +51,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0 h-[44px]',
           isScrolled && !isVertical && 'bg-base-100',
         )}
+        role='contentinfo'
         style={
           isVertical
             ? {
@@ -68,7 +69,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               }
         }
       >
-        <h2
+        <span
           className={clsx(
             'text-neutral-content text-center font-sans text-xs font-light',
             isVertical ? '' : 'line-clamp-1',
@@ -76,7 +77,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           )}
         >
           {section || ''}
-        </h2>
+        </span>
       </div>
     </>
   );

@@ -215,126 +215,128 @@ export const KOSyncSettingsWindow: React.FC = () => {
       title={_('KOReader Sync Settings')}
       boxClassName='sm:!min-w-[520px] sm:h-auto'
     >
-      <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
-        {isConfigured ? (
-          <>
-            <div className='text-center'>
-              <p className='text-base-content/80 text-sm'>
-                {_('Sync as {{userDisplayName}}', {
-                  userDisplayName: settings.kosync.username,
-                })}
-              </p>
-            </div>
-            <div className='flex h-14 items-center justify-between'>
-              <span className='text-base-content/80'>{_('Sync Server Connected')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={settings.kosync.enabled}
-                onChange={() => handleDisconnect()}
-              />
-            </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Sync Strategy')}</span>
-              </label>
-              <StyledSelect
-                value={settings.kosync.strategy}
-                onChange={handleStrategyChange}
-                options={[
-                  { value: 'prompt', label: _('Ask on conflict') },
-                  { value: 'silent', label: _('Always use latest') },
-                  { value: 'send', label: _('Send changes only') },
-                  { value: 'receive', label: _('Receive changes only') },
-                ]}
-              />
-            </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Checksum Method')}</span>
-              </label>
-              <StyledSelect
-                value={settings.kosync.checksumMethod}
-                onChange={handleChecksumMethodChange}
-                options={[
-                  { value: 'binary', label: _('File Content (recommended)') },
-                  { value: 'filename', label: _('File Name'), disabled: true },
-                ]}
-              />
-            </div>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Device Name')}</span>
-              </label>
-              <input
-                type='text'
-                placeholder={osName ? `Readest (${osName})` : 'Readest'}
-                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                value={deviceName}
-                onChange={handleDeviceNameChange}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <p className='text-base-content/70 text-center text-sm'>
-              {_('Connect to your KOReader Sync server.')}
-            </p>
-            <div className='form-control w-full'>
-              <label className='label py-1'>
-                <span className='label-text font-medium'>{_('Server URL')}</span>
-              </label>
-              <input
-                type='text'
-                placeholder='https://koreader.sync.server'
-                className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                spellCheck='false'
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-            <form className='flex flex-col gap-4'>
+      {isOpen && (
+        <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
+          {isConfigured ? (
+            <>
+              <div className='text-center'>
+                <p className='text-base-content/80 text-sm'>
+                  {_('Sync as {{userDisplayName}}', {
+                    userDisplayName: settings.kosync.username,
+                  })}
+                </p>
+              </div>
+              <div className='flex h-14 items-center justify-between'>
+                <span className='text-base-content/80'>{_('Sync Server Connected')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={settings.kosync.enabled}
+                  onChange={() => handleDisconnect()}
+                />
+              </div>
               <div className='form-control w-full'>
                 <label className='label py-1'>
-                  <span className='label-text font-medium'>{_('Username')}</span>
+                  <span className='label-text font-medium'>{_('Sync Strategy')}</span>
+                </label>
+                <StyledSelect
+                  value={settings.kosync.strategy}
+                  onChange={handleStrategyChange}
+                  options={[
+                    { value: 'prompt', label: _('Ask on conflict') },
+                    { value: 'silent', label: _('Always use latest') },
+                    { value: 'send', label: _('Send changes only') },
+                    { value: 'receive', label: _('Receive changes only') },
+                  ]}
+                />
+              </div>
+              <div className='form-control w-full'>
+                <label className='label py-1'>
+                  <span className='label-text font-medium'>{_('Checksum Method')}</span>
+                </label>
+                <StyledSelect
+                  value={settings.kosync.checksumMethod}
+                  onChange={handleChecksumMethodChange}
+                  options={[
+                    { value: 'binary', label: _('File Content (recommended)') },
+                    { value: 'filename', label: _('File Name'), disabled: true },
+                  ]}
+                />
+              </div>
+              <div className='form-control w-full'>
+                <label className='label py-1'>
+                  <span className='label-text font-medium'>{_('Device Name')}</span>
                 </label>
                 <input
                   type='text'
-                  placeholder={_('Your Username')}
+                  placeholder={osName ? `Readest (${osName})` : 'Readest'}
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                  spellCheck='false'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete='username'
+                  value={deviceName}
+                  onChange={handleDeviceNameChange}
                 />
               </div>
+            </>
+          ) : (
+            <>
+              <p className='text-base-content/70 text-center text-sm'>
+                {_('Connect to your KOReader Sync server.')}
+              </p>
               <div className='form-control w-full'>
                 <label className='label py-1'>
-                  <span className='label-text font-medium'>{_('Password')}</span>
+                  <span className='label-text font-medium'>{_('Server URL')}</span>
                 </label>
                 <input
-                  type='password'
-                  placeholder={_('Your Password')}
+                  type='text'
+                  placeholder='https://koreader.sync.server'
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete='current-password'
+                  spellCheck='false'
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
                 />
               </div>
-            </form>
-            <button
-              className='btn btn-primary mt-2 h-12 min-h-12 w-full'
-              onClick={handleConnect}
-              disabled={isConnecting || !url || !username || !password}
-            >
-              {isConnecting ? <span className='loading loading-spinner'></span> : _('Connect')}
-            </button>
-            {connectionStatus && (
-              <div className='text-error h-4 text-center text-sm'>{connectionStatus}</div>
-            )}
-          </>
-        )}
-      </div>
+              <form className='flex flex-col gap-4'>
+                <div className='form-control w-full'>
+                  <label className='label py-1'>
+                    <span className='label-text font-medium'>{_('Username')}</span>
+                  </label>
+                  <input
+                    type='text'
+                    placeholder={_('Your Username')}
+                    className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                    spellCheck='false'
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete='username'
+                  />
+                </div>
+                <div className='form-control w-full'>
+                  <label className='label py-1'>
+                    <span className='label-text font-medium'>{_('Password')}</span>
+                  </label>
+                  <input
+                    type='password'
+                    placeholder={_('Your Password')}
+                    className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete='current-password'
+                  />
+                </div>
+              </form>
+              <button
+                className='btn btn-primary mt-2 h-12 min-h-12 w-full'
+                onClick={handleConnect}
+                disabled={isConnecting || !url || !username || !password}
+              >
+                {isConnecting ? <span className='loading loading-spinner'></span> : _('Connect')}
+              </button>
+              {connectionStatus && (
+                <div className='text-error h-4 text-center text-sm'>{connectionStatus}</div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </Dialog>
   );
 };

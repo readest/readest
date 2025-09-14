@@ -10,6 +10,7 @@ import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
@@ -40,6 +41,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
 }) => {
+  const _ = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { appService } = useEnv();
@@ -115,6 +117,7 @@ const BookItem: React.FC<BookItemProps> = ({
           <div className='flex items-center justify-center gap-x-2'>
             {!appService?.isMobile && (
               <button
+                aria-label={_('Show Book Details')}
                 className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
                 onPointerDown={(e) => stopEvent(e)}
                 onPointerUp={(e) => stopEvent(e)}

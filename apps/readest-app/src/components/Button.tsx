@@ -11,39 +11,23 @@ interface ButtonProps {
   className?: string;
 }
 
-const Button: React.FC<ButtonProps> = ({
-  icon,
-  onClick,
-  disabled = false,
-  tooltip,
-  tooltipDirection = 'top',
-  className,
-}) => {
+const Button: React.FC<ButtonProps> = ({ icon, onClick, disabled = false, tooltip, className }) => {
   const { appService } = useEnv();
   return (
-    <div
+    <button
       className={clsx(
-        'lg:tooltip z-50 h-8 min-h-8 w-8',
-        tooltip && `lg:tooltip-${tooltipDirection}`,
-        {
-          'tooltip-hidden': !tooltip,
-        },
+        'btn btn-ghost h-8 min-h-8 w-8 p-0',
+        appService?.isMobileApp && 'hover:bg-transparent',
+        disabled && 'btn-disabled !bg-transparent opacity-50',
+        className,
       )}
-      data-tip={tooltip}
+      title={tooltip}
+      aria-label={tooltip}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
     >
-      <button
-        className={clsx(
-          'btn btn-ghost h-8 min-h-8 w-8 p-0',
-          appService?.isMobileApp && 'hover:bg-transparent',
-          disabled && 'btn-disabled !bg-transparent opacity-50',
-          className,
-        )}
-        onClick={disabled ? undefined : onClick}
-        disabled={disabled}
-      >
-        {icon}
-      </button>
-    </div>
+      {icon}
+    </button>
   );
 };
 
