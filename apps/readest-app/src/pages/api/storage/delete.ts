@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { createSupabaseClient } from '@/utils/supabase';
+import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { deleteObject } from '@/utils/object';
 
@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing or invalid fileKey' });
     }
 
-    const supabase = createSupabaseClient(token);
+    const supabase = createSupabaseAdminClient();
     const { data: fileRecord, error: fileError } = await supabase
       .from('files')
       .select('user_id, id')
