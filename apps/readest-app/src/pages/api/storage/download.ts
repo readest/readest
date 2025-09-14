@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createSupabaseClient } from '@/utils/supabase';
+import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getDownloadSignedUrl } from '@/utils/object';
 import { validateUserAndToken } from '@/utils/access';
@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify the file belongs to the user
-    const supabase = createSupabaseClient(token);
+    const supabase = createSupabaseAdminClient();
     const result = await supabase
       .from('files')
       .select('user_id, file_key')
