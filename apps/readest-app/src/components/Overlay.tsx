@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
 
 interface OverlayProps {
   onDismiss: () => void;
@@ -8,9 +7,7 @@ interface OverlayProps {
   className?: string;
 }
 
-export const Overlay: React.FC<OverlayProps> = ({ onDismiss, dismissLabel, className }) => {
-  const _ = useTranslation();
-
+export const Overlay: React.FC<OverlayProps> = ({ onDismiss, className }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -21,9 +18,8 @@ export const Overlay: React.FC<OverlayProps> = ({ onDismiss, dismissLabel, class
   return (
     <div
       className={clsx('overlay fixed inset-0 cursor-default', className)}
-      role='button'
+      role='none'
       tabIndex={-1}
-      aria-label={dismissLabel || _('Dismiss')}
       onClick={onDismiss}
       onContextMenu={onDismiss}
       onKeyDown={handleKeyDown}

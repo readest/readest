@@ -1,10 +1,13 @@
 import clsx from 'clsx';
 import React from 'react';
 import { IconType } from 'react-icons';
+import { MdCheck } from 'react-icons/md';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface MenuItemProps {
   label: string;
+  toggled?: boolean;
   description?: string;
   tooltip?: string;
   buttonClass?: string;
@@ -12,7 +15,7 @@ interface MenuItemProps {
   shortcut?: string;
   disabled?: boolean;
   noIcon?: boolean;
-  transient?: boolean; // For transient items the dropdown will close on click
+  transient?: boolean;
   Icon?: React.ReactNode | IconType;
   children?: React.ReactNode;
   onClick?: () => void;
@@ -21,6 +24,7 @@ interface MenuItemProps {
 
 const MenuItem: React.FC<MenuItemProps> = ({
   label,
+  toggled,
   description,
   tooltip,
   buttonClass,
@@ -34,36 +38,30 @@ const MenuItem: React.FC<MenuItemProps> = ({
   onClick,
   setIsDropdownOpen,
 }) => {
+  const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
-  const menuButton = (
-    <button
-      tabIndex={0}
-      className={clsx(
-        'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
-        disabled && 'btn-disabled text-gray-400',
-        buttonClass,
-      )}
-      aria-label={label}
-      data-tip={tooltip ? tooltip : ''}
-      onClick={() => {
-        onClick?.();
-        if (transient) {
-          setIsDropdownOpen?.(false);
-        }
-      }}
-      disabled={disabled}
-    >
+  const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
+
+  const handleClick = () => {
+    onClick?.();
+    if (transient) {
+      setIsDropdownOpen?.(false);
+    }
+  };
+
+  const buttonContent = (
+    <>
       <div className='flex w-full items-center justify-between'>
         <div className='flex min-w-0 items-center'>
           {!noIcon && (
             <span style={{ minWidth: `${iconSize}px` }}>
-              {typeof Icon === 'function' ? (
-                <Icon
+              {typeof IconType === 'function' ? (
+                <IconType
                   className={disabled ? 'text-gray-400' : 'text-base-content'}
                   size={iconSize}
                 />
               ) : (
-                Icon
+                IconType
               )}
             </span>
           )}
@@ -96,22 +94,50 @@ const MenuItem: React.FC<MenuItemProps> = ({
           </span>
         )}
       </div>
-    </button>
+    </>
   );
 
   if (children) {
     return (
-      <ul className='menu rounded-box m-0 p-0'>
-        <li>
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
+      <ul className='menu rounded-box m-0 p-0' role='menuitem' tabIndex={-1}>
+        <li aria-label={label}>
           <details>
-            <summary className='hover:bg-base-300 p-0 pr-3'>{menuButton}</summary>
+            <summary
+              className={clsx(
+                'hover:bg-base-300 text-base-content cursor-pointer rounded-md p-1 py-[10px] pr-3',
+                disabled && 'btn-disabled cursor-not-allowed text-gray-400',
+                buttonClass,
+              )}
+              title={tooltip ? tooltip : ''}
+            >
+              {buttonContent}
+            </summary>
             {children}
           </details>
         </li>
       </ul>
     );
   }
-  return menuButton;
+
+  return (
+    <button
+      role={disabled ? 'none' : 'menuitem'}
+      aria-label={toggled !== undefined ? `${label} - ${toggled ? _('ON') : _('OFF')}` : undefined}
+      aria-live={toggled === undefined ? 'polite' : 'off'}
+      tabIndex={disabled ? -1 : 0}
+      className={clsx(
+        'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
+        disabled && 'btn-disabled text-gray-400',
+        buttonClass,
+      )}
+      title={tooltip ? tooltip : ''}
+      onClick={handleClick}
+      disabled={disabled}
+    >
+      {buttonContent}
+    </button>
+  );
 };
 
 export default MenuItem;

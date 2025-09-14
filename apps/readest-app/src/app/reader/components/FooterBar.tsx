@@ -173,7 +173,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
   return (
     <>
       <div
-        role='button'
+        role='none'
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         className={clsx(
           'absolute bottom-0 left-0 z-10 hidden w-full sm:flex sm:h-[52px]',
@@ -185,6 +186,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
       <div
+        role='group'
+        aria-label={_('Footer Bar')}
         className={clsx(
           'footer-bar shadow-xs bottom-0 z-10 flex w-full flex-col',
           'sm:h-[52px] sm:justify-center',

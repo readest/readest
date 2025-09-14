@@ -65,6 +65,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}
+      role='group'
+      aria-label={_('Progress Information')}
       style={
         isVertical
           ? {

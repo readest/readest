@@ -7,6 +7,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import WindowButtons from '@/components/WindowButtons';
@@ -37,6 +38,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onCloseBook,
   onSetSettingsDialogOpen,
 }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const headerRef = useRef<HTMLDivElement>(null);
   const {
@@ -105,7 +107,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       }}
     >
       <div
-        role='button'
+        role='none'
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         className={clsx('absolute top-0 z-10 h-11 w-full')}
         onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
@@ -124,6 +127,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       />
       <div
         ref={headerRef}
+        role='group'
+        aria-label={_('Header Bar')}
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
           `shadow-xs transition-[opacity,margin-top] duration-300`,
@@ -154,25 +159,29 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         <div
+          role='contentinfo'
+          aria-label={_('Title') + ' - ' + bookTitle}
           className={clsx(
             'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
             !windowButtonVisible && 'absolute inset-0',
           )}
         >
-          <h2
+          <div
+            aria-hidden='true'
             className={clsx(
               'line-clamp-1 text-center text-xs font-semibold',
               !windowButtonVisible && 'max-w-[50%]',
             )}
           >
             {bookTitle}
-          </h2>
+          </div>
         </div>
 
         <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
           <SettingsToggler />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
+            label={_('View Options')}
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
             toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}

@@ -627,13 +627,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   return (
     <div
       ref={pageRef}
+      role='main'
+      aria-label='Your Library'
       className={clsx(
         'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',
         appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
-      <div className='top-0 z-40 w-full'>
+      <div
+        className='top-0 z-40 w-full'
+        role='banner'
+        tabIndex={-1}
+        aria-label={_('Library Header')}
+      >
         <LibraryHeader
           isSelectMode={isSelectMode}
           isSelectAll={isSelectAll}
@@ -652,6 +659,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         (libraryBooks.some((book) => !book.deletedAt) ? (
           <OverlayScrollbarsComponent
             defer
+            aria-label=''
             ref={osRef}
             className='flex-grow'
             options={{ scrollbars: { autoHide: 'scroll' } }}

@@ -211,6 +211,8 @@ const Notebook: React.FC = ({}) => {
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
         )}
+        role='group'
+        aria-label={_('Notebook')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
           width: `${notebookWidth}`,

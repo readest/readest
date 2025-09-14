@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle } from 'react-icons/pi';
 import { PiUserCircleCheck } from 'react-icons/pi';
-import { MdCheck } from 'react-icons/md';
 import { TbSunMoon } from 'react-icons/tb';
 import { BiMoon, BiSun } from 'react-icons/bi';
 
@@ -23,6 +22,7 @@ import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
+import Menu from '@/components/Menu';
 
 interface SettingsMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
@@ -165,9 +165,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
+  const themeModeLabel =
+    themeMode === 'dark'
+      ? _('Dark Mode')
+      : themeMode === 'light'
+        ? _('Light Mode')
+        : _('Auto Mode');
 
   return (
-    <div
+    <Menu
+      label={_('Settings Menu')}
       className={clsx(
         'settings-menu dropdown-content no-triangle border-base-100',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
@@ -181,6 +188,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
               : _('Logged in')
           }
           labelClass='!max-w-40'
+          aria-label={_('View account details and quota')}
           Icon={
             avatarUrl ? (
               <UserAvatar url={avatarUrl} size={iconSize} DefaultIcon={PiUserCircleCheck} />
@@ -201,27 +209,27 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       )}
       <MenuItem
         label={_('Auto Upload Books to Cloud')}
-        Icon={isAutoUpload ? MdCheck : undefined}
+        toggled={isAutoUpload}
         onClick={toggleAutoUploadBooks}
       />
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}
-          Icon={isAutoImportBooksOnOpen ? MdCheck : undefined}
+          toggled={isAutoImportBooksOnOpen}
           onClick={toggleAutoImportBooksOnOpen}
         />
       )}
       {isTauriAppPlatform() && (
         <MenuItem
           label={_('Open Last Book on Start')}
-          Icon={isOpenLastBooks ? MdCheck : undefined}
+          toggled={isOpenLastBooks}
           onClick={toggleOpenLastBooks}
         />
       )}
       {appService?.hasUpdater && (
         <MenuItem
           label={_('Check Updates on Start')}
-          Icon={isAutoCheckUpdates ? MdCheck : undefined}
+          toggled={isAutoCheckUpdates}
           onClick={toggleAutoCheckUpdates}
         />
       )}
@@ -229,39 +237,29 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       {appService?.hasWindow && (
         <MenuItem
           label={_('Open Book in New Window')}
-          Icon={settings.openBookInNewWindow ? MdCheck : undefined}
+          toggled={settings.openBookInNewWindow}
           onClick={toggleOpenInNewWindow}
         />
       )}
       {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       {appService?.hasWindow && (
-        <MenuItem
-          label={_('Always on Top')}
-          Icon={isAlwaysOnTop ? MdCheck : undefined}
-          onClick={toggleAlwaysOnTop}
-        />
+        <MenuItem label={_('Always on Top')} toggled={isAlwaysOnTop} onClick={toggleAlwaysOnTop} />
       )}
       {appService?.isMobileApp && (
         <MenuItem
           label={_('Always Show Status Bar')}
-          Icon={isAlwaysShowStatusBar ? MdCheck : undefined}
+          toggled={isAlwaysShowStatusBar}
           onClick={toggleAlwaysShowStatusBar}
         />
       )}
       <MenuItem
         label={_('Keep Screen Awake')}
-        Icon={isScreenWakeLock ? MdCheck : undefined}
+        toggled={isScreenWakeLock}
         onClick={toggleScreenWakeLock}
       />
       <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <MenuItem
-        label={
-          themeMode === 'dark'
-            ? _('Dark Mode')
-            : themeMode === 'light'
-              ? _('Light Mode')
-              : _('Auto Mode')
-        }
+        label={themeModeLabel}
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
@@ -274,10 +272,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       <MenuItem
         label={_('Help improve Readest')}
         description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
-        Icon={isTelemetryEnabled ? MdCheck : undefined}
+        toggled={isTelemetryEnabled}
         onClick={toggleTelemetry}
       />
-    </div>
+    </Menu>
   );
 };
 

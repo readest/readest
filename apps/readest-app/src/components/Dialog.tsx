@@ -4,6 +4,7 @@ import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useDrag } from '@/hooks/useDrag';
 import { useThemeStore } from '@/store/themeStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
@@ -41,12 +42,14 @@ const Dialog: React.FC<DialogProps> = ({
   contentClassName,
   onClose,
 }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight, safeAreaInsets } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
 
@@ -63,14 +66,30 @@ const Dialog: React.FC<DialogProps> = ({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      if (previousActiveElementRef.current) {
+        previousActiveElementRef.current.focus();
+        previousActiveElementRef.current = null;
+      }
+      return;
+    }
+
+    previousActiveElementRef.current = document.activeElement as HTMLElement;
+
     setIsFullHeightInMobile(!snapHeight && isMobile);
     window.addEventListener('keydown', handleKeyDown);
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception();
       eventDispatcher.onSync('native-key-down', handleKeyDown);
     }
+
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        dialogRef.current.focus();
+      }
+    }, 100);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
       if (appService?.isAndroidApp) {
         releaseBackKeyInterception();
@@ -155,7 +174,9 @@ const Dialog: React.FC<DialogProps> = ({
     <dialog
       ref={dialogRef}
       id={id ?? 'dialog'}
+      tabIndex={-1}
       open={isOpen}
+      aria-hidden={!isOpen}
       className={clsx(
         'modal sm:min-w-90 z-50 h-full w-full !items-start !bg-transparent sm:w-full sm:!items-center',
         className,
@@ -204,7 +225,7 @@ const Dialog: React.FC<DialogProps> = ({
           ) : (
             <div className='flex h-11 w-full items-center justify-between'>
               <button
-                tabIndex={-1}
+                aria-label={_('Close')}
                 onClick={onClose}
                 className={
                   'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
@@ -220,7 +241,7 @@ const Dialog: React.FC<DialogProps> = ({
                 <span className='line-clamp-1 text-center font-bold'>{title ?? ''}</span>
               </div>
               <button
-                tabIndex={-1}
+                aria-label={_('Close')}
                 onClick={onClose}
                 className={
                   'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 focus:outline-none sm:flex'

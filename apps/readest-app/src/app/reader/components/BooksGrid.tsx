@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getViewInsets } from '@/utils/insets';
 import FoliateViewer from './FoliateViewer';
@@ -27,6 +28,7 @@ interface BooksGridProps {
 }
 
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
+  const _ = useTranslation();
   const { appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
@@ -75,6 +77,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,
       }}
+      role='main'
+      aria-label={_('Books Grid')}
     >
       {bookKeys.map((bookKey, index) => {
         const bookData = getBookData(bookKey);
