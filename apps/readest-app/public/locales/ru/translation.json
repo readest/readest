@@ -117,6 +117,7 @@
   "Book Details": "Детали книги",
   "From Local File": "Из локального файла",
   "TOC": "Содержание",
+  "Table of Contents": "Содержание",
   "Book uploaded: {{title}}": "Книга загружена: {{title}}",
   "Failed to upload book: {{title}}": "Не удалось загрузить книгу: {{title}}",
   "Book downloaded: {{title}}": "Книга скачана: {{title}}",
@@ -550,5 +551,7 @@
   "Close": "Закрыть",
   "Delete Book Options": "Параметры удаления книги",
   "ON": "ВКЛ",
-  "OFF": "ВЫКЛ"
+  "OFF": "ВЫКЛ",
+  "Reading Progress": "Прогресс чтения",
+  "Page Margin": "Поля страницы"
 }

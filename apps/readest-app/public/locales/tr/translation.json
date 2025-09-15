@@ -117,6 +117,7 @@
   "Book Details": "Kitap Detayları",
   "From Local File": "Yerel dosyadan",
   "TOC": "İçindekiler",
+  "Table of Contents": "İçindekiler",
   "Book uploaded: {{title}}": "Kitap yüklendi: {{title}}",
   "Failed to upload book: {{title}}": "Kitap yüklenemedi: {{title}}",
   "Book downloaded: {{title}}": "Kitap indirildi: {{title}}",
@@ -542,5 +543,7 @@
   "Close": "Kapat",
   "Delete Book Options": "Kitap Silme Seçenekleri",
   "ON": "AÇIK",
-  "OFF": "KAPALI"
+  "OFF": "KAPALI",
+  "Reading Progress": "Okuma İlerlemesi",
+  "Page Margin": "Sayfa Kenar Boşluğu"
 }

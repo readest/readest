@@ -116,6 +116,7 @@
   "Book Details": "تفاصيل الكتاب",
   "From Local File": "من ملف محلي",
   "TOC": "جدول المحتويات",
+  "Table of Contents": "جدول المحتويات",
   "Book uploaded: {{title}}": "تم تحميل الكتاب: {{title}}",
   "Failed to upload book: {{title}}": "فشل تحميل الكتاب: {{title}}",
   "Book downloaded: {{title}}": "تم تنزيل الكتاب: {{title}}",
@@ -558,5 +559,7 @@
   "Close": "إغلاق",
   "Delete Book Options": "خيارات حذف الكتاب",
   "ON": "تشغيل",
-  "OFF": "إيقاف"
+  "OFF": "إيقاف",
+  "Reading Progress": "تقدم القراءة",
+  "Page Margin": "هامش الصفحة"
 }

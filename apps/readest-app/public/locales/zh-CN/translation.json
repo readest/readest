@@ -117,6 +117,7 @@
   "Book Details": "书籍详情",
   "From Local File": "从本地文件导入",
   "TOC": "目录",
+  "Table of Contents": "目录",
   "Book uploaded: {{title}}": "书籍已上传：{{title}}",
   "Failed to upload book: {{title}}": "上传书籍失败：{{title}}",
   "Book downloaded: {{title}}": "书籍已下载：{{title}}",
@@ -538,5 +539,7 @@
   "Close": "关闭",
   "Delete Book Options": "删除书籍选项",
   "ON": "开启",
-  "OFF": "关闭"
+  "OFF": "关闭",
+  "Reading Progress": "阅读进度",
+  "Page Margin": "页面边距"
 }

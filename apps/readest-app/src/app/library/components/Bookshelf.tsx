@@ -327,7 +327,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
           viewMode === 'list' && 'flex flex-col',
         )}
-        role='list'
+        role='main'
         aria-label={_('Bookshelf')}
       >
         {filteredBookshelfItems.map((item) => (

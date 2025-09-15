@@ -210,6 +210,7 @@
   "Match Whole Words": "Hele woorden",
   "Match Diacritics": "Diakritische tekens",
   "TOC": "Inhoudsopgave",
+  "Table of Contents": "Inhoudsopgave",
   "Sidebar": "Zijbalk",
   "TTS not supported for PDF": "TTS niet ondersteund voor PDF",
   "No Timeout": "Geen time-out",
@@ -542,5 +543,7 @@
   "Close": "Sluiten",
   "Delete Book Options": "Boekverwijderopties",
   "ON": "AAN",
-  "OFF": "UIT"
+  "OFF": "UIT",
+  "Reading Progress": "Leesvoortgang",
+  "Page Margin": "Pagina Marges"
 }

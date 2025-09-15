@@ -323,6 +323,7 @@
   "Match Whole Words": "සම්පූර්ණ වචන ගැළපීම",
   "Match Diacritics": "ධ්වනි ලකුණු ගැළපීම",
   "TOC": "සූචිය",
+  "Table of Contents": "සූචිය",
   "Sidebar": "පැති තීරුව",
   "Disable Translation": "පරිවර්තනය අබල කරන්න",
   "Translation Not Available": "පරිවර්තනය ලබා ගත නොහැක",
@@ -542,5 +543,7 @@
   "Close": "වසන්න",
   "Delete Book Options": "පොත මකන විකල්ප",
   "ON": "ඇක්ටිව්",
-  "OFF": "ඩිසැක්ටිව්"
+  "OFF": "ඩිසැක්ටිව්",
+  "Reading Progress": "කියවීමේ ප්‍රගතිය",
+  "Page Margin": "පිටු මාර්ජින්"
 }

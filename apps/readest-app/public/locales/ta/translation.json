@@ -323,6 +323,7 @@
   "Match Whole Words": "முழு வார்த்தைகள் பொருத்தம்",
   "Match Diacritics": "உச்சரிப்பு குறிகள் பொருத்தம்",
   "TOC": "உள்ளடக்கம்",
+  "Table of Contents": "உள்ளடக்கம்",
   "Sidebar": "பக்கப்பட்டி",
   "Disable Translation": "மொழிபெயர்ப்பை முடக்கவும்",
   "Translation Not Available": "மொழிபெயர்ப்பு கிடைக்கவில்லை",
@@ -542,5 +543,7 @@
   "Close": "மூடு",
   "Delete Book Options": "புத்தகத்தை நீக்கும் விருப்பங்கள்",
   "ON": "செயல்படுத்தவும்",
-  "OFF": "நிறுத்தவும்"
+  "OFF": "நிறுத்தவும்",
+  "Reading Progress": "வாசிப்பு முன்னேற்றம்",
+  "Page Margin": "பக்கம் மாறின"
 }

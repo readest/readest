@@ -117,6 +117,7 @@
   "Book Details": "書籍の詳細",
   "From Local File": "ローカルファイルから",
   "TOC": "目次",
+  "Table of Contents": "目次",
   "Book uploaded: {{title}}": "書籍がアップロードされました：{{title}}",
   "Failed to upload book: {{title}}": "書籍のアップロードに失敗しました：{{title}}",
   "Book downloaded: {{title}}": "書籍がダウンロードされました：{{title}}",
@@ -538,5 +539,7 @@
   "Close": "閉じる",
   "Delete Book Options": "本の削除オプション",
   "ON": "オン",
-  "OFF": "オフ"
+  "OFF": "オフ",
+  "Reading Progress": "読書進捗",
+  "Page Margin": "ページマージン"
 }

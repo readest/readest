@@ -222,6 +222,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         >
           <div className='flex w-full items-center justify-between gap-x-6'>
             <Slider
+              label={_('Reading Progress')}
               heightPx={sliderHeight}
               bubbleLabel={`${Math.round(progressFraction * 100)}%`}
               initialValue={progressValid ? progressFraction * 100 : 0}
@@ -275,6 +276,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           }}
         >
           <Slider
+            label={_('Font Size')}
             initialValue={viewSettings?.defaultFontSize ?? 16}
             bubbleLabel={`${viewSettings?.defaultFontSize ?? 16}`}
             minLabel='A'
@@ -287,6 +289,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           />
           <div className='flex w-full items-center justify-between gap-x-6'>
             <Slider
+              label={_('Page Margin')}
               initialValue={getMarginProgressValue(
                 viewSettings?.marginTopPx ?? 44,
                 viewSettings?.gapPercent ?? 5,
@@ -298,6 +301,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               onChange={handleMarginChange}
             />
             <Slider
+              label={_('Line Spacing')}
               initialValue={(viewSettings?.lineHeight ?? 1.6) * 10}
               bubbleElement={<RxLineHeight size={marginIconSize} />}
               minLabel={_('Small')}
@@ -317,15 +321,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
           }}
         >
           <Button
+            tooltip={_('Table of Contents')}
             icon={<TOCIcon size={tocIconSize} className='' />}
             onClick={() => handleSetActionTab('toc')}
           />
-          <Button icon={<NoteIcon className='' />} onClick={() => handleSetActionTab('note')} />
           <Button
+            tooltip={_('Notes')}
+            icon={<NoteIcon className='' />}
+            onClick={() => handleSetActionTab('note')}
+          />
+          <Button
+            tooltip={_('Reading Progress')}
             icon={<SliderIcon className={clsx(actionTab === 'progress' && 'text-blue-500')} />}
             onClick={() => handleSetActionTab('progress')}
           />
           <Button
+            tooltip={_('Font & Layout')}
             icon={
               <FontIcon
                 size={fontIconSize}
@@ -335,6 +346,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
             onClick={() => handleSetActionTab('font')}
           />
           <Button
+            tooltip={_('Speak')}
             icon={<TTSIcon className={ttsEnabled ? 'text-blue-500' : ''} />}
             onClick={() => handleSetActionTab('tts')}
           />

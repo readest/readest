@@ -117,6 +117,7 @@
   "Book Details": "Détails du livre",
   "From Local File": "Depuis un fichier local",
   "TOC": "Table des matières",
+  "Table of Contents": "Table des matières",
   "Book uploaded: {{title}}": "Livre téléchargé : {{title}}",
   "Failed to upload book: {{title}}": "Échec du téléchargement du livre : {{title}}",
   "Book downloaded: {{title}}": "Livre téléchargé : {{title}}",
@@ -546,5 +547,7 @@
   "Close": "Fermer",
   "Delete Book Options": "Options de suppression du livre",
   "ON": "ACTIVER",
-  "OFF": "DÉSACTIVER"
+  "OFF": "DÉSACTIVER",
+  "Reading Progress": "Progression de lecture",
+  "Page Margin": "Marge de page"
 }

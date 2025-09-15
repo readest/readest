@@ -117,6 +117,7 @@
   "Book Details": "책 세부 정보",
   "From Local File": "로컬 파일에서",
   "TOC": "목차",
+  "Table of Contents": "목차",
   "Book uploaded: {{title}}": "책 업로드됨: {{title}}",
   "Failed to upload book: {{title}}": "책 업로드 실패: {{title}}",
   "Book downloaded: {{title}}": "책 다운로드됨: {{title}}",
@@ -538,5 +539,7 @@
   "Close": "닫기",
   "Delete Book Options": "도서 삭제 옵션",
   "ON": "켜기",
-  "OFF": "끄기"
+  "OFF": "끄기",
+  "Reading Progress": "읽기 진행 상황",
+  "Page Margin": "페이지 여백"
 }

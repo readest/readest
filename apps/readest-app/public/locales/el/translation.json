@@ -117,6 +117,7 @@
   "Book Details": "Λεπτομέρειες βιβλίου",
   "From Local File": "Από τοπικό αρχείο",
   "TOC": "Πίνακας περιεχομένων",
+  "Table of Contents": "Πίνακας περιεχομένων",
   "Book uploaded: {{title}}": "Το βιβλίο με τίτλο {{title}} ανέβηκε",
   "Failed to upload book: {{title}}": "Αποτυχία ανέβασμα βιβλίου: {{title}}",
   "Book downloaded: {{title}}": "Το βιβλίο με τίτλο {{title}} κατέβηκε",
@@ -542,5 +543,7 @@
   "Close": "Κλείσιμο",
   "Delete Book Options": "Επιλογές διαγραφής βιβλίου",
   "ON": "ΕΝΕΡΓΟΠΟΙΗΣΗ",
-  "OFF": "ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ"
+  "OFF": "ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ",
+  "Reading Progress": "Πρόοδος ανάγνωσης",
+  "Page Margin": "Περιθώριο σελίδας"
 }

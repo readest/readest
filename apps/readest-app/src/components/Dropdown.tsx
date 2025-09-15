@@ -62,46 +62,48 @@ const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [isPointerDown, setIsPointerDown] = useState(false);
+  const lastInteractionWasTapOrClick = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const setIsDropdownOpen = (open: boolean) => {
+    setIsOpen(open);
+    onToggle?.(open);
+  };
+
+  const handleTouchOrClick = () => {
+    lastInteractionWasTapOrClick.current = true;
+    setTimeout(() => (lastInteractionWasTapOrClick.current = false), 100);
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    // skip touch and pointer triggered focus, this is only for keyboard and aria navigation
+    if (!lastInteractionWasTapOrClick.current) {
+      setIsDropdownOpen(true);
+    }
+  };
+
   const toggleDropdown = () => {
-    console.error('Toggling dropdown, current state:', isOpen);
-    const newIsOpen = !isOpen;
-    setIsDropdownOpen(newIsOpen);
+    setIsFocused(!isOpen);
+    setIsDropdownOpen(!isOpen);
+  };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!containerRef.current) return;
+    if (!containerRef.current.contains(e.relatedTarget as Node)) {
+      setIsFocused(false);
+      setIsDropdownOpen(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       if (!isOpen) setIsDropdownOpen(true);
       e.stopPropagation();
-    } else if (e.key === 'Escape' && isOpen) {
+    } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);
       e.stopPropagation();
     }
-  };
-
-  const handleFocus = () => {
-    if (!isOpen && !isPointerDown) {
-      setIsDropdownOpen(true);
-    }
-    setIsFocused(true);
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (!containerRef.current) return;
-
-    const relatedTarget = e.relatedTarget;
-    if (relatedTarget && !containerRef.current.contains(relatedTarget)) {
-      console.log('Dropdown lost focus, closing menu');
-      setIsFocused(false);
-      setIsDropdownOpen(false);
-    }
-  };
-
-  const setIsDropdownOpen = (isOpen: boolean) => {
-    setIsOpen(isOpen);
-    onToggle?.(isOpen);
   };
 
   const childrenWithToggle = isValidElement(children)
@@ -120,24 +122,29 @@ const Dropdown: React.FC<DropdownProps> = ({
       <div
         ref={containerRef}
         role='menu'
-        tabIndex={0}
-        aria-label={label}
+        tabIndex={-1}
         title={label}
-        onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        onPointerDown={() => setIsPointerDown(true)}
-        onPointerUp={() => setIsPointerDown(false)}
         className={clsx('dropdown flex flex-col', className)}
       >
-        <div
-          role='none'
-          className={clsx('dropdown-toggle', buttonClassName, isFocused && 'bg-base-300/50')}
+        <button
+          aria-haspopup='menu'
+          aria-expanded={isOpen}
+          aria-label={label}
+          className={clsx(
+            'dropdown-toggle',
+            isFocused && isOpen && 'bg-base-300/50',
+            buttonClassName,
+          )}
+          onTouchStart={handleTouchOrClick}
+          onPointerDown={handleTouchOrClick}
+          onFocus={handleFocus}
           onClick={toggleDropdown}
         >
           {toggleButton}
-        </div>
-        <div role='none' className={clsx('flex items-center justify-center', !isOpen && 'hidden')}>
+        </button>
+        <div role='none' className={clsx('flex items-center justify-center')}>
           {isOpen && childrenWithToggle}
         </div>
       </div>
