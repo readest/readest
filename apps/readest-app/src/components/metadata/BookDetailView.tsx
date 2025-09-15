@@ -55,7 +55,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         </div>
         <div className='title-author flex h-32 flex-col justify-between'>
           <div>
-            <p className='text-base-content mb-2 line-clamp-2 break-all text-lg font-bold'>
+            <p className='text-base-content mb-2 line-clamp-2 text-lg font-bold'>
               {formatTitle(book.title) || _('Untitled')}
             </p>
             <p className='text-neutral-content line-clamp-1'>
