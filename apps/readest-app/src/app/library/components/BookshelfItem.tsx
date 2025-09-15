@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
@@ -104,6 +104,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
+
+  const [keyboardFocused, setKeyboardFocused] = useState(false);
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
     if (await makeBookAvailable(book)) {
@@ -293,7 +295,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     [itemSelected],
   );
 
-  const { pressing, handlers } = useLongPress(
+  const { pressing, hasPointerEventsRef, handlers } = useLongPress(
     {
       onLongPress: () => {
         handleSelectItem();
@@ -323,6 +325,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
   };
 
+  const handleFocus = () => {
+    if (!hasPointerEventsRef.current) {
+      setKeyboardFocused(true);
+    }
+  };
+
+  const handleBlur = () => {
+    setKeyboardFocused(false);
+  };
+
   return (
     <div className={clsx(mode === 'list' && 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
       <div
@@ -330,7 +342,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           'group',
           mode === 'grid' && 'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-4 sm:px-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
-          'focus-inset-2',
+          keyboardFocused && 'focus-inset-2',
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'scale-95' : 'scale-100',
         )}
@@ -341,6 +353,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           transition: 'transform 0.2s',
         }}
         onKeyDown={handleKeyDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         {...handlers}
       >
         <div className='flex-grow'>
