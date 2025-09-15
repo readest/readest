@@ -117,6 +117,7 @@
   "Book Details": "Деталі книги",
   "From Local File": "З локального файлу",
   "TOC": "Зміст",
+  "Table of Contents": "Зміст",
   "Book uploaded: {{title}}": "Книгу завантажено: {{title}}",
   "Failed to upload book: {{title}}": "Не вдалося завантажити книгу: {{title}}",
   "Book downloaded: {{title}}": "Книгу завантажено: {{title}}",
@@ -550,5 +551,7 @@
   "Close": "Закрити",
   "Delete Book Options": "Параметри видалення книги",
   "ON": "УВІМКНЕННЯ",
-  "OFF": "ВИМКНЕННЯ"
+  "OFF": "ВИМКНЕННЯ",
+  "Reading Progress": "Проґрес читання",
+  "Page Margin": "Поля сторінки"
 }

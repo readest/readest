@@ -117,6 +117,7 @@
   "Book Details": "དཔེ་དེབ་ཀྱི་གནས་ཚུལ་རྒྱས་པ།",
   "From Local File": "ས་གནས་ཀྱི་ཡིག་ཆ་ནས་ནང་འདྲེན།",
   "TOC": "དཀར་ཆག",
+  "Table of Contents": "དཀར་ཆག",
   "Book uploaded: {{title}}": "དཔེ་དེབ་སྤྲད་ཟིན། {{title}}",
   "Failed to upload book: {{title}}": "དཔེ་དེབ་སྤྲད་མ་ཐུབ། {{title}}",
   "Book downloaded: {{title}}": "དཔེ་དེབ་ཕབ་ལེན་བྱས་ཟིན། {{title}}",
@@ -538,5 +539,7 @@
   "Close": "ཁ་རྒྱག",
   "Delete Book Options": "དེབ་བཏོན་གཏང་གི་གདམ་ཁ",
   "ON": "འབྱུང་ཁུངས",
-  "OFF": "བརྗེ་བ"
+  "OFF": "བརྗེ་བ",
+  "Reading Progress": "ཀློག་པའི་ཡར་འཕེལ།",
+  "Page Margin": "ཤོག་གདོང་།"
 }

@@ -273,6 +273,7 @@
   "Match Whole Words": "ตรงทั้งคำ",
   "Match Diacritics": "ตรงตามเครื่องหมายวรรณยุกต์",
   "TOC": "สารบัญ",
+  "Table of Contents": "สารบัญ",
   "Sidebar": "แถบข้าง",
   "Disable Translation": "ปิดการแปล",
   "Translation Not Available": "ไม่มีการแปล",
@@ -538,5 +539,7 @@
   "Close": "ปิด",
   "Delete Book Options": "ตัวเลือกการลบหนังสือ",
   "ON": "เปิด",
-  "OFF": "ปิด"
+  "OFF": "ปิด",
+  "Reading Progress": "ความคืบหน้าในการอ่าน",
+  "Page Margin": "ขอบหน้า"
 }

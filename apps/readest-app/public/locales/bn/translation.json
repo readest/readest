@@ -323,6 +323,7 @@
   "Match Whole Words": "পূর্ণ শব্দ মিলান",
   "Match Diacritics": "ডায়াক্রিটিক্স মিলান",
   "TOC": "সূচিপত্র",
+  "Table of Contents": "সূচিপত্র",
   "Sidebar": "সাইডবার",
   "Disable Translation": "অনুবাদ নিষ্ক্রিয়",
   "Translation Not Available": "অনুবাদ উপলব্ধ নয়",
@@ -542,5 +543,7 @@
   "Close": "বন্ধ করুন",
   "Delete Book Options": "বই মুছে ফেলার অপশন",
   "ON": "চালু",
-  "OFF": "বন্ধ"
+  "OFF": "বন্ধ",
+  "Reading Progress": "পড়ার অগ্রগতি",
+  "Page Margin": "পৃষ্ঠার মার্জিন"
 }

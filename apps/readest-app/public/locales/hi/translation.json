@@ -117,6 +117,7 @@
   "Book Details": "पुस्तक विवरण",
   "From Local File": "स्थानीय फ़ाइल से",
   "TOC": "सामग्री",
+  "Table of Contents": "सामग्री",
   "Book uploaded: {{title}}": "पुस्तक अपलोड की गई: {{title}}",
   "Failed to upload book: {{title}}": "पुस्तक अपलोड करने में विफल: {{title}}",
   "Book downloaded: {{title}}": "पुस्तक डाउनलोड की गई: {{title}}",
@@ -542,5 +543,7 @@
   "Close": "बंद करें",
   "Delete Book Options": "पुस्तक हटाने के विकल्प",
   "ON": "चालू",
-  "OFF": "बंद"
+  "OFF": "बंद",
+  "Reading Progress": "पढ़ने की प्रगति",
+  "Page Margin": "पृष्ठ का मार्जिन"
 }

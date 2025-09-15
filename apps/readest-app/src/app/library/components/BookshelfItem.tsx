@@ -312,6 +312,17 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     [isSelectMode, handleSelectItem, handleOpenItem, handleContextMenu],
   );
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleOpenItem();
+    }
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      e.preventDefault();
+      handleContextMenu();
+    }
+  };
+
   return (
     <div className={clsx(mode === 'list' && 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
       <div
@@ -319,14 +330,17 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           'group',
           mode === 'grid' && 'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-4 sm:px-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
+          'focus-inset-2',
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'scale-95' : 'scale-100',
         )}
-        role='group'
+        role='button'
+        tabIndex={0}
         aria-label={'format' in item ? item.title : item.name}
         style={{
           transition: 'transform 0.2s',
         }}
+        onKeyDown={handleKeyDown}
         {...handlers}
       >
         <div className='flex-grow'>

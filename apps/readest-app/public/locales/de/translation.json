@@ -116,6 +116,7 @@
   "Book Details": "Buchdetails",
   "From Local File": "Aus lokaler Datei",
   "TOC": "Inhaltsverzeichnis",
+  "Table of Contents": "Inhaltsverzeichnis",
   "Book uploaded: {{title}}": "Buch hochgeladen: {{title}}",
   "Failed to upload book: {{title}}": "Fehler beim Hochladen des Buches: {{title}}",
   "Book downloaded: {{title}}": "Buch heruntergeladen: {{title}}",
@@ -542,5 +543,7 @@
   "Close": "Schließen",
   "Delete Book Options": "Buch-Löschoptionen",
   "ON": "EIN",
-  "OFF": "AUS"
+  "OFF": "AUS",
+  "Reading Progress": "Lesefortschritt",
+  "Page Margin": "Seitenrand"
 }

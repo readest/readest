@@ -184,7 +184,8 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         </div>
 
         {availableFamilies.map((family) => (
-          <button
+          <div
+            role='none'
             key={family.name}
             className={clsx(
               'card h-12 border shadow-sm',
@@ -215,7 +216,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
                 </button>
               )}
             </div>
-          </button>
+          </div>
         ))}
       </div>
 

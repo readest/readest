@@ -5,7 +5,7 @@ import Link from './Link';
 
 const SupportLinks = () => {
   const _ = useTranslation();
-  const iconSize = useResponsiveSize(22);
+  const iconSize = useResponsiveSize(24);
 
   return (
     <div className='my-2 flex flex-col items-center gap-2'>

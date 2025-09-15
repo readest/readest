@@ -627,7 +627,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   return (
     <div
       ref={pageRef}
-      role='main'
       aria-label='Your Library'
       className={clsx(
         'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',

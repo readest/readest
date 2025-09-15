@@ -117,6 +117,7 @@
   "Book Details": "書籍詳情",
   "From Local File": "從本地文件導入",
   "TOC": "目錄",
+  "Table of Contents": "目錄",
   "Book uploaded: {{title}}": "書籍已上傳：{{title}}",
   "Failed to upload book: {{title}}": "書籍上傳失敗：{{title}}",
   "Book downloaded: {{title}}": "書籍已下載：{{title}}",
@@ -538,5 +539,7 @@
   "Close": "關閉",
   "Delete Book Options": "刪除書籍選項",
   "ON": "開啟",
-  "OFF": "關閉"
+  "OFF": "關閉",
+  "Reading Progress": "閱讀進度",
+  "Page Margin": "頁邊距"
 }

@@ -144,6 +144,7 @@
   "Book Details": "Detalles del libro",
   "From Local File": "Desde archivo local",
   "TOC": "Índice",
+  "Table of Contents": "Índice",
   "Book uploaded: {{title}}": "Libro subido: {{title}}",
   "Failed to upload book: {{title}}": "Error al subir libro: {{title}}",
   "Book downloaded: {{title}}": "Libro descargado: {{title}}",
@@ -546,5 +547,7 @@
   "Close": "Cerrar",
   "Delete Book Options": "Opciones de Eliminar Libro",
   "ON": "ENCENDIDO",
-  "OFF": "APAGADO"
+  "OFF": "APAGADO",
+  "Reading Progress": "Progreso de Lectura",
+  "Page Margin": "Márgenes de Página"
 }

@@ -117,6 +117,7 @@
   "Book Details": "Szczegóły książki",
   "From Local File": "Z pliku lokalnego",
   "TOC": "Spis treści",
+  "Table of Contents": "Spis treści",
   "Book uploaded: {{title}}": "Książka przesłana: {{title}}",
   "Failed to upload book: {{title}}": "Nie udało się przesłać książki: {{title}}",
   "Book downloaded: {{title}}": "Książka pobrana: {{title}}",
@@ -550,5 +551,7 @@
   "Close": "Zamknij",
   "Delete Book Options": "Opcje usuwania książki",
   "ON": "WŁĄCZONE",
-  "OFF": "WYŁĄCZONE"
+  "OFF": "WYŁĄCZONE",
+  "Reading Progress": "Postęp czytania",
+  "Page Margin": "Margines strony"
 }

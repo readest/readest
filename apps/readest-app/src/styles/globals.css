@@ -365,3 +365,11 @@ foliate-view {
     rgba(0,0,0,0.5) 100%
   );
 }
+
+.focus-inset-2 {
+  @apply focus:outline-none;
+}
+
+.focus-inset-2:focus {
+  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
+}

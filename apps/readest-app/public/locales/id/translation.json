@@ -117,6 +117,7 @@
   "Book Details": "Detail Buku",
   "From Local File": "Dari file lokal",
   "TOC": "Daftar Isi",
+  "Table of Contents": "Daftar Isi",
   "Book uploaded: {{title}}": "Buku diunggah: {{title}}",
   "Failed to upload book: {{title}}": "Gagal mengunggah buku: {{title}}",
   "Book downloaded: {{title}}": "Buku diunduh: {{title}}",
@@ -538,5 +539,7 @@
   "Close": "Tutup",
   "Delete Book Options": "Opsi Hapus Buku",
   "ON": "AKTIF",
-  "OFF": "TIDAK AKTIF"
+  "OFF": "TIDAK AKTIF",
+  "Reading Progress": "Progres Membaca",
+  "Page Margin": "Margin Halaman"
 }

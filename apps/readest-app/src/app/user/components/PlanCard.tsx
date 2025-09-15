@@ -48,7 +48,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         </div>
 
-        <button className='mb-6 space-y-3' onClick={() => onSelectPlan(index)}>
+        <div role='none' className='mb-6 space-y-3' onClick={() => onSelectPlan(index)}>
           {plan.features.map((feature, featureIndex) => (
             <div key={featureIndex} className='flex flex-col'>
               <div className='flex items-center gap-2'>
@@ -62,9 +62,13 @@ const PlanCard: React.FC<PlanCardProps> = ({
               )}
             </div>
           ))}
-        </button>
+        </div>
 
-        <button className='mb-6 rounded-lg bg-white/50 p-4' onClick={() => onSelectPlan(index)}>
+        <div
+          role='none'
+          className='mb-6 rounded-lg bg-white/50 p-4'
+          onClick={() => onSelectPlan(index)}
+        >
           <h5 className='mb-3 font-semibold'>{_('Plan Limits')}</h5>
           <div className='space-y-2'>
             {Object.entries(plan.limits).map(([key, value]) => (
@@ -74,7 +78,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
               </div>
             ))}
           </div>
-        </button>
+        </div>
 
         <PlanActionButton
           plan={plan}

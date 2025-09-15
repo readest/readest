@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 interface SliderProps {
+  label: string;
   min?: number;
   max?: number;
   step?: number;
@@ -18,6 +19,7 @@ interface SliderProps {
 }
 
 const Slider: React.FC<SliderProps> = ({
+  label,
   min = 0,
   max = 100,
   step = 1,
@@ -65,6 +67,7 @@ const Slider: React.FC<SliderProps> = ({
   return (
     <div
       ref={sliderRef}
+      aria-label={label}
       className={`slider bg-base-200 mx-auto w-full rounded-xl ${className}`}
       dir={isRtl ? 'rtl' : undefined}
     >
@@ -111,6 +114,12 @@ const Slider: React.FC<SliderProps> = ({
           value={value}
           className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
           onChange={handleChange}
+          aria-label={label}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={value}
+          aria-valuetext={`${value}`}
+          aria-orientation='horizontal'
         />
       </div>
     </div>
