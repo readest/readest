@@ -42,8 +42,7 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
         )
       }
       onClick={handleToggleSidebar}
-      tooltip={_('Notebook')}
-      tooltipDirection='bottom'
+      label={_('Notebook')}
     ></Button>
   );
 };

@@ -108,10 +108,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     >
       <div
         role='none'
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        tabIndex={0}
         className={clsx('absolute top-0 z-10 h-11 w-full')}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
@@ -144,6 +141,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             ? `${Math.max(gridInsets.top, statusBarHeight)}px`
             : `${gridInsets.top}px`,
         }}
+        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseLeave={(e) => {
           if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
             setHoveredBookKey('');

@@ -54,12 +54,14 @@ const SidebarHeader: React.FC<{
     >
       <div className='flex items-center gap-x-8'>
         <button
+          title={_('Close')}
           onClick={onClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
         <button
+          title={_('Go to Library')}
           className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
           onClick={onGoToLibrary}
         >
@@ -68,6 +70,7 @@ const SidebarHeader: React.FC<{
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:size-[70%]'>
         <button
+          title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
           onClick={onToggleSearchBar}
           className={clsx(
             'btn btn-ghost left-0 h-8 min-h-8 w-8 p-0',
@@ -90,6 +93,7 @@ const SidebarHeader: React.FC<{
         </Dropdown>
         <div className='right-0 hidden h-8 w-8 items-center justify-center sm:flex'>
           <button
+            title={isPinned ? _('Unpin Sidebar') : _('Pin Sidebar')}
             onClick={onTogglePin}
             className={clsx(
               'sidebar-pin-btn btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 sm:flex',

@@ -46,9 +46,10 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         : '{current} / {total}'
       : '{percent}%';
 
+  const pageProgress = ['PDF', 'CBZ'].includes(bookFormat) ? section : pageinfo;
   const progressInfo = ['PDF', 'CBZ'].includes(bookFormat)
-    ? formatReadingProgress(section?.current, section?.total, formatTemplate)
-    : formatReadingProgress(pageinfo?.current, pageinfo?.total, formatTemplate);
+    ? formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate)
+    : formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate);
 
   const timeLeft = timeinfo
     ? _('{{time}} min left in chapter', { time: Math.round(timeinfo.section) })
@@ -65,8 +66,18 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}
-      role='group'
-      aria-label={_('Progress Information')}
+      aria-label={[
+        pageProgress
+          ? _('On {{current}} of {{total}} page', {
+              current: pageProgress.current + 1,
+              total: pageProgress.total,
+            })
+          : '',
+        timeLeft,
+        pageLeft,
+      ]
+        .filter(Boolean)
+        .join(', ')}
       style={
         isVertical
           ? {
@@ -85,6 +96,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
       }
     >
       <div
+        aria-hidden='true'
         className={clsx(
           'flex items-center justify-center',
           isVertical ? 'h-full' : 'h-[52px] w-full',

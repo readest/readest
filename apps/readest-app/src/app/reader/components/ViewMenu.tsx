@@ -234,7 +234,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           />
         </>
       )}
-      <hr className='border-base-300 my-1' />
+      <hr aria-hidden='true' className='border-base-300 my-1' />
 
       <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
 
@@ -246,7 +246,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         disabled={bookData.bookDoc?.rendition?.layout === 'pre-paginated'}
       />
 
-      <hr className='border-base-300 my-1' />
+      <hr aria-hidden='true' className='border-base-300 my-1' />
 
       <MenuItem
         label={
@@ -262,7 +262,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={handleSync}
       />
 
-      <hr className='border-base-300 my-1' />
+      <hr aria-hidden='true' className='border-base-300 my-1' />
 
       {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       <MenuItem

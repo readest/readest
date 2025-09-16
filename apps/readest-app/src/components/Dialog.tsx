@@ -59,8 +59,11 @@ const Dialog: React.FC<DialogProps> = ({
         onClose();
         return true;
       }
-    } else if (event.key === 'Escape') {
-      onClose();
+    } else {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+      event.stopPropagation();
     }
     return false;
   };
@@ -78,6 +81,9 @@ const Dialog: React.FC<DialogProps> = ({
 
     setIsFullHeightInMobile(!snapHeight && isMobile);
     window.addEventListener('keydown', handleKeyDown);
+    if (dialogRef.current) {
+      dialogRef.current.addEventListener('keydown', handleKeyDown);
+    }
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception();
       eventDispatcher.onSync('native-key-down', handleKeyDown);
