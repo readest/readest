@@ -25,6 +25,7 @@ const NotebookHeader: React.FC<{
       </div>
       <div className='flex w-full items-center gap-x-4'>
         <button
+          title={isPinned ? _('Unpin Notebook') : _('Pin Notebook')}
           onClick={handleTogglePin}
           className={clsx(
             'btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 sm:flex',
@@ -34,6 +35,7 @@ const NotebookHeader: React.FC<{
           {isPinned ? <MdPushPin size={iconSize14} /> : <MdOutlinePushPin size={iconSize14} />}
         </button>
         <button
+          title={_('Close')}
           onClick={handleClose}
           className={'btn btn-ghost btn-circle flex h-6 min-h-6 w-6 hover:bg-transparent sm:hidden'}
         >
@@ -42,6 +44,7 @@ const NotebookHeader: React.FC<{
       </div>
       <div className='flex items-center justify-end gap-x-4'>
         <button
+          title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
           onClick={handleToggleSearchBar}
           className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0', isSearchBarVisible && 'bg-base-300')}
         >

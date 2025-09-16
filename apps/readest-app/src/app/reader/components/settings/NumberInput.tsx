@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface NumberInputProps {
   className?: string;
@@ -23,6 +24,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   step,
   disabled,
 }) => {
+  const _ = useTranslation();
   const [localValue, setLocalValue] = useState(value);
   const numberStep = step || 1;
 
@@ -84,7 +86,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
         />
         <button
           tabIndex={disabled ? -1 : 0}
-          onKeyDown={(e) => e.stopPropagation()}
+          disabled={value <= min || disabled}
+          aria-label={_('Decrease')}
           onClick={decrement}
           className={`btn btn-circle btn-sm ${value <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
@@ -92,7 +95,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
         </button>
         <button
           tabIndex={disabled ? -1 : 0}
-          onKeyDown={(e) => e.stopPropagation()}
+          disabled={value >= max || disabled}
+          aria-label={_('Increase')}
           onClick={increment}
           className={`btn btn-circle btn-sm ${value >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >

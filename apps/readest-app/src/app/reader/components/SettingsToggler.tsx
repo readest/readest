@@ -18,8 +18,7 @@ const SettingsToggler = () => {
     <Button
       icon={<RiFontSize className='text-base-content' />}
       onClick={handleToggleSettings}
-      tooltip={_('Font & Layout')}
-      tooltipDirection='bottom'
+      label={_('Font & Layout')}
     ></Button>
   );
 };

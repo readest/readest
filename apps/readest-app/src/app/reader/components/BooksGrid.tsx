@@ -78,7 +78,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         gridTemplateRows: gridTemplate.rows,
       }}
       role='main'
-      aria-label={_('Books Grid')}
+      aria-label={_('Books Content')}
     >
       {bookKeys.map((bookKey, index) => {
         const bookData = getBookData(bookKey);

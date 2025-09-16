@@ -40,14 +40,19 @@ const FontItem: React.FC<FontItemProps> = ({ index, style, data }) => {
       className='px-2'
       key={option.option}
       style={style}
-      onClick={() => onSelect(option.option)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onSelect(option.option);
-        }
-      }}
     >
-      <div className='flex w-full items-center overflow-hidden !px-0 text-sm'>
+      <div
+        role='button'
+        tabIndex={0}
+        onClick={() => onSelect(option.option)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            onSelect(option.option);
+          }
+        }}
+        aria-label={option.label || option.option}
+        className='flex w-full items-center overflow-hidden !px-0 text-sm'
+      >
         <span style={{ minWidth: `${iconSize16}px` }}>
           {selected === option.option && (
             <MdCheck className='text-base-content' size={iconSize16} />
@@ -127,7 +132,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
         </div>
       </button>
       <ul
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        role='listbox'
         tabIndex={0}
         className={clsx(
           'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow',
@@ -158,7 +163,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
               <span>{_('System Fonts')}</span>
             </div>
             <ul
-              // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+              role='listbox'
               tabIndex={0}
               className={clsx(
                 'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] shadow',

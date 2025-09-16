@@ -174,14 +174,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
     <>
       <div
         role='none'
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        tabIndex={0}
         className={clsx(
           'absolute bottom-0 left-0 z-10 hidden w-full sm:flex sm:h-[52px]',
           // show scroll bar when vertical and scrolled in desktop
           viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
         )}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
@@ -205,8 +202,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
             : `pointer-events-none translate-y-full opacity-0 sm:translate-y-0`,
         )}
         dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
+        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseLeave={() => window.innerWidth >= 640 && setHoveredBookKey('')}
-        aria-hidden={!isVisible}
       >
         {/* Mobile footer bar */}
         <div
@@ -233,34 +230,34 @@ const FooterBar: React.FC<FooterBarProps> = ({
             <Button
               icon={viewSettings?.rtl ? <RiArrowRightDoubleLine /> : <RiArrowLeftDoubleLine />}
               onClick={viewSettings?.rtl ? handleGoNextSection : handleGoPrevSection}
-              tooltip={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
+              label={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
             />
             <Button
               icon={viewSettings?.rtl ? <RiArrowRightSLine /> : <RiArrowLeftSLine />}
               onClick={viewSettings?.rtl ? handleGoNextPage : handleGoPrevPage}
-              tooltip={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
+              label={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
             />
             <Button
               icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
               onClick={handleGoBack}
-              tooltip={_('Go Back')}
+              label={_('Go Back')}
               disabled={!view?.history.canGoBack}
             />
             <Button
               icon={viewSettings?.rtl ? <RiArrowGoBackLine /> : <RiArrowGoForwardLine />}
               onClick={handleGoForward}
-              tooltip={_('Go Forward')}
+              label={_('Go Forward')}
               disabled={!view?.history.canGoForward}
             />
             <Button
               icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
               onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}
-              tooltip={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
+              label={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
             />
             <Button
               icon={viewSettings?.rtl ? <RiArrowLeftDoubleLine /> : <RiArrowRightDoubleLine />}
               onClick={viewSettings?.rtl ? handleGoPrevSection : handleGoNextSection}
-              tooltip={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
+              label={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
             />
           </div>
         </div>
@@ -321,22 +318,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
           }}
         >
           <Button
-            tooltip={_('Table of Contents')}
+            label={_('Table of Contents')}
             icon={<TOCIcon size={tocIconSize} className='' />}
             onClick={() => handleSetActionTab('toc')}
           />
           <Button
-            tooltip={_('Notes')}
+            label={_('Notes')}
             icon={<NoteIcon className='' />}
             onClick={() => handleSetActionTab('note')}
           />
           <Button
-            tooltip={_('Reading Progress')}
+            label={_('Reading Progress')}
             icon={<SliderIcon className={clsx(actionTab === 'progress' && 'text-blue-500')} />}
             onClick={() => handleSetActionTab('progress')}
           />
           <Button
-            tooltip={_('Font & Layout')}
+            label={_('Font & Layout')}
             icon={
               <FontIcon
                 size={fontIconSize}
@@ -346,7 +343,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
             onClick={() => handleSetActionTab('font')}
           />
           <Button
-            tooltip={_('Speak')}
+            label={_('Speak')}
             icon={<TTSIcon className={ttsEnabled ? 'text-blue-500' : ''} />}
             onClick={() => handleSetActionTab('tts')}
           />
@@ -361,33 +358,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
           <Button
             icon={viewSettings?.rtl ? <RiArrowRightDoubleLine /> : <RiArrowLeftDoubleLine />}
             onClick={viewSettings?.rtl ? handleGoNextSection : handleGoPrevSection}
-            tooltip={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
+            label={viewSettings?.rtl ? _('Next Section') : _('Previous Section')}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowRightSLine /> : <RiArrowLeftSLine />}
             onClick={viewSettings?.rtl ? handleGoNextPage : handleGoPrevPage}
-            tooltip={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
+            label={viewSettings?.rtl ? _('Next Page') : _('Previous Page')}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowGoForwardLine /> : <RiArrowGoBackLine />}
             onClick={handleGoBack}
-            tooltip={_('Go Back')}
+            label={_('Go Back')}
             disabled={!view?.history.canGoBack}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowGoBackLine /> : <RiArrowGoForwardLine />}
             onClick={handleGoForward}
-            tooltip={_('Go Forward')}
+            label={_('Go Forward')}
             disabled={!view?.history.canGoForward}
           />
-          <span className='mx-2 text-center text-sm'>
-            {progressValid ? `${Math.round(progressFraction * 100)}%` : ''}
-          </span>
+          {progressValid && (
+            <span
+              title={_('Reading Progress')}
+              aria-label={_('Reading Progress') + ': ' + `${Math.round(progressFraction * 100)}%`}
+              className='mx-2 text-center text-sm'
+            >
+              <span aria-hidden='true'>{`${Math.round(progressFraction * 100)}%`}</span>
+            </span>
+          )}
           <input
             type='range'
             className='text-base-content mx-2 min-w-0 flex-1'
             min={0}
             max={100}
+            aria-label={_('Jump to Location')}
             value={progressValid ? progressFraction * 100 : 0}
             onChange={(e) =>
               handleProgressChange(parseInt((e.target as HTMLInputElement).value, 10))
@@ -396,17 +400,17 @@ const FooterBar: React.FC<FooterBarProps> = ({
           <Button
             icon={<FaHeadphones className={ttsEnabled ? 'text-blue-500' : ''} />}
             onClick={handleSpeakText}
-            tooltip={_('Speak')}
+            label={_('Speak')}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
             onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}
-            tooltip={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
+            label={viewSettings?.rtl ? _('Previous Page') : _('Next Page')}
           />
           <Button
             icon={viewSettings?.rtl ? <RiArrowLeftDoubleLine /> : <RiArrowRightDoubleLine />}
             onClick={viewSettings?.rtl ? handleGoPrevSection : handleGoNextSection}
-            tooltip={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
+            label={viewSettings?.rtl ? _('Previous Section') : _('Next Section')}
           />
         </div>
       </div>

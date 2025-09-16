@@ -149,7 +149,9 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     textareaRef: React.RefObject<HTMLTextAreaElement>,
   ) => (
     <div className='w-full'>
-      <h2 className='mb-2 font-medium'>{_(title)}</h2>
+      <h2 className='mb-2 font-medium' aria-label={_(title)}>
+        {_(title)}
+      </h2>
       <div
         className={`card border-base-200 bg-base-100 border shadow ${error ? 'border-red-500' : ''}`}
       >

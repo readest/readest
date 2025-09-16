@@ -382,41 +382,37 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         <div className='flex items-center justify-between'>
           <h2 className='font-medium'>{_('Writing Mode')}</h2>
           <div className='flex gap-4'>
-            <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Default')}>
-              <button
-                className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
-                onClick={() => setWritingMode('auto')}
-              >
-                <MdOutlineAutoMode />
-              </button>
-            </div>
+            <button
+              title={_('Default')}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setWritingMode('auto')}
+            >
+              <MdOutlineAutoMode />
+            </button>
 
-            <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Horizontal Direction')}>
-              <button
-                className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
-                onClick={() => setWritingMode('horizontal-tb')}
-              >
-                <MdOutlineTextRotationNone />
-              </button>
-            </div>
+            <button
+              title={_('Horizontal Direction')}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setWritingMode('horizontal-tb')}
+            >
+              <MdOutlineTextRotationNone />
+            </button>
 
-            <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Vertical Direction')}>
-              <button
-                className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
-                onClick={() => setWritingMode('vertical-rl')}
-              >
-                <MdTextRotateVertical />
-              </button>
-            </div>
+            <button
+              title={_('Vertical Direction')}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setWritingMode('vertical-rl')}
+            >
+              <MdTextRotateVertical />
+            </button>
 
-            <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('RTL Direction')}>
-              <button
-                className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
-                onClick={() => setWritingMode('horizontal-rl')}
-              >
-                <TbTextDirectionRtl />
-              </button>
-            </div>
+            <button
+              title={_('RTL Direction')}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
+              onClick={() => setWritingMode('horizontal-rl')}
+            >
+              <TbTextDirectionRtl />
+            </button>
           </div>
         </div>
       )}

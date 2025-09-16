@@ -45,16 +45,16 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
       icon={
         <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
       }
+      aria-label={_('Toggle Translation')}
       disabled={!translationAvailable}
       onClick={() => setTranslationEnabled(!translationEnabled)}
-      tooltip={
+      label={
         translationAvailable
           ? translationEnabled
             ? _('Disable Translation')
             : _('Enable Translation')
-          : _('Translation Not Available')
+          : _('Translation Disabled')
       }
-      tooltipDirection='bottom'
     ></Button>
   );
 };
