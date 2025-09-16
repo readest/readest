@@ -45,23 +45,23 @@
 
 <div align="left">✅ Implemented</div>
 
-| **Feature**                             | **Description**                                                                                | **Status** |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF (experimental)                              | ✅         |
-| **Scroll/Page View Modes**              | Switch between scrolling or paginated reading modes.                                           | ✅         |
-| **Full-Text Search**                    | Search across the entire book to find relevant sections.                                       | ✅         |
-| **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience.                       | ✅         |
-| **Excerpt Text for Note-Taking**        | Easily excerpt text from books for detailed notes and analysis.                                | ✅         |
-| **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                | ✅         |
-| **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                             | ✅         |
-| **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.               | ✅         |
-| **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                             | ✅         |
-| **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms. | ✅         |
-| **Translate with DeepL**                | From a single sentence to the entire book—translate instantly with DeepL.                      | ✅         |
-| **Translate with Yandex**               | Instantly translate text or books using Yandex Translate.                                      | ✅         |
-| **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                | ✅         |
-| **Library Management**                  | Organize, sort, and manage your entire ebook library.                                          | ✅         |
-| **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                     | ✅         |
+| **Feature**                             | **Description**                                                                                                | **Status** |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------- |
+| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF (experimental)                                              | ✅         |
+| **Scroll/Page View Modes**              | Switch between scrolling or paginated reading modes.                                                           | ✅         |
+| **Full-Text Search**                    | Search across the entire book to find relevant sections.                                                       | ✅         |
+| **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience.                                       | ✅         |
+| **Excerpt Text for Note-Taking**        | Easily excerpt text from books for detailed notes and analysis.                                                | ✅         |
+| **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                                | ✅         |
+| **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                                             | ✅         |
+| **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.                               | ✅         |
+| **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                                             | ✅         |
+| **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                 | ✅         |
+| **Accessibility**                       | Provides full keyboard navigation and supports for screen readers such as VoiceOver, TalkBack, NVDA, and Orca. | ✅         |
+| **Translate with DeepL and Yandex**     | From a single sentence to the entire book—translate instantly.                                                 | ✅         |
+| **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                                | ✅         |
+| **Library Management**                  | Organize, sort, and manage your entire ebook library.                                                          | ✅         |
+| **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                                     | ✅         |
 
 ## Planned Features
 
@@ -72,7 +72,6 @@
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🛠           |
 | **AI-Powered Summarization**               | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
-| **Keyboard Navigation**                    | Implement vimium-style keybindings for book navigation.                                    | 🔄           |
 | **Support OPDS/Calibre**                   | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
 | **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                        | 🔄           |
 | **Handwriting Annotations**                | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
