@@ -307,7 +307,7 @@ export abstract class BaseAppService implements AppService {
         book.coverDownloadedAt = null;
       }
     }
-    if (deleteAction === 'cloud' || deleteAction === 'both') {
+    if ((deleteAction === 'cloud' || deleteAction === 'both') && book.uploadedAt) {
       const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
       for (const fp of fps) {
         console.log('Deleting uploaded file:', fp);
