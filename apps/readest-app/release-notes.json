@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.80": {
+      "date": "2025-09-19",
+      "notes": [
+        "Accessibility: Added support for popular screen readers on all platforms, making books accessible to readers with visual impairments",
+        "Sync: Progress is now synced across different versions of the same book by aggregated metadata",
+        "Library: Groups are now displayed in list view for easier organization",
+        "Library: Added delete confirmation when removing books from the context menu",
+        "Fonts: Added support for fonts with subfamilies when importing TTF/OTF font files",
+        "Layout: Prevented layout shift in Android when the virtual keyboard appears"
+      ]
+    },
     "0.9.78": {
       "date": "2025-09-06",
       "notes": [
