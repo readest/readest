@@ -193,7 +193,8 @@ export abstract class BaseAppService implements AppService {
           ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
         }
         ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
-        if (!loadedBook.metadata.title) {
+        const metadataTitle = formatTitle(loadedBook.metadata.title);
+        if (!metadataTitle || !metadataTitle.trim()) {
           loadedBook.metadata.title = getBaseFilename(filename);
         }
       } catch (error) {
@@ -211,13 +212,14 @@ export abstract class BaseAppService implements AppService {
         existingBook.updatedAt = Date.now();
       }
 
+      const primaryLanguage = getPrimaryLanguage(loadedBook.metadata.language);
       const book: Book = {
         hash,
         format,
         title: formatTitle(loadedBook.metadata.title),
         sourceTitle: formatTitle(loadedBook.metadata.title),
-        author: formatAuthors(loadedBook.metadata.author, loadedBook.metadata.language),
-        primaryLanguage: getPrimaryLanguage(loadedBook.metadata.language),
+        primaryLanguage,
+        author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
         uploadedAt: existingBook ? existingBook.uploadedAt : null,
         deletedAt: transient ? Date.now() : null,
@@ -227,7 +229,7 @@ export abstract class BaseAppService implements AppService {
       // update book metadata when reimporting the same book
       if (existingBook) {
         existingBook.format = book.format;
-        existingBook.title = existingBook.title ?? book.title;
+        existingBook.title = existingBook.title.trim() ? existingBook.title.trim() : book.title;
         existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
         existingBook.author = existingBook.author ?? book.author;
         existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
