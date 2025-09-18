@@ -28,3 +28,5 @@ export async function partialMD5(file: File): Promise<string> {
 
   return hasher.hex();
 }
+
+export { md5 };

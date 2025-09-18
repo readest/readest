@@ -47,19 +47,16 @@ const BookItem: React.FC<BookItemProps> = ({
   const { appService } = useEnv();
   const iconSize15 = useResponsiveSize(15);
 
-  const stopEvent = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   return (
     <div
+      role='none'
       className={clsx(
         'book-item flex',
         mode === 'grid' && 'h-full flex-col justify-end',
         mode === 'list' && 'h-28 flex-row gap-4 overflow-hidden',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
+      onClick={(e) => e.stopPropagation()}
     >
       <div
         className={clsx(
@@ -119,12 +116,10 @@ const BookItem: React.FC<BookItemProps> = ({
               <button
                 aria-label={_('Show Book Details')}
                 className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
-                onPointerDown={(e) => stopEvent(e)}
-                onPointerUp={(e) => stopEvent(e)}
-                onPointerMove={(e) => stopEvent(e)}
-                onPointerCancel={(e) => stopEvent(e)}
-                onPointerLeave={(e) => stopEvent(e)}
-                onClick={() => showBookDetailsModal(book)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  showBookDetailsModal(book);
+                }}
               >
                 <div className='pt-[2px] sm:pt-[1px]'>
                   <LiaInfoCircleSolid size={iconSize15} />
@@ -149,11 +144,7 @@ const BookItem: React.FC<BookItemProps> = ({
               (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
                 <button
                   className='show-cloud-button -m-2 p-2'
-                  onPointerDown={(e) => stopEvent(e)}
-                  onPointerUp={(e) => stopEvent(e)}
-                  onPointerMove={(e) => stopEvent(e)}
-                  onPointerCancel={(e) => stopEvent(e)}
-                  onPointerLeave={(e) => stopEvent(e)}
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => {
                     if (!user) {
                       navigateToLogin(router);

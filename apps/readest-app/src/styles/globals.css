@@ -366,10 +366,20 @@ foliate-view {
   );
 }
 
-.focus-inset-2 {
-  @apply focus:outline-none;
+.visible-focus-inset-2:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
 }
 
-.focus-inset-2:focus {
-  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
+@keyframes spin-counterclockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-reverse-spin {
+  animation: spin-counterclockwise 1s linear;
 }

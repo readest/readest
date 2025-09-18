@@ -1,6 +1,7 @@
 export interface DBBook {
   user_id: string;
   book_hash: string;
+  meta_hash?: string;
   format: string;
   title: string;
   source_title?: string;
@@ -20,6 +21,7 @@ export interface DBBook {
 export interface DBBookConfig {
   user_id: string;
   book_hash: string;
+  meta_hash?: string;
   location?: string;
   xpointer?: string;
   progress?: string;
@@ -34,6 +36,7 @@ export interface DBBookConfig {
 export interface DBBookNote {
   user_id: string;
   book_hash: string;
+  meta_hash?: string;
   id: string;
   type: string;
   cfi: string;

@@ -16,31 +16,34 @@ import { getCFIFromXPointer, getXPointerFromCFI, normalizeProgressXPointer } fro
 export const useProgressSync = (bookKey: string) => {
   const _ = useTranslation();
   const { getConfig, setConfig, getBookData } = useBookDataStore();
-  const { getView, getProgress } = useReaderStore();
+  const { getView, getProgress, setHoveredBookKey } = useReaderStore();
   const { settings } = useSettingsStore();
   const { syncedConfigs, syncConfigs } = useSync(bookKey);
   const { user } = useAuth();
-  const config = getConfig(bookKey);
   const progress = getProgress(bookKey);
 
   const configPulled = useRef(false);
   const hasPulledConfigOnce = useRef(false);
 
-  const pushConfig = (bookKey: string, config: BookConfig | null) => {
-    if (!config || !user) return;
+  const pushConfig = async (bookKey: string, config: BookConfig | null) => {
+    const book = getBookData(bookKey)?.book;
+    if (!config || !book || !user) return;
     const bookHash = bookKey.split('-')[0]!;
-    const newConfig = { ...config, bookHash };
+    const metaHash = book.metaHash;
+    const newConfig = { ...config, bookHash, metaHash };
     const compressedConfig = JSON.parse(
       serializeConfig(newConfig, settings.globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG),
     );
     delete compressedConfig.booknotes;
-    syncConfigs([compressedConfig], bookHash, 'push');
+    await syncConfigs([compressedConfig], bookHash, metaHash, 'push');
   };
 
-  const pullConfig = (bookKey: string) => {
-    if (!user) return;
+  const pullConfig = async (bookKey: string) => {
+    const book = getBookData(bookKey)?.book;
+    if (!user || !book) return;
     const bookHash = bookKey.split('-')[0]!;
-    syncConfigs([], bookHash, 'pull');
+    const metaHash = book.metaHash;
+    await syncConfigs([], bookHash, metaHash, 'pull');
   };
 
   const syncConfig = async () => {
@@ -66,10 +69,11 @@ export const useProgressSync = (bookKey: string) => {
     }
   };
 
-  const handleSyncBookProgress = (event: CustomEvent) => {
+  const handleSyncBookProgress = async (event: CustomEvent) => {
     const { bookKey: syncBookKey } = event.detail;
     if (syncBookKey === bookKey) {
-      syncConfig();
+      configPulled.current = false;
+      await pullConfig(bookKey);
     }
   };
 
@@ -105,9 +109,16 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
-  const applyRemoteProgress = useCallback(async () => {
-    if (!syncedConfigs || syncedConfigs.length === 0) return;
-    const syncedConfig = syncedConfigs.filter((c) => c.bookHash === bookKey.split('-')[0])[0];
+  const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
+    const config = getConfig(bookKey);
+    const book = getBookData(bookKey)?.book;
+    if (!syncedConfigs || syncedConfigs.length === 0 || !config || !book) return;
+
+    const bookHash = bookKey.split('-')[0]!;
+    const metaHash = book.metaHash;
+    const syncedConfig = syncedConfigs.filter(
+      (c) => c.bookHash === bookHash || c.metaHash === metaHash,
+    )[0];
     if (syncedConfig) {
       const configCFI = config?.location;
       let remoteCFILocation = syncedConfig.location;
@@ -132,6 +143,7 @@ export const useProgressSync = (bookKey: string) => {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
           if (view) {
             view.goTo(remoteCFILocation);
+            setHoveredBookKey(null);
             eventDispatcher.dispatch('hint', {
               bookKey,
               message: _('Reading Progress Synced'),
@@ -140,17 +152,16 @@ export const useProgressSync = (bookKey: string) => {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncedConfigs, config?.location]);
+  };
 
   // Pull: proccess the pulled progress
   useEffect(() => {
     if (!configPulled.current && syncedConfigs) {
       configPulled.current = true;
-      applyRemoteProgress().catch((error) => {
+      applyRemoteProgress(syncedConfigs).catch((error) => {
         console.error('Failed to apply remote progress', error);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applyRemoteProgress]);
+  }, [syncedConfigs]);
 };

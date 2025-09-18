@@ -5,11 +5,11 @@ import { PageInfo, TimeInfo } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { formatReadingProgress } from '@/utils/progress';
 
 interface PageInfoProps {
   bookKey: string;
-  bookFormat: string;
   section?: PageInfo;
   pageinfo?: PageInfo;
   timeinfo?: TimeInfo;
@@ -20,7 +20,6 @@ interface PageInfoProps {
 
 const ProgressInfoView: React.FC<PageInfoProps> = ({
   bookKey,
-  bookFormat,
   section,
   pageinfo,
   timeinfo,
@@ -30,8 +29,10 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
@@ -46,8 +47,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         : '{current} / {total}'
       : '{percent}%';
 
-  const pageProgress = ['PDF', 'CBZ'].includes(bookFormat) ? section : pageinfo;
-  const progressInfo = ['PDF', 'CBZ'].includes(bookFormat)
+  const pageProgress = bookData?.isFixedLayout ? section : pageinfo;
+  const progressInfo = bookData?.isFixedLayout
     ? formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate)
     : formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate);
 

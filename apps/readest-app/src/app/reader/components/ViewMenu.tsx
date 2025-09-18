@@ -41,10 +41,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
-  const { getView, getViewSettings, setViewSettings } = useReaderStore();
+  const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
+  const viewState = getViewState(bookKey);
 
   const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
@@ -259,6 +260,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               : _('Never synced')
         }
         Icon={user ? MdSync : MdSyncProblem}
+        iconClassName={user && viewState?.syncing ? 'animate-reverse-spin' : ''}
         onClick={handleSync}
       />
 
