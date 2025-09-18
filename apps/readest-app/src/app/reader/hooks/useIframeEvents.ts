@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
 import { ScrollSource } from './usePagination';
 
@@ -61,6 +62,7 @@ export const useTouchEvent = (
   handlePageFlip: (msg: CustomEvent) => void,
   handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
+  const { getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
 
   let touchStart: IframeTouch | null = null;
@@ -104,6 +106,7 @@ export const useTouchEvent = (
     const windowWidth = window.innerWidth;
     if (touchEnd) {
       const viewSettings = getViewSettings(bookKey)!;
+      const bookData = getBookData(bookKey)!;
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
       // also check for deltaX to prevent swipe page turn from triggering the toggle
@@ -113,7 +116,11 @@ export const useTouchEvent = (
         Math.abs(deltaX) < windowWidth * 0.3
       ) {
         // swipe up to toggle the header bar and the footer bar, only for horizontal page mode
-        if (!viewSettings!.scrolled && !viewSettings!.vertical) {
+        if (
+          !viewSettings!.scrolled && // not scrolled
+          !viewSettings!.vertical && // not vertical
+          (!bookData.isFixedLayout || viewSettings.zoomLevel <= 100) // for fixed layout, not when zoomed in
+        ) {
           setHoveredBookKey(hoveredBookKey ? null : bookKey);
         }
       } else {
