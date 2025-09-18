@@ -117,18 +117,16 @@ export function useSync(bookKey?: string) {
           if (!bookId) {
             settings.lastSyncedAtConfigs = maxTime;
             setSettings(settings);
-          } else if (bookKey && config) {
-            config.lastSyncedAtConfig = maxTime;
-            setConfig(bookKey, config);
+          } else if (bookKey) {
+            setConfig(bookKey, { lastSyncedAtConfig: maxTime });
           }
           break;
         case 'notes':
           if (!bookId) {
             settings.lastSyncedAtNotes = maxTime;
             setSettings(settings);
-          } else if (bookKey && config) {
-            config.lastSyncedAtNotes = maxTime;
-            setConfig(bookKey, config);
+          } else if (bookKey) {
+            setConfig(bookKey, { lastSyncedAtNotes: maxTime });
           }
           break;
       }
