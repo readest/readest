@@ -13,10 +13,12 @@ export const useProgressAutoSave = (bookKey: string) => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const saveBookConfig = useCallback(
-    throttle(async () => {
-      const config = getConfig(bookKey)!;
-      const settings = useSettingsStore.getState().settings;
-      await saveConfig(envConfig, bookKey, config, settings);
+    throttle(() => {
+      setTimeout(async () => {
+        const config = getConfig(bookKey)!;
+        const settings = useSettingsStore.getState().settings;
+        await saveConfig(envConfig, bookKey, config, settings);
+      }, 5000);
     }, 10000),
     [],
   );
