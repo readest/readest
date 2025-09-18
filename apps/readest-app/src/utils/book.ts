@@ -220,9 +220,13 @@ const getTitleForHash = (title: string | LanguageMap) => {
 const getAuthorsList = (contributors: string | string[] | Contributor | Contributor[]) => {
   if (!contributors) return [];
   return Array.isArray(contributors)
-    ? contributors.map((contributor) =>
-        typeof contributor === 'string' ? contributor : formatLanguageMap(contributor?.name, true),
-      )
+    ? contributors
+        .map((contributor) =>
+          typeof contributor === 'string'
+            ? contributor
+            : formatLanguageMap(contributor?.name, true),
+        )
+        .filter(Boolean)
     : [
         typeof contributors === 'string'
           ? contributors
@@ -231,12 +235,16 @@ const getAuthorsList = (contributors: string | string[] | Contributor | Contribu
 };
 
 const normalizeIdentifier = (identifier: string) => {
-  if (identifier.includes('urn:')) {
-    // Slice after the last ':'
-    return identifier.match(/[^:]+$/)![0];
-  } else if (identifier.includes(':')) {
-    // Slice after the first ':'
-    return identifier.match(/^[^:]+:(.+)$/)![1];
+  try {
+    if (identifier.includes('urn:')) {
+      // Slice after the last ':'
+      return identifier.match(/[^:]+$/)?.[0] || '';
+    } else if (identifier.includes(':')) {
+      // Slice after the first ':'
+      return identifier.match(/^[^:]+:(.+)$/)?.[1] || '';
+    }
+  } catch {
+    return identifier;
   }
   return identifier;
 };
@@ -246,9 +254,11 @@ const getIdentifiersList = (
 ) => {
   if (!identifiers) return [];
   return Array.isArray(identifiers)
-    ? identifiers.map((identifier) =>
-        typeof identifier === 'string' ? normalizeIdentifier(identifier) : identifier.value,
-      )
+    ? identifiers
+        .map((identifier) =>
+          typeof identifier === 'string' ? normalizeIdentifier(identifier) : identifier.value,
+        )
+        .filter(Boolean)
     : typeof identifiers === 'string'
       ? [normalizeIdentifier(identifiers)]
       : [identifiers.value];

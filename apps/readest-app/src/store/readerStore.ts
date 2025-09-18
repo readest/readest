@@ -160,7 +160,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
         book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
         book.metadata = book.metadata ?? bookDoc.metadata;
-        book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
+        // TODO: uncomment this when we can ensure metaHash is correctly generated for all books
+        // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
+        book.metaHash = getMetadataHash(bookDoc.metadata);
 
         const isFixedLayout = FIXED_LAYOUT_FORMATS.has(book.format);
         useBookDataStore.setState((state) => ({
