@@ -11,7 +11,6 @@ interface UseLongPressOptions {
 
 interface UseLongPressResult {
   pressing: boolean;
-  hasPointerEventsRef: React.MutableRefObject<boolean>;
   handlers: {
     onPointerDown: (e: React.PointerEvent) => void;
     onPointerUp: (e: React.PointerEvent) => void;
@@ -107,7 +106,7 @@ export const useLongPress = (
 
       pointerEventTimeoutRef.current = setTimeout(() => {
         hasPointerEventsRef.current = false;
-      }, 100);
+      }, 200);
     },
     [onTap, moveThreshold, reset],
   );
@@ -120,12 +119,13 @@ export const useLongPress = (
 
       pointerEventTimeoutRef.current = setTimeout(() => {
         hasPointerEventsRef.current = false;
-      }, 100);
+      }, 200);
     },
     [onCancel, reset],
   );
 
   const handleClick = useCallback(() => {
+    // This is only for aria activation, if the user has used pointer events, we ignore the click event
     if (!hasPointerEventsRef.current) {
       onTap?.();
     }
@@ -152,7 +152,6 @@ export const useLongPress = (
 
   return {
     pressing,
-    hasPointerEventsRef,
     handlers: {
       onPointerDown: handlePointerDown,
       onPointerUp: handlePointerUp,

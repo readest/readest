@@ -185,7 +185,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
             {showFooter && (
               <ProgressInfoView
                 bookKey={bookKey}
-                bookFormat={book.format}
                 section={section}
                 pageinfo={pageinfo}
                 timeinfo={timeinfo}

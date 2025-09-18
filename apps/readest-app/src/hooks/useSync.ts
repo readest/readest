@@ -10,6 +10,7 @@ import { transformBookFromDB } from '@/utils/transform';
 import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
 import { navigateToLogin } from '@/utils/nav';
+import { useReaderStore } from '@/store/readerStore';
 
 const transformsFromDB = {
   books: transformBookFromDB,
@@ -38,6 +39,7 @@ export function useSync(bookKey?: string) {
   const router = useRouter();
   const { settings, setSettings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
+  const { setIsSyncing } = useReaderStore();
   const config = bookKey ? getConfig(bookKey) : null;
 
   const [syncingBooks, setSyncingBooks] = useState(false);
@@ -63,6 +65,10 @@ export function useSync(bookKey?: string) {
   const { syncClient } = useSyncContext();
 
   useEffect(() => {
+    setIsSyncing(bookKey || '', syncing);
+  }, [bookKey, syncing]);
+
+  useEffect(() => {
     if (!settings.version) return;
     if (bookKey && !config?.location) return;
     if (lastSyncedAtInited) return;
@@ -85,12 +91,13 @@ export function useSync(bookKey?: string) {
     setLastSyncedAt: React.Dispatch<React.SetStateAction<number>>,
     setSyncing: React.Dispatch<React.SetStateAction<boolean>>,
     bookId?: string,
+    metaHash?: string,
   ) => {
     setSyncing(true);
     setSyncError(null);
 
     try {
-      const result = await syncClient.pullChanges(since, type, bookId);
+      const result = await syncClient.pullChanges(since, type, bookId, metaHash);
       setSyncResult({ ...syncResult, [type]: result[type] });
       const records = result[type];
       if (!records?.length) return;
@@ -175,7 +182,7 @@ export function useSync(bookKey?: string) {
   );
 
   const syncConfigs = useCallback(
-    async (bookConfigs?: BookConfig[], bookId?: string, op: SyncOp = 'both') => {
+    async (bookConfigs?: BookConfig[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!bookId && !lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && bookConfigs?.length) {
         await pushChanges({ configs: bookConfigs });
@@ -187,6 +194,7 @@ export function useSync(bookKey?: string) {
           setLastSyncedAtConfigs,
           setSyncingConfigs,
           bookId,
+          metaHash,
         );
       }
     },
@@ -195,7 +203,7 @@ export function useSync(bookKey?: string) {
   );
 
   const syncNotes = useCallback(
-    async (bookNotes?: BookNote[], bookId?: string, op: SyncOp = 'both') => {
+    async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {
         await pushChanges({ notes: bookNotes });
@@ -207,9 +215,9 @@ export function useSync(bookKey?: string) {
           setLastSyncedAtNotes,
           setSyncingNotes,
           bookId,
+          metaHash,
         );
       }
-      return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastSyncedAtInited, lastSyncedAtNotes],

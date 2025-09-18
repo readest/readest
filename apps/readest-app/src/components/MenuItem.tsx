@@ -17,6 +17,7 @@ interface MenuItemProps {
   noIcon?: boolean;
   transient?: boolean;
   Icon?: React.ReactNode | IconType;
+  iconClassName?: string;
   children?: React.ReactNode;
   onClick?: () => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
@@ -34,6 +35,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   noIcon = false,
   transient = false,
   Icon,
+  iconClassName,
   children,
   onClick,
   setIsDropdownOpen,
@@ -57,7 +59,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
             <span style={{ minWidth: `${iconSize}px` }}>
               {typeof IconType === 'function' ? (
                 <IconType
-                  className={disabled ? 'text-gray-400' : 'text-base-content'}
+                  className={clsx(disabled ? 'text-gray-400' : 'text-base-content', iconClassName)}
                   size={iconSize}
                 />
               ) : (

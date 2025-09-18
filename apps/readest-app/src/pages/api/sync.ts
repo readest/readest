@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
   const sinceParam = searchParams.get('since');
   const typeParam = searchParams.get('type') as SyncType | undefined;
   const bookParam = searchParams.get('book');
+  const metaHashParam = searchParams.get('meta_hash');
 
   if (!sinceParam) {
     return NextResponse.json({ error: '"since" query parameter is required' }, { status: 400 });
@@ -57,16 +58,38 @@ export async function GET(req: NextRequest) {
       book_configs: null,
     };
 
-    const queryTables = async (table: TableName) => {
+    const queryTables = async (table: TableName, dedupeKeys?: (keyof BookDataRecord)[]) => {
       let query = supabase.from(table).select('*').eq('user_id', user.id);
-      if (bookParam) {
+      if (bookParam && metaHashParam) {
+        query.or(`book_hash.eq.${bookParam},meta_hash.eq.${metaHashParam}`);
+      } else if (bookParam) {
         query.eq('book_hash', bookParam);
+      } else if (metaHashParam) {
+        query.eq('meta_hash', metaHashParam);
       }
+
       query = query.or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`);
+      query = query.order('updated_at', { ascending: false });
       console.log('Querying table:', table, 'since:', sinceIso);
       const { data, error } = await query;
       if (error) throw { table, error } as DBError;
-      results[DBSyncTypeMap[table] as SyncType] = data || [];
+      let records = data;
+      if (dedupeKeys && dedupeKeys.length > 0) {
+        const seen = new Set<string>();
+        records = records.filter((rec) => {
+          const key = dedupeKeys
+            .map((k) => rec[k])
+            .filter(Boolean)
+            .join('|');
+          if (key && seen.has(key)) {
+            return false;
+          } else {
+            seen.add(key);
+            return true;
+          }
+        });
+      }
+      results[DBSyncTypeMap[table] as SyncType] = records || [];
     };
 
     if (!typeParam || typeParam === 'books') {
@@ -76,7 +99,7 @@ export async function GET(req: NextRequest) {
       await queryTables('book_configs').catch((err) => (errors['book_configs'] = err));
     }
     if (!typeParam || typeParam === 'notes') {
-      await queryTables('book_notes').catch((err) => (errors['book_notes'] = err));
+      await queryTables('book_notes', ['id']).catch((err) => (errors['book_notes'] = err));
     }
 
     const dbErrors = Object.values(errors).filter((err) => err !== null);

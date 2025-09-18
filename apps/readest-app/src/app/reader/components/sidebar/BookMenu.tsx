@@ -14,6 +14,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
+import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
 
@@ -104,7 +105,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       >
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
-            .filter((book) => book.format !== 'PDF' && book.format !== 'CBZ')
+            .filter((book) => !FIXED_LAYOUT_FORMATS.has(book.format))
             .filter((book) => !!book.downloadedAt)
             .slice(0, 20)
             .map((book) => (

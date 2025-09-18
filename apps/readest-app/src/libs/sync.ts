@@ -29,11 +29,16 @@ export class SyncClient {
    * Pull incremental changes since a given timestamp (in ms).
    * Returns updated or deleted records since that time.
    */
-  async pullChanges(since: number, type?: SyncType, book?: string): Promise<SyncResult> {
+  async pullChanges(
+    since: number,
+    type?: SyncType,
+    book?: string,
+    metaHash?: string,
+  ): Promise<SyncResult> {
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
-    const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}`;
+    const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}&meta_hash=${metaHash ?? ''}`;
     const res = await fetchWithTimeout(
       url,
       {

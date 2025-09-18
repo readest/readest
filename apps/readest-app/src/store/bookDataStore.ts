@@ -12,6 +12,7 @@ interface BookData {
   file: File | null;
   config: BookConfig | null;
   bookDoc: BookDoc | null;
+  isFixedLayout: boolean;
 }
 
 interface BookDataState {

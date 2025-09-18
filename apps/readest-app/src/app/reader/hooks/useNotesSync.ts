@@ -9,20 +9,24 @@ import { debounce } from '@/utils/debounce';
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
   const { syncedNotes, syncNotes, lastSyncedAtNotes } = useSync(bookKey);
-  const { getConfig, setConfig } = useBookDataStore();
+  const { getConfig, setConfig, getBookData } = useBookDataStore();
 
   const config = getConfig(bookKey);
   const bookHash = bookKey.split('-')[0]!;
 
   const getNewNotes = () => {
     const config = getConfig(bookKey);
-    if (!config?.location || !user) return [];
+    const book = getBookData(bookKey)?.book;
+    if (!config?.location || !book || !user) return [];
+
+    const metaHash = book.metaHash;
     const bookNotes = config.booknotes ?? [];
     const newNotes = bookNotes.filter(
       (note) => lastSyncedAtNotes < note.updatedAt || lastSyncedAtNotes < (note.deletedAt ?? 0),
     );
     newNotes.forEach((note) => {
       note.bookHash = bookHash;
+      note.metaHash = metaHash;
     });
     return newNotes;
   };
@@ -30,8 +34,9 @@ export const useNotesSync = (bookKey: string) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     debounce(() => {
+      const book = getBookData(bookKey)?.book;
       const newNotes = getNewNotes();
-      syncNotes(newNotes, bookHash, 'both');
+      syncNotes(newNotes, bookHash, book?.metaHash, 'both');
     }, SYNC_NOTES_INTERVAL_SEC * 1000),
     [syncNotes],
   );
@@ -40,7 +45,7 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, handleAutoSync]);
+  }, [config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {
@@ -60,7 +65,10 @@ export const useNotesSync = (bookKey: string) => {
       return note;
     };
     if (syncedNotes?.length && config) {
-      const newNotes = syncedNotes.filter((note) => note.bookHash === bookHash);
+      const book = getBookData(bookKey)?.book;
+      const newNotes = syncedNotes.filter(
+        (note) => note.bookHash === bookHash || note.metaHash === book?.metaHash,
+      );
       if (!newNotes.length) return;
       const oldNotes = config.booknotes ?? [];
       const mergedNotes = [
