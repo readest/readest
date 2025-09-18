@@ -273,6 +273,69 @@ function ReadestSync:logout(menu)
     })
 end
 
+function normalizeIdentifier(identifier)
+    if identifier:match("urn:") then
+        -- Slice after the last ':'
+        return identifier:match("([^:]+)$")
+    elseif identifier:match(":") then
+        -- Slice after the first ':'
+        return identifier:match("^[^:]+:(.+)$")
+    end
+    return identifier
+end
+
+function normalizeAuthor(author)
+    -- Trim leading and trailing whitespace
+    author = author:gsub("^%s*(.-)%s*$", "%1")
+    return author
+end
+
+function ReadestSync:generateMetadataHash()
+    local doc_props = self.ui.doc_settings:readSetting("doc_props") or {}
+    local title = doc_props.title or ''
+    if title == '' then
+        local doc_path, filename = util.splitFilePathName(self.ui.doc_settings:readSetting("doc_path") or '')
+        local basename, suffix = util.splitFileNameSuffix(filename)
+        title = basename or ''
+    end
+
+    local authors = doc_props.authors or ''
+    if authors:find("\n") then
+        authors = util.splitToArray(authors, "\n")
+        for i, author in ipairs(authors) do
+            authors[i] = normalizeAuthor(author)
+        end
+        authors = table.concat(authors, ",")
+    else
+        authors = normalizeAuthor(authors)
+    end
+
+    local identifiers = doc_props.identifiers or ''
+    if identifiers:find("\n") then
+        identifiers = util.splitToArray(identifiers, "\n")
+        for i, id in ipairs(identifiers) do
+            identifiers[i] = normalizeIdentifier(id)
+        end
+        identifiers = table.concat(identifiers, ",")
+    else
+        identifiers = normalizeIdentifier(identifiers)
+    end
+    local doc_meta = title .. "|" .. authors .. "|" .. identifiers
+    local meta_hash = sha2.md5(doc_meta)
+    return meta_hash
+end
+
+function ReadestSync:getMetaHash()
+    local doc_readest_sync = self.ui.doc_settings:readSetting("readest_sync") or {}
+    local meta_hash = doc_readest_sync.meta_hash
+    if not meta_hash then
+        meta_hash = self:generateMetadataHash()
+        doc_readest_sync.meta_hash = meta_hash
+        self.ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
+    end
+    return meta_hash
+end
+
 function ReadestSync:getDocumentIdentifier()
     return self.ui.doc_settings:readSetting("partial_md5_checksum")
 end
@@ -325,7 +388,8 @@ end
 
 function ReadestSync:getCurrentBookConfig()
     local book_hash = self:getDocumentIdentifier()
-    if not book_hash then
+    local meta_hash = self:getMetaHash()
+    if not book_hash or not meta_hash then
         UIManager:show(InfoMessage:new{
             text = _("Cannot identify the current book"),
             timeout = 2,
@@ -335,6 +399,7 @@ function ReadestSync:getCurrentBookConfig()
 
     local config = {
         bookHash = book_hash,
+        metaHash = meta_hash,
         progress = "",
         xpointer = "",
         updatedAt = os.time() * 1000,
@@ -437,7 +502,8 @@ function ReadestSync:pullBookConfig(interactive)
     end
 
     local book_hash = self:getDocumentIdentifier()
-    if not book_hash then return end
+    local meta_hash = self:getMetaHash()
+    if not book_hash or not meta_hash then return end
 
     if NetworkMgr:willRerunWhenOnline(function() self:pullBookConfig(interactive) end) then
         return
@@ -468,6 +534,7 @@ function ReadestSync:pullBookConfig(interactive)
             since = 0,
             type = "configs",
             book = book_hash,
+            meta_hash = meta_hash,
         },
         function(success, response)
             if not success then

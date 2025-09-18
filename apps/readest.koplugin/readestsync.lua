@@ -81,6 +81,7 @@ function ReadestSyncClient:pullChanges(params, callback)
                 since = params.since,
                 type = params.type,
                 book = params.book,
+                meta_hash = params.meta_hash,
             })
         end)
         if ok then
