@@ -183,7 +183,6 @@ const TOCView: React.FC<{
         (activeItem as HTMLElement).setAttribute('aria-current', 'page');
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flatItems, activeHref]);
 
   const virtualItemSize = useMemo(() => {
