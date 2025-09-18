@@ -3,7 +3,7 @@ import { FixedSizeList as VirtualList } from 'react-window';
 
 import { useOverlayScrollbars } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
-import { TOCItem } from '@/libs/document';
+import { SectionItem, TOCItem } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -39,7 +39,8 @@ const useFlattenedTOC = (toc: TOCItem[], expandedItems: Set<string>) => {
 const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
-}> = ({ bookKey, toc }) => {
+  sections?: SectionItem[];
+}> = ({ bookKey, toc, sections }) => {
   const { appService } = useEnv();
   const { getView, getProgress, getViewState, getViewSettings } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
@@ -183,7 +184,7 @@ const TOCView: React.FC<{
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeHref]);
+  }, [flatItems, activeHref]);
 
   const virtualItemSize = useMemo(() => {
     return window.innerWidth >= 640 && !viewSettings?.translationEnabled ? 37 : 57;
@@ -214,12 +215,12 @@ const TOCView: React.FC<{
 
   useEffect(() => {
     if (flatItems.length > 0) {
-      setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 0);
+      setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollToActiveItem]);
+  }, [progress]);
 
-  return flatItems.length > 256 ? (
+  return sections && sections.length > 256 ? (
     <div
       className='virtual-list rounded pt-2'
       data-overlayscrollbars-initialize=''
