@@ -1,33 +1,33 @@
 {
-    "base_url": "https://readest.supabase.co/auth/v1/",
-    "name": "supabase-auth-api",
-    "methods": {
-        "sign_in_password": {
-            "path": "/token?grant_type=password",
-            "method": "POST",
-            "required_params": ["email", "password"],
-            "payload": ["email", "password"],
-            "expected_status": [200, 400, 401]
-        },
-        "refresh_token": {
-            "path": "/token?grant_type=refresh_token",
-            "method": "POST",
-            "required_params": ["refresh_token"],
-            "payload": ["refresh_token"],
-            "expected_status": [200, 400, 401, 403]
-        },
-        "sign_out": {
-            "path": "/logout",
-            "method": "POST",
-            "required_params": [],
-            "payload": [],
-            "expected_status": [204, 401]
-        },
-        "get_user": {
-            "path": "/user",
-            "method": "GET",
-            "required_params": [],
-            "expected_status": [200, 401]
-        }
+  "base_url": "https://readest.supabase.co/auth/v1/",
+  "name": "supabase-auth-api",
+  "methods": {
+    "sign_in_password": {
+      "path": "/token?grant_type=password",
+      "method": "POST",
+      "required_params": ["email", "password"],
+      "payload": ["email", "password"],
+      "expected_status": [200, 400, 401]
+    },
+    "refresh_token": {
+      "path": "/token?grant_type=refresh_token",
+      "method": "POST",
+      "required_params": ["refresh_token"],
+      "payload": ["refresh_token"],
+      "expected_status": [200, 400, 401, 403]
+    },
+    "sign_out": {
+      "path": "/logout",
+      "method": "POST",
+      "required_params": [],
+      "payload": [],
+      "expected_status": [204, 401]
+    },
+    "get_user": {
+      "path": "/user",
+      "method": "GET",
+      "required_params": [],
+      "expected_status": [200, 401]
     }
+  }
 }

@@ -1,19 +1,19 @@
 {
-    "base_url": "https://web.readest.com/api",
-    "name": "readest-sync-api",
-    "methods": {
-        "pullChanges": {
-            "path": "/sync",
-            "method": "GET",
-            "required_params": ["since", "type", "book"],
-            "expected_status": [200, 400, 301, 401, 403]
-        },
-        "pushChanges": {
-            "path": "/sync",
-            "method": "POST",
-            "required_params": ["books", "notes", "configs"],
-            "payload": ["books", "notes", "configs"],
-            "expected_status": [200, 201, 301, 400, 401, 403]
-        }
+  "base_url": "https://web.readest.com/api",
+  "name": "readest-sync-api",
+  "methods": {
+    "pullChanges": {
+      "path": "/sync",
+      "method": "GET",
+      "required_params": ["since", "type", "book", "meta_hash"],
+      "expected_status": [200, 400, 301, 401, 403]
+    },
+    "pushChanges": {
+      "path": "/sync",
+      "method": "POST",
+      "required_params": ["books", "notes", "configs"],
+      "payload": ["books", "notes", "configs"],
+      "expected_status": [200, 201, 301, 400, 401, 403]
     }
+  }
 }
