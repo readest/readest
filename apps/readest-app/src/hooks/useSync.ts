@@ -65,7 +65,8 @@ export function useSync(bookKey?: string) {
   const { syncClient } = useSyncContext();
 
   useEffect(() => {
-    setIsSyncing(bookKey || '', syncing);
+    if (!bookKey) return;
+    setIsSyncing(bookKey, syncing);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, syncing]);
 
