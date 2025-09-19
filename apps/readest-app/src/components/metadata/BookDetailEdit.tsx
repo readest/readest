@@ -330,8 +330,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               disabled={!hasLockedFields}
               className={clsx(
                 'hover:bg-base-200 flex items-center gap-1 rounded px-2 py-1 text-sm',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                'text-yellow-500 hover:text-yellow-600',
+                'disabled:cursor-not-allowed disabled:opacity-80',
+                'text-yellow-600 hover:text-yellow-700',
               )}
               title={_('Unlock all fields')}
             >
@@ -343,8 +343,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               disabled={allFieldsLocked}
               className={clsx(
                 'hover:bg-base-200 flex items-center gap-1 rounded px-2 py-1 text-sm',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                'text-green-500 hover:text-green-600',
+                'disabled:cursor-not-allowed disabled:opacity-80',
+                'text-green-600 hover:text-green-700',
               )}
               title={_('Lock all fields')}
             >
