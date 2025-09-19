@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.81": {
+      "date": "2025-09-19",
+      "notes": [
+        "TTS: Added desktop common media control support when TTS is playing",
+        "PDF: Disabled swipe-up gesture for toggling the action bar when zoomed in",
+        "Fonts: Fixed an issue where embedded fonts in ebooks were occasionally not applied",
+        "Reader: Fixed an issue where newly created highlights sometimes would not appear",
+        "Reader: Enabled scrolling in the menu when the menu is too long"
+      ]
+    },
     "0.9.80": {
       "date": "2025-09-19",
       "notes": [
