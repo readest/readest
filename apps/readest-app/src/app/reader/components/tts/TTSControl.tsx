@@ -121,7 +121,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       const progress = getProgress(bookKey);
       const { sectionLabel } = progress || {};
       const mark = (e as CustomEvent<TTSMark>).detail;
-      if (appService?.isMobileApp && 'mediaSession' in navigator) {
+      if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: mark?.text || '',
           artist: sectionLabel || title,
@@ -439,10 +439,18 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       });
 
       navigator.mediaSession.setActionHandler('seekforward', () => {
-        handleForward();
+        handleForward(true);
       });
 
       navigator.mediaSession.setActionHandler('seekbackward', () => {
+        handleBackward(true);
+      });
+
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        handleForward();
+      });
+
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
         handleBackward();
       });
     }
