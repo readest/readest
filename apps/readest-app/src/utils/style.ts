@@ -48,6 +48,7 @@ const getFontStyles = (
     ...FALLBACK_FONTS,
   ];
   const monospaceFonts = [monospace, ...MONOSPACE_FONTS.filter((font) => font !== monospace)];
+  const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
   const fontStyles = `
     html {
       --serif: ${serifFonts.map((font) => `"${font}"`).join(', ')}, serif;
@@ -55,11 +56,18 @@ const getFontStyles = (
       --monospace: ${monospaceFonts.map((font) => `"${font}"`).join(', ')}, monospace;
     }
     html, body {
-      font-family: var(${defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif'}) ${overrideFont ? '!important' : ''};
       font-size: ${fontSize}px !important;
       font-weight: ${fontWeight};
       -webkit-text-size-adjust: none;
       text-size-adjust: none;
+    }
+    /* lower specificity than ebook built-in font styles */
+    html {
+      font-family: var(${defaultFontFamily}) ${overrideFont ? '!important' : ''};
+    }
+    /* higher specificity than ebook built-in font styles */
+    html body {
+      ${overrideFont ? `font-family: var(${defaultFontFamily}) !important;` : ''}
     }
     font[size="1"] {
       font-size: ${minFontSize}px;
