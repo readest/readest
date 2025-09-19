@@ -22,7 +22,11 @@ const Menu: React.FC<MenuProps> = ({ children, className }) => {
   }, []);
 
   return (
-    <div ref={menuRef} role='none' className={clsx(className)}>
+    <div
+      ref={menuRef}
+      role='none'
+      className={clsx('max-h-[calc(100vh-96px)] overflow-y-auto', className)}
+    >
       {children}
     </div>
   );
