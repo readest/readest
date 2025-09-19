@@ -99,7 +99,7 @@ export const useProgressSync = (bookKey: string) => {
     if (!progress?.location || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress]);
+  }, [progress?.location]);
 
   // Pull: pull progress once when the book is opened
   useEffect(() => {
