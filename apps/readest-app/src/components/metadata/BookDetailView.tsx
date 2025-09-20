@@ -21,6 +21,7 @@ import {
 import BookCover from '@/components/BookCover';
 import Dropdown from '../Dropdown';
 import MenuItem from '../MenuItem';
+import { useAuth } from '@/context/AuthContext';
 
 interface BookDetailViewProps {
   book: Book;
@@ -45,6 +46,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDownload,
   onUpload,
 }) => {
+  const { user } = useAuth();
   const _ = useTranslation();
 
   return (
@@ -86,13 +88,14 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     transient
                     label={_('Remove from Cloud & Device')}
                     onClick={onDelete}
+                    disabled={!user || !book.uploadedAt || !book.downloadedAt}
                   />
                   <MenuItem
                     noIcon
                     transient
                     label={_('Remove from Cloud Only')}
                     onClick={onDeleteCloudBackup}
-                    disabled={!book.uploadedAt}
+                    disabled={!user || !book.uploadedAt}
                   />
                   <MenuItem
                     noIcon
@@ -104,12 +107,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 </div>
               </Dropdown>
             )}
-            {book.uploadedAt && onDownload && (
+            {book.uploadedAt && user && onDownload && (
               <button onClick={onDownload}>
                 <MdOutlineCloudDownload className='fill-base-content' />
               </button>
             )}
-            {book.downloadedAt && onUpload && (
+            {book.downloadedAt && user && onUpload && (
               <button onClick={onUpload}>
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>
