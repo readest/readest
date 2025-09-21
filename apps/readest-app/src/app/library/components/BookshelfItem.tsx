@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
+import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -104,6 +105,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
+  const { user } = useAuth();
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
     if (await makeBookAvailable(book)) {
@@ -219,10 +221,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     menu.append(selectBookMenuItem);
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
-    if (book.uploadedAt && !book.downloadedAt) {
+    if (book.uploadedAt && !book.downloadedAt && user) {
       menu.append(downloadBookMenuItem);
     }
-    if (!book.uploadedAt && book.downloadedAt) {
+    if (!book.uploadedAt && book.downloadedAt && user) {
       menu.append(uploadBookMenuItem);
     }
     menu.append(deleteBookMenuItem);
