@@ -34,7 +34,7 @@ const getNativeAppService = async () => {
   if (!nativeAppService) {
     const { NativeAppService } = await import('@/services/nativeAppService');
     nativeAppService = new NativeAppService();
-    await nativeAppService.loadSettings();
+    await nativeAppService.init();
   }
   return nativeAppService;
 };
@@ -44,7 +44,7 @@ const getWebAppService = async () => {
   if (!webAppService) {
     const { WebAppService } = await import('@/services/webAppService');
     webAppService = new WebAppService();
-    await webAppService.loadSettings();
+    await webAppService.init();
   }
   return webAppService;
 };

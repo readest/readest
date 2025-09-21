@@ -43,6 +43,22 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
 }
 
 #[cfg(desktop)]
+fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
+    let fs_scope = app.fs_scope();
+    let asset_protocol_scope = app.asset_protocol_scope();
+    if let Err(e) = fs_scope.allow_directory(dir, true) {
+        eprintln!("Failed to allow directory in fs_scope: {e}");
+    } else {
+        println!("Allowed directory in fs_scope: {dir:?}");
+    }
+    if let Err(e) = asset_protocol_scope.allow_directory(dir, true) {
+        eprintln!("Failed to allow directory in asset_protocol_scope: {e}");
+    } else {
+        println!("Allowed directory in asset_protocol_scope: {dir:?}");
+    }
+}
+
+#[cfg(desktop)]
 fn get_files_from_argv(argv: Vec<String>) -> Vec<PathBuf> {
     let mut files = Vec::new();
     // NOTICE: `args` may include URL protocol (`your-app-protocol://`)
@@ -87,15 +103,6 @@ fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
-#[cfg(desktop)]
-fn set_rounded_window(app: &AppHandle, rounded: bool) {
-    let window = app.get_webview_window("main").unwrap();
-    let script = format!("window.IS_ROUNDED = {rounded};");
-    if let Err(e) = window.eval(&script) {
-        eprintln!("Failed to set IS_ROUNDED variable: {e}");
-    }
-}
-
 #[command]
 async fn start_server(window: Window) -> Result<u16, String> {
     start(move |url| {
@@ -109,6 +116,15 @@ async fn start_server(window: Window) -> Result<u16, String> {
 #[tauri::command]
 fn get_environment_variable(name: &str) -> String {
     std::env::var(String::from(name)).unwrap_or(String::from(""))
+}
+
+#[tauri::command]
+fn get_executable_dir() -> String {
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|p| p.to_path_buf()))
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default()
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -128,6 +144,7 @@ pub fn run() {
             download_file,
             upload_file,
             get_environment_variable,
+            get_executable_dir,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
@@ -195,6 +212,11 @@ pub fn run() {
 
             #[cfg(desktop)]
             {
+                allow_dir_in_scopes(app.handle(), &PathBuf::from(get_executable_dir()));
+            }
+
+            #[cfg(desktop)]
+            {
                 app.handle().plugin(tauri_plugin_cli::init())?;
 
                 let app_handle = app.handle().clone();
@@ -204,13 +226,6 @@ pub fn run() {
                         .eval("window.__READEST_CLI_ACCESS = true;")
                         .expect("Failed to set cli access config");
 
-                    set_rounded_window(&app_handle, true);
-                    #[cfg(target_os = "windows")]
-                    if tauri_plugin_os::version()
-                        <= tauri_plugin_os::Version::from_string("10.0.19045")
-                    {
-                        set_rounded_window(&app_handle, false);
-                    }
                     #[cfg(target_os = "linux")]
                     {
                         let is_appimage = std::env::var("APPIMAGE").is_ok()

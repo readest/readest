@@ -115,8 +115,10 @@ export const UpdaterContent = ({
         const platformKey = OS_ARCH === 'aarch64' ? 'android-arm64' : 'android-universal';
         const arch = OS_ARCH === 'aarch64' ? 'arm64' : 'universal';
         const downloadUrl = data.platforms[platformKey]?.url as string;
-        const cachePrefix = await appService.fs.getPrefix('Cache');
-        const apkFilePath = `${cachePrefix}/Readest_${data.version}_${arch}.apk`;
+        const apkFilePath = await appService.resolveFilePath(
+          `Readest_${data.version}_${arch}.apk`,
+          'Cache',
+        );
         setUpdate({
           currentVersion,
           version: data.version,

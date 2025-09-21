@@ -38,6 +38,7 @@ export interface KOSyncSettings {
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
+  customRootDir?: string;
 
   keepLogin: boolean;
   autoUpload: boolean;
