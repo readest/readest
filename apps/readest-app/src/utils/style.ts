@@ -30,10 +30,10 @@ const getFontStyles = (
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
     serif,
+    ...(defaultCJKFont !== serif ? [defaultCJKFont] : []),
     ...SERIF_FONTS.filter(
       (font) => font !== serif && font !== defaultCJKFont && !lastSerifFonts.includes(font),
     ),
-    ...(defaultCJKFont !== serif ? [defaultCJKFont] : []),
     ...CJK_SERIF_FONTS.filter((font) => font !== serif && font !== defaultCJKFont),
     ...lastSerifFonts.filter(
       (font) => SERIF_FONTS.includes(font) && !lastSerifFonts.includes(defaultCJKFont),
@@ -42,8 +42,8 @@ const getFontStyles = (
   ];
   const sansSerifFonts = [
     sansSerif,
-    ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
     ...(defaultCJKFont !== sansSerif ? [defaultCJKFont] : []),
+    ...SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
     ...CJK_SANS_SERIF_FONTS.filter((font) => font !== sansSerif && font !== defaultCJKFont),
     ...FALLBACK_FONTS,
   ];
