@@ -167,7 +167,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     });
     getAllFonts().forEach((font) => {
       if (removeFont(font.id)) {
-        appService!.fs.removeFile(font.path, 'Fonts');
+        appService!.deleteFont(font);
       }
     });
     saveCustomFonts(envConfig);

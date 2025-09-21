@@ -134,6 +134,9 @@ export interface CustomFont {
   error?: string;
 }
 
+export type CustomFontInfo = Partial<CustomFont> &
+  Required<Pick<CustomFont, 'path' | 'name' | 'family' | 'style' | 'weight' | 'variable'>>;
+
 export function getFontName(path: string): string {
   const fileName = getFilename(path);
   return fileName.replace(/\.(ttf|otf|woff|woff2)$/i, '');

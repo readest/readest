@@ -9,8 +9,16 @@ export const getFilename = (fileOrUri: string) => {
   const lastPart = parts.pop()!;
   return lastPart.split('?')[0]!;
 };
+
 export const getBaseFilename = (filename: string) => {
   const normalizedPath = filename.replace(/\\/g, '/');
   const baseName = normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || '';
   return baseName;
+};
+
+export const getDirPath = (filePath: string) => {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  const parts = normalizedPath.split('/');
+  parts.pop();
+  return parts.join('/');
 };

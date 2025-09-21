@@ -157,10 +157,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       if (selectedFile.path && appService) {
         const filePath = selectedFile.path;
         metadata.coverImageFile = filePath;
-        const tempName = `cover-${Date.now()}.png`;
-        const cachePrefix = await appService.fs.getPrefix('Cache');
-        await appService.fs.copyFile(filePath, tempName, 'Cache');
-        metadata.coverImageUrl = await appService.fs.getURL(`${cachePrefix}/${tempName}`);
+        metadata.coverImageUrl = await appService.getCachedImageUrl(filePath);
         setNewCoverImageUrl(metadata.coverImageUrl!);
       } else if (selectedFile.file) {
         metadata.coverImageBlobUrl = URL.createObjectURL(selectedFile.file);

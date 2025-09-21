@@ -152,7 +152,7 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
       });
 
       const appService = await envConfig.getAppService();
-      const fontFile = await appService.fs.openFile(font.path, 'Fonts');
+      const fontFile = await appService.openFile(font.path, 'Fonts');
 
       const format = getFontFormat(font.path);
       const mimeType = getMimeType(format);

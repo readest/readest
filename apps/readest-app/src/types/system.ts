@@ -2,13 +2,22 @@ import { SystemSettings } from './settings';
 import { Book, BookConfig, BookContent, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
+import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 
 export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
 
+export type ResolvedPath = {
+  baseDir: number;
+  basePrefix: () => Promise<string>;
+  fp: string;
+  base: BaseDir;
+};
+
 export interface FileSystem {
+  resolvePath(path: string, base: BaseDir): ResolvedPath;
   getURL(path: string): string;
   getBlobURL(path: string, base: BaseDir): Promise<string>;
   openFile(path: string, base: BaseDir, filename?: string): Promise<File>;
@@ -24,7 +33,6 @@ export interface FileSystem {
 }
 
 export interface AppService {
-  fs: FileSystem;
   osPlatform: OsPlatform;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
@@ -43,13 +51,21 @@ export interface AppService {
   isIOSApp: boolean;
   isMacOSApp: boolean;
   isLinuxApp: boolean;
+  isPortableApp: boolean;
   distChannel: string;
 
+  init(): Promise<void>;
+  openFile(path: string, base: BaseDir): Promise<File>;
+  resolveFilePath(path: string, base: BaseDir): Promise<string>;
+  getCachedImageUrl(pathOrUrl: string): Promise<string>;
   selectDirectory(): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
+
   getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;
   saveSettings(settings: SystemSettings): Promise<void>;
+  importFont(file?: string | File): Promise<CustomFontInfo | null>;
+  deleteFont(font: CustomFont): Promise<void>;
   importBook(
     file: string | File,
     books: Book[],
