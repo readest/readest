@@ -561,5 +561,14 @@
   "Minimize": "最小化",
   "Maximize or Restore": "最大化或還原",
   "Exit Parallel Read": "退出並排閱讀",
-  "Enter Parallel Read": "進入並排閱讀"
+  "Enter Parallel Read": "進入並排閱讀",
+  "Zoom Level": "縮放級別",
+  "Zoom Out": "縮小",
+  "Reset Zoom": "重置縮放",
+  "Zoom In": "放大",
+  "Zoom Mode": "縮放模式",
+  "Single Page": "單頁",
+  "Auto Spread": "自動展開",
+  "Fit Page": "適應頁面",
+  "Fit Width": "適應寬度"
 }

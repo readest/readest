@@ -561,5 +561,14 @@
   "Minimize": "最小化",
   "Maximize or Restore": "最大化または復元",
   "Exit Parallel Read": "並行読書を終了",
-  "Enter Parallel Read": "並行読書に入る"
+  "Enter Parallel Read": "並行読書に入る",
+  "Zoom Level": "ズームレベル",
+  "Zoom Out": "ズームアウト",
+  "Reset Zoom": "ズームリセット",
+  "Zoom In": "ズームイン",
+  "Zoom Mode": "ズームモード",
+  "Single Page": "シングルページ",
+  "Auto Spread": "自動スプレッド",
+  "Fit Page": "ページに合わせる",
+  "Fit Width": "幅に合わせる"
 }

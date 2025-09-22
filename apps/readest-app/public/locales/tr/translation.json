@@ -565,5 +565,14 @@
   "Minimize": "Küçült",
   "Maximize or Restore": "Büyüt veya Geri Yükle",
   "Exit Parallel Read": "Paralel Okumadan Çık",
-  "Enter Parallel Read": "Paralel Okumaya Gir"
+  "Enter Parallel Read": "Paralel Okumaya Gir",
+  "Zoom Level": "Yakınlaştırma Düzeyi",
+  "Zoom Out": "Yakınlaştırmayı Kaldır",
+  "Reset Zoom": "Yakınlaştırmayı Sıfırla",
+  "Zoom In": "Yakınlaştırmayı Artır",
+  "Zoom Mode": "Yakınlaştırma Modu",
+  "Single Page": "Tek Sayfa",
+  "Auto Spread": "Otomatik Yayılma",
+  "Fit Page": "Sayfaya Sığdır",
+  "Fit Width": "Genişliğe Sığdır"
 }

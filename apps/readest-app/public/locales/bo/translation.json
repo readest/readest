@@ -561,5 +561,14 @@
   "Minimize": "ཆུང་དུ་བསྡུ།",
   "Maximize or Restore": "ཆེན་པོ་བཟོ/གསོག།",
   "Exit Parallel Read": "མཉམ་དུ་ཀློག་ཕྱིར་འཐེན།",
-  "Enter Parallel Read": "མཉམ་དུ་ཀློག་འཛུལ།"
+  "Enter Parallel Read": "མཉམ་དུ་ཀློག་འཛུལ།",
+  "Zoom Level": "རྒྱབ་སྐོར་གྱི་གདམ་ཁ",
+  "Zoom Out": "རྒྱབ་སྐོར་བཏང་བ།",
+  "Reset Zoom": "རྒྱབ་སྐོར་རྩོལ་བ།",
+  "Zoom In": "རྒྱབ་སྐོར་འཕེལ་བ།",
+  "Zoom Mode": "རྒྱབ་སྐོར་སྤོ་བ།",
+  "Single Page": "དེབ་གཅིག",
+  "Auto Spread": "རང་འགུལ་སྤྲོད།",
+  "Fit Page": "དེབ་འདེམས་པ།",
+  "Fit Width": "ཁྱབ་སྒྲིག་འདེམས་པ།"
 }

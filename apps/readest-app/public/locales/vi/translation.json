@@ -561,5 +561,14 @@
   "Minimize": "Thu nhỏ",
   "Maximize or Restore": "Tối đa hóa hoặc Khôi phục",
   "Exit Parallel Read": "Thoát Đọc Song Song",
-  "Enter Parallel Read": "Vào Đọc Song Song"
+  "Enter Parallel Read": "Vào Đọc Song Song",
+  "Zoom Level": "Độ phóng to",
+  "Zoom Out": "Thu nhỏ",
+  "Reset Zoom": "Đặt lại độ phóng to",
+  "Zoom In": "Phóng to",
+  "Zoom Mode": "Chế độ phóng to",
+  "Single Page": "Một trang",
+  "Auto Spread": "Tự động trải rộng",
+  "Fit Page": "Vừa trang",
+  "Fit Width": "Vừa chiều rộng"
 }

@@ -569,5 +569,14 @@
   "Minimize": "Minimiser",
   "Maximize or Restore": "Maximiser ou Restaurer",
   "Exit Parallel Read": "Quitter la Lecture Parallèle",
-  "Enter Parallel Read": "Entrer dans la Lecture Parallèle"
+  "Enter Parallel Read": "Entrer dans la Lecture Parallèle",
+  "Zoom Level": "Zoom",
+  "Zoom Out": "Réduire le Zoom",
+  "Reset Zoom": "Réinitialiser le Zoom",
+  "Zoom In": "Agrandir le Zoom",
+  "Zoom Mode": "Mode Zoom",
+  "Single Page": "Page Unique",
+  "Auto Spread": "Répartition Automatique",
+  "Fit Page": "Ajuster la Page",
+  "Fit Width": "Ajuster la Largeur"
 }
