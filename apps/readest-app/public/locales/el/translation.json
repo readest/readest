@@ -563,5 +563,7 @@
   "Toggle Translation": "Εναλλαγή μετάφρασης",
   "Translation Disabled": "Η μετάφραση είναι απενεργοποιημένη",
   "Minimize": "Ελαχιστοποίηση",
-  "Maximize or Restore": "Μεγιστοποίηση ή Επαναφορά"
+  "Maximize or Restore": "Μεγιστοποίηση ή Επαναφορά",
+  "Exit Parallel Read": "Έξοδος από την παράλληλη ανάγνωση",
+  "Enter Parallel Read": "Είσοδος στην παράλληλη ανάγνωση"
 }

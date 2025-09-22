@@ -563,5 +563,7 @@
   "Toggle Translation": "மொழிபெயர்ப்பை மாற்றவும்",
   "Translation Disabled": "மொழிபெயர்ப்பு முடக்கப்பட்டுள்ளது",
   "Minimize": "சிறிது செய்யவும்",
-  "Maximize or Restore": "அதிகரிக்கவும் அல்லது மீட்டமைக்கவும்"
+  "Maximize or Restore": "அதிகரிக்கவும் அல்லது மீட்டமைக்கவும்",
+  "Exit Parallel Read": "இணை வாசிப்பை வெளியேறு",
+  "Enter Parallel Read": "இணை வாசிப்பில் நுழையவும்"
 }

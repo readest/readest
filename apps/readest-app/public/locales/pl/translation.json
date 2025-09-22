@@ -571,5 +571,7 @@
   "Toggle Translation": "Włącz/Wyłącz tłumaczenie",
   "Translation Disabled": "Tłumaczenie wyłączone",
   "Minimize": "Minimalizuj",
-  "Maximize or Restore": "Maksymalizuj lub Przywróć"
+  "Maximize or Restore": "Maksymalizuj lub Przywróć",
+  "Exit Parallel Read": "Wyjdź z czytania równoległego",
+  "Enter Parallel Read": "Wejdź w czytanie równoległe"
 }

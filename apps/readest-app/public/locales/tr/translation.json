@@ -563,5 +563,7 @@
   "Toggle Translation": "Çeviriyi Değiştir",
   "Translation Disabled": "Çeviri Devre Dışı",
   "Minimize": "Küçült",
-  "Maximize or Restore": "Büyüt veya Geri Yükle"
+  "Maximize or Restore": "Büyüt veya Geri Yükle",
+  "Exit Parallel Read": "Paralel Okumadan Çık",
+  "Enter Parallel Read": "Paralel Okumaya Gir"
 }

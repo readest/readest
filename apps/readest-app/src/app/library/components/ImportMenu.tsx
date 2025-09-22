@@ -20,7 +20,6 @@ const ImportMenu: React.FC<ImportMenuProps> = ({ setIsDropdownOpen, onImportBook
 
   return (
     <Menu
-      label={_('Import Books')}
       className={clsx(
         'dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow',
         appService?.isMobile ? 'no-triangle' : 'dropdown-center',

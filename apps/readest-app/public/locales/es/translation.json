@@ -567,5 +567,7 @@
   "Toggle Translation": "Alternar Traducción",
   "Translation Disabled": "Traducción Deshabilitada",
   "Minimize": "Minimizar",
-  "Maximize or Restore": "Maximizar o Restaurar"
+  "Maximize or Restore": "Maximizar o Restaurar",
+  "Exit Parallel Read": "Salir de Lectura Paralela",
+  "Enter Parallel Read": "Entrar en Lectura Paralela"
 }

@@ -559,5 +559,7 @@
   "Toggle Translation": "Chuyển đổi dịch thuật",
   "Translation Disabled": "Dịch thuật đã tắt",
   "Minimize": "Thu nhỏ",
-  "Maximize or Restore": "Tối đa hóa hoặc Khôi phục"
+  "Maximize or Restore": "Tối đa hóa hoặc Khôi phục",
+  "Exit Parallel Read": "Thoát Đọc Song Song",
+  "Enter Parallel Read": "Vào Đọc Song Song"
 }

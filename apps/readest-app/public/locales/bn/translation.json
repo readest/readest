@@ -563,5 +563,7 @@
   "Toggle Translation": "অনুবাদ টগল করুন",
   "Translation Disabled": "অনুবাদ অক্ষম",
   "Minimize": "সঙ্কুচিত করুন",
-  "Maximize or Restore": "বৃহৎ করুন বা পুনরুদ্ধার করুন"
+  "Maximize or Restore": "বৃহৎ করুন বা পুনরুদ্ধার করুন",
+  "Exit Parallel Read": "সমান্তরাল পড়া থেকে বেরিয়ে আসুন",
+  "Enter Parallel Read": "সমান্তরাল পড়ায় প্রবেশ করুন"
 }

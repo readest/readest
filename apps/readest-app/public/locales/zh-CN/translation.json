@@ -559,5 +559,7 @@
   "Toggle Translation": "切换翻译",
   "Translation Disabled": "翻译已禁用",
   "Minimize": "最小化",
-  "Maximize or Restore": "最大化或还原"
+  "Maximize or Restore": "最大化或还原",
+  "Exit Parallel Read": "退出并排阅读",
+  "Enter Parallel Read": "进入并排阅读"
 }

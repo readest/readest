@@ -38,7 +38,7 @@ const TabNavigation: React.FC<{
           key={tab}
           tabIndex={0}
           role='button'
-          className='z-20 m-1.5 flex-1 cursor-pointer rounded-md p-2'
+          className='z-[11] m-1.5 flex-1 cursor-pointer rounded-md p-2'
           onClick={() => onTabChange(tab)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {

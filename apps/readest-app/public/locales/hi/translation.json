@@ -563,5 +563,7 @@
   "Toggle Translation": "अनुवाद टॉगल करें",
   "Translation Disabled": "अनुवाद अक्षम",
   "Minimize": "न्यूनतम करें",
-  "Maximize or Restore": "अधिकतम या पुनर्स्थापित करें"
+  "Maximize or Restore": "अधिकतम या पुनर्स्थापित करें",
+  "Exit Parallel Read": "पैरालल रीड से बाहर निकलें",
+  "Enter Parallel Read": "पैरालल रीड में प्रवेश करें"
 }
