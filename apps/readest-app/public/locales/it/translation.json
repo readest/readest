@@ -567,5 +567,7 @@
   "Toggle Translation": "Toggel Terjemahan",
   "Translation Disabled": "Terjemahan Dinonaktifkan",
   "Minimize": "Minimalkan",
-  "Maximize or Restore": "Maksimalkan atau Pulihkan"
+  "Maximize or Restore": "Maksimalkan atau Pulihkan",
+  "Exit Parallel Read": "Esci dalla lettura parallela",
+  "Enter Parallel Read": "Entra nella lettura parallela"
 }

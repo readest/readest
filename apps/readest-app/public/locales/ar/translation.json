@@ -579,5 +579,7 @@
   "Toggle Translation": "تبديل الترجمة",
   "Translation Disabled": "تم تعطيل الترجمة",
   "Minimize": "تصغير",
-  "Maximize or Restore": "تكبير أو استعادة"
+  "Maximize or Restore": "تكبير أو استعادة",
+  "Exit Parallel Read": "الخروج من القراءة المتزامنة",
+  "Enter Parallel Read": "الدخول في القراءة المتزامنة"
 }

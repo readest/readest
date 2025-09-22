@@ -17,6 +17,7 @@ import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSe
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
+import Menu from '@/components/Menu';
 
 interface BookMenuProps {
   menuClassName?: string;
@@ -87,7 +88,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   };
 
   return (
-    <div
+    <Menu
       className={clsx('book-menu dropdown-content border-base-100 z-20 shadow-2xl', menuClassName)}
     >
       <MenuItem
@@ -130,6 +131,12 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             ))}
         </ul>
       </MenuItem>
+      {bookKeys.length > 1 &&
+        (parallelViews.length > 0 ? (
+          <MenuItem label={_('Exit Parallel Read')} onClick={handleUnsetParallel} />
+        ) : (
+          <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
+        ))}
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
       {settings.kosync.enabled && (
@@ -149,7 +156,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       <hr className='border-base-200 my-1' />
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
-    </div>
+    </Menu>
   );
 };
 

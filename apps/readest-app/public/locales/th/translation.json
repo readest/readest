@@ -559,5 +559,7 @@
   "Toggle Translation": "เปลี่ยนการแปล",
   "Translation Disabled": "การแปลถูกปิดใช้งาน",
   "Minimize": "ย่อ",
-  "Maximize or Restore": "ขยายหรือคืนค่า"
+  "Maximize or Restore": "ขยายหรือคืนค่า",
+  "Exit Parallel Read": "ออกจากการอ่านคู่ขนาน",
+  "Enter Parallel Read": "เริ่มการอ่านคู่ขนาน"
 }

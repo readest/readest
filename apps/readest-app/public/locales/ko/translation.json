@@ -559,5 +559,7 @@
   "Toggle Translation": "번역 전환",
   "Translation Disabled": "번역 비활성화",
   "Minimize": "최소화",
-  "Maximize or Restore": "최대화 또는 복원"
+  "Maximize or Restore": "최대화 또는 복원",
+  "Exit Parallel Read": "병렬 읽기 종료",
+  "Enter Parallel Read": "병렬 읽기 시작"
 }

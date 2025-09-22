@@ -563,5 +563,7 @@
   "Toggle Translation": "පරිවර්තනය ස්ථානය වෙනස් කරන්න",
   "Translation Disabled": "පරිවර්තනය අක්‍රීය කර ඇත",
   "Minimize": "අඩු කරන්න",
-  "Maximize or Restore": "ඉහළ නැංවීම හෝ ප්‍රතිසංස්කරණය"
+  "Maximize or Restore": "ඉහළ නැංවීම හෝ ප්‍රතිසංස්කරණය",
+  "Exit Parallel Read": "සමාන්තර කියවීමෙන් පිටවන්න",
+  "Enter Parallel Read": "සමාන්තර කියවීමේදී පිවිසෙන්න"
 }

@@ -571,5 +571,7 @@
   "Toggle Translation": "Перемкнути переклад",
   "Translation Disabled": "Переклад вимкнено",
   "Minimize": "Згорнути",
-  "Maximize or Restore": "Збільшити або відновити"
+  "Maximize or Restore": "Збільшити або відновити",
+  "Exit Parallel Read": "Вийти з паралельного читання",
+  "Enter Parallel Read": "Войти в параллельное чтение"
 }

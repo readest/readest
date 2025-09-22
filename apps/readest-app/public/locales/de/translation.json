@@ -563,5 +563,7 @@
   "Toggle Translation": "Übersetzung umschalten",
   "Translation Disabled": "Übersetzung deaktiviert",
   "Minimize": "Minimieren",
-  "Maximize or Restore": "Maximieren oder Wiederherstellen"
+  "Maximize or Restore": "Maximieren oder Wiederherstellen",
+  "Exit Parallel Read": "Parallel Read beenden",
+  "Enter Parallel Read": "Parallel Read starten"
 }

@@ -563,5 +563,7 @@
   "Toggle Translation": "Vertaling Wisselen",
   "Translation Disabled": "Vertaling Uitgeschakeld",
   "Minimize": "Minimaliseren",
-  "Maximize or Restore": "Maximaliseren of Herstellen"
+  "Maximize or Restore": "Maximaliseren of Herstellen",
+  "Exit Parallel Read": "Parallel Lezen Afsluiten",
+  "Enter Parallel Read": "Parallel Lezen Starten"
 }

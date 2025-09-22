@@ -559,5 +559,7 @@
   "Toggle Translation": "翻訳の切り替え",
   "Translation Disabled": "翻訳が無効化されました",
   "Minimize": "最小化",
-  "Maximize or Restore": "最大化または復元"
+  "Maximize or Restore": "最大化または復元",
+  "Exit Parallel Read": "並行読書を終了",
+  "Enter Parallel Read": "並行読書に入る"
 }

@@ -24,6 +24,7 @@ import { getMaxInlineSize } from '@/utils/config';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import { saveViewSettings } from '../utils/viewSettingsHelper';
 import MenuItem from '@/components/MenuItem';
+import Menu from '@/components/Menu';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -146,7 +147,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const lastSyncTime = Math.max(config?.lastSyncedAtConfig || 0, config?.lastSyncedAtNotes || 0);
 
   return (
-    <div
+    <Menu
       className={clsx(
         'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1 border',
         'bgcolor-base-200 border-base-200 shadow-2xl',
@@ -284,7 +285,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         Icon={invertImgColorInDark ? MdCheck : undefined}
         onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
       />
-    </div>
+    </Menu>
   );
 };
 
