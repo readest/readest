@@ -561,5 +561,14 @@
   "Minimize": "ย่อ",
   "Maximize or Restore": "ขยายหรือคืนค่า",
   "Exit Parallel Read": "ออกจากการอ่านคู่ขนาน",
-  "Enter Parallel Read": "เริ่มการอ่านคู่ขนาน"
+  "Enter Parallel Read": "เริ่มการอ่านคู่ขนาน",
+  "Zoom Level": "ระดับการซูม",
+  "Zoom Out": "ลดระดับการซูม",
+  "Reset Zoom": "รีเซ็ตระดับการซูม",
+  "Zoom In": "เพิ่มระดับการซูม",
+  "Zoom Mode": "โหมดการซูม",
+  "Single Page": "หน้าเดียว",
+  "Auto Spread": "การกระจายอัตโนมัติ",
+  "Fit Page": "พอดีกับหน้า",
+  "Fit Width": "พอดีกับความกว้าง"
 }

@@ -565,5 +565,14 @@
   "Minimize": "न्यूनतम करें",
   "Maximize or Restore": "अधिकतम या पुनर्स्थापित करें",
   "Exit Parallel Read": "पैरालल रीड से बाहर निकलें",
-  "Enter Parallel Read": "पैरालल रीड में प्रवेश करें"
+  "Enter Parallel Read": "पैरालल रीड में प्रवेश करें",
+  "Zoom Level": "ज़ूम स्तर",
+  "Zoom Out": "ज़ूम आउट",
+  "Reset Zoom": "ज़ूम रीसेट करें",
+  "Zoom In": "ज़ूम इन",
+  "Zoom Mode": "ज़ूम मोड",
+  "Single Page": "एकल पृष्ठ",
+  "Auto Spread": "स्वचालित फैलाव",
+  "Fit Page": "पृष्ठ में फिट करें",
+  "Fit Width": "चौड़ाई में फिट करें"
 }

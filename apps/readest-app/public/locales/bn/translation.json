@@ -565,5 +565,14 @@
   "Minimize": "সঙ্কুচিত করুন",
   "Maximize or Restore": "বৃহৎ করুন বা পুনরুদ্ধার করুন",
   "Exit Parallel Read": "সমান্তরাল পড়া থেকে বেরিয়ে আসুন",
-  "Enter Parallel Read": "সমান্তরাল পড়ায় প্রবেশ করুন"
+  "Enter Parallel Read": "সমান্তরাল পড়ায় প্রবেশ করুন",
+  "Zoom Level": "জুম লেভেল",
+  "Zoom Out": "জুম আউট",
+  "Reset Zoom": "জুম রিসেট",
+  "Zoom In": "জুম ইন",
+  "Zoom Mode": "জুম মোড",
+  "Single Page": "একক পৃষ্ঠা",
+  "Auto Spread": "অটো স্প্রেড",
+  "Fit Page": "ফিট পৃষ্ঠা",
+  "Fit Width": "ফিট প্রস্থ"
 }

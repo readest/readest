@@ -561,5 +561,14 @@
   "Minimize": "최소화",
   "Maximize or Restore": "최대화 또는 복원",
   "Exit Parallel Read": "병렬 읽기 종료",
-  "Enter Parallel Read": "병렬 읽기 시작"
+  "Enter Parallel Read": "병렬 읽기 시작",
+  "Zoom Level": "확대/축소 수준",
+  "Zoom Out": "축소",
+  "Reset Zoom": "줌 재설정",
+  "Zoom In": "확대",
+  "Zoom Mode": "줌 모드",
+  "Single Page": "단일 페이지",
+  "Auto Spread": "자동 스프레드",
+  "Fit Page": "페이지에 맞춤",
+  "Fit Width": "너비에 맞춤"
 }

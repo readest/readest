@@ -561,5 +561,14 @@
   "Minimize": "Minimalkan",
   "Maximize or Restore": "Maksimalkan atau Pulihkan",
   "Exit Parallel Read": "Keluar dari Baca Paralel",
-  "Enter Parallel Read": "Masuk ke Baca Paralel"
+  "Enter Parallel Read": "Masuk ke Baca Paralel",
+  "Zoom Level": "Level Zoom",
+  "Zoom Out": "Perbesar Zoom",
+  "Reset Zoom": "Reset Zoom",
+  "Zoom In": "Perkecil Zoom",
+  "Zoom Mode": "Mode Zoom",
+  "Single Page": "Halaman Tunggal",
+  "Auto Spread": "Penyebaran Otomatis",
+  "Fit Page": "Sesuaikan Halaman",
+  "Fit Width": "Sesuaikan Lebar"
 }

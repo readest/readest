@@ -123,7 +123,6 @@ const Dropdown: React.FC<DropdownProps> = ({
         ref={containerRef}
         role='menu'
         tabIndex={-1}
-        title={label}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className={clsx('dropdown flex flex-col', className)}
@@ -132,6 +131,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           aria-haspopup='menu'
           aria-expanded={isOpen}
           aria-label={label}
+          title={label}
           className={clsx(
             'dropdown-toggle',
             isFocused && isOpen && 'bg-base-300/50',

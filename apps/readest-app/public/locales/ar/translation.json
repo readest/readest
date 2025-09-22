@@ -581,5 +581,14 @@
   "Minimize": "تصغير",
   "Maximize or Restore": "تكبير أو استعادة",
   "Exit Parallel Read": "الخروج من القراءة المتزامنة",
-  "Enter Parallel Read": "الدخول في القراءة المتزامنة"
+  "Enter Parallel Read": "الدخول في القراءة المتزامنة",
+  "Zoom Level": "مستوى التكبير",
+  "Zoom Out": "تصغير",
+  "Reset Zoom": "إعادة تعيين التكبير",
+  "Zoom In": "تكبير",
+  "Zoom Mode": "وضع التكبير",
+  "Single Page": "صفحة واحدة",
+  "Auto Spread": "انتشار تلقائي",
+  "Fit Page": "تناسب الصفحة",
+  "Fit Width": "تناسب العرض"
 }
