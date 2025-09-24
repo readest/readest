@@ -117,9 +117,9 @@ export class TTSController extends EventTarget {
     );
   }
 
-  async preloadSSML(ssml: string | undefined) {
+  async preloadSSML(ssml: string | undefined, signal: AbortSignal) {
     if (!ssml) return;
-    const iter = await this.ttsClient.speak(ssml, new AbortController().signal, true);
+    const iter = await this.ttsClient.speak(ssml, signal, true);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of iter);
   }
@@ -130,7 +130,7 @@ export class TTSController extends EventTarget {
     let preloaded = 0;
     for (let i = 0; i < count; i++) {
       const ssml = this.#preprocessSSML(tts.next());
-      this.preloadSSML(ssml);
+      this.preloadSSML(ssml, new AbortController().signal);
       if (ssml) preloaded++;
     }
     for (let i = 0; i < preloaded; i++) {
@@ -161,8 +161,12 @@ export class TTSController extends EventTarget {
       try {
         console.log('TTS speak');
         this.state = 'playing';
+
+        signal.addEventListener('abort', () => {
+          resolve();
+        });
+
         ssml = this.#preprocessSSML(await ssml);
-        await this.preloadSSML(ssml);
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
@@ -181,17 +185,16 @@ export class TTSController extends EventTarget {
         if (!plainText || marks.length === 0) {
           resolve();
           return await this.forward();
+        } else {
+          this.dispatchSpeakMark(marks[0]);
         }
+        await this.preloadSSML(ssml, signal);
         const iter = await this.ttsClient.speak(ssml, signal);
         let lastCode;
-        for await (const { code, mark } of iter) {
+        for await (const { code } of iter) {
           if (signal.aborted) {
             resolve();
             return;
-          }
-          if (mark && this.state === 'playing') {
-            const range = this.view.tts?.setMark(mark);
-            this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: range }));
           }
           lastCode = code;
         }
@@ -208,10 +211,13 @@ export class TTSController extends EventTarget {
           reject(e);
         }
       } finally {
-        this.#currentSpeakAbortController = null;
-        this.#currentSpeakPromise = null;
+        if (this.#currentSpeakAbortController) {
+          this.#currentSpeakAbortController.abort();
+          this.#currentSpeakAbortController = null;
+        }
       }
     });
+
     await this.#currentSpeakPromise.catch((e) => this.error(e));
   }
 
@@ -366,6 +372,10 @@ export class TTSController extends EventTarget {
 
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
+    if (mark) {
+      const range = this.view.tts?.setMark(mark.name);
+      this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: range }));
+    }
   }
 
   error(e: unknown) {

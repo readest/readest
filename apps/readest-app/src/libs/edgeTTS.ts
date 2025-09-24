@@ -238,7 +238,12 @@ const hashPayload = (payload: EdgeTTSPayload): string => {
 
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
-  private static audioCache = new LRUCache<string, ArrayBuffer>(200);
+  private static audioCache = new LRUCache<string, Blob>(200);
+  private static audioUrlCache = new LRUCache<string, string>(200, (_, url) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
 
   constructor() {}
 
@@ -361,16 +366,19 @@ export class EdgeSpeechTTS {
     return this.#fetchEdgeSpeechWs(payload);
   }
 
-  async createAudio(payload: EdgeTTSPayload): Promise<Blob> {
+  async createAudioUrl(payload: EdgeTTSPayload): Promise<string> {
     const cacheKey = hashPayload(payload);
-    if (EdgeSpeechTTS.audioCache.has(cacheKey)) {
-      return new Blob([EdgeSpeechTTS.audioCache.get(cacheKey)!], { type: 'audio/mpeg' });
+    if (EdgeSpeechTTS.audioUrlCache.has(cacheKey)) {
+      return EdgeSpeechTTS.audioUrlCache.get(cacheKey)!;
     }
     try {
       const res = await this.create(payload);
       const arrayBuffer = await res.arrayBuffer();
-      EdgeSpeechTTS.audioCache.set(cacheKey, arrayBuffer);
-      return new Blob([arrayBuffer], { type: 'audio/mpeg' });
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+      const objectUrl = URL.createObjectURL(blob);
+      EdgeSpeechTTS.audioCache.set(cacheKey, blob);
+      EdgeSpeechTTS.audioUrlCache.set(cacheKey, objectUrl);
+      return objectUrl;
     } catch (error) {
       throw error;
     }
