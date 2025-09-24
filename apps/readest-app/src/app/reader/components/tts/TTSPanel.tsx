@@ -235,7 +235,7 @@ const TTSPanel = ({
       </div>
       <div className='flex items-center justify-between space-x-2'>
         <button
-          onClick={onBackward}
+          onClick={() => onBackward()}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
           title={_('Previous Paragraph')}
           aria-label={_('Previous Paragraph')}
@@ -255,7 +255,7 @@ const TTSPanel = ({
           )}
         </button>
         <button
-          onClick={onForward}
+          onClick={() => onForward()}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
           title={_('Next Paragraph')}
           aria-label={_('Next Paragraph')}
