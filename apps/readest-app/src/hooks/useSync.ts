@@ -33,8 +33,6 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   return maxTime;
 };
 
-const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
-
 export function useSync(bookKey?: string) {
   const router = useRouter();
   const { settings, setSettings } = useSettingsStore();
@@ -78,9 +76,11 @@ export function useSync(bookKey?: string) {
     const lastSyncedBooksAt = settings.lastSyncedAtBooks ?? 0;
     const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
     const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
-    setLastSyncedAtBooks(lastSyncedBooksAt > 0 ? lastSyncedBooksAt : 0);
-    setLastSyncedAtConfigs(lastSyncedConfigsAt > 0 ? lastSyncedConfigsAt - SEVEN_DAYS_IN_MS : 0);
-    setLastSyncedAtNotes(lastSyncedNotesAt > 0 ? lastSyncedNotesAt - SEVEN_DAYS_IN_MS : 0);
+    const now = Date.now();
+    const fullSyncThreshold = 3 * 24 * 60 * 60 * 1000;
+    setLastSyncedAtBooks(now - lastSyncedBooksAt > fullSyncThreshold ? 0 : lastSyncedBooksAt);
+    setLastSyncedAtConfigs(now - lastSyncedConfigsAt > fullSyncThreshold ? 0 : lastSyncedConfigsAt);
+    setLastSyncedAtNotes(now - lastSyncedNotesAt > fullSyncThreshold ? 0 : lastSyncedNotesAt);
     setLastSyncedAtInited(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, settings, config]);
