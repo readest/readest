@@ -1,14 +1,12 @@
+import { useCallback, useRef, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { Insets } from '@/types/misc';
 import { getSafeAreaInsets } from '@/utils/bridge';
-import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
-  const [updated, setUpdated] = useState(false);
-  const [insets, setInsets] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
-  const currentInsets = useRef(insets);
+  const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
 
   const { updateSafeAreaInsets } = useThemeStore();
 
@@ -21,7 +19,6 @@ export const useSafeAreaInsets = () => {
       insets.left !== left
     ) {
       currentInsets.current = insets;
-      setInsets(insets);
       updateSafeAreaInsets(insets);
     }
   };
@@ -30,8 +27,7 @@ export const useSafeAreaInsets = () => {
     if (!appService) return;
 
     if (!appService.hasSafeAreaInset) {
-      updateInsets(insets);
-      setUpdated(true);
+      updateInsets(currentInsets.current);
       return;
     }
 
@@ -46,35 +42,43 @@ export const useSafeAreaInsets = () => {
           console.error('Error getting safe area insets from native bridge:', response.error);
         } else {
           const insets = {
-            top: response.top,
-            right: response.right,
-            bottom: response.bottom,
-            left: response.left,
+            top: Math.round(response.top),
+            right: Math.round(response.right),
+            bottom: Math.round(response.bottom),
+            left: Math.round(response.left),
           };
           updateInsets(insets);
         }
-        setUpdated(true);
       });
     } else if (hasCustomProperties) {
+      const top = parseFloat(rootStyles.getPropertyValue('--safe-area-inset-top')) || 0;
+      const right = parseFloat(rootStyles.getPropertyValue('--safe-area-inset-right')) || 0;
+      const bottom = parseFloat(rootStyles.getPropertyValue('--safe-area-inset-bottom')) || 0;
+      const left = parseFloat(rootStyles.getPropertyValue('--safe-area-inset-left')) || 0;
       const insets = {
-        top: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-top')) || 0,
-        right: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-right')) || 0,
-        bottom: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-bottom')) || 0,
-        left: parseFloat(rootStyles.getPropertyValue('--safe-area-inset-left')) || 0,
+        top: Math.round(top),
+        right: Math.round(right),
+        bottom: Math.round(bottom),
+        left: Math.round(left),
       };
       updateInsets(insets);
-      setUpdated(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
 
   useEffect(() => {
     onUpdateInsets();
-    window.addEventListener('resize', onUpdateInsets);
+    if (window.screen?.orientation) {
+      window.screen.orientation.addEventListener('change', onUpdateInsets);
+    } else {
+      window.addEventListener('orientationchange', onUpdateInsets);
+    }
     return () => {
-      window.removeEventListener('resize', onUpdateInsets);
+      if (window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', onUpdateInsets);
+      } else {
+        window.removeEventListener('orientationchange', onUpdateInsets);
+      }
     };
   }, [onUpdateInsets]);
-
-  return updated ? insets : null;
 };
