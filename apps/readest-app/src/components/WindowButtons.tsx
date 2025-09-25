@@ -50,8 +50,9 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   const { appService } = useEnv();
 
   const touchState = useRef({
-    lastTouchTime: 0,
-    touchStartPosition: { x: 0, y: 0 },
+    lastPointerTime: 0,
+    pointerStartPosition: { x: 0, y: 0 },
+    isDragging: false,
   });
 
   const isExcludedElement = (target: HTMLElement) => {
@@ -80,20 +81,25 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     }
   };
 
-  const handleTouchStart = async (e: TouchEvent) => {
+  const handlePointerDown = async (e: PointerEvent) => {
     const target = e.target as HTMLElement;
-    const touch = e.touches[0]!;
 
     if (isExcludedElement(target)) {
       return;
     }
 
-    const currentTime = Date.now();
-    const timeDiff = currentTime - touchState.current.lastTouchTime;
+    if (e.pointerType === 'mouse') {
+      return;
+    }
 
-    touchState.current.touchStartPosition = {
-      x: touch.clientX,
-      y: touch.clientY,
+    e.preventDefault();
+
+    const currentTime = Date.now();
+    const timeDiff = currentTime - touchState.current.lastPointerTime;
+
+    touchState.current.pointerStartPosition = {
+      x: e.clientX,
+      y: e.clientY,
     };
 
     if (timeDiff < 300) {
@@ -102,21 +108,28 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
       return;
     }
 
-    touchState.current.lastTouchTime = currentTime;
+    touchState.current.lastPointerTime = currentTime;
+    touchState.current.isDragging = false;
   };
 
-  const handleTouchMove = async (e: TouchEvent) => {
+  const handlePointerMove = async (e: PointerEvent) => {
     const target = e.target as HTMLElement;
-    const touch = e.touches[0]!;
 
-    if (isExcludedElement(target)) {
+    if (isExcludedElement(target) || touchState.current.isDragging) {
       return;
     }
 
-    const deltaX = Math.abs(touch.clientX - touchState.current.touchStartPosition.x);
-    const deltaY = Math.abs(touch.clientY - touchState.current.touchStartPosition.y);
+    if (e.pointerType === 'mouse') {
+      return;
+    }
+
+    e.preventDefault();
+
+    const deltaX = Math.abs(e.clientX - touchState.current.pointerStartPosition.x);
+    const deltaY = Math.abs(e.clientY - touchState.current.pointerStartPosition.y);
 
     if (deltaX > 5 || deltaY > 5) {
+      touchState.current.isDragging = true;
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         await getCurrentWindow().startDragging();
@@ -126,19 +139,27 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     }
   };
 
+  const handlePointerUp = () => {
+    touchState.current.isDragging = false;
+  };
+
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
     const headerElement = headerRef?.current;
     if (!headerElement) return;
 
     headerElement.addEventListener('mousedown', handleMouseDown);
-    headerElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-    headerElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    headerElement.addEventListener('pointerdown', handlePointerDown);
+    headerElement.addEventListener('pointermove', handlePointerMove);
+    headerElement.addEventListener('pointerup', handlePointerUp);
+    headerElement.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
       headerElement.removeEventListener('mousedown', handleMouseDown);
-      headerElement.removeEventListener('touchstart', handleTouchStart);
-      headerElement.removeEventListener('touchmove', handleTouchMove);
+      headerElement.removeEventListener('pointerdown', handlePointerDown);
+      headerElement.removeEventListener('pointermove', handlePointerMove);
+      headerElement.removeEventListener('pointerup', handlePointerUp);
+      headerElement.removeEventListener('pointercancel', handlePointerUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

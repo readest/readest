@@ -19,6 +19,7 @@ jobs:
         with:
           toolchain: stable
           override: true
+          components: rustfmt, clippy
       - name: Install system dependencies
         run: |
           sudo apt-get update
