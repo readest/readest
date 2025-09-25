@@ -134,11 +134,14 @@ export const useProgressSync = (bookKey: string) => {
           content?.index,
           bookData.bookDoc,
         );
-        if (CFI.compare(remoteCFILocation, candidateCFI) < 0) {
+        if (!remoteCFILocation || CFI.compare(remoteCFILocation, candidateCFI) < 0) {
           remoteCFILocation = candidateCFI;
         }
       }
-      setConfig(bookKey, syncedConfig);
+      const filteredSyncedConfig = Object.fromEntries(
+        Object.entries(syncedConfig).filter(([_, value]) => value !== null && value !== undefined),
+      );
+      setConfig(bookKey, { ...config, ...filteredSyncedConfig });
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
           if (view) {
