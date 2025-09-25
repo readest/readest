@@ -33,6 +33,7 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   return maxTime;
 };
 
+const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 export function useSync(bookKey?: string) {
   const router = useRouter();
   const { settings, setSettings } = useSettingsStore();
@@ -77,10 +78,15 @@ export function useSync(bookKey?: string) {
     const lastSyncedConfigsAt = config?.lastSyncedAtConfig ?? settings.lastSyncedAtConfigs ?? 0;
     const lastSyncedNotesAt = config?.lastSyncedAtNotes ?? settings.lastSyncedAtNotes ?? 0;
     const now = Date.now();
-    const fullSyncThreshold = 3 * 24 * 60 * 60 * 1000;
-    setLastSyncedAtBooks(now - lastSyncedBooksAt > fullSyncThreshold ? 0 : lastSyncedBooksAt);
-    setLastSyncedAtConfigs(now - lastSyncedConfigsAt > fullSyncThreshold ? 0 : lastSyncedConfigsAt);
-    setLastSyncedAtNotes(now - lastSyncedNotesAt > fullSyncThreshold ? 0 : lastSyncedNotesAt);
+    setLastSyncedAtBooks(
+      now - lastSyncedBooksAt > 3 * ONE_DAY_IN_MS ? 0 : lastSyncedBooksAt - ONE_DAY_IN_MS,
+    );
+    setLastSyncedAtConfigs(
+      now - lastSyncedConfigsAt > 3 * ONE_DAY_IN_MS ? 0 : lastSyncedConfigsAt - ONE_DAY_IN_MS,
+    );
+    setLastSyncedAtNotes(
+      now - lastSyncedNotesAt > 3 * ONE_DAY_IN_MS ? 0 : lastSyncedNotesAt - ONE_DAY_IN_MS,
+    );
     setLastSyncedAtInited(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, settings, config]);
