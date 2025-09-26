@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import {
   RiFolderOpenLine,
@@ -14,10 +15,12 @@ import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { DATA_SUBDIR } from '@/services/constants';
 import { FileItem } from '@/types/system';
 import { getDirPath } from '@/utils/path';
+import { formatBytes } from '@/utils/book';
 import { getOSPlatform } from '@/utils/misc';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import Dialog from '@/components/Dialog';
-import { formatBytes } from '@/utils/book';
+import Dropdown from '@/components/Dropdown';
+import MenuItem from '@/components/MenuItem';
 
 export const setMigrateDataDirDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('migrate_data_dir_window');
@@ -111,6 +114,21 @@ export const MigrateDataWindow = () => {
     }
   };
 
+  const handleSelectedNewDir = async (dir: string) => {
+    setErrorMessage('');
+
+    try {
+      const newDataDir = await join(dir, DATA_SUBDIR);
+      await appService?.createDir(newDataDir, 'None', true);
+      setNewDataDir(newDataDir);
+      setMigrationStatus('idle');
+    } catch (error) {
+      console.error('Error selecting directory:', error);
+      setErrorMessage(_('Failed to select directory'));
+      setMigrationStatus('error');
+    }
+  };
+
   const handleStartMigration = async () => {
     if (!appService || !currentDataDir || !newDataDir || !filesToMigrate.length) return;
 
@@ -186,7 +204,7 @@ export const MigrateDataWindow = () => {
   };
 
   const handleRevealDir = (dataDir: string) => {
-    if (dataDir) {
+    if (dataDir && appService?.isDesktopApp) {
       revealItemInDir(dataDir);
     }
   };
@@ -202,6 +220,11 @@ export const MigrateDataWindow = () => {
   const osPlatform = getOSPlatform();
   const fileRevealLabel =
     FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
+
+  const androidNewDirs = [
+    { path: '/storage/emulated/0/Documents' },
+    { path: '/storage/emulated/0/Download' },
+  ];
 
   return (
     <Dialog
@@ -258,17 +281,44 @@ export const MigrateDataWindow = () => {
                 </span>
               </button>
             )}
-
-            <button
-              className='btn btn-outline btn-sm w-full'
-              onClick={handleSelectNewDir}
-              disabled={migrationStatus === 'migrating' || migrationStatus === 'selecting'}
-            >
-              {migrationStatus === 'selecting' && (
-                <RiLoader2Line className='h-4 w-4 animate-spin' />
-              )}
-              {newDataDir ? _('Choose Different Folder') : _('Choose New Folder')}
-            </button>
+            {appService?.isAndroidApp ? (
+              <Dropdown
+                label={_('Choose New Folder')}
+                className='dropdown-bottom flex w-full justify-center'
+                buttonClassName='btn btn-ghost btn-outline w-full'
+                toggleButton={
+                  <div>{newDataDir ? _('Choose Different Folder') : _('Choose New Folder')}</div>
+                }
+              >
+                <div
+                  className={clsx(
+                    'folder-menu dropdown-content dropdown-center no-triangle',
+                    'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                  )}
+                >
+                  {androidNewDirs.map((dir) => (
+                    <MenuItem
+                      key={dir.path}
+                      toggled={newDataDir === dir.path}
+                      transient
+                      label={dir.path}
+                      onClick={() => handleSelectedNewDir(dir.path)}
+                    />
+                  ))}
+                </div>
+              </Dropdown>
+            ) : (
+              <button
+                className='btn btn-outline btn-sm w-full'
+                onClick={handleSelectNewDir}
+                disabled={migrationStatus === 'migrating' || migrationStatus === 'selecting'}
+              >
+                {migrationStatus === 'selecting' && (
+                  <RiLoader2Line className='h-4 w-4 animate-spin' />
+                )}
+                {newDataDir ? _('Choose Different Folder') : _('Choose New Folder')}
+              </button>
+            )}
           </div>
 
           {/* Migration Progress */}

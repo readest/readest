@@ -341,8 +341,9 @@ export class NativeAppService extends BaseAppService {
   // orientation lock is not supported on iPad
   override hasOrientationLock =
     (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
-  override canCustomRootDir = OS_TYPE !== 'ios';
+  override canCustomizeRootDir = OS_TYPE !== 'ios';
   override distChannel = process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest';
+
   private execDir?: string = undefined;
 
   override async init() {

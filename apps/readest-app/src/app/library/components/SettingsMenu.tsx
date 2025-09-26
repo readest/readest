@@ -268,7 +268,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
-      {appService?.isDesktopApp && !appService?.isPortableApp && (
+      {appService?.canCustomizeRootDir && (
         <>
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <MenuItem label={_('Advanced Settings')}>
