@@ -8,12 +8,18 @@ export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
+export type SelectDirectoryMode = 'read' | 'write';
 
 export type ResolvedPath = {
   baseDir: number;
   basePrefix: () => Promise<string>;
   fp: string;
   base: BaseDir;
+};
+
+export type FileItem = {
+  path: string;
+  size: number;
 };
 
 export interface FileSystem {
@@ -25,7 +31,7 @@ export interface FileSystem {
   readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
   writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
   removeFile(path: string, base: BaseDir): Promise<void>;
-  readDir(path: string, base: BaseDir): Promise<{ path: string; isDir: boolean }[]>;
+  readDir(path: string, base: BaseDir): Promise<FileItem[]>;
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   removeDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   exists(path: string, base: BaseDir): Promise<boolean>;
@@ -52,14 +58,22 @@ export interface AppService {
   isMacOSApp: boolean;
   isLinuxApp: boolean;
   isPortableApp: boolean;
+  isDesktopApp: boolean;
   distChannel: string;
 
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;
+  copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void>;
+  createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
+  deleteFile(path: string, base: BaseDir): Promise<void>;
+  deleteDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
+
+  setCustomRootDir(customRootDir: string): Promise<void>;
   resolveFilePath(path: string, base: BaseDir): Promise<string>;
   getCachedImageUrl(pathOrUrl: string): Promise<string>;
-  selectDirectory(): Promise<string>;
+  selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
+  readDirectory(path: string, base: BaseDir): Promise<FileItem[]>;
 
   getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;

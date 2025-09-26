@@ -6,7 +6,6 @@ import { PiUserCircleCheck } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { BiMoon, BiSun } from 'react-icons/bi';
 
-import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useAuth } from '@/context/AuthContext';
@@ -19,6 +18,8 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
+import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -162,6 +163,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
+  const handleSetRootDir = () => {
+    setMigrateDataDirDialogVisible(true);
+    setIsDropdownOpen?.(false);
+  };
+
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
@@ -262,6 +268,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
+      {appService?.isDesktopApp && !appService?.isPortableApp && (
+        <>
+          <hr aria-hidden='true' className='border-base-200 my-1' />
+          <MenuItem label={_('Advanced Settings')}>
+            <ul className='flex flex-col'>
+              <MenuItem label={_('Change Data Location')} noIcon onClick={handleSetRootDir} />
+            </ul>
+          </MenuItem>
+        </>
+      )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {user && userPlan === 'free' && !appService?.isIOSApp && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />

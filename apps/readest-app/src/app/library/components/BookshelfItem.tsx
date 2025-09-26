@@ -290,7 +290,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         groupContextMenuHandler(item as BooksGroup);
       }
     }, 100),
-    [itemSelected],
+    [itemSelected, settings.localBooksDir],
   );
 
   const { pressing, handlers } = useLongPress(

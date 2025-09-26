@@ -1,6 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SystemSettings } from '@/types/settings';
-import { AppPlatform, AppService, OsPlatform, ResolvedPath } from '@/types/system';
+import {
+  AppPlatform,
+  AppService,
+  FileItem,
+  OsPlatform,
+  ResolvedPath,
+  SelectDirectoryMode,
+} from '@/types/system';
 import { FileSystem, BaseDir, DeleteAction } from '@/types/system';
 import {
   Book,
@@ -68,6 +75,7 @@ export abstract class BaseAppService implements AppService {
   isIOSApp = false;
   isMobileApp = false;
   isPortableApp = false;
+  isDesktopApp = false;
   hasTrafficLight = false;
   hasWindow = false;
   hasWindowBar = false;
@@ -83,10 +91,12 @@ export abstract class BaseAppService implements AppService {
   protected abstract fs: FileSystem;
   protected abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
 
-  abstract selectDirectory(): Promise<string>;
+  abstract init(): Promise<void>;
+  abstract setCustomRootDir(customRootDir: string): Promise<void>;
+  abstract selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
 
-  async init() {
+  async prepareBooksDir() {
     this.localBooksDir = await this.fs.getPrefix('Books');
   }
 
@@ -94,9 +104,29 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.openFile(path, base);
   }
 
+  async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
+    return await this.fs.copyFile(srcPath, dstPath, base);
+  }
+
+  async createDir(path: string, base: BaseDir, recursive: boolean = true): Promise<void> {
+    return await this.fs.createDir(path, base, recursive);
+  }
+
+  async deleteFile(path: string, base: BaseDir): Promise<void> {
+    return await this.fs.removeFile(path, base);
+  }
+
+  async deleteDir(path: string, base: BaseDir, recursive: boolean = true): Promise<void> {
+    return await this.fs.removeDir(path, base, recursive);
+  }
+
   async resolveFilePath(path: string, base: BaseDir): Promise<string> {
     const prefix = await this.fs.getPrefix(base);
-    return `${prefix}/${path}`;
+    return path ? `${prefix}/${path}` : prefix;
+  }
+
+  async readDirectory(path: string, base: BaseDir): Promise<FileItem[]> {
+    return await this.fs.readDir(path, base);
   }
 
   getCoverImageUrl = (book: Book): string => {

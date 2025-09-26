@@ -172,16 +172,18 @@ export const formatDate = (date: string | number | Date | null | undefined, isUT
   }
 };
 
-export const formatFileSize = (size: number | null) => {
-  if (size === null) return '';
-  const formatter = new Intl.NumberFormat('en', {
+export const formatBytes = (bytes?: number | null, locale = 'en-US') => {
+  if (!bytes) return '';
+  const units = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, i);
+  const formatter = new Intl.NumberFormat(locale, {
     style: 'unit',
-    unit: 'byte',
-    unitDisplay: 'narrow',
-    notation: 'compact',
-    compactDisplay: 'short',
+    unit: units[i],
+    unitDisplay: 'short',
+    maximumFractionDigits: 2,
   });
-  return formatter.format(size);
+  return formatter.format(value);
 };
 
 export const getCurrentPage = (book: Book, progress: BookProgress) => {

@@ -43,10 +43,11 @@ import {
   tauriQuitApp,
 } from '@/utils/window';
 
-import { AboutWindow } from '@/components/AboutWindow';
-import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { BookMetadata } from '@/libs/document';
+import { AboutWindow } from '@/components/AboutWindow';
 import { BookDetailModal } from '@/components/metadata';
+import { UpdaterWindow } from '@/components/UpdaterWindow';
+import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
@@ -729,6 +730,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       <AboutWindow />
       <UpdaterWindow />
+      <MigrateDataWindow />
       <Toast />
     </div>
   );
