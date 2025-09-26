@@ -153,7 +153,7 @@ jobs:
 
       - name: install NDK (for Android build only)
         if: matrix.config.release == 'android'
-        run: sdkmanager "ndk;27.0.11902837"
+        run: sdkmanager "ndk;28.2.13676358"
 
       - name: install dependencies
         run: pnpm install
@@ -200,7 +200,7 @@ jobs:
         if: matrix.config.release == 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
@@ -288,12 +288,18 @@ jobs:
           echo "Uploading release notes to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
 
-      - name: upload portable binaries (Windows only)
+      - name: build and upload portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          echo "Building Portable Binaries"
+          pushd apps/readest-app/
+          echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
+          pnpm tauri build
+
+          popd
           echo "Uploading Portable Binaries"
           arch=${{ matrix.config.arch }}
           version=${{ needs.get-release.outputs.release_version }}
