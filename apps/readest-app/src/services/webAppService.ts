@@ -1,16 +1,16 @@
-import { FileSystem, BaseDir, AppPlatform, ResolvedPath } from '@/types/system';
+import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/types/system';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { RemoteFile } from '@/utils/file';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
-import { LOCAL_BOOKS_SUBDIR, LOCAL_DATA_SUBDIR, LOCAL_FONTS_SUBDIR } from './constants';
+import { DATA_SUBDIR, LOCAL_BOOKS_SUBDIR, LOCAL_FONTS_SUBDIR } from './constants';
 
 const basePrefix = async () => '';
 
 const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
   switch (base) {
     case 'Data':
-      return { baseDir: 0, basePrefix, fp: `${LOCAL_DATA_SUBDIR}/${path}`, base };
+      return { baseDir: 0, basePrefix, fp: `${DATA_SUBDIR}/${path}`, base };
     case 'Books':
       return { baseDir: 0, basePrefix, fp: `${LOCAL_BOOKS_SUBDIR}/${path}`, base };
     case 'Fonts':
@@ -168,17 +168,27 @@ const indexedDBFileSystem: FileSystem = {
     const { fp } = this.resolvePath(path, base);
     const db = await openIndexedDB();
 
-    return new Promise<{ path: string; isDir: boolean }[]>((resolve, reject) => {
+    return new Promise<FileItem[]>((resolve, reject) => {
       const transaction = db.transaction('files', 'readonly');
       const store = transaction.objectStore('files');
       const request = store.getAll();
 
       request.onsuccess = () => {
-        const files = request.result as { path: string }[];
+        const files = request.result as { path: string; content: string | ArrayBuffer | Blob }[];
         resolve(
           files
             .filter((file) => file.path.startsWith(fp))
-            .map((file) => ({ path: file.path.slice(fp.length + 1), isDir: false })),
+            .map((file) => ({
+              path: file.path.slice(fp.length + 1),
+              size:
+                file.content instanceof Blob
+                  ? file.content.size
+                  : typeof file.content === 'string'
+                    ? file.content.length
+                    : file.content instanceof ArrayBuffer
+                      ? file.content.byteLength
+                      : 0,
+            })),
         );
       };
 
@@ -208,11 +218,15 @@ export class WebAppService extends BaseAppService {
 
   override async init() {
     await this.loadSettings();
-    await super.init();
+    await this.prepareBooksDir();
   }
 
   override resolvePath(fp: string, base: BaseDir): ResolvedPath {
     return this.fs.resolvePath(fp, base);
+  }
+
+  async setCustomRootDir() {
+    // No-op in web environment
   }
 
   async selectDirectory(): Promise<string> {

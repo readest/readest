@@ -62,6 +62,17 @@
       ]
     },
     {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "**/Readest"
+        },
+        {
+          "path": "**/Readest/**/*"
+        }
+      ]
+    },
+    {
       "identifier": "http:default",
       "allow": [
         {

@@ -8,8 +8,10 @@ import {
   readDir,
   remove,
   copyFile,
+  stat,
   BaseDirectory,
   WriteFileOptions,
+  DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
@@ -24,7 +26,7 @@ import {
 } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
 
-import { FileSystem, BaseDir, AppPlatform, ResolvedPath } from '@/types/system';
+import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/types/system';
 import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -32,8 +34,8 @@ import { copyURIToPath } from '@/utils/bridge';
 
 import { BaseAppService } from './appService';
 import {
+  DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
-  LOCAL_DATA_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   SETTINGS_FILENAME,
 } from './constants';
@@ -67,8 +69,10 @@ const getPathResolver = ({
   const isCustomBaseDir = Boolean(customRootDir);
   const getCustomBasePrefixSync = isCustomBaseDir
     ? (baseDir: BaseDir) => {
-        return () =>
-          `${customRootDir}/${['Settings', 'Data', 'Books', 'Fonts'].includes(baseDir) ? '' : baseDir}`;
+        return () => {
+          const leafDir = ['Settings', 'Data', 'Books', 'Fonts'].includes(baseDir) ? '' : baseDir;
+          return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
+        };
       }
     : undefined;
 
@@ -84,7 +88,7 @@ const getPathResolver = ({
         return {
           baseDir: isPortable ? 0 : BaseDirectory.AppConfig,
           basePrefix: isPortable && execDir ? async () => execDir : appConfigDir,
-          fp: isPortable && execDir ? `${execDir}/${path}` : path,
+          fp: isPortable && execDir ? `${execDir}${path ? `/${path}` : ''}` : path,
           base,
         };
       case 'Cache':
@@ -98,7 +102,7 @@ const getPathResolver = ({
         return {
           baseDir: isCustomBaseDir ? 0 : BaseDirectory.AppLog,
           basePrefix: customBasePrefix ?? appLogDir,
-          fp: customBasePrefixSync ? `${customBasePrefixSync()}/${path}` : path,
+          fp: customBasePrefixSync ? `${customBasePrefixSync()}${path ? `/${path}` : ''}` : path,
           base,
         };
       case 'Data':
@@ -106,8 +110,8 @@ const getPathResolver = ({
           baseDir: customBaseDir ?? BaseDirectory.AppData,
           basePrefix: customBasePrefix ?? appDataDir,
           fp: customBasePrefixSync
-            ? `${customBasePrefixSync()}/${LOCAL_DATA_SUBDIR}/${path}`
-            : `${LOCAL_DATA_SUBDIR}/${path}`,
+            ? `${customBasePrefixSync()}/${DATA_SUBDIR}${path ? `/${path}` : ''}`
+            : `${DATA_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'Books':
@@ -115,8 +119,8 @@ const getPathResolver = ({
           baseDir: customBaseDir ?? BaseDirectory.AppData,
           basePrefix: customBasePrefix || appDataDir,
           fp: customBasePrefixSync
-            ? `${customBasePrefixSync()}/${LOCAL_BOOKS_SUBDIR}/${path}`
-            : `${LOCAL_BOOKS_SUBDIR}/${path}`,
+            ? `${customBasePrefixSync()}/${LOCAL_BOOKS_SUBDIR}${path ? `/${path}` : ''}`
+            : `${LOCAL_BOOKS_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'Fonts':
@@ -124,8 +128,8 @@ const getPathResolver = ({
           baseDir: customBaseDir ?? BaseDirectory.AppData,
           basePrefix: customBasePrefix || appDataDir,
           fp: customBasePrefixSync
-            ? `${customBasePrefixSync()}/${LOCAL_FONTS_SUBDIR}/${path}`
-            : `${LOCAL_FONTS_SUBDIR}/${path}`,
+            ? `${customBasePrefixSync()}/${LOCAL_FONTS_SUBDIR}${path ? `/${path}` : ''}`
+            : `${LOCAL_FONTS_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'None':
@@ -152,7 +156,8 @@ export const nativeFileSystem: FileSystem = {
 
   async getPrefix(base: BaseDir) {
     const { basePrefix, fp, baseDir } = this.resolvePath('', base);
-    const basePath = await basePrefix();
+    let basePath = await basePrefix();
+    basePath = basePath.replace(/\/+$/, '');
     return fp ? (baseDir === 0 ? fp : await join(basePath, fp)) : basePath;
   },
   getURL(path: string) {
@@ -200,6 +205,9 @@ export const nativeFileSystem: FileSystem = {
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
+    if (!(await this.exists(getDirPath(dstPath), base))) {
+      await this.createDir(getDirPath(dstPath), base, true);
+    }
     if (isContentURI(srcPath)) {
       const prefix = await this.getPrefix(base);
       if (!prefix) {
@@ -264,13 +272,37 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
-    const list = await readDir(fp, baseDir ? { baseDir } : undefined);
-    return list.map((entity) => {
-      return {
-        path: entity.name,
-        isDir: entity.isDirectory,
-      };
-    });
+    const entries = await readDir(fp, baseDir ? { baseDir } : undefined);
+    const fileList: FileItem[] = [];
+    const readDirRecursively = async (
+      parent: string,
+      relative: string,
+      entries: DirEntry[],
+      fileList: FileItem[],
+    ) => {
+      for (const entry of entries) {
+        if (entry.isDirectory) {
+          const dir = await join(parent, entry.name);
+          const relativeDir = relative ? await join(relative, entry.name) : entry.name;
+          await readDirRecursively(
+            dir,
+            relativeDir,
+            await readDir(dir, baseDir ? { baseDir } : undefined),
+            fileList,
+          );
+        } else {
+          const filePath = await join(parent, entry.name);
+          const relativePath = relative ? await join(relative, entry.name) : entry.name;
+          const fileInfo = await stat(filePath, baseDir ? { baseDir } : undefined);
+          fileList.push({
+            path: relativePath,
+            size: fileInfo.size,
+          });
+        }
+      }
+    };
+    await readDirRecursively(path, '', entries, fileList);
+    return fileList;
   },
   async exists(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
@@ -294,6 +326,7 @@ export class NativeAppService extends BaseAppService {
   override isMacOSApp = OS_TYPE === 'macos';
   override isLinuxApp = OS_TYPE === 'linux';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
+  override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
   override hasTrafficLight = OS_TYPE === 'macos';
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
@@ -310,9 +343,11 @@ export class NativeAppService extends BaseAppService {
     (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
   override canCustomRootDir = OS_TYPE !== 'ios';
   override distChannel = process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest';
+  private execDir?: string = undefined;
 
   override async init() {
     const execDir = await invoke<string>('get_executable_dir');
+    this.execDir = execDir;
     if (
       process.env['NEXT_PUBLIC_PORTABLE_APP'] ||
       (await this.fs.exists(`${execDir}/${SETTINGS_FILENAME}`, 'None'))
@@ -332,11 +367,20 @@ export class NativeAppService extends BaseAppService {
         execDir,
       });
     }
-    await super.init();
+    await this.prepareBooksDir();
   }
 
   override resolvePath(fp: string, base: BaseDir): ResolvedPath {
     return this.fs.resolvePath(fp, base);
+  }
+
+  async setCustomRootDir(customRootDir: string) {
+    this.fs.resolvePath = getPathResolver({
+      customRootDir,
+      isPortable: this.isPortableApp,
+      execDir: this.execDir,
+    });
+    await this.prepareBooksDir();
   }
 
   async selectDirectory(): Promise<string> {

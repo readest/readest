@@ -2,6 +2,8 @@
 members = [
   "apps/readest-app/src-tauri",
   "packages/tauri/crates/tauri",
+  "packages/tauri/crates/tauri-utils",
+  "packages/tauri/crates/tauri-build",
 ]
 resolver = "2"
 
@@ -31,3 +33,5 @@ rust-version = "1.77.2"
 
 [patch.crates-io]
 tauri = { path = "packages/tauri/crates/tauri" }
+tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
+tauri-build = { path = "packages/tauri/crates/tauri-build" }

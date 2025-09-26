@@ -13,7 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
   formatAuthors,
   formatDate,
-  formatFileSize,
+  formatBytes,
   formatLanguage,
   formatPublisher,
   formatTitle,
@@ -158,9 +158,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           </div>
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('File Size')}</span>
-            <p className='text-neutral-content text-sm'>
-              {formatFileSize(fileSize) || _('Unknown')}
-            </p>
+            <p className='text-neutral-content text-sm'>{formatBytes(fileSize) || _('Unknown')}</p>
           </div>
         </div>
         <div>

@@ -15,10 +15,10 @@ import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/user';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 
-export const LOCAL_BOOKS_SUBDIR = 'Readest/Books';
-export const CLOUD_BOOKS_SUBDIR = 'Readest/Books';
-export const LOCAL_FONTS_SUBDIR = 'Readest/Fonts';
-export const LOCAL_DATA_SUBDIR = 'Readest/Data';
+export const DATA_SUBDIR = 'Readest';
+export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
+export const CLOUD_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
+export const LOCAL_FONTS_SUBDIR = `${DATA_SUBDIR}/Fonts`;
 
 export const SETTINGS_FILENAME = 'settings.json';
 
