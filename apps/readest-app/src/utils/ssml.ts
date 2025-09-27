@@ -36,7 +36,8 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (lang === 'en' && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  return inferLangFromScript(ssml, lang);
+  const textWithoutLangTags = ssml.replace(/<lang[^>]*>.*?<\/lang>/gs, '');
+  return inferLangFromScript(textWithoutLangTags, lang);
 };
 
 export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {

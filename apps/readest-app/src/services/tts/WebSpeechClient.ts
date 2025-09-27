@@ -106,9 +106,7 @@ export class WebSpeechClient implements TTSClient {
           return webSpeechVoice;
         });
         // console.log('Voices', this.#voices);
-        if (this.#voices.length > 0) {
-          resolve();
-        }
+        resolve();
       };
 
       if (this.#synth.getVoices().length > 0) {
