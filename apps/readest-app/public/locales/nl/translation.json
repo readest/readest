@@ -596,5 +596,6 @@
   "Restart App": "Herstart App",
   "Start Migration": "Start Migratie",
   "Advanced Settings": "Geavanceerde Instellingen",
-  "File count: {{size}}": "Bestandsaantal: {{size}}"
+  "File count: {{size}}": "Bestandsaantal: {{size}}",
+  "Background Read Aloud": "Achtergrond Voorlezen"
 }

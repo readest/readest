@@ -596,5 +596,6 @@
   "Restart App": "অ্যাপ পুনরায় চালু করুন",
   "Start Migration": "মাইগ্রেশন শুরু করুন",
   "Advanced Settings": "উন্নত সেটিংস",
-  "File count: {{size}}": "ফাইলের সংখ্যা: {{size}}"
+  "File count: {{size}}": "ফাইলের সংখ্যা: {{size}}",
+  "Background Read Aloud": "পটভূমিতে উচ্চস্বরে পড়ুন"
 }

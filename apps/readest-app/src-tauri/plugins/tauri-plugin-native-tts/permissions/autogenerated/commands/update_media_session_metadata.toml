@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-update-media-session-metadata"
+description = "Enables the update_media_session_metadata command without any pre-configured scope."
+commands.allow = ["update_media_session_metadata"]
+
+[[permission]]
+identifier = "deny-update-media-session-metadata"
+description = "Denies the update_media_session_metadata command without any pre-configured scope."
+commands.deny = ["update_media_session_metadata"]

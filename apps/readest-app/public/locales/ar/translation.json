@@ -612,5 +612,6 @@
   "Restart App": "إعادة تشغيل التطبيق",
   "Start Migration": "بدء الترحيل",
   "Advanced Settings": "إعدادات متقدمة",
-  "File count: {{size}}": "عدد الملفات: {{size}}"
+  "File count: {{size}}": "عدد الملفات: {{size}}",
+  "Background Read Aloud": "قراءة بصوت عالٍ في الخلفية"
 }

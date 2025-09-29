@@ -592,5 +592,6 @@
   "Restart App": "รีสตาร์ทแอป",
   "Start Migration": "เริ่มการย้ายข้อมูล",
   "Advanced Settings": "การตั้งค่าขั้นสูง",
-  "File count: {{size}}": "จำนวนไฟล์: {{size}}"
+  "File count: {{size}}": "จำนวนไฟล์: {{size}}",
+  "Background Read Aloud": "อ่านออกเสียงเบื้องหลัง"
 }

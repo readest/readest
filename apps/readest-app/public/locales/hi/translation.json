@@ -596,5 +596,6 @@
   "Restart App": "एप्लिकेशन पुनरारंभ करें",
   "Start Migration": "माइग्रेशन प्रारंभ करें",
   "Advanced Settings": "उन्नत सेटिंग्स",
-  "File count: {{size}}": "फ़ाइलों की संख्या: {{size}}"
+  "File count: {{size}}": "फ़ाइलों की संख्या: {{size}}",
+  "Background Read Aloud": "पृष्ठभूमि में वाचन"
 }

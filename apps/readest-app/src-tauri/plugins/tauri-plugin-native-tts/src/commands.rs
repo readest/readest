@@ -51,3 +51,27 @@ pub(crate) async fn set_voice<R: Runtime>(app: AppHandle<R>, payload: SetVoiceAr
 pub(crate) async fn get_all_voices<R: Runtime>(app: AppHandle<R>) -> Result<GetVoicesResponse> {
     app.native_tts().get_all_voices()
 }
+
+#[command]
+pub(crate) async fn set_media_session_active<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetMediaSessionActiveRequest,
+) -> Result<()> {
+    app.native_tts().set_media_session_active(payload)
+}
+
+#[command]
+pub(crate) async fn update_media_session_state<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateMediaSessionStateRequest,
+) -> Result<()> {
+    app.native_tts().update_media_session_state(payload)
+}
+
+#[command]
+pub(crate) async fn update_media_session_metadata<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateMediaSessionMetadataRequest,
+) -> Result<()> {
+    app.native_tts().update_media_session_metadata(payload)
+}

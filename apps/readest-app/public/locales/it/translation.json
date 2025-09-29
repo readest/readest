@@ -600,5 +600,6 @@
   "Restart App": "Riavvia App",
   "Start Migration": "Inizia Migrazione",
   "Advanced Settings": "Impostazioni Avanzate",
-  "File count: {{size}}": "Conteggio file: {{size}}"
+  "File count: {{size}}": "Conteggio file: {{size}}",
+  "Background Read Aloud": "Background Read Aloud"
 }

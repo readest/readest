@@ -61,3 +61,26 @@ pub struct SetVoiceArgs {
 pub struct GetVoicesResponse {
     pub voices: Vec<TTSVoice>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetMediaSessionActiveRequest {
+    pub active: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateMediaSessionStateRequest {
+    pub playing: bool,
+    pub position: Option<f64>,
+    pub duration: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateMediaSessionMetadataRequest {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub artwork: Option<String>,
+}

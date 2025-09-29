@@ -596,5 +596,6 @@
   "Restart App": "Uygulamayı Yeniden Başlat",
   "Start Migration": "Taşımayı Başlat",
   "Advanced Settings": "Gelişmiş Ayarlar",
-  "File count: {{size}}": "Dosya sayısı: {{size}}"
+  "File count: {{size}}": "Dosya sayısı: {{size}}",
+  "Background Read Aloud": "Arka Planda Sesli Okuma"
 }

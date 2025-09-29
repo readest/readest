@@ -263,7 +263,7 @@ export function useTextTranslation(
   );
 
   useEffect(() => {
-    if (viewState?.ttsEnabled && progress && document.hidden) {
+    if (enabled.current && viewState?.ttsEnabled && progress && document.hidden) {
       const { range } = progress;
       translateInRange(range);
     }

@@ -592,5 +592,6 @@
   "Restart App": "Khởi động lại ứng dụng",
   "Start Migration": "Bắt đầu di chuyển",
   "Advanced Settings": "Cài đặt nâng cao",
-  "File count: {{size}}": "Số lượng tệp: {{size}}"
+  "File count: {{size}}": "Số lượng tệp: {{size}}",
+  "Background Read Aloud": "Đọc To Nền"
 }

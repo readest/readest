@@ -295,6 +295,18 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the checkPermissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-checkPermissions",
+          "markdownDescription": "Enables the checkPermissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the checkPermissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-checkPermissions",
+          "markdownDescription": "Denies the checkPermissions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_all_voices command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-all-voices",
@@ -355,6 +367,18 @@
           "markdownDescription": "Denies the remove_listener command without any pre-configured scope."
         },
         {
+          "description": "Enables the requestPermissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-requestPermissions",
+          "markdownDescription": "Enables the requestPermissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the requestPermissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-requestPermissions",
+          "markdownDescription": "Denies the requestPermissions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the resume command without any pre-configured scope.",
           "type": "string",
           "const": "allow-resume",
@@ -365,6 +389,18 @@
           "type": "string",
           "const": "deny-resume",
           "markdownDescription": "Denies the resume command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_media_session_active command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-media-session-active",
+          "markdownDescription": "Enables the set_media_session_active command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_media_session_active command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-media-session-active",
+          "markdownDescription": "Denies the set_media_session_active command without any pre-configured scope."
         },
         {
           "description": "Enables the set_pitch command without any pre-configured scope.",
@@ -427,10 +463,34 @@
           "markdownDescription": "Denies the stop command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-registerListener`\n- `allow-remove-listener`",
+          "description": "Enables the update_media_session_metadata command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-media-session-metadata",
+          "markdownDescription": "Enables the update_media_session_metadata command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_media_session_metadata command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-media-session-metadata",
+          "markdownDescription": "Denies the update_media_session_metadata command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_media_session_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-media-session-state",
+          "markdownDescription": "Enables the update_media_session_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_media_session_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-media-session-state",
+          "markdownDescription": "Denies the update_media_session_state command without any pre-configured scope."
+        },
+        {
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-registerListener`\n- `allow-remove-listener`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-registerListener`\n- `allow-remove-listener`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-registerListener`\n- `allow-remove-listener`"
         }
       ]
     }

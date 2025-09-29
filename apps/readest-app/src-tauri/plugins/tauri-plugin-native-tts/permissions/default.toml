@@ -10,6 +10,11 @@ permissions = [
   "allow-set-pitch",
   "allow-set-voice",
   "allow-get-all-voices",
+  "allow-set-media-session-active",
+  "allow-update-media-session-state",
+  "allow-update-media-session-metadata",
+  "allow-checkPermissions",
+  "allow-requestPermissions",
   "allow-registerListener",
   "allow-remove-listener",
 ]

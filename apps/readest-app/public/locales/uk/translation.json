@@ -604,5 +604,6 @@
   "Restart App": "Перезапустити програму",
   "Start Migration": "Почати переміщення",
   "Advanced Settings": "Розширені налаштування",
-  "File count: {{size}}": "Кількість файлів: {{size}}"
+  "File count: {{size}}": "Кількість файлів: {{size}}",
+  "Background Read Aloud": "Озвучування у фоновому режимі"
 }
