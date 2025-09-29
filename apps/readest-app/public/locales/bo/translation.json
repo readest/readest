@@ -592,5 +592,6 @@
   "Restart App": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།",
   "Start Migration": "མཉམ་དུ་ཀློག་འཛུལ་བྱས་མ་ཐུབ།",
   "Advanced Settings": "དབང་བསྐྱོད་སྒྲིག་སྟངས།",
-  "File count: {{size}}": "དེབ་གནས་བཅས་པའི་ཨང་། {{size}}"
+  "File count: {{size}}": "དེབ་གནས་བཅས་པའི་ཨང་། {{size}}",
+  "Background Read Aloud": "གནས་སྟངས་ཀྱིས་ཀློག་བྱེད།"
 }

@@ -8,6 +8,11 @@ const COMMANDS: &[&str] = &[
     "set_pitch",
     "set_voice",
     "get_all_voices",
+    "set_media_session_active",
+    "update_media_session_state",
+    "update_media_session_metadata",
+    "checkPermissions",
+    "requestPermissions",
     "registerListener",
     "remove_listener",
 ];

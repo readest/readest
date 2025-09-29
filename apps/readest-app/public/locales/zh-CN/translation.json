@@ -592,5 +592,6 @@
   "Restart App": "重启应用",
   "Start Migration": "开始迁移",
   "Advanced Settings": "高级设置",
-  "File count: {{size}}": "文件数量: {{size}}"
+  "File count: {{size}}": "文件数量: {{size}}",
+  "Background Read Aloud": "后台语音朗读"
 }

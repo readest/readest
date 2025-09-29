@@ -600,5 +600,6 @@
   "Restart App": "Reiniciar Aplicativo",
   "Start Migration": "Iniciar Migração",
   "Advanced Settings": "Configurações Avançadas",
-  "File count: {{size}}": "Contagem de arquivos: {{size}}"
+  "File count: {{size}}": "Contagem de arquivos: {{size}}",
+  "Background Read Aloud": "Leitura em Segundo Plano"
 }

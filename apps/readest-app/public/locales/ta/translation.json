@@ -596,5 +596,6 @@
   "Restart App": "செயலியை மீண்டும் தொடங்கவும்",
   "Start Migration": "மொத்தமாக்கலை தொடங்கவும்",
   "Advanced Settings": "மேம்பட்ட அமைப்புகள்",
-  "File count: {{size}}": "கோப்பு எண்ணிக்கை: {{size}}"
+  "File count: {{size}}": "கோப்பு எண்ணிக்கை: {{size}}",
+  "Background Read Aloud": "பின்னணி உரை வாசிப்பு"
 }

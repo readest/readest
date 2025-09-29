@@ -596,5 +596,6 @@
   "Restart App": "යෙදුම නැවත ආරම්භ කරන්න",
   "Start Migration": "මැතිවරණය ආරම්භ කරන්න",
   "Advanced Settings": "උසස් සැකසුම්",
-  "File count: {{size}}": "ගොනු ගණන: {{size}}"
+  "File count: {{size}}": "ගොනු ගණන: {{size}}",
+  "Background Read Aloud": "පසුබිම් පවසා කියවීම"
 }

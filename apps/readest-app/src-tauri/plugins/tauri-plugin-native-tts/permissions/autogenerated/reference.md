@@ -13,6 +13,11 @@ Default permissions for the plugin
 - `allow-set-pitch`
 - `allow-set-voice`
 - `allow-get-all-voices`
+- `allow-set-media-session-active`
+- `allow-update-media-session-state`
+- `allow-update-media-session-metadata`
+- `allow-checkPermissions`
+- `allow-requestPermissions`
 - `allow-registerListener`
 - `allow-remove-listener`
 
@@ -24,6 +29,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`native-tts:allow-checkPermissions`
+
+</td>
+<td>
+
+Enables the checkPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-checkPermissions`
+
+</td>
+<td>
+
+Denies the checkPermissions command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>
@@ -158,6 +189,32 @@ Denies the remove_listener command without any pre-configured scope.
 <tr>
 <td>
 
+`native-tts:allow-requestPermissions`
+
+</td>
+<td>
+
+Enables the requestPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-requestPermissions`
+
+</td>
+<td>
+
+Denies the requestPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-tts:allow-resume`
 
 </td>
@@ -177,6 +234,32 @@ Enables the resume command without any pre-configured scope.
 <td>
 
 Denies the resume command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-set-media-session-active`
+
+</td>
+<td>
+
+Enables the set_media_session_active command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-set-media-session-active`
+
+</td>
+<td>
+
+Denies the set_media_session_active command without any pre-configured scope.
 
 </td>
 </tr>
@@ -307,6 +390,58 @@ Enables the stop command without any pre-configured scope.
 <td>
 
 Denies the stop command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-update-media-session-metadata`
+
+</td>
+<td>
+
+Enables the update_media_session_metadata command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-update-media-session-metadata`
+
+</td>
+<td>
+
+Denies the update_media_session_metadata command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-update-media-session-state`
+
+</td>
+<td>
+
+Enables the update_media_session_state command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-update-media-session-state`
+
+</td>
+<td>
+
+Denies the update_media_session_state command without any pre-configured scope.
 
 </td>
 </tr>

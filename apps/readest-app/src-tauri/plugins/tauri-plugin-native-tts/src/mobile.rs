@@ -87,3 +87,36 @@ impl<R: Runtime> NativeTts<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn set_media_session_active(
+        &self,
+        payload: SetMediaSessionActiveRequest,
+    ) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_media_session_active", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn update_media_session_state(
+        &self,
+        payload: UpdateMediaSessionStateRequest,
+    ) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("update_media_session_state", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn update_media_session_metadata(
+        &self,
+        payload: UpdateMediaSessionMetadataRequest,
+    ) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("update_media_session_metadata", payload)
+            .map_err(Into::into)
+    }
+}

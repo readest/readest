@@ -45,6 +45,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::set_pitch,
             commands::set_voice,
             commands::get_all_voices,
+            commands::set_media_session_active,
+            commands::update_media_session_state,
+            commands::update_media_session_metadata,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

@@ -41,4 +41,22 @@ impl<R: Runtime> NativeTts<R> {
     pub fn get_all_voices(&self) -> crate::Result<GetVoicesResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+    pub fn set_media_session_active(
+        &self,
+        _payload: SetMediaSessionActiveRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+    pub fn update_media_session_state(
+        &self,
+        _payload: UpdateMediaSessionStateRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+    pub fn update_media_session_metadata(
+        &self,
+        _payload: UpdateMediaSessionMetadataRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }
