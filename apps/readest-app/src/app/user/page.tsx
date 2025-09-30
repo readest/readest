@@ -341,7 +341,7 @@ const ProfilePage = () => {
     <div
       className={clsx(
         'bg-base-100 inset-0 select-none overflow-hidden',
-        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        'h-[100vh] supports-[height:100dvh]:h-[100dvh]',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >

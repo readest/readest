@@ -38,3 +38,7 @@ export function hexToOklch(hexColor: string): string {
 export const getContrastOklch = (hexColor: string): string => {
   return tinycolor(hexColor).isDark() ? '100% 0 0' : '0% 0 0';
 };
+
+export const getContrastHex = (hex: string): string => {
+  return tinycolor(hex).isDark() ? '#FFFFFF' : '#000000';
+};

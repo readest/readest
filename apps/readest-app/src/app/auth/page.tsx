@@ -345,7 +345,7 @@ export default function AuthPage() {
     <div
       className={clsx(
         'bg-base-100 inset-0 flex select-none flex-col items-center overflow-hidden',
-        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        'h-[100vh] supports-[height:100dvh]:h-[100dvh]',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >

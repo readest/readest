@@ -4,7 +4,7 @@ import posthog from 'posthog-js';
 import { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { parseWebViewVersion } from '@/utils/ua';
+import { parseWebViewInfo } from '@/utils/ua';
 import { handleGlobalError } from '@/utils/error';
 
 interface ErrorPageProps {
@@ -18,7 +18,7 @@ export default function Error({ error, reset }: ErrorPageProps) {
   const [browserInfo, setBrowserInfo] = useState('');
 
   useEffect(() => {
-    setBrowserInfo(parseWebViewVersion(appService));
+    setBrowserInfo(parseWebViewInfo(appService));
     posthog.captureException(error);
     handleGlobalError(error);
   }, [appService, error]);

@@ -353,16 +353,21 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         ))}
         {viewMode === 'grid' && !navBooksGroup && allBookshelfItems.length > 0 && (
-          <button
-            aria-label={_('Import Books')}
-            className={clsx(
-              'border-1 bg-base-100 hover:bg-base-300/50 flex items-center justify-center',
-              'mx-0 my-4 aspect-[28/41] sm:mx-4',
-            )}
-            onClick={handleImportBooks}
-          >
-            <PiPlus className='size-10' color='gray' />
-          </button>
+          <div className={clsx('mx-0 my-4 sm:mx-4')}>
+            <button
+              aria-label={_('Import Books')}
+              className={clsx(
+                'border-1 bg-base-100 hover:bg-base-300/50',
+                'flex items-center justify-center',
+                'aspect-[28/41] w-full',
+              )}
+              onClick={handleImportBooks}
+            >
+              <div className='flex items-center justify-center'>
+                <PiPlus className='size-10' color='gray' />
+              </div>
+            </button>
+          </div>
         )}
       </div>
       {loading && (

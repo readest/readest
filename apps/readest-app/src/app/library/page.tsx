@@ -631,7 +631,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       aria-label='Your Library'
       className={clsx(
         'library-page bg-base-200 text-base-content flex select-none flex-col overflow-hidden',
-        appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh',
+        'h-[100vh] supports-[height:100dvh]:h-[100dvh]',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
