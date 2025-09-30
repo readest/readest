@@ -593,5 +593,7 @@
   "Start Migration": "開始遷移",
   "Advanced Settings": "高級設置",
   "File count: {{size}}": "文件數量: {{size}}",
-  "Background Read Aloud": "背景朗讀"
+  "Background Read Aloud": "背景朗讀",
+  "Ready to read aloud": "朗讀準備就緒",
+  "Read Aloud": "朗讀"
 }

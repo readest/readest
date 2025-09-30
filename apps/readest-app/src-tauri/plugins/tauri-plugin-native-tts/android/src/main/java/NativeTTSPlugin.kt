@@ -99,6 +99,11 @@ class UpdateMediaSessionStateArgs {
 @InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
+  var keepAppInForeground: Boolean? = null
+  var notificationTitle: String? = null
+  var notificationText: String? = null
+  var foregroundServiceTitle: String? = null
+  var foregroundServiceText: String? = null
 }
 
 class MediaForegroundService : Service() {
@@ -134,10 +139,10 @@ class MediaForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "TTS Media Playback",
+                NativeTTSPlugin.NOTIFICATION_TITLE,
                 NotificationManager.IMPORTANCE_MIN
             ).apply {
-                description = "Controls for TTS media playback"
+                description = NativeTTSPlugin.NOTIFICATION_TEXT
                 setShowBadge(false)
                 setSound(null, null)
             }
@@ -148,8 +153,8 @@ class MediaForegroundService : Service() {
 
     private fun startForegroundService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("TTS Media Session")
-            .setContentText("Text-to-speech playback active")
+            .setContentTitle(NativeTTSPlugin.FOREGROUND_SERVICE_TITLE)
+            .setContentText(NativeTTSPlugin.FOREGROUND_SERVICE_TEXT)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
             .setSilent(true)
@@ -183,6 +188,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     companion object {
         private const val TAG = "NativeTTSPlugin"
         private const val CHANNEL_NAME = "tts_events"
+        var NOTIFICATION_TITLE = "Read Aloud"
+        var NOTIFICATION_TEXT = "Ready to read aloud"
+        var FOREGROUND_SERVICE_TITLE = "Read Aloud"
+        var FOREGROUND_SERVICE_TEXT = "Ready to read aloud"
     }
     
     private var textToSpeech: TextToSpeech? = null
@@ -198,6 +207,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     private var player: Player? = null
     private var mediaSession: MediaSession? = null
     private var isMediaSessionActive = false
+    private var isForegroundServiceRunning = false
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -668,7 +678,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         var args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
         val isPlaying = args.playing ?: false
         val position = args.position ?: 0.0
-        val duration = args.duration ?: 0.0
         
         try {
             player?.let { player ->
@@ -687,16 +696,28 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     fun set_media_session_active(invoke: Invoke) {
         var args = invoke.parseArgs(SetMediaSessionActiveArgs::class.java)
         val active = args.active ?: true
-        
+        val keepAppInForeground = args.keepAppInForeground ?: false
+
+        args.notificationTitle?.let { NOTIFICATION_TITLE = it }
+        args.notificationText?.let { NOTIFICATION_TEXT = it }
+        args.foregroundServiceTitle?.let { FOREGROUND_SERVICE_TITLE = it }
+        args.foregroundServiceText?.let { FOREGROUND_SERVICE_TEXT = it }
+
         try {
             if (active && !isMediaSessionActive) {
                 initializeMediaSession()
-                startForegroundService()
+                if (keepAppInForeground) {
+                    startForegroundService()
+                    isForegroundServiceRunning = true
+                }
                 isMediaSessionActive = true
                 Log.d(TAG, "Media session activated with foreground service")
             } else if (!active && isMediaSessionActive) {
                 deinitializeMediaSession()
-                stopForegroundService()
+                if (isForegroundServiceRunning) {
+                    stopForegroundService()
+                    isForegroundServiceRunning = false
+                }
                 isMediaSessionActive = false
                 Log.d(TAG, "Media session deactivated and foreground service stopped")
             }
@@ -710,7 +731,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     fun destroy() {
         try {
             if (isMediaSessionActive) {
-                stopForegroundService()
+                if (isForegroundServiceRunning) {
+                    stopForegroundService()
+                    isForegroundServiceRunning = false
+                }
                 isMediaSessionActive = false
             }
 

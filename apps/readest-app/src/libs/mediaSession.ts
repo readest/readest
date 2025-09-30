@@ -16,6 +16,15 @@ export interface PlaybackState {
   duration: number;
 }
 
+export interface MediaSessionState {
+  active: boolean;
+  keepAppInForeground?: boolean;
+  notificationTitle?: string;
+  notificationText?: string;
+  foregroundServiceTitle?: string;
+  foregroundServiceText?: string;
+}
+
 interface Permissions {
   postNotification: PermissionState;
 }
@@ -25,16 +34,16 @@ export class TauriMediaSession {
   private eventListenerInited: boolean = false;
   private eventListeners: PluginListener[] = [];
 
-  private async initializeListeners(keepAppInForeground: boolean) {
-    if (keepAppInForeground) {
-      const permission = await invoke<Permissions>('plugin:native-tts|checkPermissions');
-      if (permission.postNotification.startsWith('prompt')) {
-        await invoke<Permissions>('plugin:native-tts|requestPermissions', {
-          permissions: ['postNotification'],
-        });
-      }
+  private async requestPostNotificationPermission() {
+    const permission = await invoke<Permissions>('plugin:native-tts|checkPermissions');
+    if (permission.postNotification.startsWith('prompt')) {
+      await invoke<Permissions>('plugin:native-tts|requestPermissions', {
+        permissions: ['postNotification'],
+      });
     }
+  }
 
+  private async initializeListeners() {
     if (this.eventListenerInited) return;
     this.eventListenerInited = true;
 
@@ -103,14 +112,19 @@ export class TauriMediaSession {
     }
   }
 
-  async setActive(active: boolean, keepAppInForeground: boolean = false) {
+  async setActive(sessionState: MediaSessionState) {
     try {
-      if (active) {
-        await this.initializeListeners(keepAppInForeground);
+      if (sessionState.active) {
+        if (sessionState.keepAppInForeground) {
+          await this.requestPostNotificationPermission();
+        }
+        await this.initializeListeners();
       } else {
         await this.cleanupListeners();
       }
-      await invoke('plugin:native-tts|set_media_session_active', { payload: { active } });
+      await invoke('plugin:native-tts|set_media_session_active', {
+        payload: sessionState,
+      });
     } catch (error) {
       console.error('Failed to set media session active state:', error);
     }

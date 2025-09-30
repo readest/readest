@@ -597,5 +597,7 @@
   "Start Migration": "Taşımayı Başlat",
   "Advanced Settings": "Gelişmiş Ayarlar",
   "File count: {{size}}": "Dosya sayısı: {{size}}",
-  "Background Read Aloud": "Arka Planda Sesli Okuma"
+  "Background Read Aloud": "Arka Planda Sesli Okuma",
+  "Ready to read aloud": "Sesli okumaya hazır",
+  "Read Aloud": "Sesli Oku"
 }

@@ -597,5 +597,7 @@
   "Start Migration": "Start Migratie",
   "Advanced Settings": "Geavanceerde Instellingen",
   "File count: {{size}}": "Bestandsaantal: {{size}}",
-  "Background Read Aloud": "Achtergrond Voorlezen"
+  "Background Read Aloud": "Achtergrond Voorlezen",
+  "Ready to read aloud": "Klaar om voor te lezen",
+  "Read Aloud": "Voorlezen"
 }

@@ -605,5 +605,7 @@
   "Start Migration": "Rozpocznij migrację",
   "Advanced Settings": "Ustawienia zaawansowane",
   "File count: {{size}}": "Liczba plików: {{size}}",
-  "Background Read Aloud": "Czytanie na głos w tle"
+  "Background Read Aloud": "Czytanie na głos w tle",
+  "Ready to read aloud": "Gotowy do przeczytania na głos",
+  "Read Aloud": "Czytaj na głos"
 }

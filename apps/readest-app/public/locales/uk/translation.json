@@ -605,5 +605,7 @@
   "Start Migration": "Почати переміщення",
   "Advanced Settings": "Розширені налаштування",
   "File count: {{size}}": "Кількість файлів: {{size}}",
-  "Background Read Aloud": "Озвучування у фоновому режимі"
+  "Background Read Aloud": "Озвучування у фоновому режимі",
+  "Ready to read aloud": "Готовий до читання вголос",
+  "Read Aloud": "Читати вголос"
 }

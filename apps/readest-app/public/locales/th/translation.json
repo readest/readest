@@ -593,5 +593,7 @@
   "Start Migration": "เริ่มการย้ายข้อมูล",
   "Advanced Settings": "การตั้งค่าขั้นสูง",
   "File count: {{size}}": "จำนวนไฟล์: {{size}}",
-  "Background Read Aloud": "อ่านออกเสียงเบื้องหลัง"
+  "Background Read Aloud": "อ่านออกเสียงเบื้องหลัง",
+  "Ready to read aloud": "พร้อมที่จะอ่านออกเสียง",
+  "Read Aloud": "อ่านออกเสียง"
 }
