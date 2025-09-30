@@ -136,7 +136,10 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
   const deinitMediaSession = async () => {
     if (mediaSessionRef.current && mediaSessionRef.current instanceof TauriMediaSession) {
-      await mediaSessionRef.current.setActive({ active: false });
+      await mediaSessionRef.current.setActive({
+        active: false,
+        keepAppInForeground: settings.alwaysInForeground,
+      });
     }
     mediaSessionRef.current = null;
   };

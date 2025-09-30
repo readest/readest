@@ -1,5 +1,6 @@
 'use client';
 
+import i18n from '@/i18n/i18n';
 import { useEffect } from 'react';
 import { IconContext } from 'react-icons';
 import { AuthProvider } from '@/context/AuthContext';
@@ -7,13 +8,14 @@ import { useEnv } from '@/context/EnvContext';
 import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { getLocale } from '@/utils/misc';
-import i18n from '@/i18n/i18n';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { appService } = useEnv();
+  const { applyUILanguage } = useSettingsStore();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -34,6 +36,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     loadDataTheme();
     if (appService) {
       initSystemThemeListener(appService);
+      appService.loadSettings().then((settings) => {
+        applyUILanguage(settings.globalViewSettings?.uiLanguage);
+      });
     }
   }, [appService]);
 
