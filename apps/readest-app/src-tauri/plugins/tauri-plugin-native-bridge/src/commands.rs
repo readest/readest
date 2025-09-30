@@ -126,3 +126,10 @@ pub(crate) async fn get_safe_area_insets<R: Runtime>(
 ) -> Result<GetSafeAreaInsetsResponse> {
     app.native_bridge().get_safe_area_insets()
 }
+
+#[command]
+pub(crate) async fn request_manage_storage_permission<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<RequestManageStoragePermissionResponse> {
+    app.native_bridge().request_manage_storage_permission()
+}

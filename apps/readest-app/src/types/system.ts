@@ -9,6 +9,7 @@ export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'un
 export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
 export type SelectDirectoryMode = 'read' | 'write';
+export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
 
 export type ResolvedPath = {
   baseDir: number;
@@ -60,7 +61,7 @@ export interface AppService {
   isPortableApp: boolean;
   isDesktopApp: boolean;
   canCustomizeRootDir: boolean;
-  distChannel: string;
+  distChannel: DistChannel;
 
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;

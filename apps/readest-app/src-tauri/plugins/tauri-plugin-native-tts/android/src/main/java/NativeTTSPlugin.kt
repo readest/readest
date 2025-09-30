@@ -150,10 +150,10 @@ class MediaForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("TTS Media Session")
             .setContentText("Text-to-speech playback active")
-            .setSmallIcon(android.R.drawable.ic_media_play) // Replace with your icon
+            .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
             .setSilent(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
 

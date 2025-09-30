@@ -15,6 +15,9 @@ const COMMANDS: &[&str] = &[
     "iap_restore_purchases",
     "get_system_color_scheme",
     "get_safe_area_insets",
+    "request_manage_storage_permission",
+    "checkPermissions",
+    "requestPermissions",
 ];
 
 fn main() {

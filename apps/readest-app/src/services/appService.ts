@@ -3,6 +3,7 @@ import { SystemSettings } from '@/types/settings';
 import {
   AppPlatform,
   AppService,
+  DistChannel,
   FileItem,
   OsPlatform,
   ResolvedPath,
@@ -86,7 +87,7 @@ export abstract class BaseAppService implements AppService {
   hasUpdater = false;
   hasOrientationLock = false;
   canCustomizeRootDir = false;
-  distChannel = 'readest';
+  distChannel = 'readest' as DistChannel;
 
   protected abstract fs: FileSystem;
   protected abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
