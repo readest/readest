@@ -17,4 +17,7 @@ permissions = [
   "allow-iap-restore-purchases",
   "allow-get-system-color-scheme",
   "allow-get-safe-area-insets",
+  "allow-request-manage-storage-permission",
+  "allow-checkPermissions",
+  "allow-requestPermissions",
 ]

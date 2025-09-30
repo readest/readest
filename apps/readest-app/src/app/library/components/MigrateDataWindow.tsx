@@ -6,7 +6,8 @@ import {
   RiErrorWarningFill,
   RiLoader2Line,
 } from 'react-icons/ri';
-import { join } from '@tauri-apps/api/path';
+import { documentDir, join } from '@tauri-apps/api/path';
+import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -40,6 +41,10 @@ interface MigrationProgress {
   currentFile?: string;
 }
 
+interface Permissions {
+  manageStorage: PermissionState;
+}
+
 export const MigrateDataWindow = () => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
@@ -56,12 +61,14 @@ export const MigrateDataWindow = () => {
   const [filesToMigrate, setFilesToMigrate] = useState<FileItem[]>([]);
   const [currentDirFileCount, setCurrentDirFileCount] = useState('');
   const [currentDirFileSize, setCurrentDirFileSize] = useState(0);
+  const [androidNewDirs, setAndroidNewDirs] = useState<{ path: string; label: string }[]>([]);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
       setIsOpen(event.detail.visible);
       if (event.detail.visible) {
         loadCurrentDataDir();
+        loadAndroidDirs();
       }
     };
 
@@ -93,6 +100,27 @@ export const MigrateDataWindow = () => {
     }
   };
 
+  const loadAndroidDirs = async () => {
+    const sdcardDirs = [
+      { path: '/storage/emulated/0', label: '/sdcard' },
+      { path: '/storage/emulated/0/Books', label: '/sdcard/Books' },
+      { path: '/storage/emulated/0/Documents', label: '/sdcard/Documents' },
+      { path: '/storage/emulated/0/Download', label: '/sdcard/Download' },
+    ];
+    try {
+      if (appService?.isAndroidApp) {
+        const localDocumentDir = await documentDir();
+        setAndroidNewDirs([
+          // For Google Play version we won't request permission to access root of /sdcard
+          ...(appService?.distChannel === 'playstore' ? [] : sdcardDirs),
+          { path: localDocumentDir, label: '/sdcard/APPDATA/Documents' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error loading app local data directory:', error);
+    }
+  };
+
   const handleSelectNewDir = async () => {
     setMigrationStatus('selecting');
     setErrorMessage('');
@@ -116,6 +144,16 @@ export const MigrateDataWindow = () => {
 
   const handleSelectedNewDir = async (dir: string) => {
     setErrorMessage('');
+
+    if (!dir.includes('Android/data')) {
+      let permission = await invoke<Permissions>('plugin:native-bridge|checkPermissions');
+      if (permission.manageStorage !== 'granted') {
+        permission = await invoke<Permissions>(
+          'plugin:native-bridge|request_manage_storage_permission',
+        );
+      }
+      if (permission.manageStorage !== 'granted') return;
+    }
 
     try {
       const newDataDir = await join(dir, DATA_SUBDIR);
@@ -221,11 +259,6 @@ export const MigrateDataWindow = () => {
   const fileRevealLabel =
     FILE_REVEAL_LABELS[osPlatform as FILE_REVEAL_PLATFORMS] || FILE_REVEAL_LABELS.default;
 
-  const androidNewDirs = [
-    { path: '/storage/emulated/0/Documents' },
-    { path: '/storage/emulated/0/Download' },
-  ];
-
   return (
     <Dialog
       id='migrate_data_dir_window'
@@ -299,9 +332,9 @@ export const MigrateDataWindow = () => {
                   {androidNewDirs.map((dir) => (
                     <MenuItem
                       key={dir.path}
-                      toggled={newDataDir === dir.path}
+                      toggled={newDataDir.split(`/${DATA_SUBDIR}`)[0] === dir.path}
                       transient
-                      label={dir.path}
+                      label={dir.label}
                       onClick={() => handleSelectedNewDir(dir.path)}
                     />
                   ))}
@@ -387,7 +420,7 @@ export const MigrateDataWindow = () => {
                 <span className='font-medium'>{_('Migration failed')}</span>
               </div>
               <div className='bg-error/10 border-error/20 rounded-lg border p-3'>
-                <p className='text-error/80 text-sm'>{errorMessage}</p>
+                <p className='text-error/80 break-all text-sm'>{errorMessage}</p>
               </div>
             </div>
           )}

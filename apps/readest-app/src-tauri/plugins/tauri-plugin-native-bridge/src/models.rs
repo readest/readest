@@ -167,3 +167,9 @@ pub struct GetSafeAreaInsetsResponse {
     pub left: f64,
     pub right: f64,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RequestManageStoragePermissionResponse {
+    pub manage_storage: String, // "granted", "denied", or "prompt"
+}

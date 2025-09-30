@@ -106,4 +106,10 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn get_safe_area_insets(&self) -> crate::Result<GetSafeAreaInsetsResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn request_manage_storage_permission(
+        &self,
+    ) -> crate::Result<RequestManageStoragePermissionResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }

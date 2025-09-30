@@ -1,10 +1,13 @@
 package com.readest.native_bridge
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.view.View
 import android.view.KeyEvent
 import android.view.WindowInsets
@@ -13,15 +16,19 @@ import android.view.WindowInsetsController
 import android.graphics.Color
 import android.webkit.WebView
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.graphics.fonts.SystemFonts
 import android.graphics.fonts.Font
 import androidx.core.view.WindowCompat
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
+import app.tauri.annotation.Permission
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
@@ -67,7 +74,11 @@ interface KeyDownInterceptor {
     fun interceptBackKey(enabled: Boolean)
 }
 
-@TauriPlugin
+@TauriPlugin(
+  permissions = [
+    Permission(strings = [Manifest.permission.MANAGE_EXTERNAL_STORAGE], alias = "manageStorage")
+  ]
+)
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = NativeBridge()
     private var redirectScheme = "readest"
@@ -75,6 +86,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     companion object {
         var pendingInvoke: Invoke? = null
+        private const val REQUEST_MANAGE_STORAGE = 1001
     }
 
     override fun load(webView: WebView) {
@@ -401,5 +413,54 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("left", 0)
         }
         invoke.resolve(ret)
+    }
+
+    @Command
+    fun request_manage_storage_permission(invoke: Invoke) {
+        val ret = JSObject()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = Uri.parse("package:${activity.packageName}")
+                    activity.startActivityForResult(intent, REQUEST_MANAGE_STORAGE)
+                    ret.put("manageStorage", "denied")
+                    invoke.resolve(ret)
+                } catch (e: Exception) {
+                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    activity.startActivity(intent)
+                    ret.put("manageStorage", "denied")
+                    invoke.resolve(ret)
+                }
+            } else {
+                ret.put("manageStorage", "granted")
+                invoke.resolve(ret)
+            }
+        } else {
+            val readPermission = ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+            val writePermission = ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            if (readPermission == PackageManager.PERMISSION_GRANTED &&
+                writePermission == PackageManager.PERMISSION_GRANTED) {
+                ret.put("manageStorage", "granted")
+                invoke.resolve(ret)
+            } else {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ),
+                    REQUEST_MANAGE_STORAGE
+                )
+                ret.put("manageStorage", "prompt")
+                invoke.resolve(ret)
+            }
+        }
     }
 }

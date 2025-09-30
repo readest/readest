@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-request-manage-storage-permission"
+description = "Enables the request_manage_storage_permission command without any pre-configured scope."
+commands.allow = ["request_manage_storage_permission"]
+
+[[permission]]
+identifier = "deny-request-manage-storage-permission"
+description = "Denies the request_manage_storage_permission command without any pre-configured scope."
+commands.deny = ["request_manage_storage_permission"]
