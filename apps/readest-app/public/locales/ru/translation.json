@@ -605,5 +605,7 @@
   "Start Migration": "Начать миграцию",
   "Advanced Settings": "Расширенные настройки",
   "File count: {{size}}": "Количество файлов: {{size}}",
-  "Background Read Aloud": "Озвучивание в фоне"
+  "Background Read Aloud": "Озвучивание в фоне",
+  "Ready to read aloud": "Готов к чтению вслух",
+  "Read Aloud": "Читать вслух"
 }

@@ -597,5 +597,7 @@
   "Start Migration": "মাইগ্রেশন শুরু করুন",
   "Advanced Settings": "উন্নত সেটিংস",
   "File count: {{size}}": "ফাইলের সংখ্যা: {{size}}",
-  "Background Read Aloud": "পটভূমিতে উচ্চস্বরে পড়ুন"
+  "Background Read Aloud": "পটভূমিতে উচ্চস্বরে পড়ুন",
+  "Ready to read aloud": "উচ্চস্বরে পড়ার জন্য প্রস্তুত",
+  "Read Aloud": "উচ্চস্বরে পড়ুন"
 }

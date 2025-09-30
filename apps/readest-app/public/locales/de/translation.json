@@ -597,5 +597,7 @@
   "Start Migration": "Migration starten",
   "Advanced Settings": "Erweiterte Einstellungen",
   "File count: {{size}}": "Dateianzahl: {{size}}",
-  "Background Read Aloud": "Hintergrund-Vorlesen"
+  "Background Read Aloud": "Hintergrund-Vorlesen",
+  "Ready to read aloud": "Bereit zum Vorlesen",
+  "Read Aloud": "Vorlesen"
 }

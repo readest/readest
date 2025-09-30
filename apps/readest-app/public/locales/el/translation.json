@@ -597,5 +597,7 @@
   "Start Migration": "Έναρξη μετανάστευσης",
   "Advanced Settings": "Προηγμένες ρυθμίσεις",
   "File count: {{size}}": "Αριθμός αρχείων: {{size}}",
-  "Background Read Aloud": "Ανάγνωση στο παρασκήνιο"
+  "Background Read Aloud": "Ανάγνωση στο παρασκήνιο",
+  "Ready to read aloud": "Έτοιμο για ανάγνωση",
+  "Read Aloud": "Ανάγνωση"
 }

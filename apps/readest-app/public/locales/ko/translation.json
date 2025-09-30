@@ -593,5 +593,7 @@
   "Start Migration": "마이그레이션 시작",
   "Advanced Settings": "고급 설정",
   "File count: {{size}}": "파일 수: {{size}}",
-  "Background Read Aloud": "백그라운드 음성 읽기"
+  "Background Read Aloud": "백그라운드 음성 읽기",
+  "Ready to read aloud": "읽기 준비 완료",
+  "Read Aloud": "음성 읽기"
 }

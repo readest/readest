@@ -593,5 +593,7 @@
   "Start Migration": "移行を開始",
   "Advanced Settings": "詳細設定",
   "File count: {{size}}": "ファイル数: {{size}}",
-  "Background Read Aloud": "バックグラウンド読み上げ"
+  "Background Read Aloud": "バックグラウンド読み上げ",
+  "Ready to read aloud": "読み上げの準備ができました",
+  "Read Aloud": "読み上げ"
 }

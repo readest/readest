@@ -593,5 +593,7 @@
   "Start Migration": "Mulai Migrasi",
   "Advanced Settings": "Pengaturan Lanjutan",
   "File count: {{size}}": "Jumlah file: {{size}}",
-  "Background Read Aloud": "Bacakan Latar Belakang"
+  "Background Read Aloud": "Bacakan Latar Belakang",
+  "Ready to read aloud": "Siap untuk dibacakan",
+  "Read Aloud": "Bacakan"
 }

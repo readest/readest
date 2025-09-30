@@ -593,5 +593,7 @@
   "Start Migration": "Bắt đầu di chuyển",
   "Advanced Settings": "Cài đặt nâng cao",
   "File count: {{size}}": "Số lượng tệp: {{size}}",
-  "Background Read Aloud": "Đọc To Nền"
+  "Background Read Aloud": "Đọc To Nền",
+  "Ready to read aloud": "Sẵn sàng để đọc to",
+  "Read Aloud": "Đọc To"
 }
