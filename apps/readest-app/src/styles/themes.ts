@@ -1,6 +1,6 @@
 import tinycolor from 'tinycolor2';
 import { stubTranslation as _ } from '../utils/misc';
-import { getContrastOklch, hexToOklch } from '../utils/color';
+import { getContrastHex, getContrastOklch, hexToOklch } from '../utils/color';
 
 export type BaseColor = {
   bg: string;
@@ -160,8 +160,8 @@ export const themes = [
   },
 ] as Theme[];
 
-const generateCustomThemeVariables = (palette: Palette): string => {
-  return `
+const generateCustomThemeVariables = (palette: Palette, fallbackIncluded = false): string => {
+  const colors = `
     --b1: ${hexToOklch(palette['base-100'])};
     --b2: ${hexToOklch(palette['base-200'])};
     --b3: ${hexToOklch(palette['base-300'])};
@@ -188,22 +188,64 @@ const generateCustomThemeVariables = (palette: Palette): string => {
     --er: 70.9% 0.184 22;
     --erc: 100% 0 0;
   `;
+
+  const fallbackColors = `
+    --fallback-b1: ${palette['base-100']};
+    --fallback-b2: ${palette['base-200']};
+    --fallback-b3: ${palette['base-300']};
+    --fallback-bc: ${palette['base-content']};
+
+    --fallback-p: ${palette.primary};
+    --fallback-pc: ${getContrastHex(palette.primary)};
+
+    --fallback-s: ${palette.secondary};
+    --fallback-sc: ${getContrastHex(palette.secondary)};
+
+    --fallback-a: ${palette.accent};
+    --fallback-ac: ${getContrastHex(palette.accent)};
+
+    --fallback-n: ${palette.neutral};
+    --fallback-nc: ${palette['neutral-content']};
+
+    --fallback-in: #ff0000;
+    --fallback-inc: #ffffff;
+    --fallback-su: #00ff00;
+    --fallback-suc: #000000;
+    --fallback-wa: #ffff00;
+    --fallback-wac: #000000;
+    --fallback-er: #ff8000;
+    --fallback-erc: #000000;
+  `;
+
+  return colors + (fallbackIncluded ? fallbackColors : '');
 };
 
-export const applyCustomTheme = (customTheme: CustomTheme) => {
-  const lightPalette = generateLightPalette(customTheme.colors.light);
-  const darkPalette = generateDarkPalette(customTheme.colors.dark);
+export const applyCustomTheme = (
+  customTheme?: CustomTheme,
+  themeName?: string,
+  fallbackIncluded = false,
+) => {
+  if (!customTheme && !themeName) return;
 
-  const lightThemeName = `${customTheme.name}-light`;
-  const darkThemeName = `${customTheme.name}-dark`;
+  const lightThemeName = customTheme ? `${customTheme.name}-light` : `${themeName}-light`;
+  const darkThemeName = customTheme ? `${customTheme.name}-dark` : `${themeName}-dark`;
+
+  console.log('themeName', themeName);
+  const lightPalette = customTheme
+    ? generateLightPalette(customTheme.colors.light)
+    : (themes.find((t) => t.name === themeName) || themes[0]!).colors.light;
+
+  const darkPalette = customTheme
+    ? generateDarkPalette(customTheme.colors.dark)
+    : (themes.find((t) => t.name === themeName) || themes[0]!).colors.dark;
 
   const css = `
     [data-theme="${lightThemeName}"] {
-      ${generateCustomThemeVariables(lightPalette)}
+      ${generateCustomThemeVariables(lightPalette, fallbackIncluded)}
     }
     
     [data-theme="${darkThemeName}"] {
-      ${generateCustomThemeVariables(darkPalette)}
+      ${generateCustomThemeVariables(darkPalette, fallbackIncluded)}
     }
     
     :root {
@@ -213,7 +255,7 @@ export const applyCustomTheme = (customTheme: CustomTheme) => {
   `;
 
   const styleElement = document.createElement('style');
-  styleElement.id = `theme-${lightThemeName}-styles`;
+  styleElement.id = `theme-${customTheme ? customTheme.name : themeName}-styles`;
   styleElement.textContent = css;
 
   const existingStyle = document.getElementById(styleElement.id);

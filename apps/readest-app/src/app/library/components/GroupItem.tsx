@@ -96,12 +96,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
   };
 
   return (
-    <div
-      className={clsx(
-        'group-item flex h-full flex-col justify-end',
-        appService?.hasContextMenu ? 'cursor-pointer' : '',
-      )}
-    >
+    <div className={clsx('group-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}>
       <div
         className={clsx(
           'relative flex overflow-hidden',

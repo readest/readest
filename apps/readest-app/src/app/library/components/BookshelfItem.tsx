@@ -342,7 +342,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         onKeyDown={handleKeyDown}
         {...handlers}
       >
-        <div className='flex-grow'>
+        <div className='flex h-full flex-col justify-end'>
           {'format' in item ? (
             <BookItem
               mode={mode}

@@ -1,6 +1,6 @@
 import { AppService } from '@/types/system';
 
-export const parseWebViewVersion = (appService: AppService | null): string => {
+export const parseWebViewInfo = (appService: AppService | null): string => {
   const ua = navigator.userAgent;
 
   if (appService?.isAndroidApp) {
@@ -62,4 +62,10 @@ export const parseWebViewVersion = (appService: AppService | null): string => {
   } else {
     return 'Unknown';
   }
+};
+
+export const parseWebViewVersion = (appService: AppService | null): number => {
+  const webViewInfo = parseWebViewInfo(appService);
+  const versionMatch = webViewInfo.match(/([0-9]+)\./);
+  return versionMatch ? parseFloat(versionMatch[1]!) : 0;
 };

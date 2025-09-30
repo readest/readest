@@ -1,6 +1,5 @@
 'use client';
 
-import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -185,7 +184,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     setTimeout(() => setLoading(true), 200);
     return (
       loading && (
-        <div className={clsx('hero hero-content', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
+        <div className='hero hero-content h-[100vh] supports-[height:100dvh]:h-[100dvh]'>
           <Spinner loading={true} />
         </div>
       )
@@ -193,7 +192,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }
 
   return (
-    <div className={clsx('reader-content flex', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
+    <div className='reader-content flex h-[100vh] supports-[height:100dvh]:h-[100dvh]'>
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
       <Notebook />
