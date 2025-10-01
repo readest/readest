@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.9.82": {
+      "date": "2025-10-01",
+      "notes": [
+        "Sync: More reliable syncing between KOReader and Readest",
+        "MOBI: Fixed an issue where some footnotes in MOBI/AZW files were not parsed correctly",
+        "Storage: Added support for changing data location on Windows, macOS, Linux, and Android",
+        "Windows: Portable EXE version now stores all reading data in the directory of the executable",
+        "Android: Added background TTS support with media session controls",
+        "WebView: Extended compatibility down to version 92",
+        "Settings: Added global settings menu to the library page",
+        "iOS: Fixed an issue where custom theme colors were not handled correctly on older Safari versions",
+        "TTS: Added more languages for Edge TTS"
+      ]
+    },
     "0.9.81": {
       "date": "2025-09-19",
       "notes": [
