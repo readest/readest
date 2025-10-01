@@ -436,7 +436,7 @@ function ReadestSync:pushBookConfig(interactive)
     local config = self:getCurrentBookConfig()
     if not config then return end
 
-    if NetworkMgr:willRerunWhenOnline(function() self:pushBookConfig(interactive) end) then
+    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookConfig(interactive) end) then
         return
     end
 
