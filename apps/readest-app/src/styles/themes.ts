@@ -179,14 +179,14 @@ const generateCustomThemeVariables = (palette: Palette, fallbackIncluded = false
     --n: ${hexToOklch(palette.neutral)};
     --nc: ${hexToOklch(palette['neutral-content'])};
     
-    --in: 69.37% 0.047 231;
-    --inc: 100% 0 0;
-    --su: 78.15% 0.12 160;
-    --suc: 100% 0 0;
-    --wa: 90.69% 0.123 84;
-    --wac: 0% 0 0;
-    --er: 70.9% 0.184 22;
-    --erc: 100% 0 0;
+    --in: 69.37% 0.047 231deg;
+    --inc: 100% 0 0deg;
+    --su: 78.15% 0.12 160deg;
+    --suc: 100% 0 0deg;
+    --wa: 90.69% 0.123 84deg;
+    --wac: 0% 0 0deg;
+    --er: 70.9% 0.184 22deg;
+    --erc: 100% 0 0deg;
   `;
 
   const fallbackColors = `

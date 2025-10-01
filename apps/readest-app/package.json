@@ -120,6 +120,7 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
+    "caniuse-lite": "^1.0.30001746",
     "cpx2": "^8.0.0",
     "daisyui": "^4.12.24",
     "dotenv-cli": "^7.4.4",

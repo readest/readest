@@ -40,7 +40,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         applyUILanguage(settings.globalViewSettings?.uiLanguage);
       });
     }
-  }, [appService]);
+  }, [appService, applyUILanguage]);
 
   // Make sure appService is available in all children components
   if (!appService) return;
