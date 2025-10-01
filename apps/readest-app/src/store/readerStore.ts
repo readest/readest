@@ -222,6 +222,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
   },
   getViewSettings: (key: string) => get().viewStates[key]?.viewSettings || null,
   setViewSettings: (key: string, viewSettings: ViewSettings) => {
+    if (!key) return;
     const id = key.split('-')[0]!;
     const bookData = useBookDataStore.getState().booksData[id];
     const viewState = get().viewStates[key];

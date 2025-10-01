@@ -6,7 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { getStyles } from '@/utils/style';
 import cssValidate from '@/utils/css';
@@ -18,7 +18,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { appService } = useEnv();
   const { settings, isFontLayoutSettingsGlobal, setSettings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [draftContentStylesheet, setDraftContentStylesheet] = useState(viewSettings.userStylesheet);
   const [draftContentStylesheetSaved, setDraftContentStylesheetSaved] = useState(true);

@@ -16,32 +16,29 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
-import { saveViewSettings } from '../utils/viewSettingsHelper';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
 interface ViewMenuProps {
   bookKey: string;
   setIsDropdownOpen?: (open: boolean) => void;
-  onSetSettingsDialogOpen: (open: boolean) => void;
 }
 
-const ViewMenu: React.FC<ViewMenuProps> = ({
-  bookKey,
-  setIsDropdownOpen,
-  onSetSettingsDialogOpen,
-}) => {
+const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
+  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
   const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -65,7 +62,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
-    onSetSettingsDialogOpen(true);
+    setFontLayoutSettingsDialogOpen(true);
   };
 
   const cycleThemeMode = () => {

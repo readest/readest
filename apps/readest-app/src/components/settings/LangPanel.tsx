@@ -5,11 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { getTranslators } from '@/services/translators';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
 import { saveAndReload } from '@/utils/reload';
 import Select from '@/components/Select';
 
@@ -17,15 +17,15 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const _ = useTranslation();
   const { token } = useAuth();
   const { envConfig } = useEnv();
-  const { applyUILanguage } = useSettingsStore();
+  const { settings, applyUILanguage } = useSettingsStore();
   const { getViewSettings, setViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
-  const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage!);
-  const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
-  const [translationProvider, setTranslationProvider] = useState(viewSettings.translationProvider!);
-  const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang!);
-  const [showTranslateSource, setShowTranslateSource] = useState(viewSettings.showTranslateSource!);
+  const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage);
+  const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled);
+  const [translationProvider, setTranslationProvider] = useState(viewSettings.translationProvider);
+  const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang);
+  const [showTranslateSource, setShowTranslateSource] = useState(viewSettings.showTranslateSource);
 
   const resetToDefaults = useResetViewSettings();
 

@@ -5,10 +5,11 @@ import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useFileSelector } from '@/hooks/useFileSelector';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { CustomFont, mountCustomFont } from '@/styles/fonts';
-import { saveViewSettings } from '../../utils/viewSettingsHelper';
 
 interface CustomFontsProps {
   bookKey: string;
@@ -23,6 +24,7 @@ type FontFamily = {
 const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
+  const { settings } = useSettingsStore();
   const {
     fonts: customFonts,
     addFont,
@@ -32,7 +34,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     saveCustomFonts,
   } = useCustomFontStore();
   const { getViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const [isDeleteMode, setIsDeleteMode] = useState(false);
 
   const { selectFiles } = useFileSelector(appService, _);

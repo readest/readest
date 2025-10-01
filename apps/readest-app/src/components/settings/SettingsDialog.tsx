@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { BookConfig } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -35,7 +34,7 @@ type TabConfig = {
   label: string;
 };
 
-const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ bookKey }) => {
+const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const closeIconSize = useResponsiveSize(16);
@@ -168,7 +167,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
       isOpen={true}
       onClose={handleClose}
       className='modal-open'
-      bgClassName='sm:!bg-black/20'
+      bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
       boxClassName={clsx('sm:min-w-[520px]', appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4')}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={

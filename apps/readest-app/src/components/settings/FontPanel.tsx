@@ -27,8 +27,8 @@ import { getOSPlatform, isCJKEnv } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/bridge';
 import { isCJKStr } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
-import { saveViewSettings } from '../../utils/viewSettingsHelper';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
@@ -91,7 +91,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
-  const { fontPanelView, setFontPanelView } = useSettingsStore();
+  const { settings, fontPanelView, setFontPanelView } = useSettingsStore();
   const {
     fonts: allCustomFonts,
     getAllFonts,
@@ -99,8 +99,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     removeFont,
     saveCustomFonts,
   } = useCustomFontStore();
-  const viewSettings = getViewSettings(bookKey)!;
-  const view = getView(bookKey)!;
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const view = getView(bookKey);
   const iconSize18 = useResponsiveSize(18);
 
   const fontFamilyOptions = [
@@ -136,15 +136,15 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       break;
   }
   const [sysFonts, setSysFonts] = useState<string[]>(defaultSysFonts);
-  const [defaultFont, setDefaultFont] = useState(viewSettings.defaultFont!);
-  const [defaultFontSize, setDefaultFontSize] = useState(viewSettings.defaultFontSize!);
-  const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize!);
-  const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont!);
-  const [defaultCJKFont, setDefaultCJKFont] = useState(viewSettings.defaultCJKFont!);
-  const [serifFont, setSerifFont] = useState(viewSettings.serifFont!);
-  const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont!);
-  const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont!);
-  const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight!);
+  const [defaultFont, setDefaultFont] = useState(viewSettings.defaultFont);
+  const [defaultFontSize, setDefaultFontSize] = useState(viewSettings.defaultFontSize);
+  const [minFontSize, setMinFontSize] = useState(viewSettings.minimumFontSize);
+  const [overrideFont, setOverrideFont] = useState(viewSettings.overrideFont);
+  const [defaultCJKFont, setDefaultCJKFont] = useState(viewSettings.defaultCJKFont);
+  const [serifFont, setSerifFont] = useState(viewSettings.serifFont);
+  const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont);
+  const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont);
+  const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight);
 
   const [customFonts, setCustomFonts] = useState<string[]>(getFontFamilies());
   const [CJKFonts, setCJKFonts] = useState<string[]>(() => {

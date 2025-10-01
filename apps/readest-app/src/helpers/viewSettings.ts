@@ -17,21 +17,24 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
     useSettingsStore.getState();
   const { getView, getViewSettings, setViewSettings } = useReaderStore.getState();
   const { getConfig, saveConfig } = useBookDataStore.getState();
-  const viewSettings = getViewSettings(bookKey)!;
-  const config = getConfig(bookKey)!;
-  if (viewSettings[key] !== value) {
+  const viewSettings = getViewSettings(bookKey);
+  const config = getConfig(bookKey);
+  if (bookKey && viewSettings && viewSettings[key] !== value) {
     viewSettings[key] = value;
     if (applyStyles) {
       const view = getView(bookKey);
       view?.renderer.setStyles?.(getStyles(viewSettings));
     }
   }
-  setViewSettings(bookKey, viewSettings);
 
   if (isFontLayoutSettingsGlobal && !skipGlobal) {
     settings.globalViewSettings[key] = value;
     setSettings(settings);
+    await saveSettings(envConfig, settings);
   }
-  await saveConfig(envConfig, bookKey, config, settings);
-  await saveSettings(envConfig, settings);
+
+  if (bookKey && config && viewSettings) {
+    setViewSettings(bookKey, viewSettings);
+    await saveConfig(envConfig, bookKey, config, settings);
+  }
 };
