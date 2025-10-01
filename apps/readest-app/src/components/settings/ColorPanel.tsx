@@ -18,8 +18,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
-import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { CODE_LANGUAGES, CodeLanguage, manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import Select from '@/components/Select';
@@ -32,7 +32,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { envConfig } = useEnv();
   const { settings, setSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey)!;
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
   );
@@ -42,9 +42,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
-  const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor!);
-  const [codeHighlighting, setcodeHighlighting] = useState(viewSettings.codeHighlighting!);
-  const [codeLanguage, setCodeLanguage] = useState(viewSettings.codeLanguage!);
+  const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor);
+  const [codeHighlighting, setcodeHighlighting] = useState(viewSettings.codeHighlighting);
+  const [codeLanguage, setCodeLanguage] = useState(viewSettings.codeLanguage);
 
   const resetToDefaults = useResetViewSettings();
 

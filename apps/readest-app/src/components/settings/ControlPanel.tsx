@@ -4,11 +4,12 @@ import { useReaderStore } from '@/store/readerStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useResetViewSettings } from '../../hooks/useResetSettings';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { getStyles } from '@/utils/style';
 import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
-import { saveViewSettings } from '../../utils/viewSettingsHelper';
+import { saveViewSettings } from '@/helpers/viewSettings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 
@@ -17,21 +18,20 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
+  const { settings } = useSettingsStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
-  const bookData = getBookData(bookKey)!;
-  const viewSettings = getViewSettings(bookKey)!;
+  const bookData = getBookData(bookKey);
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
-  const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled!);
-  const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll!);
-  const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap!);
-  const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip!);
-  const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick!);
-  const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea!);
-  const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(
-    viewSettings.disableDoubleClick!,
-  );
-  const [animated, setAnimated] = useState(viewSettings.animated!);
-  const [allowScript, setAllowScript] = useState(viewSettings.allowScript!);
+  const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled);
+  const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll);
+  const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
+  const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
+  const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
+  const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
+  const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
+  const [animated, setAnimated] = useState(viewSettings.animated);
+  const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
   const resetToDefaults = useResetViewSettings();
 
@@ -234,7 +234,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 type='checkbox'
                 className='toggle'
                 checked={allowScript}
-                disabled={bookData.book?.format !== 'EPUB'}
+                disabled={bookData?.book?.format !== 'EPUB'}
                 onChange={() => setAllowScript(!allowScript)}
               />
             </div>
