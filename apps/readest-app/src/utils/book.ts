@@ -251,10 +251,30 @@ const normalizeIdentifier = (identifier: string) => {
   return identifier;
 };
 
+const getPreferredIdentifier = (identifiers: string[] | Identifier[]) => {
+  for (const scheme of ['uuid', 'calibre', 'isbn']) {
+    const found = identifiers.find((identifier) =>
+      typeof identifier === 'string'
+        ? identifier.toLowerCase().includes(scheme)
+        : identifier.scheme.toLowerCase() === scheme,
+    );
+    if (found) {
+      return typeof found === 'string' ? normalizeIdentifier(found) : found.value;
+    }
+  }
+  return;
+};
+
 const getIdentifiersList = (
   identifiers: undefined | string | string[] | Identifier | Identifier[],
 ) => {
   if (!identifiers) return [];
+  if (Array.isArray(identifiers)) {
+    const preferred = getPreferredIdentifier(identifiers);
+    if (preferred) {
+      return [preferred];
+    }
+  }
   return Array.isArray(identifiers)
     ? identifiers
         .map((identifier) =>
@@ -267,10 +287,15 @@ const getIdentifiersList = (
 };
 
 export const getMetadataHash = (metadata: BookMetadata) => {
-  const title = getTitleForHash(metadata.title);
-  const authors = getAuthorsList(metadata.author).join(',');
-  const identifiers = getIdentifiersList(metadata.altIdentifier || metadata.identifier).join(',');
-  const hashSource = `${title}|${authors}|${identifiers}`;
-  const metaHash = md5(hashSource.normalize('NFC'));
-  return metaHash;
+  try {
+    const title = getTitleForHash(metadata.title);
+    const authors = getAuthorsList(metadata.author).join(',');
+    const identifiers = getIdentifiersList(metadata.altIdentifier || metadata.identifier).join(',');
+    const hashSource = `${title}|${authors}|${identifiers}`;
+    const metaHash = md5(hashSource.normalize('NFC'));
+    return metaHash;
+  } catch (error) {
+    console.error('Error generating metadata hash:', error);
+  }
+  return;
 };

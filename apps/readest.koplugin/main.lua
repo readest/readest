@@ -312,11 +312,25 @@ function ReadestSync:generateMetadataHash()
 
     local identifiers = doc_props.identifiers or ''
     if identifiers:find("\n") then
-        identifiers = util.splitToArray(identifiers, "\n")
-        for i, id in ipairs(identifiers) do
-            identifiers[i] = normalizeIdentifier(id)
+        local list = util.splitToArray(identifiers, "\n")
+        local normalized = {}
+        local priorities = { "uuid", "calibre", "isbn" }
+        local preferred = nil
+        for i, id in ipairs(list) do
+            normalized[i] = normalizeIdentifier(id)
+            local candidate = id:lower()
+            for _, p in ipairs(priorities) do
+                if candidate:find(p, 1, true) then
+                    preferred = normalized[i]
+                    break
+                end
+            end
         end
-        identifiers = table.concat(identifiers, ",")
+        if preferred then
+            identifiers = preferred
+        else
+            identifiers = table.concat(normalized, ",")
+        end
     else
         identifiers = normalizeIdentifier(identifiers)
     end
@@ -327,10 +341,10 @@ end
 
 function ReadestSync:getMetaHash()
     local doc_readest_sync = self.ui.doc_settings:readSetting("readest_sync") or {}
-    local meta_hash = doc_readest_sync.meta_hash
+    local meta_hash = doc_readest_sync.meta_hash_v1
     if not meta_hash then
         meta_hash = self:generateMetadataHash()
-        doc_readest_sync.meta_hash = meta_hash
+        doc_readest_sync.meta_hash_v1 = meta_hash
         self.ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
     end
     return meta_hash
