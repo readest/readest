@@ -29,16 +29,20 @@ export function hexToOklch(hexColor: string): string {
 
   // 5) Format as l% c h, with a bit of rounding
   const lPercent = (L * 100).toFixed(4);
-  const cValue = C.toFixed(6);
-  const hValue = h.toFixed(6);
+  const cValue = Number(C.toFixed(6));
+  const hValue = Number(h.toFixed(3));
 
-  return `${lPercent}% ${cValue} ${hValue}`;
+  if (cValue === 0) {
+    return `${lPercent}% 0 0deg`;
+  }
+
+  return `${lPercent}% ${cValue} ${hValue}deg`;
 }
 
 export const getContrastOklch = (hexColor: string): string => {
-  return tinycolor(hexColor).isDark() ? '100% 0 0' : '0% 0 0';
+  return tinycolor(hexColor).isDark() ? '100% 0 0deg' : '0% 0 0deg';
 };
 
-export const getContrastHex = (hex: string): string => {
-  return tinycolor(hex).isDark() ? '#FFFFFF' : '#000000';
+export const getContrastHex = (hexColor: string): string => {
+  return tinycolor(hexColor).isDark() ? '#FFFFFF' : '#000000';
 };
