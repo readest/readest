@@ -30,7 +30,7 @@ export const normalizeToFullLang = (langCode: string): string => {
     ru: 'ru-RU',
     uk: 'uk-UA',
     th: 'th-TH',
-    no: 'no-NO',
+    nb: 'nb-NO',
     sv: 'sv-SE',
     fi: 'fi-FI',
     da: 'da-DK',
