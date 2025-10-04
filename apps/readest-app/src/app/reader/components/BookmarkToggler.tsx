@@ -11,6 +11,7 @@ import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import Button from '@/components/Button';
 import { getCurrentPage } from '@/utils/book';
+import { eventDispatcher } from '@/utils/event';
 
 interface BookmarkTogglerProps {
   bookKey: string;
@@ -21,17 +22,21 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
-  const { getProgress, setBookmarkRibbonVisibility } = useReaderStore();
-  const config = getConfig(bookKey)!;
-  const progress = getProgress(bookKey)!;
-  const bookData = getBookData(bookKey)!;
-
+  const { getProgress, getViewState, setBookmarkRibbonVisibility } = useReaderStore();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const config = getConfig(bookKey);
+  const progress = getProgress(bookKey);
 
   const toggleBookmark = () => {
+    const bookData = getBookData(bookKey);
+    const config = getConfig(bookKey);
+    const progress = getProgress(bookKey);
+    if (!bookData || !config || !progress) return;
+
     const { booknotes: bookmarks = [] } = config;
     const { location: cfi, range } = progress;
     if (!cfi) return;
+    const isBookmarked = getViewState(bookKey)?.ribbonVisible;
     if (!isBookmarked) {
       setIsBookmarked(true);
       const text = range?.startContainer.textContent?.slice(0, 128) || '';
@@ -77,6 +82,19 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
       }
     }
   };
+
+  useEffect(() => {
+    const handleBookmarkToggle = (e: CustomEvent) => {
+      const { bookKey: eventBookKey } = e.detail;
+      if (eventBookKey !== bookKey) return;
+      toggleBookmark();
+    };
+    eventDispatcher.on('toggle-bookmark', handleBookmarkToggle);
+    return () => {
+      eventDispatcher.off('toggle-bookmark', handleBookmarkToggle);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
 
   useEffect(() => {
     const { booknotes = [] } = config || {};

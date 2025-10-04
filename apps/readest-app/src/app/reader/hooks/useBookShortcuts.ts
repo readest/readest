@@ -5,7 +5,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getStyles } from '@/utils/style';
-import { tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
+import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { viewPagination } from './usePagination';
@@ -95,6 +95,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
+  const closeWindow = async () => {
+    if (isTauriAppPlatform()) {
+      await tauriHandleClose();
+    }
+  };
+
   const quitApp = async () => {
     // on web platform use browser's default shortcut to close the tab
     if (isTauriAppPlatform()) {
@@ -145,17 +151,24 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch(viewState?.ttsEnabled ? 'tts-stop' : 'tts-speak', { bookKey });
   };
 
+  const toggleBookmark = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
+  };
+
   useShortcuts(
     {
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
+      onToggleBookmark: toggleBookmark,
       onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,
       onReloadPage: reloadPage,
+      onCloseWindow: closeWindow,
       onQuitApp: quitApp,
       onGoLeft: goLeft,
       onGoRight: goRight,
