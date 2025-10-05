@@ -178,6 +178,13 @@ const FoliateViewer: React.FC<{
         manageSyntaxHighlighting(detail.doc, viewSettings);
       }
 
+      setTimeout(() => {
+        const booknotes = config.booknotes || [];
+        booknotes
+          .filter((item) => !item.deletedAt && item.type === 'annotation' && item.style)
+          .forEach((annotation) => viewRef.current?.addAnnotation(annotation));
+      }, 100);
+
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window
         // and then used by useMouseEvent and useTouchEvent
