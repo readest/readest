@@ -13,7 +13,7 @@ const DEFAULT_SHORTCUTS = {
   onToggleFullscreen: ['F11'],
   onCloseWindow: ['ctrl+w', 'cmd+w'],
   onQuitApp: ['ctrl+q', 'cmd+q'],
-  onGoLeft: ['ArrowLeft', 'PageUp', 'h'],
+  onGoLeft: ['ArrowLeft', 'PageUp', 'h', 'shift+ '],
   onGoRight: ['ArrowRight', 'PageDown', 'l', ' '],
   onGoNext: ['ArrowDown', 'j'],
   onGoPrev: ['ArrowUp', 'k'],
