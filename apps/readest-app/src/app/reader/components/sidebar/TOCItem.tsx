@@ -137,6 +137,7 @@ export const StaticListRow: React.FC<ListRowProps> = ({
         'border-base-300 w-full border-b sm:border-none',
         'pe-4 ps-2 pt-[1px] sm:pe-2',
       )}
+      title={flatItem.item.label || ''}
     >
       <TOCItemView
         bookKey={bookKey}
@@ -166,7 +167,7 @@ export const VirtualListRow: React.FC<
   const flatItem = flatItems[index];
 
   return (
-    <div style={style}>
+    <div style={style} title={flatItem.item.label || ''}>
       <StaticListRow
         bookKey={bookKey}
         flatItem={flatItem}

@@ -293,7 +293,7 @@ const SideBar: React.FC<{
         )}
         <div
           className={clsx(
-            'drag-bar absolute -right-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-1',
+            'drag-bar bg-base-100 absolute -right-2 top-0 h-full w-0.5 cursor-col-resize p-1',
             isMobile && 'hidden',
           )}
           role='slider'
