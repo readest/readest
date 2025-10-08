@@ -14,7 +14,7 @@ import SettingsDialog from '@/components/settings/SettingsDialog';
 import FoliateViewer from './FoliateViewer';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
-import FooterBar from './FooterBar';
+import FooterBar from './footerbar/FooterBar';
 import ProgressInfoView from './ProgressInfo';
 import Ribbon from './Ribbon';
 import Annotator from './annotator/Annotator';
