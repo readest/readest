@@ -230,7 +230,6 @@ export const applyCustomTheme = (
   const lightThemeName = customTheme ? `${customTheme.name}-light` : `${themeName}-light`;
   const darkThemeName = customTheme ? `${customTheme.name}-dark` : `${themeName}-dark`;
 
-  console.log('themeName', themeName);
   const lightPalette = customTheme
     ? generateLightPalette(customTheme.colors.light)
     : (themes.find((t) => t.name === themeName) || themes[0]!).colors.light;
