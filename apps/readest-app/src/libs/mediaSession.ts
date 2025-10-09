@@ -12,8 +12,8 @@ export interface MediaMetadata {
 
 export interface PlaybackState {
   playing: boolean;
-  position: number;
-  duration: number;
+  position?: number; // in milliseconds
+  duration?: number; // in milliseconds
 }
 
 export interface MediaSessionState {
