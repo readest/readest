@@ -230,7 +230,10 @@ const Notebook: React.FC = ({}) => {
           }
         `}</style>
         <div
-          className='drag-bar bg-base-100 absolute -left-2 top-0 h-full w-0.5 cursor-col-resize p-2'
+          className={clsx(
+            'drag-bar bg-base-100 absolute -left-2 top-0 h-full w-0.5 cursor-col-resize p-2',
+            isNotebookPinned ? 'bg-base-100' : 'bg-transparent',
+          )}
           role='slider'
           tabIndex={0}
           aria-label={_('Resize Notebook')}
