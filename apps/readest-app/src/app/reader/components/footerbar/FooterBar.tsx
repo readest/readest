@@ -95,7 +95,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
       setActionTab((prevTab) => (prevTab === tab ? '' : tab));
 
       if (tab === 'tts') {
-        setHoveredBookKey('');
+        if (viewState?.ttsEnabled) {
+          setHoveredBookKey('');
+        }
         handleSpeakText();
       } else if (tab === 'toc') {
         setHoveredBookKey('');
@@ -113,7 +115,15 @@ const FooterBar: React.FC<FooterBarProps> = ({
         }
       }
     },
-    [config, bookKey, setConfig, setSideBarVisible, setHoveredBookKey, handleSpeakText],
+    [
+      config,
+      bookKey,
+      viewState?.ttsEnabled,
+      setConfig,
+      setSideBarVisible,
+      setHoveredBookKey,
+      handleSpeakText,
+    ],
   );
 
   useEffect(() => {
