@@ -19,12 +19,11 @@ const posthogKey =
   atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64']!);
 
 if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' && posthogKey) {
-  posthog.init(posthogKey, {
-    api_host: posthogUrl,
-    person_profiles: 'always',
-  });
-  if (shouldDisablePostHog()) {
-    posthog.opt_out_capturing();
+  if (!shouldDisablePostHog()) {
+    posthog.init(posthogKey, {
+      api_host: posthogUrl,
+      person_profiles: 'always',
+    });
   }
 }
 export const CSPostHogProvider = ({ children }: { children: ReactNode }) => {
