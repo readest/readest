@@ -107,6 +107,17 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn get_screen_brightness(&self) -> crate::Result<GetScreenBrightnessResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn set_screen_brightness(
+        &self,
+        _payload: SetScreenBrightnessRequest,
+    ) -> crate::Result<SetScreenBrightnessResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn request_manage_storage_permission(
         &self,
     ) -> crate::Result<RequestManageStoragePermissionResponse> {

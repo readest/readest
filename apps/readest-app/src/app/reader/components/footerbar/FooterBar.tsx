@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
+import { debounce } from '@/utils/debounce';
 import { viewPagination } from '../../hooks/usePagination';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
@@ -50,10 +51,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
     return (progressInfo.current + 1) / progressInfo.total;
   }, [progressValid, progressInfo]);
 
-  const handleProgressChange = useCallback(
-    (value: number) => {
-      view?.goToFraction(value / 100.0);
-    },
+  const handleProgressChange = useMemo(
+    () =>
+      debounce((value: number) => {
+        view?.goToFraction(value / 100.0);
+      }, 100),
     [view],
   );
 

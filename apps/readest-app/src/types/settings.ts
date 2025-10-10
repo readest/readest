@@ -46,6 +46,7 @@ export interface SystemSettings {
   openBookInNewWindow: boolean;
   autoCheckUpdates: boolean;
   screenWakeLock: boolean;
+  screenBrightness: number;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;
   openLastBooks: boolean;

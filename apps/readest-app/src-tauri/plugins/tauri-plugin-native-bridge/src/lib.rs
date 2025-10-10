@@ -53,6 +53,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::iap_restore_purchases,
             commands::get_system_color_scheme,
             commands::get_safe_area_insets,
+            commands::get_screen_brightness,
+            commands::set_screen_brightness,
             commands::request_manage_storage_permission,
         ])
         .setup(|app, api| {

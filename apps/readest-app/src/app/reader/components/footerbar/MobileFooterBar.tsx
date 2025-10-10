@@ -1,9 +1,10 @@
 import React from 'react';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { FooterBarChildProps } from './types';
 import { NavigationPanel } from './NavigationPanel';
 import { FontLayoutPanel } from './FontLayoutPanel';
+import { ColorPanel } from './ColorPanel';
 import { NavigationBar } from './NavigationBar';
-import { FooterBarChildProps } from './types';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   bookKey,
@@ -22,8 +23,9 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
 
   return (
     <>
+      <ColorPanel actionTab={actionTab} bottomOffset={bottomOffset} />
       <NavigationPanel
-        actionTab={actionTab!}
+        actionTab={actionTab}
         progressFraction={progressFraction}
         progressValid={progressValid}
         navigationHandlers={navigationHandlers}
@@ -32,13 +34,13 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
       />
       <FontLayoutPanel
         bookKey={bookKey}
-        actionTab={actionTab!}
-        mobileBottomOffset={bottomOffset}
+        actionTab={actionTab}
+        bottomOffset={bottomOffset}
         marginIconSize={marginIconSize}
       />
       <NavigationBar
         bookKey={bookKey}
-        actionTab={actionTab!}
+        actionTab={actionTab}
         navPadding={navPadding}
         onSetActionTab={onSetActionTab!}
       />

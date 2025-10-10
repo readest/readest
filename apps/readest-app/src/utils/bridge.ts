@@ -65,6 +65,20 @@ export interface GetSafeAreaInsetsResponse {
   error?: string;
 }
 
+interface GetScreenBrightnessResponse {
+  brightness: number; // 0.0 to 1.0
+  error?: string;
+}
+
+interface SetScreenBrightnessRequest {
+  brightness: number; // 0.0 to 1.0
+}
+
+interface SetScreenBrightnessResponse {
+  success: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -142,6 +156,25 @@ export async function getSystemColorScheme(): Promise<GetSystemColorSchemeRespon
 export async function getSafeAreaInsets(): Promise<GetSafeAreaInsetsResponse> {
   const result = await invoke<GetSafeAreaInsetsResponse>(
     'plugin:native-bridge|get_safe_area_insets',
+  );
+  return result;
+}
+
+export async function getScreenBrightness(): Promise<GetScreenBrightnessResponse> {
+  const result = await invoke<GetScreenBrightnessResponse>(
+    'plugin:native-bridge|get_screen_brightness',
+  );
+  return result;
+}
+
+export async function setScreenBrightness(
+  request: SetScreenBrightnessRequest,
+): Promise<SetScreenBrightnessResponse> {
+  const result = await invoke<SetScreenBrightnessResponse>(
+    'plugin:native-bridge|set_screen_brightness',
+    {
+      payload: request,
+    },
   );
   return result;
 }

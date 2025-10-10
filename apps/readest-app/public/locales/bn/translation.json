@@ -599,5 +599,6 @@
   "File count: {{size}}": "ফাইলের সংখ্যা: {{size}}",
   "Background Read Aloud": "পটভূমিতে উচ্চস্বরে পড়ুন",
   "Ready to read aloud": "উচ্চস্বরে পড়ার জন্য প্রস্তুত",
-  "Read Aloud": "উচ্চস্বরে পড়ুন"
+  "Read Aloud": "উচ্চস্বরে পড়ুন",
+  "Screen Brightness": "স্ক্রিন উজ্জ্বলতা"
 }

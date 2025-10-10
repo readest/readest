@@ -595,5 +595,6 @@
   "File count: {{size}}": "དེབ་གནས་བཅས་པའི་ཨང་། {{size}}",
   "Background Read Aloud": "གནས་སྟངས་ཀྱིས་ཀློག་བྱེད།",
   "Ready to read aloud": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།",
-  "Read Aloud": "ཀློག་བྱེད།"
+  "Read Aloud": "ཀློག་བྱེད།",
+  "Screen Brightness": "རྒྱབ་སྐོར་གྱི་འོད་ཟེར།"
 }

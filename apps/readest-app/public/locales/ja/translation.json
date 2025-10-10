@@ -595,5 +595,6 @@
   "File count: {{size}}": "ファイル数: {{size}}",
   "Background Read Aloud": "バックグラウンド読み上げ",
   "Ready to read aloud": "読み上げの準備ができました",
-  "Read Aloud": "読み上げ"
+  "Read Aloud": "読み上げ",
+  "Screen Brightness": "画面の明るさ"
 }

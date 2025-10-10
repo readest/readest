@@ -595,5 +595,6 @@
   "File count: {{size}}": "จำนวนไฟล์: {{size}}",
   "Background Read Aloud": "อ่านออกเสียงเบื้องหลัง",
   "Ready to read aloud": "พร้อมที่จะอ่านออกเสียง",
-  "Read Aloud": "อ่านออกเสียง"
+  "Read Aloud": "อ่านออกเสียง",
+  "Screen Brightness": "ความสว่างหน้าจอ"
 }

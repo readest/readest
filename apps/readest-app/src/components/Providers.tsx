@@ -9,6 +9,7 @@ import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useDeviceControlStore } from '@/store/deviceStore';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { getLocale } from '@/utils/misc';
@@ -16,6 +17,7 @@ import { getLocale } from '@/utils/misc';
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
+  const { setScreenBrightness } = useDeviceControlStore();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -38,9 +40,13 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       initSystemThemeListener(appService);
       appService.loadSettings().then((settings) => {
         applyUILanguage(settings.globalViewSettings?.uiLanguage);
+        const brightness = settings.screenBrightness;
+        if (appService.hasScreenBrightness && brightness >= 0) {
+          setScreenBrightness(brightness / 100);
+        }
       });
     }
-  }, [appService, applyUILanguage]);
+  }, [appService, applyUILanguage, setScreenBrightness]);
 
   // Make sure appService is available in all children components
   if (!appService) return;

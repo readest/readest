@@ -69,6 +69,11 @@ class LockScreenOrientationRequestArgs {
   var orientation: String? = null
 }
 
+@InvokeArg
+class SetScreenBrightnessRequestArgs {
+  var brightness: Double? = null // 0.0 to 1.0
+}
+
 interface KeyDownInterceptor {
     fun interceptVolumeKeys(enabled: Boolean)
     fun interceptBackKey(enabled: Boolean)
@@ -76,7 +81,7 @@ interface KeyDownInterceptor {
 
 @TauriPlugin(
   permissions = [
-    Permission(strings = [Manifest.permission.MANAGE_EXTERNAL_STORAGE], alias = "manageStorage")
+    Permission(strings = [Manifest.permission.MANAGE_EXTERNAL_STORAGE], alias = "manageStorage"),
   ]
 )
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
@@ -411,6 +416,44 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("right", 0)
             ret.put("bottom", 0)
             ret.put("left", 0)
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun get_screen_brightness(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            val brightness = Settings.System.getInt(
+                activity.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS
+            )
+            val normalizedBrightness = brightness / 255.0
+            ret.put("brightness", normalizedBrightness)
+        } catch (e: Exception) {
+            ret.put("error", e.message)
+            ret.put("brightness", -1.0)
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun set_screen_brightness(invoke: Invoke) {
+        val args = invoke.parseArgs(SetScreenBrightnessRequestArgs::class.java)
+        val ret = JSObject()
+        try {
+            val brightness = (args.brightness ?: 0.5).toFloat()
+            if (brightness < 0.0 || brightness > 1.0) {
+                invoke.reject("Brightness must be between 0.0 and 1.0")
+                return
+            }
+            val layoutParams = activity.window.attributes
+            layoutParams.screenBrightness = brightness
+            activity.window.attributes = layoutParams
+            ret.put("success", true)
+        } catch (e: Exception) {
+            ret.put("success", false)
+            ret.put("error", e.message)
         }
         invoke.resolve(ret)
     }
