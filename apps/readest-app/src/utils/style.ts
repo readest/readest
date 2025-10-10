@@ -327,6 +327,11 @@ const getLayoutStyles = (
     height: 1em;
     vertical-align: baseline;
   }
+  img.has-text-siblings[style*="object-fit"] {
+    display: block;
+    height: auto;
+    vertical-align: unset;
+  }
   .ie6 img {
     width: auto;
     height: auto;
