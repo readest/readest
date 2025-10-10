@@ -242,6 +242,20 @@ const SideBar: React.FC<{
             }
           }
         `}</style>
+        <div
+          className={clsx(
+            'drag-bar absolute -right-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-1',
+            isMobile && 'hidden',
+          )}
+          role='slider'
+          tabIndex={0}
+          aria-label={_('Resize Sidebar')}
+          aria-orientation='horizontal'
+          aria-valuenow={parseFloat(sideBarWidth)}
+          onMouseDown={handleHorizontalDragStart}
+          onTouchStart={handleHorizontalDragStart}
+          onKeyDown={handleDragKeyDown}
+        ></div>
         <div className='flex-shrink-0'>
           {isMobile && (
             <div
@@ -291,21 +305,6 @@ const SideBar: React.FC<{
         ) : (
           <SidebarContent bookDoc={bookDoc} sideBarBookKey={sideBarBookKey!} />
         )}
-        <div
-          className={clsx(
-            'drag-bar bg-base-100 absolute -right-2 top-0 h-full w-0.5 cursor-col-resize p-1',
-            isSideBarPinned ? 'bg-base-100' : 'bg-transparent',
-            isMobile && 'hidden',
-          )}
-          role='slider'
-          tabIndex={0}
-          aria-label={_('Resize Sidebar')}
-          aria-orientation='horizontal'
-          aria-valuenow={parseFloat(sideBarWidth)}
-          onMouseDown={handleHorizontalDragStart}
-          onTouchStart={handleHorizontalDragStart}
-          onKeyDown={handleDragKeyDown}
-        ></div>
       </div>
     </>
   ) : null;
