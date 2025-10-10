@@ -231,8 +231,7 @@ const Notebook: React.FC = ({}) => {
         `}</style>
         <div
           className={clsx(
-            'drag-bar bg-base-100 absolute -left-2 top-0 h-full w-0.5 cursor-col-resize p-2',
-            isNotebookPinned ? 'bg-base-100' : 'bg-transparent',
+            'drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
           )}
           role='slider'
           tabIndex={0}
