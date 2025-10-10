@@ -550,7 +550,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   return (
     <>
       {showPanel && <Overlay onDismiss={handleDismissPopup} />}
-      {showIndicator && (
+      {showIndicator && hoveredBookKey === bookKey && (
         <div
           ref={iconRef}
           className={clsx(
