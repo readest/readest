@@ -308,7 +308,7 @@ export const nativeFileSystem: FileSystem = {
         }
       }
     };
-    await readDirRecursively(path, '', entries, fileList);
+    await readDirRecursively(fp, '', entries, fileList);
     return fileList;
   },
   async exists(path: string, base: BaseDir) {
