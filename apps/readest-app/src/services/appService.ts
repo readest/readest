@@ -86,6 +86,7 @@ export abstract class BaseAppService implements AppService {
   hasHaptics = false;
   hasUpdater = false;
   hasOrientationLock = false;
+  hasScreenBrightness = false;
   canCustomizeRootDir = false;
   distChannel = 'readest' as DistChannel;
 

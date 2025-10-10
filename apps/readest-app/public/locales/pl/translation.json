@@ -607,5 +607,6 @@
   "File count: {{size}}": "Liczba plików: {{size}}",
   "Background Read Aloud": "Czytanie na głos w tle",
   "Ready to read aloud": "Gotowy do przeczytania na głos",
-  "Read Aloud": "Czytaj na głos"
+  "Read Aloud": "Czytaj na głos",
+  "Screen Brightness": "Jasność ekranu"
 }

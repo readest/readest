@@ -170,6 +170,25 @@ pub struct GetSafeAreaInsetsResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct GetScreenBrightnessResponse {
+    pub brightness: f64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetScreenBrightnessRequest {
+    pub brightness: f64, // 0.0 to 1.0
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetScreenBrightnessResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RequestManageStoragePermissionResponse {
     pub manage_storage: String, // "granted", "denied", or "prompt"
 }

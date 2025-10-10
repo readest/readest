@@ -599,5 +599,6 @@
   "File count: {{size}}": "Bestandsaantal: {{size}}",
   "Background Read Aloud": "Achtergrond Voorlezen",
   "Ready to read aloud": "Klaar om voor te lezen",
-  "Read Aloud": "Voorlezen"
+  "Read Aloud": "Voorlezen",
+  "Screen Brightness": "Schermhelderheid"
 }

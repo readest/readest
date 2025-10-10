@@ -20,6 +20,8 @@ Default permissions for the plugin
 - `allow-iap-restore-purchases`
 - `allow-get-system-color-scheme`
 - `allow-get-safe-area-insets`
+- `allow-get-screen-brightness`
+- `allow-set-screen-brightness`
 - `allow-request-manage-storage-permission`
 - `allow-checkPermissions`
 - `allow-requestPermissions`
@@ -159,6 +161,32 @@ Enables the get_safe_area_insets command without any pre-configured scope.
 <td>
 
 Denies the get_safe_area_insets command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-screen-brightness`
+
+</td>
+<td>
+
+Enables the get_screen_brightness command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-screen-brightness`
+
+</td>
+<td>
+
+Denies the get_screen_brightness command without any pre-configured scope.
 
 </td>
 </tr>
@@ -471,6 +499,32 @@ Enables the request_manage_storage_permission command without any pre-configured
 <td>
 
 Denies the request_manage_storage_permission command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-set-screen-brightness`
+
+</td>
+<td>
+
+Enables the set_screen_brightness command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-set-screen-brightness`
+
+</td>
+<td>
+
+Denies the set_screen_brightness command without any pre-configured scope.
 
 </td>
 </tr>

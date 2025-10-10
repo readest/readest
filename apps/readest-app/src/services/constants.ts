@@ -60,6 +60,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   alwaysInForeground: false,
   autoCheckUpdates: true,
   screenWakeLock: false,
+  screenBrightness: -1, // -1~100, -1 for system default
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,

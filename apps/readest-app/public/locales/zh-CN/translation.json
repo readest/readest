@@ -595,5 +595,6 @@
   "File count: {{size}}": "文件数量: {{size}}",
   "Background Read Aloud": "后台语音朗读",
   "Ready to read aloud": "语音朗读已就绪",
-  "Read Aloud": "语音朗读"
+  "Read Aloud": "语音朗读",
+  "Screen Brightness": "屏幕亮度"
 }

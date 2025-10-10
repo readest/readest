@@ -128,6 +128,21 @@ pub(crate) async fn get_safe_area_insets<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_screen_brightness<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetScreenBrightnessResponse> {
+    app.native_bridge().get_screen_brightness()
+}
+
+#[command]
+pub(crate) async fn set_screen_brightness<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetScreenBrightnessRequest,
+) -> Result<SetScreenBrightnessResponse> {
+    app.native_bridge().set_screen_brightness(payload)
+}
+
+#[command]
 pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {

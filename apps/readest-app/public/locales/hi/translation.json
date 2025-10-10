@@ -599,5 +599,6 @@
   "File count: {{size}}": "फ़ाइलों की संख्या: {{size}}",
   "Background Read Aloud": "पृष्ठभूमि में वाचन",
   "Ready to read aloud": "उच्च स्वर में पढ़ने के लिए तैयार",
-  "Read Aloud": "उच्च स्वर में पढ़ें"
+  "Read Aloud": "उच्च स्वर में पढ़ें",
+  "Screen Brightness": "स्क्रीन ब्राइटनेस"
 }

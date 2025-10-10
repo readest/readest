@@ -30,14 +30,14 @@ const MARGIN_CONSTANTS = {
 interface FontLayoutPanelProps {
   bookKey: string;
   actionTab: string;
-  mobileBottomOffset: string;
+  bottomOffset: string;
   marginIconSize: number;
 }
 
 export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   bookKey,
   actionTab,
-  mobileBottomOffset,
+  bottomOffset,
   marginIconSize,
 }) => {
   const _ = useTranslation();
@@ -98,7 +98,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   );
 
   return (
-    <div className={classes} style={{ bottom: mobileBottomOffset }}>
+    <div className={classes} style={{ bottom: bottomOffset }}>
       <Slider
         label={_('Font Size')}
         initialValue={viewSettings?.defaultFontSize ?? FONT_SIZE_LIMITS.DEFAULT}

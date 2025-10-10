@@ -49,6 +49,10 @@ class LockScreenOrientationRequestArgs: Decodable {
   let orientation: String?
 }
 
+class SetScreenBrightnessRequestArgs: Decodable {
+  let brightness: Float?
+}
+
 struct InitializeRequest: Decodable {
   let publicKey: String?
 }
@@ -538,6 +542,28 @@ class NativeBridgePlugin: Plugin {
     let userInterfaceStyle = UITraitCollection.current.userInterfaceStyle
     let colorScheme = (userInterfaceStyle == .dark) ? "dark" : "light"
     invoke.resolve(["colorScheme": colorScheme])
+  }
+
+  @objc public func get_screen_brightness(_ invoke: Invoke) {
+    let brightness = UIScreen.main.brightness
+    invoke.resolve(["brightness": brightness])
+  }
+
+  @objc public func set_screen_brightness(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(SetScreenBrightnessRequestArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+
+    let brightness = args.brightness ?? 0.5
+
+    if brightness < 0.0 || brightness > 1.0 {
+      return invoke.reject("Brightness must be between 0.0 and 1.0")
+    }
+
+    DispatchQueue.main.async {
+      UIScreen.main.brightness = CGFloat(brightness)
+    }
+    invoke.resolve(["success": true])
   }
 }
 

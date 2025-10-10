@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { interceptKeys } from '@/utils/bridge';
+import { interceptKeys, getScreenBrightness, setScreenBrightness } from '@/utils/bridge';
 import { eventDispatcher } from '@/utils/event';
 
 declare global {
@@ -23,6 +23,8 @@ type DeviceControlState = {
   backKeyIntercepted: boolean;
   volumeKeysInterceptionCount: number;
   backKeyInterceptionCount: number;
+  getScreenBrightness: () => Promise<number>; // 0.0 to 1.0
+  setScreenBrightness: (brightness: number) => Promise<void>; // brightness: 0.0 to 1.0
   acquireVolumeKeyInterception: () => void;
   releaseVolumeKeyInterception: () => void;
   acquireBackKeyInterception: () => void;
@@ -73,5 +75,14 @@ export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
     } else {
       set({ backKeyInterceptionCount: backKeyInterceptionCount - 1 });
     }
+  },
+
+  getScreenBrightness: async () => {
+    const res = await getScreenBrightness();
+    return res.brightness;
+  },
+
+  setScreenBrightness: async (brightness: number) => {
+    await setScreenBrightness({ brightness });
   },
 }));

@@ -15,6 +15,8 @@ const COMMANDS: &[&str] = &[
     "iap_restore_purchases",
     "get_system_color_scheme",
     "get_safe_area_insets",
+    "get_screen_brightness",
+    "set_screen_brightness",
     "request_manage_storage_permission",
     "checkPermissions",
     "requestPermissions",

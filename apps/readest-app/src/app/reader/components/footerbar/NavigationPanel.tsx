@@ -1,5 +1,5 @@
-import React from 'react';
 import clsx from 'clsx';
+import React, { useCallback, useEffect } from 'react';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
@@ -30,6 +30,25 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   sliderHeight,
 }) => {
   const _ = useTranslation();
+
+  const [progressValue, setProgressValue] = React.useState(
+    progressValid ? progressFraction * 100 : 0,
+  );
+
+  useEffect(() => {
+    if (progressValid) {
+      setProgressValue(progressFraction * 100);
+    }
+  }, [progressValid, progressFraction]);
+
+  const handleProgressChange = useCallback(
+    (value: number) => {
+      setProgressValue(value);
+      navigationHandlers.onProgressChange(value);
+    },
+    [navigationHandlers],
+  );
+
   const classes = clsx(
     'footerbar-progress-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
     actionTab === 'progress'
@@ -43,9 +62,9 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
         <Slider
           label={_('Reading Progress')}
           heightPx={sliderHeight}
-          bubbleLabel={`${Math.round(progressFraction * 100)}%`}
-          initialValue={progressValid ? progressFraction * 100 : 0}
-          onChange={navigationHandlers.onProgressChange}
+          bubbleLabel={`${Math.round(progressValue)}%`}
+          initialValue={progressValue}
+          onChange={handleProgressChange}
         />
       </div>
       <div className='flex w-full items-center justify-between gap-x-6'>

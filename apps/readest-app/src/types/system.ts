@@ -51,6 +51,7 @@ export interface AppService {
   hasHaptics: boolean;
   hasUpdater: boolean;
   hasOrientationLock: boolean;
+  hasScreenBrightness: boolean;
   isMobile: boolean;
   isAppDataSandbox: boolean;
   isMobileApp: boolean;

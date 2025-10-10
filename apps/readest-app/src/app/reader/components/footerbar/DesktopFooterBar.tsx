@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { FaHeadphones } from 'react-icons/fa6';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
@@ -22,6 +22,25 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   const view = getView(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
+
+  const [progressValue, setProgressValue] = React.useState(
+    progressValid ? progressFraction * 100 : 0,
+  );
+
+  useEffect(() => {
+    if (progressValid) {
+      setProgressValue(progressFraction * 100);
+    }
+  }, [progressValid, progressFraction]);
+
+  const handleProgressChange = useCallback(
+    (value: number) => {
+      setProgressValue(value);
+      navigationHandlers.onProgressChange(value);
+    },
+    [navigationHandlers],
+  );
+
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
 
   return (
@@ -78,8 +97,8 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         min={0}
         max={100}
         aria-label={_('Jump to Location')}
-        value={progressValid ? progressFraction * 100 : 0}
-        onChange={(e) => navigationHandlers.onProgressChange(parseInt(e.target.value, 10))}
+        value={progressValue}
+        onChange={(e) => handleProgressChange(parseInt(e.target.value, 10))}
       />
       <Button
         icon={<FaHeadphones className={viewState?.ttsEnabled ? 'text-blue-500' : ''} />}
