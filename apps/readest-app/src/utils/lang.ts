@@ -23,6 +23,7 @@ export const normalizeToFullLang = (langCode: string): string => {
     ko: 'ko-KR',
     pt: 'pt-PT',
     ar: 'ar-SA',
+    fa: 'fa-IR',
     nl: 'nl-NL',
     pl: 'pl-PL',
     tr: 'tr-TR',
