@@ -61,6 +61,7 @@ import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
+import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { parseFontInfo } from '@/utils/font';
 
@@ -237,6 +238,30 @@ export abstract class BaseAppService implements AppService {
 
   async deleteFont(font: CustomFont): Promise<void> {
     await this.fs.removeFile(font.path, 'Fonts');
+  }
+
+  async importImage(file?: string | File): Promise<CustomTextureInfo | null> {
+    let imagePath: string;
+    if (typeof file === 'string') {
+      const filePath = file;
+      const fileobj = await this.fs.openFile(filePath, 'None');
+      imagePath = fileobj.name || getFilename(filePath);
+      await this.fs.copyFile(filePath, imagePath, 'Images');
+    } else if (file) {
+      imagePath = getFilename(file.name);
+      await this.fs.writeFile(imagePath, 'Images', file);
+    } else {
+      return null;
+    }
+
+    return {
+      name: imagePath.replace(/\.[^/.]+$/, ''),
+      path: imagePath,
+    };
+  }
+
+  async deleteImage(texture: CustomTextureInfo): Promise<void> {
+    await this.fs.removeFile(texture.path, 'Images');
   }
 
   async importBook(

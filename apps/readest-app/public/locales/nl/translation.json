@@ -600,5 +600,11 @@
   "Background Read Aloud": "Achtergrond Voorlezen",
   "Ready to read aloud": "Klaar om voor te lezen",
   "Read Aloud": "Voorlezen",
-  "Screen Brightness": "Schermhelderheid"
+  "Screen Brightness": "Schermhelderheid",
+  "Background Image": "Achtergrondafbeelding",
+  "Import Image": "Afbeelding importeren",
+  "Opacity": "Doorzichtigheid",
+  "Size": "Grootte",
+  "Cover": "Omslag",
+  "Contain": "Bevatten"
 }

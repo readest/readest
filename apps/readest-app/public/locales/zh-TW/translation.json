@@ -596,5 +596,11 @@
   "Background Read Aloud": "背景朗讀",
   "Ready to read aloud": "朗讀準備就緒",
   "Read Aloud": "朗讀",
-  "Screen Brightness": "螢幕亮度"
+  "Screen Brightness": "螢幕亮度",
+  "Background Image": "背景圖片",
+  "Import Image": "匯入圖片",
+  "Opacity": "不透明度",
+  "Size": "大小",
+  "Cover": "封面",
+  "Contain": "包含"
 }

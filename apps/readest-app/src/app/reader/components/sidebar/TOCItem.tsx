@@ -68,8 +68,8 @@ const TOCItemView = React.memo<{
       className={clsx(
         'flex w-full cursor-pointer items-center rounded-md py-4 sm:py-2',
         isActive
-          ? 'sm:bg-base-300/85 sm:hover:bg-base-300 sm:text-base-content text-blue-500'
-          : 'sm:hover:bg-base-300/85',
+          ? 'sm:bg-base-300/65 sm:hover:bg-base-300/75 sm:text-base-content text-blue-500'
+          : 'sm:hover:bg-base-300/75',
       )}
       style={{
         height: itemSize ? `${itemSize}px` : 'auto',

@@ -596,5 +596,11 @@
   "Background Read Aloud": "อ่านออกเสียงเบื้องหลัง",
   "Ready to read aloud": "พร้อมที่จะอ่านออกเสียง",
   "Read Aloud": "อ่านออกเสียง",
-  "Screen Brightness": "ความสว่างหน้าจอ"
+  "Screen Brightness": "ความสว่างหน้าจอ",
+  "Background Image": "ภาพพื้นหลัง",
+  "Import Image": "นำเข้าภาพ",
+  "Opacity": "ความโปร่งใส",
+  "Size": "ขนาด",
+  "Cover": "ปก",
+  "Contain": "บรรจุ"
 }

@@ -604,5 +604,11 @@
   "Background Read Aloud": "Lectura en segundo plano",
   "Ready to read aloud": "Listo para leer en voz alta",
   "Read Aloud": "Leer en voz alta",
-  "Screen Brightness": "Brillo de pantalla"
+  "Screen Brightness": "Brillo de pantalla",
+  "Background Image": "Imagen de fondo",
+  "Import Image": "Importar imagen",
+  "Opacity": "Opacidad",
+  "Size": "Tamaño",
+  "Cover": "Cubierta",
+  "Contain": "Contener"
 }

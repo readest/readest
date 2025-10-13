@@ -608,5 +608,11 @@
   "Background Read Aloud": "Озвучивание в фоне",
   "Ready to read aloud": "Готов к чтению вслух",
   "Read Aloud": "Читать вслух",
-  "Screen Brightness": "Яркость экрана"
+  "Screen Brightness": "Яркость экрана",
+  "Background Image": "Фоновое изображение",
+  "Import Image": "Импортировать изображение",
+  "Opacity": "Непрозрачность",
+  "Size": "Размер",
+  "Cover": "Обложка",
+  "Contain": "Содержать"
 }

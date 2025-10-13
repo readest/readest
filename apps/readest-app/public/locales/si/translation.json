@@ -600,5 +600,11 @@
   "Background Read Aloud": "පසුබිම් පවසා කියවීම",
   "Ready to read aloud": "වාදනය කිරීමට සූදානම්",
   "Read Aloud": "පවසා කියවීම",
-  "Screen Brightness": "තිරයේ දිදුලනුම"
+  "Screen Brightness": "තිරයේ දිදුලනුම",
+  "Background Image": "පසුබිම් රූපය",
+  "Import Image": "රූපය ආයාත කරන්න",
+  "Opacity": "පැහැදිලිත්වය",
+  "Size": "ප්‍රමාණය",
+  "Cover": "ආවරණය",
+  "Contain": "අඩංගු වන්න"
 }

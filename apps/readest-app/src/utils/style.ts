@@ -111,10 +111,12 @@ const getColorStyles = (
   overrideColor: boolean,
   invertImgColorInDark: boolean,
   themeCode: ThemeCode,
+  backgroundTextureId: string,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const colorStyles = `
     html {
+      --bg-texture-id: ${backgroundTextureId};
       --theme-bg-color: ${bg};
       --theme-fg-color: ${fg};
       --theme-primary-color: ${primary};
@@ -495,6 +497,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.overrideColor!,
     viewSettings.invertImgColorInDark!,
     themeCode,
+    viewSettings.backgroundTextureId,
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const userStylesheet = viewSettings.userStylesheet!;

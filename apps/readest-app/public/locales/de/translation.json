@@ -600,5 +600,11 @@
   "Background Read Aloud": "Hintergrund-Vorlesen",
   "Ready to read aloud": "Bereit zum Vorlesen",
   "Read Aloud": "Vorlesen",
-  "Screen Brightness": "Bildschirmhelligkeit"
+  "Screen Brightness": "Bildschirmhelligkeit",
+  "Background Image": "Hintergrundbild",
+  "Import Image": "Bild importieren",
+  "Opacity": "Opazität",
+  "Size": "Größe",
+  "Cover": "Cover",
+  "Contain": "Inhalt"
 }

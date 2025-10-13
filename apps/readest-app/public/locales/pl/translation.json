@@ -608,5 +608,11 @@
   "Background Read Aloud": "Czytanie na głos w tle",
   "Ready to read aloud": "Gotowy do przeczytania na głos",
   "Read Aloud": "Czytaj na głos",
-  "Screen Brightness": "Jasność ekranu"
+  "Screen Brightness": "Jasność ekranu",
+  "Background Image": "Obraz tła",
+  "Import Image": "Importuj obraz",
+  "Opacity": "Przezroczystość",
+  "Size": "Rozmiar",
+  "Cover": "Okładka",
+  "Contain": "Zawierać"
 }

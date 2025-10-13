@@ -600,5 +600,11 @@
   "Background Read Aloud": "पृष्ठभूमि में वाचन",
   "Ready to read aloud": "उच्च स्वर में पढ़ने के लिए तैयार",
   "Read Aloud": "उच्च स्वर में पढ़ें",
-  "Screen Brightness": "स्क्रीन ब्राइटनेस"
+  "Screen Brightness": "स्क्रीन ब्राइटनेस",
+  "Background Image": "पृष्ठभूमि छवि",
+  "Import Image": "छवि आयात करें",
+  "Opacity": "अस्पष्टता",
+  "Size": "आकार",
+  "Cover": "कवर",
+  "Contain": "समाहित करें"
 }

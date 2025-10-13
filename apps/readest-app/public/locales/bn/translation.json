@@ -600,5 +600,11 @@
   "Background Read Aloud": "পটভূমিতে উচ্চস্বরে পড়ুন",
   "Ready to read aloud": "উচ্চস্বরে পড়ার জন্য প্রস্তুত",
   "Read Aloud": "উচ্চস্বরে পড়ুন",
-  "Screen Brightness": "স্ক্রিন উজ্জ্বলতা"
+  "Screen Brightness": "স্ক্রিন উজ্জ্বলতা",
+  "Background Image": "ব্যাকগ্রাউন্ড ছবি",
+  "Import Image": "ছবি আমদানি করুন",
+  "Opacity": "স্বচ্ছতা",
+  "Size": "আকার",
+  "Cover": "ঢাকা",
+  "Contain": "ধারণ"
 }

@@ -600,5 +600,11 @@
   "Background Read Aloud": "Arka Planda Sesli Okuma",
   "Ready to read aloud": "Sesli okumaya hazır",
   "Read Aloud": "Sesli Oku",
-  "Screen Brightness": "Ekran Parlaklığı"
+  "Screen Brightness": "Ekran Parlaklığı",
+  "Background Image": "Arka Plan Görüntüsü",
+  "Import Image": "Görüntü İçe Aktar",
+  "Opacity": "Opaklık",
+  "Size": "Boyut",
+  "Cover": "Kapak",
+  "Contain": "İçerir"
 }
