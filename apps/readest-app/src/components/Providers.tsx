@@ -47,20 +47,17 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         if (appService.hasScreenBrightness && brightness >= 0) {
           setScreenBrightness(brightness / 100);
         }
-        const backgroundTextureId = globalViewSettings.backgroundTextureId;
-        const backgroundOpacity = globalViewSettings.backgroundOpacity;
-        const backgroundSize = globalViewSettings.backgroundSize;
-        if (backgroundTextureId && backgroundTextureId !== 'none') {
-          const customTexture = settings.customTextures.find((t) => t.id === backgroundTextureId);
+        const textureId = globalViewSettings.backgroundTextureId;
+        const textureOpacity = globalViewSettings.backgroundOpacity;
+        const textureSize = globalViewSettings.backgroundSize;
+        if (textureId && textureId !== 'none') {
+          document.documentElement.style.setProperty('--bg-texture-opacity', `${textureOpacity}`);
+          document.documentElement.style.setProperty('--bg-texture-size', textureSize);
+          const customTexture = settings.customTextures?.find((t) => t.id === textureId);
           if (customTexture) {
             addTexture(customTexture.path);
           }
-          applyTexture(envConfig, backgroundTextureId);
-          document.documentElement.style.setProperty(
-            '--bg-texture-opacity',
-            backgroundOpacity.toString(),
-          );
-          document.documentElement.style.setProperty('--bg-texture-size', backgroundSize);
+          applyTexture(envConfig, textureId);
         }
       });
     }
