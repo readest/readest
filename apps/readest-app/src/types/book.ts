@@ -126,6 +126,9 @@ export interface BookStyle {
   overrideFont: boolean;
   overrideLayout: boolean;
   overrideColor: boolean;
+  backgroundTextureId: string;
+  backgroundOpacity: number;
+  backgroundSize: string;
   codeHighlighting: boolean;
   codeLanguage: string;
   userStylesheet: string;

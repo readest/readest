@@ -121,5 +121,9 @@ export const useTheme = ({
       '--overlayer-highlight-blend-mode',
       isDarkMode ? 'lighten' : 'normal',
     );
+    document.documentElement.style.setProperty(
+      '--bg-texture-blend-mode',
+      isDarkMode ? 'lighten' : 'multiply',
+    );
   }, [themeColor, isDarkMode]);
 };

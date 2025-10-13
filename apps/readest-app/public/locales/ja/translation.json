@@ -596,5 +596,11 @@
   "Background Read Aloud": "バックグラウンド読み上げ",
   "Ready to read aloud": "読み上げの準備ができました",
   "Read Aloud": "読み上げ",
-  "Screen Brightness": "画面の明るさ"
+  "Screen Brightness": "画面の明るさ",
+  "Background Image": "背景画像",
+  "Import Image": "画像をインポート",
+  "Opacity": "不透明度",
+  "Size": "サイズ",
+  "Cover": "カバー",
+  "Contain": "含む"
 }

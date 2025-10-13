@@ -3,10 +3,12 @@ import { Book, BookConfig, BookContent, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
+import { CustomTextureInfo } from '@/styles/textures';
 
 export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
-export type BaseDir = 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Log' | 'Cache' | 'Temp' | 'None';
+// prettier-ignore
+export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
 export type SelectDirectoryMode = 'read' | 'write';
 export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
@@ -83,6 +85,8 @@ export interface AppService {
   saveSettings(settings: SystemSettings): Promise<void>;
   importFont(file?: string | File): Promise<CustomFontInfo | null>;
   deleteFont(font: CustomFont): Promise<void>;
+  importImage(file?: string | File): Promise<CustomTextureInfo | null>;
+  deleteImage(texture: CustomTextureInfo): Promise<void>;
   importBook(
     file: string | File,
     books: Book[],

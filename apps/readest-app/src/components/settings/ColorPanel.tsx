@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdOutlineLightMode, MdOutlineDarkMode } from 'react-icons/md';
+import { MdOutlineLightMode, MdOutlineDarkMode, MdClose, MdAdd } from 'react-icons/md';
 import { MdRadioButtonUnchecked, MdRadioButtonChecked } from 'react-icons/md';
 import { CgColorPicker } from 'react-icons/cg';
 import { TbSunMoon } from 'react-icons/tb';
@@ -19,9 +19,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { useCustomTextureStore } from '@/store/customTextureStore';
 import { saveViewSettings } from '@/helpers/viewSettings';
 import { CODE_LANGUAGES, CodeLanguage, manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import { useFileSelector } from '@/hooks/useFileSelector';
+import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import Select from '@/components/Select';
 import ThemeEditor from './ThemeEditor';
 
@@ -29,7 +32,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const _ = useTranslation();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor, saveCustomTheme } =
     useThemeStore();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -46,7 +49,22 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [codeHighlighting, setcodeHighlighting] = useState(viewSettings.codeHighlighting);
   const [codeLanguage, setCodeLanguage] = useState(viewSettings.codeLanguage);
 
+  const [selectedTextureId, setSelectedTextureId] = useState(viewSettings.backgroundTextureId);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(viewSettings.backgroundOpacity);
+  const [backgroundSize, setBackgroundSize] = useState(viewSettings.backgroundSize);
+
+  const {
+    textures: customTextures,
+    addTexture,
+    loadTexture,
+    applyTexture,
+    removeTexture,
+    loadCustomTextures,
+    saveCustomTextures,
+  } = useCustomTextureStore();
   const resetToDefaults = useResetViewSettings();
+
+  const { selectFiles } = useFileSelector(appService, _);
 
   const handleReset = () => {
     resetToDefaults({
@@ -57,12 +75,19 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     });
     setThemeColor('default');
     setThemeMode('auto');
+    setSelectedTextureId('none');
+    setBackgroundOpacity(0.4);
+    setBackgroundSize('2048px');
   };
 
   useEffect(() => {
     onRegisterReset(handleReset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    loadCustomTextures(envConfig);
+  }, [loadCustomTextures, envConfig]);
 
   useEffect(() => {
     if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
@@ -93,6 +118,36 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     docs.forEach(({ doc }) => manageSyntaxHighlighting(doc, viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeHighlighting, codeLanguage]);
+
+  useEffect(() => {
+    if (selectedTextureId === viewSettings.backgroundTextureId) return;
+    saveViewSettings(envConfig, bookKey, 'backgroundTextureId', selectedTextureId);
+    applyBackgroundTexture();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTextureId]);
+
+  useEffect(() => {
+    if (backgroundOpacity === viewSettings.backgroundOpacity) return;
+    saveViewSettings(envConfig, bookKey, 'backgroundOpacity', backgroundOpacity);
+    applyBackgroundTexture();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backgroundOpacity]);
+
+  useEffect(() => {
+    if (backgroundSize === viewSettings.backgroundSize) return;
+    saveViewSettings(envConfig, bookKey, 'backgroundSize', backgroundSize);
+    applyBackgroundTexture();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backgroundSize]);
+
+  const applyBackgroundTexture = () => {
+    applyTexture(selectedTextureId);
+    document.documentElement.style.setProperty(
+      '--bg-texture-opacity',
+      backgroundOpacity.toString(),
+    );
+    document.documentElement.style.setProperty('--bg-texture-size', backgroundSize);
+  };
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
@@ -133,6 +188,38 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       setShowCustomThemeEditor(true);
     }
   };
+
+  const handleImportImage = () => {
+    selectFiles({ type: 'images', multiple: true }).then(async (result) => {
+      if (result.error || result.files.length === 0) return;
+      for (const selectedFile of result.files) {
+        const textureInfo = await appService?.importImage(selectedFile.path || selectedFile.file);
+        if (!textureInfo) continue;
+
+        const customTexture = addTexture(textureInfo.path);
+        console.log('Added custom texture:', customTexture);
+        if (customTexture && !customTexture.error) {
+          await loadTexture(envConfig, customTexture.id);
+        }
+      }
+      saveCustomTextures(envConfig);
+    });
+  };
+
+  const handleDeleteCustomTexture = (textureId: string) => {
+    removeTexture(textureId);
+    const updatedTextures = customTextures.filter((t) => t.id !== textureId);
+
+    settings.customTextures = updatedTextures;
+    setSettings(settings);
+
+    if (selectedTextureId === textureId) {
+      setSelectedTextureId('none');
+    }
+    saveCustomTextures(envConfig);
+  };
+
+  const allTextures = [...PREDEFINED_TEXTURES, ...customTextures.filter((t) => !t.deletedAt)];
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -247,6 +334,111 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
                 <span>{_('Custom')}</span>
               </button>
             </div>
+          </div>
+
+          <div>
+            <h2 className='mb-2 font-medium'>{_('Background Image')}</h2>
+            <div className='mb-4 grid grid-cols-2 gap-4'>
+              {allTextures.map((texture) => (
+                <button
+                  key={texture.id}
+                  onClick={() => setSelectedTextureId(texture.id)}
+                  className={`bg-base-100 relative flex flex-col items-center justify-center rounded-lg border-2 p-4 shadow-md transition-all ${
+                    selectedTextureId === texture.id
+                      ? 'ring-2 ring-indigo-500 ring-offset-2'
+                      : 'border-base-300'
+                  }`}
+                  style={{
+                    backgroundImage: texture.loaded
+                      ? `url("${texture.blobUrl || texture.url}")`
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'top',
+                    minHeight: '80px',
+                  }}
+                >
+                  {texture.path && (
+                    <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-40'>
+                      <span className='text-sm font-medium text-white'>{_(texture.name)}</span>
+                    </div>
+                  )}
+                  {selectedTextureId === texture.id && (
+                    <MdRadioButtonChecked
+                      size={iconSize24}
+                      className='absolute right-2 top-2 rounded-full bg-white text-indigo-500'
+                    />
+                  )}
+                  {!PREDEFINED_TEXTURES.find((t) => t.id === texture.id) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCustomTexture(texture.id);
+                      }}
+                      className='absolute left-2 top-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600'
+                      title={_('Delete')}
+                    >
+                      <MdClose size={16} />
+                    </button>
+                  )}
+                </button>
+              ))}
+
+              {/* Custom Image Upload */}
+              <div
+                className={`border-base-300 relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 shadow-md transition-all`}
+                style={{ minHeight: '80px' }}
+              >
+                <button
+                  className='card-body flex cursor-pointer items-center justify-center p-2 text-center'
+                  onClick={handleImportImage}
+                >
+                  <div className='flex items-center gap-2'>
+                    <div className='flex items-center justify-center'>
+                      <MdAdd className='text-primary/85 group-hover:text-primary h-6 w-6' />
+                    </div>
+                    <div className='text-primary/85 group-hover:text-primary line-clamp-1 font-medium'>
+                      {_('Import Image')}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Background Image Settings */}
+            {selectedTextureId !== 'none' && (
+              <div className='card border-base-200 bg-base-100 space-y-4 border p-4 shadow'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm font-medium'>{_('Opacity')}</span>
+                  <div className='flex items-center gap-2'>
+                    <input
+                      type='range'
+                      min='0'
+                      max='1'
+                      step='0.05'
+                      value={backgroundOpacity}
+                      onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
+                      className='range range-sm w-32'
+                    />
+                    <span className='w-12 text-right text-sm'>
+                      {Math.round(backgroundOpacity * 100)}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm font-medium'>{_('Size')}</span>
+                  <Select
+                    value={backgroundSize}
+                    onChange={(e) => setBackgroundSize(e.target.value)}
+                    options={[
+                      { value: 'auto', label: _('Auto') },
+                      { value: 'cover', label: _('Cover') },
+                      { value: 'contain', label: _('Contain') },
+                    ]}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className='w-full'>

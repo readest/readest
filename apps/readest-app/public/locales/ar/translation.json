@@ -616,5 +616,11 @@
   "Background Read Aloud": "قراءة بصوت عالٍ في الخلفية",
   "Ready to read aloud": "جاهز للقراءة بصوت عالٍ",
   "Read Aloud": "القراءة بصوت عالٍ",
-  "Screen Brightness": "سطوع الشاشة"
+  "Screen Brightness": "سطوع الشاشة",
+  "Background Image": "صورة الخلفية",
+  "Import Image": "استيراد صورة",
+  "Opacity": "شفافية",
+  "Size": "حجم",
+  "Cover": "غطاء",
+  "Contain": "احتواء"
 }

@@ -600,5 +600,11 @@
   "Reveal in Finder": "Visa i Finder",
   "Reveal in File Explorer": "Visa i Utforskaren",
   "Reveal in Folder": "Visa i mapp",
-  "Screen Brightness": "Skärmens ljusstyrka"
+  "Screen Brightness": "Skärmens ljusstyrka",
+  "Background Image": "Bakgrundsbild",
+  "Import Image": "Importera bild",
+  "Opacity": "Opacitet",
+  "Size": "Storlek",
+  "Cover": "Omslag",
+  "Contain": "Innehålla"
 }

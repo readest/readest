@@ -10,14 +10,16 @@ import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
-import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
+import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
+import { useCustomTextureStore } from '@/store/customTextureStore';
 import { getLocale } from '@/utils/misc';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
   const { setScreenBrightness } = useDeviceControlStore();
+  const { applyTexture } = useCustomTextureStore();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -39,14 +41,26 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     if (appService) {
       initSystemThemeListener(appService);
       appService.loadSettings().then((settings) => {
-        applyUILanguage(settings.globalViewSettings?.uiLanguage);
+        const globalViewSettings = settings.globalViewSettings;
+        applyUILanguage(globalViewSettings.uiLanguage);
         const brightness = settings.screenBrightness;
         if (appService.hasScreenBrightness && brightness >= 0) {
           setScreenBrightness(brightness / 100);
         }
+        const backgroundTextureId = globalViewSettings.backgroundTextureId;
+        const backgroundOpacity = globalViewSettings.backgroundOpacity;
+        const backgroundSize = globalViewSettings.backgroundSize;
+        if (backgroundTextureId && backgroundTextureId !== 'none') {
+          applyTexture(backgroundTextureId);
+          document.documentElement.style.setProperty(
+            '--bg-texture-opacity',
+            backgroundOpacity.toString(),
+          );
+          document.documentElement.style.setProperty('--bg-texture-size', backgroundSize);
+        }
       });
     }
-  }, [appService, applyUILanguage, setScreenBrightness]);
+  }, [appService, applyUILanguage, applyTexture, setScreenBrightness]);
 
   // Make sure appService is available in all children components
   if (!appService) return;

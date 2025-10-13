@@ -3,7 +3,12 @@ import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { RemoteFile } from '@/utils/file';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
-import { DATA_SUBDIR, LOCAL_BOOKS_SUBDIR, LOCAL_FONTS_SUBDIR } from './constants';
+import {
+  DATA_SUBDIR,
+  LOCAL_BOOKS_SUBDIR,
+  LOCAL_FONTS_SUBDIR,
+  LOCAL_IMAGES_SUBDIR,
+} from './constants';
 
 const basePrefix = async () => '';
 
@@ -15,6 +20,8 @@ const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
       return { baseDir: 0, basePrefix, fp: `${LOCAL_BOOKS_SUBDIR}/${path}`, base };
     case 'Fonts':
       return { baseDir: 0, basePrefix, fp: `${LOCAL_FONTS_SUBDIR}/${path}`, base };
+    case 'Images':
+      return { baseDir: 0, basePrefix, fp: `${LOCAL_IMAGES_SUBDIR}/${path}`, base };
     case 'None':
       return { baseDir: 0, basePrefix, fp: path, base };
     default:

@@ -44,6 +44,7 @@ import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
   LOCAL_FONTS_SUBDIR,
+  LOCAL_IMAGES_SUBDIR,
   SETTINGS_FILENAME,
 } from './constants';
 
@@ -137,6 +138,15 @@ const getPathResolver = ({
           fp: customBasePrefixSync
             ? `${customBasePrefixSync()}/${LOCAL_FONTS_SUBDIR}${path ? `/${path}` : ''}`
             : `${LOCAL_FONTS_SUBDIR}${path ? `/${path}` : ''}`,
+          base,
+        };
+      case 'Images':
+        return {
+          baseDir: customBaseDir ?? BaseDirectory.AppData,
+          basePrefix: customBasePrefix || appDataDir,
+          fp: customBasePrefixSync
+            ? `${customBasePrefixSync()}/${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`
+            : `${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'None':
