@@ -64,7 +64,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         }
       });
     }
-  }, [envConfig, appService, applyUILanguage, applyTexture, setScreenBrightness]);
+  }, [envConfig, appService, applyUILanguage, addTexture, applyTexture, setScreenBrightness]);
 
   // Make sure appService is available in all children components
   if (!appService) return;
