@@ -81,6 +81,28 @@ jobs:
               prerelease: false
             })
 
+  build-koreader-plugin:
+    needs: get-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: create KOReader plugin zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${{ needs.get-release.outputs.release_version }}
+          plugin_zip="Readest-${version}-1.koplugin.zip"
+
+          cd apps/readest.koplugin
+          zip -r ../../${plugin_zip} .
+          cd ../..
+
+          echo "Uploading ${plugin_zip} to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+
   build-tauri:
     needs: get-release
     permissions:
