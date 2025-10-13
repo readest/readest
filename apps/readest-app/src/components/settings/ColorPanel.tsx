@@ -357,11 +357,6 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
                     minHeight: '80px',
                   }}
                 >
-                  {texture.path && (
-                    <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-40'>
-                      <span className='text-sm font-medium text-white'>{_(texture.name)}</span>
-                    </div>
-                  )}
                   {selectedTextureId === texture.id && (
                     <MdRadioButtonChecked
                       size={iconSize24}
