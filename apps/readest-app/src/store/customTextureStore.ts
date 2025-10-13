@@ -14,10 +14,7 @@ interface TextureStoreState {
   loading: boolean;
 
   setTextures: (textures: CustomTexture[]) => void;
-  addTexture: (
-    path: string,
-    options?: Partial<Omit<CustomTexture, 'id' | 'path'>>,
-  ) => CustomTexture;
+  addTexture: (path: string) => CustomTexture;
   removeTexture: (id: string) => boolean;
   updateTexture: (id: string, updates: Partial<CustomTexture>) => boolean;
   getTexture: (id: string) => CustomTexture | undefined;
@@ -25,7 +22,7 @@ interface TextureStoreState {
   getAvailableTextures: () => CustomTexture[];
   clearAllTextures: () => void;
 
-  applyTexture: (textureId: string) => void;
+  applyTexture: (envConfig: EnvConfigType, textureId: string) => Promise<void>;
   loadTexture: (envConfig: EnvConfigType, textureId: string) => Promise<CustomTexture>;
   loadTextures: (envConfig: EnvConfigType, textureIds: string[]) => Promise<CustomTexture[]>;
   loadAllTextures: (envConfig: EnvConfigType) => Promise<CustomTexture[]>;
@@ -267,14 +264,18 @@ export const useCustomTextureStore = create<TextureStoreState>((set, get) => ({
     return texture?.loaded === true && !texture.error && !texture.deletedAt;
   },
 
-  applyTexture: (textureId: string) => {
+  applyTexture: async (envConfig, textureId) => {
     const customTextures = get().getAvailableTextures();
     const allTextures = [...PREDEFINED_TEXTURES, ...customTextures];
-    const selectedTexture = allTextures.find((t) => t.id === textureId);
+    let selectedTexture = allTextures.find((t) => t.id === textureId);
 
     if (!selectedTexture || selectedTexture.id === 'none') {
       unmountBackgroundTexture(document);
       return;
+    }
+
+    if (customTextures.find((t) => t.id === textureId) && !get().isTextureLoaded(textureId)) {
+      selectedTexture = await get().loadTexture(envConfig, textureId);
     }
 
     mountBackgroundTexture(document, selectedTexture);

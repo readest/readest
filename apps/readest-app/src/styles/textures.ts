@@ -56,10 +56,10 @@ const createTextureCSS = (texture: BackgroundTexture) => {
       position: relative;
     }
 
-    html::before, .sidebar-container::before, .notebook-container::before,
+    body::before, .sidebar-container::before, .notebook-container::before,
     .foliate-viewer::before {
       content: "";
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       right: 0;
@@ -68,12 +68,9 @@ const createTextureCSS = (texture: BackgroundTexture) => {
       z-index: 0;
       background-image: url("${texture.blobUrl || texture.url}");
       background-repeat: repeat;
-      background-size: var(--bg-texture-size);
-      mix-blend-mode: var(--bg-texture-blend-mode);
-      opacity: var(--bg-texture-opacity);
-    }
-    html::before {
-      height: 100vh;
+      background-size: var(--bg-texture-size, auto);
+      mix-blend-mode: var(--bg-texture-blend-mode, normal);
+      opacity: var(--bg-texture-opacity, 0.6);
     }`;
 
   return css;
