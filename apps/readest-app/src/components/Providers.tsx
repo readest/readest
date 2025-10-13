@@ -16,10 +16,10 @@ import { useCustomTextureStore } from '@/store/customTextureStore';
 import { getLocale } from '@/utils/misc';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
   const { setScreenBrightness } = useDeviceControlStore();
-  const { applyTexture } = useCustomTextureStore();
+  const { addTexture, applyTexture } = useCustomTextureStore();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -51,7 +51,11 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         const backgroundOpacity = globalViewSettings.backgroundOpacity;
         const backgroundSize = globalViewSettings.backgroundSize;
         if (backgroundTextureId && backgroundTextureId !== 'none') {
-          applyTexture(backgroundTextureId);
+          const customTexture = settings.customTextures.find((t) => t.id === backgroundTextureId);
+          if (customTexture) {
+            addTexture(customTexture.path);
+          }
+          applyTexture(envConfig, backgroundTextureId);
           document.documentElement.style.setProperty(
             '--bg-texture-opacity',
             backgroundOpacity.toString(),
@@ -60,7 +64,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         }
       });
     }
-  }, [appService, applyUILanguage, applyTexture, setScreenBrightness]);
+  }, [envConfig, appService, applyUILanguage, applyTexture, setScreenBrightness]);
 
   // Make sure appService is available in all children components
   if (!appService) return;

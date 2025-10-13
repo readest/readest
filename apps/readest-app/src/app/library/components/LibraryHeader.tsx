@@ -150,7 +150,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge bg-base-300/30 h-9 w-full pl-10 pr-10 sm:h-7',
+                'input rounded-badge bg-base-300/45 h-9 w-full pl-10 pr-10 sm:h-7',
                 'font-sans text-sm font-light',
                 'border-none focus:outline-none focus:ring-0',
               )}

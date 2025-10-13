@@ -79,7 +79,6 @@ foliate-view {
 .window-button {
   @apply inline-flex h-6 w-6 items-center justify-center rounded-full;
   @apply transform transition duration-200 ease-in-out hover:scale-105;
-  @apply bg-base-200/85 hover:bg-base-200;
 }
 
 .rounded-window {
