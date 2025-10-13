@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.9.85": {
+      "date": "2025-10-14",
+      "notes": [
+        "TTS: Improved media session control compatibility across more Android systems",
+        "TTS: Made the TTS icon less distracting during read-aloud mode",
+        "Settings: Added an option to adjust screen brightness while reading",
+        "Settings: Added support for custom background images",
+        "PDF: Fixed an issue where scrolling and panning didn’t work correctly when zoomed in",
+        "Android: Added adaptive launcher icon for better system integration",
+        "Reader: Added keyboard shortcuts for toggling bookmarks",
+        "Reader: Annotations are now rendered instantly when opening files"
+      ]
+    },
     "0.9.82": {
       "date": "2025-10-01",
       "notes": [
