@@ -3,6 +3,7 @@ import { ViewSettings } from '@/types/book';
 export type TransformContext = {
   bookKey: string;
   viewSettings: ViewSettings;
+  primaryLanguage?: string;
   content: string;
   transformers: string[];
   reversePunctuationTransform?: boolean;
