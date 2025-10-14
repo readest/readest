@@ -43,6 +43,7 @@ import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { isCJKLang } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
@@ -118,15 +119,17 @@ const FoliateViewer: React.FC<{
       detail.data = Promise.resolve(detail.data)
         .then((data) => {
           const viewSettings = getViewSettings(bookKey);
+          const bookData = getBookData(bookKey);
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(width, height, data);
-          if (viewSettings && detail.type === 'application/xhtml+xml') {
+          if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
             const ctx = {
               bookKey,
               viewSettings,
+              primaryLanguage: bookData.book?.primaryLanguage,
               content: data,
-              transformers: ['punctuation', 'footnote', 'language'],
-            };
+              transformers: ['punctuation', 'footnote', 'whitespace', 'language'],
+            } as TransformContext;
             return Promise.resolve(transformContent(ctx));
           }
           return data;
