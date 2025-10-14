@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.86": {
+      "date": "2025-10-14",
+      "notes": [
+        "Reader: Added support for per-book background image customization",
+        "Reader: Added option to override book language metadata for improved hyphenation accuracy",
+        "Sync: Readest sync in KOReader can now be triggered using gesture controls",
+        "Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book",
+        "Sync: Improved upload performance with concurrent upload support"
+      ]
+    },
     "0.9.85": {
       "date": "2025-10-14",
       "notes": [
