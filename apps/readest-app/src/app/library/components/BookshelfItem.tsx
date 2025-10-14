@@ -77,9 +77,9 @@ interface BookshelfItemProps {
   transferProgress: number | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
-  handleBookUpload: (book: Book) => Promise<boolean>;
   handleBookDownload: (book: Book) => Promise<boolean>;
-  handleBookDelete: (book: Book) => Promise<boolean>;
+  handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
 }

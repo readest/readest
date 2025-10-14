@@ -31,11 +31,12 @@ interface BookshelfProps {
   isSelectAll: boolean;
   isSelectNone: boolean;
   handleImportBooks: () => void;
-  handleBookUpload: (book: Book) => Promise<boolean>;
   handleBookDownload: (book: Book) => Promise<boolean>;
-  handleBookDelete: (book: Book) => Promise<boolean>;
+  handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handlePushLibrary: () => Promise<void>;
   booksTransferProgress: { [key: string]: number | null };
 }
 
@@ -50,6 +51,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookDelete,
   handleSetSelectMode,
   handleShowDetailsBook,
+  handlePushLibrary,
   booksTransferProgress,
 }) => {
   const _ = useTranslation();
@@ -217,9 +219,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const confirmDelete = async () => {
-    for (const book of getBooksToDelete()) {
-      handleBookDelete(book);
+    const books = getBooksToDelete();
+    const concurrency = 4;
+
+    for (let i = 0; i < books.length; i += concurrency) {
+      const batch = books.slice(i, i + concurrency);
+      await Promise.all(batch.map((book) => handleBookDelete(book, false)));
     }
+    handlePushLibrary();
     setSelectedBooks([]);
     setShowDeleteAlert(false);
     setShowSelectModeActions(true);
