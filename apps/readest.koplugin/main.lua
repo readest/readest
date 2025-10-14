@@ -1,5 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
+local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -40,35 +41,25 @@ function ReadestSync:init()
     self.last_sync_timestamp = 0
     self.settings = G_reader_settings:readSetting("readest_sync", self.default_settings)
 
-    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function ReadestSync:onDispatcherRegisterActions()
-   --
+    Dispatcher:registerAction("readest_sync_set_autosync",
+        { category="string", event="ReadestSyncToggleAutoSync", title=_("Set auto progress sync"), reader=true,
+        args={true, false}, toggle={_("on"), _("off")},})
+    Dispatcher:registerAction("readest_sync_toggle_autosync", { category="none", event="ReadestSyncToggleAutoSync", title=_("Toggle auto readest sync"), reader=true,})
+    Dispatcher:registerAction("readest_sync_push_progress", { category="none", event="ReadestSyncPushProgress", title=_("Push readest progress from this device"), reader=true,})
+    Dispatcher:registerAction("readest_sync_pull_progress", { category="none", event="ReadestSyncPullProgress", title=_("Pull readest progress from other devices"), reader=true, separator=true,})
 end
 
-function ReadestSync:needsLogin()
-    return not self.settings.access_token or not self.settings.expires_at
-        or self.settings.expires_at < os.time() + 60
-end
-
-function ReadestSync:tryRefreshToken()
-    if self.settings.refresh_token and self.settings.expires_at
-        and self.settings.expires_at < os.time() - self.settings.expires_in / 2 then
-        local client = self:getSupabaseAuthClient()
-        client:refresh_token(self.settings.refresh_token, function(success, response)
-            if success then
-                self.settings.access_token = response.access_token
-                self.settings.refresh_token = response.refresh_token
-                self.settings.expires_at = response.expires_at
-                self.settings.expires_in = response.expires_in
-                G_reader_settings:saveSetting("readest_sync", self.settings)
-            else
-                logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
-            end
+function ReadestSync:onReaderReady()
+    if self.settings.auto_sync and self.settings.access_token then
+        UIManager:nextTick(function()
+            self:pullBookConfig(false)
         end)
     end
+    self:onDispatcherRegisterActions()
 end
 
 function ReadestSync:addToMainMenu(menu_items)
@@ -98,17 +89,14 @@ function ReadestSync:addToMainMenu(menu_items)
                 text = _("Auto sync book configs"),
                 checked_func = function() return self.settings.auto_sync end,
                 callback = function()
-                    self.settings.auto_sync = not self.settings.auto_sync
-                    if self.settings.auto_sync then
-                        self:pullBookConfig(false)
-                    end
+                    self:onReadestSyncToggleAutoSync()
                 end,
                 separator = true,
             },
             {
                 text = _("Push book config now"),
                 enabled_func = function()
-                    return self.settings.access_token ~= nil
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
                 end,
                 callback = function()
                     self:pushBookConfig(true)
@@ -117,7 +105,7 @@ function ReadestSync:addToMainMenu(menu_items)
             {
                 text = _("Pull book config now"),
                 enabled_func = function()
-                    return self.settings.access_token ~= nil
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
                 end,
                 callback = function()
                     self:pullBookConfig(true)
@@ -125,6 +113,29 @@ function ReadestSync:addToMainMenu(menu_items)
             },
         }
     }
+end
+
+function ReadestSync:needsLogin()
+    return not self.settings.access_token or not self.settings.expires_at
+        or self.settings.expires_at < os.time() + 60
+end
+
+function ReadestSync:tryRefreshToken()
+    if self.settings.refresh_token and self.settings.expires_at
+        and self.settings.expires_at < os.time() - self.settings.expires_in / 2 then
+        local client = self:getSupabaseAuthClient()
+        client:refresh_token(self.settings.refresh_token, function(success, response)
+            if success then
+                self.settings.access_token = response.access_token
+                self.settings.refresh_token = response.refresh_token
+                self.settings.expires_at = response.expires_at
+                self.settings.expires_in = response.expires_in
+                G_reader_settings:saveSetting("readest_sync", self.settings)
+            else
+                logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
+            end
+        end)
+    end
 end
 
 function ReadestSync:getSupabaseAuthClient()
@@ -596,12 +607,23 @@ function ReadestSync:pullBookConfig(interactive)
     )
 end
 
-function ReadestSync:onReaderReady()
-    if self.settings.auto_sync and self.settings.access_token then
-        UIManager:nextTick(function()
-            self:pullBookConfig(false)
-        end)
+function ReadestSync:onReadestSyncToggleAutoSync(toggle)
+    if toggle == self.settings.auto_sync then
+        return true
     end
+    self.settings.auto_sync = not self.settings.auto_sync
+    G_reader_settings:saveSetting("readest_sync", self.settings)
+    if self.settings.auto_sync and self.ui.document then
+        self:pullBookConfig(false)
+    end
+end
+
+function ReadestSync:onReadestSyncPushProgress()
+    self:pushBookConfig(true)
+end
+
+function ReadestSync:onReadestSyncPullProgress()
+    self:pullBookConfig(true)
 end
 
 function ReadestSync:onCloseDocument()
