@@ -142,10 +142,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
 
   const applyBackgroundTexture = () => {
     applyTexture(envConfig, selectedTextureId);
-    document.documentElement.style.setProperty(
-      '--bg-texture-opacity',
-      backgroundOpacity.toString(),
-    );
+    document.documentElement.style.setProperty('--bg-texture-opacity', `${backgroundOpacity}`);
     document.documentElement.style.setProperty('--bg-texture-size', backgroundSize);
   };
 

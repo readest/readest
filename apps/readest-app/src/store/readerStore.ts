@@ -288,10 +288,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const oldConfig = bookData.config;
       const newConfig = {
         ...bookData.config,
-        updatedAt: Date.now(),
         progress,
         location,
-      };
+      } as BookConfig;
 
       useBookDataStore.setState((state) => ({
         booksData: {

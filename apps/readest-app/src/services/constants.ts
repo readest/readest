@@ -155,7 +155,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   overrideColor: false,
   backgroundTextureId: 'none',
   backgroundOpacity: 0.6,
-  backgroundSize: 'auto',
+  backgroundSize: 'cover',
   codeHighlighting: false,
   codeLanguage: 'auto-detect',
   userStylesheet: '',
