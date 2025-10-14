@@ -142,7 +142,11 @@ export const useProgressSync = (bookKey: string) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         Object.entries(syncedConfig).filter(([_, value]) => value !== null && value !== undefined),
       );
-      setConfig(bookKey, { ...config, ...filteredSyncedConfig });
+      if (syncedConfig.updatedAt >= config.updatedAt) {
+        setConfig(bookKey, { ...config, ...filteredSyncedConfig });
+      } else {
+        setConfig(bookKey, { ...filteredSyncedConfig, ...config });
+      }
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
           if (view) {

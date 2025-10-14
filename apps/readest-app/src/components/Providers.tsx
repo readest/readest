@@ -12,14 +12,14 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
-import { useCustomTextureStore } from '@/store/customTextureStore';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { getLocale } from '@/utils/misc';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
   const { setScreenBrightness } = useDeviceControlStore();
-  const { addTexture, applyTexture } = useCustomTextureStore();
+  const { applyBackgroundTexture } = useBackgroundTexture();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -47,21 +47,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         if (appService.hasScreenBrightness && brightness >= 0) {
           setScreenBrightness(brightness / 100);
         }
-        const textureId = globalViewSettings.backgroundTextureId;
-        const textureOpacity = globalViewSettings.backgroundOpacity;
-        const textureSize = globalViewSettings.backgroundSize;
-        if (textureId && textureId !== 'none') {
-          document.documentElement.style.setProperty('--bg-texture-opacity', `${textureOpacity}`);
-          document.documentElement.style.setProperty('--bg-texture-size', textureSize);
-          const customTexture = settings.customTextures?.find((t) => t.id === textureId);
-          if (customTexture) {
-            addTexture(customTexture.path);
-          }
-          applyTexture(envConfig, textureId);
-        }
+        applyBackgroundTexture(envConfig, globalViewSettings);
       });
     }
-  }, [envConfig, appService, applyUILanguage, addTexture, applyTexture, setScreenBrightness]);
+  }, [envConfig, appService, applyUILanguage, setScreenBrightness, applyBackgroundTexture]);
 
   // Make sure appService is available in all children components
   if (!appService) return;

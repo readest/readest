@@ -15,6 +15,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKOSync } from '../hooks/useKOSync';
@@ -73,6 +74,7 @@ const FoliateViewer: React.FC<{
   const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
+  const { applyBackgroundTexture } = useBackgroundTexture();
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -145,14 +147,19 @@ const FoliateViewer: React.FC<{
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
       const bookData = getBookData(bookKey)!;
-      viewSettings.vertical =
+
+      const newVertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
-      viewSettings.rtl =
+      const newRtl =
         writingDir?.rtl ||
         getDirFromUILanguage() === 'rtl' ||
         viewSettings.writingMode.includes('rl') ||
         false;
-      setViewSettings(bookKey, { ...viewSettings });
+      if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
+        viewSettings.vertical = newVertical;
+        viewSettings.rtl = newRtl;
+        setViewSettings(bookKey, { ...viewSettings });
+      }
 
       mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
 
@@ -394,6 +401,16 @@ const FoliateViewer: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.customFonts, envConfig]);
+
+  useEffect(() => {
+    if (!viewSettings) return;
+    applyBackgroundTexture(envConfig, viewSettings);
+  }, [
+    viewSettings?.backgroundTextureId,
+    viewSettings?.backgroundOpacity,
+    viewSettings?.backgroundSize,
+    applyBackgroundTexture,
+  ]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {
