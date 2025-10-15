@@ -141,7 +141,12 @@ export const loadDataTheme = () => {
   const themeMode = localStorage.getItem('themeMode');
   const themeColor = localStorage.getItem('themeColor');
   if (themeMode && themeColor) {
-    document.documentElement.setAttribute('data-theme', `${themeColor}-${themeMode}`);
+    const systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDarkMode = themeMode === 'dark' || (themeMode === 'auto' && systemIsDarkMode);
+    document.documentElement.setAttribute(
+      'data-theme',
+      `${themeColor}-${isDarkMode ? 'dark' : 'light'}`,
+    );
   }
 };
 
