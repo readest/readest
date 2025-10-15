@@ -1,4 +1,4 @@
-export const createRejecttFilter = ({
+export const createRejectFilter = ({
   tags = [],
   classes = [],
   attributes = [],

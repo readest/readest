@@ -208,6 +208,30 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         viewSettings.ttsLocation = cfi || '';
         setViewSettings(bookKey, viewSettings);
       }
+
+      if (!view.renderer.scrolled) {
+        view.renderer.scrollToAnchor(range);
+      } else {
+        const rect = range.getBoundingClientRect();
+        const { start, size, viewSize, sideProp } = view.renderer;
+        const positionStart = rect[sideProp === 'height' ? 'y' : 'x'] + viewSettings.marginTopPx;
+        const positionEnd = rect[sideProp === 'height' ? 'height' : 'width'] + positionStart;
+        const offsetStart = view.book.dir === 'rtl' ? viewSize - positionStart : positionStart;
+        const offsetEnd = view.book.dir === 'rtl' ? viewSize - positionEnd : positionEnd;
+
+        const showHeader = viewSettings.showHeader;
+        const showFooter = viewSettings.showFooter;
+        const showBarsOnScroll = viewSettings.showBarsOnScroll;
+        const headerScrollOverlap = showHeader && showBarsOnScroll ? 44 : 0;
+        const footerScrollOverlap = showFooter && showBarsOnScroll ? 44 : 0;
+        const scrollingOverlap = viewSettings.scrollingOverlap;
+        const endInNextView = offsetEnd > start + size - footerScrollOverlap - scrollingOverlap;
+        const startInPrevView = offsetStart < start + headerScrollOverlap + scrollingOverlap;
+        if (endInNextView || startInPrevView) {
+          const scrollTo = offsetStart - headerScrollOverlap - scrollingOverlap;
+          view.renderer.scrollToAnchor(scrollTo / viewSize);
+        }
+      }
     };
 
     ttsController.addEventListener('tts-speak-mark', handleSpeakMark);

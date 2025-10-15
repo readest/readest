@@ -11,7 +11,7 @@ import { BookSearchConfig, BookSearchResult } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { debounce } from '@/utils/debounce';
 import { isCJKStr } from '@/utils/lang';
-import { createRejecttFilter } from '@/utils/node';
+import { createRejectFilter } from '@/utils/node';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
 
@@ -127,7 +127,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         ...searchConfig,
         index,
         query: term,
-        acceptNode: createRejecttFilter({
+        acceptNode: createRejectFilter({
           tags: primaryLang.startsWith('ja') ? ['rt'] : [],
         }),
       });
