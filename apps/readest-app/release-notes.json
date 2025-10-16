@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.87": {
+      "date": "2025-10-16",
+      "notes": [
+        "Reader: Improved chapter detection with better chapter title recognition",
+        "Reader: Enhanced compatibility for parsing more footnote formats",
+        "Theme: Fixed auto theme switching in new reader windows",
+        "TTS: Improved scrolling accuracy to highlighted text during read-aloud",
+        "TTS: Fixed crash issues on certain Android systems"
+      ]
+    },
     "0.9.86": {
       "date": "2025-10-14",
       "notes": [
