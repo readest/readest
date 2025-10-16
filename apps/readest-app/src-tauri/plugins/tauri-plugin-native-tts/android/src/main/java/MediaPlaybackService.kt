@@ -161,10 +161,47 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setSmallIcon(R.drawable.notification_icon)
 
+            addAction(
+                android.R.drawable.ic_media_previous,
+                "Previous",
+                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    this@MediaPlaybackService,
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                )
+            )
+            if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
+                addAction(
+                    android.R.drawable.ic_media_pause,
+                    "Pause",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
+                        this@MediaPlaybackService,
+                        PlaybackStateCompat.ACTION_PAUSE
+                    )
+                )
+            } else {
+                addAction(
+                    android.R.drawable.ic_media_play,
+                    "Play",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
+                        this@MediaPlaybackService,
+                        PlaybackStateCompat.ACTION_PLAY
+                    )
+                )
+            }
+
+            addAction(
+                android.R.drawable.ic_media_next,
+                "Next",
+                MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    this@MediaPlaybackService,
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                )
+            )
+
             setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession?.sessionToken)
-                    .setShowActionsInCompactView(0)
+                    .setShowActionsInCompactView(0, 1, 2)
             )
         }
         return builder.build()
