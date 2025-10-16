@@ -54,6 +54,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const [timeoutTimestamp, setTimeoutTimestamp] = useState(0);
   const [timeoutFunc, setTimeoutFunc] = useState<ReturnType<typeof setTimeout> | null>(null);
 
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showIndicatorWithinTimeout, setShowIndicatorWithinTimeout] = useState(true);
+
   const popupPadding = useResponsiveSize(POPUP_PADDING);
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
@@ -571,10 +574,38 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPanel]);
 
+  useEffect(() => {
+    if (hoveredBookKey) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      const showTimeout = setTimeout(() => {
+        setShowIndicatorWithinTimeout(true);
+      }, 100);
+      hoverTimeoutRef.current = showTimeout;
+    } else {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      const hideTimeout = setTimeout(() => {
+        setShowIndicatorWithinTimeout(false);
+      }, 5000);
+      hoverTimeoutRef.current = hideTimeout;
+    }
+
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, [hoveredBookKey]);
+
   return (
     <>
       {showPanel && <Overlay onDismiss={handleDismissPopup} />}
-      {showIndicator && hoveredBookKey === bookKey && (
+      {(showPanel || (showIndicator && showIndicatorWithinTimeout)) && (
         <div
           ref={iconRef}
           className={clsx(
