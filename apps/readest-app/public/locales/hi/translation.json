@@ -606,5 +606,6 @@
   "Opacity": "अस्पष्टता",
   "Size": "आकार",
   "Cover": "कवर",
-  "Contain": "समाहित करें"
+  "Contain": "समाहित करें",
+  "{{number}} pages left in chapter": "इस अध्याय में {{number}} पृष्ठ शेष हैं"
 }

@@ -622,5 +622,6 @@
   "Opacity": "شفافية",
   "Size": "حجم",
   "Cover": "غطاء",
-  "Contain": "احتواء"
+  "Contain": "احتواء",
+  "{{number}} pages left in chapter": "تبقّت {{number}} صفحات في هذا الفصل"
 }

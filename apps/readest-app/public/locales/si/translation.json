@@ -606,5 +606,6 @@
   "Opacity": "පැහැදිලිත්වය",
   "Size": "ප්‍රමාණය",
   "Cover": "ආවරණය",
-  "Contain": "අඩංගු වන්න"
+  "Contain": "අඩංගු වන්න",
+  "{{number}} pages left in chapter": "පරිච්ඡේදයේ පිටු {{number}} ඉතිරිව ඇත"
 }

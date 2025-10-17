@@ -6,7 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { formatReadingProgress } from '@/utils/progress';
+import { formatNumber, formatProgress } from '@/utils/progress';
 
 interface PageInfoProps {
   bookKey: string;
@@ -40,24 +40,34 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const isVertical = viewSettings.vertical;
   const { progressStyle: readingProgressStyle } = viewSettings;
 
-  const formatTemplate =
+  const template =
     readingProgressStyle === 'fraction'
       ? isVertical
         ? '{current} · {total}'
         : '{current} / {total}'
       : '{percent}%';
 
-  const pageProgress = bookData?.isFixedLayout ? section : pageinfo;
-  const progressInfo = bookData?.isFixedLayout
-    ? formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate)
-    : formatReadingProgress(pageProgress?.current, pageProgress?.total, formatTemplate);
+  const lang = localStorage?.getItem('i18nextLng') || '';
+  const localize = isVertical && lang.toLowerCase().startsWith('zh');
+  const progress = bookData?.isFixedLayout ? section : pageinfo;
+  const progressInfo = formatProgress(progress?.current, progress?.total, template, localize, lang);
 
   const timeLeft = timeinfo
-    ? _('{{time}} min left in chapter', { time: Math.round(timeinfo.section) })
+    ? _('{{time}} min left in chapter', {
+        time: formatNumber(Math.round(timeinfo.section), localize, lang),
+      })
     : '';
   const { page = 0, pages = 0 } = view?.renderer || {};
   const pageLeft =
-    pages - 1 > page ? _('{{count}} pages left in chapter', { count: pages - 1 - page }) : '';
+    pages - 1 > page
+      ? localize
+        ? _('{{number}} pages left in chapter', {
+            number: formatNumber(pages - page - 1, localize, lang),
+          })
+        : _('{{count}} pages left in chapter', {
+            count: pages - page - 1,
+          })
+      : '';
 
   return (
     <div
@@ -68,10 +78,10 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         isScrolled && !isVertical && 'bg-base-100',
       )}
       aria-label={[
-        pageProgress
+        progress
           ? _('On {{current}} of {{total}} page', {
-              current: pageProgress.current + 1,
-              total: pageProgress.total,
+              current: progress.current + 1,
+              total: progress.total,
             })
           : '',
         timeLeft,
@@ -99,7 +109,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
       <div
         aria-hidden='true'
         className={clsx(
-          'flex items-center justify-center',
+          'flex items-center justify-between',
           isVertical ? 'h-full' : 'h-[52px] w-full',
         )}
       >
@@ -108,7 +118,11 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         ) : viewSettings.showRemainingPages ? (
           <span className='text-start'>{pageLeft}</span>
         ) : null}
-        {viewSettings.showProgressInfo && <span className='ms-auto text-end'>{progressInfo}</span>}
+        {viewSettings.showProgressInfo && (
+          <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
+            {progressInfo}
+          </span>
+        )}
       </div>
     </div>
   );

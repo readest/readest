@@ -602,5 +602,6 @@
   "Opacity": "ความโปร่งใส",
   "Size": "ขนาด",
   "Cover": "ปก",
-  "Contain": "บรรจุ"
+  "Contain": "บรรจุ",
+  "{{number}} pages left in chapter": "เหลือ {{number}} หน้าในบท"
 }

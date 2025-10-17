@@ -606,5 +606,6 @@
   "Opacity": "Αδιαφάνεια",
   "Size": "Μέγεθος",
   "Cover": "Εξώφυλλο",
-  "Contain": "Περιέχει"
+  "Contain": "Περιέχει",
+  "{{number}} pages left in chapter": "Μένουν {{number}} σελίδες στο κεφάλαιο"
 }

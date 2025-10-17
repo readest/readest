@@ -606,5 +606,6 @@
   "Opacity": "Opaklık",
   "Size": "Boyut",
   "Cover": "Kapak",
-  "Contain": "İçerir"
+  "Contain": "İçerir",
+  "{{number}} pages left in chapter": "Bu bölümde {{number}} sayfa kaldı"
 }

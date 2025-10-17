@@ -606,5 +606,6 @@
   "Opacity": "স্বচ্ছতা",
   "Size": "আকার",
   "Cover": "ঢাকা",
-  "Contain": "ধারণ"
+  "Contain": "ধারণ",
+  "{{number}} pages left in chapter": "অধ্যায়ে {{number}} পৃষ্ঠা বাকি"
 }

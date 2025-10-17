@@ -614,5 +614,6 @@
   "Opacity": "Непрозрачность",
   "Size": "Размер",
   "Cover": "Обложка",
-  "Contain": "Содержать"
+  "Contain": "Содержать",
+  "{{number}} pages left in chapter": "Осталось {{number}} страниц в главе"
 }

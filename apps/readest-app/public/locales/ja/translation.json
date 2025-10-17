@@ -602,5 +602,6 @@
   "Opacity": "不透明度",
   "Size": "サイズ",
   "Cover": "カバー",
-  "Contain": "含む"
+  "Contain": "含む",
+  "{{number}} pages left in chapter": "章に{{number}}ページ残り"
 }

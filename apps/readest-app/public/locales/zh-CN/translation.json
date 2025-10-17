@@ -601,6 +601,7 @@
   "Import Image": "导入图片",
   "Opacity": "不透明度",
   "Size": "大小",
-  "Cover": "封面",
-  "Contain": "包含"
+  "Cover": "覆盖",
+  "Contain": "适应",
+  "{{number}} pages left in chapter": "本章剩余{{number}}页"
 }
