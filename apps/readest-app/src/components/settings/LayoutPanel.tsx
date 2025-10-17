@@ -462,7 +462,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               onChange={setParagraphMargin}
               min={0}
               max={4}
-              step={0.2}
+              step={0.1}
             />
             <NumberInput
               label={_('Line Spacing')}

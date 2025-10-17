@@ -249,9 +249,7 @@ const getLayoutStyles = (
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
-    text-indent: ${vertical ? textIndent * 1.2 : textIndent}em ${overrideLayout ? '!important' : ''};
-    ${justify ? `text-align: justify ${overrideLayout ? '!important' : ''};` : ''}
-    ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
+    text-indent: ${textIndent}em ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
     hyphens: ${hyphenate ? 'auto' : 'manual'};
     -webkit-hyphenate-limit-before: 3;
@@ -260,6 +258,18 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  p.aligned-center, blockquote.aligned-center,
+  dd.aligned-center, div.aligned-center {
+    text-align: center ${overrideLayout ? '!important' : ''};
+  }
+  p.aligned-right, blockquote.aligned-right,
+  dd.aligned-right, div.aligned-right {
+    text-align: right ${overrideLayout ? '!important' : ''};
+  }
+  p.aligned-justify, blockquote.aligned-justify,
+  dd.aligned-justify, div.aligned-justify {
+    ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
+  }
   p:has(> img:only-child), p:has(> span:only-child > img:only-child),
   p:has(> img:not(.has-text-siblings)),
   p:has(> a:first-child + img:last-child) {
@@ -267,6 +277,8 @@ const getLayoutStyles = (
   }
   blockquote[align="center"], div[align="center"],
   p[align="center"], dd[align="center"],
+  p.aligned-center, blockquote.aligned-center,
+  dd.aligned-center, div.aligned-center,
   li p, ol p, ul p {
     text-indent: initial !important;
   }
@@ -577,6 +589,19 @@ export const applyImageStyle = (document: Document) => {
     );
     if (hasTextSiblings) {
       img.classList.add('has-text-siblings');
+    }
+  });
+};
+
+export const keepTextAlignment = (document: Document) => {
+  document.querySelectorAll('div, p, blockquote, dd').forEach((el) => {
+    const computedStyle = window.getComputedStyle(el);
+    if (computedStyle.textAlign === 'center') {
+      el.classList.add('aligned-center');
+    } else if (computedStyle.textAlign === 'right') {
+      el.classList.add('aligned-right');
+    } else if (computedStyle.textAlign === 'justify') {
+      el.classList.add('aligned-justify');
     }
   });
 };
