@@ -615,5 +615,7 @@
   "Size": "Розмір",
   "Cover": "Обкладинка",
   "Contain": "Вміщати",
-  "{{number}} pages left in chapter": "Залишилось {{number}} сторінок у розділі"
+  "{{number}} pages left in chapter": "Залишилось {{number}} сторінок у розділі",
+  "Device": "Пристрій",
+  "E-Ink Mode": "E-Ink режим"
 }

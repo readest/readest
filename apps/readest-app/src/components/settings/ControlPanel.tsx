@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
@@ -19,6 +20,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const { getView, getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const { settings } = useSettingsStore();
+  const { applyEinkMode } = useEinkMode();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -31,6 +33,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
   const [animated, setAnimated] = useState(viewSettings.animated);
+  const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
   const resetToDefaults = useResetViewSettings();
@@ -44,6 +47,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       disableClick: setIsDisableClick,
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
+      isEink: setIsEink,
       allowScript: setAllowScript,
     });
   };
@@ -112,6 +116,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'isEink', isEink, false, false);
+    if (isEink) {
+      getView(bookKey)?.renderer.setAttribute('eink', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('eink');
+    }
+    applyEinkMode(isEink);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEink]);
 
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
@@ -220,6 +235,25 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           </div>
         </div>
       </div>
+
+      {appService?.isAndroidApp && (
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Device')}</h2>
+          <div className='card border-base-200 bg-base-100 border shadow'>
+            <div className='divide-base-200 divide-y'>
+              <div className='config-item'>
+                <span className=''>{_('E-Ink Mode')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={isEink}
+                  onChange={() => setIsEink(!isEink)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className='w-full'>
         <h2 className='mb-2 font-medium'>{_('Security')}</h2>

@@ -623,5 +623,7 @@
   "Size": "حجم",
   "Cover": "غطاء",
   "Contain": "احتواء",
-  "{{number}} pages left in chapter": "تبقّت {{number}} صفحات في هذا الفصل"
+  "{{number}} pages left in chapter": "تبقّت {{number}} صفحات في هذا الفصل",
+  "Device": "الجهاز",
+  "E-Ink Mode": "وضع الحبر الإلكتروني"
 }

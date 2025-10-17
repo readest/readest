@@ -615,5 +615,7 @@
   "Size": "Rozmiar",
   "Cover": "Okładka",
   "Contain": "Zawierać",
-  "{{number}} pages left in chapter": "Pozostało {{number}} stron w rozdziale"
+  "{{number}} pages left in chapter": "Pozostało {{number}} stron w rozdziale",
+  "Device": "Urządzenie",
+  "E-Ink Mode": "Tryb E-Ink"
 }

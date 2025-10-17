@@ -382,3 +382,7 @@ foliate-view {
 .animate-reverse-spin {
   animation: spin-counterclockwise 1s linear;
 }
+
+.no-transitions * {
+    transition: none !important;
+}

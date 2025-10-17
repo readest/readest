@@ -607,5 +607,7 @@
   "Size": "Boyut",
   "Cover": "Kapak",
   "Contain": "İçerir",
-  "{{number}} pages left in chapter": "Bu bölümde {{number}} sayfa kaldı"
+  "{{number}} pages left in chapter": "Bu bölümde {{number}} sayfa kaldı",
+  "Device": "Cihaz",
+  "E-Ink Mode": "E-Ink Modu"
 }

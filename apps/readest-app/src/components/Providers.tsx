@@ -13,6 +13,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
+import { useEinkMode } from '@/hooks/useEinkMode';
 import { getLocale } from '@/utils/misc';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
@@ -20,6 +21,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   const { applyUILanguage } = useSettingsStore();
   const { setScreenBrightness } = useDeviceControlStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
+  const { applyEinkMode } = useEinkMode();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -48,6 +50,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           setScreenBrightness(brightness / 100);
         }
         applyBackgroundTexture(envConfig, globalViewSettings);
+        if (appService.isAndroidApp) {
+          applyEinkMode(globalViewSettings.isEink);
+        }
       });
     }
   }, [envConfig, appService, applyUILanguage, setScreenBrightness, applyBackgroundTexture]);

@@ -18,6 +18,7 @@ import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
@@ -77,6 +78,7 @@ const FoliateViewer: React.FC<{
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
+  const { applyEinkMode } = useEinkMode();
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -313,6 +315,7 @@ const FoliateViewer: React.FC<{
 
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
       const animated = viewSettings.animated!;
+      const eink = viewSettings.isEink!;
       const maxColumnCount = viewSettings.maxColumnCount!;
       const maxInlineSize = getMaxInlineSize(viewSettings);
       const maxBlockSize = viewSettings.maxBlockSize!;
@@ -324,6 +327,14 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('animated', '');
       } else {
         view.renderer.removeAttribute('animated');
+      }
+      if (appService?.isAndroidApp) {
+        if (eink) {
+          view.renderer.setAttribute('eink', '');
+        } else {
+          view.renderer.removeAttribute('eink');
+        }
+        applyEinkMode(eink);
       }
       if (bookDoc?.rendition?.layout === 'pre-paginated') {
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
