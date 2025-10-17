@@ -12,6 +12,7 @@ const basicGoogleFonts = [
   { family: 'Noto Sans', weights: 'ital,wght@0,100..900;1,100..900' },
   { family: 'Open Sans', weights: 'ital,wght@0,300..800;1,300..800' },
   { family: 'Roboto', weights: 'ital,wght@0,100..900;1,100..900' },
+  { family: 'Roboto Slab', weights: 'ital,wght@0,100..900;1,100..900' },
   { family: 'Vollkorn', weights: 'ital,wght@0,400..900;1,400..900' },
 ];
 

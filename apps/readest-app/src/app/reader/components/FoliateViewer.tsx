@@ -24,6 +24,7 @@ import {
   applyImageStyle,
   applyTranslationStyle,
   getStyles,
+  keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
@@ -175,6 +176,8 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
+
+      keepTextAlignment(detail.doc);
 
       removeTabIndex(detail.doc);
 
