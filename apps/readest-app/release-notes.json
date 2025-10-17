@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.88": {
+      "date": "2025-10-18",
+      "notes": [
+        "TTS: Fixed issue where the read-aloud indicator disappeared too quickly",
+        "Layout: Overriding book layout no longer affects explicitly set text alignment",
+        "Reader: Added localized number display for reading progress in vertical layout",
+        "Reader: Enhanced swipe responsiveness for smoother page transitions",
+        "Settings: Added an option to disable animations when using E-Ink mode"
+      ]
+    },
     "0.9.87": {
       "date": "2025-10-16",
       "notes": [
