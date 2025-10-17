@@ -112,7 +112,7 @@ export const useTouchEvent = (
       // also check for deltaX to prevent swipe page turn from triggering the toggle
       if (
         deltaY < -10 &&
-        Math.abs(deltaY) > Math.abs(deltaX) &&
+        Math.abs(deltaY) > Math.abs(deltaX) * 2 &&
         Math.abs(deltaX) < windowWidth * 0.3
       ) {
         // swipe up to toggle the header bar and the footer bar, only for horizontal page mode
