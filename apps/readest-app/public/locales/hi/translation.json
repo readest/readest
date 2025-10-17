@@ -607,5 +607,7 @@
   "Size": "आकार",
   "Cover": "कवर",
   "Contain": "समाहित करें",
-  "{{number}} pages left in chapter": "इस अध्याय में {{number}} पृष्ठ शेष हैं"
+  "{{number}} pages left in chapter": "इस अध्याय में {{number}} पृष्ठ शेष हैं",
+  "Device": "डिवाइस",
+  "E-Ink Mode": "ई-इंक मोड"
 }

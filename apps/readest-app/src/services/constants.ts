@@ -132,6 +132,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   maxInlineSize: getDefaultMaxInlineSize(),
   maxBlockSize: getDefaultMaxBlockSize(),
   animated: false,
+  isEink: false,
   writingMode: 'auto',
   vertical: false,
   rtl: false,
@@ -177,6 +178,8 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: true,
   textIndent: 2,
+  paragraphMargin: 1,
+  lineHeight: 1.6,
 };
 
 export const DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS: Partial<ViewSettings> = {

@@ -607,5 +607,7 @@
   "Size": "Größe",
   "Cover": "Cover",
   "Contain": "Inhalt",
-  "{{number}} pages left in chapter": "{{number}} Seiten verbleibend im Kapitel"
+  "{{number}} pages left in chapter": "{{number}} Seiten verbleibend im Kapitel",
+  "Device": "Gerät",
+  "E-Ink Mode": "E-Ink-Modus"
 }

@@ -611,5 +611,7 @@
   "Size": "Tamaño",
   "Cover": "Cubierta",
   "Contain": "Contener",
-  "{{number}} pages left in chapter": "{{number}} páginas restantes en el capítulo"
+  "{{number}} pages left in chapter": "{{number}} páginas restantes en el capítulo",
+  "Device": "Dispositivo",
+  "E-Ink Mode": "Modo E-Ink"
 }

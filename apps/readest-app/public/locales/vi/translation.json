@@ -603,5 +603,7 @@
   "Size": "Kích thước",
   "Cover": "Bìa",
   "Contain": "Chứa",
-  "{{number}} pages left in chapter": "Còn {{number}} trang trong chương"
+  "{{number}} pages left in chapter": "Còn {{number}} trang trong chương",
+  "Device": "Thiết bị",
+  "E-Ink Mode": "Chế độ E-Ink"
 }

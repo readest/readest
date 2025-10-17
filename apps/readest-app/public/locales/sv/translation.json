@@ -607,5 +607,7 @@
   "Size": "Storlek",
   "Cover": "Omslag",
   "Contain": "Innehålla",
-  "{{number}} pages left in chapter": "{{number}} sidor kvar i kapitlet"
+  "{{number}} pages left in chapter": "{{number}} sidor kvar i kapitlet",
+  "Device": "Enhet",
+  "E-Ink Mode": "E-Ink-läge"
 }

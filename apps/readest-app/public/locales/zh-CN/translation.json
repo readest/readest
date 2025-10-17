@@ -603,5 +603,7 @@
   "Size": "大小",
   "Cover": "覆盖",
   "Contain": "适应",
-  "{{number}} pages left in chapter": "本章剩余{{number}}页"
+  "{{number}} pages left in chapter": "本章剩余{{number}}页",
+  "Device": "设备",
+  "E-Ink Mode": "E-Ink 模式"
 }

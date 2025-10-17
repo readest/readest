@@ -607,5 +607,7 @@
   "Size": "அளவு",
   "Cover": "மூடு",
   "Contain": "அடங்கும்",
-  "{{number}} pages left in chapter": "அத்தியாயத்தில் {{number}} பக்கங்கள் மீதமுள்ளன"
+  "{{number}} pages left in chapter": "அத்தியாயத்தில் {{number}} பக்கங்கள் மீதமுள்ளன",
+  "Device": "சாதனம்",
+  "E-Ink Mode": "E-Ink முறை"
 }
