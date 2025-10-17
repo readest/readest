@@ -606,5 +606,6 @@
   "Opacity": "Opazität",
   "Size": "Größe",
   "Cover": "Cover",
-  "Contain": "Inhalt"
+  "Contain": "Inhalt",
+  "{{number}} pages left in chapter": "{{number}} Seiten verbleibend im Kapitel"
 }

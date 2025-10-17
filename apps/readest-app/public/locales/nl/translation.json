@@ -606,5 +606,6 @@
   "Opacity": "Doorzichtigheid",
   "Size": "Grootte",
   "Cover": "Omslag",
-  "Contain": "Bevatten"
+  "Contain": "Bevatten",
+  "{{number}} pages left in chapter": "Nog {{number}} pagina’s in hoofdstuk"
 }

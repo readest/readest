@@ -614,5 +614,6 @@
   "Opacity": "Przezroczystość",
   "Size": "Rozmiar",
   "Cover": "Okładka",
-  "Contain": "Zawierać"
+  "Contain": "Zawierać",
+  "{{number}} pages left in chapter": "Pozostało {{number}} stron w rozdziale"
 }

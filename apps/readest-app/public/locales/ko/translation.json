@@ -602,5 +602,6 @@
   "Opacity": "불투명도",
   "Size": "크기",
   "Cover": "표지",
-  "Contain": "포함"
+  "Contain": "포함",
+  "{{number}} pages left in chapter": "남은 페이지 {{number}}장"
 }

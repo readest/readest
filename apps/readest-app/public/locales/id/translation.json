@@ -602,5 +602,6 @@
   "Opacity": "Keburaman",
   "Size": "Ukuran",
   "Cover": "Sampul",
-  "Contain": "Mengandung"
+  "Contain": "Mengandung",
+  "{{number}} pages left in chapter": "{{number}} halaman tersisa di bab"
 }

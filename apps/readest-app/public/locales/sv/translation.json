@@ -606,5 +606,6 @@
   "Opacity": "Opacitet",
   "Size": "Storlek",
   "Cover": "Omslag",
-  "Contain": "Innehålla"
+  "Contain": "Innehålla",
+  "{{number}} pages left in chapter": "{{number}} sidor kvar i kapitlet"
 }

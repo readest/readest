@@ -614,5 +614,6 @@
   "Opacity": "Непрозорість",
   "Size": "Розмір",
   "Cover": "Обкладинка",
-  "Contain": "Вміщати"
+  "Contain": "Вміщати",
+  "{{number}} pages left in chapter": "Залишилось {{number}} сторінок у розділі"
 }

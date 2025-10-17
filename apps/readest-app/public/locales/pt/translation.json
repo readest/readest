@@ -610,5 +610,6 @@
   "Opacity": "Opacidade",
   "Size": "Tamanho",
   "Cover": "Capa",
-  "Contain": "Contém"
+  "Contain": "Contém",
+  "{{number}} pages left in chapter": "Faltam {{number}} páginas neste capítulo"
 }
