@@ -335,21 +335,21 @@ const getLayoutStyles = (
   }
 
   /* inline images without dimension */
+  .ie6 img {
+    width: unset;
+    height: unset;
+  }
   sup img {
     height: 1em;
   }
   img.has-text-siblings {
     height: 1em;
-    vertical-align: baseline;
+    vertical-align: middle;
   }
-  img.has-text-siblings[style*="object-fit"] {
+  :is(div) > img.has-text-siblings[style*="object-fit"] {
     display: block;
     height: auto;
     vertical-align: unset;
-  }
-  .ie6 img {
-    width: auto;
-    height: auto;
   }
   .duokan-footnote img:not([class]) {
     width: 0.8em;
