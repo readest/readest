@@ -78,12 +78,12 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   lastSyncedAtNotes: 0,
 };
 
-export const DEFAULT_CUSTOM_HIGHLIGHT_COLORS: Record<HighlightColor, string> = {
-  red: '#fca5a5', // red-300
-  yellow: '#fde047', // yellow-300
-  green: '#86efac', // green-300
-  blue: '#93c5fd', // blue-300
-  violet: '#c4b5fd', // violet-300
+export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
+  red: '#f87171', // red-400
+  yellow: '#facc15', // yellow-400
+  green: '#4ade80', // green-400
+  blue: '#60a5fa', // blue-400
+  violet: '#a78bfa', // violet-400
 };
 
 export const DEFAULT_READSETTINGS: ReadSettings = {
@@ -102,7 +102,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     underline: 'green',
     squiggly: 'blue',
   },
-  customHighlightColors: DEFAULT_CUSTOM_HIGHLIGHT_COLORS,
+  customHighlightColors: HIGHLIGHT_COLOR_HEX,
 };
 
 export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
@@ -616,14 +616,6 @@ export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;
 export const LONG_HOLD_THRESHOLD = 500;
-
-export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
-  red: '#f87171', // red-400
-  yellow: '#facc15', // yellow-400
-  green: '#4ade80', // green-400
-  blue: '#60a5fa', // blue-400
-  violet: '#a78bfa', // violet-400
-};
 
 export const CUSTOM_THEME_TEMPLATES = [
   {
