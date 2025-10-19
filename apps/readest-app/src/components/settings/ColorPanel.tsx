@@ -25,11 +25,11 @@ import { CODE_LANGUAGES, CodeLanguage, manageSyntaxHighlighting } from '@/utils/
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
+import { HighlightColor } from '@/types/book';
 import Select from '@/components/Select';
 import ThemeEditor from './ThemeEditor';
 import ColorInput from './ColorInput';
-import { HighlightColor } from '@/types/book';
-import { DEFAULT_CUSTOM_HIGHLIGHT_COLORS } from '@/services/constants';
+import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -56,8 +56,8 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [backgroundOpacity, setBackgroundOpacity] = useState(viewSettings.backgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(viewSettings.backgroundSize);
 
-  const [customHighlightColors, setCustomHighlightColors] = useState<Record<HighlightColor, string>>(
-    settings.globalReadSettings.customHighlightColors || DEFAULT_CUSTOM_HIGHLIGHT_COLORS,
+  const [customHighlightColors, setCustomHighlightColors] = useState(
+    settings.globalReadSettings.customHighlightColors,
   );
 
   const {
@@ -83,9 +83,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setThemeColor('default');
     setThemeMode('auto');
     setSelectedTextureId('none');
-    setBackgroundOpacity(0.4);
-    setBackgroundSize('2048px');
-    setCustomHighlightColors(DEFAULT_CUSTOM_HIGHLIGHT_COLORS);
+    setBackgroundOpacity(0.6);
+    setBackgroundSize('cover');
+    setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
   };
 
   useEffect(() => {
@@ -442,32 +442,36 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           </div>
 
           <div>
-            <h2 className='mb-2 font-medium'>{_('Custom Highlight Colors')}</h2>
-            <div className='card border-base-200 bg-base-100 border p-4 shadow overflow-visible'>
+            <h2 className='mb-2 font-medium'>{_('Highlight Colors')}</h2>
+            <div className='card border-base-200 bg-base-100 overflow-visible border p-4 shadow'>
               <div className='flex items-center justify-around gap-2'>
-                {(['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[]).map((color, index, array) => {
-                  const position = index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
-                  return (
-                    <div key={color} className='flex flex-col items-center gap-2'>
-                      <div
-                        className='h-8 w-8 rounded-full border-2 border-base-300 shadow-sm'
-                        style={{ backgroundColor: customHighlightColors[color] }}
-                      />
-                      <ColorInput
-                        label=''
-                        value={customHighlightColors[color]}
-                        compact={true}
-                        pickerPosition={position}
-                        onChange={(value: string) => {
-                          customHighlightColors[color] = value;
-                          setCustomHighlightColors({ ...customHighlightColors });
-                          settings.globalReadSettings.customHighlightColors = customHighlightColors;
-                          setSettings(settings);
-                        }}
-                      />
-                    </div>
-                  );
-                })}
+                {(['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[]).map(
+                  (color, index, array) => {
+                    const position =
+                      index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
+                    return (
+                      <div key={color} className='flex flex-col items-center gap-2'>
+                        <div
+                          className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'
+                          style={{ backgroundColor: customHighlightColors[color] }}
+                        />
+                        <ColorInput
+                          label=''
+                          value={customHighlightColors[color]}
+                          compact={true}
+                          pickerPosition={position}
+                          onChange={(value: string) => {
+                            customHighlightColors[color] = value;
+                            setCustomHighlightColors({ ...customHighlightColors });
+                            settings.globalReadSettings.customHighlightColors =
+                              customHighlightColors;
+                            setSettings(settings);
+                          }}
+                        />
+                      </div>
+                    );
+                  },
+                )}
               </div>
             </div>
           </div>

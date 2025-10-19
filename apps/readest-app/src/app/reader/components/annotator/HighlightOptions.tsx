@@ -4,7 +4,6 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { DEFAULT_CUSTOM_HIGHLIGHT_COLORS } from '@/services/constants';
 
 const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
@@ -26,7 +25,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 }) => {
   const { settings, setSettings } = useSettingsStore();
   const globalReadSettings = settings.globalReadSettings;
-  const customColors = globalReadSettings.customHighlightColors || DEFAULT_CUSTOM_HIGHLIGHT_COLORS;
+  const customColors = globalReadSettings.customHighlightColors;
   const [selectedStyle, setSelectedStyle] = React.useState<HighlightStyle>(_selectedStyle);
   const [selectedColor, setSelectedColor] = React.useState<HighlightColor>(_selectedColor);
   const size16 = useResponsiveSize(16);
@@ -67,24 +66,27 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             style={{ width: size28, height: size28, minHeight: size28 }}
           >
             <div
-              style={{ 
-                width: size16, 
+              style={{
+                width: size16,
                 height: style === 'squiggly' ? size18 : size16,
-                ...(style === 'highlight' && selectedStyle === 'highlight' && {
-                  backgroundColor: customColors[selectedColor],
-                  paddingTop: '2px'
-                }),
-                ...(style === 'highlight' && selectedStyle !== 'highlight' && {
-                  backgroundColor: '#d1d5db',
-                  paddingTop: '2px'
-                }),
+                ...(style === 'highlight' &&
+                  selectedStyle === 'highlight' && {
+                    backgroundColor: customColors[selectedColor],
+                    paddingTop: '2px',
+                  }),
+                ...(style === 'highlight' &&
+                  selectedStyle !== 'highlight' && {
+                    backgroundColor: '#d1d5db',
+                    paddingTop: '2px',
+                  }),
                 ...((style === 'underline' || style === 'squiggly') && {
                   color: '#d1d5db',
                   textDecoration: 'underline',
                   textDecorationThickness: '2px',
-                  textDecorationColor: selectedStyle === style ? customColors[selectedColor] : '#d1d5db',
-                  ...(style === 'squiggly' && { textDecorationStyle: 'wavy' })
-                })
+                  textDecorationColor:
+                    selectedStyle === style ? customColors[selectedColor] : '#d1d5db',
+                  ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
+                }),
               }}
               className='w-4 p-0 text-center leading-none'
             >
@@ -105,10 +107,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           <button
             key={color}
             onClick={() => handleSelectColor(color)}
-            style={{ 
-              width: size16, 
+            style={{
+              width: size16,
               height: size16,
-              backgroundColor: selectedColor !== color ? customColors[color] : 'transparent'
+              backgroundColor: selectedColor !== color ? customColors[color] : 'transparent',
             }}
             className='rounded-full p-0'
           >
