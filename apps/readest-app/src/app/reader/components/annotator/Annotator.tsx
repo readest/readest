@@ -142,7 +142,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
-    const hexColor = color ? HIGHLIGHT_COLOR_HEX[color] : color;
+    const customColors = settings.globalReadSettings.customHighlightColors;
+    const hexColor = color && customColors ? customColors[color] : color ? HIGHLIGHT_COLOR_HEX[color] : color;
     if (style === 'highlight') {
       draw(Overlayer.highlight, { color: hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {

@@ -78,6 +78,14 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   lastSyncedAtNotes: 0,
 };
 
+export const DEFAULT_CUSTOM_HIGHLIGHT_COLORS: Record<HighlightColor, string> = {
+  red: '#fca5a5', // red-300
+  yellow: '#fde047', // yellow-300
+  green: '#86efac', // green-300
+  blue: '#93c5fd', // blue-300
+  violet: '#c4b5fd', // violet-300
+};
+
 export const DEFAULT_READSETTINGS: ReadSettings = {
   sideBarWidth: '15%',
   isSideBarPinned: true,
@@ -94,6 +102,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     underline: 'green',
     squiggly: 'blue',
   },
+  customHighlightColors: DEFAULT_CUSTOM_HIGHLIGHT_COLORS,
 };
 
 export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
