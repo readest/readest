@@ -5,9 +5,11 @@ type ColorInputProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  compact?: boolean;
+  pickerPosition?: 'left' | 'center' | 'right';
 };
 
-const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
+const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange, compact = false, pickerPosition = 'left' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +30,44 @@ const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
   const handlePickerChange = (colorResult: ColorResult) => {
     onChange(colorResult.hex);
   };
+
+  const getPickerPositionClass = () => {
+    if (pickerPosition === 'right') {
+      return 'right-0';
+    } else if (pickerPosition === 'center') {
+      return 'left-1/2 -translate-x-1/2';
+    }
+    return 'left-0';
+  };
+
+  if (compact) {
+    return (
+      <div className='relative'>
+        <input
+          type='text'
+          value={value}
+          spellCheck={false}
+          onChange={(e) => onChange(e.target.value)}
+          onClick={() => setIsOpen(!isOpen)}
+          className='bg-base-100 text-base-content border-base-200/75 w-16 cursor-pointer rounded border px-1 py-0.5 text-center font-mono text-xs'
+        />
+
+        {isOpen && (
+          <div 
+            ref={pickerRef} 
+            className={`absolute top-full z-50 mt-1 ${getPickerPositionClass()}`}
+          >
+            <SketchPicker
+              width='200px'
+              color={value}
+              onChange={handlePickerChange}
+              disableAlpha={true}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className='mb-3'>
