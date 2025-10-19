@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import cssbeautify from 'cssbeautify';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
@@ -9,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { getStyles } from '@/utils/style';
-import cssValidate from '@/utils/css';
+import { validateCSS, formatCSS } from '@/utils/css';
 
 type CSSType = 'book' | 'reader';
 
@@ -47,11 +46,11 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const validateCSS = (cssInput: string): { isValid: boolean; error?: string } => {
+  const handleValidateCSS = (cssInput: string): { isValid: boolean; error?: string } => {
     if (!cssInput.trim()) return { isValid: true };
 
     try {
-      const { isValid, error } = cssValidate(cssInput);
+      const { isValid, error } = validateCSS(cssInput);
       if (!isValid) {
         return { isValid: false, error: error || 'Invalid CSS' };
       }
@@ -71,24 +70,20 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       setDraftContentStylesheet(cssInput);
       setDraftContentStylesheetSaved(false);
 
-      const { isValid, error } = validateCSS(cssInput);
+      const { isValid, error } = handleValidateCSS(cssInput);
       setContentError(isValid ? null : error || 'Invalid CSS');
     } else {
       setDraftUIStylesheet(cssInput);
       setDraftUIStylesheetSaved(false);
 
-      const { isValid, error } = validateCSS(cssInput);
+      const { isValid, error } = handleValidateCSS(cssInput);
       setUIError(isValid ? null : error || 'Invalid CSS');
     }
   };
 
   const applyStyles = (type: CSSType, clear = false) => {
     const cssInput = type === 'book' ? draftContentStylesheet : draftUIStylesheet;
-    const formattedCSS = cssbeautify(clear ? '' : cssInput, {
-      indent: '  ',
-      openbrace: 'end-of-line',
-      autosemicolon: true,
-    });
+    const formattedCSS = formatCSS(clear ? '' : cssInput);
 
     if (type === 'book') {
       setDraftContentStylesheet(formattedCSS);
