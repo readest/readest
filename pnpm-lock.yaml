@@ -170,6 +170,15 @@ importers:
       overlayscrollbars-react:
         specifier: ^0.5.6
         version: 0.5.6(overlayscrollbars@2.11.4)(react@19.0.0)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.4.49
+      postcss-cli:
+        specifier: ^11.0.0
+        version: 11.0.0(jiti@1.21.6)(postcss@8.4.49)
+      postcss-nested:
+        specifier: ^7.0.2
+        version: 7.0.2(postcss@8.4.49)
       posthog-js:
         specifier: ^1.246.0
         version: 1.246.0
@@ -297,15 +306,6 @@ importers:
       node-env-run:
         specifier: ^4.0.2
         version: 4.0.2
-      postcss:
-        specifier: ^8.4.49
-        version: 8.4.49
-      postcss-cli:
-        specifier: ^11.0.0
-        version: 11.0.0(jiti@1.21.6)(postcss@8.4.49)
-      postcss-nested:
-        specifier: ^7.0.2
-        version: 7.0.2(postcss@8.4.49)
       raw-loader:
         specifier: ^4.0.2
         version: 4.0.2(webpack@5.97.1)
