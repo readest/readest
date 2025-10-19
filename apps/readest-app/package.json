@@ -100,10 +100,7 @@
     "tinycolor2": "^1.6.0",
     "uuid": "^11.1.0",
     "zod": "^4.0.8",
-    "zustand": "5.0.6",
-    "postcss": "^8.4.49",
-    "postcss-cli": "^11.0.0",
-    "postcss-nested": "^7.0.2"
+    "zustand": "5.0.6"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.2",
