@@ -400,6 +400,11 @@ export const getFootnoteStyles = () => `
     padding: unset !important;
   }
 
+  dt {
+    font-weight: bold;
+    line-height: 1.6;
+  }
+
   .epubtype-footnote,
   aside[epub|type~="endnote"],
   aside[epub|type~="footnote"],
