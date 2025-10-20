@@ -4,10 +4,11 @@ import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
+import { useCustomFontStore } from '@/store/customFontStore';
 import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
-import { mountAdditionalFonts } from '@/styles/fonts';
+import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
@@ -32,6 +33,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
+  const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
@@ -62,6 +64,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const { doc } = e.detail;
         const bookData = getBookData(bookKey)!;
         mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
+        getLoadedFonts().forEach((font) => {
+          mountCustomFont(doc, font);
+        });
       });
       footnoteViewRef.current = view;
       footnoteRef.current?.replaceChildren(view);

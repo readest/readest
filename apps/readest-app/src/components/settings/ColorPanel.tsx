@@ -26,10 +26,10 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { HighlightColor } from '@/types/book';
+import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import Select from '@/components/Select';
 import ThemeEditor from './ThemeEditor';
 import ColorInput from './ColorInput';
-import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
