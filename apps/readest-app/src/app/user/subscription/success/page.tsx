@@ -9,6 +9,7 @@ import Spinner from '@/components/Spinner';
 
 const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
 const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
+const ANDROID_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/google/iap-verify`;
 
 interface SessionStatus {
   status: 'loading' | 'complete' | 'failed' | 'processing';
@@ -31,8 +32,16 @@ const SuccessPageWithSearchParams = () => {
   const payment = searchParams?.get('payment');
   const platform = searchParams?.get('platform');
   const sessionId = searchParams?.get('session_id');
+
+  // iOS parameters
   const transactionId = searchParams?.get('transaction_id');
   const originalTransactionId = searchParams?.get('original_transaction_id');
+
+  // Android parameters
+  const packageName = searchParams?.get('package_name');
+  const productId = searchParams?.get('product_id');
+  const purchaseToken = searchParams?.get('purchase_token');
+  const orderId = searchParams?.get('order_id');
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -81,8 +90,7 @@ const SuccessPageWithSearchParams = () => {
     }
   };
 
-  const updateIAPSessionStatus = async (
-    platform: string,
+  const updateIOSIAPSessionStatus = async (
     transactionId: string,
     originalTransactionId: string,
   ) => {
@@ -90,55 +98,124 @@ const SuccessPageWithSearchParams = () => {
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
       return;
     }
-    if (platform === 'ios') {
-      try {
-        const token = await getAccessToken();
-        const response = await fetch(APPLE_IAP_VERIFY_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            transactionId,
-            originalTransactionId,
-          }),
-        });
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(APPLE_IAP_VERIFY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          transactionId,
+          originalTransactionId,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const { purchase, error } = await response.json();
-
-        if (error) {
-          setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
-          console.error('IAP verification error:', error);
-          return;
-        }
-
-        setSessionStatus({
-          status: purchase.status === 'active' ? 'complete' : 'failed',
-          customerEmail: purchase.customerEmail || '',
-          subscriptionId: purchase.subscriptionId,
-          planName: purchase.planName,
-        });
-
-        try {
-          await supabase.auth.refreshSession();
-        } catch {}
-      } catch (error) {
-        console.error('Failed to verify IAP transaction:', error);
-        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const { purchase, error } = await response.json();
+
+      if (error) {
+        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+        console.error('IAP verification error:', error);
+        return;
+      }
+
+      setSessionStatus({
+        status: purchase.status === 'active' ? 'complete' : 'failed',
+        customerEmail: purchase.customerEmail || '',
+        subscriptionId: purchase.subscriptionId,
+        planName: purchase.planName,
+      });
+
+      try {
+        await supabase.auth.refreshSession();
+      } catch {}
+    } catch (error) {
+      console.error('Failed to verify IAP transaction:', error);
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+    }
+  };
+
+  const updateAndroidIAPSessionStatus = async (
+    packageName: string,
+    productId: string,
+    orderId: string,
+    purchaseToken: string,
+  ) => {
+    if (!purchaseToken || !productId || !packageName) {
+      console.error('Missing required Android IAP parameters');
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      return;
+    }
+
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(ANDROID_IAP_VERIFY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          purchaseToken,
+          orderId,
+          productId,
+          packageName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { purchase, error } = await response.json();
+
+      if (error) {
+        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+        console.error('Android IAP verification error:', error);
+        return;
+      }
+
+      setSessionStatus({
+        status: purchase.status === 'active' ? 'complete' : 'failed',
+        customerEmail: purchase.customerEmail || '',
+        subscriptionId: purchase.subscriptionId || purchase.orderId,
+        planName: purchase.planName,
+        amount: purchase.priceAmountMicros
+          ? Number(purchase.priceAmountMicros) / 1000000
+          : undefined,
+        currency: purchase.priceCurrencyCode,
+      });
+
+      try {
+        await supabase.auth.refreshSession();
+      } catch {}
+    } catch (error) {
+      console.error('Failed to verify Android IAP transaction:', error);
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+    }
+  };
+
+  const updateIAPSessionStatus = async () => {
+    if (platform === 'ios' && transactionId && originalTransactionId) {
+      await updateIOSIAPSessionStatus(transactionId, originalTransactionId);
+    } else if (platform === 'android' && orderId && purchaseToken && productId && packageName) {
+      await updateAndroidIAPSessionStatus(packageName, productId, orderId, purchaseToken);
+    } else {
+      console.error('Invalid IAP platform or missing parameters');
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
     }
   };
 
   const updateSessionStatus = async () => {
     if (payment === 'stripe' && sessionId) {
       await updateStripeSessionStatus();
-    } else if (payment === 'iap' && platform && transactionId && originalTransactionId) {
-      await updateIAPSessionStatus(platform, transactionId, originalTransactionId);
+    } else if (payment === 'iap') {
+      await updateIAPSessionStatus();
     } else {
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
     }

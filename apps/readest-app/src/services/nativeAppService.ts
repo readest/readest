@@ -333,6 +333,8 @@ export const nativeFileSystem: FileSystem = {
   },
 };
 
+const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as DistChannel;
+
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   override appPlatform = 'tauri' as AppPlatform;
@@ -359,10 +361,11 @@ export class NativeAppService extends BaseAppService {
   override hasOrientationLock =
     (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
   override hasScreenBrightness = OS_TYPE === 'ios' || OS_TYPE === 'android';
+  override hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
-  override canCustomizeRootDir = process.env['NEXT_PUBLIC_DIST_CHANNEL'] !== 'appstore';
-  override distChannel = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as DistChannel;
+  override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
+  override distChannel = DIST_CHANNEL;
 
   private execDir?: string = undefined;
 

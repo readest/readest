@@ -144,7 +144,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
           <PlanCard
             key={plan.plan}
             plan={plan}
-            comingSoon={['playstore'].includes(appService?.distChannel || '')}
+            comingSoon={false}
             isUserPlan={plan.plan === userPlan}
             upgradable={index > userPlanIndex}
             index={index}
