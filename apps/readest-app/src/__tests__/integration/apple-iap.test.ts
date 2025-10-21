@@ -4,7 +4,7 @@ import { AppleIAPVerifier, createAppleIAPVerifier } from '@/libs/iap/apple/verif
 const SKIP_IAP_API_TESTS = !process.env['ENABLE_IAP_API_TESTS'];
 const REAL_TEST_DATA = {
   validSubscription: {
-    transactionId: '2000000969168810',
+    transactionId: '2000000976418990',
     originalTransactionId: '2000000968585424',
     productId: 'com.bilingify.readest.monthly.plus',
   },
@@ -43,7 +43,7 @@ describe.skipIf(SKIP_IAP_API_TESTS)('Apple IAP Integration Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.verified).toBe(true);
-      expect(result.status).toBe('active');
+      expect(result.status).toBe('expired');
       expect(result.transactionId).toBe(transactionId);
       expect(result.originalTransactionId).toBe(originalTransactionId);
       expect(result.bundleId).toBe(process.env['APPLE_IAP_BUNDLE_ID']);

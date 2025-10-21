@@ -102,12 +102,15 @@ pub struct Product {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Purchase {
-    pub product_id: String,
-    pub transaction_id: String,
-    pub purchase_date: String,
-    pub original_transaction_id: String,
-    pub purchase_state: String, // "purchased", "pending", "cancelled"
     pub platform: String,       // "ios" or "android"
+    pub package_name: Option<String>,
+    pub product_id: String,
+    pub transaction_id: Option<String>,
+    pub original_transaction_id: Option<String>,
+    pub order_id: Option<String>,
+    pub purchase_token: Option<String>,
+    pub purchase_date: String,
+    pub purchase_state: String, // "purchased", "pending", "cancelled", "restored"
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -20,7 +20,7 @@ import { getStripe } from '@/libs/stripe/client';
 import { getAPIBaseUrl, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getAccessToken } from '@/utils/access';
-import { IAPService, IAPProduct } from '@/utils/iap';
+import { IAPService, IAPProduct, IAPPurchase } from '@/utils/iap';
 import { getPlanDetails } from './utils/plan';
 import { Toast } from '@/components/Toast';
 import LegalLinks from '@/components/LegalLinks';
@@ -184,6 +184,19 @@ const ProfilePage = () => {
     [router],
   );
 
+  const getPuchaseVerifyParams = (purchase: IAPPurchase) => {
+    return new URLSearchParams({
+      payment: 'iap',
+      platform: purchase.platform,
+      product_id: purchase.productId,
+      transaction_id: purchase.transactionId || '',
+      original_transaction_id: purchase.originalTransactionId || '',
+      package_name: purchase.packageName || '',
+      order_id: purchase.orderId || '',
+      purchase_token: purchase.purchaseToken || '',
+    });
+  };
+
   const handleIAPSubscribe = async (productId?: string) => {
     if (!productId) return;
 
@@ -192,12 +205,7 @@ const ProfilePage = () => {
     try {
       const purchase = await iapService.purchaseProduct(productId);
       if (purchase) {
-        const params = new URLSearchParams({
-          payment: 'iap',
-          platform: purchase.platform,
-          transaction_id: purchase.transactionId,
-          original_transaction_id: purchase.originalTransactionId,
-        });
+        const params = getPuchaseVerifyParams(purchase);
         router.push(`${SUBSCRIPTION_SUCCESS_PATH}?${params.toString()}`);
       }
     } catch (error) {
@@ -213,15 +221,10 @@ const ProfilePage = () => {
       const purchases = await iapService.restorePurchases();
       if (purchases.length > 0) {
         purchases.sort(
-          (a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime(),
+          (a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime(),
         );
         const purchase = purchases[0]!;
-        const params = new URLSearchParams({
-          payment: 'iap',
-          platform: purchase.platform,
-          transaction_id: purchase.transactionId,
-          original_transaction_id: purchase.originalTransactionId,
-        });
+        const params = getPuchaseVerifyParams(purchase);
         router.push(`${SUBSCRIPTION_SUCCESS_PATH}?${params.toString()}`);
       } else {
         eventDispatcher.dispatch('toast', {
@@ -272,7 +275,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (!appService) return;
 
-    if (appService?.isIOSApp) {
+    if (appService?.hasIAP) {
       const iapService = new IAPService();
       iapService
         .initialize()
@@ -384,7 +387,7 @@ const ProfilePage = () => {
                   <PlansComparison
                     availablePlans={availablePlans}
                     userPlan={userPlan}
-                    onSubscribe={appService.isIOSApp ? handleIAPSubscribe : handleStripeSubscribe}
+                    onSubscribe={appService.hasIAP ? handleIAPSubscribe : handleStripeSubscribe}
                   />
                 </div>
 

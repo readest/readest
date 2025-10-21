@@ -9,10 +9,7 @@ export const setupSupabaseMocks = async (
     update: null,
     insert: null,
     adminUpsert: null,
-    adminSelect: {
-      data: [],
-      error: null,
-    },
+    adminSelect: null,
     adminSelectMany: null,
     adminUpdate: null,
     adminInsert: null,
