@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-get-external-sdcard-path"
+description = "Enables the get_external_sdcard_path command without any pre-configured scope."
+commands.allow = ["get_external_sdcard_path"]
+
+[[permission]]
+identifier = "deny-get-external-sdcard-path"
+description = "Denies the get_external_sdcard_path command without any pre-configured scope."
+commands.deny = ["get_external_sdcard_path"]

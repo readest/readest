@@ -589,6 +589,23 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     @Command
+    fun get_external_sdcard_path(invoke: Invoke) {
+        val result = JSObject()
+        val externalDirs = activity.getExternalFilesDirs(null)
+        for (file in externalDirs) {
+            if (file != null && Environment.isExternalStorageRemovable(file)) {
+                val pathParts = file.absolutePath.split("/Android/")
+                if (pathParts.isNotEmpty()) {
+                    result.put("path", pathParts[0])
+                    invoke.resolve(result)
+                }
+            }
+        }
+        result.put("path", null)
+        invoke.resolve(result)
+    }
+
+    @Command
     fun request_manage_storage_permission(invoke: Invoke) {
         val ret = JSObject()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

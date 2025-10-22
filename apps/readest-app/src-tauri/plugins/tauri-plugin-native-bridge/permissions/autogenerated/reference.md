@@ -22,6 +22,7 @@ Default permissions for the plugin
 - `allow-get-safe-area-insets`
 - `allow-get-screen-brightness`
 - `allow-set-screen-brightness`
+- `allow-get-external-sdcard-path`
 - `allow-request-manage-storage-permission`
 - `allow-checkPermissions`
 - `allow-requestPermissions`
@@ -135,6 +136,32 @@ Enables the copy_uri_to_path command without any pre-configured scope.
 <td>
 
 Denies the copy_uri_to_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-external-sdcard-path`
+
+</td>
+<td>
+
+Enables the get_external_sdcard_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-external-sdcard-path`
+
+</td>
+<td>
+
+Denies the get_external_sdcard_path command without any pre-configured scope.
 
 </td>
 </tr>
