@@ -34,7 +34,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
   const { setGridInsets, hoveredBookKey } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { isFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { isSettingsDialogOpen } = useSettingsStore();
 
   const { safeAreaInsets: screenInsets } = useThemeStore();
   const aspectRatio = window.innerWidth / window.innerHeight;
@@ -202,7 +202,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               isHoveredAnim={false}
               gridInsets={gridInsets}
             />
-            {isFontLayoutSettingsDialogOpen && <SettingsDialog bookKey={bookKey} />}
+            {isSettingsDialogOpen && <SettingsDialog bookKey={bookKey} />}
           </div>
         );
       })}

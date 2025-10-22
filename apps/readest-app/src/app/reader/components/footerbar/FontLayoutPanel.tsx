@@ -5,7 +5,7 @@ import { RxLineHeight } from 'react-icons/rx';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import Slider from '@/components/Slider';
 
 const FONT_SIZE_LIMITS = {

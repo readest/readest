@@ -31,7 +31,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
 
   const { text, cfi, note } = item;
   const editorRef = useRef<TextEditorRef>(null);
-  const editorDraftRef = useRef<string>(text || '');
+  const [editorDraft, setEditorDraft] = useState(text || '');
   const [inlineEditMode, setInlineEditMode] = useState(false);
   const separatorWidth = useResponsiveSize(3);
 
@@ -72,19 +72,20 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
   };
 
   const editBookmark = () => {
+    setEditorDraft(text || '');
     setInlineEditMode(true);
   };
 
   const handleSaveBookmark = () => {
     setInlineEditMode(false);
     const config = getConfig(bookKey);
-    if (!config || !editorDraftRef.current) return;
+    if (!config || !editorDraft) return;
 
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((annotation) => item.id === annotation.id);
     if (existingIndex === -1) return;
     annotations[existingIndex]!.updatedAt = Date.now();
-    annotations[existingIndex]!.text = editorDraftRef.current;
+    annotations[existingIndex]!.text = editorDraft;
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
@@ -104,8 +105,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           <TextEditor
             className='!leading-normal'
             ref={editorRef}
-            value={editorDraftRef.current}
-            onChange={(value) => (editorDraftRef.current = value)}
+            value={editorDraft}
+            onChange={setEditorDraft}
             onSave={handleSaveBookmark}
             onEscape={() => setInlineEditMode(false)}
             spellCheck={false}
@@ -113,7 +114,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
         </div>
         <div className='flex justify-end space-x-3 p-2' dir='ltr'>
           <TextButton onClick={() => setInlineEditMode(false)}>{_('Cancel')}</TextButton>
-          <TextButton onClick={handleSaveBookmark} disabled={!editorDraftRef.current}>
+          <TextButton onClick={handleSaveBookmark} disabled={!editorDraft}>
             {_('Save')}
           </TextButton>
         </div>

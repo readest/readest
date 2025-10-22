@@ -10,7 +10,7 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 

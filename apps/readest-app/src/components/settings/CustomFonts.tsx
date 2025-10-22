@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useFileSelector } from '@/hooks/useFileSelector';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { CustomFont, mountCustomFont } from '@/styles/fonts';
 
 interface CustomFontsProps {

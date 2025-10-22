@@ -9,10 +9,10 @@ import Button from '@/components/Button';
 const SettingsToggler = () => {
   const _ = useTranslation();
   const { setHoveredBookKey } = useReaderStore();
-  const { isFontLayoutSettingsDialogOpen, setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const handleToggleSettings = () => {
     setHoveredBookKey('');
-    setFontLayoutSettingsDialogOpen(!isFontLayoutSettingsDialogOpen);
+    setSettingsDialogOpen(!isSettingsDialogOpen);
   };
   return (
     <Button

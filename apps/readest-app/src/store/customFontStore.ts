@@ -31,7 +31,6 @@ interface FontStoreState {
 }
 
 function toSettingsFont(font: CustomFont): CustomFont {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { blobUrl, loaded, error, ...settingsFont } = font;
   return settingsFont;
 }

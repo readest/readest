@@ -5,7 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { isTranslationAvailable } from '@/services/translators/utils';
 import Button from '@/components/Button';
 

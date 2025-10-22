@@ -15,7 +15,7 @@ import { getStyles } from '@/utils/style';
 import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
 import { lockScreenOrientation } from '@/utils/bridge';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';

@@ -79,6 +79,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
+  useEffect(() => {
+    setSelectedStyle(settings.globalReadSettings.highlightStyle);
+  }, [settings.globalReadSettings.highlightStyle]);
+
+  useEffect(() => {
+    setSelectedColor(settings.globalReadSettings.highlightStyles[selectedStyle]);
+  }, [settings.globalReadSettings.highlightStyles, selectedStyle]);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleDismissPopup = useCallback(
     throttle(() => {
@@ -143,7 +151,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
     const customColors = settings.globalReadSettings.customHighlightColors;
-    const hexColor = color && customColors ? customColors[color] : color ? HIGHLIGHT_COLOR_HEX[color] : color;
+    const hexColor =
+      color && customColors ? customColors[color] : color ? HIGHLIGHT_COLOR_HEX[color] : color;
     if (style === 'highlight') {
       draw(Overlayer.highlight, { color: hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {

@@ -139,7 +139,6 @@ export const useProgressSync = (bookKey: string) => {
         }
       }
       const filteredSyncedConfig = Object.fromEntries(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         Object.entries(syncedConfig).filter(([_, value]) => value !== null && value !== undefined),
       );
       if (syncedConfig.updatedAt >= config.updatedAt) {

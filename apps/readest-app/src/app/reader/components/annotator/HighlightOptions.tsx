@@ -1,9 +1,11 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
+import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { saveSysSettings } from '@/helpers/settings';
 
 const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
@@ -23,26 +25,30 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   selectedColor: _selectedColor,
   onHandleHighlight,
 }) => {
-  const { settings, setSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
+  const { settings } = useSettingsStore();
   const globalReadSettings = settings.globalReadSettings;
   const customColors = globalReadSettings.customHighlightColors;
-  const [selectedStyle, setSelectedStyle] = React.useState<HighlightStyle>(_selectedStyle);
-  const [selectedColor, setSelectedColor] = React.useState<HighlightColor>(_selectedColor);
+  const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(_selectedStyle);
+  const [selectedColor, setSelectedColor] = useState<HighlightColor>(_selectedColor);
   const size16 = useResponsiveSize(16);
   const size18 = useResponsiveSize(18);
   const size28 = useResponsiveSize(28);
 
   const handleSelectStyle = (style: HighlightStyle) => {
-    globalReadSettings.highlightStyle = style;
-    setSettings(settings);
+    const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
     setSelectedStyle(style);
     setSelectedColor(globalReadSettings.highlightStyles[style]);
     onHandleHighlight(true);
   };
   const handleSelectColor = (color: HighlightColor) => {
-    globalReadSettings.highlightStyle = selectedStyle;
-    globalReadSettings.highlightStyles[selectedStyle] = color;
-    setSettings(settings);
+    const newGlobalReadSettings = {
+      ...globalReadSettings,
+      highlightStyle: selectedStyle,
+      highlightStyles: { ...globalReadSettings.highlightStyles, [selectedStyle]: color },
+    };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
     setSelectedColor(color);
     onHandleHighlight(true);
   };

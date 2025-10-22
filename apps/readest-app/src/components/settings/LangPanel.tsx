@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { getTranslators } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';

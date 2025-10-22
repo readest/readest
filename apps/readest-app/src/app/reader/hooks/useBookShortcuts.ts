@@ -20,7 +20,7 @@ interface UseBookShortcutsProps {
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
   const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { setSettingsDialogOpen } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
@@ -183,7 +183,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
-      onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
+      onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,

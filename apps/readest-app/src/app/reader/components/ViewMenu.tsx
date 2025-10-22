@@ -22,7 +22,7 @@ import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -38,7 +38,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { setSettingsDialogOpen } = useSettingsStore();
   const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -62,7 +62,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
-    setFontLayoutSettingsDialogOpen(true);
+    setSettingsDialogOpen(true);
   };
 
   const cycleThemeMode = () => {
