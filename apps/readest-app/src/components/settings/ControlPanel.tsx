@@ -10,7 +10,7 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
-import { saveViewSettings } from '@/helpers/settings';
+import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 
@@ -34,6 +34,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
   const [animated, setAnimated] = useState(viewSettings.animated);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
+  const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
   const resetToDefaults = useResetViewSettings();
@@ -127,6 +128,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     applyEinkMode(isEink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEink]);
+
+  useEffect(() => {
+    if (autoScreenBrightness === settings.autoScreenBrightness) return;
+    saveSysSettings(envConfig, 'autoScreenBrightness', autoScreenBrightness);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoScreenBrightness]);
 
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
@@ -236,18 +243,29 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       </div>
 
-      {appService?.isAndroidApp && (
+      {appService?.isMobileApp && (
         <div className='w-full'>
           <h2 className='mb-2 font-medium'>{_('Device')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200 divide-y'>
+              {appService?.isAndroidApp && (
+                <div className='config-item'>
+                  <span className=''>{_('E-Ink Mode')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle'
+                    checked={isEink}
+                    onChange={() => setIsEink(!isEink)}
+                  />
+                </div>
+              )}
               <div className='config-item'>
-                <span className=''>{_('E-Ink Mode')}</span>
+                <span className=''>{_('Auto Screen Brightness')}</span>
                 <input
                   type='checkbox'
                   className='toggle'
-                  checked={isEink}
-                  onChange={() => setIsEink(!isEink)}
+                  checked={autoScreenBrightness}
+                  onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
                 />
               </div>
             </div>

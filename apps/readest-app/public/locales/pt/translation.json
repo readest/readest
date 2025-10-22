@@ -614,5 +614,6 @@
   "{{number}} pages left in chapter": "Faltam {{number}} páginas neste capítulo",
   "Device": "Dispositivo",
   "E-Ink Mode": "Modo E-Ink",
-  "Highlight Colors": "Cores de Destaque"
+  "Highlight Colors": "Cores de Destaque",
+  "Auto Screen Brightness": "Brilho Automático da Tela"
 }

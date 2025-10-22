@@ -626,5 +626,6 @@
   "{{number}} pages left in chapter": "تبقّت {{number}} صفحات في هذا الفصل",
   "Device": "الجهاز",
   "E-Ink Mode": "وضع الحبر الإلكتروني",
-  "Highlight Colors": "ألوان التمييز"
+  "Highlight Colors": "ألوان التمييز",
+  "Auto Screen Brightness": "سطوع الشاشة التلقائي"
 }

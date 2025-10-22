@@ -610,5 +610,6 @@
   "{{number}} pages left in chapter": "इस अध्याय में {{number}} पृष्ठ शेष हैं",
   "Device": "डिवाइस",
   "E-Ink Mode": "ई-इंक मोड",
-  "Highlight Colors": "हाइलाइट रंग"
+  "Highlight Colors": "हाइलाइट रंग",
+  "Auto Screen Brightness": "स्वचालित स्क्रीन ब्राइटनेस"
 }

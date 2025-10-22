@@ -606,5 +606,6 @@
   "{{number}} pages left in chapter": "本章剩余{{number}}页",
   "Device": "设备",
   "E-Ink Mode": "E-Ink 模式",
-  "Highlight Colors": "高亮颜色"
+  "Highlight Colors": "高亮颜色",
+  "Auto Screen Brightness": "自动屏幕亮度"
 }
