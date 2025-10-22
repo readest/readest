@@ -102,7 +102,7 @@ pub struct Product {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Purchase {
-    pub platform: String,       // "ios" or "android"
+    pub platform: String, // "ios" or "android"
     pub package_name: Option<String>,
     pub product_id: String,
     pub transaction_id: Option<String>,
@@ -187,6 +187,13 @@ pub struct SetScreenBrightnessRequest {
 #[serde(rename_all = "camelCase")]
 pub struct SetScreenBrightnessResponse {
     pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetExternalSDCardPathResponse {
+    pub path: Option<String>,
     pub error: Option<String>,
 }
 
