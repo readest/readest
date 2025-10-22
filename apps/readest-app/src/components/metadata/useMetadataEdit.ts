@@ -52,7 +52,7 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleFieldChange = (field: string, value: string) => {
+  const handleFieldChange = (field: string, value: string | undefined) => {
     if (lockedFields[field]) {
       return;
     }
@@ -67,7 +67,9 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     }
 
     setEditedMeta(newMeta as BookMetadata);
-    handleFieldValidation(field, value);
+    if (value !== undefined) {
+      handleFieldValidation(field, value);
+    }
 
     if (fieldSources[field]) {
       const newSources = { ...fieldSources };

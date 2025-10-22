@@ -1,25 +1,21 @@
-import path from 'node:path';
-import js from '@eslint/js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
-import { fileURLToPath } from 'node:url';
-import { FlatCompat } from '@eslint/eslintrc';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
-
-export default [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+const eslintConfig = defineConfig([
+  ...nextVitals,
   {
-    plugins: {
-      'jsx-a11y': jsxA11y,
-    },
-    rules: {
-      ...jsxA11y.configs.recommended.rules,
-    },
+    rules: jsxA11y.configs.recommended.rules,
   },
-];
+  globalIgnores([
+    'node_modules/**',
+    '.next/**',
+    '.open-next/**',
+    'out/**',
+    'build/**',
+    'public/**',
+    'next-env.d.ts',
+  ]),
+]);
+
+export default eslintConfig;

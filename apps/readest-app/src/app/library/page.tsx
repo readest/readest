@@ -79,10 +79,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { selectFiles } = useFileSelector(appService, _);
   const { safeAreaInsets: insets, isRoundedWindow } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { isFontLayoutSettingsDialogOpen } = useSettingsStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const [loading, setLoading] = useState(false);
-  const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isSelectAll, setIsSelectAll] = useState(false);
@@ -93,6 +91,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isInitiating = useRef(false);
 
   const demoBooks = useDemoBooks();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
@@ -129,7 +128,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     },
     onOpenFontLayoutSettings: () => {
-      setFontLayoutSettingsDialogOpen(true);
+      setSettingsDialogOpen(true);
     },
     onOpenBooks: () => {
       handleImportBooks();
@@ -772,7 +771,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <AboutWindow />
       <UpdaterWindow />
       <MigrateDataWindow />
-      {isFontLayoutSettingsDialogOpen && <SettingsDialog bookKey={''} />}
+      {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       <Toast />
     </div>
   );

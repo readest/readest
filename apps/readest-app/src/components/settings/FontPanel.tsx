@@ -28,7 +28,7 @@ import { getSysFontsList } from '@/utils/bridge';
 import { isCJKStr } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
@@ -215,7 +215,6 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           if (!fontName || isSymbolicFontName(fontName)) return;
 
           const fontsInFamily = Object.entries(res.fonts).filter(
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             ([_, family]) => family === fontFamily,
           );
 

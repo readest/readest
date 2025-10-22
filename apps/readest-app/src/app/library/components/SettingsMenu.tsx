@@ -20,6 +20,7 @@ import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
+import { saveSysSettings } from '@/helpers/settings';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -40,8 +41,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const { user } = useAuth();
   const { userPlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
@@ -91,77 +91,67 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const toggleOpenInNewWindow = () => {
-    settings.openBookInNewWindow = !settings.openBookInNewWindow;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveSysSettings(envConfig, 'openBookInNewWindow', !settings.openBookInNewWindow);
     setIsDropdownOpen?.(false);
   };
 
   const toggleAlwaysOnTop = () => {
-    settings.alwaysOnTop = !settings.alwaysOnTop;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAlwaysOnTop(settings.alwaysOnTop);
-    tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
+    const newValue = !settings.alwaysOnTop;
+    saveSysSettings(envConfig, 'alwaysOnTop', newValue);
+    setIsAlwaysOnTop(newValue);
+    tauriHandleSetAlwaysOnTop(newValue);
     setIsDropdownOpen?.(false);
   };
 
   const toggleAlwaysShowStatusBar = () => {
-    settings.alwaysShowStatusBar = !settings.alwaysShowStatusBar;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAlwaysShowStatusBar(settings.alwaysShowStatusBar);
+    const newValue = !settings.alwaysShowStatusBar;
+    saveSysSettings(envConfig, 'alwaysShowStatusBar', newValue);
+    setIsAlwaysShowStatusBar(newValue);
   };
 
   const toggleAutoUploadBooks = () => {
-    settings.autoUpload = !settings.autoUpload;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAutoUpload(settings.autoUpload);
+    const newValue = !settings.autoUpload;
+    saveSysSettings(envConfig, 'autoUpload', newValue);
+    setIsAutoUpload(newValue);
 
-    if (settings.autoUpload && !user) {
+    if (newValue && !user) {
       navigateToLogin(router);
     }
   };
 
   const toggleAutoImportBooksOnOpen = () => {
-    settings.autoImportBooksOnOpen = !settings.autoImportBooksOnOpen;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAutoImportBooksOnOpen(settings.autoImportBooksOnOpen);
+    const newValue = !settings.autoImportBooksOnOpen;
+    saveSysSettings(envConfig, 'autoImportBooksOnOpen', newValue);
+    setIsAutoImportBooksOnOpen(newValue);
   };
 
   const toggleAutoCheckUpdates = () => {
-    settings.autoCheckUpdates = !settings.autoCheckUpdates;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAutoCheckUpdates(settings.autoCheckUpdates);
+    const newValue = !settings.autoCheckUpdates;
+    saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
+    setIsAutoCheckUpdates(newValue);
   };
 
   const toggleScreenWakeLock = () => {
-    settings.screenWakeLock = !settings.screenWakeLock;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsScreenWakeLock(settings.screenWakeLock);
+    const newValue = !settings.screenWakeLock;
+    saveSysSettings(envConfig, 'screenWakeLock', newValue);
+    setIsScreenWakeLock(newValue);
   };
 
   const toggleOpenLastBooks = () => {
-    settings.openLastBooks = !settings.openLastBooks;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsOpenLastBooks(settings.openLastBooks);
+    const newValue = !settings.openLastBooks;
+    saveSysSettings(envConfig, 'openLastBooks', newValue);
+    setIsOpenLastBooks(newValue);
   };
 
   const toggleTelemetry = () => {
-    settings.telemetryEnabled = !settings.telemetryEnabled;
-    if (settings.telemetryEnabled) {
+    const newValue = !settings.telemetryEnabled;
+    saveSysSettings(envConfig, 'telemetryEnabled', newValue);
+    setIsTelemetryEnabled(newValue);
+    if (newValue) {
       optInTelemetry();
     } else {
       optOutTelemetry();
     }
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsTelemetryEnabled(settings.telemetryEnabled);
   };
 
   const handleUpgrade = () => {
@@ -176,7 +166,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
 
   const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
-    setFontLayoutSettingsDialogOpen(true);
+    setSettingsDialogOpen(true);
   };
 
   const toggleAlwaysInForeground = async () => {
@@ -192,10 +182,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       if (permission.postNotification !== 'granted') return;
     }
 
-    settings.alwaysInForeground = requestAlwaysInForeground;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setAlwaysInForeground(settings.alwaysInForeground);
+    saveSysSettings(envConfig, 'alwaysInForeground', requestAlwaysInForeground);
+    setAlwaysInForeground(requestAlwaysInForeground);
   };
 
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];

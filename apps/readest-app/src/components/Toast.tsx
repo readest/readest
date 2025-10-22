@@ -8,16 +8,18 @@ export type ToastType = 'info' | 'success' | 'warning' | 'error';
 export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
-  const toastType = useRef<ToastType>('info');
-  const toastTimeout = useRef(5000);
-  const messageClass = useRef('');
+  const [toastType, setToastType] = useState<ToastType>('info');
+  const [toastTimeout, setToastTimeout] = useState(5000);
+  const [messageClass, setMessageClass] = useState('');
   const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const toastClassMap = {
     info: 'toast-info toast-center toast-middle',
     success: 'toast-success toast-top sm:toast-end toast-center',
     warning: 'toast-warning toast-top sm:toast-end toast-center',
     error: 'toast-error toast-top sm:toast-end toast-center',
   };
+
   const alertClassMap = {
     info: 'alert-primary border-base-300',
     success: 'alert-success border-0',
@@ -27,18 +29,20 @@ export const Toast = () => {
 
   useEffect(() => {
     if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
-    toastDismissTimeout.current = setTimeout(() => setToastMessage(''), toastTimeout.current);
+    const timeout = setTimeout(() => setToastMessage(''), toastTimeout);
+    toastDismissTimeout.current = timeout;
+
     return () => {
-      if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
+      if (timeout) clearTimeout(timeout);
     };
-  }, [toastMessage]);
+  }, [toastMessage, toastTimeout]);
 
   const handleShowToast = async (event: CustomEvent) => {
     const { message, type = 'info', timeout, className = '' } = event.detail;
     setToastMessage(message);
-    toastType.current = type;
-    if (timeout) toastTimeout.current = timeout;
-    messageClass.current = className;
+    setToastType(type);
+    if (timeout) setToastTimeout(timeout);
+    setMessageClass(className);
   };
 
   useEffect(() => {
@@ -53,28 +57,23 @@ export const Toast = () => {
       <div
         className={clsx(
           'toast toast-center toast-middle z-50 w-auto max-w-screen-sm',
-          toastClassMap[toastType.current],
+          toastClassMap[toastType],
         )}
         style={{
-          top: toastClassMap[toastType.current].includes('toast-top')
+          top: toastClassMap[toastType].includes('toast-top')
             ? `${(safeAreaInsets?.top || 0) + 44}px`
             : undefined,
         }}
       >
-        <div
-          className={clsx(
-            'alert flex items-center justify-center',
-            alertClassMap[toastType.current],
-          )}
-        >
+        <div className={clsx('alert flex items-center justify-center', alertClassMap[toastType])}>
           <span
             className={clsx(
               'max-h-[50vh] min-w-32 overflow-y-auto',
               'text-center font-sans text-base font-normal sm:text-sm',
-              toastType.current === 'info'
+              toastType === 'info'
                 ? 'max-w-[80vw]'
                 : 'min-w-[60vw] max-w-[80vw] whitespace-normal break-words sm:min-w-40 sm:max-w-80',
-              messageClass.current,
+              messageClass,
             )}
           >
             {toastMessage.split('\n').map((line, idx) => (

@@ -1,34 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
-import * as CFI from 'foliate-js/epubcfi.js';
+import { useEffect, useMemo, useRef } from 'react';
 import { BookProgress } from '@/types/book';
+import * as CFI from 'foliate-js/epubcfi.js';
 
 const useScrollToItem = (cfi: string, progress: BookProgress | null) => {
   const viewRef = useRef<HTMLLIElement | null>(null);
-  const [isCurrent, setIsCurrent] = useState(false);
 
-  useEffect(() => {
-    if (!viewRef.current || !progress) return;
+  const isCurrent = useMemo(() => {
+    if (!progress) return false;
 
-    // Calculate if the current item is in the progress range
     const { location } = progress;
     const start = CFI.collapse(location);
     const end = CFI.collapse(location, true);
-    const isCurrent = CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
-    setIsCurrent(isCurrent);
+    return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
+  }, [cfi, progress]);
+
+  useEffect(() => {
+    if (!viewRef.current || !isCurrent) return;
 
     // Scroll to the item if it's the current one and not visible
-    if (isCurrent) {
-      const element = viewRef.current;
-      const rect = element.getBoundingClientRect();
-      const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const element = viewRef.current;
+    const rect = element.getBoundingClientRect();
+    const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
 
-      if (!isVisible) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-
-      element.setAttribute('aria-current', 'page');
+    if (!isVisible) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [cfi, progress, viewRef]);
+
+    element.setAttribute('aria-current', 'page');
+  }, [isCurrent]);
 
   return { isCurrent, viewRef };
 };

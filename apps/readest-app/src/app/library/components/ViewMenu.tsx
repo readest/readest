@@ -4,6 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
+import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -17,7 +18,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig } = useEnv();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
 
   const viewMode = settings.libraryViewMode;
   const sortBy = settings.librarySortBy;
@@ -48,9 +49,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   ];
 
   const handleSetViewMode = (value: LibraryViewModeType) => {
-    settings.libraryViewMode = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveSysSettings(envConfig, 'libraryViewMode', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -59,9 +58,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleToggleCropCovers = (value: LibraryCoverFitType) => {
-    settings.libraryCoverFit = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveSysSettings(envConfig, 'libraryCoverFit', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -70,9 +67,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleSetSortBy = (value: LibrarySortByType) => {
-    settings.librarySortBy = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveSysSettings(envConfig, 'librarySortBy', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -81,9 +76,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleSetSortAscending = (value: boolean) => {
-    settings.librarySortAscending = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveSysSettings(envConfig, 'librarySortAscending', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());

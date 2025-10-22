@@ -727,7 +727,6 @@ export abstract class BaseAppService implements AppService {
   }
 
   async saveLibraryBooks(books: Book[]): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
     const jsonData = JSON.stringify(libraryBooks, null, 2);
     const libraryFilename = getLibraryFilename();

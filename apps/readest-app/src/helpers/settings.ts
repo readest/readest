@@ -1,4 +1,5 @@
 import { ViewSettings } from '@/types/book';
+import { SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -13,8 +14,7 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
   skipGlobal = false,
   applyStyles = true,
 ) => {
-  const { settings, isFontLayoutSettingsGlobal, setSettings, saveSettings } =
-    useSettingsStore.getState();
+  const { settings, isSettingsGlobal, setSettings, saveSettings } = useSettingsStore.getState();
   const { getView, getViewSettings, setViewSettings } = useReaderStore.getState();
   const { getConfig, saveConfig } = useBookDataStore.getState();
   const viewSettings = getViewSettings(bookKey);
@@ -27,7 +27,7 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
     }
   }
 
-  if (isFontLayoutSettingsGlobal && !skipGlobal) {
+  if (isSettingsGlobal && !skipGlobal) {
     settings.globalViewSettings[key] = value;
     setSettings(settings);
     await saveSettings(envConfig, settings);
@@ -36,5 +36,18 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
   if (bookKey && config && viewSettings) {
     setViewSettings(bookKey, viewSettings);
     await saveConfig(envConfig, bookKey, config, settings);
+  }
+};
+
+export const saveSysSettings = async <K extends keyof SystemSettings>(
+  envConfig: EnvConfigType,
+  key: K,
+  value: SystemSettings[K],
+) => {
+  const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+  if (settings[key] !== value) {
+    settings[key] = value;
+    setSettings(settings);
+    await saveSettings(envConfig, settings);
   }
 };
