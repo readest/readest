@@ -132,7 +132,7 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
-    section, div, p, font, h1, h2, h3, h4, h5, h6, li, span {
+    section, blockquote, div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}
@@ -161,6 +161,16 @@ const getColorStyles = (
     /* inline images */
     p img, span img, sup img {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    }
+    /* code */
+    body.theme-dark code {
+      ${isDarkMode ? `color: ${fg}cc;` : ''}
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 90%, #000);` : ''}
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
+    }
+    blockquote, table * {
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -584,6 +594,11 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     .replace(/([\s;])color\s*:\s*#000/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, '$1color: var(--theme-fg-color)');
   return css;
+};
+
+export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {
+  document.body.classList.remove('theme-light', 'theme-dark');
+  document.body.classList.add(isDarkMode ? 'theme-dark' : 'theme-light');
 };
 
 export const applyImageStyle = (document: Document) => {

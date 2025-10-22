@@ -23,6 +23,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
   keepTextAlignment,
@@ -178,9 +179,8 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
-
+      applyThemeModeClass(detail.doc, isDarkMode);
       keepTextAlignment(detail.doc);
-
       removeTabIndex(detail.doc);
 
       // Inline scripts in tauri platforms are not executed by default
@@ -396,10 +396,13 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const viewSettings = getViewSettings(bookKey)!;
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
-      if (bookDoc.rendition?.layout === 'pre-paginated') {
-        const docs = viewRef.current.renderer.getContents();
-        docs.forEach(({ doc }) => applyFixedlayoutStyles(doc, viewSettings));
-      }
+      const docs = viewRef.current.renderer.getContents();
+      docs.forEach(({ doc }) => {
+        if (bookDoc.rendition?.layout === 'pre-paginated') {
+          applyFixedlayoutStyles(doc, viewSettings);
+        }
+        applyThemeModeClass(doc, isDarkMode);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeCode, isDarkMode, viewSettings?.overrideColor, viewSettings?.invertImgColorInDark]);
