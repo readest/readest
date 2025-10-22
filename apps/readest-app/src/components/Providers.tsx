@@ -46,7 +46,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         const globalViewSettings = settings.globalViewSettings;
         applyUILanguage(globalViewSettings.uiLanguage);
         const brightness = settings.screenBrightness;
-        if (appService.hasScreenBrightness && brightness >= 0) {
+        const autoBrightness = settings.autoScreenBrightness;
+        if (appService.hasScreenBrightness && !autoBrightness && brightness >= 0) {
           setScreenBrightness(brightness / 100);
         }
         applyBackgroundTexture(envConfig, globalViewSettings);

@@ -618,5 +618,6 @@
   "{{number}} pages left in chapter": "Осталось {{number}} страниц в главе",
   "Device": "Устройство",
   "E-Ink Mode": "E-Ink режим",
-  "Highlight Colors": "Цвета выделения"
+  "Highlight Colors": "Цвета выделения",
+  "Auto Screen Brightness": "Автояркость экрана"
 }

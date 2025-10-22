@@ -172,13 +172,6 @@ export async function getScreenBrightness(): Promise<GetScreenBrightnessResponse
   return result;
 }
 
-export async function getExternalSDCardPath(): Promise<GetExternalSDCardPathResponse> {
-  const result = await invoke<GetExternalSDCardPathResponse>(
-    'plugin:native-bridge|get_external_sdcard_path',
-  );
-  return result;
-}
-
 export async function setScreenBrightness(
   request: SetScreenBrightnessRequest,
 ): Promise<SetScreenBrightnessResponse> {
@@ -187,6 +180,13 @@ export async function setScreenBrightness(
     {
       payload: request,
     },
+  );
+  return result;
+}
+
+export async function getExternalSDCardPath(): Promise<GetExternalSDCardPathResponse> {
+  const result = await invoke<GetExternalSDCardPathResponse>(
+    'plugin:native-bridge|get_external_sdcard_path',
   );
   return result;
 }

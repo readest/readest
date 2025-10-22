@@ -606,5 +606,6 @@
   "{{number}} pages left in chapter": "เหลือ {{number}} หน้าในบท",
   "Device": "อุปกรณ์",
   "E-Ink Mode": "โหมด E-Ink",
-  "Highlight Colors": "สีไฮไลต์"
+  "Highlight Colors": "สีไฮไลต์",
+  "Auto Screen Brightness": "ความสว่างหน้าจออัตโนมัติ"
 }

@@ -606,5 +606,6 @@
   "{{number}} pages left in chapter": "章に{{number}}ページ残り",
   "Device": "デバイス",
   "E-Ink Mode": "E-Inkモード",
-  "Highlight Colors": "ハイライトカラー"
+  "Highlight Colors": "ハイライトカラー",
+  "Auto Screen Brightness": "自動画面の明るさ"
 }
