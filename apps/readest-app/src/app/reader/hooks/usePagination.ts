@@ -12,6 +12,7 @@ import { tauriGetWindowLogicalPosition } from '@/utils/window';
 export type ScrollSource = 'touch' | 'mouse';
 
 type PaginationSide = 'left' | 'right' | 'up' | 'down';
+type PaginationMode = 'page' | 'section';
 
 const swapLeftRight = (side: PaginationSide) => {
   if (side === 'left') return 'right';
@@ -23,6 +24,7 @@ export const viewPagination = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
   side: PaginationSide,
+  mode: PaginationMode = 'page',
 ) => {
   if (!view || !viewSettings) return;
   const renderer = view.renderer;
@@ -35,9 +37,27 @@ export const viewPagination = (
     const showFooter = viewSettings.showFooter && viewSettings.showBarsOnScroll;
     const scrollingOverlap = viewSettings.scrollingOverlap;
     const distance = size - scrollingOverlap - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
-    return side === 'left' || side === 'up' ? view.prev(distance) : view.next(distance);
+    switch (mode) {
+      case 'page':
+        return side === 'left' || side === 'up' ? view.prev(distance) : view.next(distance);
+      case 'section':
+        if (side === 'left' || side === 'up') {
+          return view.renderer.prevSection?.();
+        } else {
+          return view.renderer.nextSection?.();
+        }
+    }
   } else {
-    return side === 'left' || side === 'up' ? view.prev() : view.next();
+    switch (mode) {
+      case 'page':
+        return side === 'left' || side === 'up' ? view.prev() : view.next();
+      case 'section':
+        if (side === 'left' || side === 'up') {
+          return view.renderer.prevSection?.();
+        } else {
+          return view.renderer.nextSection?.();
+        }
+    }
   }
 };
 
