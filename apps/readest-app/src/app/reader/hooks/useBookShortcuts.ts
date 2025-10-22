@@ -53,6 +53,26 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     viewPagination(getView(sideBarBookKey), viewSettings, 'right');
   };
 
+  const goPrevSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'up', 'section');
+  };
+
+  const goNextSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'down', 'section');
+  };
+
+  const goLeftSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'section');
+  };
+
+  const goRightSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'section');
+  };
+
   const goPrev = () => {
     getView(sideBarBookKey)?.prev(distance);
   };
@@ -176,6 +196,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoNext: goNext,
       onGoHalfPageDown: goHalfPageDown,
       onGoHalfPageUp: goHalfPageUp,
+      onGoPrevSection: goPrevSection,
+      onGoNextSection: goNextSection,
+      onGoLeftSection: goLeftSection,
+      onGoRightSection: goRightSection,
       onGoBack: goBack,
       onGoForward: goForward,
       onZoomIn: zoomIn,
