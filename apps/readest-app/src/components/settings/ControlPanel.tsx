@@ -119,7 +119,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [animated]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'isEink', isEink, false, false);
+    saveViewSettings(envConfig, bookKey, 'isEink', isEink);
     if (isEink) {
       getView(bookKey)?.renderer.setAttribute('eink', '');
     } else {

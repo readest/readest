@@ -112,6 +112,7 @@ const getColorStyles = (
   invertImgColorInDark: boolean,
   themeCode: ThemeCode,
   backgroundTextureId: string,
+  isEink: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const colorStyles = `
@@ -142,7 +143,7 @@ const getColorStyles = (
     }
     a:any-link {
       ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
-      text-decoration: none;
+      text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
       ${isDarkMode ? `background-color: ${bg} !important;` : ''}
@@ -526,6 +527,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.invertImgColorInDark!,
     themeCode,
     viewSettings.backgroundTextureId,
+    viewSettings.isEink,
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const userStylesheet = viewSettings.userStylesheet!;
