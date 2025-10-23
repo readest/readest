@@ -195,6 +195,7 @@ export class DocumentLoader {
   private isFBZ(): boolean {
     return (
       this.file.type === 'application/x-zip-compressed-fb2' ||
+      this.file.name.endsWith('.fb.zip') ||
       this.file.name.endsWith('.fb2.zip') ||
       this.file.name.endsWith(`.${EXTS.FBZ}`)
     );
