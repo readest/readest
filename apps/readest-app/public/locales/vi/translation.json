@@ -612,5 +612,9 @@
   "Tap Both Sides": "Chạm vào cả hai bên",
   "Click Both Sides": "Nhấp vào cả hai bên",
   "Swap Tap Sides": "Đổi bên chạm",
-  "Swap Click Sides": "Đổi bên nhấp"
+  "Swap Click Sides": "Đổi bên nhấp",
+  "Source and Translated": "Nguồn và Đã dịch",
+  "Translated Only": "Chỉ Đã dịch",
+  "Source Only": "Chỉ Nguồn",
+  "TTS Text": "Văn bản TTS"
 }

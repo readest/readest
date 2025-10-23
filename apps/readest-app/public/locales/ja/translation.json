@@ -612,5 +612,9 @@
   "Tap Both Sides": "両側をタップ",
   "Click Both Sides": "両側をクリック",
   "Swap Tap Sides": "タップサイドを入れ替える",
-  "Swap Click Sides": "クリックサイドを入れ替える"
+  "Swap Click Sides": "クリックサイドを入れ替える",
+  "Source and Translated": "原文と翻訳",
+  "Translated Only": "翻訳のみ",
+  "Source Only": "原文のみ",
+  "TTS Text": "TTSテキスト"
 }

@@ -46,7 +46,7 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
         <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
       }
       aria-label={_('Toggle Translation')}
-      disabled={!translationAvailable}
+      disabled={!translationAvailable && !translationEnabled}
       onClick={() => setTranslationEnabled(!translationEnabled)}
       label={
         translationAvailable

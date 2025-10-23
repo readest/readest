@@ -616,5 +616,9 @@
   "Tap Both Sides": "Her İki Tarafa Dokunun",
   "Click Both Sides": "Her İki Tarafa Tıklayın",
   "Swap Tap Sides": "Dokunma Taraflarını Değiştir",
-  "Swap Click Sides": "Tıklama Taraflarını Değiştir"
+  "Swap Click Sides": "Tıklama Taraflarını Değiştir",
+  "Source and Translated": "Kaynak ve Çeviri",
+  "Translated Only": "Yalnızca Çeviri",
+  "Source Only": "Yalnızca Kaynak",
+  "TTS Text": "TTS Metni"
 }

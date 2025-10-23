@@ -612,5 +612,9 @@
   "Tap Both Sides": "Ketuk Kedua Sisi",
   "Click Both Sides": "Klik Kedua Sisi",
   "Swap Tap Sides": "Tukar Sisi Ketuk",
-  "Swap Click Sides": "Tukar Sisi Klik"
+  "Swap Click Sides": "Tukar Sisi Klik",
+  "Source and Translated": "Sumber dan Terjemahan",
+  "Translated Only": "Hanya Terjemahan",
+  "Source Only": "Hanya Sumber",
+  "TTS Text": "Teks TTS"
 }

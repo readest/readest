@@ -616,5 +616,9 @@
   "Tap Both Sides": "Tryck på båda sidor",
   "Click Both Sides": "Klicka på båda sidor",
   "Swap Tap Sides": "Byt plats på tap-sidor",
-  "Swap Click Sides": "Byt plats på klick-sidor"
+  "Swap Click Sides": "Byt plats på klick-sidor",
+  "Source and Translated": "Källa och översatt",
+  "Translated Only": "Översatt endast",
+  "Source Only": "Endast källa",
+  "TTS Text": "TTS-text"
 }

@@ -612,5 +612,9 @@
   "Tap Both Sides": "点击两侧翻页",
   "Click Both Sides": "点击两侧翻页",
   "Swap Tap Sides": "交换点击区域",
-  "Swap Click Sides": "交换点击区域"
+  "Swap Click Sides": "交换点击区域",
+  "Source and Translated": "原文和译文",
+  "Translated Only": "仅译文",
+  "Source Only": "仅原文",
+  "TTS Text": "TTS 文本"
 }

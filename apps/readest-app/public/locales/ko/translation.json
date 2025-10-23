@@ -612,5 +612,9 @@
   "Tap Both Sides": "양쪽을 탭",
   "Click Both Sides": "양쪽을 클릭",
   "Swap Tap Sides": "탭 사이드 전환",
-  "Swap Click Sides": "클릭 사이드 전환"
+  "Swap Click Sides": "클릭 사이드 전환",
+  "Source and Translated": "원본 및 번역",
+  "Translated Only": "번역만",
+  "Source Only": "원본만",
+  "TTS Text": "TTS 텍스트"
 }

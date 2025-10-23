@@ -182,6 +182,7 @@ export interface TranslatorConfig {
   translationProvider: string;
   translateTargetLang: string;
   showTranslateSource: boolean;
+  ttsReadAloudText: string;
 }
 
 export interface ScreenConfig {

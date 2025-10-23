@@ -616,5 +616,9 @@
   "Tap Both Sides": "Ταπ και στις δύο πλευρές",
   "Click Both Sides": "Κλικ και στις δύο πλευρές",
   "Swap Tap Sides": "Ανταλλαγή πλευρών ταπ",
-  "Swap Click Sides": "Ανταλλαγή πλευρών κλικ"
+  "Swap Click Sides": "Ανταλλαγή πλευρών κλικ",
+  "Source and Translated": "Πηγή και Μεταφρασμένο",
+  "Translated Only": "Μόνο Μεταφρασμένο",
+  "Source Only": "Μόνο πηγή",
+  "TTS Text": "Κείμενο TTS"
 }
