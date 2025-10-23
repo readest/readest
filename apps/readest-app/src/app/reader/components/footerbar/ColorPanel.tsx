@@ -101,11 +101,6 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
           className='flex gap-3 overflow-x-auto p-2'
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <style>{`
-            .theme-scroll::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
           {themes.map(({ name, label, colors }) => (
             <button
               key={name}

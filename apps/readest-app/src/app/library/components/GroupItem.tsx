@@ -100,13 +100,13 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
       <div
         className={clsx(
           'relative flex overflow-hidden',
-          mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center p-2 shadow-md',
+          mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center shadow-md',
           mode === 'list' && 'h-32 items-center justify-start gap-4 py-2',
         )}
       >
         <div
           className={clsx(
-            mode === 'grid' && 'flex h-full w-full',
+            mode === 'grid' && 'flex h-full w-full p-2',
             mode === 'list' && 'relative min-w-0 max-w-[85%]',
           )}
         >
