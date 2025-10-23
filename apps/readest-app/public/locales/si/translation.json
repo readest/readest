@@ -204,9 +204,6 @@
   "Scrolled Mode": "අනුචලන ආකාරය",
   "Continuous Scroll": "අඛණ්ඩ අනුචලනය",
   "Overlap Pixels": "අතිච්ඡාදන පික්සල්",
-  "Click": "ක්ලික්",
-  "Clicks for Page Flip": "පිටු පෙරැළීම සඳහා ක්ලික්",
-  "Swap Clicks Area": "ක්ලික් ප්‍රදේශය මාරු කරන්න",
   "Disable Double Click": "ද්විත්ව ක්ලික් අබල කරන්න",
   "Volume Keys for Page Flip": "පිටු පෙරැළීම සඳහා ශබ්ද යතුර",
   "Animation": "සජීවිකරණය",
@@ -611,5 +608,13 @@
   "Device": "උපකරණය",
   "E-Ink Mode": "E-Ink ආකාරය",
   "Highlight Colors": "ඉස්මතු වර්ණ",
-  "Auto Screen Brightness": "ස්වයංක්‍රීය තිර දිදුලනුම"
+  "Auto Screen Brightness": "ස්වයංක්‍රීය තිර දිදුලනුම",
+  "Pagination": "පිටුගත කිරීම",
+  "Disable Double Tap": "දෙවරක් ටැප් කිරීම අබල කරන්න",
+  "Tap to Paginate": "පිටුගත කිරීමට ටැප් කරන්න",
+  "Click to Paginate": "පිටුගත කිරීමට ක්ලික් කරන්න",
+  "Tap Both Sides": "පැත්ත දෙකම ටැප් කරන්න",
+  "Click Both Sides": "පැත්ත දෙකම ක්ලික් කරන්න",
+  "Swap Tap Sides": "පැත්ත දෙකම ටැප් කරන්න",
+  "Swap Click Sides": "පැත්ත දෙකම ක්ලික් කරන්න"
 }

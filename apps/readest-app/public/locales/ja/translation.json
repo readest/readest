@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(「お気に召すまま」第2幕)",
   "Link Color": "リンクカラー",
   "Volume Keys for Page Flip": "音量キーでページめくり",
-  "Clicks for Page Flip": "タップでページめくり",
-  "Swap Clicks Area": "タップ領域を入れ替え",
   "Screen": "画面",
   "Orientation": "向き",
   "Portrait": "縦",
@@ -296,7 +294,6 @@
   "Disable Translation": "翻訳を無効にする",
   "Scroll": "スクロール",
   "Overlap Pixels": "重なりピクセル",
-  "Click": "クリック",
   "System Language": "システム言語",
   "Security": "セキュリティ",
   "Allow JavaScript": "JavaScriptを許可",
@@ -607,5 +604,13 @@
   "Device": "デバイス",
   "E-Ink Mode": "E-Inkモード",
   "Highlight Colors": "ハイライトカラー",
-  "Auto Screen Brightness": "自動画面の明るさ"
+  "Auto Screen Brightness": "自動画面の明るさ",
+  "Pagination": "ページネーション",
+  "Disable Double Tap": "ダブルタップを無効にする",
+  "Tap to Paginate": "タップしてページを切り替える",
+  "Click to Paginate": "クリックしてページを切り替える",
+  "Tap Both Sides": "両側をタップ",
+  "Click Both Sides": "両側をクリック",
+  "Swap Tap Sides": "タップサイドを入れ替える",
+  "Swap Click Sides": "クリックサイドを入れ替える"
 }

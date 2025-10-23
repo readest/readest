@@ -204,9 +204,6 @@
   "Scrolled Mode": "স্ক্রল মোড",
   "Continuous Scroll": "ক্রমাগত স্ক্রল",
   "Overlap Pixels": "ওভারল্যাপ পিক্সেল",
-  "Click": "ক্লিক",
-  "Clicks for Page Flip": "পৃষ্ঠা উল্টানোর জন্য ক্লিক",
-  "Swap Clicks Area": "ক্লিক এরিয়া অদলবদল",
   "Disable Double Click": "ডাবল ক্লিক নিষ্ক্রিয়",
   "Volume Keys for Page Flip": "পৃষ্ঠা উল্টানোর জন্য ভলিউম কী",
   "Animation": "অ্যানিমেশন",
@@ -611,5 +608,13 @@
   "Device": "যন্ত্র",
   "E-Ink Mode": "ই-ইঙ্ক মোড",
   "Highlight Colors": "হাইলাইট রঙ",
-  "Auto Screen Brightness": "স্বয়ংক্রিয় স্ক্রিন উজ্জ্বলতা"
+  "Auto Screen Brightness": "স্বয়ংক্রিয় স্ক্রিন উজ্জ্বলতা",
+  "Pagination": "পৃষ্ঠা বিন্যাস",
+  "Disable Double Tap": "ডাবল ট্যাপ অক্ষম করুন",
+  "Tap to Paginate": "পৃষ্ঠায় যেতে ট্যাপ করুন",
+  "Click to Paginate": "পৃষ্ঠায় যেতে ক্লিক করুন",
+  "Tap Both Sides": "দুই পাশে ট্যাপ করুন",
+  "Click Both Sides": "দুই পাশে ক্লিক করুন",
+  "Swap Tap Sides": "ট্যাপের পাশে পরিবর্তন করুন",
+  "Swap Click Sides": "ক্লিকের পাশে পরিবর্তন করুন"
 }

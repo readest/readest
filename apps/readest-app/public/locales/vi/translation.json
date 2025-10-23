@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(từ 'Như bạn thích', Hành động II)",
   "Link Color": "Màu liên kết",
   "Volume Keys for Page Flip": "Phím âm lượng để lật trang",
-  "Clicks for Page Flip": "Nhấp để lật trang",
-  "Swap Clicks Area": "Đổi khu vực nhấp",
   "Screen": "Màn hình",
   "Orientation": "Định hướng",
   "Portrait": "Chân dung",
@@ -296,7 +294,6 @@
   "Disable Translation": "Tắt dịch",
   "Scroll": "Cuộn",
   "Overlap Pixels": "Chồng lấn pixel",
-  "Click": "Nhấp",
   "System Language": "Ngôn ngữ hệ thống",
   "Security": "An ninh",
   "Allow JavaScript": "Cho phép JavaScript",
@@ -607,5 +604,13 @@
   "Device": "Thiết bị",
   "E-Ink Mode": "Chế độ E-Ink",
   "Highlight Colors": "Màu nổi bật",
-  "Auto Screen Brightness": "Độ sáng màn hình tự động"
+  "Auto Screen Brightness": "Độ sáng màn hình tự động",
+  "Pagination": "Phân trang",
+  "Disable Double Tap": "Vô hiệu hóa chạm hai lần",
+  "Tap to Paginate": "Chạm để phân trang",
+  "Click to Paginate": "Nhấp để phân trang",
+  "Tap Both Sides": "Chạm vào cả hai bên",
+  "Click Both Sides": "Nhấp vào cả hai bên",
+  "Swap Tap Sides": "Đổi bên chạm",
+  "Swap Click Sides": "Đổi bên nhấp"
 }

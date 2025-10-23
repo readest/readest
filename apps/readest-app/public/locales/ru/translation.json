@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(из 'Как вам это понравится', Акт II)",
   "Link Color": "Цвет ссылки",
   "Volume Keys for Page Flip": "Клавиши громкости для перелистывания страниц",
-  "Clicks for Page Flip": "Клики для перелистывания страниц",
-  "Swap Clicks Area": "Переключить область кликов",
   "Screen": "Экран",
   "Orientation": "Ориентация",
   "Portrait": "Портрет",
@@ -299,7 +297,6 @@
   "Disable Translation": "Отключить перевод",
   "Scroll": "Прокрутка",
   "Overlap Pixels": "Перекрывающиеся пиксели",
-  "Click": "Клик",
   "System Language": "Системный язык",
   "Security": "Безопасность",
   "Allow JavaScript": "Разрешить JavaScript",
@@ -619,5 +616,13 @@
   "Device": "Устройство",
   "E-Ink Mode": "E-Ink режим",
   "Highlight Colors": "Цвета выделения",
-  "Auto Screen Brightness": "Автояркость экрана"
+  "Auto Screen Brightness": "Автояркость экрана",
+  "Pagination": "Пагинация",
+  "Disable Double Tap": "Отключить двойной тап",
+  "Tap to Paginate": "Тапните, чтобы разбить на страницы",
+  "Click to Paginate": "Нажмите, чтобы разбить на страницы",
+  "Tap Both Sides": "Тапните обе стороны",
+  "Click Both Sides": "Нажмите обе стороны",
+  "Swap Tap Sides": "Переключить стороны касания",
+  "Swap Click Sides": "Переключить стороны клика"
 }

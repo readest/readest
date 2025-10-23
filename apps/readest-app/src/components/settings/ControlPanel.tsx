@@ -30,6 +30,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
+  const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
   const [animated, setAnimated] = useState(viewSettings.animated);
@@ -102,6 +103,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'disableDoubleClick', isDisableDoubleClick, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableDoubleClick]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'fullscreenClickArea', fullscreenClickArea, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullscreenClickArea]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'swapClickArea', swapClickArea, false, false);
@@ -180,11 +186,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       </div>
 
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Click')}</h2>
+        <h2 className='mb-2 font-medium'>{_('Pagination')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200'>
             <div className='config-item'>
-              <span className=''>{_('Clicks for Page Flip')}</span>
+              <span className=''>
+                {appService?.isMobileApp ? _('Tap to Paginate') : _('Click to Paginate')}
+              </span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -193,17 +201,33 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
               />
             </div>
             <div className='config-item'>
-              <span className=''>{_('Swap Clicks Area')}</span>
+              <span className=''>
+                {appService?.isMobileApp ? _('Tap Both Sides') : _('Click Both Sides')}
+              </span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={fullscreenClickArea}
+                disabled={isDisableClick}
+                onChange={() => setFullscreenClickArea(!fullscreenClickArea)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>
+                {appService?.isMobileApp ? _('Swap Tap Sides') : _('Swap Click Sides')}
+              </span>
               <input
                 type='checkbox'
                 className='toggle'
                 checked={swapClickArea}
-                disabled={isDisableClick}
+                disabled={isDisableClick || fullscreenClickArea}
                 onChange={() => setSwapClickArea(!swapClickArea)}
               />
             </div>
             <div className='config-item'>
-              <span className=''>{_('Disable Double Click')}</span>
+              <span className=''>
+                {appService?.isMobileApp ? _('Disable Double Tap') : _('Disable Double Click')}
+              </span>
               <input
                 type='checkbox'
                 className='toggle'

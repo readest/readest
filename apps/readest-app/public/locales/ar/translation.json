@@ -259,8 +259,6 @@
   "(from 'As You Like It', Act II)": "(من 'كما تحب'، الفصل الثاني)",
   "Link Color": "لون الرابط",
   "Volume Keys for Page Flip": "مفاتيح الصوت لتقليب الصفحات",
-  "Clicks for Page Flip": "نقرات لتقليب الصفحات",
-  "Swap Clicks Area": "تبديل منطقة النقرات",
   "Screen": "الشاشة",
   "Orientation": "الاتجاه",
   "Portrait": "عمودي",
@@ -300,7 +298,6 @@
   "Disable Translation": "تعطيل الترجمة",
   "Scroll": "تمرير",
   "Overlap Pixels": "تداخل البكسلات",
-  "Click": "نقر",
   "System Language": "لغة النظام",
   "Security": "الأمان",
   "Allow JavaScript": "السماح بـ JavaScript",
@@ -627,5 +624,13 @@
   "Device": "الجهاز",
   "E-Ink Mode": "وضع الحبر الإلكتروني",
   "Highlight Colors": "ألوان التمييز",
-  "Auto Screen Brightness": "سطوع الشاشة التلقائي"
+  "Auto Screen Brightness": "سطوع الشاشة التلقائي",
+  "Pagination": "التقسيم إلى صفحات",
+  "Disable Double Tap": "تعطيل النقر المزدوج",
+  "Tap to Paginate": "اضغط للتقسيم إلى صفحات",
+  "Click to Paginate": "انقر للتقسيم إلى صفحات",
+  "Tap Both Sides": "اضغط على كلا الجانبين",
+  "Click Both Sides": "انقر على كلا الجانبين",
+  "Swap Tap Sides": "تبديل جانبي اللمس",
+  "Swap Click Sides": "تبديل جانبي النقر"
 }

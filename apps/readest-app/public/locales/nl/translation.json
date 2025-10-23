@@ -184,8 +184,6 @@
   "Behavior": "Gedrag",
   "Continuous Scroll": "Doorlopend scrollen",
   "Volume Keys for Page Flip": "Volumetoetsen voor pagina omslaan",
-  "Clicks for Page Flip": "Klikken voor pagina omslaan",
-  "Swap Clicks Area": "Klikgebieden omwisselen",
   "Apply": "Toepassen",
   "Font": "Lettertype",
   "Layout": "Opmaak",
@@ -297,7 +295,6 @@
   "Disable Translation": "Vertaling uitschakelen",
   "Scroll": "Scrollen",
   "Overlap Pixels": "Overlap pixels",
-  "Click": "Klik",
   "System Language": "Systemtaal",
   "Security": "Beveiliging",
   "Allow JavaScript": "JavaScript toestaan",
@@ -611,5 +608,13 @@
   "Device": "Apparaat",
   "E-Ink Mode": "E-Ink Modus",
   "Highlight Colors": "Markeerkleuren",
-  "Auto Screen Brightness": "Automatische Schermhelderheid"
+  "Auto Screen Brightness": "Automatische Schermhelderheid",
+  "Pagination": "Paginering",
+  "Disable Double Tap": "Schakel Dubbel Tikken Uit",
+  "Tap to Paginate": "Tik om te Pagineren",
+  "Click to Paginate": "Klik om te Pagineren",
+  "Tap Both Sides": "Tik op Beide Zijden",
+  "Click Both Sides": "Klik op Beide Zijden",
+  "Swap Tap Sides": "Wissel Tap Zijden",
+  "Swap Click Sides": "Wissel Klik Zijden"
 }

@@ -169,9 +169,6 @@
   "Scrolled Mode": "โหมดเลื่อน",
   "Continuous Scroll": "เลื่อนต่อเนื่อง",
   "Overlap Pixels": "พิกเซลซ้อน",
-  "Click": "คลิก",
-  "Clicks for Page Flip": "คลิกเพื่อพลิกหน้า",
-  "Swap Clicks Area": "สลับพื้นที่คลิก",
   "Volume Keys for Page Flip": "ปุ่มเสียงเพื่อพลิกหน้า",
   "Animation": "ภาพเคลื่อนไหว",
   "Paging Animation": "ภาพเคลื่อนไหวพลิกหน้า",
@@ -607,5 +604,13 @@
   "Device": "อุปกรณ์",
   "E-Ink Mode": "โหมด E-Ink",
   "Highlight Colors": "สีไฮไลต์",
-  "Auto Screen Brightness": "ความสว่างหน้าจออัตโนมัติ"
+  "Auto Screen Brightness": "ความสว่างหน้าจออัตโนมัติ",
+  "Pagination": "การแบ่งหน้า",
+  "Disable Double Tap": "ปิดการแตะสองครั้ง",
+  "Tap to Paginate": "แตะเพื่อแบ่งหน้า",
+  "Click to Paginate": "คลิกเพื่อแบ่งหน้า",
+  "Tap Both Sides": "แตะทั้งสองด้าน",
+  "Click Both Sides": "คลิกทั้งสองด้าน",
+  "Swap Tap Sides": "เปลี่ยนด้านการแตะ",
+  "Swap Click Sides": "เปลี่ยนด้านการคลิก"
 }

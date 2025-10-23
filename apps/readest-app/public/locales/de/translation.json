@@ -259,8 +259,6 @@
   "(from 'As You Like It', Act II)": "(aus 'Wie es euch gefällt', Akt II)",
   "Link Color": "Linkfarbe",
   "Volume Keys for Page Flip": "Volumen-Tasten für Seitenwechsel",
-  "Clicks for Page Flip": "Tippen zum Blättern",
-  "Swap Clicks Area": "Tippbereiche tauschen",
   "Screen": "Bildschirm",
   "Orientation": "Orientierung",
   "Portrait": "Hochformat",
@@ -296,7 +294,6 @@
   "Disable Translation": "Übersetzung deaktivieren",
   "Scroll": "Scrollen",
   "Overlap Pixels": "Überlappungspixel",
-  "Click": "Tippen",
   "System Language": "Systemsprache",
   "Security": "Sicherheit",
   "Allow JavaScript": "JavaScript zulassen",
@@ -611,5 +608,13 @@
   "Device": "Gerät",
   "E-Ink Mode": "E-Ink-Modus",
   "Highlight Colors": "Hervorhebungsfarben",
-  "Auto Screen Brightness": "Automatische Bildschirmhelligkeit"
+  "Auto Screen Brightness": "Automatische Bildschirmhelligkeit",
+  "Pagination": "Seitenumbruch",
+  "Disable Double Tap": "Doppeltippen deaktivieren",
+  "Tap to Paginate": "Tippen zum Blättern",
+  "Click to Paginate": "Klicken zum Blättern",
+  "Tap Both Sides": "Tippen Sie auf beide Seiten",
+  "Click Both Sides": "Klicken Sie auf beide Seiten",
+  "Swap Tap Sides": "Seiten für das Tippen tauschen",
+  "Swap Click Sides": "Seiten für das Klicken tauschen"
 }

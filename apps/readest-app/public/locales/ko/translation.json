@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(당신이 좋아하는 대로, 2막)",
   "Link Color": "링크 색상",
   "Volume Keys for Page Flip": "페이지 넘김을 위한 볼륨 키",
-  "Clicks for Page Flip": "페이지 넘김을 위한 클릭",
-  "Swap Clicks Area": "클릭 영역 교환",
   "Screen": "화면",
   "Orientation": "방향",
   "Portrait": "세로",
@@ -296,7 +294,6 @@
   "Disable Translation": "번역 비활성화",
   "Scroll": "스크롤",
   "Overlap Pixels": "겹치는 픽셀",
-  "Click": "클릭",
   "System Language": "시스템 언어",
   "Security": "보안",
   "Allow JavaScript": "JavaScript 허용",
@@ -607,5 +604,13 @@
   "Device": "장치",
   "E-Ink Mode": "E-Ink 모드",
   "Highlight Colors": "하이라이트 색상",
-  "Auto Screen Brightness": "자동 화면 밝기"
+  "Auto Screen Brightness": "자동 화면 밝기",
+  "Pagination": "페이지 매김",
+  "Disable Double Tap": "더블 탭 비활성화",
+  "Tap to Paginate": "탭하여 페이지 매김",
+  "Click to Paginate": "클릭하여 페이지 매김",
+  "Tap Both Sides": "양쪽을 탭",
+  "Click Both Sides": "양쪽을 클릭",
+  "Swap Tap Sides": "탭 사이드 전환",
+  "Swap Click Sides": "클릭 사이드 전환"
 }

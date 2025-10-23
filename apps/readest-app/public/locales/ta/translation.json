@@ -204,9 +204,6 @@
   "Scrolled Mode": "உருட்டல் பயன்முறை",
   "Continuous Scroll": "தொடர்ச்சியான உருட்டல்",
   "Overlap Pixels": "ஒன்றுடன் ஒன்று பிக்சல்கள்",
-  "Click": "கிளிக்",
-  "Clicks for Page Flip": "பக்கம் புரட்டுவதற்கு கிளிக்கள்",
-  "Swap Clicks Area": "கிளிக் பகுதியை மாற்றவும்",
   "Disable Double Click": "இரட்டை கிளிக்கை முடக்கவும்",
   "Volume Keys for Page Flip": "பக்கம் புரட்டுவதற்கு ஒலி விசைகள்",
   "Animation": "அனிமேஷன்",
@@ -611,5 +608,13 @@
   "Device": "சாதனம்",
   "E-Ink Mode": "E-Ink முறை",
   "Highlight Colors": "முத்திரை நிறங்கள்",
-  "Auto Screen Brightness": "தானியங்கி திரை பிரகாசம்"
+  "Auto Screen Brightness": "தானியங்கி திரை பிரகாசம்",
+  "Pagination": "பக்கமிடுதல்",
+  "Disable Double Tap": "இரட்டை தொடுதலை முடக்கு",
+  "Tap to Paginate": "பக்கம் மாற்ற தொடுங்கள்",
+  "Click to Paginate": "பக்கம் மாற்ற கிளிக் செய்யவும்",
+  "Tap Both Sides": "இரு பக்கங்களையும் தொடுங்கள்",
+  "Click Both Sides": "இரு பக்கங்களையும் கிளிக் செய்யவும்",
+  "Swap Tap Sides": "இரு பக்கங்களின் இடத்தை மாற்றவும்",
+  "Swap Click Sides": "இரு பக்கங்களின் இடத்தை மாற்றவும்"
 }

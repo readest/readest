@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(z „Jak wam się podoba”, Akt II)",
   "Link Color": "Kolor linku",
   "Volume Keys for Page Flip": "Klucze głośności do przewracania stron",
-  "Clicks for Page Flip": "Kliknięcia do przewracania stron",
-  "Swap Clicks Area": "Zamień obszar kliknięcia",
   "Screen": "Ekran",
   "Orientation": "Orientacja",
   "Portrait": "Portret",
@@ -299,7 +297,6 @@
   "Disable Translation": "Wyłącz tłumaczenie",
   "Scroll": "Przewijaj",
   "Overlap Pixels": "Przesunięcie pikseli",
-  "Click": "Kliknij",
   "System Language": "Język systemu",
   "Security": "Bezpieczeństwo",
   "Allow JavaScript": "Zezwól na JavaScript",
@@ -619,5 +616,13 @@
   "Device": "Urządzenie",
   "E-Ink Mode": "Tryb E-Ink",
   "Highlight Colors": "Kolory wyróżnień",
-  "Auto Screen Brightness": "Automatyczna jasność ekranu"
+  "Auto Screen Brightness": "Automatyczna jasność ekranu",
+  "Pagination": "Stronicowanie",
+  "Disable Double Tap": "Wyłącz podwójne dotknięcie",
+  "Tap to Paginate": "Dotknij, aby stronicować",
+  "Click to Paginate": "Kliknij, aby stronicować",
+  "Tap Both Sides": "Dotknij obu stron",
+  "Click Both Sides": "Kliknij obu stron",
+  "Swap Tap Sides": "Wymień Tap Zewnętrzne",
+  "Swap Click Sides": "Wymień Click Zewnętrzne"
 }

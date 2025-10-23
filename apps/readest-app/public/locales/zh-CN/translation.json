@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "出自《皆大欢喜》，第二幕",
   "Link Color": "链接颜色",
   "Volume Keys for Page Flip": "音量键翻页",
-  "Clicks for Page Flip": "点击翻页",
-  "Swap Clicks Area": "交换点击区域",
   "Screen": "屏幕",
   "Orientation": "屏幕方向",
   "Portrait": "竖屏",
@@ -296,7 +294,6 @@
   "Disable Translation": "禁用翻译",
   "Scroll": "滚动",
   "Overlap Pixels": "重叠像素",
-  "Click": "点击",
   "System Language": "系统语言",
   "Security": "安全",
   "Allow JavaScript": "允许 JavaScript",
@@ -607,5 +604,13 @@
   "Device": "设备",
   "E-Ink Mode": "E-Ink 模式",
   "Highlight Colors": "高亮颜色",
-  "Auto Screen Brightness": "自动屏幕亮度"
+  "Auto Screen Brightness": "自动屏幕亮度",
+  "Pagination": "翻页",
+  "Disable Double Tap": "禁用双击",
+  "Tap to Paginate": "点击翻页",
+  "Click to Paginate": "点击翻页",
+  "Tap Both Sides": "点击两侧翻页",
+  "Click Both Sides": "点击两侧翻页",
+  "Swap Tap Sides": "交换点击区域",
+  "Swap Click Sides": "交换点击区域"
 }

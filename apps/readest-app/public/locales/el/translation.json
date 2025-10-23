@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "('Όπως σας αρέσει', Πράξη II)",
   "Link Color": "Χρώμα συνδέσμου",
   "Volume Keys for Page Flip": "Ανατροπή με πλήκτρα έντασης",
-  "Clicks for Page Flip": "Κλικ για ανατροπή σελίδας",
-  "Swap Clicks Area": "Ανταλλαγή περιοχής κλικ",
   "Screen": "Οθόνη",
   "Orientation": "Προσανατολισμός",
   "Portrait": "Πορτραίτο",
@@ -297,7 +295,6 @@
   "Disable Translation": "Απενεργοποίηση μετάφρασης",
   "Scroll": "Κύλιση",
   "Overlap Pixels": "Επικάλυψη εικονοστοιχείων",
-  "Click": "Κλικ",
   "System Language": "Γλώσσα συστήματος",
   "Security": "Ασφάλεια",
   "Allow JavaScript": "Επιτρέψτε JavaScript",
@@ -611,5 +608,13 @@
   "Device": "Συσκευή",
   "E-Ink Mode": "Λειτουργία E-Ink",
   "Highlight Colors": "Χρώματα επισήμανσης",
-  "Auto Screen Brightness": "Αυτόματη φωτεινότητα οθόνης"
+  "Auto Screen Brightness": "Αυτόματη φωτεινότητα οθόνης",
+  "Pagination": "Σελιδοποίηση",
+  "Disable Double Tap": "Απενεργοποίηση διπλού ταπ",
+  "Tap to Paginate": "Ταπ για σελιδοποίηση",
+  "Click to Paginate": "Κλικ για σελιδοποίηση",
+  "Tap Both Sides": "Ταπ και στις δύο πλευρές",
+  "Click Both Sides": "Κλικ και στις δύο πλευρές",
+  "Swap Tap Sides": "Ανταλλαγή πλευρών ταπ",
+  "Swap Click Sides": "Ανταλλαγή πλευρών κλικ"
 }

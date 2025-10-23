@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(dari 'Seperti yang Anda Inginkan', Bab II)",
   "Link Color": "Warna Tautan",
   "Volume Keys for Page Flip": "Volume Keys untuk Pembalikan Halaman",
-  "Clicks for Page Flip": "Klik untuk Pembalikan Halaman",
-  "Swap Clicks Area": "Area Klik Tukar",
   "Screen": "Screen",
   "Orientation": "Orientasi",
   "Portrait": "Potret",
@@ -296,7 +294,6 @@
   "Disable Translation": "Nonaktifkan Terjemahan",
   "Scroll": "Scroll",
   "Overlap Pixels": "Overlap Piksel",
-  "Click": "Klik",
   "System Language": "Bahasa Sistem",
   "Security": "Keamanan",
   "Allow JavaScript": "Izinkan JavaScript",
@@ -607,5 +604,13 @@
   "Device": "Perangkat",
   "E-Ink Mode": "Mode E-Ink",
   "Highlight Colors": "Warna Sorotan",
-  "Auto Screen Brightness": "Auto Kecerahan Layar"
+  "Auto Screen Brightness": "Auto Kecerahan Layar",
+  "Pagination": "Paginasi",
+  "Disable Double Tap": "Nonaktifkan Ketuk Ganda",
+  "Tap to Paginate": "Ketuk untuk Paginasi",
+  "Click to Paginate": "Klik untuk Paginasi",
+  "Tap Both Sides": "Ketuk Kedua Sisi",
+  "Click Both Sides": "Klik Kedua Sisi",
+  "Swap Tap Sides": "Tukar Sisi Ketuk",
+  "Swap Click Sides": "Tukar Sisi Klik"
 }

@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(із 'Як вам це подобається', Дія II)",
   "Link Color": "Колір посилання",
   "Volume Keys for Page Flip": "Перегортати сторінки клавішами гучності",
-  "Clicks for Page Flip": "Перегортати сторінки натисканням",
-  "Swap Clicks Area": "Поміняти області клацання місцями",
   "Screen": "Екран",
   "Orientation": "Орієнтація",
   "Portrait": "Портрет",
@@ -299,7 +297,6 @@
   "Disable Translation": "Вимкнути переклад",
   "Scroll": "Прокрутка",
   "Overlap Pixels": "Перекривати пікселі",
-  "Click": "Натиснути",
   "System Language": "Системна мова",
   "Security": "Безпека",
   "Allow JavaScript": "Дозволити JavaScript",
@@ -619,5 +616,13 @@
   "Device": "Пристрій",
   "E-Ink Mode": "E-Ink режим",
   "Highlight Colors": "Кольори виділення",
-  "Auto Screen Brightness": "Автоматична яскравість екрану"
+  "Auto Screen Brightness": "Автоматична яскравість екрану",
+  "Pagination": "Розбиття на сторінки",
+  "Disable Double Tap": "Вимкнути подвійне натискання",
+  "Tap to Paginate": "Натисніть, щоб розбити на сторінки",
+  "Click to Paginate": "Клікніть, щоб розбити на сторінки",
+  "Tap Both Sides": "Натисніть обидві сторони",
+  "Click Both Sides": "Клікніть обидві сторони",
+  "Swap Tap Sides": "Змінити сторони дотику",
+  "Swap Click Sides": "Змінити сторони кліку"
 }

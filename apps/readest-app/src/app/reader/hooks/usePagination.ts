@@ -120,13 +120,17 @@ export const usePagination = (
                   return;
                 }
                 if (!viewSettings.disableClick! && screenX >= viewCenterX) {
-                  if (viewSettings.swapClickArea) {
+                  if (viewSettings.fullscreenClickArea) {
+                    viewPagination(viewRef.current, viewSettings, 'down');
+                  } else if (viewSettings.swapClickArea) {
                     viewPagination(viewRef.current, viewSettings, 'left');
                   } else {
                     viewPagination(viewRef.current, viewSettings, 'right');
                   }
                 } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
-                  if (viewSettings.swapClickArea) {
+                  if (viewSettings.fullscreenClickArea) {
+                    viewPagination(viewRef.current, viewSettings, 'down');
+                  } else if (viewSettings.swapClickArea) {
                     viewPagination(viewRef.current, viewSettings, 'right');
                   } else {
                     viewPagination(viewRef.current, viewSettings, 'left');

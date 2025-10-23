@@ -454,9 +454,6 @@
   "Scroll": "Rullning",
   "Continuous Scroll": "Kontinuerlig rullning",
   "Overlap Pixels": "Överlappande pixlar",
-  "Click": "Klick",
-  "Clicks for Page Flip": "Klick för sidbyte",
-  "Swap Clicks Area": "Byt klickområde",
   "Disable Double Click": "Inaktivera dubbelklick",
   "Volume Keys for Page Flip": "Volymknappar för sidbyte",
   "Animation": "Animation",
@@ -611,5 +608,13 @@
   "Device": "Enhet",
   "E-Ink Mode": "E-Ink-läge",
   "Highlight Colors": "Markeringsfärger",
-  "Auto Screen Brightness": "Auto-skärmens ljusstyrka"
+  "Auto Screen Brightness": "Auto-skärmens ljusstyrka",
+  "Pagination": "Pagination",
+  "Disable Double Tap": "Inaktivera dubbeltryck",
+  "Tap to Paginate": "Tryck för att bläddra",
+  "Click to Paginate": "Klicka för att bläddra",
+  "Tap Both Sides": "Tryck på båda sidor",
+  "Click Both Sides": "Klicka på båda sidor",
+  "Swap Tap Sides": "Byt plats på tap-sidor",
+  "Swap Click Sides": "Byt plats på klick-sidor"
 }
