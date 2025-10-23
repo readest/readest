@@ -632,5 +632,9 @@
   "Tap Both Sides": "اضغط على كلا الجانبين",
   "Click Both Sides": "انقر على كلا الجانبين",
   "Swap Tap Sides": "تبديل جانبي اللمس",
-  "Swap Click Sides": "تبديل جانبي النقر"
+  "Swap Click Sides": "تبديل جانبي النقر",
+  "Source and Translated": "المصدر والمترجم",
+  "Translated Only": "المترجم فقط",
+  "Source Only": "المصدر فقط",
+  "TTS Text": "نص تحويل النص إلى كلام"
 }

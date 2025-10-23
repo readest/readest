@@ -624,5 +624,9 @@
   "Tap Both Sides": "Натисніть обидві сторони",
   "Click Both Sides": "Клікніть обидві сторони",
   "Swap Tap Sides": "Змінити сторони дотику",
-  "Swap Click Sides": "Змінити сторони кліку"
+  "Swap Click Sides": "Змінити сторони кліку",
+  "Source and Translated": "Джерело та переклад",
+  "Translated Only": "Тільки переклад",
+  "Source Only": "Тільки джерело",
+  "TTS Text": "Текст TTS"
 }

@@ -226,6 +226,7 @@ export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translationProvider: 'deepl',
   translateTargetLang: '',
   showTranslateSource: true,
+  ttsReadAloudText: 'both',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {

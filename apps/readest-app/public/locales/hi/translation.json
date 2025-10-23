@@ -616,5 +616,9 @@
   "Tap Both Sides": "दोनों पक्षों पर टैप करें",
   "Click Both Sides": "दोनों पक्षों पर क्लिक करें",
   "Swap Tap Sides": "स्वैप टैप साइड्स",
-  "Swap Click Sides": "स्वैप क्लिक साइड्स"
+  "Swap Click Sides": "स्वैप क्लिक साइड्स",
+  "Source and Translated": "स्रोत और अनुवादित",
+  "Translated Only": "केवल अनुवादित",
+  "Source Only": "केवल स्रोत",
+  "TTS Text": "TTS टेक्स्ट"
 }

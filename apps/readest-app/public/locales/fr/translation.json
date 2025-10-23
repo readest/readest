@@ -620,5 +620,9 @@
   "Tap Both Sides": "Tapoter des Deux Côtés",
   "Click Both Sides": "Cliquer des Deux Côtés",
   "Swap Tap Sides": "Échanger les Côtés de Tap",
-  "Swap Click Sides": "Échanger les Côtés de Clic"
+  "Swap Click Sides": "Échanger les Côtés de Clic",
+  "Source and Translated": "Source et Traduit",
+  "Translated Only": "Traduit Seulement",
+  "Source Only": "Source Seulement",
+  "TTS Text": "TTS Texte"
 }

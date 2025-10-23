@@ -612,5 +612,9 @@
   "Tap Both Sides": "แตะทั้งสองด้าน",
   "Click Both Sides": "คลิกทั้งสองด้าน",
   "Swap Tap Sides": "เปลี่ยนด้านการแตะ",
-  "Swap Click Sides": "เปลี่ยนด้านการคลิก"
+  "Swap Click Sides": "เปลี่ยนด้านการคลิก",
+  "Source and Translated": "ต้นฉบับและแปลแล้ว",
+  "Translated Only": "แปลแล้วเท่านั้น",
+  "Source Only": "ต้นฉบับเท่านั้น",
+  "TTS Text": "ข้อความ TTS"
 }

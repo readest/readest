@@ -624,5 +624,9 @@
   "Tap Both Sides": "Dotknij obu stron",
   "Click Both Sides": "Kliknij obu stron",
   "Swap Tap Sides": "Wymień Tap Zewnętrzne",
-  "Swap Click Sides": "Wymień Click Zewnętrzne"
+  "Swap Click Sides": "Wymień Click Zewnętrzne",
+  "Source and Translated": "Źródło i Tłumaczenie",
+  "Translated Only": "Tylko Tłumaczenie",
+  "Source Only": "Tylko Źródło",
+  "TTS Text": "Tekst TTS"
 }

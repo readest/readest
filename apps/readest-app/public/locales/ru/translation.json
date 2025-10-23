@@ -624,5 +624,9 @@
   "Tap Both Sides": "Тапните обе стороны",
   "Click Both Sides": "Нажмите обе стороны",
   "Swap Tap Sides": "Переключить стороны касания",
-  "Swap Click Sides": "Переключить стороны клика"
+  "Swap Click Sides": "Переключить стороны клика",
+  "Source and Translated": "Источник и перевод",
+  "Translated Only": "Только перевод",
+  "Source Only": "Только источник",
+  "TTS Text": "TTS Текст"
 }

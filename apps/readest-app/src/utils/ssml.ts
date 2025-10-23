@@ -116,3 +116,59 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
 
   return result;
 };
+
+export const filterSSMLWithLang = (
+  ssml: string,
+  targetLang: string,
+  primaryLang?: string,
+): string => {
+  const mainLang = parseSSMLLang(ssml, primaryLang);
+
+  // Normalize target language
+  const normalizedTarget = code6392to6391(targetLang.toLowerCase()) || targetLang.toLowerCase();
+
+  // Check if target matches main language
+  if (isSameLang(normalizedTarget, mainLang)) {
+    // Remove all <lang> blocks that don't match the main language
+    return ssml.replace(/<lang\s+xml:lang="([^"]+)"[^>]*>.*?<\/lang>/gs, (match, langAttr) => {
+      const blockLang = code6392to6391(langAttr.toLowerCase()) || langAttr.toLowerCase();
+      // If the lang block matches the main language, keep it as is
+      if (isSameLang(blockLang, mainLang)) {
+        return match;
+      }
+      // Otherwise remove the entire block
+      return '';
+    });
+  }
+
+  // Check if target matches any <lang> block
+  const langBlocks: Array<{ match: string; lang: string; content: string }> = [];
+  const langBlockRegex = /<lang\s+xml:lang="([^"]+)"[^>]*>(.*?)<\/lang>/gs;
+  let match: RegExpExecArray | null;
+
+  const tempRegex = new RegExp(langBlockRegex.source, langBlockRegex.flags);
+  while ((match = tempRegex.exec(ssml)) !== null) {
+    const blockLang = code6392to6391(match[1]!.toLowerCase()) || match[1]!.toLowerCase();
+    if (isSameLang(blockLang, normalizedTarget)) {
+      langBlocks.push({
+        match: match[0]!,
+        lang: match[1]!,
+        content: match[2]!,
+      });
+    }
+  }
+
+  if (langBlocks.length > 0) {
+    const speakOpenMatch = ssml.match(/<speak[^>]*>/i);
+    const speakCloseMatch = ssml.match(/<\/speak>/i);
+
+    if (!speakOpenMatch || !speakCloseMatch) {
+      return ssml;
+    }
+
+    const combinedContent = langBlocks.map((block) => block.match).join('');
+    return `${speakOpenMatch[0]}${combinedContent}${speakCloseMatch[0]}`;
+  }
+
+  return ssml;
+};

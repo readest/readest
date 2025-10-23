@@ -616,5 +616,9 @@
   "Tap Both Sides": "පැත්ත දෙකම ටැප් කරන්න",
   "Click Both Sides": "පැත්ත දෙකම ක්ලික් කරන්න",
   "Swap Tap Sides": "පැත්ත දෙකම ටැප් කරන්න",
-  "Swap Click Sides": "පැත්ත දෙකම ක්ලික් කරන්න"
+  "Swap Click Sides": "පැත්ත දෙකම ක්ලික් කරන්න",
+  "Source and Translated": "මූලාශ්‍ර සහ පරිවර්තනය",
+  "Translated Only": "පරිවර්තනය පමණක්",
+  "Source Only": "මූලාශ්‍රය පමණක්",
+  "TTS Text": "TTS පෙළ"
 }

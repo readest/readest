@@ -616,5 +616,9 @@
   "Tap Both Sides": "Tik op Beide Zijden",
   "Click Both Sides": "Klik op Beide Zijden",
   "Swap Tap Sides": "Wissel Tap Zijden",
-  "Swap Click Sides": "Wissel Klik Zijden"
+  "Swap Click Sides": "Wissel Klik Zijden",
+  "Source and Translated": "Bron en Vertaling",
+  "Translated Only": "Alleen Vertaling",
+  "Source Only": "Alleen Bron",
+  "TTS Text": "TTS Tekst"
 }

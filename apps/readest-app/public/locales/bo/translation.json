@@ -612,5 +612,9 @@
   "Tap Both Sides": "གཡས་གཉིས་ལ་ཐོག་འགྲོ།",
   "Click Both Sides": "གཡས་གཉིས་ལ་ཁྱེད་ལུས་འགྲོ།",
   "Swap Tap Sides": "ཐོག་གཡས་གཉིས་བརྗེ་བ།",
-  "Swap Click Sides": "ཁྱེད་ལུས་གཡས་གཉིས་བརྗེ་བ།"
+  "Swap Click Sides": "ཁྱེད་ལུས་གཡས་གཉིས་བརྗེ་བ།",
+  "Source and Translated": "ཡིག་སྒྱུར་སྤོ་བ།",
+  "Translated Only": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
+  "Source Only": "ཡིག་སྒྱུར་སྤོ་བ།",
+  "TTS Text": "TTS ཡིག"
 }
