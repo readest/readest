@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "('जैसा आप इसे पसंद करते हैं', अधिनियम II)",
   "Link Color": "लिंक रंग",
   "Volume Keys for Page Flip": "पृष्ठ फ़्लिप के लिए वॉल्यूम कुंजियाँ",
-  "Clicks for Page Flip": "पृष्ठ फ़्लिप के लिए क्लिक करें",
-  "Swap Clicks Area": "क्लिक क्षेत्र स्वैप करें",
   "Screen": "स्क्रीन",
   "Orientation": "अवयव",
   "Portrait": "पोर्ट्रेट",
@@ -297,7 +295,6 @@
   "Disable Translation": "अनुवाद अक्षम करें",
   "Scroll": "स्क्रॉल",
   "Overlap Pixels": "ओवरलैप पिक्सेल",
-  "Click": "क्लिक करें",
   "System Language": "सिस्टम भाषा",
   "Security": "सुरक्षा",
   "Allow JavaScript": "जावास्क्रिप्ट की अनुमति दें",
@@ -611,5 +608,13 @@
   "Device": "डिवाइस",
   "E-Ink Mode": "ई-इंक मोड",
   "Highlight Colors": "हाइलाइट रंग",
-  "Auto Screen Brightness": "स्वचालित स्क्रीन ब्राइटनेस"
+  "Auto Screen Brightness": "स्वचालित स्क्रीन ब्राइटनेस",
+  "Pagination": "पृष्ठांकन",
+  "Disable Double Tap": "डबल टैप अक्षम करें",
+  "Tap to Paginate": "पृष्ठांकन के लिए टैप करें",
+  "Click to Paginate": "पृष्ठांकन के लिए क्लिक करें",
+  "Tap Both Sides": "दोनों पक्षों पर टैप करें",
+  "Click Both Sides": "दोनों पक्षों पर क्लिक करें",
+  "Swap Tap Sides": "स्वैप टैप साइड्स",
+  "Swap Click Sides": "स्वैप क्लिक साइड्स"
 }

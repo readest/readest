@@ -260,8 +260,6 @@
   "(from 'As You Like It', Act II)": "(As You Like It, 2. Perde)",
   "Link Color": "Bağlantı Rengi",
   "Volume Keys for Page Flip": "Sayfa Çevirme için Ses Seviyesi Tuşları",
-  "Clicks for Page Flip": "Sayfa Çevirme için Tıklamalar",
-  "Swap Clicks Area": "Tıklama Alanını Değiştir",
   "Screen": "Ekran",
   "Orientation": "Yönlendirme",
   "Portrait": "Portre",
@@ -297,7 +295,6 @@
   "Disable Translation": "Çeviriyi Devre Dışı Bırak",
   "Scroll": "Kaydır",
   "Overlap Pixels": "Örtüşen Pikseller",
-  "Click": "Klik",
   "System Language": "System Dili",
   "Security": "Security",
   "Allow JavaScript": "JavaScript'e İzin Ver",
@@ -611,5 +608,13 @@
   "Device": "Cihaz",
   "E-Ink Mode": "E-Ink Modu",
   "Highlight Colors": "Vurgu Renkleri",
-  "Auto Screen Brightness": "Otomatik Ekran Parlaklığı"
+  "Auto Screen Brightness": "Otomatik Ekran Parlaklığı",
+  "Pagination": "Sayfalama",
+  "Disable Double Tap": "Çift Dokunmayı Devre Dışı Bırak",
+  "Tap to Paginate": "Sayfalamak için Dokunun",
+  "Click to Paginate": "Sayfalamak için Tıklayın",
+  "Tap Both Sides": "Her İki Tarafa Dokunun",
+  "Click Both Sides": "Her İki Tarafa Tıklayın",
+  "Swap Tap Sides": "Dokunma Taraflarını Değiştir",
+  "Swap Click Sides": "Tıklama Taraflarını Değiştir"
 }

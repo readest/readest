@@ -259,8 +259,6 @@
   "(from 'As You Like It', Act II)": "《ཐམས་ཅད་དགའ་བ》ནས་དྲངས་པ། ལེའུ་གཉིས་པ།",
   "Link Color": "སྦྲེལ་ཐག་གི་ཚོན་མདོག",
   "Volume Keys for Page Flip": "སྒྲ་ཚད་ལྡེ་མིག་གིས་ཤོག་ལྷེ་བསྒྱུར་བ།",
-  "Clicks for Page Flip": "མནན་ནས་ཤོག་ལྷེ་བསྒྱུར་བ།",
-  "Swap Clicks Area": "མནན་སའི་ཁོངས་སུ་བརྗེ་བ།",
   "Screen": "བརྡ་ཁྱབ་ངོས།",
   "Orientation": "བརྡ་ཁྱབ་ངོས་ཀྱི་ཁ་ཕྱོགས།",
   "Portrait": "ཀྲིང་ངོས།",
@@ -295,7 +293,6 @@
   "Disable Translation": "སྒྱུར་བཅོས་སྒོ་བརྒྱབ།",
   "Scroll": "འཁོར་རྒྱུག",
   "Overlap Pixels": "ལྷན་པའི་པིག་སེལ།",
-  "Click": "མནན་པ།",
   "System Language": "མ་ལག་གི་སྐད་ཡིག",
   "Security": "བདེ་འཇགས།",
   "Allow JavaScript": "JavaScript ཆོག་མཆན།",
@@ -607,5 +604,13 @@
   "Device": "རྐྱབ་སྐོར",
   "E-Ink Mode": "ཡིག་སྒྱུར་སྤོ་བ",
   "Highlight Colors": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
-  "Auto Screen Brightness": "རྒྱབ་སྐོར་གྱི་འོད་ཟེར་རང་འགུལ།"
+  "Auto Screen Brightness": "རྒྱབ་སྐོར་གྱི་འོད་ཟེར་རང་འགུལ།",
+  "Pagination": "ཤོག་གདོང་།",
+  "Disable Double Tap": "བརྒྱབ་གདོང་གཉིས་མ་འགྱོད།",
+  "Tap to Paginate": "ཤོག་གདོང་ལ་ཐོག་འགྲོ།",
+  "Click to Paginate": "ཤོག་གདོང་ལ་ཁྱེད་ལུས་འགྲོ།",
+  "Tap Both Sides": "གཡས་གཉིས་ལ་ཐོག་འགྲོ།",
+  "Click Both Sides": "གཡས་གཉིས་ལ་ཁྱེད་ལུས་འགྲོ།",
+  "Swap Tap Sides": "ཐོག་གཡས་གཉིས་བརྗེ་བ།",
+  "Swap Click Sides": "ཁྱེད་ལུས་གཡས་གཉིས་བརྗེ་བ།"
 }
