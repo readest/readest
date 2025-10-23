@@ -81,6 +81,32 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     getView(sideBarBookKey)?.next(distance);
   };
 
+  const goPrevArrowUp = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    if (
+      view?.renderer.scrolled &&
+      event instanceof MessageEvent &&
+      event.data.type === 'iframe-keydown'
+    ) {
+      // already handled in the iframe for better smoothness
+      return;
+    }
+    view?.prev(distance);
+  };
+
+  const goNextArrowDown = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    if (
+      view?.renderer.scrolled &&
+      event instanceof MessageEvent &&
+      event.data.type === 'iframe-keydown'
+    ) {
+      // already handled in the iframe for better smoothness
+      return;
+    }
+    view?.next(distance);
+  };
+
   const goBack = () => {
     getView(sideBarBookKey)?.history.back();
   };
@@ -194,6 +220,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoRight: goRight,
       onGoPrev: goPrev,
       onGoNext: goNext,
+      onGoPrevArrowUp: goPrevArrowUp,
+      onGoNextArrowDown: goNextArrowDown,
       onGoHalfPageDown: goHalfPageDown,
       onGoHalfPageUp: goHalfPageUp,
       onGoPrevSection: goPrevSection,
