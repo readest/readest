@@ -14,6 +14,9 @@ const basicGoogleFonts = [
   { family: 'Roboto', weights: 'ital,wght@0,100..900;1,100..900' },
   { family: 'Roboto Slab', weights: 'ital,wght@0,100..900;1,100..900' },
   { family: 'Vollkorn', weights: 'ital,wght@0,400..900;1,400..900' },
+  { family: 'PT Sans', weights: 'ital,wght@0,400;0,700;1,400;1,700' },
+  { family: 'PT Serif', weights: 'ital,wght@0,400;0,700;1,400;1,700' },
+  { family: 'PT Mono', weights: '' },
 ];
 
 const cjkGoogleFonts = [
