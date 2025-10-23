@@ -63,7 +63,10 @@ const SidebarContent: React.FC<{
       >
         <OverlayScrollbarsComponent
           className='min-h-0 flex-1'
-          options={{ scrollbars: { autoHide: 'scroll' }, showNativeOverlaidScrollbars: false }}
+          options={{
+            scrollbars: { autoHide: 'scroll', clickScroll: true },
+            showNativeOverlaidScrollbars: false,
+          }}
           defer
         >
           <div
