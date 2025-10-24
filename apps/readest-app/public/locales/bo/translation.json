@@ -220,9 +220,9 @@
   "Auto Import on File Open": "ཡིག་ཆ་ཁ་ཕྱེ་སྐབས་རང་འགུལ་གྱིས་ནང་འདྲེན།",
   "LXGW WenKai GB Screen": "ཤ་ཝུ་ཝུན་ཁའེ།",
   "LXGW WenKai TC": "ཤ་ཝུ་ཝུན་ཁའེ།",
-  "No chapters detected.": "ལེའུ་བརྟག་དཔྱད་བྱུང་མེད།",
-  "Failed to parse the EPUB file.": "EPUB ཡིག་ཆ་འགྲེལ་བཤད་བྱེད་ཐུབ་མེད།",
-  "This book format is not supported.": "དཔེ་དེབ་ཀྱི་རྣམ་པ་འདི་རྒྱབ་སྐྱོར་མི་བྱེད།",
+  "No chapters detected": "ལེའུ་བརྟག་དཔྱད་བྱུང་མེད།",
+  "Failed to parse the EPUB file": "EPUB ཡིག་ཆ་འགྲེལ་བཤད་བྱེད་ཐུབ་མེད།",
+  "This book format is not supported": "དཔེ་དེབ་ཀྱི་རྣམ་པ་འདི་རྒྱབ་སྐྱོར་མི་བྱེད།",
   "Unable to fetch the translation. Please log in first and try again.": "སྒྱུར་བཅོས་ལེན་ཐུབ་མེད། ནང་བསྐྱོད་བྱས་རྗེས་ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།",
   "Group": "སྡེ་ཚན།",
   "Always on Top": "སྒེའུ་ཁུང་གནས་སུ་བཀོད་པ།",
@@ -616,5 +616,8 @@
   "Source and Translated": "ཡིག་སྒྱུར་སྤོ་བ།",
   "Translated Only": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
   "Source Only": "ཡིག་སྒྱུར་སྤོ་བ།",
-  "TTS Text": "TTS ཡིག"
+  "TTS Text": "TTS ཡིག",
+  "The book file is corrupted": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
+  "The book file is empty": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
+  "Failed to open the book file": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།"
 }

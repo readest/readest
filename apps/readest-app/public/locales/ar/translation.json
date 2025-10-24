@@ -220,9 +220,9 @@
   "Auto Import on File Open": "استيراد تلقائي عند فتح الملف",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "لم يتم التعرف على أي فصول.",
-  "Failed to parse the EPUB file.": "فشل في تحليل ملف EPUB.",
-  "This book format is not supported.": "تنسيق الكتاب هذا غير مدعوم.",
+  "No chapters detected": "لم يتم التعرف على أي فصول",
+  "Failed to parse the EPUB file": "فشل في تحليل ملف EPUB",
+  "This book format is not supported": "تنسيق الكتاب هذا غير مدعوم",
   "Unable to fetch the translation. Please log in first and try again.": "تعذر جلب الترجمة. يرجى تسجيل الدخول أولاً ثم المحاولة مرة أخرى.",
   "Group": "تجميع",
   "Always on Top": "دائمًا في المقدمة",
@@ -636,5 +636,8 @@
   "Source and Translated": "المصدر والمترجم",
   "Translated Only": "المترجم فقط",
   "Source Only": "المصدر فقط",
-  "TTS Text": "نص تحويل النص إلى كلام"
+  "TTS Text": "نص تحويل النص إلى كلام",
+  "The book file is corrupted": "ملف الكتاب تالف",
+  "The book file is empty": "ملف الكتاب فارغ",
+  "Failed to open the book file": "فشل في فتح ملف الكتاب"
 }

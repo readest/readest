@@ -105,9 +105,9 @@
   "Book Covers": "පොත් ආවරණ",
   "Sort by...": "අනුව සකස් කරන්න...",
   "No supported files found. Supported formats: {{formats}}": "සහාය දක්වන ගොනු හමුනොවිණි. සහාය දක්වන ආකෘති: {{formats}}",
-  "No chapters detected.": "කොටස් හඳුනානොගැනිණි.",
-  "Failed to parse the EPUB file.": "EPUB ගොනුව විග්‍රහ කිරීමට අසමත්.",
-  "This book format is not supported.": "මෙම පොත ආකෘතියට සහාය නොදක්වයි.",
+  "No chapters detected": "කොටස් හඳුනානොගැනිණි",
+  "Failed to parse the EPUB file": "EPUB ගොනුව විග්‍රහ කිරීමට අසමත්",
+  "This book format is not supported": "මෙම පොත ආකෘතියට සහාය නොදක්වයි",
   "Failed to import book(s): {{filenames}}": "පොත් ආයාත කිරීමට අසමත්: {{filenames}}",
   "Book uploaded: {{title}}": "පොත උඩුගත විය: {{title}}",
   "Insufficient storage quota": "ප්‍රමාණවත් නොවන ගබඩා ප්‍රමාණය",
@@ -620,5 +620,8 @@
   "Source and Translated": "මූලාශ්‍ර සහ පරිවර්තනය",
   "Translated Only": "පරිවර්තනය පමණක්",
   "Source Only": "මූලාශ්‍රය පමණක්",
-  "TTS Text": "TTS පෙළ"
+  "TTS Text": "TTS පෙළ",
+  "The book file is corrupted": "පොතේ ගොනුව අසමත් වී ඇත",
+  "The book file is empty": "පොතේ ගොනුව හිස් වේ",
+  "Failed to open the book file": "පොතේ ගොනුව විවෘත කිරීමට අසමත් විය"
 }

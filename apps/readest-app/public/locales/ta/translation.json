@@ -105,9 +105,9 @@
   "Book Covers": "புத்தக அட்டைகள்",
   "Sort by...": "வரிசைப்படுத்து...",
   "No supported files found. Supported formats: {{formats}}": "ஆதரிக்கப்படும் கோப்புகள் இல்லை. ஆதரிக்கப்படும் வடிவங்கள்: {{formats}}",
-  "No chapters detected.": "அத்தியாயங்கள் கண்டறியப்படவில்லை.",
-  "Failed to parse the EPUB file.": "EPUB கோப்பை பகுப்பாய்வு செய்ய முடியவில்லை.",
-  "This book format is not supported.": "இந்த புத்தக வடிவம் ஆதரிக்கப்படவில்லை.",
+  "No chapters detected": "அத்தியாயங்கள் கண்டறியப்படவில்லை",
+  "Failed to parse the EPUB file": "EPUB கோப்பை பகுப்பாய்வு செய்ய முடியவில்லை",
+  "This book format is not supported": "இந்த புத்தக வடிவம் ஆதரிக்கப்படவில்லை",
   "Failed to import book(s): {{filenames}}": "புத்தகங்களை இறக்குமதி செய்ய முடியவில்லை: {{filenames}}",
   "Book uploaded: {{title}}": "புத்தகம் பதிவேற்றப்பட்டது: {{title}}",
   "Insufficient storage quota": "போதுமான சேமிப்பக ஒதுக்கீடு இல்லை",
@@ -620,5 +620,8 @@
   "Source and Translated": "மூல மற்றும் மொழிபெயர்க்கப்பட்டது",
   "Translated Only": "மொழிபெயர்க்கப்பட்டது மட்டும்",
   "Source Only": "மூல மட்டும்",
-  "TTS Text": "TTS உரை"
+  "TTS Text": "TTS உரை",
+  "The book file is corrupted": "பொதுவாக, புத்தகக் கோப்பு சேதமடைந்துள்ளது",
+  "The book file is empty": "புத்தகக் கோப்பு காலியாக உள்ளது",
+  "Failed to open the book file": "புத்தகக் கோப்பைத் திறக்க முடியவில்லை"
 }

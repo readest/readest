@@ -220,9 +220,9 @@
   "Auto Import on File Open": "Automatischer Import beim Öffnen einer Datei",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Keine Kapitel erkannt.",
-  "Failed to parse the EPUB file.": "Fehler beim Parsen der EPUB-Datei.",
-  "This book format is not supported.": "Dieses Buchformat wird nicht unterstützt.",
+  "No chapters detected": "Keine Kapitel erkannt",
+  "Failed to parse the EPUB file": "Fehler beim Parsen der EPUB-Datei",
+  "This book format is not supported": "Dieses Buchformat wird nicht unterstützt",
   "Unable to fetch the translation. Please log in first and try again.": "Übersetzung konnte nicht abgerufen werden. Bitte zuerst anmelden und erneut versuchen.",
   "Group": "Gruppieren",
   "Always on Top": "Immer im Vordergrund",
@@ -620,5 +620,8 @@
   "Source and Translated": "Quell- und Übersetzungstext",
   "Translated Only": "Nur Übersetzungstext",
   "Source Only": "Nur Quelltext",
-  "TTS Text": "TTS-Text"
+  "TTS Text": "TTS-Text",
+  "The book file is corrupted": "Die Buchdatei ist beschädigt",
+  "The book file is empty": "Die Buchdatei ist leer",
+  "Failed to open the book file": "Fehler beim Öffnen der Buchdatei"
 }
