@@ -301,7 +301,13 @@ export abstract class BaseAppService implements AppService {
           const txt2epub = new TxtToEpubConverter();
           ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
         }
+        if (!fileobj || fileobj.size === 0) {
+          throw new Error('Invalid or empty book file');
+        }
         ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
+        if (!loadedBook) {
+          throw new Error('Unsupported or corrupted book file');
+        }
         const metadataTitle = formatTitle(loadedBook.metadata.title);
         if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
           loadedBook.metadata.title = getBaseFilename(filename);

@@ -221,9 +221,9 @@
   "Auto Import on File Open": "Автоматический импорт при открытии файла",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Не обнаружено глав.",
-  "Failed to parse the EPUB file.": "Не удалось разобрать файл EPUB.",
-  "This book format is not supported.": "Этот формат книги не поддерживается.",
+  "No chapters detected": "Не обнаружено глав",
+  "Failed to parse the EPUB file": "Не удалось разобрать файл EPUB",
+  "This book format is not supported": "Этот формат книги не поддерживается",
   "Unable to fetch the translation. Please log in first and try again.": "Не удалось получить перевод. Пожалуйста, войдите в систему и попробуйте снова.",
   "Group": "Группа",
   "Always on Top": "Всегда сверху",
@@ -628,5 +628,8 @@
   "Source and Translated": "Источник и перевод",
   "Translated Only": "Только перевод",
   "Source Only": "Только источник",
-  "TTS Text": "TTS Текст"
+  "TTS Text": "TTS Текст",
+  "The book file is corrupted": "Файл книги поврежден",
+  "The book file is empty": "Файл книги пуст",
+  "Failed to open the book file": "Не удалось открыть файл книги"
 }

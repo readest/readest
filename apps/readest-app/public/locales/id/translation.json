@@ -221,9 +221,9 @@
   "Auto Import on File Open": "Impor Otomatis saat File Dibuka",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Tidak ada bab yang terdeteksi.",
-  "Failed to parse the EPUB file.": "Gagal mengurai file EPUB.",
-  "This book format is not supported.": "Format buku ini tidak didukung.",
+  "No chapters detected": "Tidak ada bab yang terdeteksi",
+  "Failed to parse the EPUB file": "Gagal mengurai file EPUB",
+  "This book format is not supported": "Format buku ini tidak didukung",
   "Unable to fetch the translation. Please log in first and try again.": "Tidak dapat mengambil terjemahan. Silakan masuk terlebih dahulu dan coba lagi.",
   "Group": "Grup",
   "Always on Top": "Selalu di Atas",
@@ -616,5 +616,8 @@
   "Source and Translated": "Sumber dan Terjemahan",
   "Translated Only": "Hanya Terjemahan",
   "Source Only": "Hanya Sumber",
-  "TTS Text": "Teks TTS"
+  "TTS Text": "Teks TTS",
+  "The book file is corrupted": "File buku rusak",
+  "The book file is empty": "File buku kosong",
+  "Failed to open the book file": "Gagal membuka file buku"
 }

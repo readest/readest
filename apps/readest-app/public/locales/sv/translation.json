@@ -135,9 +135,9 @@
   "Book Covers": "Bokomslag",
   "Sort by...": "Sortera efter...",
   "No supported files found. Supported formats: {{formats}}": "Inga filer hittades. Format som stöds: {{formats}}",
-  "No chapters detected.": "Inga kapitel hittades.",
-  "Failed to parse the EPUB file.": "Kunde inte läsa EPUB-filen.",
-  "This book format is not supported.": "Detta bokformat stöds inte.",
+  "No chapters detected": "Inga kapitel hittades",
+  "Failed to parse the EPUB file": "Kunde inte läsa EPUB-filen",
+  "This book format is not supported": "Detta bokformat stöds inte",
   "Failed to import book(s): {{filenames}}": "Kunde inte importera bok(er): {{filenames}}",
   "Book uploaded: {{title}}": "Bok uppladdad: {{title}}",
   "Insufficient storage quota": "Otillräcklig lagringskvot",
@@ -620,5 +620,8 @@
   "Source and Translated": "Källa och översatt",
   "Translated Only": "Översatt endast",
   "Source Only": "Endast källa",
-  "TTS Text": "TTS-text"
+  "TTS Text": "TTS-text",
+  "The book file is corrupted": "Bokfilen är skadad",
+  "The book file is empty": "Bokfilen är tom",
+  "Failed to open the book file": "Kunde inte öppna bokfilen"
 }

@@ -221,9 +221,9 @@
   "Auto Import on File Open": "फ़ाइल खोलने पर स्वचालित आयात",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "कोई अध्याय नहीं मिला।",
-  "Failed to parse the EPUB file.": "EPUB फ़ाइल को पार्स करने में विफल।",
-  "This book format is not supported.": "यह पुस्तक प्रारूप समर्थित नहीं है।",
+  "No chapters detected": "कोई अध्याय नहीं मिला।",
+  "Failed to parse the EPUB file": "EPUB फ़ाइल को पार्स करने में विफल।",
+  "This book format is not supported": "यह पुस्तक प्रारूप समर्थित नहीं है।",
   "Unable to fetch the translation. Please log in first and try again.": "अनुवाद प्राप्त करने में असमर्थ। कृपया पहले लॉग इन करें और पुनः प्रयास करें।",
   "Group": "समूह",
   "Always on Top": "सर्वोच्च पर हमेशा",
@@ -620,5 +620,8 @@
   "Source and Translated": "स्रोत और अनुवादित",
   "Translated Only": "केवल अनुवादित",
   "Source Only": "केवल स्रोत",
-  "TTS Text": "TTS टेक्स्ट"
+  "TTS Text": "TTS टेक्स्ट",
+  "The book file is corrupted": "पुस्तक फ़ाइल भ्रष्ट है।",
+  "The book file is empty": "पुस्तक फ़ाइल खाली है।",
+  "Failed to open the book file": "पुस्तक फ़ाइल खोलने में विफल।"
 }

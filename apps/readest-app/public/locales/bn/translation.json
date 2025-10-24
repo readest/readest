@@ -105,9 +105,9 @@
   "Book Covers": "বইয়ের মলাট",
   "Sort by...": "সাজানোর ভিত্তি...",
   "No supported files found. Supported formats: {{formats}}": "কোন সমর্থিত ফাইল পাওয়া যায়নি। সমর্থিত ফরম্যাট: {{formats}}",
-  "No chapters detected.": "কোন অধ্যায় শনাক্ত হয়নি।",
-  "Failed to parse the EPUB file.": "EPUB ফাইল পার্স করতে ব্যর্থ।",
-  "This book format is not supported.": "এই বই ফরম্যাট সমর্থিত নয়।",
+  "No chapters detected": "কোন অধ্যায় শনাক্ত হয়নি।",
+  "Failed to parse the EPUB file": "EPUB ফাইল পার্স করতে ব্যর্থ।",
+  "This book format is not supported": "এই বই ফরম্যাট সমর্থিত নয়।",
   "Failed to import book(s): {{filenames}}": "বই আমদানি ব্যর্থ: {{filenames}}",
   "Book uploaded: {{title}}": "বই আপলোড হয়েছে: {{title}}",
   "Insufficient storage quota": "অপর্যাপ্ত স্টোরেজ কোটা",
@@ -620,5 +620,8 @@
   "Source and Translated": "উৎস এবং অনূদিত",
   "Translated Only": "শুধুমাত্র অনূদিত",
   "Source Only": "শুধুমাত্র উৎস",
-  "TTS Text": "TTS টেক্সট"
+  "TTS Text": "TTS টেক্সট",
+  "The book file is corrupted": "বইয়ের ফাইলটি ক্ষতিগ্রস্ত।",
+  "The book file is empty": "বইয়ের ফাইলটি খালি।",
+  "Failed to open the book file": "বইয়ের ফাইল খুলতে ব্যর্থ।"
 }

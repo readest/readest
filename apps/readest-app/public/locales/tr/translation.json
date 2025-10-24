@@ -221,9 +221,9 @@
   "Auto Import on File Open": "Dosya Açıldığında Otomatik İçe Aktar",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Bölüm bulunamadı.",
-  "Failed to parse the EPUB file.": "EPUB dosyası ayrıştırılamadı.",
-  "This book format is not supported.": "Bu kitap formatı desteklenmiyor.",
+  "No chapters detected": "Bölüm bulunamadı",
+  "Failed to parse the EPUB file": "EPUB dosyası ayrıştırılamadı",
+  "This book format is not supported": "Bu kitap formatı desteklenmiyor",
   "Unable to fetch the translation. Please log in first and try again.": "Çeviri alınamıyor. Lütfen önce giriş yapın ve tekrar deneyin.",
   "Group": "Grup",
   "Always on Top": "Her Zaman Üstte",
@@ -620,5 +620,8 @@
   "Source and Translated": "Kaynak ve Çeviri",
   "Translated Only": "Yalnızca Çeviri",
   "Source Only": "Yalnızca Kaynak",
-  "TTS Text": "TTS Metni"
+  "TTS Text": "TTS Metni",
+  "The book file is corrupted": "Kitap dosyası bozulmuş",
+  "The book file is empty": "Kitap dosyası boş",
+  "Failed to open the book file": "Kitap dosyası açılamadı"
 }

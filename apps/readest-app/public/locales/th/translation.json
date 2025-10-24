@@ -101,9 +101,9 @@
   "Book Covers": "ปกหนังสือ",
   "Sort by...": "เรียงตาม...",
   "No supported files found. Supported formats: {{formats}}": "ไม่พบไฟล์ที่รองรับ รูปแบบที่รองรับ: {{formats}}",
-  "No chapters detected.": "ไม่พบบท",
-  "Failed to parse the EPUB file.": "ไม่สามารถอ่านไฟล์ EPUB",
-  "This book format is not supported.": "ไม่รองรับรูปแบบหนังสือนี้",
+  "No chapters detected": "ไม่พบบท",
+  "Failed to parse the EPUB file": "ไม่สามารถอ่านไฟล์ EPUB",
+  "This book format is not supported": "ไม่รองรับรูปแบบหนังสือนี้",
   "Failed to import book(s): {{filenames}}": "ไม่สามารถนำเข้าหนังสือ: {{filenames}}",
   "Book uploaded: {{title}}": "อัปโหลดหนังสือแล้ว: {{title}}",
   "Insufficient storage quota": "พื้นที่จัดเก็บไม่เพียงพอ",
@@ -616,5 +616,8 @@
   "Source and Translated": "ต้นฉบับและแปลแล้ว",
   "Translated Only": "แปลแล้วเท่านั้น",
   "Source Only": "ต้นฉบับเท่านั้น",
-  "TTS Text": "ข้อความ TTS"
+  "TTS Text": "ข้อความ TTS",
+  "The book file is corrupted": "ไฟล์หนังสือเสียหาย",
+  "The book file is empty": "ไฟล์หนังสือว่างเปล่า",
+  "Failed to open the book file": "ไม่สามารถเปิดไฟล์หนังสือได้"
 }

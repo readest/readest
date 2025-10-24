@@ -81,9 +81,9 @@
   "Descending": "Aflopend",
   "Sort by...": "Sorteren op...",
   "No supported files found. Supported formats: {{formats}}": "Geen ondersteunde bestanden gevonden. Ondersteunde formaten: {{formats}}",
-  "No chapters detected.": "Geen hoofdstukken gedetecteerd.",
-  "Failed to parse the EPUB file.": "EPUB-bestand kon niet worden verwerkt.",
-  "This book format is not supported.": "Dit boekformaat wordt niet ondersteund.",
+  "No chapters detected": "Geen hoofdstukken gedetecteerd",
+  "Failed to parse the EPUB file": "EPUB-bestand kon niet worden verwerkt",
+  "This book format is not supported": "Dit boekformaat wordt niet ondersteund",
   "Failed to import book(s): {{filenames}}": "Importeren van boek(en) mislukt: {{filenames}}",
   "Book uploaded: {{title}}": "Boek geüpload: {{title}}",
   "Insufficient storage quota": "Onvoldoende opslagruimte",
@@ -620,5 +620,8 @@
   "Source and Translated": "Bron en Vertaling",
   "Translated Only": "Alleen Vertaling",
   "Source Only": "Alleen Bron",
-  "TTS Text": "TTS Tekst"
+  "TTS Text": "TTS Tekst",
+  "The book file is corrupted": "Het boekbestand is beschadigd",
+  "The book file is empty": "Het boekbestand is leeg",
+  "Failed to open the book file": "Het openen van het boekbestand is mislukt"
 }

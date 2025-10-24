@@ -221,9 +221,9 @@
   "Auto Import on File Open": "Tự động nhập khi mở tệp",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Không phát hiện thấy chương nào.",
-  "Failed to parse the EPUB file.": "Không thể phân tích tệp EPUB.",
-  "This book format is not supported.": "Định dạng sách này không được hỗ trợ.",
+  "No chapters detected": "Không phát hiện thấy chương nào",
+  "Failed to parse the EPUB file": "Không thể phân tích tệp EPUB",
+  "This book format is not supported": "Định dạng sách này không được hỗ trợ",
   "Unable to fetch the translation. Please log in first and try again.": "Không thể tải dịch vụ. Vui lòng đăng nhập trước và thử lại.",
   "Group": "Nhóm",
   "Always on Top": "Luôn ở trên cùng",
@@ -616,5 +616,8 @@
   "Source and Translated": "Nguồn và Đã dịch",
   "Translated Only": "Chỉ Đã dịch",
   "Source Only": "Chỉ Nguồn",
-  "TTS Text": "Văn bản TTS"
+  "TTS Text": "Văn bản TTS",
+  "The book file is corrupted": "Tệp sách bị hỏng",
+  "The book file is empty": "Tệp sách trống",
+  "Failed to open the book file": "Không thể mở tệp sách"
 }

@@ -421,9 +421,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const errorMap: [string, string][] = [
-      ['No chapters detected.', _('No chapters detected.')],
-      ['Failed to parse EPUB.', _('Failed to parse the EPUB file.')],
-      ['Unsupported format.', _('This book format is not supported.')],
+      ['No chapters detected', _('No chapters detected')],
+      ['Failed to parse EPUB', _('Failed to parse the EPUB file')],
+      ['Unsupported format', _('This book format is not supported')],
+      ['Failed to open file', _('Failed to open the book file')],
+      ['Invalid or empty book file', _('The book file is empty')],
+      ['Unsupported or corrupted book file', _('The book file is corrupted')],
     ];
 
     const processFile = async (selectedFile: SelectedFile) => {
@@ -440,7 +443,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         const baseFilename = getFilename(filename);
         const errorMessage =
           error instanceof Error
-            ? errorMap.find(([substring]) => error.message.includes(substring))?.[1] || ''
+            ? errorMap.find(([str]) => error.message.includes(str))?.[1] || error.message
             : '';
         failedImports.push({ filename: baseFilename, errorMessage });
         console.error('Failed to import book:', filename, error);

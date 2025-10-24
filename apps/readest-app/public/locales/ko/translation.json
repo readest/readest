@@ -221,9 +221,9 @@
   "Auto Import on File Open": "파일 열 때 자동 가져오기",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "장 발견되지 않음.",
-  "Failed to parse the EPUB file.": "EPUB 파일 구문 분석 실패.",
-  "This book format is not supported.": "이 책 형식은 지원되지 않습니다.",
+  "No chapters detected": "장 발견되지 않음",
+  "Failed to parse the EPUB file": "EPUB 파일 구문 분석 실패",
+  "This book format is not supported": "이 책 형식은 지원되지 않습니다",
   "Unable to fetch the translation. Please log in first and try again.": "번역을 가져올 수 없습니다. 먼저 로그인하고 다시 시도하세요.",
   "Group": "그룹",
   "Always on Top": "항상 위에",
@@ -616,5 +616,8 @@
   "Source and Translated": "원본 및 번역",
   "Translated Only": "번역만",
   "Source Only": "원본만",
-  "TTS Text": "TTS 텍스트"
+  "TTS Text": "TTS 텍스트",
+  "The book file is corrupted": "책 파일이 손상되었습니다",
+  "The book file is empty": "책 파일이 비어 있습니다",
+  "Failed to open the book file": "책 파일을 열지 못했습니다"
 }

@@ -221,9 +221,9 @@
   "Auto Import on File Open": "打开文件时自动导入",
   "LXGW WenKai GB Screen": "霞鹜文楷",
   "LXGW WenKai TC": "霞鶩文楷",
-  "No chapters detected.": "未检测到章节。",
-  "Failed to parse the EPUB file.": "无法解析 EPUB 文件。",
-  "This book format is not supported.": "不支持此书籍格式。",
+  "No chapters detected": "未检测到章节",
+  "Failed to parse the EPUB file": "无法解析 EPUB 文件",
+  "This book format is not supported": "不支持此书籍格式",
   "Unable to fetch the translation. Please log in first and try again.": "无法获取翻译。请登录后重试。",
   "Group": "分组",
   "Always on Top": "窗口置顶",
@@ -616,5 +616,8 @@
   "Source and Translated": "原文和译文",
   "Translated Only": "仅译文",
   "Source Only": "仅原文",
-  "TTS Text": "TTS 文本"
+  "TTS Text": "TTS 文本",
+  "The book file is corrupted": "书籍文件已损坏",
+  "The book file is empty": "书籍文件为空",
+  "Failed to open the book file": "无法打开书籍文件"
 }

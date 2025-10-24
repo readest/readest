@@ -221,9 +221,9 @@
   "Auto Import on File Open": "Αυτόματη εισαγωγή κατά το άνοιγμα αρχείου",
   "LXGW WenKai GB Screen": "LXGW WenKai SC",
   "LXGW WenKai TC": "LXGW WenKai TC",
-  "No chapters detected.": "Δεν εντοπίστηκαν κεφάλαια.",
-  "Failed to parse the EPUB file.": "Αποτυχία ανάλυσης του αρχείου EPUB.",
-  "This book format is not supported.": "Αυτή η μορφή βιβλίου δεν υποστηρίζεται.",
+  "No chapters detected": "Δεν εντοπίστηκαν κεφάλαια",
+  "Failed to parse the EPUB file": "Αποτυχία ανάλυσης του αρχείου EPUB",
+  "This book format is not supported": "Αυτή η μορφή βιβλίου δεν υποστηρίζεται",
   "Unable to fetch the translation. Please log in first and try again.": "Αδυναμία λήψης της μετάφρασης. Παρακαλώ συνδεθείτε πρώτα και δοκιμάστε ξανά.",
   "Group": "Ομάδα",
   "Always on Top": "Πάντα στην κορυφή",
@@ -620,5 +620,8 @@
   "Source and Translated": "Πηγή και Μεταφρασμένο",
   "Translated Only": "Μόνο Μεταφρασμένο",
   "Source Only": "Μόνο πηγή",
-  "TTS Text": "Κείμενο TTS"
+  "TTS Text": "Κείμενο TTS",
+  "The book file is corrupted": "Το αρχείο του βιβλίου είναι κατεστραμμένο",
+  "The book file is empty": "Το αρχείο του βιβλίου είναι κενό",
+  "Failed to open the book file": "Αποτυχία ανοίγματος του αρχείου βιβλίου"
 }
