@@ -261,17 +261,15 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development. Your contribution helps us squash bugs faster, improve performance, and keep building great features.
+If Readest has been useful to you, consider supporting its development. You can [become a sponsor on GitHub](https://github.com/sponsors/readest) or just [donate with crypto](https://donate.readest.com). Your contribution helps us squash bugs faster, improve performance, and keep building great features.
 
-### How to Donate
+### Sponsors
 
-1. **GitHub Sponsors**  
-   Back the project directly on GitHub:  
-   👉 [https://github.com/sponsors/readest](https://github.com/sponsors/readest)
-
-2. **Crypto Donations**  
-   Prefer crypto? You can donate here:  
-   👉 [https://donate.readest.com/](https://donate.readest.com/)
+<p align="center">
+  <a title="Browser testing via LambdaTest" href="https://www.lambdatest.com/?utm_source=readest&utm_medium=sponsor" target="_blank">
+    <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" />
+  </a>
+</p>
 
 ## License
 
