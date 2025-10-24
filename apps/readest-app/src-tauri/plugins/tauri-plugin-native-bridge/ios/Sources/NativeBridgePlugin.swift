@@ -196,21 +196,14 @@ class WebViewLifecycleManager: NSObject {
 
   func startMonitoring(webView: WKWebView) {
     self.webView = webView
-
-    // Store original navigation delegate
     originalNavigationDelegate = webView.navigationDelegate
-
-    // Set ourselves as the navigation delegate (we'll proxy to original)
     webView.navigationDelegate = self
-
     isMonitoring = true
     logger.log("WebViewLifecycleManager: Started monitoring WebView")
   }
 
   func stopMonitoring() {
     isMonitoring = false
-
-    // Restore original navigation delegate
     if let original = originalNavigationDelegate {
       webView?.navigationDelegate = original
     }
@@ -247,6 +240,24 @@ class WebViewLifecycleManager: NSObject {
     }
 
     lastBackgroundTime = nil
+  }
+
+  func handleAppWillResignActive() {
+    logger.log("WebViewLifecycleManager: App will resign active")
+    guard let webView = webView else { return }
+    webView.evaluateJavaScript("window.location.href") { result, error in
+      if let error = error {
+        logger.error("WebViewLifecycleManager: Failed to capture URL on background: \(error)")
+        return
+      }
+
+      if let urlString = result as? String {
+        if urlString.hasPrefix("http") || urlString.hasPrefix("tauri") {
+          UserDefaults.standard.set(urlString, forKey: "tauri_last_valid_url")
+          logger.log("WebViewLifecycleManager: Saved valid URL")
+        }
+      }
+    }
   }
 
   func handleAppDidEnterBackground() {
@@ -293,7 +304,6 @@ class WebViewLifecycleManager: NSObject {
   private func recoverWebView(_ webView: WKWebView, reason: String) {
     logger.log("WebViewLifecycleManager: Recovering WebView (reason: \(reason))")
 
-    // Try to get the last valid URL
     if let lastURL = UserDefaults.standard.string(forKey: "tauri_last_valid_url"),
       let url = URL(string: lastURL)
     {
@@ -863,6 +873,7 @@ extension NativeBridgePlugin: UIApplicationDelegate {
   }
 
   public func applicationWillResignActive(_ application: UIApplication) {
+    webViewLifecycleManager?.handleAppWillResignActive()
     self.originalDelegate?.applicationWillResignActive?(application)
   }
 
