@@ -10,6 +10,7 @@ interface SectionInfoProps {
   showDoubleBorder: boolean;
   isScrolled: boolean;
   isVertical: boolean;
+  isEink: boolean;
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
@@ -20,6 +21,7 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   showDoubleBorder,
   isScrolled,
   isVertical,
+  isEink,
   horizontalGap,
   contentInsets,
   gridInsets,
@@ -94,7 +96,12 @@ const HintInfo: React.FC<SectionInfoProps> = ({
               }
         }
       >
-        <h2 className={clsx('text-neutral-content text-center font-sans text-xs font-light')}>
+        <h2
+          className={clsx(
+            'text-center font-sans',
+            isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-light',
+          )}
+        >
           {hintMessage || ''}
         </h2>
       </div>

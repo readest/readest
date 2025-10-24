@@ -38,6 +38,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
   const isScrolled = viewSettings.scrolled;
   const isVertical = viewSettings.vertical;
+  const isEink = viewSettings.isEink;
   const { progressStyle: readingProgressStyle } = viewSettings;
 
   const template =
@@ -72,8 +73,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   return (
     <div
       className={clsx(
-        'progressinfo absolute bottom-0 flex items-center justify-between',
-        'text-neutral-content font-sans text-xs font-extralight',
+        'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
+        isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}

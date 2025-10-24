@@ -167,6 +167,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
                 showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
                 isScrolled={viewSettings.scrolled}
                 isVertical={viewSettings.vertical}
+                isEink={viewSettings.isEink}
                 horizontalGap={horizontalGapPercent}
                 contentInsets={contentInsets}
                 gridInsets={gridInsets}
@@ -177,6 +178,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
               isScrolled={viewSettings.scrolled}
               isVertical={viewSettings.vertical}
+              isEink={viewSettings.isEink}
               horizontalGap={horizontalGapPercent}
               contentInsets={contentInsets}
               gridInsets={gridInsets}
