@@ -1,7 +1,10 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
-import { getStripe } from '@/libs/stripe/server';
-import { createOrUpdateSubscription } from '@/utils/stripe';
+import {
+  getStripe,
+  createOrUpdatePayment,
+  createOrUpdateSubscription,
+} from '@/libs/payment/stripe/server';
 import { validateUserAndToken } from '@/utils/access';
 
 export async function POST(request: Request) {
@@ -16,10 +19,11 @@ export async function POST(request: Request) {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status === 'paid') {
-      const customerId = session.customer as string;
-      const subscriptionId = session.subscription as string;
-      await createOrUpdateSubscription(user.id, customerId, subscriptionId);
+    const customerId = session.customer as string;
+    if (session.payment_status === 'paid' && session.subscription) {
+      await createOrUpdateSubscription(user.id, customerId, session.subscription as string);
+    } else if (session.payment_status === 'paid' && session.payment_intent) {
+      await createOrUpdatePayment(user.id, customerId, sessionId);
     }
 
     return NextResponse.json({ session });

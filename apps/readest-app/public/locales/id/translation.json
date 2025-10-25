@@ -619,5 +619,17 @@
   "TTS Text": "Teks TTS",
   "The book file is corrupted": "File buku rusak",
   "The book file is empty": "File buku kosong",
-  "Failed to open the book file": "Gagal membuka file buku"
+  "Failed to open the book file": "Gagal membuka file buku",
+  "On-Demand Purchase": "Pembelian Sesuai Permintaan",
+  "Full Customization": "Kustomisasi Penuh",
+  "Lifetime Plan": "Rencana Seumur Hidup",
+  "One-Time Payment": "Pembayaran Sekali",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Lakukan pembayaran sekali untuk menikmati akses seumur hidup ke fitur tertentu di semua perangkat. Beli fitur atau layanan tertentu hanya saat Anda membutuhkannya.",
+  "Expand Cloud Sync Storage": "Perluas Penyimpanan Sinkronisasi Cloud",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Perluas penyimpanan cloud Anda selamanya dengan pembelian sekali. Setiap pembelian tambahan menambah lebih banyak ruang.",
+  "Unlock All Customization Options": "Buka Semua Opsi Kustomisasi",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Buka tema tambahan, font, opsi tata letak, dan baca nyaring, penerjemah, layanan penyimpanan cloud.",
+  "Purchase Successful!": "Pembelian Berhasil!",
+  "lifetime": "seumur hidup",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Terima kasih atas pembelian Anda! Pembayaran Anda telah berhasil diproses."
 }

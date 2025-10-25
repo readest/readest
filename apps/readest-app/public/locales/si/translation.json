@@ -623,5 +623,17 @@
   "TTS Text": "TTS පෙළ",
   "The book file is corrupted": "පොතේ ගොනුව අසමත් වී ඇත",
   "The book file is empty": "පොතේ ගොනුව හිස් වේ",
-  "Failed to open the book file": "පොතේ ගොනුව විවෘත කිරීමට අසමත් විය"
+  "Failed to open the book file": "පොතේ ගොනුව විවෘත කිරීමට අසමත් විය",
+  "On-Demand Purchase": "අවශ්‍යතාවය මත මිලදී ගැනීම",
+  "Full Customization": "සම්පූර්ණ අභිරුචි",
+  "Lifetime Plan": "පොදුකාලීන සැලැස්ම",
+  "One-Time Payment": "එක්වර ගෙවීම",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "සියලු උපකරණ සඳහා විශේෂිත විශේෂාංග සඳහා පොදුකාලීන ප්‍රවේශය ලබා ගැනීමට එක්වර ගෙවීමක් කරන්න. ඔබට අවශ්‍ය වන විශේෂිත විශේෂාංග හෝ සේවා මිලදී ගන්න.",
+  "Expand Cloud Sync Storage": "කලාප සමාන්‍ය ගබඩා විශාල කරන්න",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "එක්වර මිලදී ගැනීමක් මඟින් ඔබගේ කලාප ගබඩාව සදාකාලිකව විශාල කරන්න. එක් එක් අමතර මිලදී ගැනීමක් තවත් ස්ථානයක් එක් කරයි.",
+  "Unlock All Customization Options": "සියලු අභිරුචි විකල්ප විවෘත කරන්න",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "අමතර තේමාවන්, ෆොන්ට්, ආකෘති විකල්ප සහ පවසා කියවීම, පරිවර්තක, කලාප ගබඩා සේවා විවෘත කරන්න.",
+  "Purchase Successful!": "මිලදී ගැනීම සාර්ථකයි!",
+  "lifetime": "පොදුකාලීන",
+  "Thank you for your purchase! Your payment has been processed successfully.": "ඔබේ මිලදී ගැනීමට ස්තූතියි! ඔබේ ගෙවීම සාර්ථකව සැකසිණි."
 }

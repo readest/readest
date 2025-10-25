@@ -1,10 +1,12 @@
 'use client';
+import Stripe from 'stripe';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import { supabase } from '@/utils/supabase';
+import { PlanType } from '@/types/quota';
 import Spinner from '@/components/Spinner';
 
 const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
@@ -16,6 +18,7 @@ interface SessionStatus {
   customerEmail: string;
   subscriptionId?: string;
   planName?: string;
+  planType: PlanType;
   amount?: number;
   currency?: string;
 }
@@ -24,6 +27,7 @@ const SuccessPageWithSearchParams = () => {
   const _ = useTranslation();
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>({
     status: 'loading',
+    planType: 'subscription',
     customerEmail: '',
   });
   const [retryCount, setRetryCount] = useState(0);
@@ -62,7 +66,7 @@ const SuccessPageWithSearchParams = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { session, error } = await response.json();
+      const { session: stripeCheckoutSession, error } = await response.json();
 
       if (error) {
         setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -70,15 +74,15 @@ const SuccessPageWithSearchParams = () => {
         return;
       }
 
+      const session = stripeCheckoutSession as Stripe.Checkout.Session;
       setSessionStatus({
-        status:
-          session.payment_status === 'paid' ? 'complete' : session.payment_status || 'processing',
+        status: session.payment_status === 'paid' ? 'complete' : 'failed',
         customerEmail: session.customer_email || session.customer_details?.email || '',
-        subscriptionId: session.subscription,
-        planName:
-          session.display_items?.[0]?.custom?.name || session.line_items?.data?.[0]?.description,
-        amount: session.amount_total,
-        currency: session.currency,
+        subscriptionId: (session.subscription || session.payment_intent || '') as string,
+        planName: session.line_items?.data?.[0]?.description || '',
+        planType: session.mode === 'payment' ? 'purchase' : 'subscription',
+        amount: session.amount_total || undefined,
+        currency: session.currency || undefined,
       });
 
       try {
@@ -129,6 +133,7 @@ const SuccessPageWithSearchParams = () => {
         customerEmail: purchase.customerEmail || '',
         subscriptionId: purchase.subscriptionId,
         planName: purchase.planName,
+        planType: purchase.planType,
       });
 
       try {
@@ -185,6 +190,7 @@ const SuccessPageWithSearchParams = () => {
         customerEmail: purchase.customerEmail || '',
         subscriptionId: purchase.subscriptionId || purchase.orderId,
         planName: purchase.planName,
+        planType: purchase.planType,
         amount: purchase.priceAmountMicros
           ? Number(purchase.priceAmountMicros) / 1000000
           : undefined,
@@ -365,12 +371,17 @@ const SuccessPageWithSearchParams = () => {
 
         {/* Success Message */}
         <h1 className='mb-4 text-3xl font-bold text-gray-800'>
-          🎉 {_('Subscription Successful!')}
+          🎉{' '}
+          {sessionStatus.planType === 'purchase'
+            ? _('Purchase Successful!')
+            : _('Subscription Successful!')}
         </h1>
 
         <div className='mb-6 rounded-lg bg-white p-6 shadow-md'>
           <p className='mb-4 text-lg text-gray-700'>
-            {_('Thank you for your subscription! Your payment has been processed successfully.')}
+            {sessionStatus.planType === 'purchase'
+              ? _('Thank you for your purchase! Your payment has been processed successfully.')
+              : _('Thank you for your subscription! Your payment has been processed successfully.')}
           </p>
 
           {/* Subscription Details */}

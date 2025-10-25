@@ -623,5 +623,17 @@
   "TTS Text": "TTS உரை",
   "The book file is corrupted": "பொதுவாக, புத்தகக் கோப்பு சேதமடைந்துள்ளது",
   "The book file is empty": "புத்தகக் கோப்பு காலியாக உள்ளது",
-  "Failed to open the book file": "புத்தகக் கோப்பைத் திறக்க முடியவில்லை"
+  "Failed to open the book file": "புத்தகக் கோப்பைத் திறக்க முடியவில்லை",
+  "On-Demand Purchase": "தேவைப்படும் போது வாங்குதல்",
+  "Full Customization": "முழு தனிப்பயனாக்கம்",
+  "Lifetime Plan": "ஆயுள்திருத்தம்",
+  "One-Time Payment": "ஒரே முறை கட்டணம்",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "எல்லா சாதனங்களிலும் குறிப்பிட்ட அம்சங்களுக்கு ஆயுள்திருத்தம் பெற ஒரே முறை கட்டணம் செலுத்தவும். நீங்கள் தேவைப்படும் போது மட்டுமே குறிப்பிட்ட அம்சங்கள் அல்லது சேவைகளை வாங்கவும்.",
+  "Expand Cloud Sync Storage": "மோலச் சின்க் சேமிப்பிடத்தை விரிவாக்கவும்",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "ஒரே முறை வாங்குதலுடன் உங்கள் மேக சேமிப்பிடத்தை எப்போதும் விரிவாக்கவும். ஒவ்வொரு கூடுதல் வாங்குதலும் மேலும் இடத்தைச் சேர்க்கிறது.",
+  "Unlock All Customization Options": "அனைத்து தனிப்பயனாக்க விருப்பங்களைத் திறக்கவும்",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "கூடுதல் தீமைகள், எழுத்துருக்கள், வடிவமைப்பு விருப்பங்கள் மற்றும் வாசிக்க, மொழிபெயர்க்க, மேக சேமிப்பு சேவைகளைத் திறக்கவும்.",
+  "Purchase Successful!": "கொள்முதல் வெற்றிகரமாக முடிந்தது!",
+  "lifetime": "ஆயுள்திருத்தம்",
+  "Thank you for your purchase! Your payment has been processed successfully.": "உங்கள் வாங்குதலுக்கு நன்றி! உங்கள் கட்டணம் வெற்றிகரமாக செயல்படுத்தப்பட்டது."
 }

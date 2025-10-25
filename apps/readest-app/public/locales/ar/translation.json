@@ -639,5 +639,17 @@
   "TTS Text": "نص تحويل النص إلى كلام",
   "The book file is corrupted": "ملف الكتاب تالف",
   "The book file is empty": "ملف الكتاب فارغ",
-  "Failed to open the book file": "فشل في فتح ملف الكتاب"
+  "Failed to open the book file": "فشل في فتح ملف الكتاب",
+  "On-Demand Purchase": "الشراء عند الطلب",
+  "Full Customization": "تخصيص كامل",
+  "Lifetime Plan": "خطة مدى الحياة",
+  "One-Time Payment": "دفعة لمرة واحدة",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "قم بإجراء دفعة واحدة للاستمتاع بالوصول مدى الحياة إلى ميزات معينة على جميع الأجهزة. اشترِ ميزات أو خدمات معينة فقط عند الحاجة إليها.",
+  "Expand Cloud Sync Storage": "توسيع مساحة تخزين السحابة",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "قم بتوسيع مساحة التخزين السحابية الخاصة بك إلى الأبد من خلال عملية شراء لمرة واحدة. كل عملية شراء إضافية تضيف المزيد من المساحة.",
+  "Unlock All Customization Options": "فتح جميع خيارات التخصيص",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "فتح سمات إضافية، خطوط، خيارات تخطيط، وخدمات قراءة بصوت عالٍ، ومترجمين، وخدمات تخزين سحابية.",
+  "Purchase Successful!": "تمت عملية الشراء بنجاح!",
+  "lifetime": "مدى الحياة",
+  "Thank you for your purchase! Your payment has been processed successfully.": "شكرًا لشرائك! تم معالجة الدفع بنجاح."
 }

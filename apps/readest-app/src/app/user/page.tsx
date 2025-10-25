@@ -12,16 +12,17 @@ import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { UserPlan } from '@/types/user';
+import { PlanType, UserPlan } from '@/types/quota';
 import { navigateToLibrary, navigateToResetPassword } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
-import { getStripe } from '@/libs/stripe/client';
+import { getStripe } from '@/libs/payment/stripe/client';
 import { getAPIBaseUrl, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getAccessToken } from '@/utils/access';
 import { IAPService, IAPProduct, IAPPurchase } from '@/utils/iap';
 import { getPlanDetails } from './utils/plan';
+import { StripeProductMetadata } from '@/types/payment';
 import { Toast } from '@/components/Toast';
 import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
@@ -37,13 +38,16 @@ const WEB_STRIPE_CHECKOUT_URL = `${getAPIBaseUrl()}/stripe/checkout`;
 const WEB_STRIPE_PORTAL_URL = `${getAPIBaseUrl()}/stripe/portal`;
 const SUBSCRIPTION_SUCCESS_PATH = '/user/subscription/success';
 
+export type PlanInterval = 'month' | 'year' | 'lifetime';
+
 export type AvailablePlan = {
   plan: UserPlan;
-  price_id: string;
+  productId: string;
   price: number; // in cents
   currency: string;
-  interval: string;
+  interval: PlanInterval;
   productName: string;
+  metadata?: StripeProductMetadata;
   product?: Stripe.Product;
 };
 
@@ -110,7 +114,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleStripeSubscribe = async (priceId?: string) => {
+  const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
     const token = await getAccessToken();
     const stripe = await getStripe();
     if (!stripe) {
@@ -125,7 +129,7 @@ const ProfilePage = () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ priceId, embedded: isEmbeddedCheckout }),
+      body: JSON.stringify({ priceId: productId, planType, embedded: isEmbeddedCheckout }),
     });
     setLoading(false);
     if (!response.ok) {
@@ -141,7 +145,7 @@ const ProfilePage = () => {
     }
     const { sessionId, clientSecret, url } = await response.json();
 
-    const selectedPlan = availablePlans.find((plan) => plan.price_id === priceId)!;
+    const selectedPlan = availablePlans.find((plan) => plan.productId === productId)!;
     const planName = selectedPlan.product?.name || selectedPlan.productName;
     if (isEmbeddedCheckout && sessionId && clientSecret) {
       setShowEmbeddedCheckout(true);
@@ -291,11 +295,17 @@ const ProfilePage = () => {
               ? 'plus'
               : product.id.includes('pro')
                 ? 'pro'
-                : 'free',
-            price_id: product.id,
+                : product.id.includes('purchase')
+                  ? 'purchase'
+                  : 'free',
+            productId: product.id,
             price: product.priceAmountMicros / 10000,
             currency: product.priceCurrencyCode || 'USD',
-            interval: 'month',
+            interval: product.id.includes('monthly')
+              ? 'month'
+              : product.id.includes('yearly')
+                ? 'year'
+                : 'lifetime',
             productName: product.title,
           }));
           setAvailablePlans(availablePlans);

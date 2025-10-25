@@ -11,7 +11,7 @@ import {
   ViewSettings,
 } from '@/types/book';
 import { KOSyncSettings, ReadSettings, SystemSettings } from '@/types/settings';
-import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/user';
+import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -615,12 +615,14 @@ export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
   plus: 5 * 1024 * 1024 * 1024,
   pro: 20 * 1024 * 1024 * 1024,
+  purchase: 0,
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
   free: 10 * 1024,
   plus: 100 * 1024,
   pro: 500 * 1024,
+  purchase: 0,
 };
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;

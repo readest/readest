@@ -623,5 +623,17 @@
   "TTS Text": "TTS-text",
   "The book file is corrupted": "Bokfilen är skadad",
   "The book file is empty": "Bokfilen är tom",
-  "Failed to open the book file": "Kunde inte öppna bokfilen"
+  "Failed to open the book file": "Kunde inte öppna bokfilen",
+  "On-Demand Purchase": "Köp på begäran",
+  "Full Customization": "Full anpassning",
+  "Lifetime Plan": "Livstidsplan",
+  "One-Time Payment": "Engångsbetalning",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Gör en engångsbetalning för att få livstidsåtkomst till specifika funktioner på alla enheter. Köp specifika funktioner eller tjänster endast när du behöver dem.",
+  "Expand Cloud Sync Storage": "Utöka molnsynkroniseringslagring",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Utöka din molnlagring för alltid med ett engångsköp. Varje ytterligare köp lägger till mer utrymme.",
+  "Unlock All Customization Options": "Lås upp alla anpassningsalternativ",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Lås upp ytterligare teman, typsnitt, layoutalternativ och uppläsning, översättare, molnlagringstjänster.",
+  "Purchase Successful!": "Köp lyckades!",
+  "lifetime": "livstid",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Tack för ditt köp! Din betalning har behandlats."
 }

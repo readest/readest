@@ -4,10 +4,11 @@ import {
   getGoogleIAPVerifier,
   ProductPurchase,
   SubscriptionPurchase,
-} from '@/libs/iap/google/verifier';
+} from '@/libs/payment/google/verifier';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { IAPError } from '@/types/error';
+import { PlanType } from '@/types/quota';
 
 const iapVerificationSchema = z.object({
   packageName: z.string().min(1, 'Package name is required'),
@@ -41,6 +42,7 @@ interface Purchase {
   customerEmail: string;
   subscriptionId: string;
   planName: string;
+  planType: PlanType;
   productId: string;
   platform: string;
   purchaseToken: string;
@@ -137,7 +139,7 @@ export async function POST(request: Request) {
       );
     }
   }
-  const { purchaseToken, productId, packageName, orderId } = validatedInput!;
+  const { purchaseToken, productId, packageName } = validatedInput!;
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -148,11 +150,11 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdminClient();
 
     // Check if this purchase already exists
-    if (orderId) {
+    if (purchaseToken) {
       const { data: existingSubscription } = await supabase
         .from('google_iap_subscriptions')
         .select('*')
-        .eq('order_id', orderId)
+        .eq('purchase_token', purchaseToken)
         .single();
 
       console.log('Existing subscription:', existingSubscription);
@@ -163,35 +165,6 @@ export async function POST(request: Request) {
           { error: IAPError.TRANSACTION_BELONGS_TO_ANOTHER_USER },
           { status: 403 },
         );
-      }
-
-      if (
-        existingSubscription &&
-        existingSubscription.purchase_token === purchaseToken &&
-        existingSubscription.status === 'active'
-      ) {
-        console.log('Transaction already verified and active');
-
-        const purchase = {
-          status: existingSubscription.status,
-          customerEmail: user.email,
-          subscriptionId: existingSubscription.order_id,
-          planName: getProductName(existingSubscription.product_id),
-          productId: existingSubscription.product_id,
-          platform: existingSubscription.platform,
-          purchaseToken: existingSubscription.purchase_token,
-          orderId: existingSubscription.order_id,
-          purchaseDate: existingSubscription.purchase_date,
-          expiresDate: existingSubscription.expires_date,
-          quantity: existingSubscription.quantity,
-          environment: existingSubscription.environment,
-          packageName: existingSubscription.package_name,
-        };
-
-        return NextResponse.json({
-          purchase,
-          error: null,
-        });
       }
     }
 
@@ -236,6 +209,7 @@ export async function POST(request: Request) {
         customerEmail: user.email!,
         subscriptionId: subData.orderId || purchaseToken,
         planName: getProductName(productId),
+        planType: 'subscription',
         productId: productId,
         platform: 'android',
         purchaseToken: purchaseToken,
@@ -265,6 +239,7 @@ export async function POST(request: Request) {
         customerEmail: user.email!,
         subscriptionId: prodData.orderId || purchaseToken,
         planName: getProductName(productId),
+        planType: 'purchase',
         productId: productId,
         platform: 'android',
         purchaseToken: purchaseToken,

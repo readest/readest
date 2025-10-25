@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { UserPlan } from '@/types/user';
+import { UserPlan } from '@/types/quota';
 
 interface DeleteConfirmationModalProps {
   show: boolean;
@@ -84,7 +84,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           setShowConfirmDelete(false);
         }}
       />
-      <div className='flex flex-col gap-4 md:flex-row'>
+      <div className='flex flex-col gap-4 md:flex-row md:justify-center'>
         {appService?.hasIAP ? (
           <button
             onClick={onRestorePurchase}
