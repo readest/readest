@@ -12,6 +12,7 @@ module.exports = {
       'de',
       'ja',
       'es',
+      'fa',
       'fr',
       'it',
       'el',
