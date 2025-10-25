@@ -15,6 +15,7 @@ import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getLocale } from '@/utils/misc';
+import { getDirFromUILanguage } from '@/utils/rtl';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
@@ -28,6 +29,13 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handlerLanguageChanged = (lng: string) => {
       document.documentElement.lang = lng;
+      // Set RTL class on document for targeted styling without affecting layout
+      const dir = getDirFromUILanguage();
+      if (dir === 'rtl') {
+        document.documentElement.classList.add('ui-rtl');
+      } else {
+        document.documentElement.classList.remove('ui-rtl');
+      }
     };
 
     const locale = getLocale();

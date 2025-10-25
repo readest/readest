@@ -172,6 +172,35 @@ foliate-view {
   transform: translateX(0);
 }
 
+.ui-rtl .dropdown-left::before,
+.ui-rtl .dropdown-left::after {
+  left: auto;
+  right: 20px;
+}
+
+.ui-rtl .dropdown-right::before,
+.ui-rtl .dropdown-right::after {
+  right: auto;
+  left: 20px;
+}
+
+.ui-rtl .dropdown-end > :where(.dropdown-content) {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+}
+
+.ui-rtl .settings-menu,
+.ui-rtl .view-menu {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+}
+
+.ui-rtl .dropdown-content,
+.ui-rtl .settings-menu,
+.ui-rtl .view-menu {
+  direction: rtl;
+}
+
 .dropdown-content.no-triangle::before,
 .dropdown-content.no-triangle::after {
   display: none;
