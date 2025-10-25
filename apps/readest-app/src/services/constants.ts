@@ -682,6 +682,7 @@ export const TRANSLATED_LANGS = {
   pt: 'Português',
   ru: 'Русский',
   ar: 'العربية',
+  fa: 'فارسی',
   el: 'Ελληνικά',
   uk: 'Українська',
   pl: 'Polski',
