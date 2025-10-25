@@ -627,5 +627,17 @@
   "TTS Text": "TTS Texto",
   "The book file is corrupted": "O arquivo do livro está corrompido",
   "The book file is empty": "O arquivo do livro está vazio",
-  "Failed to open the book file": "Falha ao abrir o arquivo do livro"
+  "Failed to open the book file": "Falha ao abrir o arquivo do livro",
+  "On-Demand Purchase": "Compra sob demanda",
+  "Full Customization": "Personalização Completa",
+  "Lifetime Plan": "Plano Vitalício",
+  "One-Time Payment": "Pagamento Único",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Faça um único pagamento para desfrutar de acesso vitalício a recursos específicos em todos os dispositivos. Compre recursos ou serviços específicos apenas quando precisar deles.",
+  "Expand Cloud Sync Storage": "Expandir Armazenamento de Sincronização em Nuvem",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Expanda seu armazenamento em nuvem para sempre com uma compra única. Cada compra adicional adiciona mais espaço.",
+  "Unlock All Customization Options": "Desbloquear Todas as Opções de Personalização",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Desbloquear temas adicionais, fontes, opções de layout e leitura em voz alta, tradutores, serviços de armazenamento em nuvem.",
+  "Purchase Successful!": "Compra Bem-Sucedida!",
+  "lifetime": "vitalício",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Obrigado pela sua compra! Seu pagamento foi processado com sucesso."
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { getAppleIAPVerifier } from '@/libs/iap/apple/verifier';
+import { getAppleIAPVerifier } from '@/libs/payment/apple/verifier';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { IAPError } from '@/types/error';
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       );
     }
   }
-  const { transactionId, originalTransactionId } = validatedInput!;
+  const { originalTransactionId } = validatedInput!;
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -137,36 +137,6 @@ export async function POST(request: Request) {
         { error: IAPError.TRANSACTION_BELONGS_TO_ANOTHER_USER },
         { status: 403 },
       );
-    }
-    if (
-      existingSubscription &&
-      existingSubscription.transactionId === transactionId &&
-      existingSubscription.status === 'active'
-    ) {
-      console.log('Transaction already verified and active');
-
-      const purchase = {
-        status: existingSubscription.status,
-        customerEmail: user.email,
-        subscriptionId:
-          existingSubscription.web_order_line_item_id ||
-          existingSubscription.original_transaction_id,
-        planName: getProductName(existingSubscription.product_id),
-        productId: existingSubscription.product_id,
-        platform: existingSubscription.platform,
-        transactionId: existingSubscription.transaction_id,
-        originalTransactionId: existingSubscription.original_transaction_id,
-        purchaseDate: existingSubscription.purchase_date,
-        expiresDate: existingSubscription.expires_date,
-        quantity: existingSubscription.quantity,
-        environment: existingSubscription.environment,
-        bundleId: existingSubscription.bundle_id,
-      };
-
-      return NextResponse.json({
-        purchase,
-        error: null,
-      });
     }
 
     const defaultIAPVerifier = getAppleIAPVerifier();
@@ -197,6 +167,7 @@ export async function POST(request: Request) {
       customerEmail: user.email!,
       subscriptionId: transaction.webOrderLineItemId || transaction.originalTransactionId,
       planName: getProductName(transaction.productId),
+      planType: verificationResult.planType,
       productId: transaction.productId,
       platform: 'ios',
       transactionId: transaction.transactionId,

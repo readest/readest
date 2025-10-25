@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
-import { getStripe } from '@/libs/stripe/server';
-import { UserPlan } from '@/types/user';
+import { getStripe } from '@/libs/payment/stripe/server';
+import { StripeProductMetadata } from '@/types/payment';
 
 export async function GET() {
   try {
@@ -9,7 +9,6 @@ export async function GET() {
     const prices = await stripe.prices.list({
       expand: ['data.product'],
       active: true,
-      type: 'recurring',
     });
 
     const plans = prices.data
@@ -19,16 +18,18 @@ export async function GET() {
       })
       .map((price) => {
         const product = price.product as Stripe.Product & {
-          metadata: { plan: UserPlan };
+          metadata: StripeProductMetadata;
         };
         return {
           plan: product.metadata.plan,
-          price_id: price.id,
+          productId: price.id,
           price: price.unit_amount,
           currency: price.currency,
           interval: price.recurring?.interval,
           product: price.product,
           productName: product.name,
+          metadata: product.metadata,
+          price_id: price.id, // deprecated
         };
       });
 

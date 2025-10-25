@@ -619,5 +619,17 @@
   "TTS Text": "TTS 텍스트",
   "The book file is corrupted": "책 파일이 손상되었습니다",
   "The book file is empty": "책 파일이 비어 있습니다",
-  "Failed to open the book file": "책 파일을 열지 못했습니다"
+  "Failed to open the book file": "책 파일을 열지 못했습니다",
+  "On-Demand Purchase": "온디맨드 구매",
+  "Full Customization": "풀 커스터마이징",
+  "Lifetime Plan": "평생 플랜",
+  "One-Time Payment": "일회성 결제",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "모든 장치에서 특정 기능에 대한 평생 액세스를 즐기기 위해 단일 결제를 수행합니다. 필요할 때만 특정 기능이나 서비스를 구매합니다.",
+  "Expand Cloud Sync Storage": "클라우드 동기화 저장소 확장",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "1회 구매로 클라우드 저장소를 영구적으로 확장합니다. 추가 구매 시 더 많은 공간이 추가됩니다.",
+  "Unlock All Customization Options": "모든 커스터마이징 옵션 잠금 해제",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "추가 테마, 글꼴, 레이아웃 옵션 및 읽기, 번역기, 클라우드 스토리지 서비스를 잠금 해제합니다.",
+  "Purchase Successful!": "구매 성공!",
+  "lifetime": "평생",
+  "Thank you for your purchase! Your payment has been processed successfully.": "구매해주셔서 감사합니다! 결제가 성공적으로 처리되었습니다."
 }

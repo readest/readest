@@ -619,5 +619,17 @@
   "TTS Text": "Văn bản TTS",
   "The book file is corrupted": "Tệp sách bị hỏng",
   "The book file is empty": "Tệp sách trống",
-  "Failed to open the book file": "Không thể mở tệp sách"
+  "Failed to open the book file": "Không thể mở tệp sách",
+  "On-Demand Purchase": "Mua theo yêu cầu",
+  "Full Customization": "Tùy chỉnh đầy đủ",
+  "Lifetime Plan": "Kế hoạch trọn đời",
+  "One-Time Payment": "Thanh toán một lần",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Thực hiện một khoản thanh toán duy nhất để tận hưởng quyền truy cập trọn đời vào các tính năng cụ thể trên tất cả các thiết bị. Mua các tính năng hoặc dịch vụ cụ thể chỉ khi bạn cần chúng.",
+  "Expand Cloud Sync Storage": "Mở rộng dung lượng lưu trữ đồng bộ hóa đám mây",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Mở rộng dung lượng lưu trữ đám mây của bạn mãi mãi với một lần mua. Mỗi lần mua thêm sẽ thêm không gian.",
+  "Unlock All Customization Options": "Mở khóa tất cả tùy chọn tùy chỉnh",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Mở khóa các chủ đề, phông chữ, tùy chọn bố cục và đọc to, dịch giả, dịch vụ lưu trữ đám mây bổ sung.",
+  "Purchase Successful!": "Mua hàng thành công!",
+  "lifetime": "trọn đời",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Cảm ơn bạn đã mua hàng! Thanh toán của bạn đã được xử lý thành công."
 }

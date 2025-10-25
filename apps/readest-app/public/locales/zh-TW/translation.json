@@ -393,7 +393,7 @@
   "Daily translation quota reached. Upgrade your plan to continue using AI translations.": "已達每日翻譯配額。升級方案以繼續使用 AI 翻譯。",
   "Includes All Plus Plan Benefits": "包含所有 Plus 方案優惠",
   "Early Feature Access": "搶先體驗新功能",
-  "Be the first to explore new features, updates, and innovations before anyone else.": "搶先體驗新功能、更新和創新。",
+  "Be the first to explore new features, updates, and innovations before anyone else.": "搶先體驗最新功能、更新與創新成果。",
   "Advanced AI Tools": "進階 AI 工具",
   "Harness powerful AI tools for smarter reading, translation, and content discovery.": "運用強大的 AI 工具實現智慧閱讀、翻譯和內容探索。",
   "Translate up to 100,000 characters daily with the most accurate translation engine available.": "使用最精準的翻譯引擎每天翻譯多達10萬字元。",
@@ -619,5 +619,17 @@
   "TTS Text": "TTS 文字",
   "The book file is corrupted": "書籍文件已損壞",
   "The book file is empty": "書籍文件為空",
-  "Failed to open the book file": "無法打開書籍文件"
+  "Failed to open the book file": "無法打開書籍文件",
+  "On-Demand Purchase": "按需購買",
+  "Full Customization": "完全自定義",
+  "Lifetime Plan": "終身計劃",
+  "One-Time Payment": "一次性付款",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "進行一次性付款以享受在所有設備上對特定功能的終身訪問。僅在需要時購買特定功能或服務。",
+  "Expand Cloud Sync Storage": "擴展雲同步存儲",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "通過一次性購買，永久擴展您的雲存儲。每次額外購買都會增加更多空間。",
+  "Unlock All Customization Options": "解鎖所有自定義選項",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "解鎖其他主題、字體、佈局選項以及朗讀、翻譯、雲存儲服務。",
+  "Purchase Successful!": "購買成功！",
+  "lifetime": "終身",
+  "Thank you for your purchase! Your payment has been processed successfully.": "感謝您的購買！您的付款已成功處理。"
 }

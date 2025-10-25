@@ -623,5 +623,17 @@
   "TTS Text": "Κείμενο TTS",
   "The book file is corrupted": "Το αρχείο του βιβλίου είναι κατεστραμμένο",
   "The book file is empty": "Το αρχείο του βιβλίου είναι κενό",
-  "Failed to open the book file": "Αποτυχία ανοίγματος του αρχείου βιβλίου"
+  "Failed to open the book file": "Αποτυχία ανοίγματος του αρχείου βιβλίου",
+  "On-Demand Purchase": "Αγορά κατόπιν αιτήματος",
+  "Full Customization": "Πλήρης προσαρμογή",
+  "Lifetime Plan": "Σχέδιο ζωής",
+  "One-Time Payment": "Εφάπαξ πληρωμή",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Κάντε μια εφάπαξ πληρωμή για να απολαύσετε διαρκή πρόσβαση σε συγκεκριμένες δυνατότητες σε όλες τις συσκευές. Αγοράστε συγκεκριμένες δυνατότητες ή υπηρεσίες μόνο όταν τις χρειάζεστε.",
+  "Expand Cloud Sync Storage": "Επέκταση αποθήκευσης συγχρονισμού Cloud",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Επεκτείνετε την αποθήκευση cloud σας για πάντα με μια εφάπαξ αγορά. Κάθε επιπλέον αγορά προσθέτει περισσότερο χώρο.",
+  "Unlock All Customization Options": "Ξεκλειδώστε όλες τις επιλογές προσαρμογής",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Ξεκλειδώστε επιπλέον θέματα, γραμματοσειρές, επιλογές διάταξης και δυνατότητες ανάγνωσης, μεταφραστές, υπηρεσίες αποθήκευσης cloud.",
+  "Purchase Successful!": "Η αγορά ήταν επιτυχής!",
+  "lifetime": "διαρκής",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Σας ευχαριστούμε για την αγορά σας! Η πληρωμή σας έχει επεξεργαστεί με επιτυχία."
 }

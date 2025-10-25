@@ -631,5 +631,17 @@
   "TTS Text": "TTS Текст",
   "The book file is corrupted": "Файл книги поврежден",
   "The book file is empty": "Файл книги пуст",
-  "Failed to open the book file": "Не удалось открыть файл книги"
+  "Failed to open the book file": "Не удалось открыть файл книги",
+  "On-Demand Purchase": "Покупка по запросу",
+  "Full Customization": "Полная настройка",
+  "Lifetime Plan": "Пожизненный план",
+  "One-Time Payment": "Единовременный платеж",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Сделайте единовременный платеж, чтобы получить пожизненный доступ к определенным функциям на всех устройствах. Покупайте конкретные функции или услуги только тогда, когда они вам нужны.",
+  "Expand Cloud Sync Storage": "Расширить облачное хранилище",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Расширьте свое облачное хранилище навсегда с помощью единовременной покупки. Каждая дополнительная покупка добавляет больше места.",
+  "Unlock All Customization Options": "Разблокировать Все Опции Настройки",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Разблокировать дополнительные темы, шрифты, параметры макета и чтения вслух, переводчики, услуги облачного хранилища.",
+  "Purchase Successful!": "Покупка Успешна!",
+  "lifetime": "пожизненный",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Спасибо за вашу покупку! Ваш платеж был успешно обработан."
 }

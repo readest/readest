@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { QuotaType, UserPlan } from '@/types/user';
+import { QuotaType, UserPlan } from '@/types/quota';
 import { getStoragePlanData, getTranslationPlanData, getUserPlan } from '@/utils/access';
 import { useTranslation } from './useTranslation';
 

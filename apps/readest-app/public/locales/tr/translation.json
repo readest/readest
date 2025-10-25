@@ -623,5 +623,17 @@
   "TTS Text": "TTS Metni",
   "The book file is corrupted": "Kitap dosyası bozulmuş",
   "The book file is empty": "Kitap dosyası boş",
-  "Failed to open the book file": "Kitap dosyası açılamadı"
+  "Failed to open the book file": "Kitap dosyası açılamadı",
+  "On-Demand Purchase": "İhtiyaç Duyulduğunda Satın Alma",
+  "Full Customization": "Tam Özelleştirme",
+  "Lifetime Plan": "Ömür Boyu Plan",
+  "One-Time Payment": "Tek Seferlik Ödeme",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Tüm cihazlarda belirli özelliklere ömür boyu erişim sağlamak için tek seferlik bir ödeme yapın. Belirli özellikleri veya hizmetleri yalnızca ihtiyaç duyduğunuzda satın alın.",
+  "Expand Cloud Sync Storage": "Bulut Senkronizasyonu Depolama Alanını Genişlet",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Tek seferlik bir satın alma ile bulut depolama alanınızı sonsuza kadar genişletin. Her ek satın alma daha fazla alan ekler.",
+  "Unlock All Customization Options": "Tüm Özelleştirme Seçeneklerini Aç",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Ek tema, yazı tipi, düzen seçeneklerini ve sesli okuma, çevirmenler, bulut depolama hizmetlerini açın.",
+  "Purchase Successful!": "Satın Alma Başarılı!",
+  "lifetime": "ömür boyu",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Satın alma işleminiz için teşekkürler! Ödemeniz başarıyla işlendi."
 }

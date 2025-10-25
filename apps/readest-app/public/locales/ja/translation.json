@@ -619,5 +619,17 @@
   "TTS Text": "TTSテキスト",
   "The book file is corrupted": "本のファイルが破損しています",
   "The book file is empty": "本のファイルが空です",
-  "Failed to open the book file": "本のファイルを開くことができませんでした"
+  "Failed to open the book file": "本のファイルを開くことができませんでした",
+  "On-Demand Purchase": "オンデマンド購入",
+  "Full Customization": "フルカスタマイズ",
+  "Lifetime Plan": "ライフタイムプラン",
+  "One-Time Payment": "ワンタイムペイメント",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "すべてのデバイスで特定の機能にライフタイムアクセスを楽しむために、1回の支払いを行います。必要なときにのみ特定の機能やサービスを購入します。",
+  "Expand Cloud Sync Storage": "クラウド同期ストレージを拡張",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "1回の購入でクラウドストレージを永遠に拡張します。追加の購入ごとに、さらに多くのスペースが追加されます。",
+  "Unlock All Customization Options": "すべてのカスタマイズオプションを解除",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "追加のテーマ、フォント、レイアウトオプション、読み上げ、翻訳者、クラウドストレージサービスを解除します。",
+  "Purchase Successful!": "購入成功！",
+  "lifetime": "ライフタイム",
+  "Thank you for your purchase! Your payment has been processed successfully.": "ご購入ありがとうございます！お支払いが正常に処理されました。"
 }

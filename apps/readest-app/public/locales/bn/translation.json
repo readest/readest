@@ -623,5 +623,17 @@
   "TTS Text": "TTS টেক্সট",
   "The book file is corrupted": "বইয়ের ফাইলটি ক্ষতিগ্রস্ত।",
   "The book file is empty": "বইয়ের ফাইলটি খালি।",
-  "Failed to open the book file": "বইয়ের ফাইল খুলতে ব্যর্থ।"
+  "Failed to open the book file": "বইয়ের ফাইল খুলতে ব্যর্থ।",
+  "On-Demand Purchase": "অনুরোধে ক্রয়",
+  "Full Customization": "সম্পূর্ণ কাস্টমাইজেশন",
+  "Lifetime Plan": "জীবনকাল পরিকল্পনা",
+  "One-Time Payment": "এককালীন পেমেন্ট",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "নির্দিষ্ট বৈশিষ্ট্যগুলিতে সমস্ত ডিভাইসে জীবনকাল অ্যাক্সেস উপভোগ করতে এককালীন পেমেন্ট করুন। যখন আপনার প্রয়োজন তখনই নির্দিষ্ট বৈশিষ্ট্য বা পরিষেবাগুলি কিনুন।",
+  "Expand Cloud Sync Storage": "ক্লাউড সিঙ্ক স্টোরেজ বাড়ান",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "এককালীন ক্রয়ের মাধ্যমে আপনার ক্লাউড স্টোরেজ চিরকাল বাড়ান। প্রতিটি অতিরিক্ত ক্রয় আরও স্থান যোগ করে।",
+  "Unlock All Customization Options": "সমস্ত কাস্টমাইজেশন বিকল্প আনলক করুন",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "অতিরিক্ত থিম, ফন্ট, লেআউট বিকল্প এবং উচ্চস্বরে পড়া, অনুবাদক, ক্লাউড স্টোরেজ পরিষেবাগুলি আনলক করুন।",
+  "Purchase Successful!": "ক্রয় সফল!",
+  "lifetime": "জীবনকাল",
+  "Thank you for your purchase! Your payment has been processed successfully.": "আপনার ক্রয়ের জন্য ধন্যবাদ! আপনার পেমেন্ট সফলভাবে প্রক্রিয়া করা হয়েছে।"
 }

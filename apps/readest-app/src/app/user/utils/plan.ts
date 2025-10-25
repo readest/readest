@@ -1,44 +1,112 @@
-import { UserPlan } from '@/types/user';
+import { PlanType, QuotaFeature, UserPlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
-import { AvailablePlan } from '../page';
+import { AvailablePlan, PlanInterval } from '../page';
 
 type FeatureType = {
   label: string;
   description?: string;
 };
 
+type ProductInfo = {
+  id: string;
+  name: string;
+  feature: QuotaFeature;
+  price: number; // in cents
+  currency: string;
+};
+
 export type PlanDetails = {
   name: string;
   plan: UserPlan;
+  type: PlanType;
   color: string;
   hintColor: string;
-  price: number;
+  price: number; // in cents
   currency: string;
-  price_id?: string;
+  productId?: string;
   interval: string;
   features: FeatureType[];
-  limits: Record<string, string | number>;
+  limits?: Record<string, string | number>;
+  products?: ProductInfo[];
+};
+
+const getProductFeature = (productId: string): QuotaFeature | undefined => {
+  const features: QuotaFeature[] = ['storage', 'translation', 'tokens', 'customization'];
+  const lowerId = productId.toLowerCase();
+  for (const feature of features) {
+    if (lowerId.includes(feature)) {
+      return feature;
+    }
+  }
+
+  return undefined;
 };
 
 export const getPlanDetails = (
-  userPlan: UserPlan,
+  planCode: UserPlan,
   availablePlans: AvailablePlan[],
-  interval: 'month' | 'year' = 'month',
+  interval: PlanInterval = 'month',
 ): PlanDetails => {
   const availablePlan = availablePlans.find(
-    (plan) => plan.plan === userPlan && (!plan.interval || plan.interval === interval),
+    (plan) => plan.plan === planCode && (!plan.interval || plan.interval === interval),
   );
   const currency = availablePlans.length > 0 ? availablePlans[0]!.currency : 'USD';
-  switch (userPlan) {
+  switch (planCode) {
+    case 'purchase':
+      const purchasableProducts: ProductInfo[] = availablePlans
+        .filter((plan) => plan.plan === planCode)
+        .sort((a, b) => a.price - b.price)
+        .map((plan) => {
+          return {
+            id: plan.productId,
+            name: plan.productName,
+            feature: plan.metadata?.feature || getProductFeature(plan.productId) || 'generic',
+            price: plan.price,
+            currency: plan.currency,
+          } as ProductInfo;
+        });
+      return {
+        name: _('Lifetime Plan'),
+        plan: planCode,
+        type: 'purchase',
+        color: 'bg-green-100 text-green-800',
+        hintColor: 'text-green-800/75',
+        price: availablePlan?.price || 1999,
+        currency,
+        productId: availablePlan?.productId,
+        interval: _('lifetime'),
+        features: [
+          {
+            label: _('One-Time Payment'),
+            description: _(
+              'Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.',
+            ),
+          },
+          {
+            label: _('Expand Cloud Sync Storage'),
+            description: _(
+              'Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.',
+            ),
+          },
+          {
+            label: _('Unlock All Customization Options'),
+            description: _(
+              'Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.',
+            ),
+          },
+        ],
+        products: purchasableProducts,
+      };
     case 'free':
       return {
         name: _('Free Plan'),
-        plan: userPlan,
+        plan: planCode,
+        type: 'subscription',
         color: 'bg-gray-200 text-gray-800',
         hintColor: 'text-gray-800/75',
         price: 0,
         currency,
-        price_id: availablePlan?.price_id,
+        productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
           {
@@ -80,12 +148,13 @@ export const getPlanDetails = (
     case 'plus':
       return {
         name: _('Plus Plan'),
-        plan: userPlan,
+        plan: planCode,
+        type: 'subscription',
         color: 'bg-blue-200 text-blue-800',
         hintColor: 'text-blue-800/75',
         price: availablePlan?.price || 499,
         currency,
-        price_id: availablePlan?.price_id,
+        productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
           {
@@ -130,12 +199,13 @@ export const getPlanDetails = (
     case 'pro':
       return {
         name: _('Pro Plan'),
-        plan: userPlan,
+        plan: planCode,
+        type: 'subscription',
         color: 'bg-purple-200 text-purple-800',
         hintColor: 'text-purple-800/75',
         price: availablePlan?.price || 999,
         currency,
-        price_id: availablePlan?.price_id,
+        productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
           {

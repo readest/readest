@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import React, { useCallback } from 'react';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
-import { getStripe } from '@/libs/stripe/client';
+import { getStripe } from '@/libs/payment/stripe/client';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface CheckoutProps {

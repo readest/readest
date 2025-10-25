@@ -631,5 +631,17 @@
   "TTS Text": "Текст TTS",
   "The book file is corrupted": "Файл книги пошкоджено",
   "The book file is empty": "Файл книги порожній",
-  "Failed to open the book file": "Не вдалося відкрити файл книги"
+  "Failed to open the book file": "Не вдалося відкрити файл книги",
+  "On-Demand Purchase": "Покупка за запитом",
+  "Full Customization": "Повна налаштування",
+  "Lifetime Plan": "План на все життя",
+  "One-Time Payment": "Одноразовий платіж",
+  "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "Зробіть одноразовий платіж, щоб отримати довічний доступ до певних функцій на всіх пристроях. Купуйте конкретні функції або послуги лише тоді, коли вони вам потрібні.",
+  "Expand Cloud Sync Storage": "Розширити сховище синхронізації в хмарі",
+  "Expand your cloud storage forever with a one-time purchase. Each additional purchase adds more space.": "Розширте своє хмарне сховище назавжди за допомогою одноразової покупки. Кожна додаткова покупка додає більше місця.",
+  "Unlock All Customization Options": "Відкрити всі параметри налаштування",
+  "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Відкрийте додаткові теми, шрифти, параметри макета та функції читання вголос, перекладачі, послуги хмарного зберігання.",
+  "Purchase Successful!": "Покупка успішна!",
+  "lifetime": "довічний",
+  "Thank you for your purchase! Your payment has been processed successfully.": "Дякуємо за вашу покупку! Ваш платіж успішно оброблено."
 }
