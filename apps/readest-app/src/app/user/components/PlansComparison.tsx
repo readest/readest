@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useEnv } from '@/context/EnvContext';
+import { PlanType, UserPlan } from '@/types/quota';
 import { debounce } from '@/utils/debounce';
 import { getPlanDetails } from '../utils/plan';
-import { UserPlan } from '@/types/user';
 import { AvailablePlan } from '../page';
 import PlanNavigation from './PlanNavigation';
 import PlanCard from './PlanCard';
@@ -11,7 +10,7 @@ import PlanIndicators from './PlanIndicators';
 interface PlansComparisonProps {
   availablePlans: AvailablePlan[];
   userPlan: UserPlan;
-  onSubscribe: (priceId?: string) => void;
+  onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
 const PlansComparison: React.FC<PlansComparisonProps> = ({
@@ -19,12 +18,11 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   userPlan,
   onSubscribe,
 }) => {
-  const { appService } = useEnv();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [userPlanIndex, setUserPlanIndex] = useState(0);
   const plansScrollRef = useRef<HTMLDivElement>(null);
 
-  const userPlans: UserPlan[] = ['free', 'plus', 'pro'];
+  const userPlans: UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
   useEffect(() => {
     if (userPlan) {
@@ -108,9 +106,12 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 
   useEffect(() => {
     if (plansScrollRef.current) {
-      const planWidth = plansScrollRef.current.scrollWidth / allPlans.length;
-      const scrollPosition = currentPlanIndex * planWidth;
-      plansScrollRef.current.scrollTo({
+      const container = plansScrollRef.current;
+      const planWidth = (container.scrollWidth - 208 * 0) / allPlans.length;
+      const cardCenter = 208 * 0 + currentPlanIndex * planWidth + planWidth / 2;
+      const scrollPosition = cardCenter - container.clientWidth / 2;
+
+      container.scrollTo({
         left: scrollPosition,
         behavior: 'smooth',
       });
@@ -132,19 +133,18 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 
       <div
         ref={plansScrollRef}
-        className='scrollbar-hide flex items-start overflow-x-auto scroll-smooth'
+        className='plans-container scrollbar-hide flex items-start overflow-x-auto scroll-smooth sm:px-52'
         onTouchStart={handleTouchStart}
         style={{
-          scrollSnapType: appService?.isAndroidApp ? 'none' : 'x mandatory',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
       >
         {allPlans.map((plan, index) => (
           <PlanCard
-            key={plan.plan}
+            key={`plan-${plan.plan}-${index}`}
             plan={plan}
-            comingSoon={['playstore'].includes(appService?.distChannel || '')}
+            comingSoon={false}
             isUserPlan={plan.plan === userPlan}
             upgradable={index > userPlanIndex}
             index={index}

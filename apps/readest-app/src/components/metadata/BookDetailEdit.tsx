@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { MdEdit, MdDelete, MdLock, MdLockOpen, MdOutlineSearch } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -18,7 +18,7 @@ interface BookDetailEditProps {
   lockedFields: Record<string, boolean>;
   fieldErrors: Record<string, string>;
   searchLoading: boolean;
-  onFieldChange: (field: string, value: string) => void;
+  onFieldChange: (field: string, value: string | undefined) => void;
   onToggleFieldLock: (field: string) => void;
   onAutoRetrieve: () => void;
   onLockAll: () => void;
@@ -53,13 +53,8 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   const hasLockedFields = Object.values(lockedFields).some((locked) => locked);
   const allFieldsLocked = Object.values(lockedFields).every((locked) => locked);
   const isCoverLocked = lockedFields['coverImageUrl'] || false;
-  const [newCoverImageUrl, setNewCoverImageUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (metadata.coverImageUrl) {
-      setNewCoverImageUrl(metadata.coverImageUrl);
-    }
-  }, [metadata.coverImageUrl]);
+  const coverImageUrl = metadata.coverImageUrl || null;
+  const [newCoverImageUrl, setNewCoverImageUrl] = useState<string | null>(coverImageUrl);
 
   const titleAuthorFields = [
     {
@@ -156,12 +151,13 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       const selectedFile = result.files[0]!;
       if (selectedFile.path && appService) {
         const filePath = selectedFile.path;
-        metadata.coverImageFile = filePath;
-        metadata.coverImageUrl = await appService.getCachedImageUrl(filePath);
-        setNewCoverImageUrl(metadata.coverImageUrl!);
+        onFieldChange('coverImageFile', filePath);
+        onFieldChange('coverImageUrl', await appService.getCachedImageUrl(filePath));
+        setNewCoverImageUrl(filePath);
       } else if (selectedFile.file) {
-        metadata.coverImageBlobUrl = URL.createObjectURL(selectedFile.file);
-        setNewCoverImageUrl(metadata.coverImageBlobUrl!);
+        const coverImageBlobUrl = URL.createObjectURL(selectedFile.file);
+        onFieldChange('coverImageBlobUrl', coverImageBlobUrl);
+        setNewCoverImageUrl(coverImageBlobUrl);
       }
     });
   };
@@ -209,9 +205,9 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
             <button
               onClick={() => {
                 setNewCoverImageUrl(emptyCoverImageUrl);
-                metadata.coverImageUrl = emptyCoverImageUrl;
-                metadata.coverImageFile = undefined;
-                metadata.coverImageBlobUrl = undefined;
+                onFieldChange('coverImageUrl', emptyCoverImageUrl);
+                onFieldChange('coverImageFile', undefined);
+                onFieldChange('coverImageBlobUrl', undefined);
               }}
               disabled={isCoverLocked}
               className={clsx(

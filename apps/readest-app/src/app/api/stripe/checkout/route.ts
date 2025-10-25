@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/libs/stripe/server';
+import { getStripe } from '@/libs/payment/stripe/server';
 import { validateUserAndToken } from '@/utils/access';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
-  const { priceId, embedded = true, metadata = {} } = await request.json();
+  const {
+    priceId,
+    planType = 'subscription',
+    embedded = true,
+    metadata = {},
+  } = await request.json();
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -43,13 +48,12 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripe();
-    const successUrl = `${request.headers.get('origin')}/user/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${request.headers.get('origin')}/user/subscription/success?payment=stripe&session_id={CHECKOUT_SESSION_ID}`;
     const returnUrl = `${request.headers.get('origin')}/user`;
     const session = await stripe.checkout.sessions.create({
       ui_mode: embedded ? 'embedded' : 'hosted',
       customer: customerId,
-      mode: 'subscription',
-      payment_method_types: ['card'],
+      mode: planType === 'subscription' ? 'subscription' : 'payment',
       line_items: [
         {
           price: priceId,

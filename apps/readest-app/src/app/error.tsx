@@ -19,6 +19,9 @@ export default function Error({ error, reset }: ErrorPageProps) {
 
   useEffect(() => {
     setBrowserInfo(parseWebViewInfo(appService));
+  }, [appService]);
+
+  useEffect(() => {
     posthog.captureException(error);
     handleGlobalError(error);
   }, [appService, error]);

@@ -1,9 +1,11 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
+import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { saveSysSettings } from '@/helpers/settings';
 
 const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
@@ -23,25 +25,30 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   selectedColor: _selectedColor,
   onHandleHighlight,
 }) => {
-  const { settings, setSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
+  const { settings } = useSettingsStore();
   const globalReadSettings = settings.globalReadSettings;
-  const [selectedStyle, setSelectedStyle] = React.useState<HighlightStyle>(_selectedStyle);
-  const [selectedColor, setSelectedColor] = React.useState<HighlightColor>(_selectedColor);
+  const customColors = globalReadSettings.customHighlightColors;
+  const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(_selectedStyle);
+  const [selectedColor, setSelectedColor] = useState<HighlightColor>(_selectedColor);
   const size16 = useResponsiveSize(16);
   const size18 = useResponsiveSize(18);
   const size28 = useResponsiveSize(28);
 
   const handleSelectStyle = (style: HighlightStyle) => {
-    globalReadSettings.highlightStyle = style;
-    setSettings(settings);
+    const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
     setSelectedStyle(style);
     setSelectedColor(globalReadSettings.highlightStyles[style]);
     onHandleHighlight(true);
   };
   const handleSelectColor = (color: HighlightColor) => {
-    globalReadSettings.highlightStyle = selectedStyle;
-    globalReadSettings.highlightStyles[selectedStyle] = color;
-    setSettings(settings);
+    const newGlobalReadSettings = {
+      ...globalReadSettings,
+      highlightStyle: selectedStyle,
+      highlightStyles: { ...globalReadSettings.highlightStyles, [selectedStyle]: color },
+    };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
     setSelectedColor(color);
     onHandleHighlight(true);
   };
@@ -65,24 +72,29 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             style={{ width: size28, height: size28, minHeight: size28 }}
           >
             <div
-              style={{ width: size16, height: style === 'squiggly' ? size18 : size16 }}
-              className={clsx(
-                'w-4 p-0 text-center leading-none',
-                style === 'highlight' &&
-                  (selectedStyle === 'highlight'
-                    ? `bg-${selectedColor}-300 pt-[2px]`
-                    : `bg-gray-300 pt-[2px]`),
-                (style === 'underline' || style === 'squiggly') &&
-                  'text-gray-300 underline decoration-2',
-                style === 'underline' &&
-                  (selectedStyle === 'underline'
-                    ? `decoration-${selectedColor}-300`
-                    : `decoration-gray-300`),
-                style === 'squiggly' &&
-                  (selectedStyle === 'squiggly'
-                    ? `decoration-wavy decoration-${selectedColor}-300`
-                    : `decoration-gray-300 decoration-wavy`),
-              )}
+              style={{
+                width: size16,
+                height: style === 'squiggly' ? size18 : size16,
+                ...(style === 'highlight' &&
+                  selectedStyle === 'highlight' && {
+                    backgroundColor: customColors[selectedColor],
+                    paddingTop: '2px',
+                  }),
+                ...(style === 'highlight' &&
+                  selectedStyle !== 'highlight' && {
+                    backgroundColor: '#d1d5db',
+                    paddingTop: '2px',
+                  }),
+                ...((style === 'underline' || style === 'squiggly') && {
+                  color: '#d1d5db',
+                  textDecoration: 'underline',
+                  textDecorationThickness: '2px',
+                  textDecorationColor:
+                    selectedStyle === style ? customColors[selectedColor] : '#d1d5db',
+                  ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
+                }),
+              }}
+              className='w-4 p-0 text-center leading-none'
             >
               A
             </div>
@@ -101,11 +113,15 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           <button
             key={color}
             onClick={() => handleSelectColor(color)}
-            style={{ width: size16, height: size16 }}
-            className={clsx(`rounded-full p-0`, selectedColor !== color && `bg-${color}-300`)}
+            style={{
+              width: size16,
+              height: size16,
+              backgroundColor: selectedColor !== color ? customColors[color] : 'transparent',
+            }}
+            className='rounded-full p-0'
           >
             {selectedColor === color && (
-              <FaCheckCircle size={size16} className={clsx(`fill-${color}-300`)} />
+              <FaCheckCircle size={size16} style={{ fill: customColors[color] }} />
             )}
           </button>
         ))}

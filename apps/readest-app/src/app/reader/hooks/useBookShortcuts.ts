@@ -20,7 +20,7 @@ interface UseBookShortcutsProps {
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
   const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { setSettingsDialogOpen } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
@@ -53,12 +53,58 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     viewPagination(getView(sideBarBookKey), viewSettings, 'right');
   };
 
+  const goPrevSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'up', 'section');
+  };
+
+  const goNextSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'down', 'section');
+  };
+
+  const goLeftSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'section');
+  };
+
+  const goRightSection = () => {
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'section');
+  };
+
   const goPrev = () => {
     getView(sideBarBookKey)?.prev(distance);
   };
 
   const goNext = () => {
     getView(sideBarBookKey)?.next(distance);
+  };
+
+  const goPrevArrowUp = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    if (
+      view?.renderer.scrolled &&
+      event instanceof MessageEvent &&
+      event.data.type === 'iframe-keydown'
+    ) {
+      // already handled in the iframe for better smoothness
+      return;
+    }
+    view?.prev(distance);
+  };
+
+  const goNextArrowDown = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    if (
+      view?.renderer.scrolled &&
+      event instanceof MessageEvent &&
+      event.data.type === 'iframe-keydown'
+    ) {
+      // already handled in the iframe for better smoothness
+      return;
+    }
+    view?.next(distance);
   };
 
   const goBack = () => {
@@ -163,7 +209,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
-      onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
+      onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,
@@ -174,8 +220,14 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoRight: goRight,
       onGoPrev: goPrev,
       onGoNext: goNext,
+      onGoPrevArrowUp: goPrevArrowUp,
+      onGoNextArrowDown: goNextArrowDown,
       onGoHalfPageDown: goHalfPageDown,
       onGoHalfPageUp: goHalfPageUp,
+      onGoPrevSection: goPrevSection,
+      onGoNextSection: goNextSection,
+      onGoLeftSection: goLeftSection,
+      onGoRightSection: goRightSection,
       onGoBack: goBack,
       onGoForward: goForward,
       onZoomIn: zoomIn,

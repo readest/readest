@@ -22,6 +22,7 @@ export interface ReadSettings {
 
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
+  customHighlightColors: Record<HighlightColor, string>;
   customThemes: CustomTheme[];
 }
 
@@ -48,6 +49,7 @@ export interface SystemSettings {
   autoCheckUpdates: boolean;
   screenWakeLock: boolean;
   screenBrightness: number;
+  autoScreenBrightness: boolean;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;
   openLastBooks: boolean;

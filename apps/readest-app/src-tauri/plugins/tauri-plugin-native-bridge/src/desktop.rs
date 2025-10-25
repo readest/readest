@@ -118,6 +118,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn get_external_sdcard_path(&self) -> crate::Result<GetExternalSDCardPathResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn request_manage_storage_permission(
         &self,
     ) -> crate::Result<RequestManageStoragePermissionResponse> {

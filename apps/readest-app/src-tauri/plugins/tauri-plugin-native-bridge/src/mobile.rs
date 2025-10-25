@@ -190,6 +190,14 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn get_external_sdcard_path(&self) -> crate::Result<GetExternalSDCardPathResponse> {
+        self.0
+            .run_mobile_plugin("get_external_sdcard_path", ())
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn request_manage_storage_permission(
         &self,
     ) -> crate::Result<RequestManageStoragePermissionResponse> {

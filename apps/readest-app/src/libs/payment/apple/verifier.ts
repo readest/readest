@@ -1,8 +1,10 @@
 import { IAPError } from '@/types/error';
+import { PlanType } from '@/types/quota';
 import {
   AppStoreServerAPI,
   Environment,
   JWSTransactionDecodedPayload,
+  TransactionType,
   decodeTransaction,
 } from 'app-store-server-api';
 
@@ -18,6 +20,7 @@ export interface VerificationResult {
   success: boolean;
   verified?: boolean;
   status?: string;
+  planType?: PlanType;
   transaction?: JWSTransactionDecodedPayload;
   environment?: string;
   bundleId?: string;
@@ -84,10 +87,17 @@ export class AppleIAPVerifier {
       // Status 1 = Active subscription
       const isActive = status === 1 && (!expiresDate || expiresDate > now);
 
+      const planType: PlanType =
+        decodedTransaction.type === TransactionType.NonConsumable ||
+        decodedTransaction.type === TransactionType.Consumable
+          ? 'purchase'
+          : 'subscription';
+
       return {
         success: true,
         verified: true,
         status: isActive ? 'active' : 'expired',
+        planType: planType,
         transaction: decodedTransaction,
         environment: this.environment,
         bundleId: this.bundleId,

@@ -1,7 +1,10 @@
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/libs/stripe/server';
-import { createOrUpdateSubscription } from '@/utils/stripe';
+import {
+  getStripe,
+  createOrUpdateSubscription,
+  createOrUpdatePayment,
+} from '@/libs/payment/stripe/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
@@ -72,17 +75,9 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session, userId: string) {
-  const supabase = createSupabaseAdminClient();
-  await supabase.from('payments').insert({
-    user_id: userId,
-    stripe_checkout_id: session.id,
-    amount: session.amount_total,
-    currency: session.currency,
-    status: 'completed',
-    payment_intent: session.payment_intent,
-    payment_method: session.payment_method_types?.[0] || 'unknown',
-    created_at: new Date().toISOString(),
-  });
+  const customerId = session.customer as string;
+
+  await createOrUpdatePayment(userId, customerId, session.id);
 }
 
 async function handleSuccessfulSubscription(session: Stripe.Checkout.Session, userId: string) {

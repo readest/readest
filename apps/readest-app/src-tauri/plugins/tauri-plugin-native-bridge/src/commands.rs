@@ -143,6 +143,13 @@ pub(crate) async fn set_screen_brightness<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_external_sdcard_path<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetExternalSDCardPathResponse> {
+    app.native_bridge().get_external_sdcard_path()
+}
+
+#[command]
 pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {

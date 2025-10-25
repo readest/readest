@@ -22,11 +22,10 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
 }) => {
   const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
-  const { setFontPanelView, isFontLayoutSettingsGlobal, setFontLayoutSettingsGlobal } =
-    useSettingsStore();
+  const { setFontPanelView, isSettingsGlobal, setSettingsGlobal } = useSettingsStore();
 
   const handleToggleGlobal = () => {
-    setFontLayoutSettingsGlobal(!isFontLayoutSettingsGlobal);
+    setSettingsGlobal(!isSettingsGlobal);
     setIsDropdownOpen?.(false);
   };
 
@@ -49,13 +48,9 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
     >
       <MenuItem
         label={_('Global Settings')}
-        tooltip={isFontLayoutSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
+        tooltip={isSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
         buttonClass='lg:tooltip'
-        Icon={
-          isFontLayoutSettingsGlobal ? (
-            <MdCheck size={iconSize} className='text-base-content' />
-          ) : null
-        }
+        Icon={isSettingsGlobal ? <MdCheck size={iconSize} className='text-base-content' /> : null}
         onClick={handleToggleGlobal}
       />
       <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />

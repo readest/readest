@@ -187,15 +187,245 @@ class VolumeKeyHandler: NSObject {
   }
 }
 
+class WebViewLifecycleManager: NSObject {
+  private weak var webView: WKWebView?
+  private var originalNavigationDelegate: WKNavigationDelegate?
+  private var isMonitoring = false
+  private var lastBackgroundTime: Date?
+  private var backgroundTimeThreshold: TimeInterval = 180.0
+
+  func startMonitoring(webView: WKWebView) {
+    self.webView = webView
+    originalNavigationDelegate = webView.navigationDelegate
+    webView.navigationDelegate = self
+    isMonitoring = true
+    logger.log("WebViewLifecycleManager: Started monitoring WebView")
+  }
+
+  func stopMonitoring() {
+    isMonitoring = false
+    if let original = originalNavigationDelegate {
+      webView?.navigationDelegate = original
+    }
+
+    logger.log("WebViewLifecycleManager: Stopped monitoring WebView")
+  }
+
+  func handleAppWillEnterForeground() {
+    guard isMonitoring, let webView = webView else {
+      logger.warning(
+        "WebViewLifecycleManager: Cannot handle foreground - not monitoring or webView is nil")
+      return
+    }
+
+    logger.log("WebViewLifecycleManager: App entering foreground")
+
+    var timeInBackground: TimeInterval = 0
+    if let backgroundTime = lastBackgroundTime {
+      timeInBackground = Date().timeIntervalSince(backgroundTime)
+      logger.log("WebViewLifecycleManager: Time in background: \(timeInBackground)s")
+    }
+
+    // If app was backgrounded for more than threshold, check WebView health
+    if timeInBackground > backgroundTimeThreshold {
+      logger.log(
+        "WebViewLifecycleManager: App was backgrounded for \(timeInBackground)s, checking WebView health..."
+      )
+      checkAndRecoverWebView(webView, reason: "long_background")
+    } else {
+      // Still do a quick check after a small delay
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        self?.quickHealthCheck(webView)
+      }
+    }
+
+    lastBackgroundTime = nil
+  }
+
+  func handleAppWillResignActive() {
+    logger.log("WebViewLifecycleManager: App will resign active")
+    guard let webView = webView else { return }
+    webView.evaluateJavaScript("window.location.href") { result, error in
+      if let error = error {
+        logger.error("WebViewLifecycleManager: Failed to capture URL on background: \(error)")
+        return
+      }
+
+      if let urlString = result as? String {
+        if urlString.hasPrefix("http") || urlString.hasPrefix("tauri") {
+          UserDefaults.standard.set(urlString, forKey: "tauri_last_valid_url")
+          logger.log("WebViewLifecycleManager: Saved valid URL")
+        }
+      }
+    }
+  }
+
+  func handleAppDidEnterBackground() {
+    lastBackgroundTime = Date()
+  }
+
+  private func quickHealthCheck(_ webView: WKWebView) {
+    logger.log("WebViewLifecycleManager: Performing quick health check")
+
+    webView.evaluateJavaScript("window.location.href") { [weak self] result, error in
+      if let error = error {
+        logger.error("WebViewLifecycleManager: Quick health check failed: \(error)")
+        self?.checkAndRecoverWebView(webView, reason: "health_check_failed")
+      } else if let urlString = result as? String {
+        if urlString.contains("about:blank") || urlString.isEmpty {
+          logger.warning("WebViewLifecycleManager: WebView showing about:blank!")
+          self?.recoverWebView(webView, reason: "about_blank")
+        }
+      }
+    }
+  }
+
+  private func checkAndRecoverWebView(_ webView: WKWebView, reason: String) {
+    logger.log("WebViewLifecycleManager: Checking WebView health (reason: \(reason))")
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+      webView.evaluateJavaScript("window.location.href") { result, error in
+        if let error = error {
+          logger.error("WebViewLifecycleManager: Error checking WebView URL: \(error)")
+          self?.recoverWebView(webView, reason: "js_error_\(reason)")
+        } else if let urlString = result as? String {
+          logger.log("WebViewLifecycleManager: Current URL after \(reason): \(urlString)")
+          if urlString.contains("about:blank") || urlString.isEmpty {
+            logger.warning("WebViewLifecycleManager: Detected blank WebView after \(reason)")
+            self?.recoverWebView(webView, reason: reason)
+          } else {
+            logger.log("WebViewLifecycleManager: WebView appears healthy")
+          }
+        }
+      }
+    }
+  }
+
+  private func recoverWebView(_ webView: WKWebView, reason: String) {
+    logger.log("WebViewLifecycleManager: Recovering WebView (reason: \(reason))")
+
+    if let lastURL = UserDefaults.standard.string(forKey: "tauri_last_valid_url"),
+      let url = URL(string: lastURL)
+    {
+      logger.log("WebViewLifecycleManager: Reloading from saved URL: \(lastURL)")
+      webView.load(URLRequest(url: url))
+    } else {
+      logger.log("WebViewLifecycleManager: No saved URL, performing standard reload")
+      webView.reload()
+    }
+  }
+}
+
+extension WebViewLifecycleManager: WKNavigationDelegate {
+
+  func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+    logger.error("WebViewLifecycleManager: WebContent process TERMINATED!️")
+    recoverWebView(webView, reason: "process_terminated")
+
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webViewWebContentProcessDidTerminate(_:)))
+    {
+      original.webViewWebContentProcessDidTerminate?(webView)
+    }
+  }
+
+  // Save successful navigation URLs
+  func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    if let url = webView.url {
+      let urlString = url.absoluteString
+
+      if urlString.hasPrefix("http") || urlString.hasPrefix("tauri") {
+        UserDefaults.standard.set(urlString, forKey: "tauri_last_valid_url")
+        logger.log("WebViewLifecycleManager: Saved valid URL")
+      }
+    }
+
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webView(_:didFinish:)))
+    {
+      original.webView?(webView, didFinish: navigation)
+    }
+  }
+
+  // Proxy other important navigation delegate methods
+  func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    logger.error("WebViewLifecycleManager: Navigation failed: \(error)")
+
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webView(_:didFail:withError:)))
+    {
+      original.webView?(webView, didFail: navigation, withError: error)
+    }
+  }
+
+  func webView(
+    _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!,
+    withError error: Error
+  ) {
+    logger.error("WebViewLifecycleManager: Provisional navigation failed: \(error)")
+
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webView(_:didFailProvisionalNavigation:withError:)))
+    {
+      original.webView?(webView, didFailProvisionalNavigation: navigation, withError: error)
+    }
+  }
+
+  func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webView(_:didStartProvisionalNavigation:)))
+    {
+      original.webView?(webView, didStartProvisionalNavigation: navigation)
+    }
+  }
+
+  func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    if let original = originalNavigationDelegate,
+      original.responds(to: #selector(webView(_:didCommit:)))
+    {
+      original.webView?(webView, didCommit: navigation)
+    }
+  }
+
+  func webView(
+    _ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+  ) {
+    if let original = originalNavigationDelegate {
+      original.webView?(
+        webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
+    } else {
+      decisionHandler(.allow)
+    }
+  }
+
+  func webView(
+    _ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse,
+    decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+  ) {
+    if let original = originalNavigationDelegate {
+      original.webView?(
+        webView, decidePolicyFor: navigationResponse, decisionHandler: decisionHandler)
+    } else {
+      decisionHandler(.allow)
+    }
+  }
+}
+
 class NativeBridgePlugin: Plugin {
   private var webView: WKWebView?
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
+  private var webViewLifecycleManager: WebViewLifecycleManager?
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
     logger.log("NativeBridgePlugin loaded")
+
+    webViewLifecycleManager = WebViewLifecycleManager()
+    webViewLifecycleManager?.startMonitoring(webView: webview)
+    logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
 
     NotificationCenter.default.addObserver(
       self,
@@ -211,12 +441,24 @@ class NativeBridgePlugin: Plugin {
       object: nil
     )
 
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(appWillEnterForeground),
+      name: UIApplication.willEnterForegroundNotification,
+      object: nil
+    )
+
     if let app = UIApplication.value(forKey: "sharedApplication") as? UIApplication {
       self.originalDelegate = app.delegate
       app.delegate = self
     } else {
       Logger.error("NativeBridgePlugin: Failed to get shared application")
     }
+  }
+
+  @objc func appWillEnterForeground() {
+    logger.log("NativeBridgePlugin: App will enter foreground")
+    webViewLifecycleManager?.handleAppWillEnterForeground()
   }
 
   @objc func appDidBecomeActive() {
@@ -226,9 +468,11 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc func appDidEnterBackground() {
+    logger.log("NativeBridgePlugin: App did enter background")
     if let handler = volumeKeyHandler, handler.isIntercepting {
       handler.stopInterception()
     }
+    webViewLifecycleManager?.handleAppDidEnterBackground()
   }
 
   func activateVolumeKeyInterception() {
@@ -245,6 +489,9 @@ class NativeBridgePlugin: Plugin {
   }
 
   deinit {
+    webViewLifecycleManager?.stopMonitoring()
+    webViewLifecycleManager = nil
+
     NotificationCenter.default.removeObserver(self)
   }
 
@@ -626,14 +873,17 @@ extension NativeBridgePlugin: UIApplicationDelegate {
   }
 
   public func applicationWillResignActive(_ application: UIApplication) {
+    webViewLifecycleManager?.handleAppWillResignActive()
     self.originalDelegate?.applicationWillResignActive?(application)
   }
 
   public func applicationWillEnterForeground(_ application: UIApplication) {
+    webViewLifecycleManager?.handleAppWillEnterForeground()
     self.originalDelegate?.applicationWillEnterForeground?(application)
   }
 
   public func applicationDidEnterBackground(_ application: UIApplication) {
+    webViewLifecycleManager?.handleAppDidEnterBackground()
     self.originalDelegate?.applicationDidEnterBackground?(application)
   }
 

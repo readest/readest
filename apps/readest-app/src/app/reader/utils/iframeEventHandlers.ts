@@ -5,7 +5,7 @@ let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
-  if (['Backspace', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+  if (['Backspace'].includes(event.key)) {
     event.preventDefault();
   }
   window.postMessage(

@@ -1,6 +1,6 @@
 import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
-import { parseSSMLMarks } from '@/utils/ssml';
+import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
 import { createRejectFilter } from '@/utils/node';
@@ -39,6 +39,7 @@ export class TTSController extends EventTarget {
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
+  ttsTargetLang: string = '';
 
   constructor(appService: AppService | null, view: FoliateView) {
     super();
@@ -113,7 +114,6 @@ export class TTSController extends EventTarget {
   async preloadSSML(ssml: string | undefined, signal: AbortSignal) {
     if (!ssml) return;
     const iter = await this.ttsClient.speak(ssml, signal, true);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of iter);
   }
 
@@ -142,6 +142,9 @@ export class TTSController extends EventTarget {
       .replace(/\*/g, ' ')
       .replace(/·/g, ' ');
 
+    if (this.ttsTargetLang) {
+      ssml = filterSSMLWithLang(ssml, this.ttsTargetLang);
+    }
     return ssml;
   }
 
@@ -361,6 +364,10 @@ export class TTSController extends EventTarget {
 
   getSpeakingLang() {
     return this.ttsClient.getSpeakingLang();
+  }
+
+  setTargetLang(lang: string) {
+    this.ttsTargetLang = lang;
   }
 
   dispatchSpeakMark(mark?: TTSMark) {

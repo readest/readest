@@ -67,7 +67,7 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
                       {
                         title: formatTitle(source.data.title),
                         author: formatAuthors(source.data.author),
-                        coverImageUrl: (source.data as Metadata)['coverImageUrl'] ?? undefined,
+                        coverImageUrl: (source.data as Metadata)['coverImageUrl'] || '_blank',
                       } as Book
                     }
                   />

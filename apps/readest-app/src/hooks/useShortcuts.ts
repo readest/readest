@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadShortcuts, ShortcutConfig } from '../helpers/shortcuts';
 
 export type KeyActionHandlers = {
-  [K in keyof ShortcutConfig]?: () => void;
+  [K in keyof ShortcutConfig]?: (event?: KeyboardEvent | MessageEvent) => void;
 };
 
 const useShortcuts = (actions: KeyActionHandlers, dependencies: React.DependencyList = []) => {
@@ -52,12 +52,13 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
     altKey: boolean,
     metaKey: boolean,
     shiftKey: boolean,
+    event: KeyboardEvent | MessageEvent,
   ) => {
     // FIXME: This is a temporary fix to disable Back button navigation
     if (key === 'backspace') return true;
     for (const [actionName, actionHandler] of Object.entries(actions)) {
       const shortcutKey = actionName as keyof ShortcutConfig;
-      const handler = actionHandler as (() => void) | undefined;
+      const handler = actionHandler as ((event?: KeyboardEvent | MessageEvent) => void) | undefined;
       const shortcutList = shortcuts[shortcutKey as keyof ShortcutConfig];
       if (
         handler &&
@@ -65,7 +66,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
           isShortcutMatch(shortcut, key, ctrlKey, altKey, metaKey, shiftKey),
         )
       ) {
-        handler();
+        handler(event);
         return true;
       }
     }
@@ -94,7 +95,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
         return;
       }
 
-      const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey);
+      const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
       if (handled) event.preventDefault();
     } else if (
       event instanceof MessageEvent &&
@@ -102,7 +103,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
       event.data.type === 'iframe-keydown'
     ) {
       const { key, ctrlKey, altKey, metaKey, shiftKey } = event.data;
-      processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey);
+      processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
     }
   };
 

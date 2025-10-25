@@ -18,6 +18,7 @@ import { Insets } from '@/types/misc';
 import { Overlay } from '@/components/Overlay';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
+import { getLocale } from '@/utils/misc';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
 import TTSIcon from './TTSIcon';
@@ -246,6 +247,27 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
 
+  const getTTSTargetLang = useCallback((): string | null => {
+    const ttsReadAloudText = viewSettings?.ttsReadAloudText;
+    if (viewSettings?.translationEnabled && ttsReadAloudText === 'translated') {
+      return viewSettings?.translateTargetLang || getLocale();
+    } else if (viewSettings?.translationEnabled && ttsReadAloudText === 'source') {
+      const bookData = getBookData(bookKey);
+      return bookData?.book?.primaryLanguage || '';
+    }
+    return null;
+  }, [
+    bookKey,
+    getBookData,
+    viewSettings?.translationEnabled,
+    viewSettings?.ttsReadAloudText,
+    viewSettings?.translateTargetLang,
+  ]);
+
+  useEffect(() => {
+    ttsControllerRef.current?.setTargetLang(getTTSTargetLang() || '');
+  }, [getTTSTargetLang]);
+
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey, range } = event.detail;
     if (bookKey !== ttsBookKey) return;
@@ -311,6 +333,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
         ttsController.speak(ssml);
+        ttsController.setTargetLang(getTTSTargetLang() || '');
         ttsControllerRef.current = ttsController;
         setTtsController(ttsController);
       }

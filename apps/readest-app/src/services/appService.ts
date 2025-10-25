@@ -88,6 +88,7 @@ export abstract class BaseAppService implements AppService {
   hasUpdater = false;
   hasOrientationLock = false;
   hasScreenBrightness = false;
+  hasIAP = false;
   canCustomizeRootDir = false;
   distChannel = 'readest' as DistChannel;
 
@@ -300,7 +301,13 @@ export abstract class BaseAppService implements AppService {
           const txt2epub = new TxtToEpubConverter();
           ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
         }
+        if (!fileobj || fileobj.size === 0) {
+          throw new Error('Invalid or empty book file');
+        }
         ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
+        if (!loadedBook) {
+          throw new Error('Unsupported or corrupted book file');
+        }
         const metadataTitle = formatTitle(loadedBook.metadata.title);
         if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
           loadedBook.metadata.title = getBaseFilename(filename);
@@ -726,7 +733,6 @@ export abstract class BaseAppService implements AppService {
   }
 
   async saveLibraryBooks(books: Book[]): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
     const jsonData = JSON.stringify(libraryBooks, null, 2);
     const libraryFilename = getLibraryFilename();

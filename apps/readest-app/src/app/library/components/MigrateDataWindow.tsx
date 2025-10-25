@@ -18,6 +18,7 @@ import { FileItem } from '@/types/system';
 import { getDirPath } from '@/utils/path';
 import { formatBytes } from '@/utils/book';
 import { getOSPlatform } from '@/utils/misc';
+import { getExternalSDCardPath } from '@/utils/bridge';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import Dialog from '@/components/Dialog';
 import Dropdown from '@/components/Dropdown';
@@ -101,14 +102,25 @@ export const MigrateDataWindow = () => {
   };
 
   const loadAndroidDirs = async () => {
-    const sdcardDirs = [
-      { path: '/storage/emulated/0', label: '/sdcard' },
-      { path: '/storage/emulated/0/Books', label: '/sdcard/Books' },
-      { path: '/storage/emulated/0/Documents', label: '/sdcard/Documents' },
-      { path: '/storage/emulated/0/Download', label: '/sdcard/Download' },
-    ];
     try {
       if (appService?.isAndroidApp) {
+        const sdCardPathResponse = await getExternalSDCardPath();
+        let sdcardDirs = [
+          { path: '/storage/emulated/0', label: '/sdcard/0' },
+          { path: '/storage/emulated/0/Books', label: '/sdcard/0/Books' },
+          { path: '/storage/emulated/0/Documents', label: '/sdcard/0/Documents' },
+          { path: '/storage/emulated/0/Download', label: '/sdcard/0/Download' },
+        ];
+        if (sdCardPathResponse.path) {
+          const externalSdCardPath = sdCardPathResponse.path;
+          sdcardDirs = [
+            ...sdcardDirs,
+            { path: externalSdCardPath, label: '/sdcard/1' },
+            { path: `${externalSdCardPath}/Books`, label: '/sdcard/1/Books' },
+            { path: `${externalSdCardPath}/Documents`, label: '/sdcard/1/Documents' },
+            { path: `${externalSdCardPath}/Download`, label: '/sdcard/1/Download' },
+          ];
+        }
         const localDocumentDir = await documentDir();
         setAndroidNewDirs([
           // For Google Play version we won't request permission to access root of /sdcard

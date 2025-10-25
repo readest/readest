@@ -33,7 +33,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
     }
     return (
       <button
-        onClick={() => onSubscribe(plan.price_id)}
+        onClick={() => onSubscribe(plan.productId)}
         className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
       >
         {_('Upgrade to {{plan}}', { plan: _(plan.name) })}

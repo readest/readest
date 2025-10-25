@@ -33,6 +33,7 @@ android {
 }
 
 dependencies {
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.browser:browser:1.8.0")

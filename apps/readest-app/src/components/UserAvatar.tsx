@@ -11,6 +11,10 @@ interface UserAvatarProps {
   borderClassName?: string;
 }
 
+const getStorageKey = (url: string) => {
+  return `avatar_${btoa(url).replace(/[^a-zA-Z0-9]/g, '')}`;
+};
+
 const UserAvatar: React.FC<UserAvatarProps> = ({
   url,
   size,
@@ -18,15 +22,19 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   borderClassName,
   DefaultIcon,
 }) => {
-  const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
+  const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(() => {
+    if (!url) return null;
+
+    return localStorage.getItem(getStorageKey(url));
+  });
 
   useEffect(() => {
     if (!url) return;
 
-    const storageKey = `avatar_${btoa(url).replace(/[^a-zA-Z0-9]/g, '')}`;
+    const storageKey = getStorageKey(url);
     const cached = localStorage.getItem(storageKey);
-    if (cached) {
-      setCachedImageUrl(cached);
+
+    if (cached && cached === cachedImageUrl) {
       return;
     }
 
@@ -51,7 +59,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     };
 
     cacheImage();
-  }, [url]);
+  }, [url, cachedImageUrl]);
 
   return (
     <div

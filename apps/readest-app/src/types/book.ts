@@ -97,6 +97,7 @@ export interface BookLayout {
   gapPercent: number;
   scrolled: boolean;
   disableClick: boolean;
+  fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
   volumeKeysToFlip: boolean;
@@ -181,6 +182,7 @@ export interface TranslatorConfig {
   translationProvider: string;
   translateTargetLang: string;
   showTranslateSource: boolean;
+  ttsReadAloudText: string;
 }
 
 export interface ScreenConfig {

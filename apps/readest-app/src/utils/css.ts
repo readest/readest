@@ -1,4 +1,4 @@
-const cssValidate = (css: string) => {
+export const validateCSS = (css: string): { isValid: boolean; error: string | null } => {
   // Remove comments and normalize whitespace
   css = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
 
@@ -14,6 +14,33 @@ const cssValidate = (css: string) => {
   if (openBraces !== closeBraces) {
     return { isValid: false, error: 'Unbalanced curly braces' };
   }
+
+  const atRulePattern = /@[\w-]+[^{]*\{/g;
+  let result: RegExpExecArray | null;
+  let processedCss = '';
+  let lastIndex = 0;
+
+  while ((result = atRulePattern.exec(css)) !== null) {
+    const start = result.index;
+    const head = css.slice(lastIndex, start).trim();
+    if (head) processedCss += head + '\n';
+
+    let i = atRulePattern.lastIndex;
+    let depth = 1;
+    while (i < css.length && depth > 0) {
+      if (css[i] === '{') depth++;
+      else if (css[i] === '}') depth--;
+      i++;
+    }
+    if (depth !== 0) return { isValid: false, error: 'Unbalanced curly braces in at-rule' };
+    const inner = css.slice(atRulePattern.lastIndex, i - 1).trim();
+    const innerResult = validateCSS(inner);
+    if (!innerResult.isValid) return innerResult;
+    lastIndex = i;
+  }
+
+  processedCss += css.slice(lastIndex).trim();
+  css = processedCss;
 
   // Split into rule blocks
   const blocks = css
@@ -74,4 +101,54 @@ const cssValidate = (css: string) => {
   return { isValid: true, error: null };
 };
 
-export default cssValidate;
+export const formatCSS = (css: string): string => {
+  // Simple formatter: adds indentation and line breaks
+  const indent = '\t';
+  let formatted = '';
+  let depth = 0;
+  let inComment = false;
+
+  css = css.replace(/\s*\n\s*/g, '');
+  css = css.replace(/\s{2,}/g, ' ').trim();
+  css = css.replace(/([^\s{};][^{};]*:[^{};]+)\s*}/g, '$1;}');
+
+  for (let i = 0; i < css.length; i++) {
+    const char = css[i];
+    const nextTwoChars = css.slice(i, i + 2);
+
+    if (nextTwoChars === '/*') {
+      inComment = true;
+      formatted += '\n' + indent.repeat(depth) + '/*';
+      i++;
+      continue;
+    } else if (nextTwoChars === '*/' && inComment) {
+      inComment = false;
+      formatted += '*/\n' + indent.repeat(depth);
+      i++;
+      continue;
+    }
+
+    if (inComment) {
+      formatted += char;
+      continue;
+    }
+
+    if (char === '{') {
+      depth++;
+      formatted += ' {\n' + indent.repeat(depth);
+    } else if (char === '}') {
+      depth--;
+      formatted += '\n' + indent.repeat(depth) + '}\n' + indent.repeat(depth);
+    } else if (char === ';') {
+      formatted += ';\n' + indent.repeat(depth);
+      while (css[i + 1] === ' ' || css[i + 1] === ';') i++;
+    } else {
+      formatted += char;
+    }
+  }
+
+  return formatted
+    .replace(/\n([ \t]*\n)+/g, '\n')
+    .replace(/[ ]{2,}/g, ' ')
+    .trim();
+};

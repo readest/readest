@@ -11,7 +11,7 @@ import {
   ViewSettings,
 } from '@/types/book';
 import { KOSyncSettings, ReadSettings, SystemSettings } from '@/types/settings';
-import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/user';
+import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -62,6 +62,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   autoCheckUpdates: true,
   screenWakeLock: false,
   screenBrightness: -1, // -1~100, -1 for system default
+  autoScreenBrightness: true,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
@@ -76,6 +77,14 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
+};
+
+export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
+  red: '#f87171', // red-400
+  yellow: '#facc15', // yellow-400
+  green: '#4ade80', // green-400
+  blue: '#60a5fa', // blue-400
+  violet: '#a78bfa', // violet-400
 };
 
 export const DEFAULT_READSETTINGS: ReadSettings = {
@@ -94,6 +103,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     underline: 'green',
     squiggly: 'blue',
   },
+  customHighlightColors: HIGHLIGHT_COLOR_HEX,
 };
 
 export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
@@ -124,6 +134,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   gapPercent: 5,
   scrolled: false,
   disableClick: false,
+  fullscreenClickArea: false,
   swapClickArea: false,
   disableDoubleClick: false,
   volumeKeysToFlip: false,
@@ -215,6 +226,7 @@ export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translationProvider: 'deepl',
   translateTargetLang: '',
   showTranslateSource: true,
+  ttsReadAloudText: 'both',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
@@ -236,6 +248,7 @@ export const SERIF_FONTS = [
   'Merriweather',
   'Roboto Slab',
   'Vollkorn',
+  'PT Serif',
   'Georgia',
   'Times New Roman',
 ];
@@ -253,9 +266,15 @@ export const CJK_SERIF_FONTS = [
 
 export const CJK_SANS_SERIF_FONTS = ['Noto Sans SC', 'Noto Sans TC'];
 
-export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'Helvetica'];
+export const SANS_SERIF_FONTS = ['Roboto', 'Noto Sans', 'Open Sans', 'PT Sans', 'Helvetica'];
 
-export const MONOSPACE_FONTS = ['Fira Code', 'Lucida Console', 'Consolas', 'Courier New'];
+export const MONOSPACE_FONTS = [
+  'Fira Code',
+  'Consolas',
+  'Courier New',
+  'Lucida Console',
+  'PT Mono',
+];
 
 export const FALLBACK_FONTS = ['MiSans L3'];
 
@@ -596,25 +615,19 @@ export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
   plus: 5 * 1024 * 1024 * 1024,
   pro: 20 * 1024 * 1024 * 1024,
+  purchase: 0,
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
   free: 10 * 1024,
   plus: 100 * 1024,
   pro: 500 * 1024,
+  purchase: 0,
 };
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;
 export const LONG_HOLD_THRESHOLD = 500;
-
-export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
-  red: '#f87171', // red-400
-  yellow: '#facc15', // yellow-400
-  green: '#4ade80', // green-400
-  blue: '#60a5fa', // blue-400
-  violet: '#a78bfa', // violet-400
-};
 
 export const CUSTOM_THEME_TEMPLATES = [
   {

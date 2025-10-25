@@ -7,15 +7,33 @@ export interface IAPProduct {
   price: string;
   priceCurrencyCode?: string;
   priceAmountMicros: number;
+  productType?: 'consumable' | 'non_consumable' | 'subscription';
 }
 
-export interface IAPPurchase {
+interface IAPPurchaseBase {
   productId: string;
-  transactionId: string;
-  originalTransactionId: string;
   purchaseDate: string;
-  platform: 'ios' | 'android';
 }
+
+interface IOSPurchase {
+  platform: 'ios';
+  transactionId?: string;
+  originalTransactionId?: string;
+  packageName?: never;
+  orderId?: never;
+  purchaseToken?: never;
+}
+
+interface AndroidPurchase {
+  platform: 'android';
+  packageName?: string;
+  orderId?: string;
+  purchaseToken?: string;
+  transactionId?: never;
+  originalTransactionId?: never;
+}
+
+export type IAPPurchase = IAPPurchaseBase & (IOSPurchase | AndroidPurchase);
 
 interface InitializeRequest {
   publicKey?: string;

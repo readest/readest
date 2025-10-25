@@ -5,7 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { isTranslationAvailable } from '@/services/translators/utils';
 import Button from '@/components/Button';
 
@@ -46,7 +46,7 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
         <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
       }
       aria-label={_('Toggle Translation')}
-      disabled={!translationAvailable}
+      disabled={!translationAvailable && !translationEnabled}
       onClick={() => setTranslationEnabled(!translationEnabled)}
       label={
         translationAvailable

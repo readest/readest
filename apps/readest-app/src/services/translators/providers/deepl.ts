@@ -1,7 +1,7 @@
 import { getAPIBaseUrl } from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
 import { ErrorCodes, TranslationProvider } from '../types';
-import { UserPlan } from '@/types/user';
+import { UserPlan } from '@/types/quota';
 import { getUserPlan } from '@/utils/access';
 import { normalizeToShortLang } from '@/utils/lang';
 import { DEFAULT_DAILY_TRANSLATION_QUOTA } from '@/services/constants';

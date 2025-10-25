@@ -20,13 +20,16 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useCustomTextureStore } from '@/store/customTextureStore';
-import { saveViewSettings } from '@/helpers/viewSettings';
+import { saveViewSettings } from '@/helpers/settings';
 import { CODE_LANGUAGES, CodeLanguage, manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
+import { HighlightColor } from '@/types/book';
+import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import Select from '@/components/Select';
 import ThemeEditor from './ThemeEditor';
+import ColorInput from './ColorInput';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -53,6 +56,10 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [backgroundOpacity, setBackgroundOpacity] = useState(viewSettings.backgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(viewSettings.backgroundSize);
 
+  const [customHighlightColors, setCustomHighlightColors] = useState(
+    settings.globalReadSettings.customHighlightColors,
+  );
+
   const {
     textures: customTextures,
     addTexture,
@@ -76,8 +83,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setThemeColor('default');
     setThemeMode('auto');
     setSelectedTextureId('none');
-    setBackgroundOpacity(0.4);
-    setBackgroundSize('2048px');
+    setBackgroundOpacity(0.6);
+    setBackgroundSize('cover');
+    setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
   };
 
   useEffect(() => {
@@ -431,6 +439,41 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <h2 className='mb-2 font-medium'>{_('Highlight Colors')}</h2>
+            <div className='card border-base-200 bg-base-100 overflow-visible border p-4 shadow'>
+              <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
+                {(['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[]).map(
+                  (color, index, array) => {
+                    const position =
+                      index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
+                    return (
+                      <div key={color} className='flex flex-col items-center gap-2'>
+                        <div
+                          className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'
+                          style={{ backgroundColor: customHighlightColors[color] }}
+                        />
+                        <ColorInput
+                          label=''
+                          value={customHighlightColors[color]}
+                          compact={true}
+                          pickerPosition={position}
+                          onChange={(value: string) => {
+                            customHighlightColors[color] = value;
+                            setCustomHighlightColors({ ...customHighlightColors });
+                            settings.globalReadSettings.customHighlightColors =
+                              customHighlightColors;
+                            setSettings(settings);
+                          }}
+                        />
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
           </div>
 
           <div className='w-full'>

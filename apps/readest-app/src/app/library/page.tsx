@@ -79,10 +79,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { selectFiles } = useFileSelector(appService, _);
   const { safeAreaInsets: insets, isRoundedWindow } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { isFontLayoutSettingsDialogOpen } = useSettingsStore();
-  const { setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const [loading, setLoading] = useState(false);
-  const isInitiating = useRef(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isSelectAll, setIsSelectAll] = useState(false);
@@ -93,6 +91,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isInitiating = useRef(false);
 
   const demoBooks = useDemoBooks();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
@@ -129,7 +128,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     },
     onOpenFontLayoutSettings: () => {
-      setFontLayoutSettingsDialogOpen(true);
+      setSettingsDialogOpen(true);
     },
     onOpenBooks: () => {
       handleImportBooks();
@@ -422,9 +421,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const errorMap: [string, string][] = [
-      ['No chapters detected.', _('No chapters detected.')],
-      ['Failed to parse EPUB.', _('Failed to parse the EPUB file.')],
-      ['Unsupported format.', _('This book format is not supported.')],
+      ['No chapters detected', _('No chapters detected')],
+      ['Failed to parse EPUB', _('Failed to parse the EPUB file')],
+      ['Unsupported format', _('This book format is not supported')],
+      ['Failed to open file', _('Failed to open the book file')],
+      ['Invalid or empty book file', _('The book file is empty')],
+      ['Unsupported or corrupted book file', _('The book file is corrupted')],
     ];
 
     const processFile = async (selectedFile: SelectedFile) => {
@@ -441,7 +443,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         const baseFilename = getFilename(filename);
         const errorMessage =
           error instanceof Error
-            ? errorMap.find(([substring]) => error.message.includes(substring))?.[1] || ''
+            ? errorMap.find(([str]) => error.message.includes(str))?.[1] || error.message
             : '';
         failedImports.push({ filename: baseFilename, errorMessage });
         console.error('Failed to import book:', filename, error);
@@ -772,7 +774,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <AboutWindow />
       <UpdaterWindow />
       <MigrateDataWindow />
-      {isFontLayoutSettingsDialogOpen && <SettingsDialog bookKey={''} />}
+      {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       <Toast />
     </div>
   );

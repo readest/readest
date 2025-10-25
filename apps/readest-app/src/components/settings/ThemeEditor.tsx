@@ -14,38 +14,14 @@ type ThemeEditorProps = {
   onCancel: () => void;
 };
 
-const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete, onCancel }) => {
+const ThemePreview: React.FC<{
+  textColor: string;
+  backgroundColor: string;
+  primaryColor: string;
+  label: string;
+}> = ({ textColor, backgroundColor, primaryColor, label }) => {
   const _ = useTranslation();
-  const { settings } = useSettingsStore();
-  const template =
-    CUSTOM_THEME_TEMPLATES[Math.floor(Math.random() * CUSTOM_THEME_TEMPLATES.length)]!;
-  const [lightTextColor, setLightTextColor] = useState(
-    customTheme?.colors.light.fg || template.light.fg,
-  );
-  const [lightBackgroundColor, setLightBackgroundColor] = useState(
-    customTheme?.colors.light.bg || template.light.bg,
-  );
-  const [lightPrimaryColor, setLightPrimaryColor] = useState(
-    customTheme?.colors.light.primary || template.light.primary,
-  );
-  const [darkTextColor, setDarkTextColor] = useState(
-    customTheme?.colors.dark.fg || template.dark.fg,
-  );
-  const [darkBackgroundColor, setDarkBackgroundColor] = useState(
-    customTheme?.colors.dark.bg || template.dark.bg,
-  );
-  const [darkPrimaryColor, setDarkPrimaryColor] = useState(
-    customTheme?.colors.dark.primary || template.dark.primary,
-  );
-
-  const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
-
-  const ThemePreview: React.FC<{
-    textColor: string;
-    backgroundColor: string;
-    primaryColor: string;
-    label: string;
-  }> = ({ textColor, backgroundColor, primaryColor, label }) => (
+  return (
     <div className='mb-2 mt-4'>
       <label className='mb-1 block text-sm font-medium'>{label}</label>
       <div
@@ -72,6 +48,34 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
       </div>
     </div>
   );
+};
+
+const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete, onCancel }) => {
+  const _ = useTranslation();
+  const { settings } = useSettingsStore();
+  const [template] = useState(
+    () => CUSTOM_THEME_TEMPLATES[Math.floor(Math.random() * CUSTOM_THEME_TEMPLATES.length)]!,
+  );
+  const [lightTextColor, setLightTextColor] = useState(
+    customTheme?.colors.light.fg || template.light.fg,
+  );
+  const [lightBackgroundColor, setLightBackgroundColor] = useState(
+    customTheme?.colors.light.bg || template.light.bg,
+  );
+  const [lightPrimaryColor, setLightPrimaryColor] = useState(
+    customTheme?.colors.light.primary || template.light.primary,
+  );
+  const [darkTextColor, setDarkTextColor] = useState(
+    customTheme?.colors.dark.fg || template.dark.fg,
+  );
+  const [darkBackgroundColor, setDarkBackgroundColor] = useState(
+    customTheme?.colors.dark.bg || template.dark.bg,
+  );
+  const [darkPrimaryColor, setDarkPrimaryColor] = useState(
+    customTheme?.colors.dark.primary || template.dark.primary,
+  );
+
+  const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
 
   const getCustomTheme = () => {
     return {

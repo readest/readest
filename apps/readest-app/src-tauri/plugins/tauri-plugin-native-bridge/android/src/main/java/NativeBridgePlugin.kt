@@ -31,6 +31,7 @@ import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.Permission
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.JSObject
+import app.tauri.plugin.JSArray
 import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
 import org.json.JSONArray
@@ -38,41 +39,70 @@ import java.io.*
 
 @InvokeArg
 class AuthRequestArgs {
-  var authUrl: String? = null
+    var authUrl: String? = null
 }
 
 @InvokeArg
 class CopyURIRequestArgs {
-  var uri: String? = null
-  var dst: String? = null
+    var uri: String? = null
+    var dst: String? = null
 }
 
 @InvokeArg
 class InstallPackageRequestArgs {
-  var path: String? = null
+    var path: String? = null
 }
 
 @InvokeArg
 class SetSystemUIVisibilityRequestArgs {
-  var visible: Boolean? = false
-  var darkMode: Boolean? = false
+    var visible: Boolean? = false
+    var darkMode: Boolean? = false
 }
 
 @InvokeArg
 class InterceptKeysRequestArgs {
-  var volumeKeys: Boolean? = null
-  var backKey: Boolean? = null
+    var volumeKeys: Boolean? = null
+    var backKey: Boolean? = null
 }
 
 @InvokeArg
 class LockScreenOrientationRequestArgs {
-  var orientation: String? = null
+    var orientation: String? = null
 }
 
 @InvokeArg
 class SetScreenBrightnessRequestArgs {
-  var brightness: Double? = null // 0.0 to 1.0
+    var brightness: Double? = null // 0.0 to 1.0
 }
+
+@InvokeArg
+class FetchProductsRequestArgs {
+    val productIds: List<String>? = null
+}
+
+@InvokeArg
+class PurchaseProductRequestArgs {
+    val productId: String? = null
+}
+
+data class ProductData(
+    val id: String,
+    val title: String,
+    val description: String,
+    val price: String,
+    val priceCurrencyCode: String?,
+    val priceAmountMicros: Long,
+    val productType: String
+)
+
+data class PurchaseData(
+    val productId: String,
+    val orderId: String,
+    val purchaseToken: String,
+    val purchaseDate: String,
+    val purchaseState: String,
+    val platform: String = "android"
+)
 
 interface KeyDownInterceptor {
     fun interceptVolumeKeys(enabled: Boolean)
@@ -88,6 +118,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = NativeBridge()
     private var redirectScheme = "readest"
     private var redirectHost = "auth-callback"
+    private val billingManager by lazy {
+        BillingManager(activity)
+    }
 
     companion object {
         var pendingInvoke: Invoke? = null
@@ -456,6 +489,120 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("error", e.message)
         }
         invoke.resolve(ret)
+    }
+
+    @Command
+    fun iap_initialize(invoke: Invoke) {
+        billingManager.initialize { success ->
+            val result = JSObject()
+            result.put("success", success)
+            invoke.resolve(result)
+        }
+    }
+
+    @Command
+    fun iap_fetch_products(invoke: Invoke) {
+        try {
+            val args = invoke.parseArgs(FetchProductsRequestArgs::class.java)
+            val productIds = args.productIds ?: emptyList()
+            if (productIds.isEmpty()) {
+                invoke.reject("Product IDs list is empty")
+                return
+            }
+
+            billingManager.fetchProducts(productIds) { products ->
+                val result = JSObject()
+                val productsArray = JSArray()
+                for (product in products) {
+                    val productObject = JSObject().apply {
+                        put("id", product.id)
+                        put("title", product.title)
+                        put("description", product.description)
+                        put("price", product.price)
+                        put("priceCurrencyCode", product.priceCurrencyCode)
+                        put("priceAmountMicros", product.priceAmountMicros)
+                        put("productType", product.productType)
+                    }
+                    productsArray.put(productObject)
+                }
+                result.put("products", productsArray)
+                invoke.resolve(result)
+            }
+        } catch (e: Exception) {
+            invoke.reject("Failed to parse fetch products arguments: ${e.message}")
+        }
+    }
+
+    @Command
+    fun iap_purchase_product(invoke: Invoke) {
+        try {
+            val args = invoke.parseArgs(PurchaseProductRequestArgs::class.java)
+            val productId = args.productId ?: ""
+            if (productId.isEmpty()) {
+                invoke.reject("Product ID is empty")
+                return
+            }
+
+            billingManager.purchaseProduct(productId) { purchase ->
+                if (purchase != null) {
+                    val result = JSObject()
+                    val purchaseData = JSObject().apply {
+                        put("platform", purchase.platform)
+                        put("packageName", activity.packageName)
+                        put("productId", purchase.productId)
+                        put("orderId", purchase.orderId)
+                        put("purchaseToken", purchase.purchaseToken)
+                        put("purchaseDate", purchase.purchaseDate)
+                        put("purchaseState", purchase.purchaseState)
+                    }
+                    result.put("purchase", purchaseData)
+                    invoke.resolve(result)
+                } else {
+                    invoke.reject("Purchase failed or was cancelled")
+                }
+            }
+        } catch (e: Exception) {
+            invoke.reject("Failed to parse purchase arguments: ${e.message}")
+        }
+    }
+
+    @Command
+    fun iap_restore_purchases(invoke: Invoke) {
+        billingManager.restorePurchases { purchases ->
+            val result = JSObject()
+            val purchasesArray = JSArray()
+            for (purchase in purchases) {
+                val purchaseObject = JSObject().apply {
+                    put("platform", purchase.platform)
+                    put("packageName", activity.packageName)
+                    put("productId", purchase.productId)
+                    put("orderId", purchase.orderId)
+                    put("purchaseToken", purchase.purchaseToken)
+                    put("purchaseDate", purchase.purchaseDate)
+                    put("purchaseState", purchase.purchaseState)
+                }
+                purchasesArray.put(purchaseObject)
+            }
+            result.put("purchases", purchasesArray)
+            invoke.resolve(result)
+        }
+    }
+
+    @Command
+    fun get_external_sdcard_path(invoke: Invoke) {
+        val result = JSObject()
+        val externalDirs = activity.getExternalFilesDirs(null)
+        for (file in externalDirs) {
+            if (file != null && Environment.isExternalStorageRemovable(file)) {
+                val pathParts = file.absolutePath.split("/Android/")
+                if (pathParts.isNotEmpty()) {
+                    result.put("path", pathParts[0])
+                    invoke.resolve(result)
+                }
+            }
+        }
+        result.put("path", null)
+        invoke.resolve(result)
     }
 
     @Command

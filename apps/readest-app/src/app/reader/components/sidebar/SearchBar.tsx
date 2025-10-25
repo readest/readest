@@ -148,7 +148,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 console.log('search progress:', result.progress);
                 lastProgressLogTime = now;
               }
-              if (queuedSearchTerm.current !== term) {
+              if (queuedSearchTerm.current && queuedSearchTerm.current !== term) {
                 console.log('search term changed, resetting search');
                 resetSearch();
                 return;

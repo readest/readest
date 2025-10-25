@@ -41,7 +41,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontPanelView, setFontLayoutSettingsDialogOpen } = useSettingsStore();
+  const { setFontPanelView, setSettingsDialogOpen } = useSettingsStore();
 
   const tabConfig = [
     {
@@ -113,7 +113,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const handleClose = () => {
-    setFontLayoutSettingsDialogOpen(false);
+    setSettingsDialogOpen(false);
   };
 
   useEffect(() => {

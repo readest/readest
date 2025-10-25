@@ -7,6 +7,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
+import { saveSysSettings } from '@/helpers/settings';
 import { themes } from '@/styles/themes';
 import { debounce } from '@/utils/debounce';
 import Slider from '@/components/Slider';
@@ -25,7 +26,7 @@ interface ColorPanelProps {
 export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor } = useThemeStore();
 
@@ -35,7 +36,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;
-    if (settings.screenBrightness >= 0) return;
+    if (actionTab !== 'color') return;
 
     getScreenBrightness().then((brightness) => {
       if (brightness >= 0.0 && brightness <= 1.0) {
@@ -43,17 +44,16 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
         setScreenBrightnessValue(screenBrightness);
       }
     });
-  }, [appService, settings, setSettings, getScreenBrightness]);
+  }, [actionTab, appService, getScreenBrightness]);
 
   const debouncedSetScreenBrightness = useMemo(
     () =>
       debounce(async (value: number) => {
-        settings.screenBrightness = value;
-        setSettings(settings);
-        saveSettings(envConfig, settings);
+        saveSysSettings(envConfig, 'screenBrightness', value);
+        saveSysSettings(envConfig, 'autoScreenBrightness', false);
         await setScreenBrightness(value / 100);
       }, 100),
-    [envConfig, settings, setSettings, saveSettings, setScreenBrightness],
+    [envConfig, setScreenBrightness],
   );
 
   const handleScreenBrightnessChange = useCallback(
@@ -101,11 +101,6 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
           className='flex gap-3 overflow-x-auto p-2'
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <style>{`
-            .theme-scroll::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
           {themes.map(({ name, label, colors }) => (
             <button
               key={name}

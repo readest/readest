@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -28,14 +28,14 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
 
-  const [actionTab, setActionTab] = useState('');
-
   const view = getView(bookKey);
   const config = getConfig(bookKey);
   const viewState = getViewState(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
+  const [userSelectedTab, setUserSelectedTab] = useState('');
+  const actionTab = hoveredBookKey === bookKey ? userSelectedTab : '';
   const isVisible = hoveredBookKey === bookKey;
 
   const progressInfo = useMemo(
@@ -43,12 +43,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
     [bookFormat, section, pageinfo],
   );
 
-  const progressValid = !!progressInfo;
+  const progressValid = !!progressInfo && progressInfo.total > 0 && progressInfo.current >= 0;
   const progressFraction = useMemo(() => {
-    if (!progressValid || !progressInfo?.total || progressInfo.total <= 0) {
-      return 0;
+    if (progressValid && progressInfo.total > 0 && progressInfo.current >= 0) {
+      return (progressInfo.current + 1) / progressInfo.total;
     }
-    return (progressInfo.current + 1) / progressInfo.total;
+    return 0;
   }, [progressValid, progressInfo]);
 
   const handleProgressChange = useMemo(
@@ -92,7 +92,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const handleSetActionTab = useCallback(
     (tab: string) => {
-      setActionTab((prevTab) => (prevTab === tab ? '' : tab));
+      setUserSelectedTab((prevTab) => (prevTab === tab ? '' : tab));
 
       if (tab === 'tts') {
         if (viewState?.ttsEnabled) {
@@ -102,16 +102,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
       } else if (tab === 'toc') {
         setHoveredBookKey('');
         if (config?.viewSettings) {
-          config.viewSettings.sideBarTab = 'toc';
-          setConfig(bookKey, config);
+          setConfig(bookKey, { viewSettings: { ...config.viewSettings, sideBarTab: 'toc' } });
         }
         setSideBarVisible(true);
       } else if (tab === 'note') {
         setHoveredBookKey('');
         setSideBarVisible(true);
         if (config?.viewSettings) {
-          config.viewSettings.sideBarTab = 'annotations';
-          setConfig(bookKey, config);
+          setConfig(bookKey, {
+            viewSettings: { ...config.viewSettings, sideBarTab: 'annotations' },
+          });
         }
       }
     },
@@ -125,12 +125,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
       handleSpeakText,
     ],
   );
-
-  useEffect(() => {
-    if (hoveredBookKey !== bookKey) {
-      setActionTab('');
-    }
-  }, [hoveredBookKey, bookKey]);
 
   const navigationHandlers: NavigationHandlers = useMemo(
     () => ({

@@ -1,20 +1,24 @@
 'use client';
+import Stripe from 'stripe';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import { supabase } from '@/utils/supabase';
+import { PlanType } from '@/types/quota';
 import Spinner from '@/components/Spinner';
 
 const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
 const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
+const ANDROID_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/google/iap-verify`;
 
 interface SessionStatus {
   status: 'loading' | 'complete' | 'failed' | 'processing';
   customerEmail: string;
   subscriptionId?: string;
   planName?: string;
+  planType: PlanType;
   amount?: number;
   currency?: string;
 }
@@ -23,6 +27,7 @@ const SuccessPageWithSearchParams = () => {
   const _ = useTranslation();
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>({
     status: 'loading',
+    planType: 'subscription',
     customerEmail: '',
   });
   const [retryCount, setRetryCount] = useState(0);
@@ -31,8 +36,16 @@ const SuccessPageWithSearchParams = () => {
   const payment = searchParams?.get('payment');
   const platform = searchParams?.get('platform');
   const sessionId = searchParams?.get('session_id');
+
+  // iOS parameters
   const transactionId = searchParams?.get('transaction_id');
   const originalTransactionId = searchParams?.get('original_transaction_id');
+
+  // Android parameters
+  const packageName = searchParams?.get('package_name');
+  const productId = searchParams?.get('product_id');
+  const purchaseToken = searchParams?.get('purchase_token');
+  const orderId = searchParams?.get('order_id');
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -53,7 +66,7 @@ const SuccessPageWithSearchParams = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { session, error } = await response.json();
+      const { session: stripeCheckoutSession, error } = await response.json();
 
       if (error) {
         setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -61,15 +74,15 @@ const SuccessPageWithSearchParams = () => {
         return;
       }
 
+      const session = stripeCheckoutSession as Stripe.Checkout.Session;
       setSessionStatus({
-        status:
-          session.payment_status === 'paid' ? 'complete' : session.payment_status || 'processing',
+        status: session.payment_status === 'paid' ? 'complete' : 'failed',
         customerEmail: session.customer_email || session.customer_details?.email || '',
-        subscriptionId: session.subscription,
-        planName:
-          session.display_items?.[0]?.custom?.name || session.line_items?.data?.[0]?.description,
-        amount: session.amount_total,
-        currency: session.currency,
+        subscriptionId: (session.subscription || session.payment_intent || '') as string,
+        planName: session.line_items?.data?.[0]?.description || '',
+        planType: session.mode === 'payment' ? 'purchase' : 'subscription',
+        amount: session.amount_total || undefined,
+        currency: session.currency || undefined,
       });
 
       try {
@@ -81,8 +94,7 @@ const SuccessPageWithSearchParams = () => {
     }
   };
 
-  const updateIAPSessionStatus = async (
-    platform: string,
+  const updateIOSIAPSessionStatus = async (
     transactionId: string,
     originalTransactionId: string,
   ) => {
@@ -90,55 +102,126 @@ const SuccessPageWithSearchParams = () => {
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
       return;
     }
-    if (platform === 'ios') {
-      try {
-        const token = await getAccessToken();
-        const response = await fetch(APPLE_IAP_VERIFY_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            transactionId,
-            originalTransactionId,
-          }),
-        });
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(APPLE_IAP_VERIFY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          transactionId,
+          originalTransactionId,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const { purchase, error } = await response.json();
-
-        if (error) {
-          setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
-          console.error('IAP verification error:', error);
-          return;
-        }
-
-        setSessionStatus({
-          status: purchase.status === 'active' ? 'complete' : 'failed',
-          customerEmail: purchase.customerEmail || '',
-          subscriptionId: purchase.subscriptionId,
-          planName: purchase.planName,
-        });
-
-        try {
-          await supabase.auth.refreshSession();
-        } catch {}
-      } catch (error) {
-        console.error('Failed to verify IAP transaction:', error);
-        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const { purchase, error } = await response.json();
+
+      if (error) {
+        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+        console.error('IAP verification error:', error);
+        return;
+      }
+
+      setSessionStatus({
+        status: purchase.status === 'active' ? 'complete' : 'failed',
+        customerEmail: purchase.customerEmail || '',
+        subscriptionId: purchase.subscriptionId,
+        planName: purchase.planName,
+        planType: purchase.planType,
+      });
+
+      try {
+        await supabase.auth.refreshSession();
+      } catch {}
+    } catch (error) {
+      console.error('Failed to verify IAP transaction:', error);
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+    }
+  };
+
+  const updateAndroidIAPSessionStatus = async (
+    packageName: string,
+    productId: string,
+    orderId: string,
+    purchaseToken: string,
+  ) => {
+    if (!purchaseToken || !productId || !packageName) {
+      console.error('Missing required Android IAP parameters');
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+      return;
+    }
+
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(ANDROID_IAP_VERIFY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          purchaseToken,
+          orderId,
+          productId,
+          packageName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { purchase, error } = await response.json();
+
+      if (error) {
+        setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+        console.error('Android IAP verification error:', error);
+        return;
+      }
+
+      setSessionStatus({
+        status: purchase.status === 'active' ? 'complete' : 'failed',
+        customerEmail: purchase.customerEmail || '',
+        subscriptionId: purchase.subscriptionId || purchase.orderId,
+        planName: purchase.planName,
+        planType: purchase.planType,
+        amount: purchase.priceAmountMicros
+          ? Number(purchase.priceAmountMicros) / 1000000
+          : undefined,
+        currency: purchase.priceCurrencyCode,
+      });
+
+      try {
+        await supabase.auth.refreshSession();
+      } catch {}
+    } catch (error) {
+      console.error('Failed to verify Android IAP transaction:', error);
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
+    }
+  };
+
+  const updateIAPSessionStatus = async () => {
+    if (platform === 'ios' && transactionId && originalTransactionId) {
+      await updateIOSIAPSessionStatus(transactionId, originalTransactionId);
+    } else if (platform === 'android' && orderId && purchaseToken && productId && packageName) {
+      await updateAndroidIAPSessionStatus(packageName, productId, orderId, purchaseToken);
+    } else {
+      console.error('Invalid IAP platform or missing parameters');
+      setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
     }
   };
 
   const updateSessionStatus = async () => {
     if (payment === 'stripe' && sessionId) {
       await updateStripeSessionStatus();
-    } else if (payment === 'iap' && platform && transactionId && originalTransactionId) {
-      await updateIAPSessionStatus(platform, transactionId, originalTransactionId);
+    } else if (payment === 'iap') {
+      await updateIAPSessionStatus();
     } else {
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
     }
@@ -288,12 +371,17 @@ const SuccessPageWithSearchParams = () => {
 
         {/* Success Message */}
         <h1 className='mb-4 text-3xl font-bold text-gray-800'>
-          🎉 {_('Subscription Successful!')}
+          🎉{' '}
+          {sessionStatus.planType === 'purchase'
+            ? _('Purchase Successful!')
+            : _('Subscription Successful!')}
         </h1>
 
         <div className='mb-6 rounded-lg bg-white p-6 shadow-md'>
           <p className='mb-4 text-lg text-gray-700'>
-            {_('Thank you for your subscription! Your payment has been processed successfully.')}
+            {sessionStatus.planType === 'purchase'
+              ? _('Thank you for your purchase! Your payment has been processed successfully.')
+              : _('Thank you for your subscription! Your payment has been processed successfully.')}
           </p>
 
           {/* Subscription Details */}

@@ -79,6 +79,11 @@ interface SetScreenBrightnessResponse {
   error?: string;
 }
 
+interface GetExternalSDCardPathResponse {
+  path: string | null;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -175,6 +180,13 @@ export async function setScreenBrightness(
     {
       payload: request,
     },
+  );
+  return result;
+}
+
+export async function getExternalSDCardPath(): Promise<GetExternalSDCardPathResponse> {
+  const result = await invoke<GetExternalSDCardPathResponse>(
+    'plugin:native-bridge|get_external_sdcard_path',
   );
   return result;
 }
