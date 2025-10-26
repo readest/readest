@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PlanType, UserPlan } from '@/types/quota';
+import { AvailablePlan, PlanType, UserPlan } from '@/types/quota';
+import { useEnv } from '@/context/EnvContext';
 import { debounce } from '@/utils/debounce';
 import { getPlanDetails } from '../utils/plan';
-import { AvailablePlan } from '../page';
 import PlanNavigation from './PlanNavigation';
 import PlanCard from './PlanCard';
 import PlanIndicators from './PlanIndicators';
@@ -18,11 +18,16 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   userPlan,
   onSubscribe,
 }) => {
+  const { appService } = useEnv();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [userPlanIndex, setUserPlanIndex] = useState(0);
   const plansScrollRef = useRef<HTMLDivElement>(null);
 
   const userPlans: UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
+
+  const allPlans = userPlans.map((plan) => ({
+    ...getPlanDetails(plan, availablePlans),
+  }));
 
   useEffect(() => {
     if (userPlan) {
@@ -119,16 +124,19 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlanIndex]);
 
-  const allPlans = userPlans.map((plan) => ({
-    ...getPlanDetails(plan, availablePlans),
-  }));
+  const handleSelectPlan = (plan: UserPlan) => {
+    const index = userPlans.indexOf(plan);
+    if (index !== -1) {
+      setCurrentPlanIndex(index);
+    }
+  };
 
   return (
     <div className='bg-base-100 border-base-200 overflow-hidden rounded-xl border shadow-sm'>
       <PlanNavigation
-        allPlans={allPlans}
-        currentPlanIndex={currentPlanIndex}
-        onSelectPlan={setCurrentPlanIndex}
+        allPlans={allPlans.filter((plan) => plan.plan !== 'free')}
+        currentPlan={userPlans[currentPlanIndex]!}
+        onSelectPlan={handleSelectPlan}
       />
 
       <div
@@ -136,6 +144,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
         className='plans-container scrollbar-hide flex items-start overflow-x-auto scroll-smooth sm:px-52'
         onTouchStart={handleTouchStart}
         style={{
+          scrollSnapType: appService?.isIOSApp ? 'x mandatory' : 'none',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}

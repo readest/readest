@@ -362,7 +362,6 @@
   "Email:": "ایمیل:",
   "Plan:": "طرح:",
   "Amount:": "مبلغ:",
-  "Subscription ID:": "شناسه اشتراک:",
   "Go to Library": "رفتن به کتابخانه",
   "Need help? Contact our support team at support@readest.com": "نیاز به کمک دارید؟ با تیم پشتیبانی ما به آدرس support@readest.com تماس بگیرید",
   "Free Plan": "طرح رایگان",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "باز کردن تم‌ها، فونت‌ها، گزینه‌های چیدمان و خواندن با صدای بلند، مترجم‌ها، خدمات ذخیره‌سازی ابری اضافی.",
   "Purchase Successful!": "خرید با موفقیت انجام شد!",
   "lifetime": "مادام‌العمر",
-  "Thank you for your purchase! Your payment has been processed successfully.": "از خرید شما متشکریم! پرداخت شما با موفقیت انجام شد."
+  "Thank you for your purchase! Your payment has been processed successfully.": "از خرید شما متشکریم! پرداخت شما با موفقیت انجام شد.",
+  "Order ID:": "شناسه سفارش:"
 }

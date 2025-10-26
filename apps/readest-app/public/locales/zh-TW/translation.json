@@ -359,7 +359,6 @@
   "Email:": "電子郵件：",
   "Plan:": "方案：",
   "Amount:": "金額：",
-  "Subscription ID:": "訂閱 ID：",
   "Go to Library": "前往書庫",
   "Need help? Contact our support team at support@readest.com": "需要協助？請聯絡支援團隊：support@readest.com",
   "Free Plan": "免費方案",
@@ -622,7 +621,7 @@
   "Failed to open the book file": "無法打開書籍文件",
   "On-Demand Purchase": "按需購買",
   "Full Customization": "完全自定義",
-  "Lifetime Plan": "終身計劃",
+  "Lifetime Plan": "終身方案",
   "One-Time Payment": "一次性付款",
   "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "進行一次性付款以享受在所有設備上對特定功能的終身訪問。僅在需要時購買特定功能或服務。",
   "Expand Cloud Sync Storage": "擴展雲同步存儲",
@@ -630,6 +629,7 @@
   "Unlock All Customization Options": "解鎖所有自定義選項",
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "解鎖其他主題、字體、佈局選項以及朗讀、翻譯、雲存儲服務。",
   "Purchase Successful!": "購買成功！",
-  "lifetime": "終身",
-  "Thank you for your purchase! Your payment has been processed successfully.": "感謝您的購買！您的付款已成功處理。"
+  "lifetime": "永久",
+  "Thank you for your purchase! Your payment has been processed successfully.": "感謝您的購買！您的付款已成功處理。",
+  "Order ID:": "訂單編號："
 }

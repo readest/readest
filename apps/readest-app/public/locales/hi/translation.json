@@ -363,7 +363,6 @@
   "Email:": "ईमेल:",
   "Plan:": "योजना:",
   "Amount:": "राशि:",
-  "Subscription ID:": "सदस्यता आईडी:",
   "Go to Library": "लाइब्रेरी पर जाएँ",
   "Need help? Contact our support team at support@readest.com": "मदद चाहिए? हमारी सहायता टीम से संपर्क करें: support@readest.com",
   "Free Plan": "मुफ्त योजना",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "अतिरिक्त थीम, फ़ॉन्ट, लेआउट विकल्प और पढ़ने के लिए, अनुवादक, क्लाउड स्टोरेज सेवाएँ अनलॉक करें।",
   "Purchase Successful!": "खरीदारी सफल!",
   "lifetime": "जीवनकाल",
-  "Thank you for your purchase! Your payment has been processed successfully.": "आपकी खरीदारी के लिए धन्यवाद! आपका भुगतान सफलतापूर्वक संसाधित हो गया है।"
+  "Thank you for your purchase! Your payment has been processed successfully.": "आपकी खरीदारी के लिए धन्यवाद! आपका भुगतान सफलतापूर्वक संसाधित हो गया है।",
+  "Order ID:": "ऑर्डर आईडी:"
 }

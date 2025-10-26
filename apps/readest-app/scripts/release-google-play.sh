@@ -39,7 +39,7 @@ if grep -q 'MANAGE_EXTERNAL_STORAGE' "$MANIFEST"; then
 fi
 
 echo "🚀 Running: pnpm tauri android build"
-pnpm tauri android build
+pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
 
 # --- ADD PERMISSION BACK AFTER BUILD ---
 if ! grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then

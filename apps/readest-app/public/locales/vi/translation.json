@@ -359,7 +359,6 @@
   "Email:": "Email:",
   "Plan:": "Gói:",
   "Amount:": "Số tiền:",
-  "Subscription ID:": "ID đăng ký:",
   "Go to Library": "Đi đến Thư viện",
   "Need help? Contact our support team at support@readest.com": "Cần hỗ trợ? Liên hệ nhóm hỗ trợ tại support@readest.com",
   "Free Plan": "Gói miễn phí",
@@ -631,5 +630,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Mở khóa các chủ đề, phông chữ, tùy chọn bố cục và đọc to, dịch giả, dịch vụ lưu trữ đám mây bổ sung.",
   "Purchase Successful!": "Mua hàng thành công!",
   "lifetime": "trọn đời",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Cảm ơn bạn đã mua hàng! Thanh toán của bạn đã được xử lý thành công."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Cảm ơn bạn đã mua hàng! Thanh toán của bạn đã được xử lý thành công.",
+  "Order ID:": "Mã đơn hàng:"
 }

@@ -393,7 +393,6 @@
   "Email:": "Correo electrónico:",
   "Plan:": "Plan:",
   "Amount:": "Importe:",
-  "Subscription ID:": "ID de suscripción:",
   "Go to Library": "Ir a la biblioteca",
   "Need help? Contact our support team at support@readest.com": "¿Necesitas ayuda? Contacta con nuestro equipo de soporte en support@readest.com",
   "Free Plan": "Plan gratuito",
@@ -639,5 +638,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Desbloquear temas adicionales, fuentes, opciones de diseño y funciones de lectura en voz alta, traductores, servicios de almacenamiento en la nube.",
   "Purchase Successful!": "¡Compra Exitosa!",
   "lifetime": "de por vida",
-  "Thank you for your purchase! Your payment has been processed successfully.": "¡Gracias por tu compra! Tu pago se ha procesado correctamente."
+  "Thank you for your purchase! Your payment has been processed successfully.": "¡Gracias por tu compra! Tu pago se ha procesado correctamente.",
+  "Order ID:": "ID de pedido:"
 }

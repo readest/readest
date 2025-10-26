@@ -358,7 +358,6 @@
   "Email:": "གློག་རྡུལ་ཡིག་ཟམ།",
   "Plan:": "ཐུམ་སྒྲིལ།",
   "Amount:": "དངུལ་གྲངས།",
-  "Subscription ID:": "མཚམས་སྦྱོར་ ID །",
   "Go to Library": "དཔེ་མཛོད་ལ་འགྲོ།",
   "Need help? Contact our support team at support@readest.com": "རོགས་རམ་དགོས་སམ། རྒྱབ་སྐྱོར་ཚོགས་པར་འབྲེལ་བ་གནང་རོགས། support@readest.com",
   "Free Plan": "རིན་མེད་ཐུམ་སྒྲིལ།",
@@ -631,5 +630,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "অতিরিক্ত থিম, ফন্ট, লেআউট বিকল্প এবং উচ্চস্বরে পড়া, অনুবাদক, ক্লাউড স্টোরেজ পরিষেবাগুলি আনলক করুন।",
   "Purchase Successful!": "ক্রয় সফল!",
   "lifetime": "জীবনকাল",
-  "Thank you for your purchase! Your payment has been processed successfully.": "আপনার ক্রয়ের জন্য ধন্যবাদ! আপনার পেমেন্ট সফলভাবে প্রক্রিয়াকৃত হয়েছে।"
+  "Thank you for your purchase! Your payment has been processed successfully.": "আপনার ক্রয়ের জন্য ধন্যবাদ! আপনার পেমেন্ট সফলভাবে প্রক্রিয়াকৃত হয়েছে।",
+  "Order ID:": "অর্ডার আইডি:"
 }

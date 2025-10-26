@@ -8,18 +8,19 @@ import { getAccessToken } from '@/utils/access';
 import { supabase } from '@/utils/supabase';
 import { PlanType } from '@/types/quota';
 import Spinner from '@/components/Spinner';
+import { VerifiedIAP } from '@/libs/payment/iap/types';
 
 const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
 const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
 const ANDROID_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/google/iap-verify`;
 
 interface SessionStatus {
-  status: 'loading' | 'complete' | 'failed' | 'processing';
+  status: 'loading' | 'completed' | 'failed' | 'processing';
   customerEmail: string;
-  subscriptionId?: string;
+  orderId?: string;
   planName?: string;
   planType: PlanType;
-  amount?: number;
+  amount?: number; // in cents
   currency?: string;
 }
 
@@ -76,9 +77,9 @@ const SuccessPageWithSearchParams = () => {
 
       const session = stripeCheckoutSession as Stripe.Checkout.Session;
       setSessionStatus({
-        status: session.payment_status === 'paid' ? 'complete' : 'failed',
+        status: session.payment_status === 'paid' ? 'completed' : 'failed',
         customerEmail: session.customer_email || session.customer_details?.email || '',
-        subscriptionId: (session.subscription || session.payment_intent || '') as string,
+        orderId: (session.subscription || session.payment_intent || '') as string,
         planName: session.line_items?.data?.[0]?.description || '',
         planType: session.mode === 'payment' ? 'purchase' : 'subscription',
         amount: session.amount_total || undefined,
@@ -120,7 +121,7 @@ const SuccessPageWithSearchParams = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { purchase, error } = await response.json();
+      const { purchase: iOSPurchase, error } = await response.json();
 
       if (error) {
         setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -128,10 +129,11 @@ const SuccessPageWithSearchParams = () => {
         return;
       }
 
+      const purchase = iOSPurchase as VerifiedIAP;
       setSessionStatus({
-        status: purchase.status === 'active' ? 'complete' : 'failed',
+        status: purchase.status === 'active' ? 'completed' : 'failed',
         customerEmail: purchase.customerEmail || '',
-        subscriptionId: purchase.subscriptionId,
+        orderId: purchase.orderId,
         planName: purchase.planName,
         planType: purchase.planType,
       });
@@ -177,7 +179,7 @@ const SuccessPageWithSearchParams = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { purchase, error } = await response.json();
+      const { purchase: androidPurchase, error } = await response.json();
 
       if (error) {
         setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -185,16 +187,15 @@ const SuccessPageWithSearchParams = () => {
         return;
       }
 
+      const purchase = androidPurchase as VerifiedIAP;
       setSessionStatus({
-        status: purchase.status === 'active' ? 'complete' : 'failed',
+        status: purchase.status === 'active' ? 'completed' : 'failed',
         customerEmail: purchase.customerEmail || '',
-        subscriptionId: purchase.subscriptionId || purchase.orderId,
+        orderId: purchase.orderId,
         planName: purchase.planName,
         planType: purchase.planType,
-        amount: purchase.priceAmountMicros
-          ? Number(purchase.priceAmountMicros) / 1000000
-          : undefined,
-        currency: purchase.priceCurrencyCode,
+        amount: purchase.amount,
+        currency: purchase.currency,
       });
 
       try {
@@ -409,10 +410,10 @@ const SuccessPageWithSearchParams = () => {
                 </span>
               </div>
             )}
-            {sessionStatus.subscriptionId && (
+            {sessionStatus.orderId && (
               <div className='flex justify-between'>
-                <span className='font-medium'>{_('Subscription ID:')}</span>
-                <span className='font-mono text-xs'>{sessionStatus.subscriptionId}</span>
+                <span className='font-medium'>{_('Order ID:')}</span>
+                <span className='font-mono text-xs'>{sessionStatus.orderId}</span>
               </div>
             )}
           </div>

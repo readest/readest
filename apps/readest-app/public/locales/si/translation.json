@@ -376,7 +376,6 @@
   "Email:": "ඊමේල්:",
   "Plan:": "සැලැස්ම:",
   "Amount:": "මුදල:",
-  "Subscription ID:": "දායකත්ව ID:",
   "Go to Library": "පුස්තකාලයට යන්න",
   "Need help? Contact our support team at support@readest.com": "උදව් අවශ්‍යද? support@readest.com හි අපගේ සහාය කණ්ඩායමට සම්බන්ධ වන්න",
   "Free Plan": "නොමිලේ සැලැස්ම",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "අමතර තේමාවන්, ෆොන්ට්, ආකෘති විකල්ප සහ පවසා කියවීම, පරිවර්තක, කලාප ගබඩා සේවා විවෘත කරන්න.",
   "Purchase Successful!": "මිලදී ගැනීම සාර්ථකයි!",
   "lifetime": "පොදුකාලීන",
-  "Thank you for your purchase! Your payment has been processed successfully.": "ඔබේ මිලදී ගැනීමට ස්තූතියි! ඔබේ ගෙවීම සාර්ථකව සැකසිණි."
+  "Thank you for your purchase! Your payment has been processed successfully.": "ඔබේ මිලදී ගැනීමට ස්තූතියි! ඔබේ ගෙවීම සාර්ථකව සැකසිණි.",
+  "Order ID:": "ඇණවුම් හැඳුනුම්පත:"
 }

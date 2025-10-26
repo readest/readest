@@ -5,7 +5,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 const Spinner: React.FC<{
   loading: boolean;
-}> = ({ loading }) => {
+  className?: string;
+}> = ({ loading, className }) => {
   const _ = useTranslation();
   const { safeAreaInsets } = useThemeStore();
   if (!loading) return null;
@@ -18,7 +19,7 @@ const Spinner: React.FC<{
       }}
       role='status'
     >
-      <span className='loading loading-dots loading-lg'></span>
+      <span className={clsx('loading loading-dots loading-lg', className)}></span>
       <span className='hidden'>{_('Loading...')}</span>
     </div>
   );

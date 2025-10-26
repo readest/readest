@@ -9,7 +9,7 @@ export type PaymentStatus =
   | 'succeeded'
   | 'failed'
   | 'refunded'
-  | 'canceled';
+  | 'cancelled';
 
 export const COMPLETED_PAYMENT_STATUSES: PaymentStatus[] = ['completed', 'succeeded'];
 
@@ -25,8 +25,8 @@ export interface StripeProductMetadata {
 export interface BasePaymentData {
   user_id: string;
   provider: PaymentProvider;
-  amount: number;
-  currency: string;
+  amount?: number; // in cents
+  currency?: string;
   status: PaymentStatus;
   payment_method?: string | null;
   product_id?: string;

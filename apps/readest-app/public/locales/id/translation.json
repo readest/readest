@@ -359,7 +359,6 @@
   "Email:": "Email:",
   "Plan:": "Paket:",
   "Amount:": "Jumlah:",
-  "Subscription ID:": "ID Langganan:",
   "Go to Library": "Pergi ke Perpustakaan",
   "Need help? Contact our support team at support@readest.com": "Perlu bantuan? Hubungi tim dukungan kami di support@readest.com",
   "Free Plan": "Paket Gratis",
@@ -631,5 +630,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Buka tema tambahan, font, opsi tata letak, dan baca nyaring, penerjemah, layanan penyimpanan cloud.",
   "Purchase Successful!": "Pembelian Berhasil!",
   "lifetime": "seumur hidup",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Terima kasih atas pembelian Anda! Pembayaran Anda telah berhasil diproses."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Terima kasih atas pembelian Anda! Pembayaran Anda telah berhasil diproses.",
+  "Order ID:": "ID Pesanan:"
 }

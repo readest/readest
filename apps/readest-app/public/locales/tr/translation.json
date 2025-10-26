@@ -363,7 +363,6 @@
   "Email:": "E-posta:",
   "Plan:": "Plan:",
   "Amount:": "Tutar:",
-  "Subscription ID:": "Abonelik ID'si:",
   "Go to Library": "Kütüphaneye Git",
   "Need help? Contact our support team at support@readest.com": "Yardım mı gerekiyor? Destek ekibimizle iletişime geçin: support@readest.com",
   "Free Plan": "Ücretsiz Plan",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Ek tema, yazı tipi, düzen seçeneklerini ve sesli okuma, çevirmenler, bulut depolama hizmetlerini açın.",
   "Purchase Successful!": "Satın Alma Başarılı!",
   "lifetime": "ömür boyu",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Satın alma işleminiz için teşekkürler! Ödemeniz başarıyla işlendi."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Satın alma işleminiz için teşekkürler! Ödemeniz başarıyla işlendi.",
+  "Order ID:": "Sipariş Kimliği:"
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { AppleIAPVerifier, createAppleIAPVerifier } from '@/libs/payment/apple/verifier';
+import { AppleIAPVerifier, createAppleIAPVerifier } from '@/libs/payment/iap/apple/verifier';
 
 const SKIP_IAP_API_TESTS = !process.env['ENABLE_IAP_API_TESTS'];
 const REAL_TEST_DATA = {
