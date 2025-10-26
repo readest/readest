@@ -359,7 +359,6 @@
   "Email:": "이메일:",
   "Plan:": "요금제:",
   "Amount:": "금액:",
-  "Subscription ID:": "구독 ID:",
   "Go to Library": "라이브러리로 이동",
   "Need help? Contact our support team at support@readest.com": "도움이 필요하시면 support@readest.com으로 문의해주세요.",
   "Free Plan": "무료 요금제",
@@ -631,5 +630,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "추가 테마, 글꼴, 레이아웃 옵션 및 읽기, 번역기, 클라우드 스토리지 서비스를 잠금 해제합니다.",
   "Purchase Successful!": "구매 성공!",
   "lifetime": "평생",
-  "Thank you for your purchase! Your payment has been processed successfully.": "구매해주셔서 감사합니다! 결제가 성공적으로 처리되었습니다."
+  "Thank you for your purchase! Your payment has been processed successfully.": "구매해주셔서 감사합니다! 결제가 성공적으로 처리되었습니다.",
+  "Order ID:": "주문 ID:"
 }

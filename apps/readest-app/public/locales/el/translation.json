@@ -363,7 +363,6 @@
   "Email:": "Email:",
   "Plan:": "Πρόγραμμα:",
   "Amount:": "Ποσό:",
-  "Subscription ID:": "ID συνδρομής:",
   "Go to Library": "Μετάβαση στη βιβλιοθήκη",
   "Need help? Contact our support team at support@readest.com": "Χρειάζεστε βοήθεια; Επικοινωνήστε με την υποστήριξη στο support@readest.com",
   "Free Plan": "Δωρεάν πρόγραμμα",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Ξεκλειδώστε επιπλέον θέματα, γραμματοσειρές, επιλογές διάταξης και δυνατότητες ανάγνωσης, μεταφραστές, υπηρεσίες αποθήκευσης cloud.",
   "Purchase Successful!": "Η αγορά ήταν επιτυχής!",
   "lifetime": "διαρκής",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Σας ευχαριστούμε για την αγορά σας! Η πληρωμή σας έχει επεξεργαστεί με επιτυχία."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Σας ευχαριστούμε για την αγορά σας! Η πληρωμή σας έχει επεξεργαστεί με επιτυχία.",
+  "Order ID:": "Αριθμός παραγγελίας:"
 }

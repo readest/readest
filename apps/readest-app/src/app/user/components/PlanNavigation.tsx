@@ -1,17 +1,14 @@
 import { useTranslation } from '@/hooks/useTranslation';
+import { UserPlan } from '@/types/quota';
 import { PlanDetails } from '../utils/plan';
 
 interface PlanNavigationProps {
   allPlans: PlanDetails[];
-  currentPlanIndex: number;
-  onSelectPlan: (index: number) => void;
+  currentPlan: UserPlan;
+  onSelectPlan: (plan: UserPlan) => void;
 }
 
-const PlanNavigation: React.FC<PlanNavigationProps> = ({
-  allPlans,
-  currentPlanIndex,
-  onSelectPlan,
-}) => {
+const PlanNavigation: React.FC<PlanNavigationProps> = ({ allPlans, currentPlan, onSelectPlan }) => {
   const _ = useTranslation();
 
   return (
@@ -24,9 +21,9 @@ const PlanNavigation: React.FC<PlanNavigationProps> = ({
           {allPlans.map((plan, index) => (
             <button
               key={`plan-${plan.plan}-${index}`}
-              onClick={() => onSelectPlan(index)}
+              onClick={() => onSelectPlan(plan.plan)}
               className={`rounded-md px-2 py-2 text-sm font-medium shadow-sm transition-colors ${
-                currentPlanIndex === index ? `${plan.color}` : 'text-base-content hover:bg-base-200'
+                currentPlan === plan.plan ? `${plan.color}` : 'text-base-content hover:bg-base-200'
               }`}
             >
               <span className='whitespace-nowrap'>{_(plan.name)}</span>

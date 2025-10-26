@@ -1,4 +1,3 @@
-import { IAPError } from '@/types/error';
 import { PlanType } from '@/types/quota';
 import {
   AppStoreServerAPI,
@@ -7,6 +6,7 @@ import {
   TransactionType,
   decodeTransaction,
 } from 'app-store-server-api';
+import { IAPError, IAPStatus } from '../types';
 
 export interface AppleIAPConfig {
   keyId: string;
@@ -19,7 +19,7 @@ export interface AppleIAPConfig {
 export interface VerificationResult {
   success: boolean;
   verified?: boolean;
-  status?: string;
+  status?: IAPStatus;
   planType?: PlanType;
   transaction?: JWSTransactionDecodedPayload;
   environment?: string;
@@ -56,47 +56,66 @@ export class AppleIAPVerifier {
   }
 
   async verifyTransaction(originalTransactionId: string): Promise<VerificationResult> {
-    let response;
     try {
-      response = await this.client.getSubscriptionStatuses(originalTransactionId);
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : IAPError.UNKNOWN_ERROR,
-      };
-    }
-    if (response.data && response.data.length > 0) {
-      const transaction = response.data[0]!;
-      const lastTransaction = transaction.lastTransactions.find(
-        (item) => item.originalTransactionId === originalTransactionId,
-      );
-      if (!lastTransaction) {
+      const transactionResponse = await this.client.getTransactionInfo(originalTransactionId);
+      if (!transactionResponse?.signedTransactionInfo) {
         return {
           success: false,
           error: IAPError.TRANSACTION_NOT_FOUND,
         };
       }
-      const decodedTransaction = await decodeTransaction(lastTransaction.signedTransactionInfo);
 
-      const status = lastTransaction.status;
-      const expiresDate = decodedTransaction.expiresDate
-        ? new Date(decodedTransaction.expiresDate)
-        : undefined;
-      const now = new Date();
-
-      // Status 1 = Active subscription
-      const isActive = status === 1 && (!expiresDate || expiresDate > now);
-
+      let decodedTransaction = await decodeTransaction(transactionResponse.signedTransactionInfo);
       const planType: PlanType =
         decodedTransaction.type === TransactionType.NonConsumable ||
         decodedTransaction.type === TransactionType.Consumable
           ? 'purchase'
           : 'subscription';
 
+      let status: IAPStatus = 'active';
+      let expiresDate: Date | null = null;
+
+      if (planType === 'subscription') {
+        try {
+          const subscriptionResponse =
+            await this.client.getSubscriptionStatuses(originalTransactionId);
+
+          if (subscriptionResponse.data && subscriptionResponse.data.length > 0) {
+            const transaction = subscriptionResponse.data[0]!;
+            const lastTransaction = transaction.lastTransactions.find(
+              (item) => item.originalTransactionId === originalTransactionId,
+            );
+
+            if (lastTransaction) {
+              decodedTransaction = await decodeTransaction(lastTransaction.signedTransactionInfo);
+              expiresDate = decodedTransaction.expiresDate
+                ? new Date(decodedTransaction.expiresDate)
+                : null;
+
+              const now = new Date();
+              // Status 1 = Active subscription
+              status =
+                lastTransaction.status === 1 && (!expiresDate || expiresDate > now)
+                  ? 'active'
+                  : 'expired';
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to get subscription status:', error);
+        }
+      } else {
+        if (decodedTransaction.revocationDate) {
+          status = 'expired';
+        } else {
+          status = 'active';
+        }
+        expiresDate = null;
+      }
+
       return {
         success: true,
         verified: true,
-        status: isActive ? 'active' : 'expired',
+        status: status,
         planType: planType,
         transaction: decodedTransaction,
         environment: this.environment,
@@ -105,9 +124,7 @@ export class AppleIAPVerifier {
         transactionId: decodedTransaction.transactionId,
         originalTransactionId: decodedTransaction.originalTransactionId,
         purchaseDate: new Date(decodedTransaction.purchaseDate),
-        expiresDate: decodedTransaction.expiresDate
-          ? new Date(decodedTransaction.expiresDate)
-          : null,
+        expiresDate: expiresDate,
         quantity: decodedTransaction.quantity,
         type: decodedTransaction.type,
         revocationDate: decodedTransaction.revocationDate
@@ -117,10 +134,10 @@ export class AppleIAPVerifier {
         webOrderLineItemId: decodedTransaction.webOrderLineItemId,
         subscriptionGroupIdentifier: decodedTransaction.subscriptionGroupIdentifier,
       };
-    } else {
+    } catch (error) {
       return {
         success: false,
-        error: IAPError.TRANSACTION_NOT_FOUND,
+        error: error instanceof Error ? error.message : IAPError.UNKNOWN_ERROR,
       };
     }
   }

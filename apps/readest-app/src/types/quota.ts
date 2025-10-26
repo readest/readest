@@ -5,11 +5,8 @@ export interface UserQuota {
   purchase: number;
 }
 
-export type UserPlan = keyof UserQuota;
 export type UserStorageQuota = UserQuota;
 export type UserDailyTranslationQuota = UserQuota;
-
-export type PlanType = 'subscription' | 'purchase';
 export type QuotaType = {
   name: string;
   tooltip: string;
@@ -19,3 +16,15 @@ export type QuotaType = {
 };
 
 export type QuotaFeature = 'storage' | 'translation' | 'tokens' | 'customization' | 'generic';
+
+export type UserPlan = keyof UserQuota;
+export type PlanType = 'subscription' | 'purchase';
+export type PlanInterval = 'month' | 'year' | 'lifetime';
+export type AvailablePlan = {
+  plan: UserPlan;
+  productId: string;
+  price: number; // in cents
+  currency: string;
+  interval: PlanInterval;
+  productName: string;
+};

@@ -359,7 +359,6 @@
   "Email:": "メール:",
   "Plan:": "プラン:",
   "Amount:": "金額:",
-  "Subscription ID:": "サブスクリプションID:",
   "Go to Library": "ライブラリへ移動",
   "Need help? Contact our support team at support@readest.com": "サポートが必要ですか？ support@readest.com までお問い合わせください。",
   "Free Plan": "無料プラン",
@@ -631,5 +630,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "追加のテーマ、フォント、レイアウトオプション、読み上げ、翻訳者、クラウドストレージサービスを解除します。",
   "Purchase Successful!": "購入成功！",
   "lifetime": "ライフタイム",
-  "Thank you for your purchase! Your payment has been processed successfully.": "ご購入ありがとうございます！お支払いが正常に処理されました。"
+  "Thank you for your purchase! Your payment has been processed successfully.": "ご購入ありがとうございます！お支払いが正常に処理されました。",
+  "Order ID:": "購入ID："
 }

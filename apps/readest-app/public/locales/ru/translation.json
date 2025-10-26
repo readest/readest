@@ -371,7 +371,6 @@
   "Email:": "Электронная почта:",
   "Plan:": "План:",
   "Amount:": "Сумма:",
-  "Subscription ID:": "ID подписки:",
   "Go to Library": "Перейти в библиотеку",
   "Need help? Contact our support team at support@readest.com": "Нужна помощь? Свяжитесь с нашей поддержкой: support@readest.com",
   "Free Plan": "Бесплатный план",
@@ -643,5 +642,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Разблокировать дополнительные темы, шрифты, параметры макета и чтения вслух, переводчики, услуги облачного хранилища.",
   "Purchase Successful!": "Покупка Успешна!",
   "lifetime": "пожизненный",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Спасибо за вашу покупку! Ваш платеж был успешно обработан."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Спасибо за вашу покупку! Ваш платеж был успешно обработан.",
+  "Order ID:": "ID заказа:"
 }

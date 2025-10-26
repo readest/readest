@@ -361,7 +361,6 @@
   "Email:": "E-mail:",
   "Plan:": "Abonnement:",
   "Amount:": "Bedrag:",
-  "Subscription ID:": "Abonnements-ID:",
   "Go to Library": "Ga naar bibliotheek",
   "Need help? Contact our support team at support@readest.com": "Hulp nodig? Neem contact op met support via support@readest.com",
   "Free Plan": "Gratis abonnement",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Ontgrendel extra thema's, lettertypen, lay-outopties en voorlezen, vertalers, cloudopslagdiensten.",
   "Purchase Successful!": "Aankoop Succesvol!",
   "lifetime": "levenslang",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Bedankt voor je aankoop! Je betaling is succesvol verwerkt."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Bedankt voor je aankoop! Je betaling is succesvol verwerkt.",
+  "Order ID:": "Bestel-ID:"
 }

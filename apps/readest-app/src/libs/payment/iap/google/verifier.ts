@@ -1,7 +1,9 @@
 import { google, androidpublisher_v3 } from 'googleapis';
 import { GoogleAuth, GoogleAuthOptions } from 'google-auth-library';
+import { IAPStatus } from '../types';
 
-interface VerifyPurchaseParams {
+export interface VerifyPurchaseParams {
+  orderId: string;
   purchaseToken: string;
   productId: string;
   packageName: string;
@@ -46,16 +48,18 @@ export interface ProductPurchase {
   regionCode?: string | null;
 }
 
+type PurchaseType = 'subscription' | 'product';
+
 export interface VerificationResult {
   success: boolean;
   error?: string;
-  status?: string;
+  status?: IAPStatus;
   purchaseDate?: Date;
   expiresDate?: Date | null;
   revocationDate?: Date | null;
   revocationReason?: number | null;
   purchaseData?: SubscriptionPurchase | ProductPurchase;
-  purchaseType?: 'subscription' | 'product';
+  purchaseType?: PurchaseType;
 }
 
 export class GoogleIAPVerifier {
@@ -130,7 +134,7 @@ export class GoogleIAPVerifier {
       const expiryTime = purchase.expiryTimeMillis ? parseInt(purchase.expiryTimeMillis) : 0;
       const startTime = purchase.startTimeMillis ? parseInt(purchase.startTimeMillis) : 0;
 
-      let status = 'expired';
+      let status: IAPStatus = 'expired';
       if (purchase.paymentState === 1 && expiryTime > now) {
         status = 'active';
       } else if (purchase.paymentState === 0) {
@@ -149,6 +153,7 @@ export class GoogleIAPVerifier {
           : null,
         revocationReason: purchase.cancelReason || null,
         purchaseData: purchase,
+        purchaseType: 'subscription',
       };
     } catch {
       return {
@@ -170,7 +175,7 @@ export class GoogleIAPVerifier {
 
       const purchase: ProductPurchase = response.data;
 
-      // Check purchase state (0 = purchased, 1 = canceled)
+      // Check purchase state (0 = purchased, 1 = cancelled)
       const status = purchase.purchaseState === 0 ? 'active' : 'cancelled';
       const purchaseTime = purchase.purchaseTimeMillis ? parseInt(purchase.purchaseTimeMillis) : 0;
 
@@ -182,6 +187,7 @@ export class GoogleIAPVerifier {
         revocationDate: null,
         revocationReason: null,
         purchaseData: purchase,
+        purchaseType: 'product',
       };
     } catch {
       return {

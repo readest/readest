@@ -359,7 +359,6 @@
   "Email:": "邮箱：",
   "Plan:": "套餐：",
   "Amount:": "金额：",
-  "Subscription ID:": "订阅 ID：",
   "Go to Library": "前往书库",
   "Need help? Contact our support team at support@readest.com": "需要帮助？请联系支持团队：support@readest.com",
   "Free Plan": "免费套餐",
@@ -622,7 +621,7 @@
   "Failed to open the book file": "无法打开书籍文件",
   "On-Demand Purchase": "按需购买",
   "Full Customization": "完全自定义",
-  "Lifetime Plan": "终身计划",
+  "Lifetime Plan": "终身套餐",
   "One-Time Payment": "一次性付款",
   "Make a single payment to enjoy lifetime access to specific features on all devices. Purchase specific features or services only when you need them.": "进行一次性付款以享受在所有设备上对特定功能的终身访问。仅在需要时购买特定功能或服务。",
   "Expand Cloud Sync Storage": "扩展云同步存储",
@@ -630,6 +629,7 @@
   "Unlock All Customization Options": "解锁所有自定义选项",
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "解锁其他主题、字体、布局选项以及朗读、翻译、云存储服务。",
   "Purchase Successful!": "购买成功！",
-  "lifetime": "终身",
-  "Thank you for your purchase! Your payment has been processed successfully.": "感谢您的购买！您的付款已成功处理。"
+  "lifetime": "永久",
+  "Thank you for your purchase! Your payment has been processed successfully.": "感谢您的购买！您的付款已成功处理。",
+  "Order ID:": "订单号："
 }

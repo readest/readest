@@ -376,7 +376,6 @@
   "Email:": "மின்னஞ்சல்:",
   "Plan:": "திட்டம்:",
   "Amount:": "தொகை:",
-  "Subscription ID:": "சந்தா ID:",
   "Go to Library": "நூலகத்திற்கு செல்லவும்",
   "Need help? Contact our support team at support@readest.com": "உதவி தேவையா? support@readest.com இல் எங்கள் ஆதரவு குழுவைத் தொடர்பு கொள்ளவும்",
   "Free Plan": "இலவச திட்டம்",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "கூடுதல் தீமைகள், எழுத்துருக்கள், வடிவமைப்பு விருப்பங்கள் மற்றும் வாசிக்க, மொழிபெயர்க்க, மேக சேமிப்பு சேவைகளைத் திறக்கவும்.",
   "Purchase Successful!": "கொள்முதல் வெற்றிகரமாக முடிந்தது!",
   "lifetime": "ஆயுள்திருத்தம்",
-  "Thank you for your purchase! Your payment has been processed successfully.": "உங்கள் வாங்குதலுக்கு நன்றி! உங்கள் கட்டணம் வெற்றிகரமாக செயல்படுத்தப்பட்டது."
+  "Thank you for your purchase! Your payment has been processed successfully.": "உங்கள் வாங்குதலுக்கு நன்றி! உங்கள் கட்டணம் வெற்றிகரமாக செயல்படுத்தப்பட்டது.",
+  "Order ID:": "ஆர்டர் ஐடி:"
 }

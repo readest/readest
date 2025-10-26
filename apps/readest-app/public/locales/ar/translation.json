@@ -378,7 +378,6 @@
   "Email:": "البريد الإلكتروني:",
   "Plan:": "الخطة:",
   "Amount:": "المبلغ:",
-  "Subscription ID:": "رقم الاشتراك:",
   "Go to Library": "الانتقال إلى المكتبة",
   "Need help? Contact our support team at support@readest.com": "تحتاج مساعدة؟ تواصل مع فريق الدعم على support@readest.com",
   "Free Plan": "الخطة المجانية",
@@ -651,5 +650,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "فتح سمات إضافية، خطوط، خيارات تخطيط، وخدمات قراءة بصوت عالٍ، ومترجمين، وخدمات تخزين سحابية.",
   "Purchase Successful!": "تمت عملية الشراء بنجاح!",
   "lifetime": "مدى الحياة",
-  "Thank you for your purchase! Your payment has been processed successfully.": "شكرًا لشرائك! تم معالجة الدفع بنجاح."
+  "Thank you for your purchase! Your payment has been processed successfully.": "شكرًا لشرائك! تم معالجة الدفع بنجاح.",
+  "Order ID:": "معرف الطلب:"
 }

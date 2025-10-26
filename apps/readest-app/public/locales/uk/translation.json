@@ -371,7 +371,6 @@
   "Email:": "Електронна пошта:",
   "Plan:": "План:",
   "Amount:": "Сума:",
-  "Subscription ID:": "ID підписки:",
   "Go to Library": "Перейти до бібліотеки",
   "Need help? Contact our support team at support@readest.com": "Потрібна допомога? Зверніться до служби підтримки: support@readest.com",
   "Free Plan": "Безкоштовний план",
@@ -643,5 +642,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Відкрийте додаткові теми, шрифти, параметри макета та функції читання вголос, перекладачі, послуги хмарного зберігання.",
   "Purchase Successful!": "Покупка успішна!",
   "lifetime": "довічний",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Дякуємо за вашу покупку! Ваш платіж успішно оброблено."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Дякуємо за вашу покупку! Ваш платіж успішно оброблено.",
+  "Order ID:": "ID замовлення:"
 }

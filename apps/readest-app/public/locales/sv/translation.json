@@ -347,7 +347,6 @@
   "Email:": "E-post:",
   "Plan:": "Plan:",
   "Amount:": "Belopp:",
-  "Subscription ID:": "Prenumerations-ID:",
   "Need help? Contact our support team at support@readest.com": "Behöver du hjälp? Kontakta vår support på support@readest.com",
   "Free Plan": "Gratisplan",
   "month": "månad",
@@ -635,5 +634,6 @@
   "Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.": "Lås upp ytterligare teman, typsnitt, layoutalternativ och uppläsning, översättare, molnlagringstjänster.",
   "Purchase Successful!": "Köp lyckades!",
   "lifetime": "livstid",
-  "Thank you for your purchase! Your payment has been processed successfully.": "Tack för ditt köp! Din betalning har behandlats."
+  "Thank you for your purchase! Your payment has been processed successfully.": "Tack för ditt köp! Din betalning har behandlats.",
+  "Order ID:": "Order-ID:"
 }
