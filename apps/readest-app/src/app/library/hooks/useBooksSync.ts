@@ -1,34 +1,74 @@
-import { useCallback, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useEnv } from '@/context/EnvContext';
-import { useSync } from '@/hooks/useSync';
+import { useCallback, useEffect, useRef } from 'react';
 import { Book } from '@/types/book';
+import { useSync } from '@/hooks/useSync';
+import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
+import { throttle } from '@/utils/throttle';
 
 export const useBooksSync = () => {
   const { user } = useAuth();
   const { appService } = useEnv();
   const { library, isSyncing, setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
+  const isPullingRef = useRef(false);
 
   const getNewBooks = useCallback(() => {
-    if (!user) return [];
+    if (!user) return {};
     const library = useLibraryStore.getState().library;
     const newBooks = library.filter(
       (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
     );
-    return newBooks;
+    return {
+      books: newBooks,
+      lastSyncedAt: lastSyncedAtBooks,
+    };
   }, [user, lastSyncedAtBooks]);
 
   const pullLibrary = useCallback(async () => {
     if (!user) return;
-    await syncBooks([], 'pull');
+    if (isPullingRef.current) {
+      console.log('Pull already in progress, skipping...');
+      return;
+    }
+    try {
+      isPullingRef.current = true;
+      await syncBooks([], 'pull');
+    } finally {
+      isPullingRef.current = false;
+    }
   }, [user, syncBooks]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAutoSync = useCallback(
+    throttle(
+      () => {
+        const newBooks = getNewBooks();
+        if (newBooks.lastSyncedAt) {
+          syncBooks(newBooks.books, 'both');
+        }
+      },
+      SYNC_BOOKS_INTERVAL_SEC * 1000,
+      { emitLast: false },
+    ),
+    [syncBooks],
+  );
+
+  useEffect(() => {
+    if (!user) return;
+    if (isPullingRef.current) {
+      console.log('Pull already in progress, skipping...');
+      return;
+    }
+    handleAutoSync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [library, handleAutoSync]);
 
   const pushLibrary = useCallback(async () => {
     if (!user) return;
     const newBooks = getNewBooks();
-    await syncBooks(newBooks, 'push');
+    await syncBooks(newBooks?.books, 'push');
   }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
