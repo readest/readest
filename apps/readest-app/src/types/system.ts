@@ -70,6 +70,7 @@ export interface AppService {
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;
   copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void>;
+  writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   deleteFile(path: string, base: BaseDir): Promise<void>;
   deleteDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
@@ -104,6 +105,7 @@ export interface AppService {
     redownload?: boolean,
     onProgress?: ProgressHandler,
   ): Promise<void>;
+  downloadBookCovers(books: Book[], redownload?: boolean): Promise<void>;
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;

@@ -2,73 +2,56 @@ import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
-import { useLibraryStore } from '@/store/libraryStore';
 import { Book } from '@/types/book';
-import { debounce } from '@/utils/debounce';
-import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
+import { useLibraryStore } from '@/store/libraryStore';
 
-export interface UseBooksSyncProps {
-  onSyncStart?: () => void;
-  onSyncEnd?: () => void;
-}
-
-export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
+export const useBooksSync = () => {
   const { user } = useAuth();
   const { appService } = useEnv();
-  const { library, setLibrary } = useLibraryStore();
+  const { library, isSyncing, setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
 
-  const pullLibrary = useCallback(async () => {
-    if (!user) return;
-    await syncBooks([], 'pull');
-  }, [user, syncBooks]);
-
-  const pushLibrary = async () => {
-    if (!user) return;
-    const newBooks = getNewBooks();
-    syncBooks(newBooks, 'push');
-  };
-
-  useEffect(() => {
-    if (!user) return;
-    pullLibrary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const getNewBooks = () => {
+  const getNewBooks = useCallback(() => {
     if (!user) return [];
     const library = useLibraryStore.getState().library;
     const newBooks = library.filter(
       (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
     );
     return newBooks;
-  };
+  }, [user, lastSyncedAtBooks]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAutoSync = useCallback(
-    debounce(() => {
-      const newBooks = getNewBooks();
-      syncBooks(newBooks, 'both');
-    }, SYNC_BOOKS_INTERVAL_SEC * 1000),
-    [syncBooks],
-  );
+  const pullLibrary = useCallback(async () => {
+    if (!user) return;
+    await syncBooks([], 'pull');
+  }, [user, syncBooks]);
+
+  const pushLibrary = useCallback(async () => {
+    if (!user) return;
+    const newBooks = getNewBooks();
+    await syncBooks(newBooks, 'push');
+  }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
     if (!user) return;
-    handleAutoSync();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library, handleAutoSync]);
+    pullLibrary();
+  }, [user, pullLibrary]);
 
   const updateLibrary = async () => {
+    if (isSyncing) return;
     if (!syncedBooks?.length) return;
+
     // Process old books first so that when we update the library the order is preserved
     syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
+    const bookHashesInSynced = new Set(syncedBooks.map((book) => book.hash));
+    const oldBooks = library.filter((book) => bookHashesInSynced.has(book.hash));
+    const oldBooksNeedsDownload = oldBooks.filter((book) => {
+      return !book.deletedAt && book.uploadedAt && !book.coverDownloadedAt;
+    });
 
     const processOldBook = async (oldBook: Book) => {
       const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
       if (matchingBook) {
         if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.coverDownloadedAt) {
-          await appService?.downloadBook(oldBook, true);
           oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
         }
         const mergedBook =
@@ -80,31 +63,44 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
       return oldBook;
     };
 
-    const updatedLibrary = await Promise.all(library.map(processOldBook));
-    const processNewBook = async (newBook: Book) => {
-      if (!updatedLibrary.some((oldBook) => oldBook.hash === newBook.hash)) {
-        if (newBook.uploadedAt && !newBook.deletedAt) {
-          try {
-            await appService?.downloadBook(newBook, true);
-          } catch {
-            console.error('Failed to download book:', newBook);
-          } finally {
-            newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
-            updatedLibrary.push(newBook);
-            setLibrary(updatedLibrary);
-          }
-        }
-      }
-    };
-    onSyncStart?.();
-    const batchSize = 3;
-    for (let i = 0; i < syncedBooks.length; i += batchSize) {
-      const batch = syncedBooks.slice(i, i + batchSize);
-      await Promise.all(batch.map(processNewBook));
+    const oldBooksBatchSize = 20;
+    for (let i = 0; i < oldBooksNeedsDownload.length; i += oldBooksBatchSize) {
+      const batch = oldBooksNeedsDownload.slice(i, i + oldBooksBatchSize);
+      await appService?.downloadBookCovers(batch);
     }
-    onSyncEnd?.();
+
+    const updatedLibrary = await Promise.all(library.map(processOldBook));
+    const bookHashesInLibrary = new Set(updatedLibrary.map((book) => book.hash));
+    const newBooks = syncedBooks.filter(
+      (newBook) =>
+        !bookHashesInLibrary.has(newBook.hash) && newBook.uploadedAt && !newBook.deletedAt,
+    );
+
+    const processNewBook = async (newBook: Book) => {
+      newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+      updatedLibrary.push(newBook);
+    };
+
+    if (newBooks.length > 0) {
+      setIsSyncing(true);
+    }
+
+    const batchSize = 10;
+    for (let i = 0; i < newBooks.length; i += batchSize) {
+      const batch = newBooks.slice(i, i + batchSize);
+      await appService?.downloadBookCovers(batch);
+      await Promise.all(batch.map(processNewBook));
+      const progress = Math.min((i + batchSize) / newBooks.length, 1);
+      setLibrary([...updatedLibrary]);
+      setSyncProgress(progress);
+    }
+
     setLibrary(updatedLibrary);
     appService?.saveLibraryBooks(updatedLibrary);
+
+    if (newBooks.length > 0) {
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {

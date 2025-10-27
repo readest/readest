@@ -4,10 +4,14 @@ import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
 
 interface LibraryState {
   library: Book[]; // might contain deleted books
+  isSyncing: boolean;
+  syncProgress: number;
   checkOpenWithBooks: boolean;
   checkLastOpenBooks: boolean;
   currentBookshelf: (Book | BooksGroup)[];
   selectedBooks: Set<string>; // hashes for books, ids for groups
+  setIsSyncing: (syncing: boolean) => void;
+  setSyncProgress: (progress: number) => void;
   setSelectedBooks: (ids: string[]) => void;
   getSelectedBooks: () => string[];
   toggleSelectedBook: (id: string) => void;
@@ -21,10 +25,14 @@ interface LibraryState {
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
+  isSyncing: false,
+  syncProgress: 0,
   currentBookshelf: [],
   selectedBooks: new Set(),
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
+  setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
+  setSyncProgress: (progress: number) => set({ syncProgress: progress }),
   getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => {
     set({ currentBookshelf: bookshelf });
