@@ -18,6 +18,8 @@ interface SliderProps {
   maxClassName?: string;
   bubbleClassName?: string;
   onChange?: (value: number) => void;
+  valueToPosition?: (value: number, min: number, max: number) => number;
+  positionToValue?: (position: number, min: number, max: number) => number;
 }
 
 const Slider: React.FC<SliderProps> = ({
@@ -38,13 +40,28 @@ const Slider: React.FC<SliderProps> = ({
   maxClassName = '',
   bubbleClassName = '',
   onChange,
+  valueToPosition,
+  positionToValue,
 }) => {
   const [value, setValue] = useState(initialValue);
   const [isRtl, setIsRtl] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
+  // Default linear mapping functions
+  const defaultValueToPosition = (val: number, minVal: number, maxVal: number) => {
+    return ((val - minVal) / (maxVal - minVal)) * 100;
+  };
+
+  const defaultPositionToValue = (pos: number, minVal: number, maxVal: number) => {
+    return minVal + (pos / 100) * (maxVal - minVal);
+  };
+
+  const valueToPos = valueToPosition || defaultValueToPosition;
+  const posToValue = positionToValue || defaultPositionToValue;
+
   const handleChange = (e: React.ChangeEvent) => {
-    const newValue = parseInt((e.target as HTMLInputElement).value, 10);
+    const position = parseInt((e.target as HTMLInputElement).value, 10);
+    const newValue = Math.round(posToValue(position, min, max) / step) * step;
     setValue(newValue);
     if (onChange) {
       onChange(newValue);
@@ -66,7 +83,7 @@ const Slider: React.FC<SliderProps> = ({
     setValue(initialValue);
   }, [initialValue]);
 
-  const percentage = ((value - min) / (max - min)) * 100;
+  const percentage = valueToPos(value, min, max);
   const visualPercentage = (percentage / 100) * 95;
 
   return (
@@ -113,10 +130,10 @@ const Slider: React.FC<SliderProps> = ({
         </div>
         <input
           type='range'
-          min={min}
-          max={max}
+          min={0}
+          max={100}
           step={step}
-          value={value}
+          value={percentage}
           className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
           onChange={handleChange}
           aria-label={label}

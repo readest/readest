@@ -90,6 +90,22 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
           onChange={handleScreenBrightnessChange}
           min={SCREEN_BRIGHTNESS_LIMITS.MIN}
           max={SCREEN_BRIGHTNESS_LIMITS.MAX}
+          valueToPosition={(value: number, min: number, max: number): number => {
+            if (value <= min) return 0;
+            if (value >= max) return 100;
+            // Use exponential mapping: position = 100 * ((value/max)^0.5)
+            const normalized = value / max;
+            const position = Math.pow(normalized, 0.5) * 100;
+            return position;
+          }}
+          positionToValue={(position: number, min: number, max: number): number => {
+            if (position <= 0) return min;
+            if (position >= 100) return max;
+            // Inverse of the above: value = max * (position/100)^2
+            const normalized = position / 100;
+            const value = Math.pow(normalized, 2) * max;
+            return Math.max(min, Math.min(max, value));
+          }}
         />
       )}
 
