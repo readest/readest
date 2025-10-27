@@ -56,7 +56,13 @@ import {
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
-import { downloadFile, uploadFile, deleteFile, createProgressHandler } from '@/libs/storage';
+import {
+  downloadFile,
+  uploadFile,
+  deleteFile,
+  createProgressHandler,
+  batchGetDownloadUrls,
+} from '@/libs/storage';
 import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
@@ -110,6 +116,10 @@ export abstract class BaseAppService implements AppService {
 
   async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
     return await this.fs.copyFile(srcPath, dstPath, base);
+  }
+
+  async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File) {
+    return await this.fs.writeFile(path, base, content);
   }
 
   async createDir(path: string, base: BaseDir, recursive: boolean = true): Promise<void> {
@@ -498,19 +508,46 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async downloadCloudFile(lfp: string, cfp: string, handleProgress: ProgressHandler) {
+  async downloadCloudFile(lfp: string, cfp: string, onProgress: ProgressHandler) {
     console.log('Downloading file:', cfp, 'to', lfp);
-    const localFullpath = `${this.localBooksDir}/${lfp}`;
-    const result = await downloadFile(cfp, localFullpath, handleProgress);
-    try {
-      if (this.appPlatform === 'web') {
-        const fileobj = result as Blob;
-        await this.fs.writeFile(lfp, 'Books', await fileobj.arrayBuffer());
-      }
-    } catch {
-      console.log('Failed to download file:', cfp);
-      throw new Error('Failed to download file');
-    }
+    const dstPath = `${this.localBooksDir}/${lfp}`;
+    await downloadFile({ appService: this, cfp, dst: dstPath, onProgress });
+  }
+
+  async downloadBookCovers(books: Book[]): Promise<void> {
+    const booksLfps = new Map(
+      books.map((book) => {
+        const lfp = getCoverFilename(book);
+        return [lfp, book];
+      }),
+    );
+    const filePaths = books.map((book) => ({
+      lfp: getCoverFilename(book),
+      cfp: `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`,
+    }));
+    const downloadUrls = await batchGetDownloadUrls(filePaths);
+    await Promise.all(
+      books.map(async (book) => {
+        if (!(await this.fs.exists(getDir(book), 'Books'))) {
+          await this.fs.createDir(getDir(book), 'Books');
+        }
+      }),
+    );
+    await Promise.all(
+      downloadUrls.map(async (file) => {
+        try {
+          const dst = `${this.localBooksDir}/${file.lfp}`;
+          if (!file.downloadUrl) return;
+          await downloadFile({ appService: this, dst, cfp: file.cfp, url: file.downloadUrl });
+          const book = booksLfps.get(file.lfp);
+          if (book && !book.coverDownloadedAt) {
+            book.coverDownloadedAt = Date.now();
+          }
+        } catch (error) {
+          console.log(`Failed to download cover file for book: '${file.lfp}'`, error);
+        }
+      }),
+    );
   }
 
   async downloadBook(

@@ -68,6 +68,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { token, user } = useAuth();
   const {
     library: libraryBooks,
+    isSyncing,
+    syncProgress,
     updateBook,
     setLibrary,
     checkOpenWithBooks,
@@ -103,10 +105,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useOpenWithBooks();
 
-  const { pullLibrary, pushLibrary } = useBooksSync({
-    onSyncStart: () => setLoading(true),
-    onSyncEnd: () => setLoading(false),
-  });
+  const { pullLibrary, pushLibrary } = useBooksSync();
 
   usePullToRefresh(containerRef, pullLibrary);
   useScreenWakeLock(settings.screenWakeLock);
@@ -692,7 +691,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onDeselectAll={handleDeselectAll}
         />
       </div>
-      {loading && (
+      {(loading || isSyncing) && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
         </div>
@@ -723,6 +722,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 paddingLeft: `${insets.left}px`,
               }}
             >
+              <progress
+                className={clsx(
+                  'progress progress-success absolute left-0 right-0 top-[2px] z-30 h-1 transition-opacity duration-200',
+                  isSyncing ? 'opacity-100' : 'opacity-0',
+                )}
+                value={syncProgress * 100}
+                max='100'
+              ></progress>
               <DropIndicator />
               <Bookshelf
                 libraryBooks={libraryBooks}
