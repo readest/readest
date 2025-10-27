@@ -9,6 +9,7 @@ import { transformBookToDB } from '@/utils/transform';
 import { runMiddleware, corsAllMethods } from '@/utils/cors';
 import { SyncData, SyncResult, SyncType } from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
+import { DBBook, DBBookConfig } from '@/types/records';
 
 const transformsToDB = {
   books: transformBookToDB,
@@ -129,82 +130,130 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
   }
   const supabase = createSupabaseClient(token);
-
   const body = await req.json();
   const { books = [], configs = [], notes = [] } = body as SyncData;
 
+  const BATCH_SIZE = 100;
   const upsertRecords = async (
     table: TableName,
     primaryKeys: (keyof BookDataRecord)[],
     records: BookDataRecord[],
   ) => {
-    const authoritativeRecords: BookDataRecord[] = [];
+    if (records.length === 0) return { data: [] };
 
-    for (const rec of records) {
-      const dbRec = transformsToDB[table](rec, user.id);
-      rec.user_id = user.id;
-      rec.book_hash = dbRec.book_hash;
-      const matchConditions: Record<string, string | number> = { user_id: user.id };
-      for (const pk of primaryKeys) {
-        matchConditions[pk] = rec[pk]!;
-      }
+    const allAuthoritativeRecords: BookDataRecord[] = [];
 
-      const { data: serverData, error: fetchError } = await supabase
+    // Process in batches
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+      const batch = records.slice(i, i + BATCH_SIZE);
+
+      // Transform all records to DB format
+      const dbRecords = batch.map((rec) => {
+        const dbRec = transformsToDB[table](rec, user.id);
+        rec.user_id = user.id;
+        rec.book_hash = dbRec.book_hash;
+        return { original: rec, db: dbRec };
+      });
+
+      // Build match conditions for batch
+      const matchConditions = dbRecords.map(({ original }) => {
+        const conditions: Record<string, string | number> = { user_id: user.id };
+        for (const pk of primaryKeys) {
+          conditions[pk] = original[pk]!;
+        }
+        return conditions;
+      });
+
+      // Fetch existing records for this batch
+      const orConditions = matchConditions
+        .map((cond) => {
+          const parts = Object.entries(cond).map(([key, val]) => `and(${key}.eq.${val})`);
+          return parts.join(',');
+        })
+        .join(',');
+
+      const { data: serverRecords, error: fetchError } = await supabase
         .from(table)
         .select()
-        .match(matchConditions)
-        .single();
+        .or(orConditions);
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError) {
         return { error: fetchError.message };
       }
 
-      if (!serverData) {
-        // use server updated_at for new records
-        dbRec.updated_at = new Date().toISOString();
-        const { data: inserted, error: insertError } = await supabase
-          .from(table)
-          .insert(dbRec)
-          .select()
-          .single();
-        if (insertError) {
-          console.log(`Failed to insert ${table} record:`, JSON.stringify(dbRec));
-          return {
-            error: insertError.message,
-          };
-        }
-        authoritativeRecords.push(inserted);
-      } else {
-        const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
-        const serverUpdatedAt = serverData.updated_at
-          ? new Date(serverData.updated_at).getTime()
-          : 0;
-        const clientDeletedAt = dbRec.deleted_at ? new Date(dbRec.deleted_at).getTime() : 0;
-        const serverDeletedAt = serverData.deleted_at
-          ? new Date(serverData.deleted_at).getTime()
-          : 0;
-        const clientIsNewer =
-          clientDeletedAt > serverDeletedAt || clientUpdatedAt > serverUpdatedAt;
+      // Create lookup map
+      const serverRecordsMap = new Map<string, any>();
+      (serverRecords || []).forEach((record) => {
+        const key = primaryKeys.map((pk) => record[pk]).join('|');
+        serverRecordsMap.set(key, record);
+      });
 
-        if (clientIsNewer) {
-          const { data: updated, error: updateError } = await supabase
-            .from(table)
-            .update(dbRec)
-            .match(matchConditions)
-            .select()
-            .single();
-          if (updateError) {
-            console.log(`Failed to update ${table} record:`, JSON.stringify(dbRec));
-            return { error: updateError.message };
-          }
-          authoritativeRecords.push(updated);
+      // Separate into inserts and updates
+      const toInsert: (DBBook | DBBookConfig | DBBookConfig)[] = [];
+      const toUpdate: (DBBook | DBBookConfig | DBBookConfig)[] = [];
+      const batchAuthoritativeRecords: BookDataRecord[] = [];
+
+      for (const { original, db: dbRec } of dbRecords) {
+        const key = primaryKeys.map((pk) => original[pk]).join('|');
+        const serverData = serverRecordsMap.get(key);
+
+        if (!serverData) {
+          dbRec.updated_at = new Date().toISOString();
+          toInsert.push(dbRec);
         } else {
-          authoritativeRecords.push(serverData);
+          const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
+          const serverUpdatedAt = serverData.updated_at
+            ? new Date(serverData.updated_at).getTime()
+            : 0;
+          const clientDeletedAt = dbRec.deleted_at ? new Date(dbRec.deleted_at).getTime() : 0;
+          const serverDeletedAt = serverData.deleted_at
+            ? new Date(serverData.deleted_at).getTime()
+            : 0;
+          const clientIsNewer =
+            clientDeletedAt > serverDeletedAt || clientUpdatedAt > serverUpdatedAt;
+
+          if (clientIsNewer) {
+            toUpdate.push(dbRec);
+          } else {
+            batchAuthoritativeRecords.push(serverData);
+          }
         }
       }
+
+      // Batch insert
+      if (toInsert.length > 0) {
+        const { data: inserted, error: insertError } = await supabase
+          .from(table)
+          .insert(toInsert)
+          .select();
+
+        if (insertError) {
+          console.log(`Failed to insert ${table} records:`, JSON.stringify(toInsert));
+          return { error: insertError.message };
+        }
+        batchAuthoritativeRecords.push(...(inserted || []));
+      }
+
+      // Batch upsert
+      if (toUpdate.length > 0) {
+        const { data: updated, error: updateError } = await supabase
+          .from(table)
+          .upsert(toUpdate, {
+            onConflict: ['user_id', ...primaryKeys].join(','),
+          })
+          .select();
+
+        if (updateError) {
+          console.log(`Failed to update ${table} records:`, JSON.stringify(toUpdate));
+          return { error: updateError.message };
+        }
+        batchAuthoritativeRecords.push(...(updated || []));
+      }
+
+      allAuthoritativeRecords.push(...batchAuthoritativeRecords);
     }
 
-    return { data: authoritativeRecords };
+    return { data: allAuthoritativeRecords };
   };
 
   try {

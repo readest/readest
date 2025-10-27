@@ -4,7 +4,7 @@ import { useSync } from '@/hooks/useSync';
 import { BookNote } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
-import { debounce } from '@/utils/debounce';
+import { throttle } from '@/utils/throttle';
 
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
@@ -12,32 +12,37 @@ export const useNotesSync = (bookKey: string) => {
   const { getConfig, setConfig, getBookData } = useBookDataStore();
 
   const config = getConfig(bookKey);
-  const bookHash = bookKey.split('-')[0]!;
 
-  const getNewNotes = () => {
+  const getNewNotes = useCallback(() => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    if (!config?.location || !book || !user) return [];
+    if (!config?.location || !book || !user) return {};
 
-    const metaHash = book.metaHash;
     const bookNotes = config.booknotes ?? [];
     const newNotes = bookNotes.filter(
       (note) => lastSyncedAtNotes < note.updatedAt || lastSyncedAtNotes < (note.deletedAt ?? 0),
     );
     newNotes.forEach((note) => {
-      note.bookHash = bookHash;
-      note.metaHash = metaHash;
+      note.bookHash = book.hash;
+      note.metaHash = book.metaHash;
     });
-    return newNotes;
-  };
+    return {
+      notes: newNotes,
+      lastSyncedAt: lastSyncedAtNotes,
+    };
+  }, [user, bookKey, lastSyncedAtNotes, getConfig, getBookData]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
-    debounce(() => {
-      const book = getBookData(bookKey)?.book;
-      const newNotes = getNewNotes();
-      syncNotes(newNotes, bookHash, book?.metaHash, 'both');
-    }, SYNC_NOTES_INTERVAL_SEC * 1000),
+    throttle(
+      () => {
+        const book = getBookData(bookKey)?.book;
+        const newNotes = getNewNotes();
+        syncNotes(newNotes.notes, book?.hash, book?.metaHash, 'both');
+      },
+      SYNC_NOTES_INTERVAL_SEC * 1000,
+      { emitLast: false },
+    ),
     [syncNotes],
   );
 
@@ -67,7 +72,7 @@ export const useNotesSync = (bookKey: string) => {
     if (syncedNotes?.length && config) {
       const book = getBookData(bookKey)?.book;
       const newNotes = syncedNotes.filter(
-        (note) => note.bookHash === bookHash || note.metaHash === book?.metaHash,
+        (note) => note.bookHash === book?.hash || note.metaHash === book?.metaHash,
       );
       if (!newNotes.length) return;
       const oldNotes = config.booknotes ?? [];
