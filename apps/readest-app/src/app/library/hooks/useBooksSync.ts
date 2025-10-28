@@ -58,7 +58,6 @@ export const useBooksSync = () => {
   useEffect(() => {
     if (!user) return;
     if (isPullingRef.current) {
-      console.log('Pull already in progress, skipping...');
       return;
     }
     handleAutoSync();

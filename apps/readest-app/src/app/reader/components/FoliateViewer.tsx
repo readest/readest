@@ -132,7 +132,7 @@ const FoliateViewer: React.FC<{
               viewSettings,
               primaryLanguage: bookData.book?.primaryLanguage,
               content: data,
-              transformers: ['punctuation', 'footnote', 'whitespace', 'language'],
+              transformers: ['punctuation', 'footnote', 'whitespace', 'language', 'sanitizer'],
             } as TransformContext;
             return Promise.resolve(transformContent(ctx));
           }
