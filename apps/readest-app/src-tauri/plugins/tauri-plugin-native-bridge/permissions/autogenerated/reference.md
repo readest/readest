@@ -24,6 +24,8 @@ Default permissions for the plugin
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
 - `allow-request-manage-storage-permission`
+- `allow-check-permissions`
+- `allow-request-permissions`
 - `allow-checkPermissions`
 - `allow-requestPermissions`
 
@@ -91,6 +93,32 @@ Denies the auth_with_safari command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-check-permissions`
+
+</td>
+<td>
+
+Enables the check-permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-check-permissions`
+
+</td>
+<td>
+
+Denies the check-permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-checkPermissions`
 
 </td>
@@ -110,6 +138,32 @@ Enables the checkPermissions command without any pre-configured scope.
 <td>
 
 Denies the checkPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-check-permissions`
+
+</td>
+<td>
+
+Enables the check_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-check-permissions`
+
+</td>
+<td>
+
+Denies the check_permissions command without any pre-configured scope.
 
 </td>
 </tr>
@@ -481,6 +535,32 @@ Denies the lock_screen_orientation command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-request-permissions`
+
+</td>
+<td>
+
+Enables the request-permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-request-permissions`
+
+</td>
+<td>
+
+Denies the request-permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-requestPermissions`
 
 </td>
@@ -526,6 +606,32 @@ Enables the request_manage_storage_permission command without any pre-configured
 <td>
 
 Denies the request_manage_storage_permission command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-request-permissions`
+
+</td>
+<td>
+
+Enables the request_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-request-permissions`
+
+</td>
+<td>
+
+Denies the request_permissions command without any pre-configured scope.
 
 </td>
 </tr>

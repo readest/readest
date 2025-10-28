@@ -21,6 +21,8 @@ permissions = [
   "allow-set-screen-brightness",
   "allow-get-external-sdcard-path",
   "allow-request-manage-storage-permission",
+  "allow-check-permissions",
+  "allow-request-permissions",
   "allow-checkPermissions",
   "allow-requestPermissions",
 ]
