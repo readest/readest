@@ -1,5 +1,24 @@
 {
   "releases": {
+    "0.9.90": {
+      "date": "2025-10-28",
+      "notes": [
+        "Sync: Faster library syncing and support for in-app one-time purchases of extra cloud storage",
+        "TTS: You can now choose the target language for read-aloud on translated books",
+        "Reader: New keyboard shortcuts make it easier to move between sections",
+        "Reader: Smoother scrolling for a more comfortable reading experience",
+        "Reader: Footnotes in definition lists are now fully supported",
+        "Reader: Improved search accuracy and display of search results",
+        "Reader: Clearer error messages when importing books",
+        "Reader: Improved safety when loading book content",
+        "Settings: You can now choose your own highlight colors",
+        "Settings: Added option to adjust screen brightness automatically",
+        "E-Ink: Better readability and clearer progress display with underlined links",
+        "Android: You can now store app data on an external SD card",
+        "iOS: Restores your last reading page if the app was closed in the background",
+        "Localization: Added Persian (Farsi) language support"
+      ]
+    },
     "0.9.88": {
       "date": "2025-10-18",
       "notes": [
