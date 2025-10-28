@@ -16,10 +16,12 @@ Default permissions for the plugin
 - `allow-set-media-session-active`
 - `allow-update-media-session-state`
 - `allow-update-media-session-metadata`
+- `allow-register-listener`
+- `allow-remove-listener`
+- `allow-check-permissions`
+- `allow-request-permissions`
 - `allow-checkPermissions`
 - `allow-requestPermissions`
-- `allow-registerListener`
-- `allow-remove-listener`
 
 ## Permission Table
 
@@ -52,6 +54,32 @@ Enables the checkPermissions command without any pre-configured scope.
 <td>
 
 Denies the checkPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-check-permissions`
+
+</td>
+<td>
+
+Enables the check_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-check-permissions`
+
+</td>
+<td>
+
+Denies the check_permissions command without any pre-configured scope.
 
 </td>
 </tr>
@@ -137,12 +165,12 @@ Denies the pause command without any pre-configured scope.
 <tr>
 <td>
 
-`native-tts:allow-registerListener`
+`native-tts:allow-register-listener`
 
 </td>
 <td>
 
-Enables the registerListener command without any pre-configured scope.
+Enables the register_listener command without any pre-configured scope.
 
 </td>
 </tr>
@@ -150,12 +178,12 @@ Enables the registerListener command without any pre-configured scope.
 <tr>
 <td>
 
-`native-tts:deny-registerListener`
+`native-tts:deny-register-listener`
 
 </td>
 <td>
 
-Denies the registerListener command without any pre-configured scope.
+Denies the register_listener command without any pre-configured scope.
 
 </td>
 </tr>
@@ -208,6 +236,32 @@ Enables the requestPermissions command without any pre-configured scope.
 <td>
 
 Denies the requestPermissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-request-permissions`
+
+</td>
+<td>
+
+Enables the request_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-request-permissions`
+
+</td>
+<td>
+
+Denies the request_permissions command without any pre-configured scope.
 
 </td>
 </tr>

@@ -319,6 +319,18 @@
           "markdownDescription": "Denies the auth_with_safari command without any pre-configured scope."
         },
         {
+          "description": "Enables the check-permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-check-permissions",
+          "markdownDescription": "Enables the check-permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check-permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-check-permissions",
+          "markdownDescription": "Denies the check-permissions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the checkPermissions command without any pre-configured scope.",
           "type": "string",
           "const": "allow-checkPermissions",
@@ -329,6 +341,18 @@
           "type": "string",
           "const": "deny-checkPermissions",
           "markdownDescription": "Denies the checkPermissions command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the check_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-check-permissions",
+          "markdownDescription": "Enables the check_permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-check-permissions",
+          "markdownDescription": "Denies the check_permissions command without any pre-configured scope."
         },
         {
           "description": "Enables the copy_uri_to_path command without any pre-configured scope.",
@@ -499,6 +523,18 @@
           "markdownDescription": "Denies the lock_screen_orientation command without any pre-configured scope."
         },
         {
+          "description": "Enables the request-permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-request-permissions",
+          "markdownDescription": "Enables the request-permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the request-permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-request-permissions",
+          "markdownDescription": "Denies the request-permissions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the requestPermissions command without any pre-configured scope.",
           "type": "string",
           "const": "allow-requestPermissions",
@@ -521,6 +557,18 @@
           "type": "string",
           "const": "deny-request-manage-storage-permission",
           "markdownDescription": "Denies the request_manage_storage_permission command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the request_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-request-permissions",
+          "markdownDescription": "Enables the request_permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the request_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-request-permissions",
+          "markdownDescription": "Denies the request_permissions command without any pre-configured scope."
         },
         {
           "description": "Enables the set_screen_brightness command without any pre-configured scope.",
@@ -559,10 +607,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-request-manage-storage-permission`\n- `allow-checkPermissions`\n- `allow-requestPermissions`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-request-manage-storage-permission`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-request-manage-storage-permission`\n- `allow-checkPermissions`\n- `allow-requestPermissions`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-request-manage-storage-permission`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`"
         }
       ]
     }
