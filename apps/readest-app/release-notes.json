@@ -1,5 +1,16 @@
 {
   "releases": {
+    "0.9.91": {
+      "date": "2025-10-29",
+      "notes": [
+        "TTS: Fixed an issue where system voices were not working on Android",
+        "TTS: Added options to customize the highlight style during read-aloud",
+        "E-Ink: Disabled all shadows to improve display clarity",
+        "E-Ink: Added an option to save the last book cover on Android",
+        "Android: Fixed a crash that occurred when toggling 'Allow Script'",
+        "Android: Adjusted launcher icon size for better compatibility across devices"
+      ]
+    },
     "0.9.90": {
       "date": "2025-10-28",
       "notes": [
