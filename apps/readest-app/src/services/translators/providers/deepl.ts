@@ -2,7 +2,7 @@ import { getAPIBaseUrl } from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
 import { ErrorCodes, TranslationProvider } from '../types';
 import { UserPlan } from '@/types/quota';
-import { getUserPlan } from '@/utils/access';
+import { getSubscriptionPlan } from '@/utils/access';
 import { normalizeToShortLang } from '@/utils/lang';
 import { DEFAULT_DAILY_TRANSLATION_QUOTA } from '@/services/constants';
 import { saveDailyUsage } from '../utils';
@@ -29,7 +29,7 @@ export const deeplProvider: TranslationProvider = {
 
     let userPlan: UserPlan = 'free';
     if (token) {
-      userPlan = getUserPlan(token);
+      userPlan = getSubscriptionPlan(token);
       headers['Authorization'] = `Bearer ${token}`;
     }
 
