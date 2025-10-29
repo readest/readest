@@ -644,5 +644,7 @@
   "Outline": "வட்டம்",
   "Save Current Color": "தற்போதைய நிறத்தை சேமிக்கவும்",
   "Quick Colors": "விரைவு நிறங்கள்",
-  "Highlighter": "ஹைலைட்டர்"
+  "Highlighter": "ஹைலைட்டர்",
+  "Save Book Cover": "புத்தகக் கோப்பைச் சேமிக்கவும்",
+  "Auto-save last book cover": "அවසන් புத்தகக் கோப்பு காலியாக உள்ளது"
 }

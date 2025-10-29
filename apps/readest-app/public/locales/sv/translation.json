@@ -644,5 +644,7 @@
   "Outline": "Kontur",
   "Save Current Color": "Spara aktuell färg",
   "Quick Colors": "Snabba färger",
-  "Highlighter": "Markeringspenna"
+  "Highlighter": "Markeringspenna",
+  "Save Book Cover": "Spara bokomslag",
+  "Auto-save last book cover": "Automatiskt spara senaste bokomslag"
 }

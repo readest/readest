@@ -640,5 +640,7 @@
   "Outline": "윤곽선",
   "Save Current Color": "현재 색상 저장",
   "Quick Colors": "빠른 색상",
-  "Highlighter": "형광펜"
+  "Highlighter": "형광펜",
+  "Save Book Cover": "책 표지 저장",
+  "Auto-save last book cover": "마지막 책 표지 자동 저장"
 }

@@ -644,5 +644,7 @@
   "Outline": "Kontur",
   "Save Current Color": "Mevcut Rengi Kaydet",
   "Quick Colors": "Hızlı Renkler",
-  "Highlighter": "Vurgulayıcı"
+  "Highlighter": "Vurgulayıcı",
+  "Save Book Cover": "Kitap Kapağını Kaydet",
+  "Auto-save last book cover": "Son kitap kapağını otomatik olarak kaydet"
 }

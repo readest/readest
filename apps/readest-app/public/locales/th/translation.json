@@ -640,5 +640,7 @@
   "Outline": "เส้นขอบ",
   "Save Current Color": "บันทึกสีปัจจุบัน",
   "Quick Colors": "สีด่วน",
-  "Highlighter": "ปากกาเน้นข้อความ"
+  "Highlighter": "ปากกาเน้นข้อความ",
+  "Save Book Cover": "บันทึกปกหนังสือ",
+  "Auto-save last book cover": "บันทึกปกหนังสือสุดท้ายโดยอัตโนมัติ"
 }

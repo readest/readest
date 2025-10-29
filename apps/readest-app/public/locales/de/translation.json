@@ -644,5 +644,7 @@
   "Outline": "Umriss",
   "Save Current Color": "Aktuelle Farbe speichern",
   "Quick Colors": "Schnellfarben",
-  "Highlighter": "Textmarker"
+  "Highlighter": "Textmarker",
+  "Save Book Cover": "Buchcover speichern",
+  "Auto-save last book cover": "Letztes Buchcover automatisch speichern"
 }

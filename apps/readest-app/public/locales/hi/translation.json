@@ -644,5 +644,7 @@
   "Outline": "आउटलाइन",
   "Save Current Color": "वर्तमान रंग सहेजें",
   "Quick Colors": "त्वरित रंग",
-  "Highlighter": "हाइलाइटर"
+  "Highlighter": "हाइलाइटर",
+  "Save Book Cover": "बुक कवर सहेजें",
+  "Auto-save last book cover": "अंतिम पुस्तक कवर को स्वचालित रूप से सहेजें"
 }

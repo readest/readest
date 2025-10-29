@@ -640,5 +640,7 @@
   "Outline": "アウトライン",
   "Save Current Color": "現在の色を保存",
   "Quick Colors": "クイックカラー",
-  "Highlighter": "蛍光ペン"
+  "Highlighter": "蛍光ペン",
+  "Save Book Cover": "本のカバーを保存",
+  "Auto-save last book cover": "最後の本のカバーを自動保存"
 }

@@ -644,5 +644,7 @@
   "Outline": "පරිසීමාව",
   "Save Current Color": "දැන් ඇති වර්ණය සුරකින්න",
   "Quick Colors": "ක්ෂණික වර්ණ",
-  "Highlighter": "ඉස්මතු කරන්නා"
+  "Highlighter": "ඉස්මතු කරන්නා",
+  "Save Book Cover": "පොත් ආවරණය සුරකින්න",
+  "Auto-save last book cover": "අවසන් පොත් ආවරණය ස්වයංක්‍රීයව සුරකින්න"
 }

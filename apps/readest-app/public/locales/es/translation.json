@@ -648,5 +648,7 @@
   "Outline": "Contorno",
   "Save Current Color": "Guardar Color Actual",
   "Quick Colors": "Colores Rápidos",
-  "Highlighter": "Resaltador"
+  "Highlighter": "Resaltador",
+  "Save Book Cover": "Guardar Portada del Libro",
+  "Auto-save last book cover": "Guardar automáticamente la última portada del libro"
 }

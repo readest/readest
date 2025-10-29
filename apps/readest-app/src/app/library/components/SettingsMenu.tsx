@@ -53,6 +53,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   );
   const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
   const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
+  const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
+    settings.savedBookCoverForLockScreen || '',
+  );
   const iconSize = useResponsiveSize(16);
 
   const showAboutReadest = () => {
@@ -167,6 +170,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
     setSettingsDialogOpen(true);
+  };
+
+  const handleSetSavedBookCoverForLockScreen = () => {
+    const newValue = settings.savedBookCoverForLockScreen ? '' : 'default';
+    saveSysSettings(envConfig, 'savedBookCoverForLockScreen', newValue);
+    setSavedBookCoverForLockScreen(newValue);
   };
 
   const toggleAlwaysInForeground = async () => {
@@ -299,7 +308,20 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <MenuItem label={_('Advanced Settings')}>
             <ul className='flex flex-col'>
-              <MenuItem label={_('Change Data Location')} noIcon onClick={handleSetRootDir} />
+              <MenuItem
+                label={_('Change Data Location')}
+                noIcon={!appService?.isAndroidApp}
+                onClick={handleSetRootDir}
+              />
+              {appService?.isAndroidApp && (
+                <MenuItem
+                  label={_('Save Book Cover')}
+                  tooltip={_('Auto-save last book cover')}
+                  description={'💾 Images/last-book-cover.png'}
+                  toggled={!!savedBookCoverForLockScreen}
+                  onClick={handleSetSavedBookCoverForLockScreen}
+                />
+              )}
             </ul>
           </MenuItem>
         </>

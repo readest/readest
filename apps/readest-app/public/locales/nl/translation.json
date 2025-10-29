@@ -644,5 +644,7 @@
   "Outline": "Omtrek",
   "Save Current Color": "Huidige kleur opslaan",
   "Quick Colors": "Snelle kleuren",
-  "Highlighter": "Marker"
+  "Highlighter": "Marker",
+  "Save Book Cover": "Opslaan boekomslag",
+  "Auto-save last book cover": "Automatisch opslaan laatste boekomslag"
 }

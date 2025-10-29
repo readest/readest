@@ -640,5 +640,7 @@
   "Outline": "轮廓",
   "Save Current Color": "保存当前颜色",
   "Quick Colors": "快速颜色",
-  "Highlighter": "荧光笔"
+  "Highlighter": "荧光笔",
+  "Save Book Cover": "保存书籍封面",
+  "Auto-save last book cover": "自动保存最后一本书的封面"
 }
