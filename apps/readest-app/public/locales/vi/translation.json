@@ -631,5 +631,13 @@
   "Purchase Successful!": "Mua hàng thành công!",
   "lifetime": "trọn đời",
   "Thank you for your purchase! Your payment has been processed successfully.": "Cảm ơn bạn đã mua hàng! Thanh toán của bạn đã được xử lý thành công.",
-  "Order ID:": "Mã đơn hàng:"
+  "Order ID:": "Mã đơn hàng:",
+  "TTS Highlighting": "Đánh dấu TTS",
+  "Style": "Kiểu",
+  "Underline": "Gạch chân",
+  "Strikethrough": "Gạch ngang",
+  "Squiggly": "Gạch ngoằn ngoèo",
+  "Outline": "Đường viền",
+  "Save Current Color": "Lưu màu hiện tại",
+  "Quick Colors": "Màu nhanh"
 }

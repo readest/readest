@@ -639,5 +639,13 @@
   "Purchase Successful!": "Acquisto Riuscito!",
   "lifetime": "a vita",
   "Thank you for your purchase! Your payment has been processed successfully.": "Grazie per il tuo acquisto! Il pagamento è stato elaborato con successo.",
-  "Order ID:": "ID Ordine:"
+  "Order ID:": "ID Ordine:",
+  "TTS Highlighting": "Evidenziazione TTS",
+  "Style": "Stile",
+  "Underline": "Sottolineato",
+  "Strikethrough": "Barrato",
+  "Squiggly": "Ondulato",
+  "Outline": "Contorno",
+  "Save Current Color": "Salva Colore Corrente",
+  "Quick Colors": "Colori Veloci"
 }

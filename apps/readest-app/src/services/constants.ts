@@ -104,6 +104,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     squiggly: 'blue',
   },
   customHighlightColors: HIGHLIGHT_COLOR_HEX,
+  customTtsHighlightColors: [],
 };
 
 export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
@@ -219,6 +220,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsVoice: '',
   ttsLocation: '',
   showTTSBar: false,
+  ttsHighlightOptions: { style: 'highlight', color: '#808080' },
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {

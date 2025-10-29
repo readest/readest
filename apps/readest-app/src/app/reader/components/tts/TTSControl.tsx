@@ -323,7 +323,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       setShowIndicator(true);
       const ttsController = new TTSController(appService, view);
       await ttsController.init();
-      await ttsController.initViewTTS();
+      await ttsController.initViewTTS(viewSettings.ttsHighlightOptions);
       const ssml = view.tts?.from(ttsFromRange);
       if (ssml) {
         const lang = parseSSMLLang(ssml, primaryLang) || 'en';
@@ -624,6 +624,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       }
     };
   }, [hoveredBookKey]);
+
+  useEffect(() => {
+    const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
+    if (ttsControllerRef.current && ttsHighlightOptions) {
+      ttsControllerRef.current.initViewTTS(ttsHighlightOptions);
+    }
+  }, [viewSettings?.ttsHighlightOptions]);
 
   return (
     <>

@@ -41,6 +41,8 @@ export class TTSController extends EventTarget {
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
 
+  options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
+
   constructor(appService: AppService | null, view: FoliateView) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
@@ -80,10 +82,10 @@ export class TTSController extends EventTarget {
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
   }
 
-  #getHighlighter(options: TTSHighlightOptions) {
+  #getHighlighter() {
     return (range: Range) => {
       const { overlayer } = this.view.renderer.getContents()[0] as { overlayer: Overlayer };
-      const { style, color } = options;
+      const { style, color } = this.options;
       overlayer?.remove(HIGHLIGHT_KEY);
       overlayer?.add(HIGHLIGHT_KEY, range, Overlayer[style], { color });
     };
@@ -94,20 +96,23 @@ export class TTSController extends EventTarget {
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 
-  async initViewTTS() {
+  async initViewTTS(options?: TTSHighlightOptions) {
+    if (options) {
+      this.options.style = options.style;
+      this.options.color = options.color;
+    }
     let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
     const supportedGranularities = this.ttsClient.getGranularities();
     if (!supportedGranularities.includes(granularity)) {
       granularity = supportedGranularities[0]!;
     }
-    const highlightOptions: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
     await this.view.initTTS(
       granularity,
       createRejectFilter({
         tags: ['rt', 'sup'],
         contents: [{ tag: 'a', content: /^\d+$/ }],
       }),
-      this.#getHighlighter(highlightOptions),
+      this.#getHighlighter(),
     );
   }
 

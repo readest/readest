@@ -635,5 +635,13 @@
   "Purchase Successful!": "මිලදී ගැනීම සාර්ථකයි!",
   "lifetime": "පොදුකාලීන",
   "Thank you for your purchase! Your payment has been processed successfully.": "ඔබේ මිලදී ගැනීමට ස්තූතියි! ඔබේ ගෙවීම සාර්ථකව සැකසිණි.",
-  "Order ID:": "ඇණවුම් හැඳුනුම්පත:"
+  "Order ID:": "ඇණවුම් හැඳුනුම්පත:",
+  "TTS Highlighting": "TTS උද්දීපනය",
+  "Style": "රූපය",
+  "Underline": "ඇටය",
+  "Strikethrough": "ඇඳුම",
+  "Squiggly": "වැලි රේඛාව",
+  "Outline": "පරිසීමාව",
+  "Save Current Color": "දැන් ඇති වර්ණය සුරකින්න",
+  "Quick Colors": "ක්ෂණික වර්ණ"
 }

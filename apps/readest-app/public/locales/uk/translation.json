@@ -643,5 +643,13 @@
   "Purchase Successful!": "Покупка успішна!",
   "lifetime": "довічний",
   "Thank you for your purchase! Your payment has been processed successfully.": "Дякуємо за вашу покупку! Ваш платіж успішно оброблено.",
-  "Order ID:": "ID замовлення:"
+  "Order ID:": "ID замовлення:",
+  "TTS Highlighting": "Підсвічування TTS",
+  "Style": "Стиль",
+  "Underline": "Підкреслення",
+  "Strikethrough": "Закреслення",
+  "Squiggly": "Хвиляста лінія",
+  "Outline": "Контур",
+  "Save Current Color": "Зберегти поточний колір",
+  "Quick Colors": "Швидкі кольори"
 }

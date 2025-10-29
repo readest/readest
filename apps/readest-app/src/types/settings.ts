@@ -23,6 +23,7 @@ export interface ReadSettings {
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
   customHighlightColors: Record<HighlightColor, string>;
+  customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
 }
 
