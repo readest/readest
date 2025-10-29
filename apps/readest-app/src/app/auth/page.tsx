@@ -24,7 +24,7 @@ import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oau
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback } from '@/helpers/auth';
-import { getUserPlan } from '@/utils/access';
+import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
@@ -173,7 +173,7 @@ export default function AuthPage() {
       const type = params.get('type');
       if (accessToken) {
         let next = params.get('next') ?? '/';
-        if (getUserPlan(accessToken) === 'free') {
+        if (getUserProfilePlan(accessToken) === 'free') {
           next = '/user';
         }
         handleAuthCallback({ accessToken, refreshToken, type, next, login, navigate: router.push });

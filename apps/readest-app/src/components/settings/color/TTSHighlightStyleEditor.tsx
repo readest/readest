@@ -61,7 +61,7 @@ const TTSHighlightStyleEditor: React.FC<TTSHighlightStyleEditorProps> = ({
               value={style}
               onChange={(e) => onStyleChange(e.target.value as TTSHighlightStyle)}
               options={[
-                { value: 'highlight', label: _('Highlight') },
+                { value: 'highlight', label: _('Highlighter') },
                 { value: 'underline', label: _('Underline') },
                 { value: 'strikethrough', label: _('Strikethrough') },
                 { value: 'squiggly', label: _('Squiggly') },

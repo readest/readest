@@ -67,7 +67,7 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
-  const { quotas, userPlan = 'free' } = useQuotaStats();
+  const { quotas, userProfilePlan = 'free' } = useQuotaStats();
   const { handleLogout, handleResetPassword, handleConfirmDelete } = useUserActions();
 
   const { availablePlans } = useAvailablePlans({
@@ -218,8 +218,8 @@ const ProfilePage = () => {
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'] || '-';
   const userEmail = user?.email || '';
-  const planDetails =
-    getPlanDetails(userPlan, availablePlans) || getPlanDetails('free', availablePlans);
+  const userPlanDetails =
+    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
 
   return (
     <div
@@ -258,7 +258,7 @@ const ProfilePage = () => {
                     avatarUrl={avatarUrl}
                     userFullName={userFullName}
                     userEmail={userEmail}
-                    planDetails={planDetails}
+                    planDetails={userPlanDetails}
                   />
 
                   <UsageStats quotas={quotas} />
@@ -267,14 +267,14 @@ const ProfilePage = () => {
                 <div className='flex flex-col gap-y-8 sm:px-6'>
                   <PlansComparison
                     availablePlans={availablePlans}
-                    userPlan={userPlan}
+                    userPlan={userProfilePlan}
                     onSubscribe={appService.hasIAP ? handleIAPSubscribe : handleStripeSubscribe}
                   />
                 </div>
 
                 <div className='flex flex-col gap-y-8 px-6'>
                   <AccountActions
-                    userPlan={userPlan}
+                    userPlan={userProfilePlan}
                     onLogout={handleLogout}
                     onResetPassword={handleResetPassword}
                     onConfirmDelete={handleDeleteWithMessage}

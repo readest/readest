@@ -12,9 +12,21 @@ interface Token {
   [key: string]: string | number;
 }
 
-export const getUserPlan = (token: string): UserPlan => {
+export const getSubscriptionPlan = (token: string): UserPlan => {
   const data = jwtDecode<Token>(token) || {};
   return data['plan'] || 'free';
+};
+
+export const getUserProfilePlan = (token: string): UserPlan => {
+  const data = jwtDecode<Token>(token) || {};
+  let plan = data['plan'] || 'free';
+  if (plan === 'free') {
+    const purchasedQuota = data['storage_purchased_bytes'] || 0;
+    if (purchasedQuota > 0) {
+      plan = 'purchase';
+    }
+  }
+  return plan;
 };
 
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace

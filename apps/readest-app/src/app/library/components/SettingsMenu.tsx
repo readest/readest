@@ -39,7 +39,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { userPlan, quotas } = useQuotaStats(true);
+  const { userProfilePlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -305,7 +305,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         </>
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {user && userPlan === 'free' && !appService?.isIOSApp && (
+      {user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
