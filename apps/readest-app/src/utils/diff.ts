@@ -4,8 +4,8 @@
  */
 
 export function diff(str1: string, str2: string) {
-  const lines1 = str1.split('\n');
-  const lines2 = str2.split('\n');
+  const lines1 = str1.split('\n').filter((line) => line.trim() !== '');
+  const lines2 = str2.split('\n').filter((line) => line.trim() !== '');
 
   const lcs = longestCommonSubsequence(lines1, lines2);
 
@@ -17,17 +17,17 @@ export function diff(str1: string, str2: string) {
   const addRange = (start: number, end: number) => (start === end ? `${start}` : `${start},${end}`);
 
   while (i < lines1.length || j < lines2.length) {
-    if (k < lcs.length && i < lines1.length && lines1[i] === lcs[k]) {
+    if (k < lcs.length && i < lines1.length && trimCompare(lines1[i], lcs[k])) {
       // common line
       i++;
       j++;
       k++;
     } else {
-      let delStart = i,
-        addStart = j;
+      let delStart = i;
+      let addStart = j;
 
-      while (i < lines1.length && (k >= lcs.length || lines1[i] !== lcs[k])) i++;
-      while (j < lines2.length && (k >= lcs.length || lines2[j] !== lcs[k])) j++;
+      while (i < lines1.length && (k >= lcs.length || !trimCompare(lines1[i], lcs[k]))) i++;
+      while (j < lines2.length && (k >= lcs.length || !trimCompare(lines2[j], lcs[k]))) j++;
 
       const delRange = addRange(delStart + 1, i);
       const addRangeStr = addRange(addStart + 1, j);
@@ -53,6 +53,10 @@ export function diff(str1: string, str2: string) {
   return result.join('\n');
 }
 
+function trimCompare(a: string | undefined, b: string | undefined) {
+  return (a || '').trim() === (b || '').trim();
+}
+
 function longestCommonSubsequence(arr1: string[], arr2: string[]) {
   const m = arr1.length;
   const n = arr2.length;
@@ -62,7 +66,7 @@ function longestCommonSubsequence(arr1: string[], arr2: string[]) {
 
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      if (arr1[i - 1] === arr2[j - 1]) {
+      if (trimCompare(arr1[i - 1], arr2[j - 1])) {
         dp[i]![j] = dp[i - 1]![j - 1] + 1;
       } else {
         dp[i]![j] = Math.max(dp[i - 1]![j], dp[i]![j - 1]);
@@ -75,7 +79,7 @@ function longestCommonSubsequence(arr1: string[], arr2: string[]) {
     j = n;
 
   while (i > 0 && j > 0) {
-    if (arr1[i - 1] === arr2[j - 1]) {
+    if (trimCompare(arr1[i - 1], arr2[j - 1])) {
       lcs.unshift(arr1[i - 1]!);
       i--;
       j--;

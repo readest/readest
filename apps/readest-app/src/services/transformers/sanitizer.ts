@@ -18,18 +18,23 @@ export const sanitizerTransformer: Transformer = {
       ADD_TAGS: ['link', 'meta'],
       ADD_ATTR: (attributeName: string) => {
         return (
-          ['xmlns'].includes(attributeName) ||
+          ['xmlns', 'http-equiv', 'content', 'charset', 'link', 'vlink'].includes(attributeName) ||
           attributeName.startsWith('xml:') ||
           attributeName.startsWith('xmlns:') ||
           attributeName.startsWith('epub:')
         );
       },
+      RETURN_DOM: true,
     });
 
-    sanitized = '<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html>' + sanitized;
+    const serializer = new XMLSerializer();
+    let serialized = serializer.serializeToString(sanitized);
+    serialized = '<?xml version="1.0" encoding="utf-8"?>' + serialized;
+    serialized = serialized.replace(/(<head[^>]*>)/i, '\n$1');
+    serialized = serialized.replace(/(<\/body>)(<\/html>)/i, '$1\n$2');
 
-    // console.log(`Sanitizer diff:\n${diff(result, sanitized)}`);
+    // console.log(`Sanitizer diff:\n${diff(result, serialized)}`);
 
-    return sanitized;
+    return serialized;
   },
 };
