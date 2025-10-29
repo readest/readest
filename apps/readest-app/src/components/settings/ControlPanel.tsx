@@ -8,16 +8,16 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
-import { saveAndReload } from '@/utils/reload';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import { RELOAD_BEFORE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import NumberInput from './NumberInput';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getViewSettings, recreateViewer } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const { settings } = useSettingsStore();
   const { applyEinkMode } = useEinkMode();
@@ -144,7 +144,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
     saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false);
-    saveAndReload();
+    setTimeout(() => {
+      recreateViewer(envConfig, bookKey);
+    }, RELOAD_BEFORE_SAVED_TIMEOUT_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowScript]);
 

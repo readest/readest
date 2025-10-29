@@ -271,7 +271,6 @@ const FoliateViewer: React.FC<{
       await import('foliate-js/view.js');
       const view = wrappedFoliateView(document.createElement('foliate-view') as FoliateView);
       view.id = `foliate-view-${bookKey}`;
-      document.body.append(view);
       containerRef.current?.appendChild(view);
 
       const viewSettings = getViewSettings(bookKey)!;

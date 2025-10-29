@@ -20,11 +20,13 @@ import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
 import { useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
+import { uniqueId } from '@/utils/misc';
 
 interface ViewState {
   /* Unique key for each book view */
   key: string;
   view: FoliateView | null;
+  viewerKey: string;
   isPrimary: boolean;
   loading: boolean;
   inited: boolean;
@@ -72,12 +74,14 @@ interface ReaderStore {
     id: string,
     key: string,
     isPrimary?: boolean,
+    reload?: boolean,
   ) => Promise<void>;
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
   getGridInsets: (key: string) => Insets | null;
   setGridInsets: (key: string, insets: Insets | null) => void;
   setViewInited: (key: string, inited: boolean) => void;
+  recreateViewer: (envConfig: EnvConfigType, key: string) => void;
 }
 
 export const useReaderStore = create<ReaderStore>((set, get) => ({
@@ -110,7 +114,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     });
   },
   getViewState: (key: string) => get().viewStates[key] || null,
-  initViewState: async (envConfig: EnvConfigType, id: string, key: string, isPrimary = true) => {
+  initViewState: async (
+    envConfig: EnvConfigType,
+    id: string,
+    key: string,
+    isPrimary = true,
+    reload = false,
+  ) => {
     const booksData = useBookDataStore.getState().booksData;
     const bookData = booksData[id];
     set((state) => ({
@@ -119,6 +129,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           key: '',
           view: null,
+          viewerKey: '',
           isPrimary: false,
           loading: true,
           inited: false,
@@ -134,7 +145,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     }));
     try {
       const { settings } = useSettingsStore.getState();
-      if (!bookData) {
+      if (!bookData || reload) {
         const appService = await envConfig.getAppService();
         const { library } = useLibraryStore.getState();
         const book = library.find((b) => b.hash === id);
@@ -183,6 +194,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ...state.viewStates[key],
             key,
             view: null,
+            viewerKey: `${key}-${uniqueId()}`,
             isPrimary,
             loading: false,
             inited: false,
@@ -205,6 +217,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ...state.viewStates[key],
             key: '',
             view: null,
+            viewerKey: '',
             isPrimary: false,
             loading: false,
             inited: false,
@@ -378,4 +391,21 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         },
       },
     })),
+
+  recreateViewer: (envConfig: EnvConfigType, key: string) => {
+    const id = key.split('-')[0]!;
+    get()
+      .initViewState(envConfig, id, key, true, true)
+      .then(() => {
+        set((state) => ({
+          viewStates: {
+            ...state.viewStates,
+            [key]: {
+              ...state.viewStates[key]!,
+              viewerKey: `${key}-${uniqueId()}`,
+            },
+          },
+        }));
+      });
+  },
 }));

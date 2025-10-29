@@ -8,9 +8,12 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { getTranslators } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
-import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
+import {
+  RELOAD_BEFORE_SAVED_TIMEOUT_MS,
+  TRANSLATED_LANGS,
+  TRANSLATOR_LANGS,
+} from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { saveAndReload } from '@/utils/reload';
 import Select from '@/components/Select';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -18,7 +21,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { token } = useAuth();
   const { envConfig } = useEnv();
   const { settings, applyUILanguage } = useSettingsStore();
-  const { getViewSettings, setViewSettings } = useReaderStore();
+  const { getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage);
@@ -141,10 +144,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;
     saveViewSettings(envConfig, bookKey, 'translationEnabled', translationEnabled, true, false);
-    viewSettings.translationEnabled = translationEnabled;
-    setViewSettings(bookKey, { ...viewSettings });
-    if (!showTranslateSource && !translationEnabled) {
-      saveAndReload();
+    if (!showTranslateSource && translationEnabled) {
+      setTimeout(() => recreateViewer(envConfig, bookKey), RELOAD_BEFORE_SAVED_TIMEOUT_MS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translationEnabled]);
@@ -152,7 +153,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   useEffect(() => {
     if (showTranslateSource === viewSettings.showTranslateSource) return;
     saveViewSettings(envConfig, bookKey, 'showTranslateSource', showTranslateSource, false, false);
-    saveAndReload();
+    setTimeout(() => recreateViewer(envConfig, bookKey), RELOAD_BEFORE_SAVED_TIMEOUT_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showTranslateSource]);
 
