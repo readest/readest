@@ -631,5 +631,13 @@
   "Purchase Successful!": "การซื้อสำเร็จ!",
   "lifetime": "ตลอดชีพ",
   "Thank you for your purchase! Your payment has been processed successfully.": "ขอบคุณสำหรับการซื้อ! การชำระเงินของคุณได้รับการประมวลผลเรียบร้อยแล้ว",
-  "Order ID:": "รหัสคำสั่งซื้อ:"
+  "Order ID:": "รหัสคำสั่งซื้อ:",
+  "TTS Highlighting": "การไฮไลต์ TTS",
+  "Style": "สไตล์",
+  "Underline": "ขีดเส้นใต้",
+  "Strikethrough": "ขีดฆ่า",
+  "Squiggly": "เส้นหยัก",
+  "Outline": "เส้นขอบ",
+  "Save Current Color": "บันทึกสีปัจจุบัน",
+  "Quick Colors": "สีด่วน"
 }

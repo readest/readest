@@ -643,5 +643,13 @@
   "Purchase Successful!": "Покупка Успешна!",
   "lifetime": "пожизненный",
   "Thank you for your purchase! Your payment has been processed successfully.": "Спасибо за вашу покупку! Ваш платеж был успешно обработан.",
-  "Order ID:": "ID заказа:"
+  "Order ID:": "ID заказа:",
+  "TTS Highlighting": "Выделение TTS",
+  "Style": "Стиль",
+  "Underline": "Подчёркивание",
+  "Strikethrough": "Зачёркивание",
+  "Squiggly": "Волнистая линия",
+  "Outline": "Контур",
+  "Save Current Color": "Сохранить текущий цвет",
+  "Quick Colors": "Быстрые цвета"
 }

@@ -635,5 +635,13 @@
   "Purchase Successful!": "Köp lyckades!",
   "lifetime": "livstid",
   "Thank you for your purchase! Your payment has been processed successfully.": "Tack för ditt köp! Din betalning har behandlats.",
-  "Order ID:": "Order-ID:"
+  "Order ID:": "Order-ID:",
+  "TTS Highlighting": "TTS-markering",
+  "Style": "Stil",
+  "Underline": "Understrykning",
+  "Strikethrough": "Genomstrykning",
+  "Squiggly": "Vågig linje",
+  "Outline": "Kontur",
+  "Save Current Color": "Spara aktuell färg",
+  "Quick Colors": "Snabba färger"
 }

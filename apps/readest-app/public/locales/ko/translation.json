@@ -631,5 +631,13 @@
   "Purchase Successful!": "구매 성공!",
   "lifetime": "평생",
   "Thank you for your purchase! Your payment has been processed successfully.": "구매해주셔서 감사합니다! 결제가 성공적으로 처리되었습니다.",
-  "Order ID:": "주문 ID:"
+  "Order ID:": "주문 ID:",
+  "TTS Highlighting": "TTS 하이라이팅",
+  "Style": "스타일",
+  "Underline": "밑줄",
+  "Strikethrough": "취소선",
+  "Squiggly": "물결선",
+  "Outline": "윤곽선",
+  "Save Current Color": "현재 색상 저장",
+  "Quick Colors": "빠른 색상"
 }

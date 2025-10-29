@@ -631,5 +631,13 @@
   "Purchase Successful!": "ক্রয় সফল!",
   "lifetime": "জীবনকাল",
   "Thank you for your purchase! Your payment has been processed successfully.": "আপনার ক্রয়ের জন্য ধন্যবাদ! আপনার পেমেন্ট সফলভাবে প্রক্রিয়াকৃত হয়েছে।",
-  "Order ID:": "অর্ডার আইডি:"
+  "Order ID:": "অর্ডার আইডি:",
+  "TTS Highlighting": "ཡིག་འབྲུ་སྦྱོར་བའི་གསལ་བཤད།",
+  "Style": "བཟོ་ལྟ།",
+  "Underline": "འོག་ཐིག",
+  "Strikethrough": "འཐེན་ཐིག",
+  "Squiggly": "འཁྱོག་ཐིག",
+  "Outline": "མཐའ་ཐིག",
+  "Save Current Color": "མིག་སྔའི་ཚོན་གཏན་འཁེལ་བྱེད།",
+  "Quick Colors": "མྱུར་ཚོན།"
 }

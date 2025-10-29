@@ -635,5 +635,13 @@
   "Purchase Successful!": "خرید با موفقیت انجام شد!",
   "lifetime": "مادام‌العمر",
   "Thank you for your purchase! Your payment has been processed successfully.": "از خرید شما متشکریم! پرداخت شما با موفقیت انجام شد.",
-  "Order ID:": "شناسه سفارش:"
+  "Order ID:": "شناسه سفارش:",
+  "TTS Highlighting": "هایلایت TTS",
+  "Style": "سبک",
+  "Underline": "خط زیرین",
+  "Strikethrough": "خط‌خورده",
+  "Squiggly": "خط‌موج‌دار",
+  "Outline": "خط‌کشی",
+  "Save Current Color": "ذخیره رنگ فعلی",
+  "Quick Colors": "رنگ‌های سریع"
 }

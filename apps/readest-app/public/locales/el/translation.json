@@ -635,5 +635,13 @@
   "Purchase Successful!": "Η αγορά ήταν επιτυχής!",
   "lifetime": "διαρκής",
   "Thank you for your purchase! Your payment has been processed successfully.": "Σας ευχαριστούμε για την αγορά σας! Η πληρωμή σας έχει επεξεργαστεί με επιτυχία.",
-  "Order ID:": "Αριθμός παραγγελίας:"
+  "Order ID:": "Αριθμός παραγγελίας:",
+  "TTS Highlighting": "Επισήμανση TTS",
+  "Style": "Στυλ",
+  "Underline": "Υπογράμμιση",
+  "Strikethrough": "Διαγραμμένο",
+  "Squiggly": "Κυματιστό",
+  "Outline": "Περίγραμμα",
+  "Save Current Color": "Αποθήκευση τρέχουσας χρώματος",
+  "Quick Colors": "Γρήγορα χρώματα"
 }

@@ -631,5 +631,13 @@
   "Purchase Successful!": "購買成功！",
   "lifetime": "永久",
   "Thank you for your purchase! Your payment has been processed successfully.": "感謝您的購買！您的付款已成功處理。",
-  "Order ID:": "訂單編號："
+  "Order ID:": "訂單編號：",
+  "TTS Highlighting": "TTS 高亮",
+  "Style": "樣式",
+  "Underline": "底線",
+  "Strikethrough": "刪除線",
+  "Squiggly": "波浪線",
+  "Outline": "輪廓",
+  "Save Current Color": "儲存目前顏色",
+  "Quick Colors": "快速顏色"
 }

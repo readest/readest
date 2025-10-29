@@ -631,5 +631,13 @@
   "Purchase Successful!": "Pembelian Berhasil!",
   "lifetime": "seumur hidup",
   "Thank you for your purchase! Your payment has been processed successfully.": "Terima kasih atas pembelian Anda! Pembayaran Anda telah berhasil diproses.",
-  "Order ID:": "ID Pesanan:"
+  "Order ID:": "ID Pesanan:",
+  "TTS Highlighting": "TTS Menyorot",
+  "Style": "Gaya",
+  "Underline": "Garisan Bawah",
+  "Strikethrough": "Garis Tengah",
+  "Squiggly": "Bergelombang",
+  "Outline": "Garis Besar",
+  "Save Current Color": "Simpan Warna Saat Ini",
+  "Quick Colors": "Warna Cepat"
 }

@@ -635,5 +635,13 @@
   "Purchase Successful!": "Satın Alma Başarılı!",
   "lifetime": "ömür boyu",
   "Thank you for your purchase! Your payment has been processed successfully.": "Satın alma işleminiz için teşekkürler! Ödemeniz başarıyla işlendi.",
-  "Order ID:": "Sipariş Kimliği:"
+  "Order ID:": "Sipariş Kimliği:",
+  "TTS Highlighting": "TTS Vurgulama",
+  "Style": "Stil",
+  "Underline": "Altı Çizili",
+  "Strikethrough": "Üstü Çizili",
+  "Squiggly": "Dalgalı Çizgi",
+  "Outline": "Kontur",
+  "Save Current Color": "Mevcut Rengi Kaydet",
+  "Quick Colors": "Hızlı Renkler"
 }

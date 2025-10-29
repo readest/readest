@@ -635,5 +635,13 @@
   "Purchase Successful!": "Aankoop Succesvol!",
   "lifetime": "levenslang",
   "Thank you for your purchase! Your payment has been processed successfully.": "Bedankt voor je aankoop! Je betaling is succesvol verwerkt.",
-  "Order ID:": "Bestel-ID:"
+  "Order ID:": "Bestel-ID:",
+  "TTS Highlighting": "TTS-markering",
+  "Style": "Stijl",
+  "Underline": "Onderstrepen",
+  "Strikethrough": "Doorhalen",
+  "Squiggly": "Kronkelig",
+  "Outline": "Omtrek",
+  "Save Current Color": "Huidige kleur opslaan",
+  "Quick Colors": "Snelle kleuren"
 }
