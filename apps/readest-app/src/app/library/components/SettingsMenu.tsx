@@ -317,7 +317,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
                 <MenuItem
                   label={_('Save Book Cover')}
                   tooltip={_('Auto-save last book cover')}
-                  description={'💾 Images/last-book-cover.png'}
+                  description={savedBookCoverForLockScreen ? '💾 Images/last-book-cover.png' : ''}
                   toggled={!!savedBookCoverForLockScreen}
                   onClick={handleSetSavedBookCoverForLockScreen}
                 />
