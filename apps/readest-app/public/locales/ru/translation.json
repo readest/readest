@@ -652,5 +652,7 @@
   "Outline": "Контур",
   "Save Current Color": "Сохранить текущий цвет",
   "Quick Colors": "Быстрые цвета",
-  "Highlighter": "Маркер"
+  "Highlighter": "Маркер",
+  "Save Book Cover": "Сохранить обложку книги",
+  "Auto-save last book cover": "Автоматически сохранять последнюю обложку книги"
 }

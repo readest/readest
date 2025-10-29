@@ -660,5 +660,7 @@
   "Outline": "مخطط",
   "Save Current Color": "حفظ اللون الحالي",
   "Quick Colors": "ألوان سريعة",
-  "Highlighter": "محدد النص"
+  "Highlighter": "محدد النص",
+  "Save Book Cover": "حفظ غلاف الكتاب",
+  "Auto-save last book cover": "حفظ غلاف الكتاب الأخير تلقائيًا"
 }

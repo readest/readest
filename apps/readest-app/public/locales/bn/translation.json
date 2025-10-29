@@ -644,5 +644,7 @@
   "Outline": "বাহিরের রেখা",
   "Save Current Color": "বর্তমান রঙ সংরক্ষণ করুন",
   "Quick Colors": "দ্রুত রংসমূহ",
-  "Highlighter": "হাইলাইটার"
+  "Highlighter": "হাইলাইটার",
+  "Save Book Cover": "বইয়ের মলাট সংরক্ষণ করুন",
+  "Auto-save last book cover": "শেষ বইয়ের মলাট স্বয়ংক্রিয়ভাবে সংরক্ষণ করুন"
 }

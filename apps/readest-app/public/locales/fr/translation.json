@@ -648,5 +648,7 @@
   "Outline": "Contour",
   "Save Current Color": "Enregistrer la Couleur Actuelle",
   "Quick Colors": "Couleurs Rapides",
-  "Highlighter": "Surligneur"
+  "Highlighter": "Surligneur",
+  "Save Book Cover": "Enregistrer la Couverture du Livre",
+  "Auto-save last book cover": "Enregistrer automatiquement la dernière couverture du livre"
 }
