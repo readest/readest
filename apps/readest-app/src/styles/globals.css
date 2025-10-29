@@ -412,6 +412,10 @@ foliate-view {
   animation: spin-counterclockwise 1s linear;
 }
 
+[data-eink="true"] [class*="shadow-"] {
+  box-shadow: none !important;
+}
+
 .no-transitions * {
-    transition: none !important;
+  transition: none !important;
 }
