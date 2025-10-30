@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { FaHeadphones } from 'react-icons/fa6';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
@@ -18,7 +18,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { getView, getViewState, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getViewState, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
@@ -26,6 +26,16 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
   );
+
+  const rangeInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (hoveredBookKey !== bookKey) {
+      if (rangeInputRef.current && document.activeElement === rangeInputRef.current) {
+        rangeInputRef.current.blur();
+      }
+    }
+  }, [hoveredBookKey, bookKey]);
 
   useEffect(() => {
     if (progressValid) {
@@ -93,6 +103,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         </span>
       )}
       <input
+        ref={rangeInputRef}
         type='range'
         className='text-base-content mx-2 min-w-0 flex-1'
         min={0}

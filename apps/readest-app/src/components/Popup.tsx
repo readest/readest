@@ -83,7 +83,11 @@ const Popup = ({
       <div
         id='popup-container'
         ref={containerRef}
-        className={clsx('bg-base-300 absolute rounded-lg font-sans shadow-xl', className)}
+        className={clsx(
+          'bg-base-300 absolute rounded-lg font-sans',
+          trianglePosition?.dir !== 'up' && 'shadow-xl',
+          className,
+        )}
         style={{
           width: `${width}px`,
           height: height ? `${height}px` : 'auto',
