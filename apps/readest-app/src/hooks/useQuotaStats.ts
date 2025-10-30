@@ -21,7 +21,7 @@ export const useQuotaStats = (briefName = false) => {
         percentage: Math.round((storagPlan.usage / storagPlan.quota) * 100),
       }),
       used: parseFloat((storagPlan.usage / 1024 / 1024 / (inGB ? 1024 : 1)).toFixed(2)),
-      total: Math.round(storagPlan.quota / 1024 / 1024 / (inGB ? 1024 : 1)),
+      total: Math.round((storagPlan.quota / 1024 / 1024 / (inGB ? 1024 : 1)) * 10) / 10,
       unit: inGB ? 'GB' : 'MB',
     };
     const translationPlan = getTranslationPlanData(token);
