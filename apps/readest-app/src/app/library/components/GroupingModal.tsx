@@ -65,7 +65,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         }
       }
     });
-    setLibrary(libraryBooks);
+    setLibrary([...libraryBooks]);
     appService?.saveLibraryBooks(libraryBooks);
     onConfirm();
   };
@@ -118,7 +118,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         }
       }
     });
-    setLibrary(libraryBooks);
+    setLibrary([...libraryBooks]);
     appService?.saveLibraryBooks(libraryBooks);
     onConfirm();
   };
@@ -155,7 +155,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
               className='flex items-center space-x-2 p-2 text-blue-500'
             >
               <HiOutlineFolderRemove size={iconSize} />
-              <span>{_('Remove From Group')}</span>
+              <span className='truncate'>{_('Remove From Group')}</span>
             </button>
           )}
           <button
@@ -163,7 +163,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             className='flex items-center space-x-2 p-2 text-blue-500'
           >
             <HiOutlineFolderAdd size={iconSize} />
-            <span>{_('Create New Group')}</span>
+            <span className='truncate'>{_('Create New Group')}</span>
           </button>
         </div>
         {showInput && (
