@@ -164,7 +164,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         <div>
           <span className='font-bold'>{_('Description')}</span>
           <p
-            className='text-neutral-content prose prose-sm text-sm'
+            className='text-neutral-content prose prose-sm max-w-full text-sm'
             dangerouslySetInnerHTML={{
               __html: metadata.description || _('No description available'),
             }}
