@@ -110,6 +110,9 @@ importers:
       '@zip.js/zip.js':
         specifier: ^2.7.53
         version: 2.7.53
+      abortcontroller-polyfill:
+        specifier: ^1.7.8
+        version: 1.7.8
       app-store-server-api:
         specifier: ^0.17.1
         version: 0.17.1
@@ -3351,6 +3354,9 @@ packages:
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
     engines: {node: '>=6.5'}
+
+  abortcontroller-polyfill@1.7.8:
+    resolution: {integrity: sha512-9f1iZ2uWh92VcrU9Y8x+LdM4DLj75VE0MJB8zuF1iUnroEptStw+DQ8EQPMUdfe5k+PkB1uUfDQfWbhstH8LrQ==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -11440,6 +11446,8 @@ snapshots:
   abort-controller@3.0.0:
     dependencies:
       event-target-shim: 5.0.1
+
+  abortcontroller-polyfill@1.7.8: {}
 
   accepts@2.0.0:
     dependencies:

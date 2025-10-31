@@ -67,6 +67,7 @@
     "@tauri-apps/plugin-shell": "~2.3.1",
     "@tauri-apps/plugin-updater": "^2.9.0",
     "@zip.js/zip.js": "^2.7.53",
+    "abortcontroller-polyfill": "^1.7.8",
     "app-store-server-api": "^0.17.1",
     "aws4fetch": "^1.0.20",
     "clsx": "^2.1.1",
