@@ -201,6 +201,10 @@ const getColorStyles = (
 
 const getLayoutStyles = (
   overrideLayout: boolean,
+  marginTop: number,
+  marginRight: number,
+  marginBottom: number,
+  marginLeft: number,
   paragraphMargin: number,
   lineSpacing: number,
   wordSpacing: number,
@@ -216,6 +220,10 @@ const getLayoutStyles = (
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
     --default-text-align: ${justify ? 'justify' : 'start'};
+    --margin-top: ${marginTop}px;
+    --margin-right: ${marginRight}px;
+    --margin-bottom: ${marginBottom}px;
+    --margin-left: ${marginLeft}px;
     hanging-punctuation: allow-end last;
     orphans: 2;
     widows: 2;
@@ -503,6 +511,10 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   }
   const layoutStyles = getLayoutStyles(
     viewSettings.overrideLayout!,
+    viewSettings.marginTopPx,
+    viewSettings.marginRightPx,
+    viewSettings.marginBottomPx,
+    viewSettings.marginLeftPx,
     viewSettings.paragraphMargin!,
     viewSettings.lineHeight!,
     viewSettings.wordSpacing!,
@@ -575,6 +587,23 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     }
     return match;
   });
+
+  // Process duokan-bleed
+  css = css.replace(ruleRegex, (_, selector, block) => {
+    const directions = ['top', 'bottom', 'left', 'right'];
+    for (const dir of directions) {
+      const bleedRegex = new RegExp(`duokan-bleed\\s*:\\s*[^;]*${dir}[^;]*;`);
+      const marginRegex = new RegExp(`margin-${dir}\\s*:`);
+      if (bleedRegex.test(block) && !marginRegex.test(block)) {
+        block = block.replace(
+          /}$/,
+          ` margin-${dir}: calc(-1 * var(--margin-${dir})) !important; }`,
+        );
+      }
+    }
+    return selector + block;
+  });
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
