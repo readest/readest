@@ -171,8 +171,8 @@ const getColorStyles = (
       ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
     }
     blockquote, table * {
-      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -300,7 +300,7 @@ const getLayoutStyles = (
   p[align="center"], dd[align="center"],
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center,
-  li p, ol p, ul p {
+  li p, ol p, ul p, td p {
     text-indent: initial !important;
   }
   p {
