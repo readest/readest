@@ -582,19 +582,19 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
               value={maxInlineSize}
               onChange={setMaxInlineSize}
-              disabled={maxColumnCount === 1 || viewSettings.scrolled}
-              min={400}
+              disabled={false}
+              min={200}
               max={9999}
-              step={100}
+              step={50}
             />
             <NumberInput
               label={viewSettings.vertical ? _('Maximum Column Width') : _('Maximum Column Height')}
               value={maxBlockSize}
               onChange={setMaxBlockSize}
-              disabled={maxColumnCount === 1 || viewSettings.scrolled}
+              disabled={false}
               min={400}
               max={9999}
-              step={100}
+              step={50}
             />
           </div>
         </div>
