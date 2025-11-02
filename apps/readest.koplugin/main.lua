@@ -122,7 +122,7 @@ end
 
 function ReadestSync:tryRefreshToken()
     if self.settings.refresh_token and self.settings.expires_at
-        and self.settings.expires_at < os.time() - self.settings.expires_in / 2 then
+        and self.settings.expires_at < os.time() + self.settings.expires_in / 2 then
         local client = self:getSupabaseAuthClient()
         client:refresh_token(self.settings.refresh_token, function(success, response)
             if success then
