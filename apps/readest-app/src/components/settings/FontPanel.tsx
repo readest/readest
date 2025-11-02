@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { MdSettings } from 'react-icons/md';
 
 import {
-  ANDROID_FONTS,
   CJK_EXCLUDE_PATTENS,
   CJK_FONTS_PATTENS,
   CJK_SANS_SERIF_FONTS,
@@ -130,7 +129,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       defaultSysFonts = IOS_FONTS;
       break;
     case 'android':
-      defaultSysFonts = ANDROID_FONTS;
+      defaultSysFonts = [];
       break;
     default:
       break;
@@ -204,7 +203,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   }, [viewSettings.serifFont, viewSettings.sansSerifFont, viewSettings.monospaceFont]);
 
   useEffect(() => {
-    if (isTauriAppPlatform()) {
+    if (isTauriAppPlatform() && appService && !appService.isAndroidApp) {
       getSysFontsList().then((res) => {
         if (res.error || Object.keys(res.fonts).length === 0) {
           console.error('Failed to get system fonts list:', res.error);
@@ -227,7 +226,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         setSysFonts([...new Set(processedFonts)].sort((a, b) => a.localeCompare(b)));
       });
     }
-  }, []);
+  }, [appService]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'defaultFont', defaultFont);
