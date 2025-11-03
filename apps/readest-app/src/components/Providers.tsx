@@ -60,8 +60,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           setScreenBrightness(brightness / 100);
         }
         applyBackgroundTexture(envConfig, globalViewSettings);
-        if (appService.isAndroidApp) {
-          applyEinkMode(globalViewSettings.isEink);
+        if (globalViewSettings.isEink) {
+          applyEinkMode(true);
         }
       });
     }
