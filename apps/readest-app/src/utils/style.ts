@@ -354,6 +354,10 @@ const getLayoutStyles = (
     color: unset;
   }
 
+  div:has(> img, > svg) {
+    max-width: 100% !important;
+  }
+
   /* some epubs set insane inline-block for p */
   p {
     display: block;
