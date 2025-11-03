@@ -15,7 +15,7 @@ import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
-import { Book, BookGroupType, BooksGroup } from '@/types/book';
+import { Book, BooksGroup } from '@/types/book';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 
@@ -48,24 +48,6 @@ export const generateBookshelfItems = (books: Book[]): (Book | BooksGroup)[] => 
     groups.find((group) => group.name === BOOK_UNGROUPED_NAME)?.books || [];
   const groupedBooks: BooksGroup[] = groups.filter((group) => group.name !== BOOK_UNGROUPED_NAME);
   return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
-};
-
-export const generateGroupsList = (items: Book[]): BookGroupType[] => {
-  return items
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .reduce((acc: BookGroupType[], item: Book) => {
-      if (item.deletedAt) return acc;
-      if (
-        item.groupId &&
-        item.groupName &&
-        item.groupId !== BOOK_UNGROUPED_ID &&
-        item.groupName !== BOOK_UNGROUPED_NAME &&
-        !acc.find((group) => group.id === item.groupId)
-      ) {
-        acc.push({ id: item.groupId, name: item.groupName });
-      }
-      return acc;
-    }, []) as BookGroupType[];
 };
 
 interface BookshelfItemProps {
