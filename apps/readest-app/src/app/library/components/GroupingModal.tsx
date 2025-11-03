@@ -4,13 +4,12 @@ import { MdCheck } from 'react-icons/md';
 import { HiOutlineFolder, HiOutlineFolderAdd, HiOutlineFolderRemove } from 'react-icons/hi';
 
 import { Book, BookGroupType } from '@/types/book';
-import { isMd5, md5Fingerprint } from '@/utils/md5';
+import { isMd5 } from '@/utils/md5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
-import { generateGroupsList } from './BookshelfItem';
 
 interface GroupingModalProps {
   libraryBooks: Book[];
@@ -27,16 +26,15 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { setLibrary } = useLibraryStore();
-  const groupsList = generateGroupsList(libraryBooks);
+  const { setLibrary, addGroup, getGroups, refreshGroups } = useLibraryStore();
+
+  const allGroups = getGroups();
 
   const [showInput, setShowInput] = useState(false);
   const [editGroupName, setEditGroupName] = useState(_('Untitled Group'));
   const [selectedGroup, setSelectedGroup] = useState<BookGroupType | null>(null);
-  const [newGroups, setNewGroups] = useState<BookGroupType[]>([]);
-  const [allGroups, setAllGroups] = useState<BookGroupType[]>(groupsList);
-  const editorRef = useRef<HTMLInputElement>(null);
 
+  const editorRef = useRef<HTMLInputElement>(null);
   const iconSize = useResponsiveSize(16);
 
   const isSelectedBooksHasGroup =
@@ -44,6 +42,20 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     selectedBooks
       .map((hash) => libraryBooks.find((book) => book.hash === hash)?.groupId)
       .some((group) => group && group !== BOOK_UNGROUPED_NAME);
+
+  const generateNextUntitledGroupName = () => {
+    const untitledGroupPattern = new RegExp(`^${_('Untitled Group')}\\s*(\\d+)?$`);
+    const untitledGroupNumbers = allGroups
+      .map((group) => {
+        const match = group.name.match(untitledGroupPattern);
+        return match ? parseInt(match[1] || '0', 10) : null;
+      })
+      .filter((num) => num !== null);
+
+    const nextNumber = untitledGroupNumbers.length > 0 ? Math.max(...untitledGroupNumbers) + 1 : 1;
+
+    return `${_('Untitled Group')} ${nextNumber}`;
+  };
 
   const handleCreateGroup = () => {
     setShowInput(true);
@@ -73,33 +85,11 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   const handleConfirmCreateGroup = () => {
     const groupName = editGroupName.trim();
     if (groupName) {
-      const newGroup = { id: md5Fingerprint(groupName), name: groupName };
-      const existingGroupIndex = newGroups.findIndex((group) => group.name === groupName);
-      if (existingGroupIndex > -1) {
-        newGroups.splice(existingGroupIndex, 1);
-      }
-      newGroups.push(newGroup);
+      const newGroup = addGroup(groupName);
       setSelectedGroup(newGroup);
-      setNewGroups(newGroups);
-      for (const newGroup of newGroups) {
-        const existingGroupIndex = groupsList.findIndex((group) => group.id === newGroup.id);
-        if (existingGroupIndex > -1) {
-          groupsList.splice(existingGroupIndex, 1);
-        }
-        groupsList.unshift(newGroup);
-      }
-      setAllGroups(groupsList);
-      const untitledGroupPattern = new RegExp(`^${_('Untitled Group')}\\s*(\\d+)?$`);
-      const untitledGroupNumbers = groupsList
-        .map((group) => {
-          const match = group.name.match(untitledGroupPattern);
-          return match ? parseInt(match[1] || '0', 10) : null;
-        })
-        .filter((num) => num !== null);
 
-      const nextNumber =
-        untitledGroupNumbers.length > 0 ? Math.max(...untitledGroupNumbers) + 1 : 1;
-      setEditGroupName(`${_('Untitled Group')} ${nextNumber}`);
+      const nextName = generateNextUntitledGroupName();
+      setEditGroupName(nextName);
       setShowInput(false);
     }
   };
@@ -130,14 +120,20 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   }, [showInput]);
 
   useEffect(() => {
+    refreshGroups();
+  }, [refreshGroups]);
+
+  useEffect(() => {
     const groupIds = selectedBooks
       .map((id) => libraryBooks.find((book) => book.hash === id || book.groupId === id)?.groupId)
       .filter((groupId) => groupId);
     if (Array.from(new Set(groupIds)).length === 1) {
-      setSelectedGroup(groupsList.find((group) => group.id === groupIds[0]) || null);
+      setTimeout(() => {
+        const allGroups = getGroups();
+        setSelectedGroup(allGroups.find((group) => group.id === groupIds[0]) || null);
+      }, 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBooks]);
+  }, [libraryBooks, selectedBooks, getGroups]);
 
   return (
     <div className='fixed inset-0 flex items-center justify-center'>
@@ -183,7 +179,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
               className={clsx(
                 'btn btn-ghost settings-content hover:bg-transparent',
                 'flex h-[1.3em] min-h-[1.3em] items-end p-0',
-                editorRef.current && editorRef.current.value ? '' : 'btn-disabled !bg-opacity-0',
+                editGroupName ? '' : 'btn-disabled !bg-opacity-0',
               )}
               onClick={() => handleConfirmCreateGroup()}
             >

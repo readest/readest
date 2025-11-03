@@ -18,7 +18,6 @@ import { getFilename } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
-import { BOOK_ACCEPT_FORMATS } from '@/services/constants';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 
@@ -49,6 +48,7 @@ import { AboutWindow } from '@/components/AboutWindow';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
+import { useDragDropImport } from './hooks/useDragDropImport';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
@@ -72,6 +72,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     syncProgress,
     updateBook,
     setLibrary,
+    getGroupName,
+    refreshGroups,
     checkOpenWithBooks,
     checkLastOpenBooks,
     setCheckOpenWithBooks,
@@ -92,7 +94,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     [key: string]: number | null;
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const isInitiating = useRef(false);
 
   const demoBooks = useDemoBooks();
@@ -106,6 +107,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenWithBooks();
 
   const { pullLibrary, pushLibrary } = useBooksSync();
+  const { isDragging } = useDragDropImport();
 
   usePullToRefresh(containerRef, pullLibrary);
   useScreenWakeLock(settings.screenWakeLock);
@@ -155,64 +157,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   }, [appService]);
 
-  const handleDropedFiles = async (files: File[] | string[]) => {
-    if (files.length === 0) return;
-    const supportedFiles = files.filter((file) => {
-      let fileExt;
-      if (typeof file === 'string') {
-        fileExt = file.split('.').pop()?.toLowerCase();
-      } else {
-        fileExt = file.name.split('.').pop()?.toLowerCase();
-      }
-      return BOOK_ACCEPT_FORMATS.includes(`.${fileExt}`);
-    });
-    if (supportedFiles.length === 0) {
-      eventDispatcher.dispatch('toast', {
-        message: _('No supported files found. Supported formats: {{formats}}', {
-          formats: BOOK_ACCEPT_FORMATS,
-        }),
-        type: 'error',
-      });
-      return;
-    }
-
-    if (appService?.hasHaptics) {
-      impactFeedback('medium');
-    }
-
-    const selectedFiles = supportedFiles.map(
-      (file) =>
-        ({
-          file: typeof file === 'string' ? undefined : file,
-          path: typeof file === 'string' ? file : undefined,
-        }) as SelectedFile,
-    );
-    await importBooks(selectedFiles);
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-
-    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      const files = Array.from(event.dataTransfer.files);
-      handleDropedFiles(files);
-    }
-  };
-
   const handleRefreshLibrary = useCallback(async () => {
     const appService = await envConfig.getAppService();
     const settings = await appService.loadSettings();
@@ -235,48 +179,30 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     return;
   }, [appService, handleRefreshLibrary]);
 
-  useEffect(() => {
-    const libraryPage = document.querySelector('.library-page');
-    if (!appService?.isMobile) {
-      libraryPage?.addEventListener('dragover', handleDragOver as unknown as EventListener);
-      libraryPage?.addEventListener('dragleave', handleDragLeave as unknown as EventListener);
-      libraryPage?.addEventListener('drop', handleDrop as unknown as EventListener);
-    }
-
-    if (isTauriAppPlatform()) {
-      const unlisten = getCurrentWebview().onDragDropEvent((event) => {
-        if (event.payload.type === 'over') {
-          setIsDragging(true);
-        } else if (event.payload.type === 'drop') {
-          setIsDragging(false);
-          handleDropedFiles(event.payload.paths);
-        } else {
-          setIsDragging(false);
-        }
-      });
-      return () => {
-        unlisten.then((fn) => fn());
-      };
-    }
-
-    return () => {
-      if (!appService?.isMobile) {
-        libraryPage?.removeEventListener('dragover', handleDragOver as unknown as EventListener);
-        libraryPage?.removeEventListener('dragleave', handleDragLeave as unknown as EventListener);
-        libraryPage?.removeEventListener('drop', handleDrop as unknown as EventListener);
-      }
-    };
+  const handleImportBookFiles = useCallback(async (event: CustomEvent) => {
+    const selectedFiles: SelectedFile[] = event.detail.files;
+    const groupId: string = event.detail.groupId || '';
+    if (selectedFiles.length === 0) return;
+    await importBooks(selectedFiles, groupId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageRef.current]);
+  }, []);
 
   useEffect(() => {
+    eventDispatcher.on('import-book-files', handleImportBookFiles);
+    return () => {
+      eventDispatcher.off('import-book-files', handleImportBookFiles);
+    };
+  }, [handleImportBookFiles]);
+
+  useEffect(() => {
+    refreshGroups();
     if (!libraryBooks.some((book) => !book.deletedAt)) {
       handleSetSelectMode(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [libraryBooks]);
 
-  const processOpenWithFiles = React.useCallback(
+  const processOpenWithFiles = useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
       const settings = await appService.loadSettings();
       const bookIds: string[] = [];
@@ -415,7 +341,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoBooks, libraryLoaded]);
 
-  const importBooks = async (files: SelectedFile[]) => {
+  const importBooks = async (files: SelectedFile[], groupId?: string) => {
     setLoading(true);
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
@@ -433,6 +359,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       if (!file) return;
       try {
         const book = await appService?.importBook(file, library);
+        if (book && groupId) {
+          book.groupId = groupId;
+          book.groupName = getGroupName(groupId);
+          await updateBook(envConfig, book);
+        }
         if (user && book && !book.uploadedAt && settings.autoUpload) {
           console.log('Uploading book:', book.title);
           handleBookUpload(book, false);
@@ -634,7 +565,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     console.log('Importing books...');
     selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
-      importBooks(result.files);
+      const groupId = searchParams?.get('group') || '';
+      importBooks(result.files, groupId);
     });
   };
 

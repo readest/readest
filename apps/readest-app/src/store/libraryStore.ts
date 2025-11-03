@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { Book, BooksGroup } from '@/types/book';
+import { Book, BookGroupType, BooksGroup } from '@/types/book';
 import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
+import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
+import { md5Fingerprint } from '@/utils/md5';
 
 interface LibraryState {
   library: Book[]; // might contain deleted books
@@ -10,6 +12,7 @@ interface LibraryState {
   checkLastOpenBooks: boolean;
   currentBookshelf: (Book | BooksGroup)[];
   selectedBooks: Set<string>; // hashes for books, ids for groups
+  groups: Record<string, string>;
   setIsSyncing: (syncing: boolean) => void;
   setSyncProgress: (progress: number) => void;
   setSelectedBooks: (ids: string[]) => void;
@@ -21,6 +24,11 @@ interface LibraryState {
   setLibrary: (books: Book[]) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
+
+  refreshGroups: () => void;
+  addGroup: (name: string) => BookGroupType;
+  getGroups: () => BookGroupType[];
+  getGroupName: (id: string) => string | undefined;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -29,6 +37,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   syncProgress: 0,
   currentBookshelf: [],
   selectedBooks: new Set(),
+  groups: {},
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
@@ -66,5 +75,45 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       }
       return { selectedBooks: newSelection };
     });
+  },
+  refreshGroups: () => {
+    const { library } = get();
+    const groups: Record<string, string> = {};
+
+    library.forEach((book) => {
+      if (
+        book.groupId &&
+        book.groupName &&
+        book.groupId !== BOOK_UNGROUPED_ID &&
+        book.groupName !== BOOK_UNGROUPED_NAME &&
+        !book.deletedAt
+      ) {
+        groups[book.groupId] = book.groupName;
+      }
+    });
+
+    set({ groups });
+  },
+  addGroup: (name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      throw new Error('Group name cannot be empty');
+    }
+
+    const id = md5Fingerprint(trimmedName);
+    const { groups } = get();
+
+    set({ groups: { ...groups, [id]: trimmedName } });
+
+    return { id, name: trimmedName };
+  },
+  getGroups: () => {
+    const { groups } = get();
+    return Object.entries(groups)
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+  getGroupName: (id: string) => {
+    return get().groups[id];
   },
 }));
