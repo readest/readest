@@ -269,12 +269,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       </div>
 
-      {appService?.isMobileApp && (
+      {(appService?.isMobileApp || appService?.appPlatform === 'web') && (
         <div className='w-full'>
           <h2 className='mb-2 font-medium'>{_('Device')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200 divide-y'>
-              {appService?.isAndroidApp && (
+              {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
                 <div className='config-item'>
                   <span className=''>{_('E-Ink Mode')}</span>
                   <input
@@ -285,15 +285,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                   />
                 </div>
               )}
-              <div className='config-item'>
-                <span className=''>{_('Auto Screen Brightness')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={autoScreenBrightness}
-                  onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
-                />
-              </div>
+              {appService?.isMobileApp && (
+                <div className='config-item'>
+                  <span className=''>{_('Auto Screen Brightness')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle'
+                    checked={autoScreenBrightness}
+                    onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

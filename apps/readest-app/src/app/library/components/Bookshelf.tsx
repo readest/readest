@@ -363,7 +363,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <div
             className={clsx(
               'flex items-center justify-center shadow-lg',
-              'bg-gray-600 text-xs text-white',
+              'bg-base-300 text-base-content text-xs',
               'mx-auto w-fit space-x-6 rounded-lg p-4',
             )}
           >

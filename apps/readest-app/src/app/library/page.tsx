@@ -96,6 +96,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const isInitiating = useRef(false);
 
+  const viewSettings = settings.globalViewSettings;
   const demoBooks = useDemoBooks();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
   const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
@@ -604,7 +605,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ref={pageRef}
       aria-label='Your Library'
       className={clsx(
-        'library-page bg-base-200 text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        'library-page text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >

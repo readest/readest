@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
-import { PiSelectionAllDuotone } from 'react-icons/pi';
+import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
 import { MdOutlineMenu, MdArrowBackIosNew } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
@@ -152,6 +152,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               className={clsx(
                 'input rounded-badge bg-base-300/45 h-9 w-full pl-10 pr-10 sm:h-7',
                 'font-sans text-sm font-light',
+                'placeholder:text-base-content/50',
                 'border-none focus:outline-none focus:ring-0',
               )}
             />
@@ -189,10 +190,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 title={_('Select Books')}
                 className='h-6'
               >
-                <PiSelectionAllDuotone
-                  role='button'
-                  className={`h-6 w-6 ${isSelectMode ? 'fill-gray-400' : 'fill-gray-500'}`}
-                />
+                {isSelectMode ? (
+                  <PiSelectionAllFill role='button' className='h-6 w-6 text-gray-500' />
+                ) : (
+                  <PiSelectionAll role='button' className='h-6 w-6 text-gray-500' />
+                )}
               </button>
             )}
           </div>
