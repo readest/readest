@@ -10,7 +10,11 @@ export const styleTransformer: Transformer = {
 
     for (const match of styleMatches) {
       const [full, css] = match;
-      const transformed = await transformStylesheet(ctx.width, ctx.height, css!);
+      const transformed = await transformStylesheet(
+        ctx.width || window.innerWidth,
+        ctx.height || window.innerHeight,
+        css!,
+      );
       result = result.replace(full, `<style>${transformed}</style>`);
     }
 
