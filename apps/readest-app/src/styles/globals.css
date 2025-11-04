@@ -428,6 +428,10 @@ foliate-view {
   color: theme('colors.base-content') !important;
 }
 
+[data-eink="true"] [class*="text-bold-in-eink"] {
+  font-weight: bold;
+}
+
 .no-transitions * {
   transition: none !important;
 }

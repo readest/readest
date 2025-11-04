@@ -4,6 +4,8 @@ export type TransformContext = {
   bookKey: string;
   viewSettings: ViewSettings;
   primaryLanguage?: string;
+  width?: number;
+  height?: number;
   content: string;
   transformers: string[];
   reversePunctuationTransform?: boolean;

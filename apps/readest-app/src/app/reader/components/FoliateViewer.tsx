@@ -129,13 +129,22 @@ const FoliateViewer: React.FC<{
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(width, height, data);
           if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
-            const ctx = {
+            const ctx: TransformContext = {
               bookKey,
               viewSettings,
+              width,
+              height,
               primaryLanguage: bookData.book?.primaryLanguage,
               content: data,
-              transformers: ['punctuation', 'footnote', 'whitespace', 'language', 'sanitizer'],
-            } as TransformContext;
+              transformers: [
+                'style',
+                'punctuation',
+                'footnote',
+                'whitespace',
+                'language',
+                'sanitizer',
+              ],
+            };
             return Promise.resolve(transformContent(ctx));
           }
           return data;
