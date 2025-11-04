@@ -391,6 +391,10 @@ const getLayoutStyles = (
   div.center *, p.center * { text-align: center; }
   div.justify *, p.justify * { text-align: justify; }
 
+  .h5_mainbody {
+    overflow: unset !important;
+  }
+
   .nonindent, .noindent {
     text-indent: unset !important;
   }
