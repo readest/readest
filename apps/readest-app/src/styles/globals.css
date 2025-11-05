@@ -416,7 +416,23 @@ foliate-view {
   box-shadow: none !important;
 }
 
-[data-eink="true"] [class*="text-"] {
+[data-eink="true"] [class*="text-base-content"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="text-red"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="text-gray"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="text-neutral-content"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="placeholder"]::placeholder {
   color: theme('colors.base-content') !important;
 }
 
@@ -424,8 +440,8 @@ foliate-view {
   background-color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="placeholder:"]::placeholder {
-  color: theme('colors.base-content') !important;
+[data-eink="true"] [class*="font-light"] {
+  font-weight: normal !important;
 }
 
 [data-eink="true"] [class*="text-bold-in-eink"] {

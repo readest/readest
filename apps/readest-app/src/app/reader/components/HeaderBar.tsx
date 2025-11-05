@@ -106,7 +106,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     >
       <div
         role='none'
-        className={clsx('absolute top-0 z-10 h-11 w-full')}
+        className={clsx('absolute top-0 z-20 h-11 w-full')}
+        onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />

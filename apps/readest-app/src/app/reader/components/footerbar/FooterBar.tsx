@@ -1,10 +1,11 @@
 import clsx from 'clsx';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
@@ -27,6 +28,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
+  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
 
   const view = getView(bookKey);
   const config = getConfig(bookKey);
@@ -147,6 +149,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
     ],
   );
 
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent | CustomEvent) => {
+      if (event instanceof CustomEvent) {
+        if (event.detail.keyName === 'Back') {
+          setHoveredBookKey('');
+          return true;
+        }
+      } else {
+        if (event.key === 'Escape') {
+          setHoveredBookKey('');
+        }
+        event.stopPropagation();
+      }
+      return false;
+    },
+    [setHoveredBookKey],
+  );
+
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+
+    if (hoveredBookKey) {
+      acquireBackKeyInterception();
+      eventDispatcher.onSync('native-key-down', handleKeyDown);
+    }
+    return () => {
+      if (hoveredBookKey) {
+        releaseBackKeyInterception();
+        eventDispatcher.offSync('native-key-down', handleKeyDown);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredBookKey]);
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -182,6 +218,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
         )}
+        onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />
