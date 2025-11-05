@@ -457,12 +457,19 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun get_screen_brightness(invoke: Invoke) {
         val ret = JSObject()
         try {
-            val brightness = Settings.System.getInt(
-                activity.contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS
-            )
-            val normalizedBrightness = brightness / 255.0
-            ret.put("brightness", normalizedBrightness)
+            val window = activity.window
+            val layoutParams = window.attributes
+            val brightness = layoutParams.screenBrightness
+
+            if (brightness >= 0.0f) {
+                ret.put("brightness", brightness.toDouble())
+            } else {
+                val systemBrightness = Settings.System.getInt(
+                    activity.contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS
+                )
+                ret.put("brightness", systemBrightness / 255.0)
+            }
         } catch (e: Exception) {
             ret.put("error", e.message)
             ret.put("brightness", -1.0)
