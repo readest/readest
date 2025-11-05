@@ -57,24 +57,28 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
       return;
     }
 
-    const newMeta = { ...editedMeta } as { [key: string]: unknown };
-    switch (field) {
-      case 'subject':
-        newMeta['subject'] = value ? value.split(/,|;|，|、/).map((s) => s.trim()) : [];
-        break;
-      default:
-        newMeta[field] = value;
-    }
+    setEditedMeta((prevMeta) => {
+      const newMeta = { ...prevMeta } as { [key: string]: unknown };
+      switch (field) {
+        case 'subject':
+          newMeta['subject'] = value ? value.split(/,|;|，|、/).map((s) => s.trim()) : [];
+          break;
+        default:
+          newMeta[field] = value;
+      }
+      return newMeta as BookMetadata;
+    });
 
-    setEditedMeta(newMeta as BookMetadata);
     if (value !== undefined) {
       handleFieldValidation(field, value);
     }
 
     if (fieldSources[field]) {
-      const newSources = { ...fieldSources };
-      delete newSources[field];
-      setFieldSources(newSources);
+      setFieldSources((prevSources) => {
+        const newSources = { ...prevSources };
+        delete newSources[field];
+        return newSources;
+      });
     }
   };
 

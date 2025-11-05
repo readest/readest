@@ -151,9 +151,10 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       const selectedFile = result.files[0]!;
       if (selectedFile.path && appService) {
         const filePath = selectedFile.path;
+        const imageUrl = await appService.getCachedImageUrl(filePath);
         onFieldChange('coverImageFile', filePath);
-        onFieldChange('coverImageUrl', await appService.getCachedImageUrl(filePath));
-        setNewCoverImageUrl(filePath);
+        onFieldChange('coverImageUrl', imageUrl);
+        setNewCoverImageUrl(imageUrl);
       } else if (selectedFile.file) {
         const coverImageBlobUrl = URL.createObjectURL(selectedFile.file);
         onFieldChange('coverImageBlobUrl', coverImageBlobUrl);
