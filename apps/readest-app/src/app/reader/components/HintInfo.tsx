@@ -60,6 +60,8 @@ const HintInfo: React.FC<SectionInfoProps> = ({
     };
   }, [hintMessage]);
 
+  if (!hintMessage) return null;
+
   return (
     <>
       <div

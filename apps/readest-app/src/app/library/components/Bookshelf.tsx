@@ -406,7 +406,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                 !selectedBooks.length && 'btn-disabled opacity-50',
               )}
             >
-              <MdDelete className='fill-red-500' />
+              <MdDelete className='text-red-500' />
               <div className='text-red-500'>{_('Delete')}</div>
             </button>
             <button
