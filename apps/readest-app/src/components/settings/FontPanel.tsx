@@ -144,6 +144,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont);
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight);
+  const [textStrokeWidth, setTextStrokeWidth] = useState(viewSettings.textStrokeWidth);
 
   const [customFonts, setCustomFonts] = useState<string[]>(getFontFamilies());
   const [CJKFonts, setCJKFonts] = useState<string[]>(() => {
@@ -163,6 +164,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       sansSerifFont: setSansSerifFont,
       monospaceFont: setMonospaceFont,
       fontWeight: setFontWeight,
+      textStrokeWidth: setTextStrokeWidth,
     });
     getAllFonts().forEach((font) => {
       if (removeFont(font.id)) {
@@ -254,6 +256,11 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   }, [fontWeight]);
 
   useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'textStrokeWidth', textStrokeWidth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textStrokeWidth]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'serifFont', serifFont);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serifFont]);
@@ -339,6 +346,22 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               min={100}
               max={900}
               step={100}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Text Stroke Width')}</h2>
+        <div className='card border-base-200 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <NumberInput
+              label={_('Text Stroke Width')}
+              value={textStrokeWidth}
+              onChange={setTextStrokeWidth}
+              min={0}
+              max={10}
+              step={1}
             />
           </div>
         </div>

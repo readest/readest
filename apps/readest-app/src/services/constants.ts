@@ -121,6 +121,7 @@ export const DEFAULT_BOOK_FONT: BookFont = {
   defaultFontSize: 16,
   minimumFontSize: 8,
   fontWeight: 400,
+  textStrokeWidth: 0,
 };
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {

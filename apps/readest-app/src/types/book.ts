@@ -152,6 +152,7 @@ export interface BookFont {
   defaultFontSize: number;
   minimumFontSize: number;
   fontWeight: number;
+  textStrokeWidth: number;
 }
 
 export interface ViewConfig {

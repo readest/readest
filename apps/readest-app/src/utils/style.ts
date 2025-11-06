@@ -25,6 +25,7 @@ const getFontStyles = (
   fontSize: number,
   minFontSize: number,
   fontWeight: number,
+  textStrokeWidth: number,
   overrideFont: boolean,
 ) => {
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
@@ -57,10 +58,12 @@ const getFontStyles = (
       --font-size: ${fontSize}px;
       --min-font-size: ${minFontSize}px;
       --font-weight: ${fontWeight};
+      --webkit-text-stroke-width: ${textStrokeWidth / 100}em;
     }
     html, body {
       font-size: ${fontSize}px !important;
       font-weight: ${fontWeight};
+      -webkit-text-stroke-width: ${textStrokeWidth / 100}em;
       -webkit-text-size-adjust: none;
       text-size-adjust: none;
     }
@@ -548,6 +551,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.defaultFontSize! * fontScale * zoomScale,
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
+    viewSettings.textStrokeWidth!,
     viewSettings.overrideFont!,
   );
   const colorStyles = getColorStyles(
