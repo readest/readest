@@ -213,13 +213,16 @@ export const useKOSync = (bookKey: string) => {
 
       setSyncState('checking');
       const remoteProgress = await kosyncClient.getProgress(book);
-      if (!remoteProgress || !remoteProgress.progress || !remoteProgress.timestamp) {
+      if (!remoteProgress || !remoteProgress.progress) {
         setSyncState('synced');
         return;
       }
 
       const localTimestamp = bookData?.config?.updatedAt || book.updatedAt;
-      const remoteIsNewer = remoteProgress.timestamp * 1000 > localTimestamp;
+      const remoteTimestamp = remoteProgress.timestamp
+        ? remoteProgress.timestamp * 1000
+        : Date.now();
+      const remoteIsNewer = remoteTimestamp > localTimestamp;
       if (strategy === 'receive' || (strategy === 'silent' && remoteIsNewer)) {
         applyRemoteProgress(book, bookDoc, remoteProgress);
         setSyncState('synced');
