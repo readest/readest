@@ -122,7 +122,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     <div className='relative px-3 py-2'>
       <div className='bg-base-100 flex h-8 items-center rounded-lg'>
         <div className='pl-3'>
-          <FaSearch size={iconSize16} className='text-gray-500' />
+          <FaSearch size={iconSize16} className='text-base-content/50' />
         </div>
 
         <input
@@ -141,7 +141,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               onClick={handleClearSearch}
               className='btn btn-ghost h-8 min-h-8 w-8 rounded-none rounded-r-lg p-0'
             >
-              <FaTimes size={iconSize12} className='text-gray-500' />
+              <FaTimes size={iconSize12} className='text-base-content/50' />
             </button>
           </div>
         )}

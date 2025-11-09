@@ -137,7 +137,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </button>
           )}
           <div className='relative flex h-9 w-full items-center sm:h-7'>
-            <span className='absolute left-3 text-gray-500'>
+            <span className='text-base-content/50 absolute left-3'>
               <FaSearch className='h-4 w-4' />
             </span>
             <input
@@ -163,7 +163,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               )}
             />
           </div>
-          <div className='absolute right-4 flex items-center space-x-2 text-gray-500 sm:space-x-4'>
+          <div className='text-base-content/50 absolute right-4 flex items-center space-x-2 sm:space-x-4'>
             {searchQuery && (
               <button
                 type='button'
@@ -171,7 +171,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   setSearchQuery('');
                   debouncedUpdateQueryParam('');
                 }}
-                className='pe-1 text-gray-400 hover:text-gray-600'
+                className='text-base-content/40 hover:text-base-content/60 pe-1'
                 aria-label={_('Clear Search')}
               >
                 <IoMdCloseCircle className='h-4 w-4' />
@@ -197,9 +197,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 className='h-6'
               >
                 {isSelectMode ? (
-                  <PiSelectionAllFill role='button' className='h-6 w-6 text-gray-500' />
+                  <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
                 ) : (
-                  <PiSelectionAll role='button' className='h-6 w-6 text-gray-500' />
+                  <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
                 )}
               </button>
             )}
