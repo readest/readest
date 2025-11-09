@@ -12,6 +12,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
@@ -44,6 +45,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
   const {
@@ -55,6 +57,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   } = useTrafficLightStore();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
+  const viewSettings = settings.globalViewSettings;
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
   const iconSize20 = useResponsiveSize(20);
@@ -150,10 +153,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge bg-base-300/45 h-9 w-full pl-10 pr-10 sm:h-7',
+                'input rounded-badge h-9 w-full pl-10 pr-10 sm:h-7',
+                viewSettings?.isEink
+                  ? 'border-1 border-base-content focus:border-base-content'
+                  : 'bg-base-300/45 border-none',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50',
-                'border-none focus:outline-none focus:ring-0',
+                'focus:outline-none focus:ring-0',
               )}
             />
           </div>
