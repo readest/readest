@@ -126,7 +126,10 @@ export const handleClick = (
           bookKey,
           element,
           footnote:
-            element.getAttribute('data-wr-footernote') || element.getAttribute('zy-footnote') || '',
+            element.getAttribute('data-wr-footernote') ||
+            element.getAttribute('zy-footnote') ||
+            element.getAttribute('alt') ||
+            '',
         });
         return;
       }
