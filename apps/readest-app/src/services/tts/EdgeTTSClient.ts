@@ -58,7 +58,7 @@ export class EdgeTTSClient implements TTSClient {
 
     const availableVoices = (await this.getVoices(lang))[0]?.voices || [];
     let defaultVoice: TTSVoice | null = availableVoices[0] || null;
-    if (defaultVoice?.id === 'en-US-AnaNeural') defaultVoice = null; // avoid using AnaNeural as default
+    if (defaultVoice?.id === 'en-US-AnaNeural') return 'en-US-AriaNeural'; // avoid using AnaNeural as default
     return defaultVoice?.id || this.#currentVoiceId || 'en-US-AriaNeural';
   };
 
