@@ -32,6 +32,7 @@ import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
+import useShortcuts from '@/hooks/useShortcuts';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -427,6 +428,28 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowAnnotPopup(false);
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
+
+  // Keyboard shortcuts: trigger actions only if there's an active selection and popup hidden
+  useShortcuts(
+    {
+      onTranslateSelection: () => {
+        if (selection?.text) {
+          handleTranslation();
+        }
+      },
+      onDictionarySelection: () => {
+        if (selection?.text) {
+          handleDictionary();
+        }
+      },
+      onWikipediaSelection: () => {
+        if (selection?.text) {
+          handleWikipedia();
+        }
+      },
+    },
+    [selection?.text],
+  );
 
   const handleExportMarkdown = (event: CustomEvent) => {
     const { bookKey: exportBookKey } = event.detail;
