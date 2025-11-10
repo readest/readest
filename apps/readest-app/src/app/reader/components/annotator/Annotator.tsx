@@ -80,6 +80,57 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
+  // Reposition popups on scroll without dismissing them
+  const repositionPopups = useCallback(() => {
+    if (!selection || !selection.text) return;
+    const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
+    if (!gridFrame) return;
+    const rect = gridFrame.getBoundingClientRect();
+    const triangPos = getPosition(selection.range, rect, popupPadding, viewSettings.vertical);
+    const annotPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      viewSettings.vertical ? annotPopupHeight : annotPopupWidth,
+      viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
+      popupPadding,
+    );
+    if (annotPopupPos.dir === 'down' && osPlatform === 'android') {
+      triangPos.point.y += androidSelectionHandlerHeight;
+      annotPopupPos.point.y += androidSelectionHandlerHeight;
+    }
+    const dictPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      dictPopupWidth,
+      dictPopupHeight,
+      popupPadding,
+    );
+    const transPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      transPopupWidth,
+      transPopupHeight,
+      popupPadding,
+    );
+    if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
+    setAnnotPopupPosition(annotPopupPos);
+    setDictPopupPosition(dictPopupPos);
+    setTranslatorPopupPosition(transPopupPos);
+    setTrianglePosition(triangPos);
+  }, [
+    selection,
+    bookKey,
+    osPlatform,
+    popupPadding,
+    viewSettings.vertical,
+    annotPopupHeight,
+    annotPopupWidth,
+    dictPopupWidth,
+    dictPopupHeight,
+    transPopupWidth,
+    transPopupHeight,
+  ]);
+
   useEffect(() => {
     setSelectedStyle(settings.globalReadSettings.highlightStyle);
   }, [settings.globalReadSettings.highlightStyle]);
@@ -128,6 +179,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // Attach generic selection listeners for all formats, including PDF.
     // For PDF we only guarantee Copy & Translate; highlight/annotate may be limited by CFI support.
     view?.renderer?.addEventListener('scroll', handleScroll);
+    // Reposition popups on scroll to keep them in view
+    view?.renderer?.addEventListener('scroll', () => {
+      repositionPopups();
+    });
     detail.doc?.addEventListener('touchstart', handleTouchStart);
     detail.doc?.addEventListener('touchmove', handleTouchmove);
     detail.doc?.addEventListener('touchend', handleTouchEnd);
@@ -221,6 +276,29 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup(showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAnnotPopup, showWiktionaryPopup, showWikipediaPopup, showDeepLPopup]);
+
+  // When popups are visible, update their positions on scroll events
+  useEffect(() => {
+    const view = getView(bookKey);
+    if (!view?.renderer) return;
+    const onScroll = () => {
+      if (showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup) {
+        repositionPopups();
+      }
+    };
+    view.renderer.addEventListener('scroll', onScroll);
+    return () => {
+      view.renderer.removeEventListener('scroll', onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    bookKey,
+    showAnnotPopup,
+    showWiktionaryPopup,
+    showWikipediaPopup,
+    showDeepLPopup,
+    repositionPopups,
+  ]);
 
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);

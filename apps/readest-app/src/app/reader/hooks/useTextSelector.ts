@@ -128,9 +128,11 @@ export const useTextSelector = (
     isTouchStarted.current = false;
   };
   const handleScroll = () => {
-    // Prevent the container from scrolling when text is selected in paginated mode
-    // FIXME: this is a workaround for issue #873
-    // TODO: support text selection across pages
+    // If a popup (annotation/dictionary/translation) is open, don't dismiss it while scrolling.
+    if (isPopuped.current) {
+      return;
+    }
+    // Otherwise, behave as before: dismiss selection UI and keep container position if needed.
     handleDismissPopup();
     const viewSettings = getViewSettings(bookKey);
     if (
