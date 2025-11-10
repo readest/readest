@@ -424,10 +424,6 @@ foliate-view {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="text-gray"] {
-  color: theme('colors.base-content') !important;
-}
-
 [data-eink="true"] [class*="text-neutral-content"] {
   color: theme('colors.base-content') !important;
 }

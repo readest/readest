@@ -12,6 +12,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { navigateToLibrary } from '@/utils/nav';
@@ -44,6 +45,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
   const {
@@ -55,6 +57,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   } = useTrafficLightStore();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
+  const viewSettings = settings.globalViewSettings;
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
   const iconSize20 = useResponsiveSize(20);
@@ -134,7 +137,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </button>
           )}
           <div className='relative flex h-9 w-full items-center sm:h-7'>
-            <span className='absolute left-3 text-gray-500'>
+            <span className='text-base-content/50 absolute left-3'>
               <FaSearch className='h-4 w-4' />
             </span>
             <input
@@ -150,14 +153,17 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge bg-base-300/45 h-9 w-full pl-10 pr-10 sm:h-7',
+                'input rounded-badge h-9 w-full pl-10 pr-10 sm:h-7',
+                viewSettings?.isEink
+                  ? 'border-1 border-base-content focus:border-base-content'
+                  : 'bg-base-300/45 border-none',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50',
-                'border-none focus:outline-none focus:ring-0',
+                'focus:outline-none focus:ring-0',
               )}
             />
           </div>
-          <div className='absolute right-4 flex items-center space-x-2 text-gray-500 sm:space-x-4'>
+          <div className='text-base-content/50 absolute right-4 flex items-center space-x-2 sm:space-x-4'>
             {searchQuery && (
               <button
                 type='button'
@@ -165,7 +171,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   setSearchQuery('');
                   debouncedUpdateQueryParam('');
                 }}
-                className='pe-1 text-gray-400 hover:text-gray-600'
+                className='text-base-content/40 hover:text-base-content/60 pe-1'
                 aria-label={_('Clear Search')}
               >
                 <IoMdCloseCircle className='h-4 w-4' />
@@ -191,9 +197,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 className='h-6'
               >
                 {isSelectMode ? (
-                  <PiSelectionAllFill role='button' className='h-6 w-6 text-gray-500' />
+                  <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
                 ) : (
-                  <PiSelectionAll role='button' className='h-6 w-6 text-gray-500' />
+                  <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
                 )}
               </button>
             )}
