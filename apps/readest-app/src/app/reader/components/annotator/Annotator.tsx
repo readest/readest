@@ -120,28 +120,55 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     const handleTouchmove = () => {
       // Available on iOS, on Android not fired
-      // To make the popup not to follow the selection
+      // To make the popup not follow the selection while dragging
       setShowAnnotPopup(false);
     };
-    if (bookData.book?.format !== 'PDF') {
-      view?.renderer?.addEventListener('scroll', handleScroll);
-      detail.doc?.addEventListener('touchstart', handleTouchStart);
-      detail.doc?.addEventListener('touchmove', handleTouchmove);
-      detail.doc?.addEventListener('touchend', handleTouchEnd);
-      detail.doc?.addEventListener('pointerup', (ev: PointerEvent) =>
-        handlePointerup(doc, index, ev),
-      );
-      detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
 
-      // Disable the default context menu on mobile devices,
-      // although it should but doesn't work on iOS
-      if (appService?.isMobile) {
-        detail.doc?.addEventListener('contextmenu', (event: Event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          return false;
-        });
-      }
+    // Attach generic selection listeners for all formats, including PDF.
+    // For PDF we only guarantee Copy & Translate; highlight/annotate may be limited by CFI support.
+    view?.renderer?.addEventListener('scroll', handleScroll);
+    detail.doc?.addEventListener('touchstart', handleTouchStart);
+    detail.doc?.addEventListener('touchmove', handleTouchmove);
+    detail.doc?.addEventListener('touchend', handleTouchEnd);
+    detail.doc?.addEventListener('pointerup', (ev: PointerEvent) =>
+      handlePointerup(doc, index, ev),
+    );
+    detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
+
+    // For PDF selections, enable right-click context menu to directly open translator popup.
+    if (bookData.book?.format === 'PDF') {
+      detail.doc?.addEventListener('contextmenu', (e: Event) => {
+        try {
+          const sel = doc.getSelection?.();
+          if (sel && !sel.isCollapsed) {
+            const range = sel.getRangeAt(0);
+            const text = sel.toString();
+            if (text.trim()) {
+              setSelection({ key: bookKey, text, range, index });
+              // Show translation popup preferentially for PDF right-click
+              setShowAnnotPopup(false);
+              setShowDeepLPopup(true);
+              setShowWiktionaryPopup(false);
+              setShowWikipediaPopup(false);
+            }
+          }
+        } catch (err) {
+          console.warn('PDF context menu translation failed:', err);
+        }
+        // Prevent native menu to keep experience consistent
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      });
+    }
+
+    // Disable the default context menu on mobile devices (selection handles suffice)
+    if (appService?.isMobile) {
+      detail.doc?.addEventListener('contextmenu', (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      });
     }
   };
 
