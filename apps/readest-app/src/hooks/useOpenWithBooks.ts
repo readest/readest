@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow, getAllWindows } from '@tauri-apps/api/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { navigateToLibrary, showLibraryWindow } from '@/utils/nav';
 
@@ -19,7 +19,14 @@ export function useOpenWithBooks() {
   const { setCheckOpenWithBooks } = useLibraryStore();
   const listenedOpenWithBooks = useRef(false);
 
-  const handleOpenWithFileUrl = (url: string) => {
+  const isFirstWindow = async () => {
+    const allWindows = await getAllWindows();
+    const currentWindow = getCurrentWindow();
+    const sortedWindows = allWindows.sort((a, b) => a.label.localeCompare(b.label));
+    return sortedWindows[0]?.label === currentWindow.label;
+  };
+
+  const handleOpenWithFileUrl = async (url: string) => {
     console.log('Handle Open with URL:', url);
     let filePath = url;
     if (filePath.startsWith('file://')) {
@@ -28,7 +35,9 @@ export function useOpenWithBooks() {
     if (!/^(https?:|data:|blob:)/i.test(filePath)) {
       const settings = useSettingsStore.getState().settings;
       if (appService?.hasWindow && settings.openBookInNewWindow) {
-        showLibraryWindow(appService, [filePath]);
+        if (await isFirstWindow()) {
+          showLibraryWindow(appService, [filePath]);
+        }
       } else {
         window.OPEN_WITH_FILES = [filePath];
         setCheckOpenWithBooks(true);
