@@ -10,7 +10,12 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 interface AnnotationPopupProps {
   dir: 'ltr' | 'rtl';
   isVertical: boolean;
-  buttons: Array<{ tooltipText: string; Icon: React.ElementType; onClick: () => void }>;
+  buttons: Array<{
+    tooltipText: string;
+    Icon: React.ElementType;
+    onClick: () => void;
+    disabled?: boolean;
+  }>;
   position: Position;
   trianglePosition: Position;
   highlightOptionsVisible: boolean;
@@ -65,6 +70,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               tooltipText={button.tooltipText}
               Icon={button.Icon}
               onClick={button.onClick}
+              disabled={button.disabled}
             />
           ))}
         </div>

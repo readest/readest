@@ -621,13 +621,29 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
       Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
       onClick: handleHighlight,
+      disabled: bookData.book?.format === 'PDF',
     },
-    { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
-    { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
+    {
+      tooltipText: _('Annotate'),
+      Icon: BsPencilSquare,
+      onClick: handleAnnotate,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    {
+      tooltipText: _('Search'),
+      Icon: FiSearch,
+      onClick: handleSearch,
+      disabled: bookData.book?.format === 'PDF',
+    },
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
     { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
-    { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
+    {
+      tooltipText: _('Speak'),
+      Icon: FaHeadphones,
+      onClick: handleSpeakText,
+      disabled: bookData.book?.format === 'PDF',
+    },
   ];
 
   return (
