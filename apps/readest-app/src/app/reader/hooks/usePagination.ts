@@ -174,8 +174,9 @@ export const usePagination = (
         bookData.isFixedLayout &&
         viewSettings!.zoomLevel <= 100
       ) {
-        const { deltaX, deltaY } = msg.detail;
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+        const { deltaX, deltaY, deltaT } = msg.detail;
+        const vx = Math.abs(deltaX / deltaT);
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30 && vx > 0.2) {
           if (deltaX > 0) {
             viewPagination(viewRef.current, viewSettings, 'left');
           } else {

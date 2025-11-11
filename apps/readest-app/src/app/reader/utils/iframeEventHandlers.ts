@@ -181,6 +181,7 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     {
       type: type,
       bookKey,
+      timeStamp: Date.now(),
       targetTouches: touches,
     },
     '*',
