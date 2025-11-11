@@ -134,7 +134,8 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
-    section, blockquote, div, p, font, h1, h2, h3, h4, h5, h6, li, span {
+    section, aside, blockquote, article, nav, header, footer, main, figure,
+    div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}
