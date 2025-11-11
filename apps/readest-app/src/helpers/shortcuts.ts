@@ -7,6 +7,10 @@ const DEFAULT_SHORTCUTS = {
   onToggleSelectMode: ['shift+s'],
   onToggleBookmark: ['ctrl+d', 'cmd+d'],
   onToggleTTS: ['t'],
+  // Selection actions (lowercase key without modifiers when selection active)
+  onTranslateSelection: ['ctrl+z', 'ctrl+shift+t'],
+  onDictionarySelection: ['ctrl+x', 'ctrl+shift+d'],
+  onWikipediaSelection: ['ctrl+w', 'ctrl+shift+w'],
   onOpenFontLayoutSettings: ['shift+f', 'ctrl+,', 'cmd+,'],
   onOpenBooks: ['ctrl+o', 'cmd+o'],
   onReloadPage: ['shift+r'],
