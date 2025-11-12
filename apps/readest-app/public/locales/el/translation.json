@@ -646,5 +646,14 @@
   "Quick Colors": "Γρήγορα χρώματα",
   "Highlighter": "Υπογραμμιστής",
   "Save Book Cover": "Αποθήκευση εξωφύλλου βιβλίου",
-  "Auto-save last book cover": "Αυτόματη αποθήκευση τελευταίου εξωφύλλου βιβλίου"
+  "Auto-save last book cover": "Αυτόματη αποθήκευση τελευταίου εξωφύλλου βιβλίου",
+  "Back": "Πίσω",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Το email επιβεβαίωσης στάλθηκε! Παρακαλώ έλεγξε την παλιά και τη νέα σου διεύθυνση email για να επιβεβαιώσεις την αλλαγή.",
+  "Failed to update email": "Αποτυχία ενημέρωσης email",
+  "New Email": "Νέο email",
+  "Your new email": "Το νέο σου email",
+  "Updating email ...": "Ενημέρωση email ...",
+  "Update email": "Ενημέρωση email",
+  "Current email": "Τρέχον email",
+  "Update Email": "Ενημέρωση email"
 }

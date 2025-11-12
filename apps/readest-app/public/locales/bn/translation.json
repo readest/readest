@@ -646,5 +646,14 @@
   "Quick Colors": "দ্রুত রংসমূহ",
   "Highlighter": "হাইলাইটার",
   "Save Book Cover": "বইয়ের মলাট সংরক্ষণ করুন",
-  "Auto-save last book cover": "শেষ বইয়ের মলাট স্বয়ংক্রিয়ভাবে সংরক্ষণ করুন"
+  "Auto-save last book cover": "শেষ বইয়ের মলাট স্বয়ংক্রিয়ভাবে সংরক্ষণ করুন",
+  "Back": "পেছনে",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "নিশ্চিতকরণ ইমেল পাঠানো হয়েছে! পরিবর্তন নিশ্চিত করতে আপনার পুরানো এবং নতুন ইমেল ঠিকানা পরীক্ষা করুন।",
+  "Failed to update email": "ইমেল আপডেট করতে ব্যর্থ",
+  "New Email": "নতুন ইমেল",
+  "Your new email": "আপনার নতুন ইমেল",
+  "Updating email ...": "ইমেল আপডেট হচ্ছে ...",
+  "Update email": "ইমেল আপডেট করুন",
+  "Current email": "বর্তমান ইমেল",
+  "Update Email": "ইমেল আপডেট করুন"
 }

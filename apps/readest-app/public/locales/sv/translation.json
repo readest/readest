@@ -646,5 +646,14 @@
   "Quick Colors": "Snabba färger",
   "Highlighter": "Markeringspenna",
   "Save Book Cover": "Spara bokomslag",
-  "Auto-save last book cover": "Automatiskt spara senaste bokomslag"
+  "Auto-save last book cover": "Automatiskt spara senaste bokomslag",
+  "Back": "Tillbaka",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Bekräftelsemail skickat! Kontrollera din gamla och nya e-postadress för att bekräfta ändringen.",
+  "Failed to update email": "Misslyckades med att uppdatera e-post",
+  "New Email": "Ny e-post",
+  "Your new email": "Din nya e-post",
+  "Updating email ...": "Uppdaterar e-post ...",
+  "Update email": "Uppdatera e-post",
+  "Current email": "Nuvarande e-post",
+  "Update Email": "Uppdatera e-post"
 }

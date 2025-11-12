@@ -654,5 +654,14 @@
   "Quick Colors": "Быстрые цвета",
   "Highlighter": "Маркер",
   "Save Book Cover": "Сохранить обложку книги",
-  "Auto-save last book cover": "Автоматически сохранять последнюю обложку книги"
+  "Auto-save last book cover": "Автоматически сохранять последнюю обложку книги",
+  "Back": "Назад",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Письмо с подтверждением отправлено! Пожалуйста, проверьте старый и новый адреса электронной почты, чтобы подтвердить изменение.",
+  "Failed to update email": "Не удалось обновить электронную почту",
+  "New Email": "Новый адрес электронной почты",
+  "Your new email": "Ваш новый адрес электронной почты",
+  "Updating email ...": "Обновление электронной почты ...",
+  "Update email": "Обновить электронную почту",
+  "Current email": "Текущий адрес электронной почты",
+  "Update Email": "Обновить электронную почту"
 }

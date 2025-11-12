@@ -94,3 +94,10 @@ export const navigateToResetPassword = (router: ReturnType<typeof useRouter>) =>
   const currentPath = pathname !== '/auth' ? pathname + search : '/';
   router.push(`/auth/recovery?redirect=${encodeURIComponent(currentPath)}`);
 };
+
+export const navigateToUpdatePassword = (router: ReturnType<typeof useRouter>) => {
+  const pathname = window.location.pathname;
+  const search = window.location.search;
+  const currentPath = pathname !== '/auth' ? pathname + search : '/';
+  router.push(`/auth/update?redirect=${encodeURIComponent(currentPath)}`);
+};

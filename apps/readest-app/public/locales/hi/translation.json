@@ -646,5 +646,14 @@
   "Quick Colors": "त्वरित रंग",
   "Highlighter": "हाइलाइटर",
   "Save Book Cover": "बुक कवर सहेजें",
-  "Auto-save last book cover": "अंतिम पुस्तक कवर को स्वचालित रूप से सहेजें"
+  "Auto-save last book cover": "अंतिम पुस्तक कवर को स्वचालित रूप से सहेजें",
+  "Back": "वापस",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "पुष्टिकरण ईमेल भेज दिया गया है! कृपया परिवर्तन की पुष्टि करने के लिए अपना पुराना और नया ईमेल पता जांचें।",
+  "Failed to update email": "ईमेल अपडेट करने में विफल",
+  "New Email": "नया ईमेल",
+  "Your new email": "आपका नया ईमेल",
+  "Updating email ...": "ईमेल अपडेट किया जा रहा है ...",
+  "Update email": "ईमेल अपडेट करें",
+  "Current email": "वर्तमान ईमेल",
+  "Update Email": "ईमेल अपडेट करें"
 }

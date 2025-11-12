@@ -49,6 +49,7 @@ interface AccountActionsProps {
   userPlan: UserPlan;
   onLogout: () => void;
   onResetPassword: () => void;
+  onUpdateEmail: () => void;
   onConfirmDelete: () => void;
   onRestorePurchase?: () => void;
   onManageSubscription?: () => void;
@@ -58,6 +59,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   userPlan,
   onLogout,
   onResetPassword,
+  onUpdateEmail,
   onConfirmDelete,
   onRestorePurchase,
   onManageSubscription,
@@ -84,7 +86,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           setShowConfirmDelete(false);
         }}
       />
-      <div className='flex flex-col gap-4 md:flex-row md:justify-center'>
+      <div className='flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3'>
         {appService?.hasIAP ? (
           <button
             onClick={onRestorePurchase}
@@ -107,6 +109,12 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
         >
           {_('Reset Password')}
+        </button>
+        <button
+          onClick={onUpdateEmail}
+          className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
+        >
+          {_('Update Email')}
         </button>
         <button
           onClick={onLogout}

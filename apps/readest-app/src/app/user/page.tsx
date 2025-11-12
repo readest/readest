@@ -68,7 +68,8 @@ const ProfilePage = () => {
   useTheme({ systemUIVisible: false });
 
   const { quotas, userProfilePlan = 'free' } = useQuotaStats();
-  const { handleLogout, handleResetPassword, handleConfirmDelete } = useUserActions();
+  const { handleLogout, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
+    useUserActions();
 
   const { availablePlans } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
@@ -277,6 +278,7 @@ const ProfilePage = () => {
                     userPlan={userProfilePlan}
                     onLogout={handleLogout}
                     onResetPassword={handleResetPassword}
+                    onUpdateEmail={handleUpdateEmail}
                     onConfirmDelete={handleDeleteWithMessage}
                     onRestorePurchase={handleIAPRestorePurchase}
                     onManageSubscription={handleManageSubscription}
