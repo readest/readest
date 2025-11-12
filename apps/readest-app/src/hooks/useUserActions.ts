@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
 import { saveSysSettings } from '@/helpers/settings';
-import { navigateToLibrary, navigateToResetPassword } from '@/utils/nav';
+import { navigateToLibrary, navigateToResetPassword, navigateToUpdatePassword } from '@/utils/nav';
 
 export const useUserActions = () => {
   const router = useRouter();
@@ -19,6 +19,10 @@ export const useUserActions = () => {
 
   const handleResetPassword = () => {
     navigateToResetPassword(router);
+  };
+
+  const handleUpdateEmail = () => {
+    navigateToUpdatePassword(router);
   };
 
   const handleConfirmDelete = async (errorMessage: string) => {
@@ -36,6 +40,7 @@ export const useUserActions = () => {
 
   return {
     handleLogout,
+    handleUpdateEmail,
     handleResetPassword,
     handleConfirmDelete,
   };

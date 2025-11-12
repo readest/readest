@@ -642,5 +642,14 @@
   "Quick Colors": "Warna Cepat",
   "Highlighter": "Penyorot",
   "Save Book Cover": "Simpan Sampul Buku",
-  "Auto-save last book cover": "Simpan otomatis sampul buku terakhir"
+  "Auto-save last book cover": "Simpan otomatis sampul buku terakhir",
+  "Back": "Kembali",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Email konfirmasi telah dikirim! Silakan periksa alamat email lama dan baru Anda untuk mengonfirmasi perubahan.",
+  "Failed to update email": "Gagal memperbarui email",
+  "New Email": "Email baru",
+  "Your new email": "Email baru Anda",
+  "Updating email ...": "Memperbarui email ...",
+  "Update email": "Perbarui email",
+  "Current email": "Email saat ini",
+  "Update Email": "Perbarui email"
 }

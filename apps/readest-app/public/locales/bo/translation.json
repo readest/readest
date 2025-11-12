@@ -642,5 +642,14 @@
   "Quick Colors": "མྱུར་ཚོན།",
   "Highlighter": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
   "Save Book Cover": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
-  "Auto-save last book cover": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།"
+  "Auto-save last book cover": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
+  "Back": "ལོག་བྱེད།",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "གཏན་འཁེལ་ཡིག་འཕྲིན་བཏང་ཡོད། ཡིག་འཕྲིན་རྣམས་གཉིས་ལ་བལྟས་ནས་བརྗེ་བ་དེ་གཏན་འཁེལ་བྱོས།",
+  "Failed to update email": "ཡིག་འཕྲིན་གསར་བསྒྱུར་ཕམ་པ།",
+  "New Email": "ཡིག་འཕྲིན་གསར་པ།",
+  "Your new email": "ཁྱེད་ཀྱི་ཡིག་འཕྲིན་གསར་པ།",
+  "Updating email ...": "ཡིག་འཕྲིན་གསར་བསྒྱུར་བཞིན་པ། ...",
+  "Update email": "ཡིག་འཕྲིན་གསར་བསྒྱུར།",
+  "Current email": "མིག་སྔའི་ཡིག་འཕྲིན།",
+  "Update Email": "ཡིག་འཕྲིན་གསར་བསྒྱུར།"
 }

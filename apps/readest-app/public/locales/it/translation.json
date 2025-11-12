@@ -650,5 +650,14 @@
   "Quick Colors": "Colori Veloci",
   "Highlighter": "Evidenziatore",
   "Save Book Cover": "Salva Copertina del Libro",
-  "Auto-save last book cover": "Salva automaticamente l'ultima copertina del libro"
+  "Auto-save last book cover": "Salva automaticamente l'ultima copertina del libro",
+  "Back": "Indietro",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Email di conferma inviata! Controlla il tuo vecchio e nuovo indirizzo email per confermare la modifica.",
+  "Failed to update email": "Aggiornamento dell'email non riuscito",
+  "New Email": "Nuova email",
+  "Your new email": "La tua nuova email",
+  "Updating email ...": "Aggiornamento dell'email ...",
+  "Update email": "Aggiorna email",
+  "Current email": "Email attuale",
+  "Update Email": "Aggiorna email"
 }

@@ -642,5 +642,14 @@
   "Quick Colors": "สีด่วน",
   "Highlighter": "ปากกาเน้นข้อความ",
   "Save Book Cover": "บันทึกปกหนังสือ",
-  "Auto-save last book cover": "บันทึกปกหนังสือสุดท้ายโดยอัตโนมัติ"
+  "Auto-save last book cover": "บันทึกปกหนังสือสุดท้ายโดยอัตโนมัติ",
+  "Back": "กลับ",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "ส่งอีเมลยืนยันแล้ว! กรุณาตรวจสอบอีเมลเก่าและใหม่ของคุณเพื่อยืนยันการเปลี่ยนแปลง",
+  "Failed to update email": "ไม่สามารถอัปเดตอีเมลได้",
+  "New Email": "อีเมลใหม่",
+  "Your new email": "อีเมลใหม่ของคุณ",
+  "Updating email ...": "กำลังอัปเดตอีเมล ...",
+  "Update email": "อัปเดตอีเมล",
+  "Current email": "อีเมลปัจจุบัน",
+  "Update Email": "อัปเดตอีเมล"
 }

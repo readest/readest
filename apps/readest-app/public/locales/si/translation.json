@@ -646,5 +646,14 @@
   "Quick Colors": "ක්ෂණික වර්ණ",
   "Highlighter": "ඉස්මතු කරන්නා",
   "Save Book Cover": "පොත් ආවරණය සුරකින්න",
-  "Auto-save last book cover": "අවසන් පොත් ආවරණය ස්වයංක්‍රීයව සුරකින්න"
+  "Auto-save last book cover": "අවසන් පොත් ආවරණය ස්වයංක්‍රීයව සුරකින්න",
+  "Back": "ආපසු",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "තහවුරු කිරීමේ විද්‍යුත් තැපැල් පණිවිඩය යවන්නා! වෙනස්කම තහවුරු කිරීම සඳහා ඔබගේ පැරණි සහ නව විද්‍යුත් තැපැල් ලිපින පරීක්ෂා කරන්න.",
+  "Failed to update email": "විද්‍යුත් තැපැල් යාවත්කාලීන කිරීමට අසමත් විය",
+  "New Email": "නව විද්‍යුත් තැපැල්",
+  "Your new email": "ඔබේ නව විද්‍යුත් තැපැල්",
+  "Updating email ...": "විද්‍යුත් තැපැල් යාවත්කාලීන කරමින් ...",
+  "Update email": "විද්‍යුත් තැපැල් යාවත්කාලීන කරන්න",
+  "Current email": "වත්මන් විද්‍යුත් තැපැල්",
+  "Update Email": "විද්‍යුත් තැපැල් යාවත්කාලීන කරන්න"
 }

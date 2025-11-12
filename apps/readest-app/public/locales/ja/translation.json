@@ -642,5 +642,14 @@
   "Quick Colors": "クイックカラー",
   "Highlighter": "蛍光ペン",
   "Save Book Cover": "本のカバーを保存",
-  "Auto-save last book cover": "最後の本のカバーを自動保存"
+  "Auto-save last book cover": "最後の本のカバーを自動保存",
+  "Back": "戻る",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "確認メールを送信しました。変更を確認するために、古いメールアドレスと新しいメールアドレスを確認してください。",
+  "Failed to update email": "メールの更新に失敗しました",
+  "New Email": "新しいメールアドレス",
+  "Your new email": "あなたの新しいメールアドレス",
+  "Updating email ...": "メールを更新しています ...",
+  "Update email": "メールを更新",
+  "Current email": "現在のメールアドレス",
+  "Update Email": "メールを更新"
 }

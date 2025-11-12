@@ -646,5 +646,14 @@
   "Quick Colors": "விரைவு நிறங்கள்",
   "Highlighter": "ஹைலைட்டர்",
   "Save Book Cover": "புத்தகக் கோப்பைச் சேமிக்கவும்",
-  "Auto-save last book cover": "அවසන් புத்தகக் கோப்பு காலியாக உள்ளது"
+  "Auto-save last book cover": "அවසන් புத்தகக் கோப்பு காலியாக உள்ளது",
+  "Back": "பின் செல்ல",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "உறுதிப்பத்திர மின்னஞ்சல் அனுப்பப்பட்டுள்ளது! மாற்றத்தை உறுதிப்படுத்த உங்கள் பழைய மற்றும் புதிய மின்னஞ்சல் முகவரிகளை சரிபார்க்கவும்.",
+  "Failed to update email": "மின்னஞ்சல் புதுப்பிப்பில் தோல்வி",
+  "New Email": "புதிய மின்னஞ்சல்",
+  "Your new email": "உங்கள் புதிய மின்னஞ்சல்",
+  "Updating email ...": "மின்னஞ்சல் புதுப்பிக்கப்படுகிறது ...",
+  "Update email": "மின்னஞ்சல் புதுப்பிக்கவும்",
+  "Current email": "தற்போதைய மின்னஞ்சல்",
+  "Update Email": "மின்னஞ்சல் புதுப்பிக்கவும்"
 }

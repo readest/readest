@@ -646,5 +646,14 @@
   "Quick Colors": "Snelle kleuren",
   "Highlighter": "Marker",
   "Save Book Cover": "Opslaan boekomslag",
-  "Auto-save last book cover": "Automatisch opslaan laatste boekomslag"
+  "Auto-save last book cover": "Automatisch opslaan laatste boekomslag",
+  "Back": "Terug",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Bevestigingsmail verzonden! Controleer je oude en nieuwe e-mailadres om de wijziging te bevestigen.",
+  "Failed to update email": "E-mail bijwerken mislukt",
+  "New Email": "Nieuw e-mailadres",
+  "Your new email": "Je nieuwe e-mailadres",
+  "Updating email ...": "E-mail wordt bijgewerkt...",
+  "Update email": "E-mail bijwerken",
+  "Current email": "Huidig e-mailadres",
+  "Update Email": "E-mail bijwerken"
 }

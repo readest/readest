@@ -646,5 +646,14 @@
   "Quick Colors": "رنگ‌های سریع",
   "Highlighter": "ماژیک هایلایت",
   "Save Book Cover": "ذخیره جلد کتاب",
-  "Auto-save last book cover": "ذخیره خودکار آخرین جلد کتاب"
+  "Auto-save last book cover": "ذخیره خودکار آخرین جلد کتاب",
+  "Back": "بازگشت",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "ایمیل تأیید ارسال شد! لطفاً ایمیل قدیمی و جدید خود را بررسی کنید تا تغییر را تأیید نمایید.",
+  "Failed to update email": "به‌روزرسانی ایمیل ناموفق بود",
+  "New Email": "ایمیل جدید",
+  "Your new email": "ایمیل جدید شما",
+  "Updating email ...": "در حال به‌روزرسانی ایمیل ...",
+  "Update email": "به‌روزرسانی ایمیل",
+  "Current email": "ایمیل فعلی",
+  "Update Email": "به‌روزرسانی ایمیل"
 }

@@ -642,5 +642,14 @@
   "Quick Colors": "Màu nhanh",
   "Highlighter": "Bút đánh dấu",
   "Save Book Cover": "Lưu bìa sách",
-  "Auto-save last book cover": "Tự động lưu bìa sách cuối cùng"
+  "Auto-save last book cover": "Tự động lưu bìa sách cuối cùng",
+  "Back": "Quay lại",
+  "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Email xác nhận đã được gửi! Vui lòng kiểm tra địa chỉ email cũ và mới của bạn để xác nhận thay đổi.",
+  "Failed to update email": "Cập nhật email thất bại",
+  "New Email": "Email mới",
+  "Your new email": "Email mới của bạn",
+  "Updating email ...": "Đang cập nhật email ...",
+  "Update email": "Cập nhật email",
+  "Current email": "Email hiện tại",
+  "Update Email": "Cập nhật email"
 }
