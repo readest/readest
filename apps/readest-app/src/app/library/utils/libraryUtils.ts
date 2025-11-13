@@ -4,7 +4,22 @@ import { formatAuthors, formatTitle } from '@/utils/book';
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
-  const searchTerm = new RegExp(queryTerm, 'i');
+  let searchTerm: RegExp;
+  try {
+    searchTerm = new RegExp(queryTerm, 'i');
+  } catch {
+    const lowerQuery = queryTerm.toLowerCase();
+    const title = formatTitle(item.title).toLowerCase();
+    const authors = formatAuthors(item.author).toLowerCase();
+
+    return (
+      title.includes(lowerQuery) ||
+      authors.includes(lowerQuery) ||
+      item.format.toLowerCase().includes(lowerQuery) ||
+      (item.groupName && item.groupName.toLowerCase().includes(lowerQuery)) ||
+      (item.metadata?.description && item.metadata.description.toLowerCase().includes(lowerQuery))
+    );
+  }
   const title = formatTitle(item.title);
   const authors = formatAuthors(item.author);
   return (
