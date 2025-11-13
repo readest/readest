@@ -50,7 +50,7 @@ export const useBooksSync = () => {
         }
       },
       SYNC_BOOKS_INTERVAL_SEC * 1000,
-      { emitLast: false },
+      { emitLast: true },
     ),
     [syncBooks],
   );
