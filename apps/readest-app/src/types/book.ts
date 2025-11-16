@@ -266,6 +266,7 @@ export interface BookDataRecord {
 export interface BooksGroup {
   id: string;
   name: string;
+  displayName: string;
   books: Book[];
 
   updatedAt: number;

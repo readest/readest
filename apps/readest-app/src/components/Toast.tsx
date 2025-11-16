@@ -71,7 +71,7 @@ export const Toast = () => {
               'max-h-[50vh] min-w-32 overflow-y-auto',
               'text-center font-sans text-base font-normal sm:text-sm',
               toastType === 'info'
-                ? 'max-w-[80vw]'
+                ? 'max-w-[80vw] overflow-x-hidden'
                 : 'min-w-[60vw] max-w-[80vw] whitespace-normal break-words sm:min-w-40 sm:max-w-80',
               messageClass,
             )}
