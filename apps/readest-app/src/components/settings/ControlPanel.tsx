@@ -34,6 +34,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
   const [animated, setAnimated] = useState(viewSettings.animated);
+  const [viewAnnotationsOnClick, setViewAnnotationsOnClick] = useState(settings.viewAnnotationsOnClick);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
@@ -123,6 +124,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    if (viewAnnotationsOnClick === settings.viewAnnotationsOnClick) return;
+    saveSysSettings(envConfig, 'viewAnnotationsOnClick', viewAnnotationsOnClick);
+  }, [viewAnnotationsOnClick]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'isEink', isEink);
@@ -263,6 +269,23 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 className='toggle'
                 checked={animated}
                 onChange={() => setAnimated(!animated)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Annotations')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('View Annotations on Click')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={viewAnnotationsOnClick}
+                onChange={() => setViewAnnotationsOnClick(!viewAnnotationsOnClick)}
               />
             </div>
           </div>

@@ -66,6 +66,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
+  viewAnnotationsOnClick: false,
   telemetryEnabled: true,
   libraryViewMode: 'grid',
   librarySortBy: 'updated',
