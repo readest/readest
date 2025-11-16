@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { MdCheck } from 'react-icons/md';
+import { MdCheck, MdChevronRight } from 'react-icons/md';
 import { HiOutlineFolder, HiOutlineFolderAdd, HiOutlineFolderRemove } from 'react-icons/hi';
+import { IoMdArrowBack } from 'react-icons/io';
 
 import { Book, BookGroupType } from '@/types/book';
 import { isMd5 } from '@/utils/md5';
@@ -10,10 +11,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
+import { getBreadcrumbs } from '../utils/libraryUtils';
 
 interface GroupingModalProps {
   libraryBooks: Book[];
   selectedBooks: string[];
+  parentGroupName: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -21,21 +24,32 @@ interface GroupingModalProps {
 const GroupingModal: React.FC<GroupingModalProps> = ({
   libraryBooks,
   selectedBooks,
+  parentGroupName,
   onCancel,
   onConfirm,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { setLibrary, addGroup, getGroups, refreshGroups } = useLibraryStore();
+  const { setLibrary, addGroup, getGroups, getGroupsByParent, getParentPath, refreshGroups } =
+    useLibraryStore();
 
-  const allGroups = getGroups();
-
+  const [currentPath, setCurrentPath] = useState<string | undefined>(undefined);
   const [showInput, setShowInput] = useState(false);
-  const [editGroupName, setEditGroupName] = useState(_('Untitled Group'));
+  const [editGroupName, setEditGroupName] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<BookGroupType | null>(null);
+  const [newGroup, setNewGroup] = useState<BookGroupType | null>(null);
 
   const editorRef = useRef<HTMLInputElement>(null);
   const iconSize = useResponsiveSize(16);
+
+  const allGroups = getGroups();
+  const currentGroups = getGroupsByParent(currentPath);
+  const currentGroupsList =
+    newGroup &&
+    !currentGroups.some((g) => g.id === newGroup.id) &&
+    !currentGroups.some((g) => newGroup.name.startsWith(g.name))
+      ? [newGroup, ...currentGroups]
+      : currentGroups;
 
   const isSelectedBooksHasGroup =
     selectedBooks.some((hash) => !isMd5(hash)) ||
@@ -44,20 +58,31 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
       .some((group) => group && group !== BOOK_UNGROUPED_NAME);
 
   const generateNextUntitledGroupName = () => {
-    const untitledGroupPattern = new RegExp(`^${_('Untitled Group')}\\s*(\\d+)?$`);
+    const baseName = _('Untitled Group');
+    const basePattern = parentGroupName
+      ? `${parentGroupName}/${baseName}`
+      : currentPath
+        ? `${currentPath}/${baseName}`
+        : baseName;
+
+    const escapedPattern = basePattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const untitledGroupPattern = new RegExp(`^${escapedPattern}\\s*(\\d+)?$`);
+
     const untitledGroupNumbers = allGroups
       .map((group) => {
         const match = group.name.match(untitledGroupPattern);
-        return match ? parseInt(match[1] || '0', 10) : null;
+        return match ? parseInt(match[1] || '1', 10) : null;
       })
-      .filter((num) => num !== null);
+      .filter((num) => num !== null) as number[];
 
     const nextNumber = untitledGroupNumbers.length > 0 ? Math.max(...untitledGroupNumbers) + 1 : 1;
 
-    return `${_('Untitled Group')} ${nextNumber}`;
+    return `${basePattern} ${nextNumber}`;
   };
 
   const handleCreateGroup = () => {
+    const nextName = generateNextUntitledGroupName();
+    setEditGroupName(nextName);
     setShowInput(true);
   };
 
@@ -83,19 +108,38 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   };
 
   const handleConfirmCreateGroup = () => {
-    const groupName = editGroupName.trim();
+    let groupName = editGroupName.trim();
     if (groupName) {
-      const newGroup = addGroup(groupName);
-      setSelectedGroup(newGroup);
+      if (currentPath && !groupName.startsWith(currentPath + '/')) {
+        groupName = `${currentPath}/${groupName}`;
+      }
 
-      const nextName = generateNextUntitledGroupName();
-      setEditGroupName(nextName);
+      const newGroup = addGroup(groupName);
+      setNewGroup(newGroup);
+      setSelectedGroup(newGroup);
       setShowInput(false);
+      const parentGroup = getParentPath(groupName);
+      if (parentGroup) {
+        setCurrentPath(parentGroup);
+      }
     }
   };
 
   const handleToggleSelectGroup = (group: BookGroupType) => {
     setSelectedGroup((prevGroup) => (prevGroup?.id === group.id ? null : group));
+  };
+
+  const handleNavigateToGroup = (group: BookGroupType) => {
+    setCurrentPath(group.name);
+  };
+
+  const handleNavigateBack = () => {
+    const parent = currentPath ? getParentPath(currentPath) : undefined;
+    setCurrentPath(parent);
+  };
+
+  const handleNavigateToPath = (path: string | undefined) => {
+    setCurrentPath(path);
   };
 
   const handleConfirmGrouping = () => {
@@ -111,6 +155,11 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     setLibrary([...libraryBooks]);
     appService?.saveLibraryBooks(libraryBooks);
     onConfirm();
+  };
+
+  const getDisplayName = (fullPath: string) => {
+    const segments = fullPath.split('/');
+    return segments[segments.length - 1];
   };
 
   useEffect(() => {
@@ -130,10 +179,16 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     if (Array.from(new Set(groupIds)).length === 1) {
       setTimeout(() => {
         const allGroups = getGroups();
-        setSelectedGroup(allGroups.find((group) => group.id === groupIds[0]) || null);
+        const group = allGroups.find((group) => group.id === groupIds[0]);
+        setSelectedGroup(group || null);
+        if (group && !currentPath) {
+          const parent = getParentPath(group.name);
+          setCurrentPath(parent);
+        }
       }, 0);
     }
-  }, [libraryBooks, selectedBooks, getGroups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className='fixed inset-0 flex items-center justify-center'>
@@ -144,6 +199,8 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         )}
       >
         <h2 className='text-center text-lg font-bold'>{_('Group Books')}</h2>
+
+        {/* Action buttons */}
         <div className={clsx('mt-4 grid grid-cols-1 gap-2 text-base md:grid-cols-2')}>
           {isSelectedBooksHasGroup && (
             <button
@@ -162,62 +219,115 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             <span className='truncate'>{_('Create New Group')}</span>
           </button>
         </div>
+
+        {/* Create group input */}
         {showInput && (
-          <div className='mt-4 flex items-center gap-2'>
-            <input
-              type='text'
-              ref={editorRef}
-              value={editGroupName}
-              onChange={(e) => setEditGroupName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleConfirmCreateGroup();
-                e.stopPropagation();
-              }}
-              className='input input-ghost w-full border-0 px-2 text-base !outline-none sm:text-sm'
-            />
-            <button
-              className={clsx(
-                'btn btn-ghost settings-content hover:bg-transparent',
-                'flex h-[1.3em] min-h-[1.3em] items-end p-0',
-                editGroupName ? '' : 'btn-disabled !bg-opacity-0',
-              )}
-              onClick={() => handleConfirmCreateGroup()}
-            >
-              <div className='pr-1 align-bottom text-base text-blue-500 sm:text-sm'>
-                {_('Save')}
-              </div>
-            </button>
+          <div className='mt-4 space-y-2'>
+            <div className='flex items-center gap-2'>
+              <input
+                type='text'
+                ref={editorRef}
+                value={editGroupName}
+                onChange={(e) => setEditGroupName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleConfirmCreateGroup();
+                  if (e.key === 'Escape') setShowInput(false);
+                  e.stopPropagation();
+                }}
+                className='input input-ghost w-full border-0 px-2 text-base !outline-none sm:text-sm'
+              />
+              <button
+                className={clsx(
+                  'btn btn-ghost settings-content hover:bg-transparent',
+                  'flex h-[1.3em] min-h-[1.3em] items-end p-0',
+                  editGroupName ? '' : 'btn-disabled !bg-opacity-0',
+                )}
+                onClick={() => handleConfirmCreateGroup()}
+              >
+                <div className='pr-1 align-bottom text-base text-blue-500 sm:text-sm'>
+                  {_('Save')}
+                </div>
+              </button>
+            </div>
           </div>
         )}
-        <ul className='groups-list mt-4 grid grid-cols-2 gap-2'>
-          {allGroups.map((group, index) => (
+
+        {/* Breadcrumb navigation */}
+        {currentPath && (
+          <div className='mt-4 flex flex-wrap items-center gap-2 text-base'>
             <button
-              key={index}
-              className={clsx(
-                'hover:bg-base-300 text-base-content flex w-full',
-                'items-center justify-between rounded-md px-2 py-2',
-              )}
-              onClick={() => handleToggleSelectGroup(group)}
+              onClick={handleNavigateBack}
+              className='hover:bg-base-300 flex items-center gap-1 rounded px-2 py-1'
             >
-              <div className='flex min-w-0 items-center'>
-                <span style={{ minWidth: `${iconSize}px` }}>
-                  <HiOutlineFolder size={iconSize} />
-                </span>
-                <span
-                  className={clsx('mx-2 flex-1 truncate text-base sm:text-sm')}
-                  style={{ minWidth: 0 }}
-                >
-                  {group.name}
-                </span>
-              </div>
-              <span className='text-neutral-content flex shrink-0 text-sm'>
-                {selectedGroup && selectedGroup.id == group.id && (
-                  <MdCheck className='fill-blue-500' size={iconSize} />
-                )}
-              </span>
+              <IoMdArrowBack size={iconSize} />
             </button>
-          ))}
+            <button
+              onClick={() => handleNavigateToPath(undefined)}
+              className='hover:bg-base-300 rounded px-2 py-1'
+            >
+              {_('All')}
+            </button>
+            {getBreadcrumbs(currentPath).map((crumb, index, array) => {
+              const isLast = index === array.length - 1;
+              return (
+                <React.Fragment key={index}>
+                  <MdChevronRight size={iconSize} className='text-neutral-content' />
+                  {isLast ? (
+                    <span className='truncate rounded px-2 py-1'>{crumb.name}</span>
+                  ) : (
+                    <button
+                      onClick={() => handleNavigateToPath(crumb.path)}
+                      className='hover:bg-base-300 truncate rounded px-2 py-1'
+                    >
+                      {crumb.name}
+                    </button>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Groups list */}
+        <ul className='groups-list mt-4 grid grid-cols-2 gap-2 overflow-x-hidden'>
+          {currentGroupsList.map((group, index) => {
+            const displayName = getDisplayName(group.name);
+            const hasChildren = allGroups.some((g) => g.name.startsWith(group.name + '/'));
+            return (
+              <div key={index} className='flex min-w-0 gap-1'>
+                <button
+                  className={clsx(
+                    'hover:bg-base-300 text-base-content flex min-w-0 max-w-[90%] flex-1',
+                    'items-center justify-between gap-2 rounded-md px-2 py-2',
+                  )}
+                  onClick={() => handleToggleSelectGroup(group)}
+                >
+                  <div className='flex min-w-0 flex-1 items-center gap-2'>
+                    <span className='shrink-0'>
+                      <HiOutlineFolder size={iconSize} />
+                    </span>
+                    <span className='min-w-0 truncate text-base sm:text-sm'>{displayName}</span>
+                  </div>
+                  <span className='text-neutral-content flex shrink-0 text-sm'>
+                    {selectedGroup && selectedGroup.id === group.id && (
+                      <MdCheck className='fill-blue-500' size={iconSize} />
+                    )}
+                  </span>
+                </button>
+                {hasChildren && (
+                  <button
+                    onClick={() => handleNavigateToGroup(group)}
+                    className='hover:bg-base-300 flex shrink-0 items-center rounded-md px-1'
+                  >
+                    <MdChevronRight size={iconSize} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </ul>
+
+        {/* Footer actions */}
         <div className='mt-6 flex justify-end gap-x-8 p-2'>
           <button onClick={onCancel} className='flex items-center'>
             {_('Cancel')}

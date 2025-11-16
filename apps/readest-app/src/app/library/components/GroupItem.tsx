@@ -187,7 +187,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
         </div>
         {mode === 'list' && (
           <div className='text-base-content/75 w-28 min-w-24 max-w-40 overflow-hidden text-ellipsis text-base font-semibold'>
-            {group.name}
+            {group.displayName}
           </div>
         )}
         {groupSelected && (
@@ -207,7 +207,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
         <div className={clsx('flex w-full flex-col pt-2')}>
           <div className='min-w-0 flex-1'>
             <h4 className='block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold'>
-              {group.name}
+              {group.displayName}
             </h4>
           </div>
           <div className='placeholder' style={{ height: `${iconSize15}px` }}></div>
