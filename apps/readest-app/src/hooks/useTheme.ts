@@ -46,7 +46,7 @@ export const useTheme = ({
   const handleSystemUIVisibility = useCallback(() => {
     if (!appService?.isMobileApp) return;
 
-    const visible = systemUIVisible && !systemUIAlwaysHidden;
+    const visible = !!(systemUIVisible && !systemUIAlwaysHidden);
     if (visible) {
       showSystemUI();
     } else {

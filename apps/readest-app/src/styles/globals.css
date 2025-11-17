@@ -399,6 +399,16 @@ foliate-view {
   box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
 }
 
+.window-button {
+  position: relative;
+}
+
+.window-button::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
 @keyframes spin-counterclockwise {
   from {
     transform: rotate(0deg);
