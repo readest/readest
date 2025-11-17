@@ -637,7 +637,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
     >
       <div
-        className='top-0 z-40 w-full'
+        className='relative top-0 z-40 w-full'
         role='banner'
         tabIndex={-1}
         aria-label={_('Library Header')}
@@ -649,6 +649,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
+        />
+        <progress
+          className={clsx(
+            'progress progress-success absolute bottom-0 left-0 right-0 h-1 translate-y-[2px] transition-opacity duration-200 sm:translate-y-[4px]',
+            isSyncing ? 'opacity-100' : 'opacity-0',
+          )}
+          value={syncProgress * 100}
+          max='100'
         />
       </div>
       {(loading || isSyncing) && (
@@ -716,14 +724,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 paddingLeft: `${insets.left}px`,
               }}
             >
-              <progress
-                className={clsx(
-                  'progress progress-success absolute left-0 right-0 top-[2px] z-30 h-1 transition-opacity duration-200',
-                  isSyncing ? 'opacity-100' : 'opacity-0',
-                )}
-                value={syncProgress * 100}
-                max='100'
-              ></progress>
               <DropIndicator />
               <Bookshelf
                 libraryBooks={libraryBooks}
