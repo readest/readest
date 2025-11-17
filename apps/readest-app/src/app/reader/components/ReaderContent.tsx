@@ -131,9 +131,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     clearViewState(bookKey);
   };
 
+  const navigateBackToLibrary = () => {
+    navigateToLibrary(router, '', undefined, true);
+  };
+
   const saveSettingsAndGoToLibrary = () => {
     saveSettings(envConfig, settings);
-    navigateToLibrary(router);
+    navigateBackToLibrary();
   };
 
   const handleCloseBooks = throttle(async () => {
@@ -147,12 +151,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     if (isTauriAppPlatform()) {
       const currentWindow = getCurrentWindow();
       if (currentWindow.label === 'main') {
-        navigateToLibrary(router);
+        navigateBackToLibrary();
       } else {
         currentWindow.close();
       }
     } else {
-      navigateToLibrary(router);
+      navigateBackToLibrary();
     }
   };
 

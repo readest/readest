@@ -2,8 +2,9 @@
 
 import '@/utils/polyfill';
 import i18n from '@/i18n/i18n';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { IconContext } from 'react-icons';
+import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { CSPostHogProvider } from '@/context/PHContext';
@@ -26,6 +27,16 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   const { applyEinkMode } = useEinkMode();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
+
+  const pathname = usePathname();
+  const prevPathnameRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevPathnameRef.current !== null) {
+      sessionStorage.setItem('lastPath', prevPathnameRef.current);
+    }
+    prevPathnameRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     const handlerLanguageChanged = (lng: string) => {
