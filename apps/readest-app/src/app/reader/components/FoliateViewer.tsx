@@ -23,6 +23,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyTableStyle,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -190,6 +191,7 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
+      applyTableStyle(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       keepTextAlignment(detail.doc);
       removeTabIndex(detail.doc);
