@@ -18,7 +18,10 @@ export const useBooksSync = () => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
     const newBooks = library.filter(
-      (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
+      (book) =>
+        !book.syncedAt ||
+        lastSyncedAtBooks < book.updatedAt ||
+        lastSyncedAtBooks < (book.deletedAt ?? 0),
     );
     return {
       books: newBooks,
@@ -67,7 +70,9 @@ export const useBooksSync = () => {
   const pushLibrary = useCallback(async () => {
     if (!user) return;
     const newBooks = getNewBooks();
-    await syncBooks(newBooks?.books, 'push');
+    if (newBooks.lastSyncedAt) {
+      await syncBooks(newBooks?.books, 'push');
+    }
   }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
@@ -95,8 +100,8 @@ export const useBooksSync = () => {
         }
         const mergedBook =
           matchingBook.updatedAt > oldBook.updatedAt
-            ? { ...oldBook, ...matchingBook }
-            : { ...matchingBook, ...oldBook };
+            ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
+            : { ...matchingBook, ...oldBook, syncedAt: Date.now() };
         return mergedBook;
       }
       return oldBook;
@@ -117,6 +122,7 @@ export const useBooksSync = () => {
 
     const processNewBook = async (newBook: Book) => {
       newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+      newBook.syncedAt = Date.now();
       updatedLibrary.push(newBook);
     };
 
