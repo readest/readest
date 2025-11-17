@@ -138,7 +138,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
-    await Promise.all(bookKeys.map((key) => saveConfigAndCloseBook(key)));
+    await Promise.all(bookKeys.map(async (key) => await saveConfigAndCloseBook(key)));
     await saveSettings(envConfig, settings);
   }, 200);
 
@@ -166,6 +166,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       const openWithFiles = (await parseOpenWithFiles()) || [];
       if (appService?.hasWindow) {
         if (openWithFiles.length > 0) {
+          tauriHandleOnCloseWindow(handleCloseBooks);
           return await tauriHandleClose();
         }
         const currentWindow = getCurrentWindow();
