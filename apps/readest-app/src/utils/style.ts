@@ -331,7 +331,7 @@ const getLayoutStyles = (
 
   p:not([dir="rtl"]) {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .epubtype-footnote,
