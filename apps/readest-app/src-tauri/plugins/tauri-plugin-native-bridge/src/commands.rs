@@ -150,6 +150,14 @@ pub(crate) async fn get_external_sdcard_path<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn open_external_url<R: Runtime>(
+    app: AppHandle<R>,
+    payload: OpenExternalUrlRequest,
+) -> Result<OpenExternalUrlResponse> {
+    app.native_bridge().open_external_url(payload)
+}
+
+#[command]
 pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {

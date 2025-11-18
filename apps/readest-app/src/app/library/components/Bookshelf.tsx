@@ -328,7 +328,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         ))}
         {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
-          <div className={clsx('mx-0 my-4 sm:mx-4')}>
+          <div className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}>
             <button
               aria-label={_('Import Books')}
               className={clsx(

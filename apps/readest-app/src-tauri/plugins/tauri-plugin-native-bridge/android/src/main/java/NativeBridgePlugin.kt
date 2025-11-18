@@ -76,6 +76,11 @@ class SetScreenBrightnessRequestArgs {
 }
 
 @InvokeArg
+class OpenExternalUrlArgs {
+    var url: String? = null
+}
+
+@InvokeArg
 class FetchProductsRequestArgs {
     val productIds: List<String>? = null
 }
@@ -658,6 +663,23 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 ret.put("manageStorage", "prompt")
                 invoke.resolve(ret)
             }
+        }
+    }
+
+    @Command
+    fun open_external_url(invoke: Invoke) {
+        val args = invoke.parseArgs(OpenExternalUrlArgs::class.java)
+        val url = args.url ?: ""
+
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            val ret = JSObject()
+            ret.put("success", true)
+            invoke.resolve(ret)
+        } catch (e: Exception) {
+            invoke.reject("Failed to open URL: ${e.message}")
         }
     }
 }
