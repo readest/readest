@@ -122,6 +122,13 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn open_external_url(
+        &self,
+        _payload: OpenExternalUrlRequest,
+    ) -> crate::Result<OpenExternalUrlResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn request_manage_storage_permission(
         &self,
     ) -> crate::Result<RequestManageStoragePermissionResponse> {

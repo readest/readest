@@ -21,7 +21,11 @@ use tauri_plugin_fs::FsExt;
 mod macos;
 mod transfer_file;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
+#[cfg(target_os = "android")]
+use tauri_plugin_native_bridge::{NativeBridgeExt, OpenExternalUrlRequest};
 use tauri_plugin_oauth::start;
+#[cfg(not(target_os = "android"))]
+use tauri_plugin_opener::OpenerExt;
 use transfer_file::{download_file, upload_file};
 
 #[cfg(desktop)]
@@ -257,9 +261,56 @@ pub fn run() {
                 eprintln!("Failed to initialize tauri_plugin_log: {e}");
             };
 
+            let app_handle = app.handle().clone();
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .background_throttling(BackgroundThrottlingPolicy::Disabled)
-                .background_color(tauri::window::Color(50, 49, 48, 255));
+                .background_color(tauri::window::Color(50, 49, 48, 255))
+                .initialization_script(
+                    r#"
+                        window.addEventListener('DOMContentLoaded', function() {
+                            const isTauriLocal = window.location.protocol === 'tauri:' ||
+                                                window.location.hostname === 'tauri.localhost';
+                            const needsSafeArea = !isTauriLocal;
+                            if (needsSafeArea && !document.getElementById('safe-area-style')) {
+                                const style = document.createElement('style');
+                                style.id = 'safe-area-style';
+                                style.textContent = `
+                                    body {
+                                        padding-top: env(safe-area-inset-top) !important;
+                                        padding-bottom: env(safe-area-inset-bottom) !important;
+                                        padding-left: env(safe-area-inset-left) !important;
+                                        padding-right: env(safe-area-inset-right) !important;
+                                    }
+                                `;
+                                document.head.appendChild(style);
+                            }
+                        });
+                    "#,
+                )
+                .on_navigation(move |url| {
+                    if url.scheme() == "alipays" || url.scheme() == "alipay" {
+                        let url_str = url.as_str().to_string();
+                        #[cfg(target_os = "android")]
+                        {
+                            let handle = app_handle.clone();
+                            tauri::async_runtime::spawn(async move {
+                                match handle
+                                    .native_bridge()
+                                    .open_external_url(OpenExternalUrlRequest { url: url_str })
+                                {
+                                    Ok(result) => println!("Result: {:?}", result),
+                                    Err(e) => eprintln!("Error: {:?}", e),
+                                }
+                            });
+                        }
+                        #[cfg(not(target_os = "android"))]
+                        {
+                            let _ = app_handle.opener().open_url(url_str, None::<&str>);
+                        }
+                        return false;
+                    }
+                    true
+                });
 
             #[cfg(desktop)]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);

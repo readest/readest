@@ -23,6 +23,7 @@ Default permissions for the plugin
 - `allow-get-screen-brightness`
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
+- `allow-open-external-url`
 - `allow-request-manage-storage-permission`
 - `allow-check-permissions`
 - `allow-request-permissions`
@@ -528,6 +529,32 @@ Enables the lock_screen_orientation command without any pre-configured scope.
 <td>
 
 Denies the lock_screen_orientation command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-open-external-url`
+
+</td>
+<td>
+
+Enables the open_external_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-open-external-url`
+
+</td>
+<td>
+
+Denies the open_external_url command without any pre-configured scope.
 
 </td>
 </tr>

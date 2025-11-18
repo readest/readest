@@ -202,3 +202,16 @@ pub struct GetExternalSDCardPathResponse {
 pub struct RequestManageStoragePermissionResponse {
     pub manage_storage: String, // "granted", "denied", or "prompt"
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenExternalUrlRequest {
+    pub url: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenExternalUrlResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}

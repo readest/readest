@@ -18,6 +18,7 @@ const COMMANDS: &[&str] = &[
     "get_screen_brightness",
     "set_screen_brightness",
     "get_external_sdcard_path",
+    "open_external_url",
     "request_manage_storage_permission",
     "check_permissions",
     "request_permissions",

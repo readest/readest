@@ -134,6 +134,14 @@
     "oauth:allow-cancel",
     "sign-in-with-apple:default",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "alipays:*"
+        }
+      ]
+    },
     "haptics:allow-vibrate",
     "haptics:allow-impact-feedback",
     "haptics:allow-notification-feedback",

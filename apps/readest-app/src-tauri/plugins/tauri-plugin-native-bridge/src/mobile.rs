@@ -198,6 +198,17 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn open_external_url(
+        &self,
+        payload: OpenExternalUrlRequest,
+    ) -> crate::Result<OpenExternalUrlResponse> {
+        self.0
+            .run_mobile_plugin("open_external_url", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn request_manage_storage_permission(
         &self,
     ) -> crate::Result<RequestManageStoragePermissionResponse> {
