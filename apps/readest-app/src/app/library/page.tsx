@@ -614,6 +614,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     } else {
       params.delete('group');
     }
+    setIsSelectAll(false);
+    setIsSelectNone(false);
     navigateToLibrary(router, `${params.toString()}`);
     setTimeout(() => {
       setCurrentGroupPath(path);
