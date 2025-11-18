@@ -271,7 +271,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     if (isSelectMode) {
       setShowSelectModeActions(true);
       if (isSelectAll) {
-        setSelectedBooks(filteredBooks.map((item) => item.hash));
+        setSelectedBooks(
+          currentBookshelfItems.map((item) => ('hash' in item ? item.hash : item.id)),
+        );
       } else if (isSelectNone) {
         setSelectedBooks([]);
       }
@@ -280,7 +282,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       setShowSelectModeActions(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectMode, isSelectAll, isSelectNone, filteredBooks]);
+  }, [isSelectMode, isSelectAll, isSelectNone, currentBookshelfItems]);
 
   useEffect(() => {
     eventDispatcher.on('delete-books', handleDeleteBooksIntent);
