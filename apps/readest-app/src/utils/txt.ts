@@ -145,7 +145,7 @@ export class TxtToEpubConverter {
         'Afterword',
       ];
 
-      const numberPattern = String.raw`(\d+|[IVXLCDM]+)`;
+      const numberPattern = String.raw`(\d+|(?:[IVXLCDM]{2,}|V|X|L|C|D|M)\b)`;
       const dotNumberPattern = String.raw`\.\d{1,4}`;
       const titlePattern = String.raw`[^\n]{0,50}`;
 
@@ -194,7 +194,7 @@ export class TxtToEpubConverter {
       }, []);
 
     const isGoodMatches = (matches: string[], maxLength: number = 100000): boolean => {
-      const meaningfulParts = matches.filter((part) => part.trim().length > 0);
+      const meaningfulParts = matches.filter((part) => part && part.trim().length > 0);
       if (meaningfulParts.length <= 1) return false;
 
       const hasLongParts = meaningfulParts.some((part) => part.length > maxLength);
