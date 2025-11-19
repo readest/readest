@@ -396,6 +396,7 @@ export class TxtToEpubConverter {
           <dc:identifier id="book-id">${identifier}</dc:identifier>
         </metadata>
         <manifest>
+          <item id="css" href="style.css" media-type="text/css"/>
           ${manifest}
           ${tocManifest}
         </manifest>
