@@ -55,6 +55,7 @@ export class TxtToEpubConverter {
 
     const fileContent = await txtFile.arrayBuffer();
     const detectedEncoding = this.detectEncoding(fileContent) || 'utf-8';
+    console.log(`Detected encoding: ${detectedEncoding}`);
     const decoder = new TextDecoder(detectedEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
@@ -413,6 +414,31 @@ export class TxtToEpubConverter {
       new TextDecoder('utf-8', { fatal: true }).decode(buffer);
       return 'utf-8';
     } catch {
+      const uint8Array = new Uint8Array(buffer);
+      // Try tolerant UTF-8 detection - check if most of it is valid UTF-8
+      let validBytes = 0;
+      let checkedBytes = 0;
+      const sampleSize = Math.min(uint8Array.length, 10000);
+
+      for (let i = 0; i < sampleSize; i++) {
+        try {
+          new TextDecoder('utf-8', { fatal: true }).decode(uint8Array.slice(i, i + 100));
+          validBytes += 100;
+          checkedBytes += 100;
+          i += 99;
+        } catch {
+          checkedBytes++;
+        }
+      }
+
+      const validPercentage = (validBytes / checkedBytes) * 100;
+      console.log(`UTF-8 validity: ${validPercentage.toFixed(2)}%`);
+
+      // If more than 80% is valid UTF-8, consider it UTF-8 with some corruption
+      if (validPercentage > 80) {
+        console.log('Treating as UTF-8 despite some invalid sequences');
+        return 'utf-8';
+      }
       // If UTF-8 decoding fails, try to detect other encodings
     }
 
