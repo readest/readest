@@ -66,7 +66,8 @@ const nextConfig = {
 const withPWA = withPWAInit({
   dest: 'public',
   disable: isDev || appPlatform !== 'web',
-  buildExcludes: [/\/_headers$/],
+  cacheStartUrl: false,
+  dynamicStartUrl: false,
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
@@ -76,6 +77,23 @@ const withPWA = withPWAInit({
   },
   workboxOptions: {
     disableDevLogs: true,
+    manifestTransforms: [
+      (manifestEntries) => {
+        const manifest = manifestEntries.filter((entry) => {
+          const url = entry.url;
+          return (
+            !url.includes('dynamic-css-manifest.json') &&
+            !url.includes('middleware-manifest.json') &&
+            !url.includes('react-loadable-manifest.json') &&
+            !url.includes('build-manifest.json') &&
+            !url.includes('_buildManifest.js') &&
+            !url.includes('_ssgManifest.js') &&
+            !url.includes('_headers')
+          );
+        });
+        return { manifest };
+      },
+    ],
   },
 });
 
