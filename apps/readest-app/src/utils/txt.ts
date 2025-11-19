@@ -385,6 +385,7 @@ export class TxtToEpubConverter {
     }
 
     const tocManifest = `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>`;
+    const styleManifest = `<item id="css" href="style.css" media-type="text/css"/>`;
 
     // Add content.opf file
     const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
@@ -398,6 +399,7 @@ export class TxtToEpubConverter {
         <manifest>
           ${manifest}
           ${tocManifest}
+          ${styleManifest}
         </manifest>
         <spine toc="ncx">
           ${spine}
