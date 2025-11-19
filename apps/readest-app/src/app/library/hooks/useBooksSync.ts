@@ -99,7 +99,7 @@ export const useBooksSync = () => {
           oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
         }
         const mergedBook =
-          matchingBook.updatedAt > oldBook.updatedAt
+          matchingBook.updatedAt >= oldBook.updatedAt
             ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
             : { ...matchingBook, ...oldBook, syncedAt: Date.now() };
         return mergedBook;
