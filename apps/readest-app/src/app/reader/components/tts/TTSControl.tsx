@@ -277,13 +277,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     const viewSettings = getViewSettings(bookKey);
     const bookData = getBookData(bookKey);
     if (!view || !progress || !viewSettings || !bookData || !bookData.book) return;
-    if (bookData.book?.format === 'PDF') {
-      eventDispatcher.dispatch('toast', {
-        message: _('TTS not supported for PDF'),
-        type: 'warning',
-      });
-      return;
-    }
 
     let ttsFromRange = range;
     if (!ttsFromRange && viewSettings.ttsLocation) {
