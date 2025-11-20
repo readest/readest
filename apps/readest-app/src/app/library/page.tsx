@@ -144,6 +144,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   });
 
   useEffect(() => {
+    sessionStorage.setItem('lastLibraryParams', searchParams?.toString() || '');
+  }, [searchParams]);
+
+  useEffect(() => {
     const doCheckAppUpdates = async () => {
       if (appService?.hasUpdater && settings.autoCheckUpdates) {
         await checkForAppUpdates(_);

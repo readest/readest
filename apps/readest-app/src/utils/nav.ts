@@ -82,10 +82,10 @@ export const navigateToLibrary = (
   navOptions?: { scroll?: boolean },
   navBack?: boolean,
 ) => {
-  const lastPath = typeof window !== 'undefined' ? sessionStorage.getItem('lastPath') : null;
-  if (navBack && lastPath === '/library') {
-    router.back();
-    return;
+  const lastLibraryParams =
+    typeof window !== 'undefined' ? sessionStorage.getItem('lastLibraryParams') : null;
+  if (navBack && lastLibraryParams) {
+    queryParams = lastLibraryParams;
   }
 
   router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
