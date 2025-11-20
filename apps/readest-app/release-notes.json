@@ -1,5 +1,15 @@
 {
   "releases": {
+    "0.9.93": {
+      "date": "2025-11-20",
+      "notes": [
+        "Sync: Improved reliability for new accounts so your books sync correctly from the start",
+        "Library: Fixed an occasional issue where returning to the library could get stuck",
+        "Layout: Improved image display in paginated mode so images won't exceed the available height",
+        "TXT: Improved performance and stability when opening and parsing TXT files",
+        "Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks"
+      ]
+    },
     "0.9.92": {
       "date": "2025-11-18",
       "notes": [
