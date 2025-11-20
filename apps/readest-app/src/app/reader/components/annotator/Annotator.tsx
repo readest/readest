@@ -61,6 +61,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
+  const [showInstantNote, setShowInstantNote] = useState(false);
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
@@ -258,16 +259,49 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const detail = (event as CustomEvent).detail;
     const { value: cfi, index, range } = detail;
     const { booknotes = [] } = getConfig(bookKey)!;
-    const annotations = booknotes.filter(
-      (booknote) => booknote.type === 'annotation' && !booknote.deletedAt,
+
+    const highlightAnnotation = booknotes.find(
+      (item) =>
+        item.cfi === cfi &&
+        item.type === 'annotation' &&
+        item.style &&          
+        !item.deletedAt
     );
-    const annotation = annotations.find((annotation) => annotation.cfi === cfi);
-    if (!annotation) return;
-    const selection = { key: bookKey, annotated: true, text: annotation.text ?? '', range, index };
-    setSelectedStyle(annotation.style!);
-    setSelectedColor(annotation.color!);
+    if (!highlightAnnotation) return;
+
+    const notesForHighlight = booknotes.filter(
+      (item) =>
+        item.cfi === cfi &&
+        item.type === 'annotation' &&
+        item.note &&
+        item.note.trim().length > 0 &&
+        !item.deletedAt
+    );
+
+    const noteTexts = notesForHighlight
+      .map((n) => n.note!)
+      .filter((n) => n.trim().length > 0)
+      .reverse()                
+      .join("\n\n");
+
+    const selection = {
+      key: bookKey,
+      annotated: true,
+      text: highlightAnnotation.text ?? "",
+      note: noteTexts,          
+      range,
+      index
+    };
+
+    setSelectedStyle(highlightAnnotation.style!);
+    setSelectedColor(highlightAnnotation.color!);
     setSelection(selection);
     handleUpToPopup();
+    if (settings.viewAnnotationsOnClick) {
+      setShowInstantNote(true);
+    } else {
+      setShowInstantNote(false);
+    }
   };
 
   useFoliateEvents(view, { onLoad, onDrawAnnotation, onShowAnnotation });
@@ -690,6 +724,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupWidth={annotPopupWidth}
           popupHeight={annotPopupHeight}
           onHighlight={handleHighlight}
+          showInstantNote={showInstantNote}
+          noteText={selection?.note}
         />
       )}
     </div>

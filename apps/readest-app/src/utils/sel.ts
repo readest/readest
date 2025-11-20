@@ -29,6 +29,7 @@ export interface TextSelection {
   index: number;
   href?: string;
   annotated?: boolean;
+  note?: string;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
