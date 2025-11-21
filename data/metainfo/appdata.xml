@@ -117,16 +117,6 @@
         </ul>
       </description>
     </release>
-    <release version="0.9.9" date="2025-02-06">
-      <description>
-        <ul>
-          <li>Load system fonts list at runtime on desktop</li>
-          <li>Incrementally load new books in synchronization</li>
-          <li>Change voice language dynamically by detecting text language</li>
-          <li>Various fixes and enhancements on sync, fonts and highlighting</li>
-        </ul>
-      </description>
-    </release>
     <release version="0.9.88" date="2025-10-18">
       <description>
         <ul>
@@ -186,6 +176,17 @@
           <li>Settings: Added global settings menu to the library page</li>
           <li>iOS: Fixed an issue where custom theme colors were not handled correctly on older Safari versions</li>
           <li>TTS: Added more languages for Edge TTS</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.81" date="2025-09-19">
+      <description>
+        <ul>
+          <li>TTS: Added desktop common media control support when TTS is playing</li>
+          <li>PDF: Disabled swipe-up gesture for toggling the action bar when zoomed in</li>
+          <li>Fonts: Fixed an issue where embedded fonts in ebooks were occasionally not applied</li>
+          <li>Reader: Fixed an issue where newly created highlights sometimes would not appear</li>
+          <li>Reader: Enabled scrolling in the menu when the menu is too long</li>
         </ul>
       </description>
     </release>
