@@ -210,7 +210,9 @@
     </screenshot>
   </screenshots>
 
-  <content_rating type="oars-1.0"></content_rating>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">moderate</content_attribute>
+  </content_rating>
 
   <branding>
     <color type="primary" scheme_preference="light">#d97706</color>
