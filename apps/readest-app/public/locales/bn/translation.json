@@ -302,7 +302,6 @@
   "Link Color": "লিঙ্ক রঙ",
   "Preview": "প্রিভিউ",
   "Font & Layout": "ফন্ট ও লেআউট",
-  "Book Cover": "বইয়ের মলাট",
   "More Info": "আরো তথ্য",
   "Parallel Read": "সমান্তরাল পড়া",
   "Disable": "নিষ্ক্রিয়",
@@ -656,5 +655,6 @@
   "Update email": "ইমেল আপডেট করুন",
   "Current email": "বর্তমান ইমেল",
   "Update Email": "ইমেল আপডেট করুন",
-  "All": "সব"
+  "All": "সব",
+  "Unable to open book": "বই খুলতে অক্ষম"
 }

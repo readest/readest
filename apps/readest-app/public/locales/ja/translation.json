@@ -8,7 +8,6 @@
   "Auto Mode": "自動モード",
   "Behavior": "動作",
   "Book": "書籍",
-  "Book Cover": "表紙",
   "Bookmark": "ブックマーク",
   "Cancel": "キャンセル",
   "Chapter": "章",
@@ -652,5 +651,6 @@
   "Update email": "メールを更新",
   "Current email": "現在のメールアドレス",
   "Update Email": "メールを更新",
-  "All": "すべて"
+  "All": "すべて",
+  "Unable to open book": "本を開くことができません"
 }

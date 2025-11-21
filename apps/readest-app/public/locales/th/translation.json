@@ -255,7 +255,6 @@
   "Link Color": "สีลิงก์",
   "Preview": "ดูตัวอย่าง",
   "Font & Layout": "ฟอนต์และเลย์เอาต์",
-  "Book Cover": "ปกหนังสือ",
   "More Info": "ข้อมูลเพิ่มเติม",
   "Parallel Read": "อ่านคู่ขนาน",
   "Disable": "ปิด",
@@ -652,5 +651,6 @@
   "Update email": "อัปเดตอีเมล",
   "Current email": "อีเมลปัจจุบัน",
   "Update Email": "อัปเดตอีเมล",
-  "All": "ทั้งหมด"
+  "All": "ทั้งหมด",
+  "Unable to open book": "ไม่สามารถเปิดหนังสือได้"
 }

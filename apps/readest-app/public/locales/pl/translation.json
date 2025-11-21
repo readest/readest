@@ -8,7 +8,6 @@
   "Auto Mode": "Tryb automatyczny",
   "Behavior": "Zachowanie",
   "Book": "Książka",
-  "Book Cover": "Okładka książki",
   "Bookmark": "Zakładka",
   "Cancel": "Anuluj",
   "Chapter": "Rozdział",
@@ -664,5 +663,6 @@
   "Update email": "Zaktualizuj e-mail",
   "Current email": "Obecny e-mail",
   "Update Email": "Zaktualizuj e-mail",
-  "All": "Wszystkie"
+  "All": "Wszystkie",
+  "Unable to open book": "Nie można otworzyć książki"
 }

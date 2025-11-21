@@ -8,7 +8,6 @@
   "Auto Mode": "自动主题",
   "Behavior": "行为",
   "Book": "书籍",
-  "Book Cover": "书籍封面",
   "Bookmark": "书签",
   "Cancel": "取消",
   "Chapter": "章节",
@@ -652,5 +651,6 @@
   "Update email": "更新邮箱",
   "Current email": "当前邮箱",
   "Update Email": "更新邮箱",
-  "All": "全部"
+  "All": "全部",
+  "Unable to open book": "无法打开书籍"
 }

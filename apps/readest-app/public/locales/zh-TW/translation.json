@@ -8,7 +8,6 @@
   "Auto Mode": "自動主題",
   "Behavior": "行為",
   "Book": "書籍",
-  "Book Cover": "書籍封面",
   "Bookmark": "書籤",
   "Cancel": "取消",
   "Chapter": "章節",
@@ -652,5 +651,6 @@
   "Update email": "更新電子郵件",
   "Current email": "當前電子郵件",
   "Update Email": "更新電子郵件",
-  "All": "全部"
+  "All": "全部",
+  "Unable to open book": "無法打開書籍"
 }
