@@ -157,11 +157,26 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     if (sortBy !== 'updated' && params.get('sort') !== sortBy) {
       params.set('sort', sortBy);
       hasChanges = true;
-    } else if (sortBy === 'updated' && sortOrder === 'desc' && viewMode === 'grid') {
-      if (params.has('sort')) {
-        params.delete('sort');
-        hasChanges = true;
-      }
+    }
+
+    if (sortBy === 'updated') {
+      params.delete('sort');
+      hasChanges = true;
+    }
+
+    if (sortOrder === 'desc') {
+      params.delete('order');
+      hasChanges = true;
+    }
+
+    if (coverFit === 'crop') {
+      params.delete('cover');
+      hasChanges = true;
+    }
+
+    if (viewMode === 'grid') {
+      params.delete('view');
+      hasChanges = true;
     }
 
     if (groupId) {
