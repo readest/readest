@@ -60,69 +60,132 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
-    <release version="0.9.63" date="2025-07-07">
+    <release version="0.9.93" date="2025-11-20">
       <description>
         <ul>
-          <li>Reader: Fixed links not working in some MOBI books</li>
-          <li>TTS: Fixed an issue where some text was skipped during reading</li>
-          <li>Library: You can now delete only the cloud backup of a book without removing the local copy</li>
-          <li>Performance: Fonts in the font list now load only when displayed for faster startup</li>
-          <li>Performance: Opening large MOBI books is now significantly faster</li>
-          <li>Layout: Fixed overlay scrollbar display in virtualized book lists</li>
-          <li>Layout: Improved grid cover image height in crop mode</li>
-          <li>Layout: Removed unsupported screen orientation lock option on iPad</li>
-          <li>Layout: System context menu no longer appears when selecting text on iPad</li>
-          <li>Translation: Added Thai (th-TH) language support</li>
+          <li>Sync: Improved reliability for new accounts so your books sync correctly from the start</li>
+          <li>Library: Fixed an occasional issue where returning to the library could get stuck</li>
+          <li>Layout: Improved image display in paginated mode so images won't exceed the available height</li>
+          <li>TXT: Improved performance and stability when opening and parsing TXT files</li>
+          <li>Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks</li>
         </ul>
       </description>
     </release>
-    <release version="0.9.62" date="2025-07-02">
+    <release version="0.9.92" date="2025-11-18">
       <description>
         <ul>
-          <li>Subscription: You can now upgrade to Readest Premium and manage your subscription</li>
-          <li>Reader: Added an option to toggle Parallel Reading when viewing multiple books</li>
-          <li>Translation: Added an option to show or hide the original text in translations</li>
-          <li>Layout: TOC on Android now uses an overlay scrollbar for easier navigation</li>
-          <li>Layout: Custom CSS can now also be applied to the library page</li>
-          <li>Fonts: Added three new CJK fonts to choose from</li>
-          <li>Shortcuts: Press ESC to quickly close the search bar</li>
+          <li>Bookshelf: Added support for nested groups to organize your books more flexibly</li>
+          <li>Sync: Improved reliability by automatically retrying failed book syncs</li>
+          <li>Sync: Improved token refresh so login sessions stay active longer on KOReader</li>
+          <li>E-Ink: Enhanced readability on the library page for E-Ink devices</li>
+          <li>UI: Storage capacity is now displayed with precise values in the user profile</li>
+          <li>Reader: You can now import files directly into the currently selected book group</li>
+          <li>Account: You can now update the email address linked to your Readest account</li>
+          <li>Footnotes: Added compatibility for more footnote formats</li>
         </ul>
       </description>
     </release>
-    <release version="0.9.61" date="2025-06-25">
+    <release version="0.9.91" date="2025-10-29">
       <description>
         <ul>
-          <li>Layout: Fixed view menu width on smaller screens</li>
-          <li>Layout: Added option to crop or fit book covers in library view</li>
-          <li>Reader: You can now apply custom CSS to the reading interface (UI)</li>
-          <li>Reader: Added an option to show remaining pages in the current chapter</li>
-          <li>Settings: Added options to reset settings from the config dialog</li>
-          <li>Import: Fixed encoded filenames when importing TXT files on iOS</li>
-          <li>Linux: Fixed missing app icon on some Linux distributions</li>
-          <li>GitHub: Added donation link to support Readest development</li>
+          <li>TTS: Fixed an issue where system voices were not working on Android</li>
+          <li>TTS: Added options to customize the highlight style during read-aloud</li>
+          <li>E-Ink: Disabled all shadows to improve display clarity</li>
+          <li>E-Ink: Added an option to save the last book cover on Android</li>
+          <li>Android: Fixed a crash that occurred when toggling 'Allow Script'</li>
+          <li>Android: Adjusted launcher icon size for better compatibility across devices</li>
         </ul>
       </description>
     </release>
-    <release version="0.9.60" date="2025-06-18">
+    <release version="0.9.90" date="2025-10-28">
       <description>
         <ul>
-          <li>Layout has been improved for iPad devices</li>
-          <li>Screen orientation changes are now smoother on iOS</li>
-          <li>Importing books on iOS during the first launch is now more reliable</li>
-          <li>Font size no longer changes unexpectedly in scrolled mode on iOS</li>
-          <li>Top and bottom safe insets are now ignored when no header or footer is present</li>
-          <li>Interactive books now load correctly on the Desktop platform</li>
-          <li>Translation is now disabled when the primary language is undefined</li>
-          <li>Android: the task list background color has been updated with current theme color</li>
+          <li>Sync: Faster library syncing and support for in-app one-time purchases of extra cloud storage</li>
+          <li>TTS: You can now choose the target language for read-aloud on translated books</li>
+          <li>Reader: New keyboard shortcuts make it easier to move between sections</li>
+          <li>Reader: Smoother scrolling for a more comfortable reading experience</li>
+          <li>Reader: Footnotes in definition lists are now fully supported</li>
+          <li>Reader: Improved search accuracy and display of search results</li>
+          <li>Reader: Clearer error messages when importing books</li>
+          <li>Reader: Improved safety when loading book content</li>
+          <li>Settings: You can now choose your own highlight colors</li>
+          <li>Settings: Added option to adjust screen brightness automatically</li>
+          <li>E-Ink: Better readability and clearer progress display with underlined links</li>
+          <li>Android: You can now store app data on an external SD card</li>
+          <li>iOS: Restores your last reading page if the app was closed in the background</li>
+          <li>Localization: Added Persian (Farsi) language support</li>
         </ul>
       </description>
     </release>
-    <release version="0.9.59" date="2025-06-12">
+    <release version="0.9.9" date="2025-02-06">
       <description>
         <ul>
-          <li>Layout: Image size now adjusts more accurately by converting screen units to pixels properly</li>
-          <li>Layout: Improved header layout on iOS landscape mode — extra spacing has been removed</li>
-          <li>Settings: Top and bottom margin settings are now more intuitive and better constrained</li>
+          <li>Load system fonts list at runtime on desktop</li>
+          <li>Incrementally load new books in synchronization</li>
+          <li>Change voice language dynamically by detecting text language</li>
+          <li>Various fixes and enhancements on sync, fonts and highlighting</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.88" date="2025-10-18">
+      <description>
+        <ul>
+          <li>TTS: Fixed issue where the read-aloud indicator disappeared too quickly</li>
+          <li>Layout: Overriding book layout no longer affects explicitly set text alignment</li>
+          <li>Reader: Added localized number display for reading progress in vertical layout</li>
+          <li>Reader: Enhanced swipe responsiveness for smoother page transitions</li>
+          <li>Settings: Added an option to disable animations when using E-Ink mode</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.87" date="2025-10-16">
+      <description>
+        <ul>
+          <li>Reader: Improved chapter detection with better chapter title recognition</li>
+          <li>Reader: Enhanced compatibility for parsing more footnote formats</li>
+          <li>Theme: Fixed auto theme switching in new reader windows</li>
+          <li>TTS: Improved scrolling accuracy to highlighted text during read-aloud</li>
+          <li>TTS: Fixed crash issues on certain Android systems</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.86" date="2025-10-14">
+      <description>
+        <ul>
+          <li>Reader: Added support for per-book background image customization</li>
+          <li>Reader: Added option to override book language metadata for improved hyphenation accuracy</li>
+          <li>Sync: Readest sync in KOReader can now be triggered using gesture controls</li>
+          <li>Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book</li>
+          <li>Sync: Improved upload performance with concurrent upload support</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.85" date="2025-10-14">
+      <description>
+        <ul>
+          <li>TTS: Improved media session control compatibility across more Android systems</li>
+          <li>TTS: Made the TTS icon less distracting during read-aloud mode</li>
+          <li>Settings: Added an option to adjust screen brightness while reading</li>
+          <li>Settings: Added support for custom background images</li>
+          <li>PDF: Fixed an issue where scrolling and panning didn’t work correctly when zoomed in</li>
+          <li>Android: Added adaptive launcher icon for better system integration</li>
+          <li>Reader: Added keyboard shortcuts for toggling bookmarks</li>
+          <li>Reader: Annotations are now rendered instantly when opening files</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.82" date="2025-10-01">
+      <description>
+        <ul>
+          <li>Sync: More reliable syncing between KOReader and Readest</li>
+          <li>MOBI: Fixed an issue where some footnotes in MOBI/AZW files were not parsed correctly</li>
+          <li>Storage: Added support for changing data location on Windows, macOS, Linux, and Android</li>
+          <li>Windows: Portable EXE version now stores all reading data in the directory of the executable</li>
+          <li>Android: Added background TTS support with media session controls</li>
+          <li>WebView: Extended compatibility down to version 92</li>
+          <li>Settings: Added global settings menu to the library page</li>
+          <li>iOS: Fixed an issue where custom theme colors were not handled correctly on older Safari versions</li>
+          <li>TTS: Added more languages for Edge TTS</li>
         </ul>
       </description>
     </release>
