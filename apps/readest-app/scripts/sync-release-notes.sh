@@ -9,7 +9,7 @@
 #
 # Arguments:
 #   json_file: Path to JSON file (default: releases.json)
-#   xml_file:  Path to XML file (default: com.bilingify.readest.appdata.xml)
+#   xml_file:  Path to XML file (default: appdata.xml)
 
 set -e
 set -o pipefail
@@ -42,7 +42,7 @@ fi
 
 # Parse arguments
 JSON_FILE="${1:-releases.json}"
-XML_FILE="${2:-com.bilingify.readest.appdata.xml}"
+XML_FILE="${2:-appdata.xml}"
 
 # Validate input files
 if [ ! -f "$JSON_FILE" ]; then
@@ -95,7 +95,7 @@ RELEASE_COUNT=$(jq '.releases | length' "$JSON_FILE")
 echo "  Found $RELEASE_COUNT releases"
 
 jq -r '
-.releases | to_entries | sort_by(.key) | reverse | .[0:10] |  .[] |
+.releases | to_entries | .[0:10] |  .[] |
 "    <release version=\"\(.key)\" date=\"\(.value.date)\">
       <description>
         <ul>
