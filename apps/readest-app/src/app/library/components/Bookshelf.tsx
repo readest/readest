@@ -129,54 +129,59 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const sort = searchParams?.get('sort') || settings.librarySortBy;
     const order = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
     const cover = searchParams?.get('cover') || settings.libraryCoverFit;
-    const params = new URLSearchParams(searchParams?.toString());
-    if (query) {
-      params.set('q', query);
-      setQueryTerm(query);
-    } else {
-      params.delete('q');
-      setQueryTerm(null);
-    }
-    if (sort) {
-      params.set('sort', sort);
-      setSortBy(sort);
-    } else {
-      params.delete('sort');
-    }
-    if (order) {
-      params.set('order', order);
-      setSortOrder(order);
-    } else {
-      params.delete('order');
-    }
-    if (view) {
-      params.set('view', view);
-      setViewMode(view);
-    } else {
-      params.delete('view');
-    }
-    setCoverFit(cover);
-    if (cover === 'crop') {
-      params.delete('cover');
-    }
-    if (sort === 'updated' && order === 'desc' && view === 'grid') {
-      params.delete('sort');
-      params.delete('order');
-      params.delete('view');
-    }
+
     setGroupId(group);
-    if (group) {
-      if (currentBookshelfItems.length > 0) {
-        params.set('group', group);
-      } else {
-        params.delete('group');
-        navigateToLibrary(router, `${params.toString()}`);
+    setQueryTerm(query || null);
+    setViewMode(view);
+    setSortBy(sort);
+    setSortOrder(order);
+    setCoverFit(cover);
+  }, [searchParams, settings]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams?.toString());
+    let hasChanges = false;
+
+    if (queryTerm) {
+      if (params.get('q') !== queryTerm) {
+        params.set('q', queryTerm);
+        hasChanges = true;
       }
     } else {
-      params.delete('group');
-      navigateToLibrary(router, `${params.toString()}`);
+      if (params.has('q')) {
+        params.delete('q');
+        hasChanges = true;
+      }
     }
-  }, [router, settings, searchParams, currentBookshelfItems, showGroupingModal]);
+
+    if (sortBy !== 'updated' && params.get('sort') !== sortBy) {
+      params.set('sort', sortBy);
+      hasChanges = true;
+    } else if (sortBy === 'updated' && sortOrder === 'desc' && viewMode === 'grid') {
+      if (params.has('sort')) {
+        params.delete('sort');
+        hasChanges = true;
+      }
+    }
+
+    if (groupId) {
+      if (currentBookshelfItems.length === 0) {
+        params.delete('group');
+        hasChanges = true;
+      } else if (params.get('group') !== groupId) {
+        params.set('group', groupId);
+        hasChanges = true;
+      }
+    } else if (params.has('group')) {
+      params.delete('group');
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      navigateToLibrary(router, params.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryTerm, sortBy, sortOrder, viewMode, coverFit, groupId, currentBookshelfItems.length]);
 
   const toggleSelection = useCallback(
     (id: string) => {
