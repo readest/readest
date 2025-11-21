@@ -241,7 +241,6 @@
   "{{count}} pages left in chapter_other": "{{count}} sidor kvar i kapitlet",
   "On {{current}} of {{total}} page": "På {{current}} av {{total}} sidor",
   "Section Title": "Sektionstitel",
-  "Book Cover": "Bokomslag",
   "More Info": "Mer info",
   "Parallel Read": "Parallell läsning",
   "Disable": "Inaktivera",
@@ -656,5 +655,6 @@
   "Update email": "Uppdatera e-post",
   "Current email": "Nuvarande e-post",
   "Update Email": "Uppdatera e-post",
-  "All": "Alla"
+  "All": "Alla",
+  "Unable to open book": "Kunde inte öppna bok"
 }

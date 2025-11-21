@@ -8,7 +8,6 @@
   "Auto Mode": "Chế độ tự động",
   "Behavior": "Hành vi",
   "Book": "Sách",
-  "Book Cover": "Bìa sách",
   "Bookmark": "Đánh dấu",
   "Cancel": "Hủy",
   "Chapter": "Chương",
@@ -652,5 +651,6 @@
   "Update email": "Cập nhật email",
   "Current email": "Email hiện tại",
   "Update Email": "Cập nhật email",
-  "All": "Tất cả"
+  "All": "Tất cả",
+  "Unable to open book": "Không thể mở sách"
 }

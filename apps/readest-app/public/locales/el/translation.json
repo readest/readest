@@ -8,7 +8,6 @@
   "Auto Mode": "Αυτόματη λειτουργία",
   "Behavior": "Συμπεριφορά",
   "Book": "Βιβλίο",
-  "Book Cover": "Εξώφυλλο βιβλίου",
   "Bookmark": "Σελιδοδείκτης",
   "Cancel": "Ακύρωση",
   "Chapter": "Κεφάλαιο",
@@ -656,5 +655,6 @@
   "Update email": "Ενημέρωση email",
   "Current email": "Τρέχον email",
   "Update Email": "Ενημέρωση email",
-  "All": "Όλα"
+  "All": "Όλα",
+  "Unable to open book": "Αδύνατη η άνοιγμα του βιβλίου"
 }

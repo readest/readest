@@ -8,7 +8,6 @@
   "Auto Mode": "자동 모드",
   "Behavior": "동작",
   "Book": "책",
-  "Book Cover": "책 표지",
   "Bookmark": "북마크",
   "Cancel": "취소",
   "Chapter": "챕터",
@@ -652,5 +651,6 @@
   "Update email": "이메일 업데이트",
   "Current email": "현재 이메일",
   "Update Email": "이메일 업데이트",
-  "All": "전체"
+  "All": "전체",
+  "Unable to open book": "책을 열 수 없습니다"
 }

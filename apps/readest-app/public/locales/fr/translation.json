@@ -8,7 +8,6 @@
   "Auto Mode": "Mode automatique",
   "Behavior": "Comportement",
   "Book": "Livre",
-  "Book Cover": "Couverture du livre",
   "Bookmark": "Signet",
   "Cancel": "Annuler",
   "Chapter": "Chapitre",
@@ -660,5 +659,6 @@
   "Update email": "Mettre à jour l’e-mail",
   "Current email": "E-mail actuel",
   "Update Email": "Mettre à jour l’e-mail",
-  "All": "Tous"
+  "All": "Tous",
+  "Unable to open book": "Impossible d'ouvrir le livre"
 }

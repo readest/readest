@@ -8,7 +8,6 @@
   "Auto Mode": "حالت خودکار",
   "Behavior": "رفتار",
   "Book": "کتاب",
-  "Book Cover": "جلد کتاب",
   "Bookmark": "نشانک",
   "Cancel": "لغو",
   "Chapter": "فصل",
@@ -656,5 +655,6 @@
   "Update email": "به‌روزرسانی ایمیل",
   "Current email": "ایمیل فعلی",
   "Update Email": "به‌روزرسانی ایمیل",
-  "All": "همه"
+  "All": "همه",
+  "Unable to open book": "قادر به باز کردن کتاب نیست"
 }

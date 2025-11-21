@@ -196,7 +196,6 @@
   "Link Color": "Linkkleur",
   "Preview": "Voorbeeld",
   "Font & Layout": "Lettertype & opmaak",
-  "Book Cover": "Boekomslag",
   "More Info": "Meer informatie",
   "Parallel Read": "Parallel lezen",
   "Export Annotations": "Annotaties exporteren",
@@ -656,5 +655,6 @@
   "Update email": "E-mail bijwerken",
   "Current email": "Huidig e-mailadres",
   "Update Email": "E-mail bijwerken",
-  "All": "Alles"
+  "All": "Alles",
+  "Unable to open book": "Kan boek niet openen"
 }
