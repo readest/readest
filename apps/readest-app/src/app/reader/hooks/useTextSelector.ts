@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { getOSPlatform } from '@/utils/misc';
+import { getLocale, getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getTextFromRange, TextSelection } from '@/utils/sel';
 import { transformContent } from '@/services/transformService';
+import { TransformContext } from '@/services/transformers/types';
 
 export const useTextSelector = (
   bookKey: string,
@@ -31,9 +32,10 @@ export const useTextSelector = (
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
   };
 
-  const transformCtx = {
+  const transformCtx: TransformContext = {
     bookKey,
     viewSettings: getViewSettings(bookKey)!,
+    userLocale: getLocale(),
     content: '',
     transformers: ['punctuation'],
     reversePunctuationTransform: true,

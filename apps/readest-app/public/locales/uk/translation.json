@@ -664,5 +664,8 @@
   "Current email": "Поточна електронна пошта",
   "Update Email": "Оновити електронну пошту",
   "All": "Всі",
-  "Unable to open book": "Не вдалося відкрити книгу"
+  "Unable to open book": "Не вдалося відкрити книгу",
+  "Punctuation": "Пунктуація",
+  "Replace Quotation Marks": "Замінити лапки",
+  "Enabled only in vertical layout.": "Активовано лише у вертикальному макеті."
 }

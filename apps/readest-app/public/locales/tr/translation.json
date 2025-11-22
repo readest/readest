@@ -656,5 +656,8 @@
   "Current email": "Mevcut e-posta",
   "Update Email": "E-postayı güncelle",
   "All": "Tümü",
-  "Unable to open book": "Kitap açılamıyor"
+  "Unable to open book": "Kitap açılamıyor",
+  "Punctuation": "Noktalama İşaretleri",
+  "Replace Quotation Marks": "Tırnak İşaretlerini Değiştir",
+  "Enabled only in vertical layout.": "Yalnızca dikey düzenle etkinleştirildi."
 }

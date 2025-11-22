@@ -656,5 +656,8 @@
   "Current email": "Huidig e-mailadres",
   "Update Email": "E-mail bijwerken",
   "All": "Alles",
-  "Unable to open book": "Kan boek niet openen"
+  "Unable to open book": "Kan boek niet openen",
+  "Punctuation": "Interpunctie",
+  "Replace Quotation Marks": "Aanhalingstekens vervangen",
+  "Enabled only in vertical layout.": "Alleen ingeschakeld in verticale lay-out."
 }

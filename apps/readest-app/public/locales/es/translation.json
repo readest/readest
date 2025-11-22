@@ -660,5 +660,8 @@
   "Current email": "Correo electrónico actual",
   "Update Email": "Actualizar correo electrónico",
   "All": "Todos",
-  "Unable to open book": "No se puede abrir el libro"
+  "Unable to open book": "No se puede abrir el libro",
+  "Punctuation": "Signos de puntuación",
+  "Replace Quotation Marks": "Reemplazar comillas",
+  "Enabled only in vertical layout.": "Habilitado solo en diseño vertical."
 }

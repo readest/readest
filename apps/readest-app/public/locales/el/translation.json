@@ -656,5 +656,8 @@
   "Current email": "Τρέχον email",
   "Update Email": "Ενημέρωση email",
   "All": "Όλα",
-  "Unable to open book": "Αδύνατη η άνοιγμα του βιβλίου"
+  "Unable to open book": "Αδύνατη η άνοιγμα του βιβλίου",
+  "Punctuation": "Στίξη",
+  "Replace Quotation Marks": "Αντικατάσταση εισαγωγικών",
+  "Enabled only in vertical layout.": "Ενεργοποιημένο μόνο σε κάθετη διάταξη."
 }

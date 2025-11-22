@@ -664,5 +664,8 @@
   "Current email": "Obecny e-mail",
   "Update Email": "Zaktualizuj e-mail",
   "All": "Wszystkie",
-  "Unable to open book": "Nie można otworzyć książki"
+  "Unable to open book": "Nie można otworzyć książki",
+  "Punctuation": "Interpunkcja",
+  "Replace Quotation Marks": "Zamień cudzysłowy",
+  "Enabled only in vertical layout.": "Włączone tylko w układzie pionowym."
 }

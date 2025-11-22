@@ -664,5 +664,8 @@
   "Current email": "Текущий адрес электронной почты",
   "Update Email": "Обновить электронную почту",
   "All": "Все",
-  "Unable to open book": "Не удалось открыть книгу"
+  "Unable to open book": "Не удалось открыть книгу",
+  "Punctuation": "Пунктуация",
+  "Replace Quotation Marks": "Заменить кавычки",
+  "Enabled only in vertical layout.": "Включено только в вертикальной раскладке."
 }

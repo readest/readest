@@ -652,5 +652,8 @@
   "Current email": "当前邮箱",
   "Update Email": "更新邮箱",
   "All": "全部",
-  "Unable to open book": "无法打开书籍"
+  "Unable to open book": "无法打开书籍",
+  "Punctuation": "标点符号",
+  "Replace Quotation Marks": "替换引号",
+  "Enabled only in vertical layout.": "仅在竖排布局中启用"
 }
