@@ -1,25 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { BookDoc, getDirection } from '@/libs/document';
-import { BookConfig } from '@/types/book';
-import { FoliateView, wrappedFoliateView } from '@/types/view';
-import { Insets } from '@/types/misc';
+import Spinner from '@/components/Spinner';
 import { useEnv } from '@/context/EnvContext';
-import { useThemeStore } from '@/store/themeStore';
-import { useReaderStore } from '@/store/readerStore';
+import { useAutoFocus } from '@/hooks/useAutoFocus';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
+import { useEinkMode } from '@/hooks/useEinkMode';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useUICSS } from '@/hooks/useUICSS';
+import { BookDoc, getDirection } from '@/libs/document';
+import { isTauriAppPlatform } from '@/services/environment';
+import { TransformContext } from '@/services/transformers/types';
+import { transformContent } from '@/services/transformService';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
-import { usePagination } from '../hooks/usePagination';
-import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { useProgressSync } from '../hooks/useProgressSync';
-import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
-import { useAutoFocus } from '@/hooks/useAutoFocus';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useEinkMode } from '@/hooks/useEinkMode';
-import { useKOSync } from '../hooks/useKOSync';
+import { useReaderStore } from '@/store/readerStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useThemeStore } from '@/store/themeStore';
+import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
+import { BookConfig } from '@/types/book';
+import { Insets } from '@/types/misc';
+import { FoliateView, wrappedFoliateView } from '@/types/view';
+import { removeTabIndex } from '@/utils/a11y';
+import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
+import { lockScreenOrientation } from '@/utils/bridge';
+import { getMaxInlineSize } from '@/utils/config';
+import { manageSyntaxHighlighting } from '@/utils/highlightjs';
+import { getViewInsets } from '@/utils/insets';
+import { isCJKLang } from '@/utils/lang';
+import { getDirFromUILanguage } from '@/utils/rtl';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -31,32 +38,26 @@ import {
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
-import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
-import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
-import { useUICSS } from '@/hooks/useUICSS';
+import React, { useEffect, useRef, useState } from 'react';
+import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
+import { useFoliateEvents } from '../hooks/useFoliateEvents';
+import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
+import { useKOSync } from '../hooks/useKOSync';
+import { usePagination } from '../hooks/usePagination';
+import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import { useProgressSync } from '../hooks/useProgressSync';
+import { useTextTranslation } from '../hooks/useTextTranslation';
 import {
+  handleClick,
   handleKeydown,
   handleMousedown,
   handleMouseup,
-  handleClick,
-  handleWheel,
-  handleTouchStart,
-  handleTouchMove,
   handleTouchEnd,
+  handleTouchMove,
+  handleTouchStart,
+  handleWheel,
 } from '../utils/iframeEventHandlers';
-import { getMaxInlineSize } from '@/utils/config';
-import { getDirFromUILanguage } from '@/utils/rtl';
-import { isCJKLang } from '@/utils/lang';
-import { isTauriAppPlatform } from '@/services/environment';
-import { TransformContext } from '@/services/transformers/types';
-import { transformContent } from '@/services/transformService';
-import { lockScreenOrientation } from '@/utils/bridge';
-import { useTextTranslation } from '../hooks/useTextTranslation';
-import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
-import { manageSyntaxHighlighting } from '@/utils/highlightjs';
-import { getViewInsets } from '@/utils/insets';
-import { removeTabIndex } from '@/utils/a11y';
-import Spinner from '@/components/Spinner';
+import ImageViewerModal from './ImageViewerModal';
 import KOSyncConflictResolver from './KOSyncResolver';
 
 declare global {
@@ -85,7 +86,9 @@ const FoliateViewer: React.FC<{
   const { applyEinkMode } = useEinkMode();
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
-
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | undefined>(undefined);
+  const [savedLocation, setSavedLocation] = useState<any>(null);
   const viewRef = useRef<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isViewCreated = useRef(false);
@@ -119,6 +122,76 @@ const FoliateViewer: React.FC<{
       detail.time,
       detail.range,
     );
+  };
+
+  const makeImageOverlayScript = (bookKey: string) => {
+    return `
+  (function(){
+    try {
+      const BOOK_KEY = ${JSON.stringify(bookKey)};
+      function addButtons() {
+        try {
+          document.querySelectorAll('img').forEach(img => {
+            if (img.dataset.readestEnlarger) return;
+            img.dataset.readestEnlarger = '1';
+            const wrapper = document.createElement('span');
+            wrapper.style.position = 'relative';
+            wrapper.style.display = 'inline-block';
+            img.parentNode && img.parentNode.insertBefore(wrapper, img);
+            wrapper.appendChild(img);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('aria-label','Enlarge image');
+            btn.innerHTML = '⛶';
+            btn.title = 'Click to enlarge image';
+            Object.assign(btn.style, {
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              zIndex: '99999',
+              background: 'rgba(0,0,0,0.7)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: '0.8',
+              transition: 'opacity 0.2s'
+            });
+            btn.addEventListener('mouseenter', function() {
+              this.style.opacity = '1';
+            });
+            btn.addEventListener('mouseleave', function() {
+              this.style.opacity = '0.8';
+            });
+            btn.addEventListener('click', function(e){
+              e.stopPropagation();
+              e.preventDefault();
+              try {
+                window.parent.postMessage({ type: 'iframe-image-click', bookKey: BOOK_KEY, src: img.currentSrc || img.src }, '*');
+              } catch (err) {
+                console.warn('[readest-image-inject] postMessage failed', err);
+              }
+            }, false);
+            wrapper.appendChild(btn);
+          });
+        } catch (err) {
+          console.warn('[readest-image-inject] addButtons', err);
+        }
+      }
+      addButtons();
+      const obs = new MutationObserver(addButtons);
+      obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    } catch(e){
+      console.warn('[readest-image-inject] outer', e);
+    }
+  })();
+  `;
   };
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
@@ -163,6 +236,7 @@ const FoliateViewer: React.FC<{
     docLoaded.current = true;
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
+
     if (detail.doc) {
       const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
@@ -214,6 +288,36 @@ const FoliateViewer: React.FC<{
           .filter((item) => !item.deletedAt && item.type === 'annotation' && item.style)
           .forEach((annotation) => viewRef.current?.addAnnotation(annotation));
       }, 100);
+
+      try {
+        const injectionCode = makeImageOverlayScript(bookKey);
+        const docWindow = detail.doc?.defaultView;
+        if (docWindow && docWindow.frameElement) {
+          try {
+            // eval inside iframe context (same-origin EPUB content should allow this)
+            (docWindow as any).eval?.(injectionCode);
+            console.log('[readest-image-inject] injected via iframe eval into', docWindow.location?.href);
+          } catch (evalErr) {
+            console.warn('[readest-image-inject] iframe eval failed, falling back to appending script', evalErr);
+            const script = detail.doc.createElement('script');
+            script.type = 'text/javascript';
+            script.textContent = injectionCode;
+            const parentEl = detail.doc.head || detail.doc.documentElement || detail.doc.body;
+            if (parentEl) parentEl.appendChild(script);
+            console.log('[readest-image-inject] injected via appended <script>');
+          }
+        } else {
+          // Not in an iframe: append script directly to the document
+          const script = detail.doc.createElement('script');
+          script.type = 'text/javascript';
+          script.textContent = injectionCode;
+          const parentEl = detail.doc.head || detail.doc.documentElement || detail.doc.body;
+          if (parentEl) parentEl.appendChild(script);
+          console.log('[readest-image-inject] injected via appended <script> (no iframe)');
+        }
+      } catch (injectionErr) {
+        console.warn('[readest-image-inject] injection error', injectionErr);
+      }
 
       if (!detail.doc.isEventListenersAdded) {
         // listened events in iframes are posted to the main window
@@ -276,6 +380,31 @@ const FoliateViewer: React.FC<{
   });
 
   useEffect(() => {
+    const onMessage = (ev: MessageEvent) => {
+      const data = ev.data || {};
+      if (data && data.type === 'iframe-image-click' && data.bookKey === bookKey) {
+        try {
+          const renderer = viewRef.current?.renderer;
+          let save: any = null;
+          if (renderer && (renderer as any).position) {
+            save = { index: (renderer as any).position.index, fraction: (renderer as any).position.anchor };
+          }
+          // fallback: capture CFI from view if available: (viewRef.current as any)?.getCFI(...)
+          setSavedLocation(save);
+        } catch (err) {
+          console.warn('[readest-image-inject] capture location failed', err);
+        }
+
+        setImageSrc(data.src);
+        setImageModalOpen(true);
+      }
+    };
+
+    window.addEventListener('message', onMessage, false);
+    return () => window.removeEventListener('message', onMessage, false);
+  }, [bookKey]);
+
+  useEffect(() => {
     if (isViewCreated.current) return;
     isViewCreated.current = true;
 
@@ -313,12 +442,6 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
-      book.transformTarget?.addEventListener('load', (event: Event) => {
-        const { detail } = event as CustomEvent;
-        if (detail.isScript) {
-          detail.allow = viewSettings.allowScript ?? false;
-        }
-      });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
       const viewHeight = appService?.isMobile ? screen.height : window.innerHeight;
       const width = viewWidth - insets.left - insets.right;
@@ -497,6 +620,33 @@ const FoliateViewer: React.FC<{
           onClose={resolveWithLocal}
         />
       )}
+      
+      <ImageViewerModal
+        key={imageSrc}
+        open={imageModalOpen}
+        src={imageSrc}
+        alt={''}
+        onClose={() => {
+          setImageModalOpen(false);
+          // Restore the saved location when closing the modal
+          if (savedLocation) {
+            try {
+              if (savedLocation.index != null && savedLocation.fraction != null) {
+                viewRef.current?.renderer?.goTo?.({ 
+                  index: savedLocation.index, 
+                  anchor: savedLocation.fraction 
+                });
+              } else if ((viewRef.current as any)?.goTo && savedLocation.cfi) {
+                (viewRef.current as any).goTo(savedLocation.cfi);
+              }
+            } catch (e) {
+              console.warn('[readest-image-inject] restore failed', e);
+            } finally {
+              setSavedLocation(null);
+            }
+          }
+        }}
+      />
     </>
   );
 };
