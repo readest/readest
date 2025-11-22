@@ -5,7 +5,7 @@
   <h1>Readest</h1>
   <br>
 
-[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
+[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 16](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
 
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
@@ -111,6 +111,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 - macOS / iOS / iPadOS : Search and install **Readest** on the [App Store][link-appstore], _also_ available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
 - Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
+- Linux users can also install [Readest on Flathub][link-flathub].
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
 
 ## Requirements
@@ -312,6 +313,7 @@ The following fonts are utilized in this software, either bundled within the app
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
+[link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
 [link-web-readest]: https://web.readest.com
 [link-gh-releases]: https://github.com/readest/readest/releases
 [link-gh-commits]: https://github.com/readest/readest/commits/main
