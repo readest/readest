@@ -615,26 +615,32 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const selectionAnnotated = selection?.annotated;
+  const isPDF = bookData.book?.format === 'PDF';
   const buttons = [
     { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
-    {
-      tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
-      Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
-      onClick: handleHighlight,
-      disabled: bookData.book?.format === 'PDF',
-    },
+    ...(isPDF
+      ? []
+      : [
+          {
+            tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
+            Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
+            onClick: handleHighlight,
+          },
+        ]),
     {
       tooltipText: _('Annotate'),
       Icon: BsPencilSquare,
       onClick: handleAnnotate,
-      disabled: bookData.book?.format === 'PDF',
     },
-    {
-      tooltipText: _('Search'),
-      Icon: FiSearch,
-      onClick: handleSearch,
-      disabled: bookData.book?.format === 'PDF',
-    },
+    ...(isPDF
+      ? []
+      : [
+          {
+            tooltipText: _('Search'),
+            Icon: FiSearch,
+            onClick: handleSearch,
+          },
+        ]),
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
     { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
@@ -642,7 +648,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tooltipText: _('Speak'),
       Icon: FaHeadphones,
       onClick: handleSpeakText,
-      disabled: bookData.book?.format === 'PDF',
     },
   ];
 
