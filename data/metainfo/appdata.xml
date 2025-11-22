@@ -3,8 +3,7 @@
   <id>com.bilingify.readest</id>
 
   <name>Readest</name>
-  <summary>Modern, feature-rich ebook reader for immersive reading experiences</summary>
-  <icon type="stock">com.bilingify.readest</icon>
+  <summary>Modern, feature-rich ebook reader</summary>
 
   <description>
     <p>Readest is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
@@ -52,7 +51,7 @@
     <keyword>sync</keyword>
   </keywords>
 
-  <url type="homepage">https://readest.com</url>
+  <url type="homepage">https://github.com/readest/readest</url>
   <url type="bugtracker">https://github.com/readest/readest/issues</url>
   <url type="help">https://github.com/readest/readest/wiki</url>
   <url type="donation">https://github.com/sponsors/readest</url>
@@ -207,6 +206,14 @@
     <screenshot>
       <caption>Reading interface with dark mode</caption>
       <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/dark_mode.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading with TTS speak out</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/tts_speak_aloud.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading tools with Wikipedia integration</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/wikipedia_vertical.png</image>
     </screenshot>
   </screenshots>
 
