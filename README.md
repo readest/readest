@@ -111,7 +111,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 - macOS / iOS / iPadOS : Search and install **Readest** on the [App Store][link-appstore], _also_ available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
 - Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
-- Linux users can also install [Readest on Flathub][link-flathub].
+- Linux users can also install [Readest on Flathub][link-flathub]. <a href='https://flathub.org/en/apps/com.bilingify.readest'> <img style="height: 50px;" alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en' /></a>
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
 
 ## Requirements
