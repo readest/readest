@@ -652,5 +652,8 @@
   "Current email": "현재 이메일",
   "Update Email": "이메일 업데이트",
   "All": "전체",
-  "Unable to open book": "책을 열 수 없습니다"
+  "Unable to open book": "책을 열 수 없습니다",
+  "Punctuation": "구두점",
+  "Replace Quotation Marks": "인용 부호 바꾸기",
+  "Enabled only in vertical layout.": "세로 레이아웃에서만 활성화됩니다."
 }

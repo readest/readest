@@ -16,7 +16,7 @@ import { getMaxInlineSize } from '@/utils/config';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { saveViewSettings } from '@/helpers/settings';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
-import { MIGHT_BE_RTL_LANGS, RELOAD_BEFORE_SAVED_TIMEOUT_MS } from '@/services/constants';
+import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import Select from '@/components/Select';
 import NumberInput from './NumberInput';
@@ -273,18 +273,19 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     } else {
       viewSettings.vertical = false;
     }
-    saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true);
-    if (view) {
-      view.renderer.setStyles?.(getStyles(viewSettings));
-      view.book.dir = getBookDirFromWritingMode(writingMode);
-    }
-    if (
-      prevWritingMode !== writingMode &&
-      (['horizontal-rl', 'vertical-rl'].includes(writingMode) ||
-        ['horizontal-rl', 'vertical-rl'].includes(prevWritingMode))
-    ) {
-      setTimeout(() => recreateViewer(envConfig, bookKey), RELOAD_BEFORE_SAVED_TIMEOUT_MS);
-    }
+    saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true).then(() => {
+      if (view) {
+        view.renderer.setStyles?.(getStyles(viewSettings));
+        view.book.dir = getBookDirFromWritingMode(writingMode);
+      }
+      if (
+        prevWritingMode !== writingMode &&
+        (['horizontal-rl', 'vertical-rl'].includes(writingMode) ||
+          ['horizontal-rl', 'vertical-rl'].includes(prevWritingMode))
+      ) {
+        recreateViewer(envConfig, bookKey);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [writingMode]);
 

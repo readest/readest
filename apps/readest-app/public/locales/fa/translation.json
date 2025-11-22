@@ -656,5 +656,8 @@
   "Current email": "ایمیل فعلی",
   "Update Email": "به‌روزرسانی ایمیل",
   "All": "همه",
-  "Unable to open book": "قادر به باز کردن کتاب نیست"
+  "Unable to open book": "قادر به باز کردن کتاب نیست",
+  "Punctuation": "علامت نگارشی",
+  "Replace Quotation Marks": "جایگزینی علامت نقل قول",
+  "Enabled only in vertical layout.": "فقط در طرح عمودی فعال است."
 }

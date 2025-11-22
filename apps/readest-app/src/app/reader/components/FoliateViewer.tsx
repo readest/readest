@@ -46,7 +46,6 @@ import {
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
-import { isCJKLang } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -56,6 +55,8 @@ import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { removeTabIndex } from '@/utils/a11y';
+import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 
@@ -137,6 +138,7 @@ const FoliateViewer: React.FC<{
               width,
               height,
               primaryLanguage: bookData.book?.primaryLanguage,
+              userLocale: getLocale(),
               content: data,
               transformers: [
                 'style',

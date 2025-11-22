@@ -660,5 +660,8 @@
   "Current email": "E-mail actuel",
   "Update Email": "Mettre à jour l’e-mail",
   "All": "Tous",
-  "Unable to open book": "Impossible d'ouvrir le livre"
+  "Unable to open book": "Impossible d'ouvrir le livre",
+  "Punctuation": "Ponctuation",
+  "Replace Quotation Marks": "Remplacer les guillemets",
+  "Enabled only in vertical layout.": "Activé uniquement en disposition verticale."
 }

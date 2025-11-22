@@ -656,5 +656,8 @@
   "Current email": "Aktuelle E-Mail",
   "Update Email": "E-Mail aktualisieren",
   "All": "Alle",
-  "Unable to open book": "Buch kann nicht geöffnet werden"
+  "Unable to open book": "Buch kann nicht geöffnet werden",
+  "Punctuation": "Interpunktion",
+  "Replace Quotation Marks": "Anführungszeichen ersetzen",
+  "Enabled only in vertical layout.": "Nur im vertikalen Layout aktiviert."
 }

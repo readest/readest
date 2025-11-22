@@ -11,7 +11,6 @@ import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { RELOAD_BEFORE_SAVED_TIMEOUT_MS } from '@/services/constants';
 import NumberInput from './NumberInput';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -143,10 +142,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
-    saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false);
-    setTimeout(() => {
+    saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false).then(() => {
       recreateViewer(envConfig, bookKey);
-    }, RELOAD_BEFORE_SAVED_TIMEOUT_MS);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowScript]);
 

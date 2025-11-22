@@ -672,5 +672,8 @@
   "Current email": "البريد الإلكتروني الحالي",
   "Update Email": "تحديث البريد الإلكتروني",
   "All": "الكل",
-  "Unable to open book": "غير قادر على فتح الكتاب"
+  "Unable to open book": "غير قادر على فتح الكتاب",
+  "Punctuation": "علامات الترقيم",
+  "Replace Quotation Marks": "استبدال علامات الاقتباس",
+  "Enabled only in vertical layout.": "مفعل فقط في التخطيط الرأسي."
 }

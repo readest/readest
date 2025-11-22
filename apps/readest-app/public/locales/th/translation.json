@@ -652,5 +652,8 @@
   "Current email": "อีเมลปัจจุบัน",
   "Update Email": "อัปเดตอีเมล",
   "All": "ทั้งหมด",
-  "Unable to open book": "ไม่สามารถเปิดหนังสือได้"
+  "Unable to open book": "ไม่สามารถเปิดหนังสือได้",
+  "Punctuation": "เครื่องหมายวรรคตอน",
+  "Replace Quotation Marks": "แทนที่เครื่องหมายคำพูด",
+  "Enabled only in vertical layout.": "เปิดใช้งานเฉพาะในเค้าโครงแนวตั้งเท่านั้น"
 }

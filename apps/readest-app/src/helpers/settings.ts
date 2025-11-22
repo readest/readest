@@ -18,7 +18,6 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
   const { getView, getViewSettings, setViewSettings } = useReaderStore.getState();
   const { getConfig, saveConfig } = useBookDataStore.getState();
   const viewSettings = getViewSettings(bookKey);
-  const config = getConfig(bookKey);
   if (bookKey && viewSettings && viewSettings[key] !== value) {
     viewSettings[key] = value;
     if (applyStyles) {
@@ -33,9 +32,12 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
     await saveSettings(envConfig, settings);
   }
 
-  if (bookKey && config && viewSettings) {
+  if (bookKey && viewSettings) {
     setViewSettings(bookKey, viewSettings);
-    await saveConfig(envConfig, bookKey, config, settings);
+    const config = getConfig(bookKey);
+    if (config) {
+      await saveConfig(envConfig, bookKey, config, settings);
+    }
   }
 };
 

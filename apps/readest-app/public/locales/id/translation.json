@@ -652,5 +652,8 @@
   "Current email": "Email saat ini",
   "Update Email": "Perbarui email",
   "All": "Semua",
-  "Unable to open book": "Tidak dapat membuka buku"
+  "Unable to open book": "Tidak dapat membuka buku",
+  "Punctuation": "Tanda Baca",
+  "Replace Quotation Marks": "Ganti Tanda Kutip",
+  "Enabled only in vertical layout.": "Hanya diaktifkan dalam tata letak vertikal."
 }

@@ -652,5 +652,8 @@
   "Current email": "當前電子郵件",
   "Update Email": "更新電子郵件",
   "All": "全部",
-  "Unable to open book": "無法打開書籍"
+  "Unable to open book": "無法打開書籍",
+  "Punctuation": "標點符號",
+  "Replace Quotation Marks": "替換引號",
+  "Enabled only in vertical layout.": "僅在直排佈局中啟用"
 }

@@ -656,5 +656,8 @@
   "Current email": "वर्तमान ईमेल",
   "Update Email": "ईमेल अपडेट करें",
   "All": "सभी",
-  "Unable to open book": "पुस्तक खोलने में असमर्थ"
+  "Unable to open book": "पुस्तक खोलने में असमर्थ",
+  "Punctuation": "विराम चिह्न",
+  "Replace Quotation Marks": "उद्धरण चिह्न बदलें",
+  "Enabled only in vertical layout.": "केवल ऊर्ध्वाधर लेआउट में सक्षम।"
 }

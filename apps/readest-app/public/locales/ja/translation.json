@@ -652,5 +652,8 @@
   "Current email": "現在のメールアドレス",
   "Update Email": "メールを更新",
   "All": "すべて",
-  "Unable to open book": "本を開くことができません"
+  "Unable to open book": "本を開くことができません",
+  "Punctuation": "句読点",
+  "Replace Quotation Marks": "引用符を置き換える",
+  "Enabled only in vertical layout.": "縦書きレイアウトでのみ有効です。"
 }

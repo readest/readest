@@ -656,5 +656,8 @@
   "Current email": "தற்போதைய மின்னஞ்சல்",
   "Update Email": "மின்னஞ்சல் புதுப்பிக்கவும்",
   "All": "அனைத்து",
-  "Unable to open book": "புத்தகத்தைத் திறக்க முடியவில்லை"
+  "Unable to open book": "புத்தகத்தைத் திறக்க முடியவில்லை",
+  "Punctuation": "விருத்தி",
+  "Replace Quotation Marks": "உதயம்சுட்டிகளை மாற்றவும்",
+  "Enabled only in vertical layout.": "செங்குத்து அமைப்பில் மட்டுமே இயலுமைப்படுத்தப்பட்டது."
 }

@@ -652,5 +652,8 @@
   "Current email": "མིག་སྔའི་ཡིག་འཕྲིན།",
   "Update Email": "ཡིག་འཕྲིན་གསར་བསྒྱུར།",
   "All": "ཆེན་མོ།",
-  "Unable to open book": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།"
+  "Unable to open book": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།",
+  "Punctuation": "ཚིག་གྲུབ།",
+  "Replace Quotation Marks": "འདྲེན་འབྲེལ་མཐུད་ཐིག་བརྗེ་བ།",
+  "Enabled only in vertical layout.": "གཡས་སྒྲིག་ནང་མིང་བརྗེ་བ།"
 }

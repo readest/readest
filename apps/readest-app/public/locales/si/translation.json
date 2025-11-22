@@ -656,5 +656,8 @@
   "Current email": "වත්මන් විද්‍යුත් තැපැල්",
   "Update Email": "විද්‍යුත් තැපැල් යාවත්කාලීන කරන්න",
   "All": "සියල්ල",
-  "Unable to open book": "පොත විවෘත කිරීමට නොහැක"
+  "Unable to open book": "පොත විවෘත කිරීමට නොහැක",
+  "Punctuation": "ලකුණු",
+  "Replace Quotation Marks": "උද්ධෘත ලකුණු ප්‍රතිස්ථාපනය කරන්න",
+  "Enabled only in vertical layout.": "සිරස් ආකෘතියේ පමණක් සක්‍රීයයි."
 }

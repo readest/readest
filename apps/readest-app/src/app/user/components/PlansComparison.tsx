@@ -155,7 +155,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             plan={plan}
             comingSoon={false}
             isUserPlan={plan.plan === userPlan}
-            upgradable={index > userPlanIndex}
+            upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
             index={index}
             currentPlanIndex={currentPlanIndex}
             onSubscribe={onSubscribe}

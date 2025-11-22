@@ -112,6 +112,7 @@ export interface BookLayout {
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
+  replaceQuotationMarks: boolean;
   scrollingOverlap: number;
   allowScript: boolean;
 }
