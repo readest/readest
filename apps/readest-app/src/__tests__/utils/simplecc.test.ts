@@ -8,7 +8,6 @@ describe.concurrent('suite', () => {
     const wasmPath = join(process.cwd(), 'public/vendor/simplecc/simplecc_wasm_bg.wasm');
     const wasmBuffer = await readFile(wasmPath);
     await init(wasmBuffer);
-    await init();
   });
 
   test('basic s2t and t2s', () => {
@@ -26,6 +25,9 @@ describe.concurrent('suite', () => {
     expect(simplecc('计算机', 's2twp')).toBe('計算機');
     expect(simplecc('打印机', 's2twp')).toBe('印表機');
     expect(simplecc('激光', 's2twp')).toBe('雷射');
+    expect(simplecc('鼠标里面的硅二极管坏了，导致光标分辨率降低。', 's2twp')).toBe(
+      '滑鼠裡面的矽二極體壞了，導致游標解析度降低。',
+    );
   });
 
   test('tw2s - Traditional (Taiwan) to Simplified', () => {
@@ -38,5 +40,8 @@ describe.concurrent('suite', () => {
     expect(simplecc('電腦', 'tw2sp')).toBe('电脑');
     expect(simplecc('印表機', 'tw2sp')).toBe('打印机');
     expect(simplecc('雷射', 'tw2sp')).toBe('激光');
+    expect(
+      simplecc('我們在寮國的伺服器的硬碟需要使用網際網路演算法軟體解決非同步的問題。', 'tw2sp'),
+    ).toBe('我们在老挝的服务器的硬盘需要使用互联网算法软件解决异步的问题。');
   });
 });
