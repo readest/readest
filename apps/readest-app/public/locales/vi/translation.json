@@ -666,5 +666,6 @@
   "Traditional (Hong Kong) to Simplified": "Phồn thể (Hồng Kông) → Giản thể",
   "Traditional (Taiwan) to Simplified, with phrases": "Phồn thể (Đài Loan • cụm từ) → Giản thể",
   "Convert Simplified and Traditional Chinese": "Chuyển đổi Trung giản/Phồn thể",
-  "Convert Mode": "Chế độ chuyển đổi"
+  "Convert Mode": "Chế độ chuyển đổi",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Không thể tự động lưu bìa sách cho màn hình khóa: {{error}}"
 }

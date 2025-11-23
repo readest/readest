@@ -666,5 +666,6 @@
   "Traditional (Hong Kong) to Simplified": "繁體（香港） → 簡體",
   "Traditional (Taiwan) to Simplified, with phrases": "繁體（台灣） → 簡體慣用語",
   "Convert Simplified and Traditional Chinese": "簡繁中文轉換",
-  "Convert Mode": "轉換模式"
+  "Convert Mode": "轉換模式",
+  "Failed to auto-save book cover for lock screen: {{error}}": "自動保存鎖定螢幕書籍封面失敗：{{error}}"
 }

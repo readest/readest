@@ -667,12 +667,13 @@
   "No Conversion": "Sin conversión",
   "Simplified to Traditional": "Simpl. → Trad.",
   "Traditional to Simplified": "Trad. → Simpl.",
-  "Simplified to Traditional (Taiwán)": "Simpl. → Trad. (Taiwán)",
+  "Simplified to Traditional (Taiwan)": "Simpl. → Trad. (Taiwan)",
   "Simplified to Traditional (Hong Kong)": "Simpl. → Trad. (Hong Kong)",
-  "Simplified to Traditional (Taiwán), with phrases": "Simpl. → Trad. (Taiwán • frases)",
-  "Traditional (Taiwán) to Simplified": "Trad. (Taiwán) → Simpl.",
+  "Simplified to Traditional (Taiwan), with phrases": "Simpl. → Trad. (Taiwan • frases)",
+  "Traditional (Taiwan) to Simplified": "Trad. (Taiwan) → Simpl.",
   "Traditional (Hong Kong) to Simplified": "Trad. (Hong Kong) → Simpl.",
-  "Traditional (Taiwán) to Simplified, with phrases": "Trad. (Taiwán • frases) → Simpl.",
+  "Traditional (Taiwan) to Simplified, with phrases": "Trad. (Taiwan • frases) → Simpl.",
   "Convert Simplified and Traditional Chinese": "Convertir chino Simpl./Trad.",
-  "Convert Mode": "Modo de conversión"
+  "Convert Mode": "Modo de conversión",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Error al guardar automáticamente la portada del libro para la pantalla de bloqueo: {{error}}"
 }

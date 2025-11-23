@@ -670,5 +670,6 @@
   "Traditional (Hong Kong) to Simplified": "සාම්ප්‍රදායික (හොං කොං) → සරල",
   "Traditional (Taiwan) to Simplified, with phrases": "සාම්ප්‍රදායික (තායිවාන • වාක්‍ය) → සරල",
   "Convert Simplified and Traditional Chinese": "සරල/සාම්ප්‍රදායික චීන පරිවර්තනය",
-  "Convert Mode": "පරිවර්තන මෝඩියුලය"
+  "Convert Mode": "පරිවර්තන මෝඩියුලය",
+  "Failed to auto-save book cover for lock screen: {{error}}": "අගුළු තිරය සඳහා පොත් ආවරණය ස්වයංක්‍රීයව සුරකිීමට අසමත් විය: {{error}}"
 }

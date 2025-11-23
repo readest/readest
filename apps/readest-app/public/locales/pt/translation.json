@@ -674,5 +674,6 @@
   "Traditional (Hong Kong) to Simplified": "Tradicional (Hong Kong) → Simplificado",
   "Traditional (Taiwan) to Simplified, with phrases": "Tradicional (Taiwan • frases) → Simplificado",
   "Convert Simplified and Traditional Chinese": "Converter Chinês Simpl./Trad.",
-  "Convert Mode": "Modo de conversão"
+  "Convert Mode": "Modo de conversão",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Falha ao salvar automaticamente a capa do livro para a tela de bloqueio: {{error}}"
 }

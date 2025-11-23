@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-select-directory"
+description = "Enables the select_directory command without any pre-configured scope."
+commands.allow = ["select_directory"]
+
+[[permission]]
+identifier = "deny-select-directory"
+description = "Denies the select_directory command without any pre-configured scope."
+commands.deny = ["select_directory"]

@@ -670,5 +670,6 @@
   "Traditional (Hong Kong) to Simplified": "Traditionell (Hongkong) → Förenklad",
   "Traditional (Taiwan) to Simplified, with phrases": "Traditionell (Taiwan • fraser) → Förenklad",
   "Convert Simplified and Traditional Chinese": "Konvertera förenklad/traditionell kinesiska",
-  "Convert Mode": "Konverteringsläge"
+  "Convert Mode": "Konverteringsläge",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Kunde inte autospara bokomslag för låsskärm: {{error}}"
 }

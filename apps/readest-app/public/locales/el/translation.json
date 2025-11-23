@@ -670,5 +670,6 @@
   "Traditional (Hong Kong) to Simplified": "Παραδ. (Χονγκ Κονγκ) → Απλοπ.",
   "Traditional (Taiwan) to Simplified, with phrases": "Παραδ. (Ταϊβάν • φράσεις) → Απλοπ.",
   "Convert Simplified and Traditional Chinese": "Μετατροπή Απλοπ./Παραδ. Κινέζικων",
-  "Convert Mode": "Λειτουργία μετατροπής"
+  "Convert Mode": "Λειτουργία μετατροπής",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Αποτυχία αυτόματης αποθήκευσης εξωφύλλου βιβλίου για την οθόνη κλειδώματος: {{error}}"
 }

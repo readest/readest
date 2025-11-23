@@ -678,5 +678,6 @@
   "Traditional (Hong Kong) to Simplified": "Традиционный (Гонконг) → Упрощённый",
   "Traditional (Taiwan) to Simplified, with phrases": "Традиционный (Тайвань • фразы) → Упрощённый",
   "Convert Simplified and Traditional Chinese": "Преобразовать упрощённый/традиционный китайский",
-  "Convert Mode": "Режим преобразования"
+  "Convert Mode": "Режим преобразования",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Не удалось автоматически сохранить обложку книги для экрана блокировки: {{error}}"
 }

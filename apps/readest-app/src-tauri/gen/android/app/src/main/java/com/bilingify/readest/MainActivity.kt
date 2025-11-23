@@ -6,6 +6,7 @@ import androidx.activity.enableEdgeToEdge
 import android.view.KeyEvent
 import android.webkit.WebView
 import android.util.Log
+import android.content.Intent
 import android.graphics.Color
 import android.app.ActivityManager
 import android.content.res.Configuration
@@ -13,6 +14,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import com.readest.native_bridge.KeyDownInterceptor
+import com.readest.native_bridge.NativeBridgePlugin
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private lateinit var wv: WebView
@@ -91,5 +93,11 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 )
             )
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        NativeBridgePlugin.getInstance()?.handleActivityResult(requestCode, resultCode, data)
     }
 }

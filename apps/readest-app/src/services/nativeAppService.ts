@@ -224,8 +224,12 @@ export const nativeFileSystem: FileSystem = {
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    if (!(await this.exists(getDirPath(dstPath), base))) {
-      await this.createDir(getDirPath(dstPath), base, true);
+    try {
+      if (!(await this.exists(getDirPath(dstPath), base))) {
+        await this.createDir(getDirPath(dstPath), base, true);
+      }
+    } catch (error) {
+      console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
       const prefix = await this.getPrefix(base);
