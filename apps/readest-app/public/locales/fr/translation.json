@@ -663,5 +663,16 @@
   "Unable to open book": "Impossible d'ouvrir le livre",
   "Punctuation": "Ponctuation",
   "Replace Quotation Marks": "Remplacer les guillemets",
-  "Enabled only in vertical layout.": "Activé uniquement en disposition verticale."
+  "Enabled only in vertical layout.": "Activé uniquement en disposition verticale.",
+  "No Conversion": "Pas de conversion",
+  "Simplified to Traditional": "Simp. → Trad.",
+  "Traditional to Simplified": "Trad. → Simp.",
+  "Simplified to Traditional (Taiwan)": "Simp. → Trad. (Taïwan)",
+  "Simplified to Traditional (Hong Kong)": "Simp. → Trad. (Hong Kong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Simp. → Trad. (Taïwan • phrases)",
+  "Traditional (Taiwan) to Simplified": "Trad. (Taïwan) → Simp.",
+  "Traditional (Hong Kong) to Simplified": "Trad. (Hong Kong) → Simp.",
+  "Traditional (Taiwan) to Simplified, with phrases": "Trad. (Taïwan • phrases) → Simp.",
+  "Convert Simplified and Traditional Chinese": "Convertir chinois simp./trad.",
+  "Convert Mode": "Mode de conversion"
 }

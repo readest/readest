@@ -659,5 +659,16 @@
   "Unable to open book": "Kan boek niet openen",
   "Punctuation": "Interpunctie",
   "Replace Quotation Marks": "Aanhalingstekens vervangen",
-  "Enabled only in vertical layout.": "Alleen ingeschakeld in verticale lay-out."
+  "Enabled only in vertical layout.": "Alleen ingeschakeld in verticale lay-out.",
+  "No Conversion": "Geen conversie",
+  "Simplified to Traditional": "Vereenvoudigd → Traditioneel",
+  "Traditional to Simplified": "Traditioneel → Vereenvoudigd",
+  "Simplified to Traditional (Taiwan)": "Vereenvoudigd → Traditioneel (Taiwan)",
+  "Simplified to Traditional (Hong Kong)": "Vereenvoudigd → Traditioneel (Hong Kong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Vereenvoudigd → Traditioneel (Taiwan • zinnen)",
+  "Traditional (Taiwan) to Simplified": "Traditioneel (Taiwan) → Vereenvoudigd",
+  "Traditional (Hong Kong) to Simplified": "Traditioneel (Hong Kong) → Vereenvoudigd",
+  "Traditional (Taiwan) to Simplified, with phrases": "Traditioneel (Taiwan • zinnen) → Vereenvoudigd",
+  "Convert Simplified and Traditional Chinese": "Converteer Vereenvoudigd/Traditioneel Chinees",
+  "Convert Mode": "Conversiemodus"
 }

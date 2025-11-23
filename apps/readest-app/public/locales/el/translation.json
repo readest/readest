@@ -659,5 +659,16 @@
   "Unable to open book": "Αδύνατη η άνοιγμα του βιβλίου",
   "Punctuation": "Στίξη",
   "Replace Quotation Marks": "Αντικατάσταση εισαγωγικών",
-  "Enabled only in vertical layout.": "Ενεργοποιημένο μόνο σε κάθετη διάταξη."
+  "Enabled only in vertical layout.": "Ενεργοποιημένο μόνο σε κάθετη διάταξη.",
+  "No Conversion": "Χωρίς μετατροπή",
+  "Simplified to Traditional": "Απλοπ. → Παραδ.",
+  "Traditional to Simplified": "Παραδ. → Απλοπ.",
+  "Simplified to Traditional (Taiwan)": "Απλοπ. → Παραδ. (Ταϊβάν)",
+  "Simplified to Traditional (Hong Kong)": "Απλοπ. → Παραδ. (Χονγκ Κονγκ)",
+  "Simplified to Traditional (Taiwan), with phrases": "Απλοπ. → Παραδ. (Ταϊβάν • φράσεις)",
+  "Traditional (Taiwan) to Simplified": "Παραδ. (Ταϊβάν) → Απλοπ.",
+  "Traditional (Hong Kong) to Simplified": "Παραδ. (Χονγκ Κονγκ) → Απλοπ.",
+  "Traditional (Taiwan) to Simplified, with phrases": "Παραδ. (Ταϊβάν • φράσεις) → Απλοπ.",
+  "Convert Simplified and Traditional Chinese": "Μετατροπή Απλοπ./Παραδ. Κινέζικων",
+  "Convert Mode": "Λειτουργία μετατροπής"
 }

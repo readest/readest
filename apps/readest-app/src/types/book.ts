@@ -112,7 +112,6 @@ export interface BookLayout {
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
-  replaceQuotationMarks: boolean;
   scrollingOverlap: number;
   allowScript: boolean;
 }
@@ -156,6 +155,22 @@ export interface BookFont {
   fontWeight: number;
 }
 
+export type ConvertChineseVariant =
+  | 'none'
+  | 's2t'
+  | 't2s'
+  | 's2tw'
+  | 's2hk'
+  | 's2twp'
+  | 'tw2s'
+  | 'hk2s'
+  | 'tw2sp';
+
+export interface BookLanguage {
+  replaceQuotationMarks: boolean;
+  convertChineseVariant: ConvertChineseVariant;
+}
+
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -197,6 +212,7 @@ export interface ViewSettings
   extends BookLayout,
     BookStyle,
     BookFont,
+    BookLanguage,
     ViewConfig,
     TTSConfig,
     TranslatorConfig,

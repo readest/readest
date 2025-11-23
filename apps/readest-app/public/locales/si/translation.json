@@ -659,5 +659,16 @@
   "Unable to open book": "පොත විවෘත කිරීමට නොහැක",
   "Punctuation": "ලකුණු",
   "Replace Quotation Marks": "උද්ධෘත ලකුණු ප්‍රතිස්ථාපනය කරන්න",
-  "Enabled only in vertical layout.": "සිරස් ආකෘතියේ පමණක් සක්‍රීයයි."
+  "Enabled only in vertical layout.": "සිරස් ආකෘතියේ පමණක් සක්‍රීයයි.",
+  "No Conversion": "ප්‍රතිවර්තනයක් නැත",
+  "Simplified to Traditional": "සරල → සාම්ප්‍රදායික",
+  "Traditional to Simplified": "සාම්ප්‍රදායික → සරල",
+  "Simplified to Traditional (Taiwan)": "සරල → සාම්ප්‍රදායික (තායිවான்)",
+  "Simplified to Traditional (Hong Kong)": "සරල → සාම්ප්‍රදායික (හොං කොං)",
+  "Simplified to Traditional (Taiwan), with phrases": "සරල → සාම්ප්‍රදායික (තායිවාන • වාක්‍ය)",
+  "Traditional (Taiwan) to Simplified": "සාම්ප්‍රදායික (තායිවාන) → සරල",
+  "Traditional (Hong Kong) to Simplified": "සාම්ප්‍රදායික (හොං කොං) → සරල",
+  "Traditional (Taiwan) to Simplified, with phrases": "සාම්ප්‍රදායික (තායිවාන • වාක්‍ය) → සරල",
+  "Convert Simplified and Traditional Chinese": "සරල/සාම්ප්‍රදායික චීන පරිවර්තනය",
+  "Convert Mode": "පරිවර්තන මෝඩියුලය"
 }

@@ -147,6 +147,7 @@ const FoliateViewer: React.FC<{
                 'whitespace',
                 'language',
                 'sanitizer',
+                'simplecc',
               ],
             };
             return Promise.resolve(transformContent(ctx));

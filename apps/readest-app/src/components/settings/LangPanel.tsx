@@ -9,6 +9,7 @@ import { saveViewSettings } from '@/helpers/settings';
 import { getTranslators } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
+import { ConvertChineseVariant } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { isCJKEnv } from '@/utils/misc';
 import Select from '@/components/Select';
@@ -29,6 +30,9 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [ttsReadAloudText, setTtsReadAloudText] = useState(viewSettings.ttsReadAloudText);
   const [replaceQuotationMarks, setReplaceQuotationMarks] = useState(
     viewSettings.replaceQuotationMarks,
+  );
+  const [convertChineseVariant, setConvertChineseVariant] = useState(
+    viewSettings.convertChineseVariant,
   );
 
   const resetToDefaults = useResetViewSettings();
@@ -195,6 +199,46 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replaceQuotationMarks]);
 
+  const getConvertModeOptions: () => { value: ConvertChineseVariant; label: string }[] = () => {
+    return [
+      { value: 'none', label: _('No Conversion') },
+      { value: 's2t', label: _('Simplified to Traditional') },
+      { value: 't2s', label: _('Traditional to Simplified') },
+      { value: 's2tw', label: _('Simplified to Traditional (Taiwan)') },
+      { value: 's2hk', label: _('Simplified to Traditional (Hong Kong)') },
+      { value: 's2twp', label: _('Simplified to Traditional (Taiwan), with phrases') },
+      { value: 'tw2s', label: _('Traditional (Taiwan) to Simplified') },
+      { value: 'hk2s', label: _('Traditional (Hong Kong) to Simplified') },
+      { value: 'tw2sp', label: _('Traditional (Taiwan) to Simplified, with phrases') },
+    ];
+  };
+
+  const getConvertModeOption = () => {
+    const value = convertChineseVariant;
+    const availableOptions = getConvertModeOptions();
+    return availableOptions.find((o) => o.value === value) || availableOptions[0]!;
+  };
+
+  const handleSelectConvertMode = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value as ConvertChineseVariant;
+    setConvertChineseVariant(option);
+  };
+
+  useEffect(() => {
+    if (convertChineseVariant === viewSettings.convertChineseVariant) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'convertChineseVariant',
+      convertChineseVariant,
+      true,
+      false,
+    ).then(() => {
+      recreateViewer(envConfig, bookKey);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convertChineseVariant]);
+
   return (
     <div className={clsx('my-4 w-full space-y-6')}>
       <div className='w-full'>
@@ -282,6 +326,24 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
                   className='toggle'
                   checked={replaceQuotationMarks}
                   onChange={() => setReplaceQuotationMarks(!replaceQuotationMarks)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCJKEnv() && (
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Convert Simplified and Traditional Chinese')}</h2>
+          <div className='card border-base-200 bg-base-100 border shadow'>
+            <div className='divide-base-200'>
+              <div className='config-item'>
+                <span className=''>{_('Convert Mode')}</span>
+                <Select
+                  value={getConvertModeOption().value}
+                  onChange={handleSelectConvertMode}
+                  options={getConvertModeOptions()}
                 />
               </div>
             </div>

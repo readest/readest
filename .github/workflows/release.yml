@@ -180,8 +180,8 @@ jobs:
       - name: install dependencies
         run: pnpm install
 
-      - name: copy pdfjs-dist to public directory
-        run: pnpm --filter @readest/readest-app setup-pdfjs
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable

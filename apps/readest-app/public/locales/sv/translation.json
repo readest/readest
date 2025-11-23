@@ -659,5 +659,16 @@
   "Unable to open book": "Kunde inte öppna bok",
   "Punctuation": "Interpunktion",
   "Replace Quotation Marks": "Ersätt citattecken",
-  "Enabled only in vertical layout.": "Aktiverad endast i vertikal layout."
+  "Enabled only in vertical layout.": "Aktiverad endast i vertikal layout.",
+  "No Conversion": "Ingen konvertering",
+  "Simplified to Traditional": "Förenklad → Traditionell",
+  "Traditional to Simplified": "Traditionell → Förenklad",
+  "Simplified to Traditional (Taiwan)": "Förenklad → Traditionell (Taiwan)",
+  "Simplified to Traditional (Hong Kong)": "Förenklad → Traditionell (Hongkong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Förenklad → Traditionell (Taiwan • fraser)",
+  "Traditional (Taiwan) to Simplified": "Traditionell (Taiwan) → Förenklad",
+  "Traditional (Hong Kong) to Simplified": "Traditionell (Hongkong) → Förenklad",
+  "Traditional (Taiwan) to Simplified, with phrases": "Traditionell (Taiwan • fraser) → Förenklad",
+  "Convert Simplified and Traditional Chinese": "Konvertera förenklad/traditionell kinesiska",
+  "Convert Mode": "Konverteringsläge"
 }

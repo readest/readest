@@ -659,5 +659,16 @@
   "Unable to open book": "Kitap açılamıyor",
   "Punctuation": "Noktalama İşaretleri",
   "Replace Quotation Marks": "Tırnak İşaretlerini Değiştir",
-  "Enabled only in vertical layout.": "Yalnızca dikey düzenle etkinleştirildi."
+  "Enabled only in vertical layout.": "Yalnızca dikey düzenle etkinleştirildi.",
+  "No Conversion": "Dönüştürme yok",
+  "Simplified to Traditional": "Basitleştirilmiş → Geleneksel",
+  "Traditional to Simplified": "Geleneksel → Basitleştirilmiş",
+  "Simplified to Traditional (Taiwan)": "Basitleştirilmiş → Geleneksel (Tayvan)",
+  "Simplified to Traditional (Hong Kong)": "Basitleştirilmiş → Geleneksel (Hong Kong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Basitleştirilmiş → Geleneksel (Tayvan • ifadeler)",
+  "Traditional (Taiwan) to Simplified": "Geleneksel (Tayvan) → Basitleştirilmiş",
+  "Traditional (Hong Kong) to Simplified": "Geleneksel (Hong Kong) → Basitleştirilmiş",
+  "Traditional (Taiwan) to Simplified, with phrases": "Geleneksel (Tayvan • ifadeler) → Basitleştirilmiş",
+  "Convert Simplified and Traditional Chinese": "Basitleştirilmiş/Geleneksel Çince Dönüştür",
+  "Convert Mode": "Dönüştürme Modu"
 }

@@ -1,5 +1,6 @@
 import {
   BookFont,
+  BookLanguage,
   BookLayout,
   BookSearchConfig,
   BookStyle,
@@ -148,9 +149,13 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   writingMode: 'auto',
   vertical: false,
   rtl: false,
-  replaceQuotationMarks: true,
   scrollingOverlap: 0,
   allowScript: false,
+};
+
+export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
+  replaceQuotationMarks: true,
+  convertChineseVariant: 'none',
 };
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {

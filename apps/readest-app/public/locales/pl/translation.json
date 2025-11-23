@@ -667,5 +667,16 @@
   "Unable to open book": "Nie można otworzyć książki",
   "Punctuation": "Interpunkcja",
   "Replace Quotation Marks": "Zamień cudzysłowy",
-  "Enabled only in vertical layout.": "Włączone tylko w układzie pionowym."
+  "Enabled only in vertical layout.": "Włączone tylko w układzie pionowym.",
+  "No Conversion": "Brak konwersji",
+  "Simplified to Traditional": "Uproszczony → Tradycyjny",
+  "Traditional to Simplified": "Tradycyjny → Uproszczony",
+  "Simplified to Traditional (Taiwan)": "Uproszczony → Tradycyjny (Tajwan)",
+  "Simplified to Traditional (Hong Kong)": "Uproszczony → Tradycyjny (Hongkong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Uproszczony → Tradycyjny (Tajwan • frazy)",
+  "Traditional (Taiwan) to Simplified": "Tradycyjny (Tajwan) → Uproszczony",
+  "Traditional (Hong Kong) to Simplified": "Tradycyjny (Hongkong) → Uproszczony",
+  "Traditional (Taiwan) to Simplified, with phrases": "Tradycyjny (Tajwan • frazy) → Uproszczony",
+  "Convert Simplified and Traditional Chinese": "Konwertuj chiński uproszczony/tradycyjny",
+  "Convert Mode": "Tryb konwersji"
 }

@@ -655,5 +655,16 @@
   "Unable to open book": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།",
   "Punctuation": "ཚིག་གྲུབ།",
   "Replace Quotation Marks": "འདྲེན་འབྲེལ་མཐུད་ཐིག་བརྗེ་བ།",
-  "Enabled only in vertical layout.": "གཡས་སྒྲིག་ནང་མིང་བརྗེ་བ།"
+  "Enabled only in vertical layout.": "གཡས་སྒྲིག་ནང་མིང་བརྗེ་བ།",
+  "No Conversion": "བསྒྱུར་བཤེར་མེད་",
+  "Simplified to Traditional": "སྟོང་བཟོས → སྲོལ་རྒྱུན",
+  "Traditional to Simplified": "སྲོལ་རྒྱུན → སྟོང་བཟོས",
+  "Simplified to Traditional (Taiwan)": "སྟོང་བཟོས → སྲོལ་རྒྱུན (ཏའི་ཝན)",
+  "Simplified to Traditional (Hong Kong)": "སྟོང་བཟོས → སྲོལ་རྒྱུན (ཧོང་ཀོང)",
+  "Simplified to Traditional (Taiwan), with phrases": "སྟོང་བཟོས → སྲོལ་རྒྱུན (ཏའི་ཝན • ཚིག་ཕྲེང)",
+  "Traditional (Taiwan) to Simplified": "སྲོལ་རྒྱུན (ཏའི་ཝན) → སྟོང་བཟོས",
+  "Traditional (Hong Kong) to Simplified": "སྲོལ་རྒྱུན (ཧོང་ཀོང) → སྟོང་བཟོས",
+  "Traditional (Taiwan) to Simplified, with phrases": "སྲོལ་རྒྱུན (ཏའི་ཝན • ཚིག་ཕྲེང) → སྟོང་བཟོས",
+  "Convert Simplified and Traditional Chinese": "རྒྱ་ཡིག སྟོང་བཟོས/སྲོལ་རྒྱུན བསྒྱུར་བ",
+  "Convert Mode": "བསྒྱུར་བའི་རྣམ་པ"
 }
