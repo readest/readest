@@ -158,6 +158,13 @@ pub(crate) async fn open_external_url<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn select_directory<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<SelectDirectoryResponse> {
+    app.native_bridge().select_directory()
+}
+
+#[command]
 pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {

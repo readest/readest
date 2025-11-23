@@ -670,5 +670,6 @@
   "Traditional (Hong Kong) to Simplified": "প্রথাগত (হংকং) → সরল",
   "Traditional (Taiwan) to Simplified, with phrases": "প্রথাগত (তাইওয়ান • বাক্য) → সরল",
   "Convert Simplified and Traditional Chinese": "সরল/প্রথাগত রূপান্তর",
-  "Convert Mode": "রূপান্তর মোড"
+  "Convert Mode": "রূপান্তর মোড",
+  "Failed to auto-save book cover for lock screen: {{error}}": "লক স্ক্রিনের জন্য বইয়ের মলাট স্বয়ংক্রিয়ভাবে সংরক্ষণ করতে ব্যর্থ: {{error}}"
 }

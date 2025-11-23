@@ -666,5 +666,6 @@
   "Traditional (Hong Kong) to Simplified": "སྲོལ་རྒྱུན (ཧོང་ཀོང) → སྟོང་བཟོས",
   "Traditional (Taiwan) to Simplified, with phrases": "སྲོལ་རྒྱུན (ཏའི་ཝན • ཚིག་ཕྲེང) → སྟོང་བཟོས",
   "Convert Simplified and Traditional Chinese": "རྒྱ་ཡིག སྟོང་བཟོས/སྲོལ་རྒྱུན བསྒྱུར་བ",
-  "Convert Mode": "བསྒྱུར་བའི་རྣམ་པ"
+  "Convert Mode": "བསྒྱུར་བའི་རྣམ་པ",
+  "Failed to auto-save book cover for lock screen: {{error}}": "སྒྲོམ་སྒོར་དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།: {{error}}"
 }

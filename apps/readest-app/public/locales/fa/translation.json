@@ -670,5 +670,6 @@
   "Traditional (Hong Kong) to Simplified": "سنتی (هنگ‌کنگ) → ساده",
   "Traditional (Taiwan) to Simplified, with phrases": "سنتی (تایوان • عبارات) → ساده",
   "Convert Simplified and Traditional Chinese": "تبدیل چینی ساده/سنتی",
-  "Convert Mode": "حالت تبدیل"
+  "Convert Mode": "حالت تبدیل",
+  "Failed to auto-save book cover for lock screen: {{error}}": "ذخیره‌ی خودکار جلد کتاب برای صفحه‌ی قفل ناموفق بود: {{error}}"
 }

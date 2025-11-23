@@ -666,5 +666,6 @@
   "Traditional (Hong Kong) to Simplified": "Tradisional (Hong Kong) → Sederhana",
   "Traditional (Taiwan) to Simplified, with phrases": "Tradisional (Taiwan • frasa) → Sederhana",
   "Convert Simplified and Traditional Chinese": "Konversi Tionghoa Sederhana/Tradisional",
-  "Convert Mode": "Mode Konversi"
+  "Convert Mode": "Mode Konversi",
+  "Failed to auto-save book cover for lock screen: {{error}}": "Gagal menyimpan otomatis sampul buku untuk layar kunci: {{error}}"
 }
