@@ -659,5 +659,16 @@
   "Unable to open book": "புத்தகத்தைத் திறக்க முடியவில்லை",
   "Punctuation": "விருத்தி",
   "Replace Quotation Marks": "உதயம்சுட்டிகளை மாற்றவும்",
-  "Enabled only in vertical layout.": "செங்குத்து அமைப்பில் மட்டுமே இயலுமைப்படுத்தப்பட்டது."
+  "Enabled only in vertical layout.": "செங்குத்து அமைப்பில் மட்டுமே இயலுமைப்படுத்தப்பட்டது.",
+  "No Conversion": "மாற்றம் செய்யவில்லை",
+  "Simplified to Traditional": "எளிய → பாரம்பரிய",
+  "Traditional to Simplified": "பாரம்பரிய → எளிய",
+  "Simplified to Traditional (Taiwan)": "எளிய → பாரம்பரிய (தைவான்)",
+  "Simplified to Traditional (Hong Kong)": "எளிய → பாரம்பரிய (ஹாங்காங்)",
+  "Simplified to Traditional (Taiwan), with phrases": "எளிய → பாரம்பரிய (தைவான் • வசனங்கள்)",
+  "Traditional (Taiwan) to Simplified": "பாரம்பரிய (தைவான்) → எளிய",
+  "Traditional (Hong Kong) to Simplified": "பாரம்பரிய (ஹாங்காங்) → எளிய",
+  "Traditional (Taiwan) to Simplified, with phrases": "பாரம்பரிய (தைவான் • வசனங்கள்) → எளிய",
+  "Convert Simplified and Traditional Chinese": "எளிய/பாரம்பரிய சீன மொழி மாற்றம்",
+  "Convert Mode": "மாற்ற முறை"
 }

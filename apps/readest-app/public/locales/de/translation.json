@@ -659,5 +659,16 @@
   "Unable to open book": "Buch kann nicht geöffnet werden",
   "Punctuation": "Interpunktion",
   "Replace Quotation Marks": "Anführungszeichen ersetzen",
-  "Enabled only in vertical layout.": "Nur im vertikalen Layout aktiviert."
+  "Enabled only in vertical layout.": "Nur im vertikalen Layout aktiviert.",
+  "No Conversion": "Keine Konvertierung",
+  "Simplified to Traditional": "Vereinfacht → Traditionell",
+  "Traditional to Simplified": "Traditionell → Vereinfacht",
+  "Simplified to Traditional (Taiwan)": "Vereinfacht → Traditionell (Taiwan)",
+  "Simplified to Traditional (Hong Kong)": "Vereinfacht → Traditionell (Hongkong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Vereinfacht → Traditionell (Taiwan • Phrasen)",
+  "Traditional (Taiwan) to Simplified": "Traditionell (Taiwan) → Vereinfacht",
+  "Traditional (Hong Kong) to Simplified": "Traditionell (Hongkong) → Vereinfacht",
+  "Traditional (Taiwan) to Simplified, with phrases": "Traditionell (Taiwan • Phrasen) → Vereinfacht",
+  "Convert Simplified and Traditional Chinese": "Vereinfach./Traditionell konvertieren",
+  "Convert Mode": "Konvertierungsmodus"
 }

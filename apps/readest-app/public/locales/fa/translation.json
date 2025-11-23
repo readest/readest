@@ -659,5 +659,16 @@
   "Unable to open book": "قادر به باز کردن کتاب نیست",
   "Punctuation": "علامت نگارشی",
   "Replace Quotation Marks": "جایگزینی علامت نقل قول",
-  "Enabled only in vertical layout.": "فقط در طرح عمودی فعال است."
+  "Enabled only in vertical layout.": "فقط در طرح عمودی فعال است.",
+  "No Conversion": "بدون تبدیل",
+  "Simplified to Traditional": "ساده → سنتی",
+  "Traditional to Simplified": "سنتی → ساده",
+  "Simplified to Traditional (Taiwan)": "ساده → سنتی (تایوان)",
+  "Simplified to Traditional (Hong Kong)": "ساده → سنتی (هنگ‌کنگ)",
+  "Simplified to Traditional (Taiwan), with phrases": "ساده → سنتی (تایوان • عبارات)",
+  "Traditional (Taiwan) to Simplified": "سنتی (تایوان) → ساده",
+  "Traditional (Hong Kong) to Simplified": "سنتی (هنگ‌کنگ) → ساده",
+  "Traditional (Taiwan) to Simplified, with phrases": "سنتی (تایوان • عبارات) → ساده",
+  "Convert Simplified and Traditional Chinese": "تبدیل چینی ساده/سنتی",
+  "Convert Mode": "حالت تبدیل"
 }

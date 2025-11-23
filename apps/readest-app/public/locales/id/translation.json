@@ -655,5 +655,16 @@
   "Unable to open book": "Tidak dapat membuka buku",
   "Punctuation": "Tanda Baca",
   "Replace Quotation Marks": "Ganti Tanda Kutip",
-  "Enabled only in vertical layout.": "Hanya diaktifkan dalam tata letak vertikal."
+  "Enabled only in vertical layout.": "Hanya diaktifkan dalam tata letak vertikal.",
+  "No Conversion": "Tanpa konversi",
+  "Simplified to Traditional": "Sederhana → Tradisional",
+  "Traditional to Simplified": "Tradisional → Sederhana",
+  "Simplified to Traditional (Taiwan)": "Sederhana → Tradisional (Taiwan)",
+  "Simplified to Traditional (Hong Kong)": "Sederhana → Tradisional (Hong Kong)",
+  "Simplified to Traditional (Taiwan), with phrases": "Sederhana → Tradisional (Taiwan • frasa)",
+  "Traditional (Taiwan) to Simplified": "Tradisional (Taiwan) → Sederhana",
+  "Traditional (Hong Kong) to Simplified": "Tradisional (Hong Kong) → Sederhana",
+  "Traditional (Taiwan) to Simplified, with phrases": "Tradisional (Taiwan • frasa) → Sederhana",
+  "Convert Simplified and Traditional Chinese": "Konversi Tionghoa Sederhana/Tradisional",
+  "Convert Mode": "Mode Konversi"
 }

@@ -655,5 +655,16 @@
   "Unable to open book": "Không thể mở sách",
   "Punctuation": "Dấu câu",
   "Replace Quotation Marks": "Thay thế dấu ngoặc kép",
-  "Enabled only in vertical layout.": "Chỉ bật trong bố cục dọc."
+  "Enabled only in vertical layout.": "Chỉ bật trong bố cục dọc.",
+  "No Conversion": "Không chuyển đổi",
+  "Simplified to Traditional": "Giản thể → Phồn thể",
+  "Traditional to Simplified": "Phồn thể → Giản thể",
+  "Simplified to Traditional (Taiwan)": "Giản thể → Phồn thể (Đài Loan)",
+  "Simplified to Traditional (Hong Kong)": "Giản thể → Phồn thể (Hồng Kông)",
+  "Simplified to Traditional (Taiwan), with phrases": "Giản thể → Phồn thể (Đài Loan • cụm từ)",
+  "Traditional (Taiwan) to Simplified": "Phồn thể (Đài Loan) → Giản thể",
+  "Traditional (Hong Kong) to Simplified": "Phồn thể (Hồng Kông) → Giản thể",
+  "Traditional (Taiwan) to Simplified, with phrases": "Phồn thể (Đài Loan • cụm từ) → Giản thể",
+  "Convert Simplified and Traditional Chinese": "Chuyển đổi Trung giản/Phồn thể",
+  "Convert Mode": "Chế độ chuyển đổi"
 }

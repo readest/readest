@@ -667,5 +667,16 @@
   "Unable to open book": "Не вдалося відкрити книгу",
   "Punctuation": "Пунктуація",
   "Replace Quotation Marks": "Замінити лапки",
-  "Enabled only in vertical layout.": "Активовано лише у вертикальному макеті."
+  "Enabled only in vertical layout.": "Активовано лише у вертикальному макеті.",
+  "No Conversion": "Без конвертації",
+  "Simplified to Traditional": "Спрощене → Традиційне",
+  "Traditional to Simplified": "Традиційне → Спрощене",
+  "Simplified to Traditional (Taiwan)": "Спрощене → Традиційне (Тайвань)",
+  "Simplified to Traditional (Hong Kong)": "Спрощене → Традиційне (Гонконг)",
+  "Simplified to Traditional (Taiwan), with phrases": "Спрощене → Традиційне (Тайвань • фрази)",
+  "Traditional (Taiwan) to Simplified": "Традиційне (Тайвань) → Спрощене",
+  "Traditional (Hong Kong) to Simplified": "Традиційне (Гонконг) → Спрощене",
+  "Traditional (Taiwan) to Simplified, with phrases": "Традиційне (Тайвань • фрази) → Спрощене",
+  "Convert Simplified and Traditional Chinese": "Конвертувати спрощену/традиційну китайську",
+  "Convert Mode": "Режим конвертації"
 }

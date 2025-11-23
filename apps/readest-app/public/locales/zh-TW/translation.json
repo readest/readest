@@ -655,5 +655,16 @@
   "Unable to open book": "無法打開書籍",
   "Punctuation": "標點符號",
   "Replace Quotation Marks": "替換引號",
-  "Enabled only in vertical layout.": "僅在直排佈局中啟用"
+  "Enabled only in vertical layout.": "僅在直排佈局中啟用",
+  "No Conversion": "不轉換",
+  "Simplified to Traditional": "簡體 → 繁體",
+  "Traditional to Simplified": "繁體 → 簡體",
+  "Simplified to Traditional (Taiwan)": "簡體 → 繁體（台灣）",
+  "Simplified to Traditional (Hong Kong)": "簡體 → 繁體（香港）",
+  "Simplified to Traditional (Taiwan), with phrases": "簡體 → 繁體（台灣）慣用語",
+  "Traditional (Taiwan) to Simplified": "繁體（台灣） → 簡體",
+  "Traditional (Hong Kong) to Simplified": "繁體（香港） → 簡體",
+  "Traditional (Taiwan) to Simplified, with phrases": "繁體（台灣） → 簡體慣用語",
+  "Convert Simplified and Traditional Chinese": "簡繁中文轉換",
+  "Convert Mode": "轉換模式"
 }

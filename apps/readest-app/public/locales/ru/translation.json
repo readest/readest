@@ -667,5 +667,16 @@
   "Unable to open book": "Не удалось открыть книгу",
   "Punctuation": "Пунктуация",
   "Replace Quotation Marks": "Заменить кавычки",
-  "Enabled only in vertical layout.": "Включено только в вертикальной раскладке."
+  "Enabled only in vertical layout.": "Включено только в вертикальной раскладке.",
+  "No Conversion": "Без преобразования",
+  "Simplified to Traditional": "Упрощённый → Традиционный",
+  "Traditional to Simplified": "Традиционный → Упрощённый",
+  "Simplified to Traditional (Taiwan)": "Упрощённый → Традиционный (Тайвань)",
+  "Simplified to Traditional (Hong Kong)": "Упрощённый → Традиционный (Гонконг)",
+  "Simplified to Traditional (Taiwan), with phrases": "Упрощённый → Традиционный (Тайвань • фразы)",
+  "Traditional (Taiwan) to Simplified": "Традиционный (Тайвань) → Упрощённый",
+  "Traditional (Hong Kong) to Simplified": "Традиционный (Гонконг) → Упрощённый",
+  "Traditional (Taiwan) to Simplified, with phrases": "Традиционный (Тайвань • фразы) → Упрощённый",
+  "Convert Simplified and Traditional Chinese": "Преобразовать упрощённый/традиционный китайский",
+  "Convert Mode": "Режим преобразования"
 }

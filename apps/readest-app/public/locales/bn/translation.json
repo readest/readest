@@ -659,5 +659,16 @@
   "Unable to open book": "বই খুলতে অক্ষম",
   "Punctuation": "বিরামচিহ্ন",
   "Replace Quotation Marks": "উদ্ধৃতি চিহ্ন প্রতিস্থাপন করুন",
-  "Enabled only in vertical layout.": "শুধুমাত্র উল্লম্ব বিন্যাসে সক্রিয়।"
+  "Enabled only in vertical layout.": "শুধুমাত্র উল্লম্ব বিন্যাসে সক্রিয়।",
+  "No Conversion": "রূপান্তর নয়",
+  "Simplified to Traditional": "সরল → প্রথাগত",
+  "Traditional to Simplified": "প্রথাগত → সরল",
+  "Simplified to Traditional (Taiwan)": "সরল → প্রথাগত (তাইওয়ান)",
+  "Simplified to Traditional (Hong Kong)": "সরল → প্রথাগত (হংকং)",
+  "Simplified to Traditional (Taiwan), with phrases": "সরল → প্রথাগত (তাইওয়ান • বাক্য)",
+  "Traditional (Taiwan) to Simplified": "প্রথাগত (তাইওয়ান) → সরল",
+  "Traditional (Hong Kong) to Simplified": "প্রথাগত (হংকং) → সরল",
+  "Traditional (Taiwan) to Simplified, with phrases": "প্রথাগত (তাইওয়ান • বাক্য) → সরল",
+  "Convert Simplified and Traditional Chinese": "সরল/প্রথাগত রূপান্তর",
+  "Convert Mode": "রূপান্তর মোড"
 }

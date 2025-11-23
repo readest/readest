@@ -655,5 +655,16 @@
   "Unable to open book": "책을 열 수 없습니다",
   "Punctuation": "구두점",
   "Replace Quotation Marks": "인용 부호 바꾸기",
-  "Enabled only in vertical layout.": "세로 레이아웃에서만 활성화됩니다."
+  "Enabled only in vertical layout.": "세로 레이아웃에서만 활성화됩니다.",
+  "No Conversion": "변환 없음",
+  "Simplified to Traditional": "간체 → 번체",
+  "Traditional to Simplified": "번체 → 간체",
+  "Simplified to Traditional (Taiwan)": "간체 → 번체 (대만)",
+  "Simplified to Traditional (Hong Kong)": "간체 → 번체 (홍콩)",
+  "Simplified to Traditional (Taiwan), with phrases": "간체 → 번체 (대만) • 문구",
+  "Traditional (Taiwan) to Simplified": "번체 (대만) → 간체",
+  "Traditional (Hong Kong) to Simplified": "번체 (홍콩) → 간체",
+  "Traditional (Taiwan) to Simplified, with phrases": "번체 (대만) → 간체 • 문구",
+  "Convert Simplified and Traditional Chinese": "간체/번체 변환",
+  "Convert Mode": "변환 모드"
 }
