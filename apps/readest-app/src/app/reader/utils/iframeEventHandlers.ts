@@ -4,13 +4,72 @@ import { eventDispatcher } from '@/utils/event';
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 
+let keyboardState = {
+  key: '',
+  code: '',
+  ctrlKey: false,
+  shiftKey: false,
+  altKey: false,
+  metaKey: false,
+};
+
+const getKeyStatus = (event?: MouseEvent | WheelEvent | TouchEvent) => {
+  if (event && 'ctrlKey' in event) {
+    return {
+      key: keyboardState.key,
+      code: keyboardState.code,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    };
+  }
+  return {
+    ...keyboardState,
+  };
+};
+
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
+  keyboardState = {
+    key: event.key,
+    code: event.code,
+    ctrlKey: event.ctrlKey,
+    shiftKey: event.shiftKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey,
+  };
+
   if (['Backspace'].includes(event.key)) {
     event.preventDefault();
   }
   window.postMessage(
     {
       type: 'iframe-keydown',
+      bookKey,
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    },
+    '*',
+  );
+};
+
+export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
+  keyboardState = {
+    key: '',
+    code: '',
+    ctrlKey: event.ctrlKey,
+    shiftKey: event.shiftKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey,
+  };
+
+  window.postMessage(
+    {
+      type: 'iframe-keyup',
       bookKey,
       key: event.key,
       code: event.code,
@@ -39,6 +98,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -60,6 +120,7 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -80,6 +141,7 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -104,6 +166,7 @@ export const handleClick = (
         clientY: event.clientY,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
+        ...getKeyStatus(event),
       },
       '*',
     );
@@ -151,6 +214,7 @@ export const handleClick = (
         clientY: event.clientY,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
+        ...getKeyStatus(event),
       },
       '*',
     );
@@ -183,6 +247,7 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
       bookKey,
       timeStamp: Date.now(),
       targetTouches: touches,
+      ...getKeyStatus(event),
     },
     '*',
   );

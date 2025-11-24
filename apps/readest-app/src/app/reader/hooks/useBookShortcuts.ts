@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -171,18 +172,36 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
-  const zoomIn = () => {
+  const zoomInFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
-    const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP;
+    const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP * factor;
     applyZoomLevel(Math.min(zoomLevel, MAX_ZOOM_LEVEL));
   };
 
-  const zoomOut = () => {
+  const zoomOutFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
-    const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP;
+    const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP * factor;
     applyZoomLevel(Math.max(zoomLevel, MIN_ZOOM_LEVEL));
+  };
+
+  const zoomIn = () => {
+    zoomInFactor();
+  };
+
+  const zoomOut = () => {
+    zoomOutFactor();
+  };
+
+  const handleZoomIn = (event: CustomEvent) => {
+    const factor = event.detail?.factor || 1.0;
+    zoomInFactor(factor);
+  };
+
+  const handleZoomOut = (event: CustomEvent) => {
+    const factor = event.detail?.factor || 1.0;
+    zoomOutFactor(factor);
   };
 
   const resetZoom = () => {
@@ -201,6 +220,18 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     if (!sideBarBookKey) return;
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
   };
+
+  useEffect(() => {
+    eventDispatcher.on('zoom-in', handleZoomIn);
+    eventDispatcher.on('zoom-out', handleZoomOut);
+    eventDispatcher.on('reset-zoom', resetZoom);
+    return () => {
+      eventDispatcher.off('zoom-in', handleZoomIn);
+      eventDispatcher.off('zoom-out', handleZoomOut);
+      eventDispatcher.off('reset-zoom', resetZoom);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
 
   useShortcuts(
     {
