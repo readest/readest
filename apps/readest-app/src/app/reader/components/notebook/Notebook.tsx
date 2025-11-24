@@ -201,15 +201,20 @@ const Notebook: React.FC = ({}) => {
   return isNotebookVisible ? (
     <>
       {!isNotebookPinned && (
-        <Overlay className='z-[45] bg-black/20' onDismiss={handleClickOverlay} />
+        <Overlay
+          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/20')}
+          onDismiss={handleClickOverlay}
+        />
       )}
       <div
         className={clsx(
-          'notebook-container bg-base-200 right-0 flex min-w-60 select-none flex-col',
+          'notebook-container right-0 flex min-w-60 select-none flex-col',
           'font-sans text-base font-normal sm:text-sm',
+          viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
+          !isNotebookPinned && viewSettings?.isEink && 'border-base-content border-s',
         )}
         role='group'
         aria-label={_('Notebook')}
