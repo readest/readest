@@ -401,12 +401,12 @@ export class NativeAppService extends BaseAppService {
     await this.runMigrations();
   }
 
-  private CURRENT_MIGRATION_VERSION = 20251029;
-
-  private async runMigrations() {
+  override async runMigrations() {
     try {
       const settings = await this.loadSettings();
       const lastMigrationVersion = settings.migrationVersion || 0;
+
+      await super.runMigrations(lastMigrationVersion);
 
       if (lastMigrationVersion < 20251029) {
         try {
