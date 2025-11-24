@@ -206,15 +206,20 @@ const SideBar: React.FC<{
   return isSideBarVisible ? (
     <>
       {!isSideBarPinned && (
-        <Overlay className='z-[45] bg-black/50 sm:bg-black/20' onDismiss={handleClickOverlay} />
+        <Overlay
+          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/50 sm:bg-black/20')}
+          onDismiss={handleClickOverlay}
+        />
       )}
       <div
         className={clsx(
-          'sidebar-container bg-base-200 flex min-w-60 select-none flex-col',
-          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
+          'sidebar-container flex min-w-60 select-none flex-col',
           'transition-[padding-top] duration-300',
+          viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
+          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
+          !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
         )}
         role='group'
         aria-label={_('Sidebar')}
