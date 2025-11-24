@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import ReplacementMenu from '@/components/ReplacementMenu';
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -161,7 +160,6 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <UpdaterWindow />
         <KOSyncSettingsWindow />
         <Toast />
-        <ReplacementMenu />
       </Suspense>
     </div>
   ) : (
