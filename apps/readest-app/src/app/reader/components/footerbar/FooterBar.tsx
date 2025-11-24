@@ -195,6 +195,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
     onSpeakText: handleSpeakText,
   };
 
+  const needHorizontalScroll =
+    (viewSettings?.vertical && viewSettings?.scrolled) ||
+    (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
+
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 z-10 flex w-full flex-col',
     'sm:h-[52px] sm:justify-center',
@@ -204,15 +208,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
+    needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
-
-  const needHorizontalScroll =
-    (viewSettings?.vertical && viewSettings?.scrolled) ||
-    (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   return (
     <>

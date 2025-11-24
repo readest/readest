@@ -667,5 +667,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "繁体（台湾） → 简体习惯用语",
   "Convert Simplified and Traditional Chinese": "简繁中文转换",
   "Convert Mode": "转换模式",
-  "Failed to auto-save book cover for lock screen: {{error}}": "自动保存锁屏书籍封面失败：{{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "自动保存锁屏书籍封面失败：{{error}}",
+  "Download from Cloud": "从云端下载",
+  "Upload to Cloud": "上传到云端"
 }

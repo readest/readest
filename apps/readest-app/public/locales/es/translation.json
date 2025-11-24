@@ -675,5 +675,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "Trad. (Taiwan • frases) → Simpl.",
   "Convert Simplified and Traditional Chinese": "Convertir chino Simpl./Trad.",
   "Convert Mode": "Modo de conversión",
-  "Failed to auto-save book cover for lock screen: {{error}}": "Error al guardar automáticamente la portada del libro para la pantalla de bloqueo: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "Error al guardar automáticamente la portada del libro para la pantalla de bloqueo: {{error}}",
+  "Download from Cloud": "Descargar desde la nube",
+  "Upload to Cloud": "Subir a la nube"
 }

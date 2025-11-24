@@ -671,5 +671,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "سنتی (تایوان • عبارات) → ساده",
   "Convert Simplified and Traditional Chinese": "تبدیل چینی ساده/سنتی",
   "Convert Mode": "حالت تبدیل",
-  "Failed to auto-save book cover for lock screen: {{error}}": "ذخیره‌ی خودکار جلد کتاب برای صفحه‌ی قفل ناموفق بود: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "ذخیره‌ی خودکار جلد کتاب برای صفحه‌ی قفل ناموفق بود: {{error}}",
+  "Download from Cloud": "دانلود از فضای ابری",
+  "Upload to Cloud": "آپلود به فضای ابری"
 }

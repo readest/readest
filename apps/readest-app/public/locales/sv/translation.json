@@ -671,5 +671,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "Traditionell (Taiwan • fraser) → Förenklad",
   "Convert Simplified and Traditional Chinese": "Konvertera förenklad/traditionell kinesiska",
   "Convert Mode": "Konverteringsläge",
-  "Failed to auto-save book cover for lock screen: {{error}}": "Kunde inte autospara bokomslag för låsskärm: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "Kunde inte autospara bokomslag för låsskärm: {{error}}",
+  "Download from Cloud": "Ladda ner från molnet",
+  "Upload to Cloud": "Ladda upp till molnet"
 }

@@ -671,5 +671,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "Traditioneel (Taiwan • zinnen) → Vereenvoudigd",
   "Convert Simplified and Traditional Chinese": "Converteer Vereenvoudigd/Traditioneel Chinees",
   "Convert Mode": "Conversiemodus",
-  "Failed to auto-save book cover for lock screen: {{error}}": "Automatisch opslaan van boekomslag voor vergrendelscherm mislukt: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "Automatisch opslaan van boekomslag voor vergrendelscherm mislukt: {{error}}",
+  "Download from Cloud": "Downloaden van Cloud",
+  "Upload to Cloud": "Uploaden naar Cloud"
 }

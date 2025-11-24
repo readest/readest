@@ -671,5 +671,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "සාම්ප්‍රදායික (තායිවාන • වාක්‍ය) → සරල",
   "Convert Simplified and Traditional Chinese": "සරල/සාම්ප්‍රදායික චීන පරිවර්තනය",
   "Convert Mode": "පරිවර්තන මෝඩියුලය",
-  "Failed to auto-save book cover for lock screen: {{error}}": "අගුළු තිරය සඳහා පොත් ආවරණය ස්වයංක්‍රීයව සුරකිීමට අසමත් විය: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "අගුළු තිරය සඳහා පොත් ආවරණය ස්වයංක්‍රීයව සුරකිීමට අසමත් විය: {{error}}",
+  "Download from Cloud": "කලාඬයෙන් බාගත කරන්න",
+  "Upload to Cloud": "කලාඬයට උඩුගත කරන්න"
 }

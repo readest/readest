@@ -667,5 +667,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "ตัวเต็ม (ไต้หวัน • วลี) → ตัวย่อ",
   "Convert Simplified and Traditional Chinese": "แปลงจีนตัวย่อ/ตัวเต็ม",
   "Convert Mode": "โหมดแปลงค่า",
-  "Failed to auto-save book cover for lock screen: {{error}}": "ไม่สามารถบันทึกปกหนังสือสำหรับหน้าจอล็อกโดยอัตโนมัติ: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "ไม่สามารถบันทึกปกหนังสือสำหรับหน้าจอล็อกโดยอัตโนมัติ: {{error}}",
+  "Download from Cloud": "ดาวน์โหลดจากคลาวด์",
+  "Upload to Cloud": "อัปโหลดไปยังคลาวด์"
 }

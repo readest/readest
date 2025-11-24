@@ -667,5 +667,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "번체 (대만) → 간체 • 문구",
   "Convert Simplified and Traditional Chinese": "간체/번체 변환",
   "Convert Mode": "변환 모드",
-  "Failed to auto-save book cover for lock screen: {{error}}": "잠금 화면용 책 표지 자동 저장 실패: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "잠금 화면용 책 표지 자동 저장 실패: {{error}}",
+  "Download from Cloud": "클라우드에서 다운로드",
+  "Upload to Cloud": "클라우드에 업로드"
 }

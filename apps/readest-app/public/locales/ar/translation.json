@@ -687,5 +687,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "تقليدي (تايوان • عبارات) → مبسّط",
   "Convert Simplified and Traditional Chinese": "تحويل المبسّط/التقليدي",
   "Convert Mode": "وضع التحويل",
-  "Failed to auto-save book cover for lock screen: {{error}}": "فشل في الحفظ التلقائي لغلاف الكتاب لشاشة القفل: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "فشل في الحفظ التلقائي لغلاف الكتاب لشاشة القفل: {{error}}",
+  "Download from Cloud": "تحميل من السحابة",
+  "Upload to Cloud": "رفع إلى السحابة"
 }
