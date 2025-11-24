@@ -679,5 +679,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "Традиционный (Тайвань • фразы) → Упрощённый",
   "Convert Simplified and Traditional Chinese": "Преобразовать упрощённый/традиционный китайский",
   "Convert Mode": "Режим преобразования",
-  "Failed to auto-save book cover for lock screen: {{error}}": "Не удалось автоматически сохранить обложку книги для экрана блокировки: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "Не удалось автоматически сохранить обложку книги для экрана блокировки: {{error}}",
+  "Download from Cloud": "Скачать из облака",
+  "Upload to Cloud": "Загрузить в облако"
 }

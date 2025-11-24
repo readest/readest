@@ -671,5 +671,7 @@
   "Traditional (Taiwan) to Simplified, with phrases": "Geleneksel (Tayvan • ifadeler) → Basitleştirilmiş",
   "Convert Simplified and Traditional Chinese": "Basitleştirilmiş/Geleneksel Çince Dönüştür",
   "Convert Mode": "Dönüştürme Modu",
-  "Failed to auto-save book cover for lock screen: {{error}}": "Kitap kapağı kilit ekranı için otomatik kaydedilemedi: {{error}}"
+  "Failed to auto-save book cover for lock screen: {{error}}": "Kitap kapağı kilit ekranı için otomatik kaydedilemedi: {{error}}",
+  "Download from Cloud": "Buluttan İndir",
+  "Upload to Cloud": "Buluta Yükle"
 }

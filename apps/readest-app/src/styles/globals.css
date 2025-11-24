@@ -60,6 +60,10 @@ foliate-view {
   border: none;
 }
 
+foliate-fxl {
+  overflow: scroll;
+}
+
 @keyframes scaleUpAndDown {
   0% {
     transform: scale(1);
