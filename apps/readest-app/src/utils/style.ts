@@ -325,8 +325,7 @@ const getLayoutStyles = (
     white-space: pre-wrap !important;
   }
 
-  p:not([dir="rtl"]) {
-    max-width: 100%;
+  body:not([dir="rtl"]) {
     overflow-x: clip;
   }
 
