@@ -99,6 +99,8 @@ export abstract class BaseAppService implements AppService {
   canCustomizeRootDir = false;
   distChannel = 'readest' as DistChannel;
 
+  protected CURRENT_MIGRATION_VERSION = 20251124;
+
   protected abstract fs: FileSystem;
   protected abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
 
@@ -106,6 +108,16 @@ export abstract class BaseAppService implements AppService {
   abstract setCustomRootDir(customRootDir: string): Promise<void>;
   abstract selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
+
+  protected async runMigrations(lastMigrationVersion: number): Promise<void> {
+    if (lastMigrationVersion < 20251124) {
+      try {
+        await this.migrate20251124();
+      } catch (error) {
+        console.error('Error migrating to version 20251124:', error);
+      }
+    }
+  }
 
   async prepareBooksDir() {
     this.localBooksDir = await this.fs.getPrefix('Books');
@@ -181,40 +193,39 @@ export abstract class BaseAppService implements AppService {
   }
 
   async loadSettings(): Promise<SystemSettings> {
-    let settings: SystemSettings;
+    const defaultSettings: SystemSettings = {
+      ...DEFAULT_SYSTEM_SETTINGS,
+      version: SYSTEM_SETTINGS_VERSION,
+      localBooksDir: await this.fs.getPrefix('Books'),
+      koreaderSyncDeviceId: uuidv4(),
+      globalReadSettings: {
+        ...DEFAULT_READSETTINGS,
+        ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
+      },
+      globalViewSettings: this.getDefaultViewSettings(),
+    } as SystemSettings;
 
-    try {
-      await this.fs.exists(SETTINGS_FILENAME, 'Settings');
-      const txt = await this.fs.readFile(SETTINGS_FILENAME, 'Settings', 'text');
-      settings = JSON.parse(txt as string);
-      const version = settings.version ?? 0;
-      if (this.isAppDataSandbox || version < SYSTEM_SETTINGS_VERSION) {
-        settings.version = SYSTEM_SETTINGS_VERSION;
-      }
-      settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
-      settings.globalReadSettings = { ...DEFAULT_READSETTINGS, ...settings.globalReadSettings };
-      settings.globalViewSettings = {
-        ...this.getDefaultViewSettings(),
-        ...settings.globalViewSettings,
-      };
+    let settings = await this.safeLoadJSON<SystemSettings>(
+      SETTINGS_FILENAME,
+      'Settings',
+      defaultSettings,
+    );
 
-      settings.localBooksDir = await this.fs.getPrefix('Books');
-      if (!settings.kosync.deviceId) {
-        settings.kosync.deviceId = uuidv4();
-        await this.saveSettings(settings);
-      }
-    } catch {
-      settings = {
-        ...DEFAULT_SYSTEM_SETTINGS,
-        version: SYSTEM_SETTINGS_VERSION,
-        localBooksDir: await this.fs.getPrefix('Books'),
-        koreaderSyncDeviceId: uuidv4(),
-        globalReadSettings: {
-          ...DEFAULT_READSETTINGS,
-          ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
-        },
-        globalViewSettings: this.getDefaultViewSettings(),
-      } as SystemSettings;
+    const version = settings.version ?? 0;
+    if (this.isAppDataSandbox || version < SYSTEM_SETTINGS_VERSION) {
+      settings.version = SYSTEM_SETTINGS_VERSION;
+    }
+    settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
+    settings.globalReadSettings = { ...DEFAULT_READSETTINGS, ...settings.globalReadSettings };
+    settings.globalViewSettings = {
+      ...this.getDefaultViewSettings(),
+      ...settings.globalViewSettings,
+    };
+
+    settings.localBooksDir = await this.fs.getPrefix('Books');
+
+    if (!settings.kosync.deviceId) {
+      settings.kosync.deviceId = uuidv4();
       await this.saveSettings(settings);
     }
 
@@ -223,7 +234,7 @@ export abstract class BaseAppService implements AppService {
   }
 
   async saveSettings(settings: SystemSettings): Promise<void> {
-    await this.fs.writeFile(SETTINGS_FILENAME, 'Settings', JSON.stringify(settings));
+    await this.safeSaveJSON(SETTINGS_FILENAME, 'Settings', settings);
   }
 
   async importFont(file?: string | File): Promise<CustomFontInfo | null> {
@@ -716,49 +727,15 @@ export abstract class BaseAppService implements AppService {
       : this.getCoverImageUrl(book);
   }
 
-  private async loadJSONFile(
-    path: string,
-    base: BaseDir,
-  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> {
-    try {
-      const txt = await this.fs.readFile(path, base, 'text');
-      if (!txt || typeof txt !== 'string' || txt.trim().length === 0) {
-        return { success: false, error: 'File is empty or invalid' };
-      }
-      try {
-        const data = JSON.parse(txt as string);
-        return { success: true, data };
-      } catch (parseError) {
-        return { success: false, error: `JSON parse error: ${parseError}` };
-      }
-    } catch (error) {
-      return { success: false, error };
-    }
-  }
-
   async loadLibraryBooks(): Promise<Book[]> {
     console.log('Loading library books...');
-    let books: Book[] = [];
     const libraryFilename = getLibraryFilename();
-    const backupFilename = getLibraryBackupFilename();
 
     if (!(await this.fs.exists('', 'Books'))) {
       await this.fs.createDir('', 'Books', true);
     }
 
-    const mainResult = await this.loadJSONFile(libraryFilename, 'Books');
-    if (mainResult.success) {
-      books = mainResult.data as Book[];
-    } else {
-      const backupResult = await this.loadJSONFile(backupFilename, 'Books');
-      if (backupResult.success) {
-        books = backupResult.data as Book[];
-        console.warn('Loaded library from backup file:', backupFilename);
-      } else {
-        await this.fs.writeFile(libraryFilename, 'Books', '[]');
-        await this.fs.writeFile(backupFilename, 'Books', '[]');
-      }
-    }
+    const books = await this.safeLoadJSON<Book[]>(libraryFilename, 'Books', []);
 
     await Promise.all(
       books.map(async (book) => {
@@ -773,19 +750,7 @@ export abstract class BaseAppService implements AppService {
 
   async saveLibraryBooks(books: Book[]): Promise<void> {
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
-    const jsonData = JSON.stringify(libraryBooks, null, 2);
-    const libraryFilename = getLibraryFilename();
-    const backupFilename = getLibraryBackupFilename();
-
-    const saveResults = await Promise.allSettled([
-      this.fs.writeFile(backupFilename, 'Books', jsonData),
-      this.fs.writeFile(libraryFilename, 'Books', jsonData),
-    ]);
-    const backupSuccess = saveResults[0].status === 'fulfilled';
-    const mainSuccess = saveResults[1].status === 'fulfilled';
-    if (!backupSuccess || !mainSuccess) {
-      throw new Error('Failed to save library books');
-    }
+    await this.safeSaveJSON(getLibraryFilename(), 'Books', libraryBooks);
   }
 
   private imageToArrayBuffer(imageUrl?: string, imageFile?: string): Promise<ArrayBuffer> {
@@ -822,6 +787,105 @@ export abstract class BaseAppService implements AppService {
     } else if (imageUrl || imageFile) {
       const arrayBuffer = await this.imageToArrayBuffer(imageUrl, imageFile);
       await this.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
+    }
+  }
+
+  private async loadJSONFile(
+    path: string,
+    base: BaseDir,
+  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> {
+    try {
+      const txt = await this.fs.readFile(path, base, 'text');
+      if (!txt || typeof txt !== 'string' || txt.trim().length === 0) {
+        return { success: false, error: 'File is empty or invalid' };
+      }
+      try {
+        const data = JSON.parse(txt as string);
+        return { success: true, data };
+      } catch (parseError) {
+        return { success: false, error: `JSON parse error: ${parseError}` };
+      }
+    } catch (error) {
+      return { success: false, error };
+    }
+  }
+
+  /**
+   * Safely loads a JSON file with automatic backup fallback.
+   * If the main file is corrupted, attempts to load from backup.
+   * @param filename - The name of the file to load (without .bak extension)
+   * @param base - The base directory
+   * @param defaultValue - Default value to return if both files fail
+   */
+  private async safeLoadJSON<T>(filename: string, base: BaseDir, defaultValue: T): Promise<T> {
+    const backupFilename = `${filename}.bak`;
+
+    // Try loading main file
+    const mainResult = await this.loadJSONFile(filename, base);
+    if (mainResult.success) {
+      return mainResult.data as T;
+    }
+
+    console.warn(`Failed to load ${filename}, attempting backup...`, mainResult.error);
+
+    // Try loading backup file
+    const backupResult = await this.loadJSONFile(backupFilename, base);
+    if (backupResult.success) {
+      console.warn(`Loaded from backup: ${backupFilename}`);
+      // Restore the main file from backup
+      try {
+        const backupData = JSON.stringify(backupResult.data, null, 2);
+        await this.fs.writeFile(filename, base, backupData);
+        console.log(`Restored ${filename} from backup`);
+      } catch (error) {
+        console.error(`Failed to restore ${filename} from backup:`, error);
+      }
+      return backupResult.data as T;
+    }
+
+    console.error(`Both ${filename} and ${backupFilename} failed to load`);
+    return defaultValue;
+  }
+
+  /**
+   * Safely saves a JSON file with atomic write using backup strategy.
+   * Strategy: write to backup first, then to main file.
+   * This ensures at least one valid copy exists at all times.
+   * @param filename - The name of the file to save (without .bak extension)
+   * @param base - The base directory
+   * @param data - The data to save
+   */
+  private async safeSaveJSON(filename: string, base: BaseDir, data: unknown): Promise<void> {
+    const backupFilename = `${filename}.bak`;
+    const jsonData = JSON.stringify(data, null, 2);
+
+    // Strategy: Always write to backup first, then to main file
+    // This ensures we always have at least one valid copy
+    try {
+      // Step 1: Write to backup file
+      await this.fs.writeFile(backupFilename, base, jsonData);
+
+      // Step 2: Write to main file
+      await this.fs.writeFile(filename, base, jsonData);
+    } catch (error) {
+      console.error(`Failed to save ${filename}:`, error);
+      throw new Error(`Failed to save ${filename}: ${error}`);
+    }
+  }
+
+  private async migrate20251124(): Promise<void> {
+    console.log('Running migration for version 20251124 to rename the backup library file...');
+    const oldBackupFilename = getLibraryBackupFilename();
+    const newBackupFilename = `${getLibraryFilename()}.bak`;
+    if (await this.fs.exists(oldBackupFilename, 'Books')) {
+      try {
+        const content = await this.fs.readFile(oldBackupFilename, 'Books', 'text');
+        await this.fs.writeFile(newBackupFilename, 'Books', content);
+        await this.fs.removeFile(oldBackupFilename, 'Books');
+        console.log('Migration to rename backup library file completed successfully.');
+      } catch (error) {
+        console.error('Error during migration to rename backup library file:', error);
+      }
     }
   }
 }
