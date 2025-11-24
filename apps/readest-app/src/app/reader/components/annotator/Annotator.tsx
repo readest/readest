@@ -8,6 +8,7 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
 import { FaHeadphones } from 'react-icons/fa6';
+import { MdBuildCircle } from 'react-icons/md';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -33,6 +34,7 @@ import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
+import ReplacementOptions from './ReplacementOptions';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -56,6 +58,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
   const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
+  const [showReplacementOptions, setShowReplacementOptions] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -507,6 +510,42 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
 
+  const handleFixOnce = () => {
+  if (!selection || !selection.text) return;
+  console.log('Fix this once:', selection.text);
+  setShowReplacementOptions(false);
+  // TODO: Implement actual fix logic
+  handleDismissPopupAndSelection();
+};
+
+  const handleFixInBook = () => {
+    if (!selection || !selection.text) return;
+    console.log('Fix in this book:', selection.text);
+    setShowReplacementOptions(false);
+    // TODO: Implement actual fix logic
+    handleDismissPopupAndSelection();
+  };
+
+  const handleFixInLibrary = () => {
+    if (!selection || !selection.text) return;
+    console.log('Fix in library:', selection.text);
+    setShowReplacementOptions(false);
+    // TODO: Implement actual fix logic
+    handleDismissPopupAndSelection();
+  };
+
+  const handleFixAllFuture = () => {
+    if (!selection || !selection.text) return;
+    console.log('Fix all future:', selection.text);
+    setShowReplacementOptions(false);
+    // TODO: Implement actual fix logic
+    handleDismissPopupAndSelection();
+  };
+
+  const handleShowReplacementOptions = () => {
+    setShowReplacementOptions(!showReplacementOptions);
+  };
+
   // Keyboard shortcuts: trigger actions only if there's an active selection and popup hidden
   useShortcuts(
     {
@@ -616,34 +655,35 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const selectionAnnotated = selection?.annotated;
   const buttons = [
-    { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
-    {
-      tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
-      Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
-      onClick: handleHighlight,
-      disabled: bookData.book?.format === 'PDF',
-    },
-    {
-      tooltipText: _('Annotate'),
-      Icon: BsPencilSquare,
-      onClick: handleAnnotate,
-      disabled: bookData.book?.format === 'PDF',
-    },
-    {
-      tooltipText: _('Search'),
-      Icon: FiSearch,
-      onClick: handleSearch,
-      disabled: bookData.book?.format === 'PDF',
-    },
-    { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
-    { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
-    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
-    {
-      tooltipText: _('Speak'),
-      Icon: FaHeadphones,
-      onClick: handleSpeakText,
-      disabled: bookData.book?.format === 'PDF',
-    },
+  { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
+  {
+    tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
+    Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
+    onClick: handleHighlight,
+    disabled: bookData.book?.format === 'PDF',
+  },
+  {
+    tooltipText: _('Annotate'),
+    Icon: BsPencilSquare,
+    onClick: handleAnnotate,
+    disabled: bookData.book?.format === 'PDF',
+  },
+  {
+    tooltipText: _('Search'),
+    Icon: FiSearch,
+    onClick: handleSearch,
+    disabled: bookData.book?.format === 'PDF',
+  },
+  { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
+  { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
+  { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
+  {
+    tooltipText: _('Speak'),
+    Icon: FaHeadphones,
+    onClick: handleSpeakText,
+    disabled: bookData.book?.format === 'PDF',
+  },
+  { tooltipText: 'Text Replacement', Icon: MdBuildCircle, onClick: handleShowReplacementOptions },
   ];
 
   return (
@@ -692,6 +732,25 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onHighlight={handleHighlight}
         />
       )}
+      {showReplacementOptions && trianglePosition && annotPopupPosition && (
+      <ReplacementOptions
+        isVertical={viewSettings.vertical}
+        style={{
+          width: `${viewSettings.vertical ? annotPopupHeight : annotPopupWidth}px`,
+          height: 'auto',
+          left: `${annotPopupPosition.point.x}px`,
+          top: `${
+            annotPopupPosition.point.y +
+            (annotPopupHeight + 16) * (trianglePosition.dir === 'up' ? -1 : 1)
+          }px`,
+        }}
+        selectedText={selection?.text || ''}
+        onFixOnce={handleFixOnce}
+        onFixInBook={handleFixInBook}
+        onFixInLibrary={handleFixInLibrary}
+        onFixAllFuture={handleFixAllFuture}
+      />
+    )}
     </div>
   );
 };
