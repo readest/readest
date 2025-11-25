@@ -171,6 +171,9 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 90%, #000);` : ''}
       ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
     }
+    blockquote {
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+    }
     blockquote, table * {
       ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
       ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
