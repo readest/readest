@@ -392,6 +392,11 @@ const getLayoutStyles = (
     width: 0.8em;
     height: 0.8em;
   }
+  div:has(img.singlepage) {
+    position: relative;
+    width: auto;
+    height: auto;
+  }
 
   /* workaround for some badly designed epubs */
   div.left *, p.left * { text-align: left; }
