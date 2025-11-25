@@ -33,7 +33,7 @@ const ThemePreview: React.FC<{
       >
         <p className='mb-2 whitespace-pre-line text-xs'>
           {_(
-            "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
+            "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}
           {'\n\n'}
           <span

@@ -12,65 +12,35 @@ export const isCJKLang = (lang: string | null | undefined): boolean => {
   return ['zh', 'ja', 'ko', 'zho', 'jpn', 'kor'].includes(normalizedLang);
 };
 
-export const normalizeToFullLang = (langCode: string): string => {
-  const mapping: Record<string, string> = {
-    en: 'en-US',
-    fr: 'fr-FR',
-    de: 'de-DE',
-    es: 'es-ES',
-    it: 'it-IT',
-    ja: 'ja-JP',
-    ko: 'ko-KR',
-    pt: 'pt-PT',
-    ar: 'ar-SA',
-    fa: 'fa-IR',
-    nl: 'nl-NL',
-    pl: 'pl-PL',
-    tr: 'tr-TR',
-    id: 'id-ID',
-    ru: 'ru-RU',
-    uk: 'uk-UA',
-    th: 'th-TH',
-    nb: 'nb-NO',
-    sv: 'sv-SE',
-    fi: 'fi-FI',
-    da: 'da-DK',
-    cs: 'cs-CZ',
-    hu: 'hu-HU',
-    ro: 'ro-RO',
-    bg: 'bg-BG',
-    hr: 'hr-HR',
-    lt: 'lt-LT',
-    sl: 'sl-SI',
-    sk: 'sk-SK',
-    bo: 'bo-CN',
-    bn: 'bn-BD',
-    ta: 'ta-IN',
-    si: 'si-LK',
-    zh: 'zh-Hans',
-    'zh-cn': 'zh-Hans',
-    'zh-tw': 'zh-Hant',
-    'zh-mo': 'zh-Hant',
-    'zh-hans': 'zh-Hans',
-    'zh-hant': 'zh-Hant',
-  };
+const ZH_SCRIPTS_MAPPING: Record<string, string> = {
+  zh: 'zh-Hans',
+  'zh-cn': 'zh-Hans',
+  'zh-hk': 'zh-Hant',
+  'zh-tw': 'zh-Hant',
+  'zh-mo': 'zh-Hant',
+  'zh-hans': 'zh-Hans',
+  'zh-hant': 'zh-Hant',
+};
 
-  return mapping[langCode.toLowerCase()] || langCode;
+export const normalizeToFullLang = (langCode: string): string => {
+  try {
+    const locale = new Intl.Locale(langCode.toLowerCase());
+    const maximized = locale.maximize();
+
+    if (maximized.language === 'zh') {
+      return maximized.script === 'Hant' ? 'zh-Hant' : 'zh-Hans';
+    }
+
+    return maximized.region ? `${maximized.language}-${maximized.region}` : langCode;
+  } catch {
+    return ZH_SCRIPTS_MAPPING[langCode.toLowerCase()] || langCode;
+  }
 };
 
 export const normalizeToShortLang = (langCode: string): string => {
   const lang = langCode.toLowerCase();
-  const mapping: Record<string, string> = {
-    'zh-cn': 'zh-Hans',
-    'zh-tw': 'zh-Hant',
-    'zh-hk': 'zh-Hant',
-    'zh-mo': 'zh-Hant',
-    'zh-hans': 'zh-Hans',
-    'zh-hant': 'zh-Hant',
-  };
-
   if (lang.startsWith('zh')) {
-    return mapping[lang] || 'zh-Hans';
+    return ZH_SCRIPTS_MAPPING[lang] || 'zh-Hans';
   }
   return lang.split('-')[0]!;
 };
