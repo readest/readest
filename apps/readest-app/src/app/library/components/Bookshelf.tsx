@@ -370,7 +370,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      {isSelectMode && showSelectModeActions && (
+      {!showGroupingModal && isSelectMode && showSelectModeActions && (
         <SelectModeActions
           selectedBooks={selectedBooks}
           safeAreaBottom={safeAreaInsets?.bottom || 0}
@@ -381,7 +381,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onCancel={() => handleSetSelectMode(false)}
         />
       )}
-      {showGroupingModal && (
+      {showGroupingModal && selectedBooks.length > 0 && (
         <ModalPortal>
           <GroupingModal
             libraryBooks={libraryBooks}

@@ -10,6 +10,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { getBreadcrumbs } from '../utils/libraryUtils';
 
@@ -39,6 +40,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<BookGroupType | null>(null);
   const [newGroup, setNewGroup] = useState<BookGroupType | null>(null);
 
+  const divRef = useKeyDownActions({ onCancel, onConfirm });
   const editorRef = useRef<HTMLInputElement>(null);
   const iconSize = useResponsiveSize(16);
 
@@ -193,6 +195,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   return (
     <div className='fixed inset-0 flex items-center justify-center'>
       <div
+        ref={divRef}
         className={clsx(
           'modal-box bg-base-100 overflow-y-auto rounded-2xl shadow-xl',
           'max-h-[85%] w-[95%] min-w-64 max-w-[440px] p-6 sm:w-[70%]',
