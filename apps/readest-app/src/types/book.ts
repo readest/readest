@@ -185,6 +185,7 @@ export interface ViewConfig {
   showRemainingPages: boolean;
   showProgressInfo: boolean;
   showBarsOnScroll: boolean;
+  showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
 }
 

@@ -400,10 +400,11 @@ const FoliateViewer: React.FC<{
     const rightMargin = insets.right + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
     const leftMargin = insets.left + moreLeftInset;
+    const viewMargins = viewSettings.showMarginsOnScroll && viewSettings.scrolled;
 
-    viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-top', `${viewMargins ? 0 : topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
-    viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
@@ -482,6 +483,8 @@ const FoliateViewer: React.FC<{
     viewState?.ttsEnabled,
   ]);
 
+  const showViewMargins = viewSettings?.showMarginsOnScroll && viewSettings?.scrolled;
+
   return (
     <>
       <div
@@ -490,6 +493,10 @@ const FoliateViewer: React.FC<{
         role='document'
         aria-label={_('Book Content')}
         className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
+        style={{
+          paddingTop: showViewMargins ? insets.top : 0,
+          paddingBottom: showViewMargins ? insets.bottom : 0,
+        }}
         {...mouseHandlers}
         {...touchHandlers}
       />
