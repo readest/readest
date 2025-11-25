@@ -14,7 +14,7 @@
 [![Discord][badge-discord]][link-discord]
 [![Reddit][badge-reddit]][link-reddit]
 [![AGPL Licence][badge-license]](LICENSE)
-[![Language Coverage][badge-language-coverage]]()
+[![Language Coverage][badge-language-coverage]][link-locales]
 [![Donate][badge-donate]][link-donate]
 [![Latest release][badge-release]][link-gh-releases]
 [![Last commit][badge-last-commit]][link-gh-commits]
@@ -309,7 +309,7 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-donate]: https://donate.readest.com/badge.svg
 [badge-deepwiki]: https://deepwiki.com/badge.svg
 [badge-reddit]: https://img.shields.io/reddit/subreddit-subscribers/readest?style=flat&logo=reddit&color=F37E41
-[badge-language-coverage]: https://img.shields.io/badge/coverage-52%25%20population%20🌍-green
+[badge-language-coverage]: https://img.shields.io/badge/coverage-53%25%20population%20🌍-green
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
@@ -324,5 +324,6 @@ The following fonts are utilized in this software, either bundled within the app
 [link-koreader]: https://github.com/koreader/koreader
 [link-hellogithub]: https://hellogithub.com/repository/8a5b6ade2aee461a8bd94e59200682a7
 [link-deepwiki]: https://deepwiki.com/readest/readest
+[link-locales]: https://github.com/readest/readest/tree/main/apps/readest-app/public/locales
 [link-kosync-wiki]: https://github.com/readest/readest/wiki/Sync-with-Koreader-devices
 [link-reddit]: https://reddit.com/r/readest/

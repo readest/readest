@@ -711,6 +711,7 @@ export const TRANSLATED_LANGS = {
   id: 'Indonesia',
   vi: 'Tiếng Việt',
   th: 'ภาษาไทย',
+  ms: 'Melayu',
   bo: 'བོད་སྐད་',
   bn: 'বাংলা',
   ta: 'தமிழ்',
