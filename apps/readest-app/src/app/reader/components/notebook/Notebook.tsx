@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -16,6 +16,7 @@ import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { Overlay } from '@/components/Overlay';
+import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
@@ -49,6 +50,15 @@ const Notebook: React.FC = ({}) => {
       setNotebookVisible(false);
     }
   };
+
+  const handleHideNotebook = useCallback(() => {
+    if (!isNotebookPinned) {
+      setNotebookVisible(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNotebookPinned]);
+
+  useShortcuts({ onEscape: handleHideNotebook }, [handleHideNotebook]);
 
   useEffect(() => {
     if (isNotebookVisible) {

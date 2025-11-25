@@ -58,16 +58,20 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
     if (key === 'backspace') return true;
     for (const [actionName, actionHandler] of Object.entries(actions)) {
       const shortcutKey = actionName as keyof ShortcutConfig;
-      const handler = actionHandler as ((event?: KeyboardEvent | MessageEvent) => void) | undefined;
+      const handler = actionHandler as
+        | ((event?: KeyboardEvent | MessageEvent) => void | boolean)
+        | undefined;
       const shortcutList = shortcuts[shortcutKey as keyof ShortcutConfig];
+      // console.log('Checking action:', shortcutKey);
       if (
         handler &&
         shortcutList?.some((shortcut) =>
           isShortcutMatch(shortcut, key, ctrlKey, altKey, metaKey, shiftKey),
         )
       ) {
-        handler(event);
-        return true;
+        if (handler(event)) {
+          return true;
+        }
       }
     }
     return false;
@@ -96,6 +100,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
       }
 
       const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
+      // console.log('Key event handled:', key, handled);
       if (handled) event.preventDefault();
     } else if (
       event instanceof MessageEvent &&
