@@ -673,5 +673,6 @@
   "Convert Mode": "রূপান্তর মোড",
   "Failed to auto-save book cover for lock screen: {{error}}": "লক স্ক্রিনের জন্য বইয়ের মলাট স্বয়ংক্রিয়ভাবে সংরক্ষণ করতে ব্যর্থ: {{error}}",
   "Download from Cloud": "ক্লাউড থেকে ডাউনলোড করুন",
-  "Upload to Cloud": "ক্লাউডে আপলোড করুন"
+  "Upload to Cloud": "ক্লাউডে আপলোড করুন",
+  "Clear Custom Fonts": "কাস্টম ফন্টস মুছুন"
 }

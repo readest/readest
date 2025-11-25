@@ -669,5 +669,6 @@
   "Convert Mode": "โหมดแปลงค่า",
   "Failed to auto-save book cover for lock screen: {{error}}": "ไม่สามารถบันทึกปกหนังสือสำหรับหน้าจอล็อกโดยอัตโนมัติ: {{error}}",
   "Download from Cloud": "ดาวน์โหลดจากคลาวด์",
-  "Upload to Cloud": "อัปโหลดไปยังคลาวด์"
+  "Upload to Cloud": "อัปโหลดไปยังคลาวด์",
+  "Clear Custom Fonts": "ล้างฟอนต์กำหนดเอง"
 }

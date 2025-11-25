@@ -673,5 +673,6 @@
   "Convert Mode": "Λειτουργία μετατροπής",
   "Failed to auto-save book cover for lock screen: {{error}}": "Αποτυχία αυτόματης αποθήκευσης εξωφύλλου βιβλίου για την οθόνη κλειδώματος: {{error}}",
   "Download from Cloud": "Λήψη από το Cloud",
-  "Upload to Cloud": "Ανέβασμα στο Cloud"
+  "Upload to Cloud": "Ανέβασμα στο Cloud",
+  "Clear Custom Fonts": "Καθαρισμός προσαρμοσμένων γραμματοσειρών"
 }

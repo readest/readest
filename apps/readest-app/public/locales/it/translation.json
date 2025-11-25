@@ -677,5 +677,6 @@
   "Convert Mode": "Modalità conversione",
   "Failed to auto-save book cover for lock screen: {{error}}": "Impossibile salvare automaticamente la copertina del libro per la schermata di blocco: {{error}}",
   "Download from Cloud": "Scarica dal Cloud",
-  "Upload to Cloud": "Carica sul Cloud"
+  "Upload to Cloud": "Carica sul Cloud",
+  "Clear Custom Fonts": "Pulisci Font Personalizzati"
 }
