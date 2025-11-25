@@ -673,5 +673,6 @@
   "Convert Mode": "Konverteringsläge",
   "Failed to auto-save book cover for lock screen: {{error}}": "Kunde inte autospara bokomslag för låsskärm: {{error}}",
   "Download from Cloud": "Ladda ner från molnet",
-  "Upload to Cloud": "Ladda upp till molnet"
+  "Upload to Cloud": "Ladda upp till molnet",
+  "Clear Custom Fonts": "Rensa anpassade typsnitt"
 }

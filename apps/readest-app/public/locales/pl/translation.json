@@ -681,5 +681,6 @@
   "Convert Mode": "Tryb konwersji",
   "Failed to auto-save book cover for lock screen: {{error}}": "Nie udało się automatycznie zapisać okładki książki dla ekranu blokady: {{error}}",
   "Download from Cloud": "Pobierz z chmury",
-  "Upload to Cloud": "Prześlij do chmury"
+  "Upload to Cloud": "Prześlij do chmury",
+  "Clear Custom Fonts": "Wyczyść niestandardowe czcionki"
 }

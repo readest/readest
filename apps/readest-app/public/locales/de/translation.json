@@ -673,5 +673,6 @@
   "Convert Mode": "Konvertierungsmodus",
   "Failed to auto-save book cover for lock screen: {{error}}": "Automatisches Speichern des Buchcovers für den Sperrbildschirm fehlgeschlagen: {{error}}",
   "Download from Cloud": "Aus der Cloud herunterladen",
-  "Upload to Cloud": "In die Cloud hochladen"
+  "Upload to Cloud": "In die Cloud hochladen",
+  "Clear Custom Fonts": "Benutzerdefinierte Schriftarten löschen"
 }

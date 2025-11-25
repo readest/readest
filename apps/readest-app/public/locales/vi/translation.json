@@ -669,5 +669,6 @@
   "Convert Mode": "Chế độ chuyển đổi",
   "Failed to auto-save book cover for lock screen: {{error}}": "Không thể tự động lưu bìa sách cho màn hình khóa: {{error}}",
   "Download from Cloud": "Tải xuống từ đám mây",
-  "Upload to Cloud": "Tải lên đám mây"
+  "Upload to Cloud": "Tải lên đám mây",
+  "Clear Custom Fonts": "Xóa phông chữ tùy chỉnh"
 }

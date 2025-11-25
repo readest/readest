@@ -673,5 +673,6 @@
   "Convert Mode": "மாற்ற முறை",
   "Failed to auto-save book cover for lock screen: {{error}}": "பூட்டு திரைக்கான புத்தகக் கோப்பை தானாகச் சேமிக்க முடியவில்லை: {{error}}",
   "Download from Cloud": "மேகத்திலிருந்து பதிவிறக்கு செய்யவும்",
-  "Upload to Cloud": "மேகத்திற்கு பதிவேற்றவும்"
+  "Upload to Cloud": "மேகத்திற்கு பதிவேற்றவும்",
+  "Clear Custom Fonts": "தனிப்பயன் எழுத்துருக்களை அழிக்கவும்"
 }

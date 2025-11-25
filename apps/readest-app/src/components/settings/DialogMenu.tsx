@@ -1,8 +1,10 @@
 import clsx from 'clsx';
 import React from 'react';
 import { MdCheck } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { SettingsPanelType } from './SettingsDialog';
 import MenuItem from '@/components/MenuItem';
@@ -21,8 +23,10 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
   resetLabel,
 }) => {
   const _ = useTranslation();
+  const { envConfig, appService } = useEnv();
   const iconSize = useResponsiveSize(16);
   const { setFontPanelView, isSettingsGlobal, setSettingsGlobal } = useSettingsStore();
+  const { getAllFonts, removeFont, saveCustomFonts } = useCustomFontStore();
 
   const handleToggleGlobal = () => {
     setSettingsGlobal(!isSettingsGlobal);
@@ -36,6 +40,16 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
 
   const handleManageCustomFont = () => {
     setFontPanelView('custom-fonts');
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleClearCustomFont = () => {
+    getAllFonts().forEach((font) => {
+      if (removeFont(font.id)) {
+        appService!.deleteFont(font);
+      }
+    });
+    saveCustomFonts(envConfig);
     setIsDropdownOpen?.(false);
   };
 
@@ -55,7 +69,10 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
       />
       <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
       {activePanel === 'Font' && (
-        <MenuItem label={_('Manage Custom Fonts')} onClick={handleManageCustomFont} />
+        <>
+          <MenuItem label={_('Clear Custom Fonts')} onClick={handleClearCustomFont} />
+          <MenuItem label={_('Manage Custom Fonts')} onClick={handleManageCustomFont} />
+        </>
       )}
     </div>
   );
