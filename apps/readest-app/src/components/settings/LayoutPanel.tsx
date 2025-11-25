@@ -66,6 +66,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader);
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter);
   const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll);
+  const [showMarginsOnScroll, setShowMarginsOnScroll] = useState(viewSettings.showMarginsOnScroll);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
@@ -103,6 +104,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
+      showMarginsOnScroll: setShowMarginsOnScroll,
     });
   };
 
@@ -310,6 +312,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'showBarsOnScroll', showBarsOnScroll, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBarsOnScroll]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showMarginsOnScroll', showMarginsOnScroll, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMarginsOnScroll]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showRemainingTime', showRemainingTime, false, false);
@@ -597,6 +604,15 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               max={9999}
               step={50}
             />
+            <div className='config-item'>
+              <span className=''>{_('Apply also in Scrolled Mode')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showMarginsOnScroll}
+                onChange={() => setShowMarginsOnScroll(!showMarginsOnScroll)}
+              />
+            </div>
           </div>
         </div>
       </div>

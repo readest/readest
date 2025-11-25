@@ -218,6 +218,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  showMarginsOnScroll: false,
   progressStyle: 'fraction',
 };
 
