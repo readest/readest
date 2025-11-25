@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 
 const Alert: React.FC<{
   title: string;
@@ -9,9 +10,12 @@ const Alert: React.FC<{
   onConfirm: () => void;
 }> = ({ title, message, onCancel, onConfirm }) => {
   const _ = useTranslation();
+  const divRef = useKeyDownActions({ onCancel, onConfirm });
+
   return (
     <div className={clsx('z-[100] flex justify-center px-4')}>
       <div
+        ref={divRef}
         role='alert'
         className={clsx(
           'alert flex items-center justify-between',

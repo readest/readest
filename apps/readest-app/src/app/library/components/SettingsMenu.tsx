@@ -231,6 +231,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         'settings-menu dropdown-content no-triangle border-base-100',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
+      onCancel={() => setIsDropdownOpen?.(false)}
     >
       {user ? (
         <MenuItem

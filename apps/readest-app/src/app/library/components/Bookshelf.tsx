@@ -2,8 +2,6 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdDelete, MdOpenInNew, MdOutlineCancel, MdInfoOutline } from 'react-icons/md';
-import { LuFolderPlus } from 'react-icons/lu';
 import { PiPlus } from 'react-icons/pi';
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
@@ -17,12 +15,12 @@ import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/n
 import { createBookFilter, createBookSorter } from '../utils/libraryUtils';
 import { formatTitle } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
-import { isMd5 } from '@/utils/md5';
 
 import Alert from '@/components/Alert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
+import SelectModeActions from './SelectModeActions';
 import GroupingModal from './GroupingModal';
 
 interface BookshelfProps {
@@ -372,72 +370,17 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      <div
-        className='fixed bottom-0 left-0 right-0 z-40'
-        style={{
-          paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
-        }}
-      >
-        {isSelectMode && showSelectModeActions && (
-          <div
-            className={clsx(
-              'flex items-center justify-center shadow-lg',
-              'bg-base-300 text-base-content text-xs',
-              'mx-auto w-fit space-x-6 rounded-lg p-4',
-            )}
-          >
-            <button
-              onClick={openSelectedBooks}
-              className={clsx(
-                'flex flex-col items-center justify-center gap-1',
-                (!selectedBooks.length || !selectedBooks.every((id) => isMd5(id))) &&
-                  'btn-disabled opacity-50',
-              )}
-            >
-              <MdOpenInNew />
-              <div>{_('Open')}</div>
-            </button>
-            <button
-              onClick={groupSelectedBooks}
-              className={clsx(
-                'flex flex-col items-center justify-center gap-1',
-                !selectedBooks.length && 'btn-disabled opacity-50',
-              )}
-            >
-              <LuFolderPlus />
-              <div>{_('Group')}</div>
-            </button>
-            <button
-              onClick={openBookDetails}
-              className={clsx(
-                'flex flex-col items-center justify-center gap-1',
-                (selectedBooks.length !== 1 || !selectedBooks.every((id) => isMd5(id))) &&
-                  'btn-disabled opacity-50',
-              )}
-            >
-              <MdInfoOutline />
-              <div>{_('Details')}</div>
-            </button>
-            <button
-              onClick={deleteSelectedBooks}
-              className={clsx(
-                'flex flex-col items-center justify-center gap-1',
-                !selectedBooks.length && 'btn-disabled opacity-50',
-              )}
-            >
-              <MdDelete className='text-red-500' />
-              <div className='text-red-500'>{_('Delete')}</div>
-            </button>
-            <button
-              onClick={() => handleSetSelectMode(false)}
-              className={clsx('flex flex-col items-center justify-center gap-1')}
-            >
-              <MdOutlineCancel />
-              <div>{_('Cancel')}</div>
-            </button>
-          </div>
-        )}
-      </div>
+      {isSelectMode && showSelectModeActions && (
+        <SelectModeActions
+          selectedBooks={selectedBooks}
+          safeAreaBottom={safeAreaInsets?.bottom || 0}
+          onOpen={openSelectedBooks}
+          onGroup={groupSelectedBooks}
+          onDetails={openBookDetails}
+          onDelete={deleteSelectedBooks}
+          onCancel={() => handleSetSelectMode(false)}
+        />
+      )}
       {showGroupingModal && (
         <ModalPortal>
           <GroupingModal
