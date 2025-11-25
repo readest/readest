@@ -156,7 +156,9 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const showSearchBar = () => {
-    eventDispatcher.dispatch('search', { term: '' });
+    setTimeout(() => {
+      eventDispatcher.dispatch('search', { term: null });
+    }, 100);
   };
 
   const applyZoomLevel = (zoomLevel: number) => {
@@ -241,7 +243,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
-      onToggleSearchBar: showSearchBar,
+      onShowSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,
       onReloadPage: reloadPage,

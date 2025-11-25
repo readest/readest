@@ -37,6 +37,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const footnoteHandler = new FootnoteHandler();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [gridRect, setGridRect] = useState<DOMRect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
@@ -114,6 +115,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
+
+  useEffect(() => {
+    if (showPopup) {
+      containerRef.current?.focus();
+    }
+  }, [showPopup]);
 
   useEffect(() => {
     if (viewSettings.vertical) {
@@ -231,14 +238,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   }, [footnoteRef]);
 
   return (
-    <div>
+    <div ref={containerRef} role='toolbar' tabIndex={-1}>
       {showPopup && <Overlay onDismiss={handleDismissPopup} />}
       <Popup
+        isOpen={showPopup}
         width={responsiveWidth}
         height={responsiveHeight}
         position={showPopup ? popupPosition! : undefined}
         trianglePosition={showPopup ? trianglePosition! : undefined}
         className='select-text overflow-y-auto'
+        onDismiss={handleDismissPopup}
       >
         <div
           className=''
