@@ -3,7 +3,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
@@ -18,7 +17,6 @@ interface ViewMenuProps {
 const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
-  const iconSize = useResponsiveSize(16);
   const searchParams = useSearchParams();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
@@ -123,8 +121,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         siblings={
           <NumberInput
             className='!h-10 !p-0 !pe-1 !ps-0'
-            iconSize={iconSize}
-            inputClassName={autoColumns ? 'opacity-50 !p-0 !w-6' : 'p-0 !w-6'}
+            inputClassName={`!p-0 text-center text-base sm:text-sm !w-10 !h-6 !pe-0 ${autoColumns ? 'opacity-50' : ''}`}
             label={''}
             value={columns}
             disabled={viewMode === 'list'}
