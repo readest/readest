@@ -59,34 +59,62 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { safeAreaInsets } = useThemeStore();
+
+  const groupId = searchParams?.get('group') || '';
+  const queryTerm = searchParams?.get('q') || null;
+  const viewMode = searchParams?.get('view') || settings.libraryViewMode;
+  const sortBy = searchParams?.get('sort') || settings.librarySortBy;
+  const sortOrder = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
+  const coverFit = searchParams?.get('cover') || settings.libraryCoverFit;
+
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
   const [bookIdsToDelete, setBookIdsToDelete] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
-  const [queryTerm, setQueryTerm] = useState<string | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
-  const [groupId, setGroupId] = useState(searchParams?.get('group') || '');
-  const [viewMode, setViewMode] = useState(searchParams?.get('view') || settings.libraryViewMode);
-  const [sortBy, setSortBy] = useState(searchParams?.get('sort') || settings.librarySortBy);
-  const [sortOrder, setSortOrder] = useState(
-    searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc'),
-  );
-  const [coverFit, setCoverFit] = useState(searchParams?.get('cover') || settings.libraryCoverFit);
+
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
+  const autofocusRef = useAutoFocus<HTMLDivElement>();
 
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
   const { getGroupName } = useLibraryStore();
 
-  const bookFilter = useMemo(() => createBookFilter(queryTerm), [queryTerm]);
   const uiLanguage = localStorage?.getItem('i18nextLng') || '';
-  const bookSorter = useMemo(() => createBookSorter(sortBy, uiLanguage), [sortBy, uiLanguage]);
+
+  const updateUrlParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams?.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '') {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      if (params.get('sort') === 'updated') params.delete('sort');
+      if (params.get('order') === 'desc') params.delete('order');
+      if (params.get('cover') === 'crop') params.delete('cover');
+      if (params.get('view') === 'grid') params.delete('view');
+
+      const newParamString = params.toString();
+      const currentParamString = searchParams?.toString() || '';
+
+      if (newParamString !== currentParamString) {
+        navigateToLibrary(router, newParamString);
+      }
+    },
+    [router, searchParams],
+  );
 
   const filteredBooks = useMemo(() => {
+    const bookFilter = createBookFilter(queryTerm);
     return queryTerm ? libraryBooks.filter((book) => bookFilter(book)) : libraryBooks;
-  }, [libraryBooks, queryTerm, bookFilter]);
+  }, [libraryBooks, queryTerm]);
 
   const currentBookshelfItems = useMemo(() => {
     const groupName = getGroupName(groupId) || '';
@@ -97,7 +125,33 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     return items;
   }, [filteredBooks, groupId, getGroupName]);
 
-  const autofocusRef = useAutoFocus<HTMLDivElement>();
+  useEffect(() => {
+    if (groupId && currentBookshelfItems.length === 0) {
+      updateUrlParams({ group: null });
+    } else {
+      updateUrlParams({});
+    }
+  }, [searchParams, groupId, currentBookshelfItems.length, updateUrlParams]);
+
+  const sortedBookshelfItems = useMemo(() => {
+    const bookSorter = createBookSorter(sortBy, uiLanguage);
+    const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
+    return currentBookshelfItems.sort((a, b) => {
+      if (sortBy === 'updated') {
+        return (
+          (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * sortOrderMultiplier
+        );
+      } else if ('name' in a || 'name' in b) {
+        const aName = 'name' in a ? a.name : formatTitle(a.title);
+        const bName = 'name' in b ? b.name : formatTitle(b.title);
+        return aName.localeCompare(bName, uiLanguage || navigator.language) * sortOrderMultiplier;
+      } else if (!('name' in a || 'name' in b)) {
+        return bookSorter(a, b) * sortOrderMultiplier;
+      } else {
+        return 0;
+      }
+    });
+  }, [sortOrder, sortBy, uiLanguage, currentBookshelfItems]);
 
   useEffect(() => {
     if (isImportingBook.current) return;
@@ -121,82 +175,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   useEffect(() => {
     setCurrentBookshelf(currentBookshelfItems);
   }, [currentBookshelfItems, setCurrentBookshelf]);
-
-  useEffect(() => {
-    const group = searchParams?.get('group') || '';
-    const query = searchParams?.get('q') || '';
-    const view = searchParams?.get('view') || settings.libraryViewMode;
-    const sort = searchParams?.get('sort') || settings.librarySortBy;
-    const order = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
-    const cover = searchParams?.get('cover') || settings.libraryCoverFit;
-
-    setGroupId(group);
-    setQueryTerm(query || null);
-    setViewMode(view);
-    setSortBy(sort);
-    setSortOrder(order);
-    setCoverFit(cover);
-  }, [searchParams, settings]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams?.toString());
-    let hasChanges = false;
-
-    if (queryTerm) {
-      if (params.get('q') !== queryTerm) {
-        params.set('q', queryTerm);
-        hasChanges = true;
-      }
-    } else {
-      if (params.has('q')) {
-        params.delete('q');
-        hasChanges = true;
-      }
-    }
-
-    if (sortBy !== 'updated' && params.get('sort') !== sortBy) {
-      params.set('sort', sortBy);
-      hasChanges = true;
-    }
-
-    if (sortBy === 'updated') {
-      params.delete('sort');
-      hasChanges = true;
-    }
-
-    if (sortOrder === 'desc') {
-      params.delete('order');
-      hasChanges = true;
-    }
-
-    if (coverFit === 'crop') {
-      params.delete('cover');
-      hasChanges = true;
-    }
-
-    if (viewMode === 'grid') {
-      params.delete('view');
-      hasChanges = true;
-    }
-
-    if (groupId) {
-      if (currentBookshelfItems.length === 0) {
-        params.delete('group');
-        hasChanges = true;
-      } else if (params.get('group') !== groupId) {
-        params.set('group', groupId);
-        hasChanges = true;
-      }
-    } else if (params.has('group')) {
-      params.delete('group');
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      navigateToLibrary(router, params.toString());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryTerm, sortBy, sortOrder, viewMode, coverFit, groupId, currentBookshelfItems.length]);
 
   const toggleSelection = useCallback(
     (id: string) => {
@@ -267,25 +245,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };
-
-  const sortedBookshelfItems = useMemo(() => {
-    const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
-    return currentBookshelfItems.sort((a, b) => {
-      if (sortBy === 'updated') {
-        return (
-          (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * sortOrderMultiplier
-        );
-      } else if ('name' in a || 'name' in b) {
-        const aName = 'name' in a ? a.name : formatTitle(a.title);
-        const bName = 'name' in b ? b.name : formatTitle(b.title);
-        return aName.localeCompare(bName, uiLanguage || navigator.language) * sortOrderMultiplier;
-      } else if (!('name' in a || 'name' in b)) {
-        return bookSorter(a, b) * sortOrderMultiplier;
-      } else {
-        return 0;
-      }
-    });
-  }, [sortOrder, sortBy, uiLanguage, currentBookshelfItems, bookSorter]);
 
   useEffect(() => {
     if (isSelectMode) {
