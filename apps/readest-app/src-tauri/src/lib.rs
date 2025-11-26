@@ -269,6 +269,7 @@ pub fn run() {
                     r#"
                         window.addEventListener('DOMContentLoaded', function() {
                             const isTauriLocal = window.location.protocol === 'tauri:' ||
+                                                window.location.protocol === 'about:' ||
                                                 window.location.hostname === 'tauri.localhost';
                             const needsSafeArea = !isTauriLocal;
                             if (needsSafeArea && !document.getElementById('safe-area-style')) {
