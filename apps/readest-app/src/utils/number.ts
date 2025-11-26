@@ -36,15 +36,13 @@ export const localizeNumber = (num: number, language: string, isIndex = false): 
 
   if (!isIndex) {
     if (isTraditional) {
-      result = result.replace(
-        /^貳$|(?<![壹貳叁肆伍陸柒捌玖])貳(?![佰仟萬億壹貳叁肆伍陸柒捌玖])/g,
-        '兩',
-      );
+      result = result
+        .replace(/^貳$/, '兩')
+        .replace(/(^|[^壹貳叁肆伍陸柒捌玖])貳([^佰仟萬億壹貳叁肆伍陸柒捌玖]|$)/g, '$1兩$2');
     } else {
-      result = result.replace(
-        /^二$|(?<![一二三四五六七八九])二(?![百千万亿一二三四五六七八九])/g,
-        '两',
-      );
+      result = result
+        .replace(/^二$/, '两')
+        .replace(/(^|[^一二三四五六七八九])二([^百千万亿一二三四五六七八九]|$)/g, '$1两$2');
     }
   }
 
