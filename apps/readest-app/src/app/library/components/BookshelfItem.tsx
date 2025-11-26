@@ -20,8 +20,6 @@ import { md5Fingerprint } from '@/utils/md5';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 
-export type BookshelfItem = Book | BooksGroup;
-
 export const generateBookshelfItems = (
   books: Book[],
   parentGroupName: string,
@@ -76,7 +74,7 @@ export const generateBookshelfItems = (
 
 interface BookshelfItemProps {
   mode: LibraryViewModeType;
-  item: BookshelfItem;
+  item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
   isSelectMode: boolean;
   itemSelected: boolean;
