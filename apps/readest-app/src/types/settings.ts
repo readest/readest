@@ -19,6 +19,7 @@ export interface ReadSettings {
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
+  openaiApiKey?: string;
 
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;

@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
-import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
+import { RiDashboardLine, RiTranslate, RiRobotLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
@@ -21,8 +21,16 @@ import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
+import AIPanel from './AIPanel';
 
-export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType =
+  | 'Font'
+  | 'Layout'
+  | 'Color'
+  | 'Control'
+  | 'Language'
+  | 'Custom'
+  | 'AI';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -74,6 +82,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       icon: IoAccessibilityOutline,
       label: _('Custom'),
     },
+    {
+      tab: 'AI',
+      icon: RiRobotLine,
+      label: _('AI'),
+    },
   ] as TabConfig[];
 
   const [activePanel, setActivePanel] = useState<SettingsPanelType>(() => {
@@ -99,6 +112,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Control: null,
     Language: null,
     Custom: null,
+    AI: null,
   });
 
   const registerResetFunction = (panel: SettingsPanelType, resetFn: () => void) => {
@@ -283,6 +297,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             bookKey={bookKey}
             onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
           />
+        )}
+        {activePanel === 'AI' && (
+          <AIPanel bookKey={bookKey} onRegisterReset={(fn) => registerResetFunction('AI', fn)} />
         )}
       </div>
     </Dialog>

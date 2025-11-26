@@ -8,6 +8,7 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
 import { FaHeadphones } from 'react-icons/fa6';
+import { RiRobotLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -18,6 +19,8 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useAIChatStore } from '@/store/aiChatStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
@@ -41,6 +44,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
+  const { setActiveSnippet, setAIChatVisible } = useAIChatStore();
+  const { setSideBarBookKey } = useSidebarStore();
 
   useNotesSync(bookKey);
 
@@ -512,6 +517,23 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
 
+  const handleAskAI = () => {
+    if (!selection || !selection.text || !bookData?.book) return;
+    setShowAnnotPopup(false);
+    handleDismissPopup();
+
+    // Set active snippet and open AI chat
+    setActiveSnippet({
+      text: selection.text,
+      type: 'highlight',
+      bookKey,
+      bookTitle: bookData.book.title,
+      bookAuthor: bookData.book.author,
+    });
+    setSideBarBookKey(bookKey);
+    setAIChatVisible(true);
+  };
+
   // Keyboard shortcuts: trigger actions only if there's an active selection and popup hidden
   useShortcuts(
     {
@@ -655,6 +677,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
     { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
+    {
+      tooltipText: _('Ask AI'),
+      Icon: RiRobotLine,
+      onClick: handleAskAI,
+    },
     {
       tooltipText: _('Speak'),
       Icon: FaHeadphones,
