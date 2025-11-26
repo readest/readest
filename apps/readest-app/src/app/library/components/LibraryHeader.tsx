@@ -105,6 +105,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
 
   if (!insets) return null;
 
+  const isMobile = appService?.isMobile || window.innerWidth <= 640;
+
   return (
     <div
       ref={headerRef}
@@ -138,12 +140,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge h-9 w-full pl-10 pr-10 sm:h-7',
+                'input rounded-badge h-9 w-full pl-10 pr-[30%] sm:h-7',
                 viewSettings?.isEink
                   ? 'border-1 border-base-content focus:border-base-content'
                   : 'bg-base-300/45 border-none',
                 'font-sans text-sm font-light',
-                'placeholder:text-base-content/50',
+                'placeholder:text-base-content/50 truncate',
                 'focus:outline-none focus:ring-0',
               )}
             />
@@ -167,14 +169,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               label={_('Import Books')}
               className={clsx(
                 'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
-                appService?.isMobile ? 'dropdown-end' : 'dropdown-center',
+                isMobile ? 'dropdown-end' : 'dropdown-center',
               )}
               buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu onImportBooks={onImportBooks} />
             </Dropdown>
-            {appService?.isMobile ? null : (
+            {isMobile ? null : (
               <button
                 onClick={onToggleSelectMode}
                 aria-label={_('Select Books')}

@@ -674,5 +674,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "ذخیره‌ی خودکار جلد کتاب برای صفحه‌ی قفل ناموفق بود: {{error}}",
   "Download from Cloud": "دانلود از فضای ابری",
   "Upload to Cloud": "آپلود به فضای ابری",
-  "Clear Custom Fonts": "پاک‌کردن فونت‌های سفارشی"
+  "Clear Custom Fonts": "پاک‌کردن فونت‌های سفارشی",
+  "Columns": "ستون‌ها"
 }

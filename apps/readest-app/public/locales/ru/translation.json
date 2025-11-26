@@ -682,5 +682,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Не удалось автоматически сохранить обложку книги для экрана блокировки: {{error}}",
   "Download from Cloud": "Скачать из облака",
   "Upload to Cloud": "Загрузить в облако",
-  "Clear Custom Fonts": "Очистить пользовательские шрифты"
+  "Clear Custom Fonts": "Очистить пользовательские шрифты",
+  "Columns": "Колонки"
 }

@@ -670,5 +670,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "잠금 화면용 책 표지 자동 저장 실패: {{error}}",
   "Download from Cloud": "클라우드에서 다운로드",
   "Upload to Cloud": "클라우드에 업로드",
-  "Clear Custom Fonts": "사용자 정의 글꼴 지우기"
+  "Clear Custom Fonts": "사용자 정의 글꼴 지우기",
+  "Columns": "열"
 }

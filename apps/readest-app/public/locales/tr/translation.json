@@ -674,5 +674,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Kitap kapağı kilit ekranı için otomatik kaydedilemedi: {{error}}",
   "Download from Cloud": "Buluttan İndir",
   "Upload to Cloud": "Buluta Yükle",
-  "Clear Custom Fonts": "Özel Yazı Tiplerini Temizle"
+  "Clear Custom Fonts": "Özel Yazı Tiplerini Temizle",
+  "Columns": "Sütunlar"
 }

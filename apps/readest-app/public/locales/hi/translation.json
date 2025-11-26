@@ -674,5 +674,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "लॉक स्क्रीन के लिए पुस्तक कवर स्वचालित रूप से सहेजने में विफल: {{error}}",
   "Download from Cloud": "क्लाउड से डाउनलोड करें",
   "Upload to Cloud": "क्लाउड पर अपलोड करें",
-  "Clear Custom Fonts": "कस्टम फ़ॉन्ट साफ़ करें"
+  "Clear Custom Fonts": "कस्टम फ़ॉन्ट साफ़ करें",
+  "Columns": "कॉलम"
 }

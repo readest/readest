@@ -674,5 +674,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Automatisch opslaan van boekomslag voor vergrendelscherm mislukt: {{error}}",
   "Download from Cloud": "Downloaden van Cloud",
   "Upload to Cloud": "Uploaden naar Cloud",
-  "Clear Custom Fonts": "Aangepaste Lettertypen Wissen"
+  "Clear Custom Fonts": "Aangepaste Lettertypen Wissen",
+  "Columns": "Kolommen"
 }
