@@ -11,6 +11,7 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { createBookFilter, createBookSorter } from '../utils/libraryUtils';
 import { formatTitle } from '@/utils/book';
@@ -73,6 +74,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
   const [coverFit, setCoverFit] = useState(searchParams?.get('cover') || settings.libraryCoverFit);
   const isImportingBook = useRef(false);
+  const iconSize15 = useResponsiveSize(15);
 
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
@@ -354,7 +356,17 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         ))}
         {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
-          <div className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}>
+          <div
+            className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}
+            style={
+              coverFit === 'fit' && viewMode === 'grid'
+                ? {
+                    display: 'flex',
+                    paddingBottom: `${iconSize15 + 24}px`,
+                  }
+                : undefined
+            }
+          >
             <button
               aria-label={_('Import Books')}
               className={clsx(
