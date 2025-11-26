@@ -670,5 +670,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Gagal menyimpan otomatis sampul buku untuk layar kunci: {{error}}",
   "Download from Cloud": "Unduh dari Cloud",
   "Upload to Cloud": "Unggah ke Cloud",
-  "Clear Custom Fonts": "Bersihkan Font Kustom"
+  "Clear Custom Fonts": "Bersihkan Font Kustom",
+  "Columns": "Kolom"
 }

@@ -89,6 +89,9 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const handleBlur = (e: React.FocusEvent) => {
+    if (process.env.NODE_ENV === 'development') {
+      return;
+    }
     if (!containerRef.current) return;
     if (!containerRef.current.contains(e.relatedTarget as Node)) {
       setIsFocused(false);

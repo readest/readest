@@ -322,6 +322,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
           viewMode === 'list' && 'flex flex-col',
         )}
+        style={{
+          gridTemplateColumns:
+            viewMode === 'grid' && !settings.libraryAutoColumns
+              ? `repeat(${settings.libraryColumns}, minmax(0, 1fr))`
+              : undefined,
+        }}
         role='main'
         aria-label={_('Bookshelf')}
       >

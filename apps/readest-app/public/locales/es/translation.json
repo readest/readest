@@ -220,7 +220,7 @@
   "No supported files found. Supported formats: {{formats}}": "No se encontraron archivos compatibles. Formatos compatibles: {{formats}}",
   "Drop to Import Books": "Soltar para importar libros",
   "Custom": "Personalizado",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Todo el mundo es un escenario,\nY todos los hombres y mujeres son meros actores;\nTienen sus salidas y sus entradas,\nY un hombre en su tiempo interpreta muchos papeles,\nSus actos son siete edades.\n\n— William Shakespeare",
+  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Todo el mundo es un escenario,\nY todos los hombres y mujeres son meros actores;\nTienen sus salidas y sus entradas,\nY un hombre en su tiempo interpreta muchos papeles,\nSus actos son siete edades.\n\n— William Shakespeare",
   "Custom Theme": "Tema personalizado",
   "Theme Name": "Nombre del tema",
   "Text Color": "Color del texto",
@@ -678,5 +678,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Error al guardar automáticamente la portada del libro para la pantalla de bloqueo: {{error}}",
   "Download from Cloud": "Descargar desde la nube",
   "Upload to Cloud": "Subir a la nube",
-  "Clear Custom Fonts": "Limpiar fuentes personalizadas"
+  "Clear Custom Fonts": "Limpiar fuentes personalizadas",
+  "Columns": "Columnas"
 }

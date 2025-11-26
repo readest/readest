@@ -3,9 +3,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
+import NumberInput from '@/components/settings/NumberInput';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
@@ -16,6 +18,7 @@ interface ViewMenuProps {
 const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
+  const iconSize = useResponsiveSize(16);
   const searchParams = useSearchParams();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
@@ -24,6 +27,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const sortBy = settings.librarySortBy;
   const isAscending = settings.librarySortAscending;
   const coverFit = settings.libraryCoverFit;
+  const autoColumns = settings.libraryAutoColumns;
+  const columns = settings.libraryColumns;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
@@ -66,6 +71,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
+  const handleToggleAutoColumns = () => {
+    const newValue = !settings.libraryAutoColumns;
+    saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
+  };
+
+  const handleSetColumns = (value: number) => {
+    saveSysSettings(envConfig, 'libraryColumns', value);
+    saveSysSettings(envConfig, 'libraryAutoColumns', false);
+  };
+
   const handleSetSortBy = (value: LibrarySortByType) => {
     saveSysSettings(envConfig, 'librarySortBy', value);
     setIsDropdownOpen?.(false);
@@ -98,6 +113,28 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
         />
       ))}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem label={_('Columns')} buttonClass='h-8' labelClass='text-sm sm:text-xs' disabled />
+      <MenuItem
+        label={_('Auto')}
+        buttonClass='h-10'
+        toggled={autoColumns}
+        disabled={viewMode === 'list'}
+        siblings={
+          <NumberInput
+            className='!h-10 !p-0 !pe-1 !ps-0'
+            iconSize={iconSize}
+            inputClassName={autoColumns ? 'opacity-50 !p-0 !w-6' : 'p-0 !w-6'}
+            label={''}
+            value={columns}
+            disabled={viewMode === 'list'}
+            onChange={handleSetColumns}
+            min={window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3}
+            max={window.innerWidth < 640 ? 4 : window.innerWidth < 1024 ? 6 : 12}
+          />
+        }
+        onClick={() => handleToggleAutoColumns()}
+      />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem
         label={_('Book Covers')}

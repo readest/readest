@@ -53,6 +53,7 @@ import {
   DEFAULT_TRANSLATOR_CONFIG,
   DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS,
   SETTINGS_FILENAME,
+  DEFAULT_MOBILE_SYSTEM_SETTINGS,
 } from './constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
@@ -195,6 +196,7 @@ export abstract class BaseAppService implements AppService {
   async loadSettings(): Promise<SystemSettings> {
     const defaultSettings: SystemSettings = {
       ...DEFAULT_SYSTEM_SETTINGS,
+      ...(this.isMobile ? DEFAULT_MOBILE_SYSTEM_SETTINGS : {}),
       version: SYSTEM_SETTINGS_VERSION,
       localBooksDir: await this.fs.getPrefix('Books'),
       koreaderSyncDeviceId: uuidv4(),
@@ -215,8 +217,16 @@ export abstract class BaseAppService implements AppService {
     if (this.isAppDataSandbox || version < SYSTEM_SETTINGS_VERSION) {
       settings.version = SYSTEM_SETTINGS_VERSION;
     }
-    settings = { ...DEFAULT_SYSTEM_SETTINGS, ...settings };
-    settings.globalReadSettings = { ...DEFAULT_READSETTINGS, ...settings.globalReadSettings };
+    settings = {
+      ...DEFAULT_SYSTEM_SETTINGS,
+      ...(this.isMobile ? DEFAULT_MOBILE_SYSTEM_SETTINGS : {}),
+      ...settings,
+    };
+    settings.globalReadSettings = {
+      ...DEFAULT_READSETTINGS,
+      ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
+      ...settings.globalReadSettings,
+    };
     settings.globalViewSettings = {
       ...this.getDefaultViewSettings(),
       ...settings.globalViewSettings,

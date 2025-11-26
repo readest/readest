@@ -72,12 +72,18 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   librarySortBy: 'updated',
   librarySortAscending: false,
   libraryCoverFit: 'crop',
+  libraryAutoColumns: true,
+  libraryColumns: 6,
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
+};
+
+export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
+  libraryColumns: 3,
 };
 
 export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {

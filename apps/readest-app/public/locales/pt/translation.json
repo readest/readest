@@ -678,5 +678,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "Falha ao salvar automaticamente a capa do livro para a tela de bloqueio: {{error}}",
   "Download from Cloud": "Baixar da Nuvem",
   "Upload to Cloud": "Enviar para a Nuvem",
-  "Clear Custom Fonts": "Limpar Fontes Personalizadas"
+  "Clear Custom Fonts": "Limpar Fontes Personalizadas",
+  "Columns": "Colunas"
 }

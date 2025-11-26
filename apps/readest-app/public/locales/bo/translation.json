@@ -670,5 +670,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "སྒྲོམ་སྒོར་དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།: {{error}}",
   "Download from Cloud": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་",
   "Upload to Cloud": "སྤྲིན་ལ་ཡར་སྤེལ་",
-  "Clear Custom Fonts": "རང་བཞིན་ཡིག་གཟུགས་སུབ་པ།"
+  "Clear Custom Fonts": "རང་བཞིན་ཡིག་གཟུགས་སུབ་པ།",
+  "Columns": "མཚན་ཉིད།"
 }

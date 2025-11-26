@@ -690,5 +690,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "فشل في الحفظ التلقائي لغلاف الكتاب لشاشة القفل: {{error}}",
   "Download from Cloud": "تحميل من السحابة",
   "Upload to Cloud": "رفع إلى السحابة",
-  "Clear Custom Fonts": "مسح الخطوط المخصصة"
+  "Clear Custom Fonts": "مسح الخطوط المخصصة",
+  "Columns": "الأعمدة"
 }

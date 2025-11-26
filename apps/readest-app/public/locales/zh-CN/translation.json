@@ -670,5 +670,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "自动保存锁屏书籍封面失败：{{error}}",
   "Download from Cloud": "从云端下载",
   "Upload to Cloud": "上传到云端",
-  "Clear Custom Fonts": "清除自定义字体"
+  "Clear Custom Fonts": "清除自定义字体",
+  "Columns": "列数"
 }

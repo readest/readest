@@ -670,5 +670,6 @@
   "Failed to auto-save book cover for lock screen: {{error}}": "ロック画面の本のカバーの自動保存に失敗しました：{{error}}",
   "Download from Cloud": "クラウドからダウンロード",
   "Upload to Cloud": "クラウドにアップロード",
-  "Clear Custom Fonts": "カスタムフォントをクリア"
+  "Clear Custom Fonts": "カスタムフォントをクリア",
+  "Columns": "列"
 }

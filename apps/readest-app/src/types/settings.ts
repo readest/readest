@@ -63,6 +63,8 @@ export interface SystemSettings {
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
+  libraryAutoColumns: boolean;
+  libraryColumns: number;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
 
