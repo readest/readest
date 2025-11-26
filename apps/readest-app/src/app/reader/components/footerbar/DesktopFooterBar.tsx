@@ -6,7 +6,9 @@ import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { getNavigationIcon, getNavigationLabel, getNavigationHandler } from './utils';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { FooterBarChildProps } from './types';
+import { formatProgress } from '@/utils/progress';
 import Button from '@/components/Button';
 
 const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
@@ -18,14 +20,23 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const { getBookData } = useBookDataStore();
   const view = getView(bookKey);
+  const bookData = getBookData(bookKey);
+  const progress = getProgress(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
+  const progressStyle = viewSettings?.progressStyle || 'percentage';
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
   );
+
+  const { section, pageinfo } = progress || {};
+  const template = progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
+  const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
+  const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, false, 'en', 0);
 
   const rangeInputRef = useRef<HTMLInputElement>(null);
 
@@ -99,7 +110,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
           aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
           className='mx-2 text-center text-sm'
         >
-          <span aria-hidden='true'>{`${Math.round(progressFraction * 100)}%`}</span>
+          <span aria-hidden='true'>{progressInfo}</span>
         </span>
       )}
       <input

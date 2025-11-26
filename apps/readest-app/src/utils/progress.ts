@@ -6,6 +6,7 @@ export function formatProgress(
   template: string,
   localize: boolean = false,
   language: string = 'en',
+  fractionDigits: number = 1,
 ): string {
   if (current !== undefined && total !== undefined && total > 0 && current >= 0) {
     const currentStr = localize ? localizeNumber(current + 1, language, true) : String(current + 1);
@@ -13,7 +14,7 @@ export function formatProgress(
     return template
       .replace('{current}', currentStr)
       .replace('{total}', totalStr)
-      .replace('{percent}', (((current + 1) / total) * 100).toFixed(1));
+      .replace('{percent}', (((current + 1) / total) * 100).toFixed(fractionDigits));
   } else {
     return '';
   }
