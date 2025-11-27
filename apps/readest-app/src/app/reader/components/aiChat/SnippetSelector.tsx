@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAIChatStore } from '@/store/aiChatStore';
 
 interface SnippetSelectorProps {
   onSelectPage: () => void;
@@ -15,25 +14,8 @@ const SnippetSelector: React.FC<SnippetSelectorProps> = ({
   isLoading = false,
 }) => {
   const _ = useTranslation();
-  const { activeSnippet } = useAIChatStore();
-
-  if (activeSnippet) {
-    return (
-      <div className='snippet-preview border-b-base-300 border-b bg-base-200 p-4'>
-        <div className='mb-2 text-xs font-semibold text-base-content/70'>
-          {activeSnippet.type === 'highlight'
-            ? _('Highlight')
-            : activeSnippet.type === 'page'
-              ? _('Current Page')
-              : _('Current Chapter')}
-        </div>
-        <div className='text-sm text-base-content/90 line-clamp-3'>{activeSnippet.text}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className='snippet-selector border-b-base-300 border-b bg-base-200 p-4'>
+    <div className='snippet-selector border-b-base-300 bg-base-200 border-b p-4'>
       <div className='mb-3 text-sm font-medium'>{_('Select content to discuss')}</div>
       <div className='flex flex-col gap-2'>
         <button

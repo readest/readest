@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { AIConversation, AIChatMessage, AIChatService } from '@/services/aiChatService';
 import { AppService } from '@/types/system';
+import { normalizeSnippetText } from '@/utils/snippet';
 
 export interface ActiveSnippet {
   text: string;
@@ -57,7 +58,10 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
   setAIChatVisible: (visible) => set({ isAIChatVisible: visible }),
   toggleAIChatPin: () => set((state) => ({ isAIChatPinned: !state.isAIChatPinned })),
   setAIChatWidth: (width) => set({ aiChatWidth: width }),
-  setActiveSnippet: (snippet) => set({ activeSnippet: snippet }),
+  setActiveSnippet: (snippet) =>
+    set({
+      activeSnippet: snippet ? { ...snippet, text: normalizeSnippetText(snippet.text) } : null,
+    }),
   setCurrentConversationId: (id) => set({ currentConversationId: id }),
   setConversations: (conversations) => set({ conversations }),
   setLoading: (loading) => set({ isLoading: loading }),
@@ -69,14 +73,21 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
     const conversation = conversations.find((c) => c.id === conversationId);
     if (!conversation) return;
 
-    conversation.messages.push(message);
-    conversation.updatedAt = Date.now();
+    const updatedConversation: AIConversation = {
+      ...conversation,
+      messages: [...conversation.messages, message],
+      updatedAt: Date.now(),
+    };
 
     await chatService.updateConversation(conversationId, {
-      messages: conversation.messages,
-      updatedAt: conversation.updatedAt,
+      messages: updatedConversation.messages,
+      updatedAt: updatedConversation.updatedAt,
     });
-    set({ conversations: [...conversations] });
+
+    const updatedConversations = conversations.map((c) =>
+      c.id === conversationId ? updatedConversation : c,
+    );
+    set({ conversations: updatedConversations });
   },
 
   createConversation: async (conversation) => {

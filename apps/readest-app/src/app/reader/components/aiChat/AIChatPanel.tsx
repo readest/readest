@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useAIChatStore } from '@/store/aiChatStore';
+import { ActiveSnippet, useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { DragKey, useDrag } from '@/hooks/useDrag';
@@ -73,6 +73,13 @@ const AIChatPanel: React.FC = () => {
   useEffect(() => {
     if (appService) loadConversations(appService);
   }, [appService, loadConversations]);
+  useEffect(() => {
+    if (activeSnippet && activeSnippet.bookKey !== sideBarBookKey) {
+      setActiveSnippet(null);
+      setCurrentConversationId(null);
+      setError(null);
+    }
+  }, [activeSnippet, sideBarBookKey, setActiveSnippet, setCurrentConversationId, setError]);
 
   useEffect(() => {
     updateAppTheme(isAIChatVisible ? 'base-200' : 'base-100');
@@ -120,14 +127,17 @@ const AIChatPanel: React.FC = () => {
           : await getCurrentChapterText(sideBarBookKey, view, progress!);
 
       if (text) {
-        setActiveSnippet({
+        const snippetPayload: ActiveSnippet = {
           text,
           type,
           bookKey: sideBarBookKey,
           bookTitle: bookData.book.title,
           bookAuthor: bookData.book.author,
-        });
-        await handleCreateConversation(text, type);
+        };
+        setActiveSnippet(snippetPayload);
+        await handleCreateConversation(snippetPayload);
+      } else {
+        setError(_(`No content found in the current ${type}.`));
       }
     } catch {
       setError(_(`Failed to extract ${type} text`));
@@ -136,19 +146,16 @@ const AIChatPanel: React.FC = () => {
     }
   };
 
-  const handleCreateConversation = async (
-    snippetText: string,
-    snippetType: 'page' | 'chapter',
-  ): Promise<string | null> => {
-    if (!sideBarBookKey || !activeSnippet || !appService) return null;
+  const handleCreateConversation = async (snippet: ActiveSnippet): Promise<string | null> => {
+    if (!appService) return null;
 
     const conversation: AIConversation = {
       id: uniqueId(),
-      bookKey: sideBarBookKey,
-      bookTitle: activeSnippet.bookTitle,
-      bookAuthor: activeSnippet.bookAuthor,
-      snippet: snippetText,
-      snippetType,
+      bookKey: snippet.bookKey,
+      bookTitle: snippet.bookTitle,
+      bookAuthor: snippet.bookAuthor,
+      snippet: snippet.text,
+      snippetType: snippet.type,
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -162,7 +169,7 @@ const AIChatPanel: React.FC = () => {
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversationId) return currentConversationId;
     if (!activeSnippet) return null;
-    return handleCreateConversation(activeSnippet.text, activeSnippet.type as 'page' | 'chapter');
+    return handleCreateConversation(activeSnippet);
   };
 
   const handleSendMessage = async (messageText: string) => {

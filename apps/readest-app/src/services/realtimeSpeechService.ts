@@ -17,6 +17,10 @@ interface TauriWebSocket {
 const WS_URL = 'wss://api.openai.com/v1/realtime?model=gpt-realtime';
 const SAMPLE_RATE = 24000;
 const MIN_AUDIO_SAMPLES = 100;
+const BASE_INPUT_THRESHOLD = 0.0005;
+const PLAYBACK_INPUT_THRESHOLD = 0.003;
+const ENERGY_SMOOTHING_ALPHA = 0.25;
+const CANCELLED_RESPONSE_TTL_MS = 2000;
 
 export class RealtimeSpeechService {
   private ws: WebSocket | TauriWebSocket | null = null;
@@ -26,7 +30,7 @@ export class RealtimeSpeechService {
   private mediaStream: MediaStream | null = null;
   private audioProcessor: ScriptProcessorNode | null = null;
   private audioSource: MediaStreamAudioSourceNode | null = null;
-  private audioQueue: Uint8Array[] = [];
+  private audioQueue: { data: Uint8Array; responseId: string | null }[] = [];
   private isPlayingAudio = false;
   private isRecording = false;
   private isConnected = false;
@@ -36,6 +40,12 @@ export class RealtimeSpeechService {
   private callbacks: RealtimeSpeechCallbacks;
   private currentAssistantTranscript = '';
   private tauriUnlisten: (() => void) | null = null;
+  private smoothedInputEnergy = 0;
+  private currentResponseId: string | null = null;
+  private cancelledResponseIds = new Map<string, number>();
+  private playbackCursor = 0;
+  private isSchedulingPlayback = false;
+  private activePlaybackSources = new Set<AudioBufferSourceNode>();
 
   constructor(apiKey: string, callbacks: RealtimeSpeechCallbacks) {
     this.apiKey = apiKey;
@@ -65,6 +75,7 @@ export class RealtimeSpeechService {
   }
 
   async connect(systemPrompt: string): Promise<void> {
+    // s
     if (this.isConnected || this.ws) {
       await this.disconnect();
     }
@@ -141,6 +152,7 @@ export class RealtimeSpeechService {
   }
 
   private handleMessage(data: any): void {
+    console.debug('RealtimeSpeechService handleMessage', data);
     switch (data.type) {
       case 'session.updated':
         this.sessionReady = true;
@@ -168,10 +180,12 @@ export class RealtimeSpeechService {
         break;
 
       case 'response.output_audio.delta':
-      case 'response.audio.delta':
         if (data.delta) {
-          this.handleAudioChunk(data.delta);
+          this.handleAudioChunk(data.delta, data.response_id || data.response?.id);
         }
+        break;
+      case 'response.audio.delta':
+        // Older event name; ignore to avoid duplicate playback streams
         break;
 
       case 'error':
@@ -182,15 +196,31 @@ export class RealtimeSpeechService {
     }
   }
 
-  private handleAudioChunk(base64Audio: string): void {
+  private handleAudioChunk(base64Audio: string, responseId?: string): void {
     try {
+      if (responseId) {
+        const cancelledAt = this.cancelledResponseIds.get(responseId);
+        if (cancelledAt && Date.now() - cancelledAt < CANCELLED_RESPONSE_TTL_MS) {
+          return;
+        } else if (cancelledAt) {
+          this.cancelledResponseIds.delete(responseId);
+        }
+        if (this.currentResponseId && this.currentResponseId !== responseId) {
+          this.cancelledResponseIds.set(this.currentResponseId, Date.now());
+          this.interruptPlayback(false);
+        }
+        this.currentResponseId = responseId;
+      }
+
       const binaryString = atob(base64Audio);
       const audioData = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         audioData[i] = binaryString.charCodeAt(i);
       }
-      this.audioQueue.push(audioData);
-      this.playAudioQueue();
+      this.audioQueue.push({ data: audioData, responseId: responseId ?? null });
+      this.schedulePlayback().catch((error) =>
+        console.error('Error scheduling audio playback:', error),
+      );
     } catch (error) {
       console.error('Error handling audio chunk:', error);
     }
@@ -206,63 +236,82 @@ export class RealtimeSpeechService {
     return this.playbackAudioContext;
   }
 
-  private async playAudioQueue(scheduledStartTime?: number): Promise<void> {
-    if (this.audioQueue.length === 0) {
-      this.isPlayingAudio = false;
-      return;
-    }
+  private async schedulePlayback(): Promise<void> {
+    if (this.isSchedulingPlayback) return;
+    if (this.audioQueue.length === 0) return;
 
-    if (this.isPlayingAudio && scheduledStartTime === undefined) {
-      return;
-    }
-
+    this.isSchedulingPlayback = true;
     try {
       const playbackContext = await this.getPlaybackAudioContext();
-      const audioData = this.audioQueue.shift();
-      if (!audioData) {
-        this.isPlayingAudio = false;
-        return;
+      if (this.playbackCursor < playbackContext.currentTime) {
+        this.playbackCursor = playbackContext.currentTime;
       }
 
-      const length = audioData.length / 2;
-      if (length === 0) {
-        this.playAudioQueue(scheduledStartTime);
-        return;
-      }
+      while (this.audioQueue.length > 0) {
+        const chunk = this.audioQueue.shift();
+        if (!chunk) continue;
+        if (chunk.responseId) {
+          const cancelledAt = this.cancelledResponseIds.get(chunk.responseId);
+          if (cancelledAt && Date.now() - cancelledAt < CANCELLED_RESPONSE_TTL_MS) {
+            continue;
+          } else if (cancelledAt) {
+            this.cancelledResponseIds.delete(chunk.responseId);
+          }
+        }
+        const audioData = chunk.data;
+        if (!audioData || audioData.length === 0) continue;
+        if (chunk.responseId) {
+          this.currentResponseId = chunk.responseId;
+        }
 
-      const audioBuffer = playbackContext.createBuffer(1, length, SAMPLE_RATE);
-      const channelData = audioBuffer.getChannelData(0);
-      const dataView = new DataView(audioData.buffer);
+        const length = audioData.length / 2;
+        if (length === 0) continue;
 
-      for (let i = 0; i < length; i++) {
-        channelData[i] = dataView.getInt16(i * 2, true) / 32768.0;
-      }
+        const audioBuffer = playbackContext.createBuffer(1, length, SAMPLE_RATE);
+        const channelData = audioBuffer.getChannelData(0);
+        const dataView = new DataView(audioData.buffer);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = dataView.getInt16(i * 2, true) / 32768.0;
+        }
 
-      const duration = length / SAMPLE_RATE;
-      const currentTime = playbackContext.currentTime;
-      const startTime =
-        scheduledStartTime !== undefined && scheduledStartTime > currentTime
-          ? scheduledStartTime
-          : currentTime;
+        const duration = length / SAMPLE_RATE;
+        const startTime = this.playbackCursor;
 
-      const source = playbackContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(playbackContext.destination);
-      this.isPlayingAudio = true;
-      source.start(startTime);
+        const source = playbackContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(playbackContext.destination);
 
-      if (this.audioQueue.length > 0) {
-        this.playAudioQueue(startTime + duration);
-      } else {
+        this.isPlayingAudio = true;
+        this.activePlaybackSources.add(source);
+
+        source.start(startTime);
+        const scheduledEndTime = startTime + duration;
         source.onended = () => {
-          this.isPlayingAudio = false;
+          this.activePlaybackSources.delete(source);
+          if (this.activePlaybackSources.size === 0) {
+            this.isPlayingAudio = false;
+            this.playbackCursor = playbackContext.currentTime;
+          }
         };
+
+        this.playbackCursor = scheduledEndTime;
       }
     } catch (error) {
       console.error('Error playing audio:', error);
       this.isPlayingAudio = false;
+      this.playbackCursor = this.playbackAudioContext?.currentTime ?? 0;
+      this.activePlaybackSources.clear();
       if (this.audioQueue.length > 0) {
-        this.playAudioQueue();
+        setTimeout(() => {
+          this.schedulePlayback().catch((err) => console.error('Error retrying playback:', err));
+        }, 0);
+      }
+    } finally {
+      this.isSchedulingPlayback = false;
+      if (this.audioQueue.length > 0 && !this.isSchedulingPlayback) {
+        this.schedulePlayback().catch((err) =>
+          console.error('Error scheduling remaining audio:', err),
+        );
       }
     }
   }
@@ -331,15 +380,25 @@ export class RealtimeSpeechService {
     if (!this.isRecording || !this.ws || !this.isConnected || !this.sessionReady) return;
     if (!audioData || audioData.length < MIN_AUDIO_SAMPLES) return;
 
-    // Check for non-silent audio
-    let hasAudio = false;
+    // Compute chunk energy (average absolute amplitude over ~170ms)
+    let sumAbs = 0;
     for (let i = 0; i < audioData.length; i++) {
-      if (Math.abs(audioData[i]!) > 0.0001) {
-        hasAudio = true;
-        break;
-      }
+      sumAbs += Math.abs(audioData[i]!);
     }
-    if (!hasAudio) return;
+    const chunkEnergy = sumAbs / audioData.length;
+
+    // Smooth energy to avoid reacting to isolated spikes
+    this.smoothedInputEnergy =
+      ENERGY_SMOOTHING_ALPHA * chunkEnergy +
+      (1 - ENERGY_SMOOTHING_ALPHA) * this.smoothedInputEnergy;
+    const effectiveEnergy = Math.max(chunkEnergy, this.smoothedInputEnergy);
+
+    const minEnergy = this.isPlayingAudio ? PLAYBACK_INPUT_THRESHOLD : BASE_INPUT_THRESHOLD;
+    if (effectiveEnergy <= minEnergy) return;
+
+    if (this.isPlayingAudio) {
+      this.interruptPlayback();
+    }
 
     // Convert Float32 to PCM16
     const pcm16 = new Int16Array(audioData.length);
@@ -415,6 +474,24 @@ export class RealtimeSpeechService {
     await this.cleanup();
   }
 
+  private interruptPlayback(addCurrentToCancelled = true): void {
+    if (addCurrentToCancelled && this.currentResponseId) {
+      this.cancelledResponseIds.set(this.currentResponseId, Date.now());
+    }
+    this.audioQueue = [];
+    this.isPlayingAudio = false;
+    this.currentResponseId = null;
+    this.isSchedulingPlayback = false;
+    this.playbackCursor = this.playbackAudioContext?.currentTime ?? 0;
+    this.activePlaybackSources.forEach((source) => {
+      try {
+        source.onended = null;
+        source.stop();
+      } catch {}
+    });
+    this.activePlaybackSources.clear();
+  }
+
   private async cleanup(): Promise<void> {
     if (this.audioSource) {
       this.audioSource.disconnect();
@@ -458,18 +535,17 @@ export class RealtimeSpeechService {
       this.mediaStream = null;
     }
 
+    this.interruptPlayback();
+    this.smoothedInputEnergy = 0;
     this.isConnected = false;
     this.isRecording = false;
-    this.isPlayingAudio = false;
     this.hasSentValidAudio = false;
     this.sessionReady = false;
-    this.audioQueue = [];
     this.currentAssistantTranscript = '';
   }
 
   private async send(data: { type: string; audio?: string }): Promise<void> {
     if (!this.ws) return;
-
     // Validate audio data before sending
     if (data.type === 'input_audio_buffer.append') {
       if (!this.sessionReady || !data.audio || data.audio.length < 100) return;

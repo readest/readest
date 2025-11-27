@@ -24,6 +24,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
+import { normalizeSnippetText } from '@/utils/snippet';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
@@ -524,7 +525,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     // Set active snippet and open AI chat
     setActiveSnippet({
-      text: selection.text,
+      text: normalizeSnippetText(selection.text),
       type: 'highlight',
       bookKey,
       bookTitle: bookData.book.title,

@@ -1,5 +1,6 @@
 import { FoliateView } from '@/types/view';
 import { BookProgress } from '@/types/book';
+import { normalizeSnippetText } from './snippet';
 
 function extractTextFromDoc(doc: Document): string {
   const clone = doc.cloneNode(true) as Document;
@@ -22,11 +23,13 @@ export async function getCurrentPageText(_bookKey: string, view: FoliateView): P
 
     if (visibleDocs.length === 0) return '';
 
-    return visibleDocs
+    const text = visibleDocs
       .map(({ doc }) => (doc ? extractTextFromDoc(doc) : ''))
       .filter(Boolean)
       .join('\n\n')
       .trim();
+
+    return text ? normalizeSnippetText(text) : '';
   } catch (error) {
     console.error('Error extracting current page text:', error);
     return '';
@@ -53,13 +56,16 @@ export async function getCurrentChapterText(
       });
 
       if (sectionDoc?.doc) {
-        return extractTextFromDoc(sectionDoc.doc);
+        const text = extractTextFromDoc(sectionDoc.doc);
+        return text ? normalizeSnippetText(text) : '';
       }
     }
 
     // Fallback: get text from current document
     const currentDoc = contents[0];
-    return currentDoc?.doc ? extractTextFromDoc(currentDoc.doc) : '';
+    if (!currentDoc?.doc) return '';
+    const fallbackText = extractTextFromDoc(currentDoc.doc);
+    return fallbackText ? normalizeSnippetText(fallbackText) : '';
   } catch (error) {
     console.error('Error extracting current chapter text:', error);
     return '';
