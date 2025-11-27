@@ -5,92 +5,73 @@ export interface OpenAIResponse {
   error?: string;
 }
 
-export class OpenAIService {
-  private apiKey: string;
+export function createSystemPrompt(bookTitle: string, bookAuthor: string, snippet: string): string {
+  return `User wants to talk about a book snippet coming from "${bookTitle}" by ${bookAuthor}: ${snippet}. And then the conversation.`;
+}
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+export async function sendChatMessage(
+  apiKey: string,
+  messages: AIChatMessage[],
+  systemPrompt: string,
+): Promise<OpenAIResponse> {
+  if (!apiKey) {
+    return {
+      content: '',
+      error: 'OpenAI API key is not configured. Please add your API key in Settings > AI.',
+    };
   }
 
-  async sendMessage(messages: AIChatMessage[], systemPrompt: string): Promise<OpenAIResponse> {
-    if (!this.apiKey) {
-      return {
-        content: '',
-        error: 'OpenAI API key is not configured. Please add your API key in Settings > AI.',
-      };
-    }
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.map((msg) => ({ role: msg.role, content: msg.content })),
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
+    });
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            ...messages.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-          return {
-            content: '',
-            error: 'Invalid API key. Please check your OpenAI API key in Settings > AI.',
-          };
-        }
-        if (response.status === 429) {
-          return {
-            content: '',
-            error: 'Rate limit exceeded. Please try again later.',
-          };
-        }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
         return {
           content: '',
-          error: errorData.error?.message || `API error: ${response.statusText}`,
+          error: 'Invalid API key. Please check your OpenAI API key in Settings > AI.',
         };
       }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-
-      if (!content) {
-        return {
-          content: '',
-          error: 'No response from OpenAI API.',
-        };
-      }
-
-      return { content };
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        return {
-          content: '',
-          error: 'Network error. Please check your internet connection.',
-        };
+      if (response.status === 429) {
+        return { content: '', error: 'Rate limit exceeded. Please try again later.' };
       }
       return {
         content: '',
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: errorData.error?.message || `API error: ${response.statusText}`,
       };
     }
-  }
 
-  createSystemPrompt(bookTitle: string, bookAuthor: string, snippet: string): string {
-    return `User wants to talk about a book snippet coming from "${bookTitle}" by ${bookAuthor}: ${snippet}. And then the conversation.`;
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+
+    if (!content) {
+      return { content: '', error: 'No response from OpenAI API.' };
+    }
+
+    return { content };
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return { content: '', error: 'Network error. Please check your internet connection.' };
+    }
+    return {
+      content: '',
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
   }
 }

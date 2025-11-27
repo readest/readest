@@ -1,6 +1,5 @@
 import React from 'react';
 import { RiRobotLine } from 'react-icons/ri';
-
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -22,9 +21,7 @@ const AIChatToggler: React.FC<AIChatTogglerProps> = ({ bookKey }) => {
   const iconSize16 = useResponsiveSize(16);
 
   const handleToggleSidebar = () => {
-    if (appService?.isMobile) {
-      setHoveredBookKey('');
-    }
+    if (appService?.isMobile) setHoveredBookKey('');
     if (sideBarBookKey === bookKey) {
       toggleAIChat();
     } else {
@@ -35,21 +32,11 @@ const AIChatToggler: React.FC<AIChatTogglerProps> = ({ bookKey }) => {
 
   return (
     <Button
-      icon={
-        <RiRobotLine
-          size={iconSize16}
-          className={
-            sideBarBookKey == bookKey && isAIChatVisible
-              ? 'text-base-content'
-              : 'text-base-content'
-          }
-        />
-      }
+      icon={<RiRobotLine size={iconSize16} className='text-base-content' />}
       onClick={handleToggleSidebar}
       label={_('AI Chat')}
-    ></Button>
+    />
   );
 };
 
 export default AIChatToggler;
-

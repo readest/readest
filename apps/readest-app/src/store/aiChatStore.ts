@@ -21,17 +21,9 @@ interface AIChatState {
   error: string | null;
   isSpeechModeActive: boolean;
   isRecording: boolean;
-  speechConversationId: string | null;
 
-  // Getters
-  getIsAIChatVisible: () => boolean;
-  getAIChatWidth: () => string;
-  getCurrentConversation: () => AIConversation | null;
-
-  // Actions
   toggleAIChat: () => void;
   setAIChatVisible: (visible: boolean) => void;
-  setAIChatPin: (pinned: boolean) => void;
   toggleAIChatPin: () => void;
   setAIChatWidth: (width: string) => void;
   setActiveSnippet: (snippet: ActiveSnippet | null) => void;
@@ -60,30 +52,19 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
   error: null,
   isSpeechModeActive: false,
   isRecording: false,
-  speechConversationId: null,
-
-  getIsAIChatVisible: () => get().isAIChatVisible,
-  getAIChatWidth: () => get().aiChatWidth,
-  getCurrentConversation: () => {
-    const { currentConversationId, conversations } = get();
-    if (!currentConversationId) return null;
-    return conversations.find((c) => c.id === currentConversationId) || null;
-  },
 
   toggleAIChat: () => set((state) => ({ isAIChatVisible: !state.isAIChatVisible })),
-  setAIChatVisible: (visible: boolean) => set({ isAIChatVisible: visible }),
-  setAIChatPin: (pinned: boolean) => set({ isAIChatPinned: pinned }),
+  setAIChatVisible: (visible) => set({ isAIChatVisible: visible }),
   toggleAIChatPin: () => set((state) => ({ isAIChatPinned: !state.isAIChatPinned })),
-  setAIChatWidth: (width: string) => set({ aiChatWidth: width }),
-  setActiveSnippet: (snippet: ActiveSnippet | null) => set({ activeSnippet: snippet }),
-  setCurrentConversationId: (id: string | null) => set({ currentConversationId: id }),
-  setConversations: (conversations: AIConversation[]) => set({ conversations }),
-  setLoading: (loading: boolean) => set({ isLoading: loading }),
-  setError: (error: string | null) => set({ error }),
+  setAIChatWidth: (width) => set({ aiChatWidth: width }),
+  setActiveSnippet: (snippet) => set({ activeSnippet: snippet }),
+  setCurrentConversationId: (id) => set({ currentConversationId: id }),
+  setConversations: (conversations) => set({ conversations }),
+  setLoading: (loading) => set({ isLoading: loading }),
+  setError: (error) => set({ error }),
 
-  addMessage: async (conversationId: string, message: AIChatMessage) => {
+  addMessage: async (conversationId, message) => {
     if (!chatService) return;
-
     const { conversations } = get();
     const conversation = conversations.find((c) => c.id === conversationId);
     if (!conversation) return;
@@ -95,47 +76,29 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
       messages: conversation.messages,
       updatedAt: conversation.updatedAt,
     });
-
     set({ conversations: [...conversations] });
   },
 
-  createConversation: async (conversation: AIConversation) => {
+  createConversation: async (conversation) => {
     if (!chatService) return;
-
     await chatService.addConversation(conversation);
     const conversations = await chatService.loadConversations();
-    set({
-      conversations,
-      currentConversationId: conversation.id,
-    });
+    set({ conversations, currentConversationId: conversation.id });
   },
 
-  loadConversations: async (appService: AppService) => {
-    if (!chatService) {
-      chatService = new AIChatService(appService);
-    }
+  loadConversations: async (appService) => {
+    if (!chatService) chatService = new AIChatService(appService);
     const conversations = await chatService.loadConversations();
     set({ conversations });
   },
 
-  startSpeechConversation: (conversationId: string) => {
-    set({
-      isSpeechModeActive: true,
-      speechConversationId: conversationId,
-      currentConversationId: conversationId,
-    });
+  startSpeechConversation: (conversationId) => {
+    set({ isSpeechModeActive: true, currentConversationId: conversationId });
   },
 
   stopSpeechConversation: () => {
-    set({
-      isSpeechModeActive: false,
-      isRecording: false,
-      speechConversationId: null,
-    });
+    set({ isSpeechModeActive: false, isRecording: false });
   },
 
-  setRecording: (recording: boolean) => {
-    set({ isRecording: recording });
-  },
+  setRecording: (recording) => set({ isRecording: recording }),
 }));
-

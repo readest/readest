@@ -40,7 +40,6 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  console.log('LAYOUT LOADED - VERSION 123');
   return (
     <html lang='en'>
       <head>

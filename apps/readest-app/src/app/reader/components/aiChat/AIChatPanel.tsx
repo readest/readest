@@ -11,7 +11,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { DragKey, useDrag } from '@/hooks/useDrag';
 import { Overlay } from '@/components/Overlay';
 import useShortcuts from '@/hooks/useShortcuts';
-import { OpenAIService } from '@/services/openaiService';
+import { createSystemPrompt, sendChatMessage } from '@/services/openaiService';
 import {
   AIChatService,
   AIConversation,
@@ -32,7 +32,6 @@ const MAX_AI_CHAT_WIDTH = 0.5;
 
 const AIChatPanel: React.FC = () => {
   const _ = useTranslation();
-  console.log('AIChatPanel@!!');
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -69,35 +68,23 @@ const AIChatPanel: React.FC = () => {
   const speechServiceRef = useRef<RealtimeSpeechService | null>(null);
 
   const currentConversation = conversations.find((c) => c.id === currentConversationId) || null;
+  const apiKey = settings.globalReadSettings.openaiApiKey;
 
   useEffect(() => {
-    if (appService) {
-      loadConversations(appService);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService]);
+    if (appService) loadConversations(appService);
+  }, [appService, loadConversations]);
 
   useEffect(() => {
-    if (isAIChatVisible) {
-      updateAppTheme('base-200');
-    } else {
-      updateAppTheme('base-100');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAIChatVisible]);
+    updateAppTheme(isAIChatVisible ? 'base-200' : 'base-100');
+  }, [isAIChatVisible, updateAppTheme]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentConversation?.messages]);
 
-  // Cleanup speech service on unmount
   useEffect(() => {
     return () => {
-      if (speechServiceRef.current) {
-        speechServiceRef.current.disconnect().catch(console.error);
-        speechServiceRef.current = null;
-      }
+      speechServiceRef.current?.disconnect().catch(() => {});
     };
   }, []);
 
@@ -107,18 +94,9 @@ const AIChatPanel: React.FC = () => {
       setActiveSnippet(null);
       setCurrentConversationId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAIChatPinned]);
+  }, [isAIChatPinned, setAIChatVisible, setActiveSnippet, setCurrentConversationId]);
 
   useShortcuts({ onEscape: handleHideAIChat }, [handleHideAIChat]);
-
-  const handleAIChatResize = (newWidth: string) => {
-    setAIChatWidth(newWidth);
-  };
-
-  const handleTogglePin = () => {
-    toggleAIChatPin();
-  };
 
   const handleClickOverlay = () => {
     setAIChatVisible(false);
@@ -126,58 +104,33 @@ const AIChatPanel: React.FC = () => {
     setCurrentConversationId(null);
   };
 
-  const handleSelectPage = async () => {
+  const handleSelectContent = async (type: 'page' | 'chapter') => {
     if (!sideBarBookKey || !appService) return;
     const view = getView(sideBarBookKey);
     const bookData = getBookData(sideBarBookKey);
-    if (!view || !bookData?.book) return;
+    const progress = type === 'chapter' ? getProgress(sideBarBookKey) : null;
+
+    if (!view || !bookData?.book || (type === 'chapter' && !progress)) return;
 
     setLoading(true);
     try {
-      const text = await getCurrentPageText(sideBarBookKey, view);
+      const text =
+        type === 'page'
+          ? await getCurrentPageText(sideBarBookKey, view)
+          : await getCurrentChapterText(sideBarBookKey, view, progress!);
+
       if (text) {
         setActiveSnippet({
           text,
-          type: 'page',
+          type,
           bookKey: sideBarBookKey,
           bookTitle: bookData.book.title,
           bookAuthor: bookData.book.author,
         });
-        // Create new conversation
-        await handleCreateConversation(text, 'page');
+        await handleCreateConversation(text, type);
       }
-    } catch (error) {
-      console.error('Error selecting page:', error);
-      setError(_('Failed to extract page text'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectChapter = async () => {
-    if (!sideBarBookKey || !appService) return;
-    const view = getView(sideBarBookKey);
-    const progress = getProgress(sideBarBookKey);
-    const bookData = getBookData(sideBarBookKey);
-    if (!view || !progress || !bookData?.book) return;
-
-    setLoading(true);
-    try {
-      const text = await getCurrentChapterText(sideBarBookKey, view, progress);
-      if (text) {
-        setActiveSnippet({
-          text,
-          type: 'chapter',
-          bookKey: sideBarBookKey,
-          bookTitle: bookData.book.title,
-          bookAuthor: bookData.book.author,
-        });
-        // Create new conversation
-        await handleCreateConversation(text, 'chapter');
-      }
-    } catch (error) {
-      console.error('Error selecting chapter:', error);
-      setError(_('Failed to extract chapter text'));
+    } catch {
+      setError(_(`Failed to extract ${type} text`));
     } finally {
       setLoading(false);
     }
@@ -206,26 +159,19 @@ const AIChatPanel: React.FC = () => {
     return conversation.id;
   };
 
+  const ensureConversation = async (): Promise<string | null> => {
+    if (currentConversationId) return currentConversationId;
+    if (!activeSnippet) return null;
+    return handleCreateConversation(activeSnippet.text, activeSnippet.type as 'page' | 'chapter');
+  };
+
   const handleSendMessage = async (messageText: string) => {
-    if (!settings.globalReadSettings.openaiApiKey || !activeSnippet) {
+    if (!apiKey || !activeSnippet) {
       setError(_('OpenAI API key is not configured. Please add your API key in Settings > AI.'));
       return;
     }
 
-    let conversationId = currentConversationId;
-    if (!conversationId && activeSnippet) {
-      // Create conversation if it doesn't exist
-      const newConversationId = await handleCreateConversation(
-        activeSnippet.text,
-        activeSnippet.type as 'page' | 'chapter',
-      );
-      if (!newConversationId) {
-        setError(_('Failed to create conversation. Please try again.'));
-        return;
-      }
-      conversationId = newConversationId;
-    }
-
+    const conversationId = await ensureConversation();
     if (!conversationId) {
       setError(_('Failed to create conversation. Please try again.'));
       return;
@@ -236,51 +182,46 @@ const AIChatPanel: React.FC = () => {
       content: messageText,
       timestamp: Date.now(),
     };
-
     await addMessage(conversationId, userMessage);
     setLoading(true);
     setError(null);
 
     try {
-      const openaiService = new OpenAIService(settings.globalReadSettings.openaiApiKey);
       let conversation = conversations.find((c) => c.id === conversationId);
       if (!conversation && appService) {
-        // Reload conversations if not found
         const chatService = new AIChatService(appService);
         const allConversations = await chatService.loadConversations();
         setConversations(allConversations);
         conversation = allConversations.find((c) => c.id === conversationId);
       }
+
       if (!conversation) {
         setError(_('Conversation not found. Please try again.'));
-        setLoading(false);
         return;
       }
 
-      const systemPrompt = openaiService.createSystemPrompt(
+      const systemPrompt = createSystemPrompt(
         activeSnippet.bookTitle,
         activeSnippet.bookAuthor,
         activeSnippet.text,
       );
-
-      const messages: AIChatMessageType[] = [...conversation.messages, userMessage];
-
-      const response = await openaiService.sendMessage(messages, systemPrompt);
+      const response = await sendChatMessage(
+        apiKey,
+        [...conversation.messages, userMessage],
+        systemPrompt,
+      );
 
       if (response.error) {
         setError(response.error);
         return;
       }
 
-      const assistantMessage: AIChatMessageType = {
+      await addMessage(conversationId, {
         role: 'assistant',
         content: response.content,
         timestamp: Date.now(),
-      };
-
-      await addMessage(conversationId, assistantMessage);
-    } catch (error) {
-      console.error('Error sending message:', error);
+      });
+    } catch {
       setError(_('Failed to send message. Please try again.'));
     } finally {
       setLoading(false);
@@ -290,114 +231,64 @@ const AIChatPanel: React.FC = () => {
   const onDragMove = (data: { clientX: number }) => {
     const widthFraction = 1 - data.clientX / window.innerWidth;
     const newWidth = Math.max(MIN_AI_CHAT_WIDTH, Math.min(MAX_AI_CHAT_WIDTH, widthFraction));
-    handleAIChatResize(`${Math.round(newWidth * 10000) / 100}%`);
+    setAIChatWidth(`${Math.round(newWidth * 10000) / 100}%`);
   };
 
   const onDragKeyDown = (data: { key: DragKey; step: number }) => {
     const currentWidth = parseFloat(aiChatWidth) / 100;
     let newWidth = currentWidth;
-
-    if (data.key === 'ArrowLeft') {
-      newWidth = Math.max(MIN_AI_CHAT_WIDTH, currentWidth + data.step);
-    } else if (data.key === 'ArrowRight') {
+    if (data.key === 'ArrowLeft') newWidth = Math.max(MIN_AI_CHAT_WIDTH, currentWidth + data.step);
+    else if (data.key === 'ArrowRight')
       newWidth = Math.min(MAX_AI_CHAT_WIDTH, currentWidth - data.step);
-    }
-    handleAIChatResize(`${Math.round(newWidth * 10000) / 100}%`);
+    setAIChatWidth(`${Math.round(newWidth * 10000) / 100}%`);
   };
 
   const { handleDragStart, handleDragKeyDown } = useDrag(onDragMove, onDragKeyDown);
 
   const handleStartSpeechConversation = async () => {
-    if (!settings.globalReadSettings.openaiApiKey || !activeSnippet) {
+    if (!apiKey || !activeSnippet) {
       setError(_('OpenAI API key is not configured. Please add your API key in Settings > AI.'));
       return;
     }
 
     try {
-      // Create or get conversation
-      let conversationId = currentConversationId;
-      if (!conversationId && activeSnippet) {
-        const newConversationId = await handleCreateConversation(
-          activeSnippet.text,
-          activeSnippet.type as 'page' | 'chapter',
-        );
-        if (!newConversationId) {
-          setError(_('Failed to create conversation. Please try again.'));
-          return;
-        }
-        conversationId = newConversationId;
-      }
-
+      const conversationId = await ensureConversation();
       if (!conversationId) {
         setError(_('Failed to create conversation. Please try again.'));
         return;
       }
 
-      // Create system prompt
-      const openaiService = new OpenAIService(settings.globalReadSettings.openaiApiKey);
-      const systemPrompt = openaiService.createSystemPrompt(
+      const systemPrompt = createSystemPrompt(
         activeSnippet.bookTitle,
         activeSnippet.bookAuthor,
         activeSnippet.text,
       );
-
-      // Initialize speech service
-      console.error('[AIChatPanel] *** Creating RealtimeSpeechService ***');
-      const service = new RealtimeSpeechService(settings.globalReadSettings.openaiApiKey, {
+      const service = new RealtimeSpeechService(apiKey, {
         onTranscript: async (text, role) => {
-          console.error('[AIChatPanel] onTranscript:', role, text.substring(0, 50));
-          if (conversationId) {
-            const message: AIChatMessageType = {
-              role,
-              content: text,
-              timestamp: Date.now(),
-            };
-            await addMessage(conversationId, message);
-          }
+          await addMessage(conversationId, { role, content: text, timestamp: Date.now() });
         },
-        onError: (errorMessage) => {
-          console.error('[AIChatPanel] *** onError callback ***: ', errorMessage);
-          setError(`[DEBUG v2] ${errorMessage}`);
-        },
+        onError: setError,
         onConnectionStateChange: (connected) => {
-          console.error('[AIChatPanel] onConnectionStateChange:', connected);
-          if (!connected) {
-            stopSpeechConversation();
-          }
+          if (!connected) stopSpeechConversation();
         },
-        onRecordingStateChange: (recording) => {
-          console.error('[AIChatPanel] onRecordingStateChange:', recording);
-          setRecording(recording);
-        },
+        onRecordingStateChange: setRecording,
       });
 
       speechServiceRef.current = service;
-
-      // Connect and start recording
-      console.error('[AIChatPanel] *** Calling service.connect ***');
       await service.connect(systemPrompt);
-      console.error('[AIChatPanel] *** Calling service.startRecording ***');
       await service.startRecording();
-      console.error('[AIChatPanel] *** Recording started successfully ***');
-
-      // Start speech conversation in store
       startSpeechConversation(conversationId);
       setError(null);
-    } catch (error) {
-      console.error('Error starting speech conversation:', error);
+    } catch {
       setError(_('Failed to start voice conversation. Please try again.'));
-      if (speechServiceRef.current) {
-        await speechServiceRef.current.disconnect();
-        speechServiceRef.current = null;
-      }
+      await speechServiceRef.current?.disconnect();
+      speechServiceRef.current = null;
     }
   };
 
   const handleStopSpeechConversation = async () => {
-    if (speechServiceRef.current) {
-      await speechServiceRef.current.disconnect();
-      speechServiceRef.current = null;
-    }
+    await speechServiceRef.current?.disconnect();
+    speechServiceRef.current = null;
     stopSpeechConversation();
   };
 
@@ -405,9 +296,7 @@ const AIChatPanel: React.FC = () => {
 
   const bookData = getBookData(sideBarBookKey);
   const viewSettings = getViewSettings(sideBarBookKey);
-  if (!bookData || !bookData.bookDoc) {
-    return null;
-  }
+  if (!bookData?.bookDoc) return null;
 
   return isAIChatVisible ? (
     <>
@@ -431,7 +320,7 @@ const AIChatPanel: React.FC = () => {
         aria-label={_('AI Chat')}
         dir='ltr'
         style={{
-          width: `${aiChatWidth}`,
+          width: aiChatWidth,
           maxWidth: `${MAX_AI_CHAT_WIDTH * 100}%`,
           position: isAIChatPinned ? 'relative' : 'absolute',
           paddingTop: `${safeAreaInsets?.top || 0}px`,
@@ -446,9 +335,7 @@ const AIChatPanel: React.FC = () => {
           }
         `}</style>
         <div
-          className={clsx(
-            'drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
-          )}
+          className='drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2'
           role='slider'
           tabIndex={0}
           aria-label={_('Resize AI Chat')}
@@ -462,13 +349,12 @@ const AIChatPanel: React.FC = () => {
           <AIChatHeader
             isPinned={isAIChatPinned}
             handleClose={() => setAIChatVisible(false)}
-            handleTogglePin={handleTogglePin}
+            handleTogglePin={toggleAIChatPin}
           />
         </div>
         <SnippetSelector
-          bookKey={sideBarBookKey}
-          onSelectPage={handleSelectPage}
-          onSelectChapter={handleSelectChapter}
+          onSelectPage={() => handleSelectContent('page')}
+          onSelectChapter={() => handleSelectContent('chapter')}
           isLoading={isLoading}
         />
         {error && (
@@ -512,7 +398,7 @@ const AIChatPanel: React.FC = () => {
           ) : activeSnippet ? (
             <SpeechConversationTrigger
               onClick={handleStartSpeechConversation}
-              disabled={!settings.globalReadSettings.openaiApiKey || isLoading}
+              disabled={!apiKey || isLoading}
             />
           ) : (
             <div className='text-base-content/70 flex h-full items-center justify-center'>
@@ -523,11 +409,9 @@ const AIChatPanel: React.FC = () => {
         {activeSnippet && !isSpeechModeActive && (
           <AIChatInput
             onSend={handleSendMessage}
-            disabled={isLoading || !settings.globalReadSettings.openaiApiKey}
+            disabled={isLoading || !apiKey}
             placeholder={
-              !settings.globalReadSettings.openaiApiKey
-                ? _('Configure OpenAI API key in Settings > AI')
-                : _('Type your message...')
+              !apiKey ? _('Configure OpenAI API key in Settings > AI') : _('Type your message...')
             }
           />
         )}

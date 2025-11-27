@@ -4,7 +4,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAIChatStore } from '@/store/aiChatStore';
 
 interface SnippetSelectorProps {
-  bookKey: string;
   onSelectPage: () => void;
   onSelectChapter: () => void;
   isLoading?: boolean;
@@ -28,9 +27,7 @@ const SnippetSelector: React.FC<SnippetSelectorProps> = ({
               ? _('Current Page')
               : _('Current Chapter')}
         </div>
-        <div className='text-sm text-base-content/90 line-clamp-3'>
-          {activeSnippet.text}
-        </div>
+        <div className='text-sm text-base-content/90 line-clamp-3'>{activeSnippet.text}</div>
       </div>
     );
   }
@@ -40,20 +37,14 @@ const SnippetSelector: React.FC<SnippetSelectorProps> = ({
       <div className='mb-3 text-sm font-medium'>{_('Select content to discuss')}</div>
       <div className='flex flex-col gap-2'>
         <button
-          className={clsx(
-            'btn btn-outline btn-sm',
-            isLoading && 'btn-disabled',
-          )}
+          className={clsx('btn btn-outline btn-sm', isLoading && 'btn-disabled')}
           onClick={onSelectPage}
           disabled={isLoading}
         >
           {_('Use Current Page')}
         </button>
         <button
-          className={clsx(
-            'btn btn-outline btn-sm',
-            isLoading && 'btn-disabled',
-          )}
+          className={clsx('btn btn-outline btn-sm', isLoading && 'btn-disabled')}
           onClick={onSelectChapter}
           disabled={isLoading}
         >
@@ -65,4 +56,3 @@ const SnippetSelector: React.FC<SnippetSelectorProps> = ({
 };
 
 export default SnippetSelector;
-
