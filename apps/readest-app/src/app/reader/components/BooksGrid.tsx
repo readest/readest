@@ -85,12 +85,14 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         const config = getConfig(bookKey);
         const progress = getProgress(bookKey);
         const viewSettings = getViewSettings(bookKey);
+        const viewState = getViewState(bookKey);
         const gridInsets = calcGridInsets(index, bookKeys.length);
         const { book, bookDoc } = bookData || {};
-        if (!book || !config || !bookDoc || !viewSettings) return null;
+        if (!book || !config || !bookDoc || !viewSettings || !viewState) return null;
 
         const { section, pageinfo, timeinfo, sectionLabel } = progress || {};
-        const isBookmarked = getViewState(bookKey)?.ribbonVisible;
+        const isBookmarked = viewState.ribbonVisible;
+        const viewerKey = viewState.viewerKey;
         const horizontalGapPercent = viewSettings.gapPercent;
         const viewInsets = getViewInsets(viewSettings);
         const contentInsets = {
@@ -123,6 +125,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               gridInsets={gridInsets}
             />
             <FoliateViewer
+              key={viewerKey}
               bookKey={bookKey}
               bookDoc={bookDoc}
               config={config}

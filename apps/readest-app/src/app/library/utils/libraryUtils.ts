@@ -4,7 +4,22 @@ import { formatAuthors, formatTitle } from '@/utils/book';
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
-  const searchTerm = new RegExp(queryTerm, 'i');
+  let searchTerm: RegExp;
+  try {
+    searchTerm = new RegExp(queryTerm, 'i');
+  } catch {
+    const lowerQuery = queryTerm.toLowerCase();
+    const title = formatTitle(item.title).toLowerCase();
+    const authors = formatAuthors(item.author).toLowerCase();
+
+    return (
+      title.includes(lowerQuery) ||
+      authors.includes(lowerQuery) ||
+      item.format.toLowerCase().includes(lowerQuery) ||
+      (item.groupName && item.groupName.toLowerCase().includes(lowerQuery)) ||
+      (item.metadata?.description && item.metadata.description.toLowerCase().includes(lowerQuery))
+    );
+  }
   const title = formatTitle(item.title);
   const authors = formatAuthors(item.author);
   return (
@@ -35,4 +50,13 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
     default:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
   }
+};
+
+export const getBreadcrumbs = (currentPath: string) => {
+  if (!currentPath) return [];
+  const segments = currentPath.split('/');
+  return segments.map((segment, index) => ({
+    name: segment,
+    path: segments.slice(0, index + 1).join('/'),
+  }));
 };

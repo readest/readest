@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
+import NumberInput from '@/components/settings/NumberInput';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
@@ -24,6 +25,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const sortBy = settings.librarySortBy;
   const isAscending = settings.librarySortAscending;
   const coverFit = settings.libraryCoverFit;
+  const autoColumns = settings.libraryAutoColumns;
+  const columns = settings.libraryColumns;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
@@ -48,8 +51,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Descending'), value: false },
   ];
 
-  const handleSetViewMode = (value: LibraryViewModeType) => {
-    saveSysSettings(envConfig, 'libraryViewMode', value);
+  const handleSetViewMode = async (value: LibraryViewModeType) => {
+    await saveSysSettings(envConfig, 'libraryViewMode', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -57,8 +60,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleCropCovers = (value: LibraryCoverFitType) => {
-    saveSysSettings(envConfig, 'libraryCoverFit', value);
+  const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
+    await saveSysSettings(envConfig, 'libraryCoverFit', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -66,8 +69,18 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortBy = (value: LibrarySortByType) => {
-    saveSysSettings(envConfig, 'librarySortBy', value);
+  const handleToggleAutoColumns = async () => {
+    const newValue = !settings.libraryAutoColumns;
+    await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
+  };
+
+  const handleSetColumns = async (value: number) => {
+    await saveSysSettings(envConfig, 'libraryColumns', value);
+    await saveSysSettings(envConfig, 'libraryAutoColumns', false);
+  };
+
+  const handleSetSortBy = async (value: LibrarySortByType) => {
+    await saveSysSettings(envConfig, 'librarySortBy', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -75,8 +88,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortAscending = (value: boolean) => {
-    saveSysSettings(envConfig, 'librarySortAscending', value);
+  const handleSetSortAscending = async (value: boolean) => {
+    await saveSysSettings(envConfig, 'librarySortAscending', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -85,7 +98,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   return (
-    <Menu className='view-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'>
+    <Menu
+      className='view-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
+      onCancel={() => setIsDropdownOpen?.(false)}
+    >
       {viewOptions.map((option) => (
         <MenuItem
           key={option.value}
@@ -95,6 +111,27 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
         />
       ))}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem label={_('Columns')} buttonClass='h-8' labelClass='text-sm sm:text-xs' disabled />
+      <MenuItem
+        label={_('Auto')}
+        buttonClass='h-10'
+        toggled={autoColumns}
+        disabled={viewMode === 'list'}
+        siblings={
+          <NumberInput
+            className='!h-10 !p-0 !pe-1 !ps-0'
+            inputClassName={`!p-0 text-center text-base sm:text-sm !w-10 !h-6 !pe-0 ${autoColumns ? 'opacity-50' : ''}`}
+            label={''}
+            value={columns}
+            disabled={viewMode === 'list'}
+            onChange={handleSetColumns}
+            min={window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3}
+            max={window.innerWidth < 640 ? 4 : window.innerWidth < 1024 ? 6 : 12}
+          />
+        }
+        onClick={() => handleToggleAutoColumns()}
+      />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem
         label={_('Book Covers')}

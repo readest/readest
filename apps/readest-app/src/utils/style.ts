@@ -100,7 +100,7 @@ const getFontStyles = (
     pre, code, kbd {
       font-family: var(--monospace);
     }
-    body *:not(pre):not(code):not(kbd):not(pre *):not(code *):not(kbd *) {
+    body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
   `;
@@ -121,6 +121,7 @@ const getColorStyles = (
       --theme-bg-color: ${bg};
       --theme-fg-color: ${fg};
       --theme-primary-color: ${primary};
+      --override-color: ${overrideColor};
       color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
     html, body {
@@ -133,7 +134,8 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
-    section, blockquote, div, p, font, h1, h2, h3, h4, h5, h6, li, span {
+    section, aside, blockquote, article, nav, header, footer, main, figure,
+    div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}
@@ -169,9 +171,12 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 90%, #000);` : ''}
       ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
     }
-    blockquote, table * {
+    blockquote {
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+    }
+    blockquote, table * {
+      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -200,6 +205,10 @@ const getColorStyles = (
 
 const getLayoutStyles = (
   overrideLayout: boolean,
+  marginTop: number,
+  marginRight: number,
+  marginBottom: number,
+  marginLeft: number,
   paragraphMargin: number,
   lineSpacing: number,
   wordSpacing: number,
@@ -215,6 +224,10 @@ const getLayoutStyles = (
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
     --default-text-align: ${justify ? 'justify' : 'start'};
+    --margin-top: ${marginTop}px;
+    --margin-right: ${marginRight}px;
+    --margin-bottom: ${marginBottom}px;
+    --margin-left: ${marginLeft}px;
     hanging-punctuation: allow-end last;
     orphans: 2;
     widows: 2;
@@ -226,10 +239,6 @@ const getLayoutStyles = (
   :is(hgroup, header) p {
       text-align: unset;
       hyphens: unset;
-  }
-  pre {
-      white-space: pre-wrap !important;
-      tab-size: 2;
   }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
@@ -291,7 +300,7 @@ const getLayoutStyles = (
   p[align="center"], dd[align="center"],
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center,
-  li p, ol p, ul p {
+  li p, ol p, ul p, td p {
     text-indent: initial !important;
   }
   p {
@@ -317,6 +326,10 @@ const getLayoutStyles = (
 
   pre {
     white-space: pre-wrap !important;
+  }
+
+  body:not([dir="rtl"]) {
+    overflow-x: clip;
   }
 
   .epubtype-footnote,
@@ -345,6 +358,19 @@ const getLayoutStyles = (
     color: unset;
   }
 
+  div:has(> img, > svg) {
+    max-width: 100% !important;
+  }
+
+  body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
+    max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  /* some epubs set insane inline-block for p */
+  p {
+    display: block;
+  }
+
   /* inline images without dimension */
   .ie6 img {
     width: unset;
@@ -366,12 +392,21 @@ const getLayoutStyles = (
     width: 0.8em;
     height: 0.8em;
   }
+  div:has(img.singlepage) {
+    position: relative;
+    width: auto;
+    height: auto;
+  }
 
   /* workaround for some badly designed epubs */
   div.left *, p.left * { text-align: left; }
   div.right *, p.right * { text-align: right; }
   div.center *, p.center * { text-align: center; }
   div.justify *, p.justify * { text-align: justify; }
+
+  .h5_mainbody {
+    overflow: unset !important;
+  }
 
   .nonindent, .noindent {
     text-indent: unset !important;
@@ -391,6 +426,8 @@ export const getFootnoteStyles = () => `
   }
 
   a:any-link {
+    cursor: default;
+    pointer-events: none;
     text-decoration: none;
     padding: unset;
     margin: unset;
@@ -495,6 +532,10 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   }
   const layoutStyles = getLayoutStyles(
     viewSettings.overrideLayout!,
+    viewSettings.marginTopPx,
+    viewSettings.marginRightPx,
+    viewSettings.marginBottomPx,
+    viewSettings.marginLeftPx,
     viewSettings.paragraphMargin!,
     viewSettings.lineHeight!,
     viewSettings.wordSpacing!,
@@ -567,6 +608,23 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     }
     return match;
   });
+
+  // Process duokan-bleed
+  css = css.replace(ruleRegex, (_, selector, block) => {
+    const directions = ['top', 'bottom', 'left', 'right'];
+    for (const dir of directions) {
+      const bleedRegex = new RegExp(`duokan-bleed\\s*:\\s*[^;]*${dir}[^;]*;`);
+      const marginRegex = new RegExp(`margin-${dir}\\s*:`);
+      if (bleedRegex.test(block) && !marginRegex.test(block)) {
+        block = block.replace(
+          /}$/,
+          ` margin-${dir}: calc(-1 * var(--margin-${dir})) !important; }`,
+        );
+      }
+    }
+    return selector + block;
+  });
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
@@ -603,6 +661,11 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
   document.body.classList.add(isDarkMode ? 'theme-dark' : 'theme-light');
 };
 
+export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
+  document.body.classList.remove('scroll-mode', 'paginated-mode');
+  document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
 export const applyImageStyle = (document: Document) => {
   document.querySelectorAll('img').forEach((img) => {
     const parent = img.parentNode;
@@ -610,8 +673,57 @@ export const applyImageStyle = (document: Document) => {
     const hasTextSiblings = Array.from(parent.childNodes).some(
       (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
     );
-    if (hasTextSiblings) {
+    const isInline = Array.from(parent.childNodes).every(
+      (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
+    );
+    if (hasTextSiblings && isInline) {
       img.classList.add('has-text-siblings');
+    }
+  });
+};
+
+export const applyTableStyle = (document: Document) => {
+  document.querySelectorAll('table').forEach((table) => {
+    const parent = table.parentNode;
+    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
+
+    // Calculate total width from td elements with width attribute or inline style
+    let totalTableWidth = 0;
+    const rows = table.querySelectorAll('tr');
+
+    // Check all rows and use the widest one
+    for (const row of rows) {
+      const cells = row.querySelectorAll('td, th');
+      let rowWidth = 0;
+
+      cells.forEach((cell) => {
+        const cellElement = cell as HTMLElement;
+
+        const widthAttr = cellElement.getAttribute('width');
+        const styleWidth = cellElement.style.width;
+        const widthStr = widthAttr || styleWidth;
+
+        if (widthStr) {
+          const widthValue = parseFloat(widthStr);
+          const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
+
+          if (widthUnit === 'px' || !widthUnit) {
+            rowWidth += widthValue + 6;
+          } else if (widthUnit === '%') {
+            rowWidth += (window.innerWidth * widthValue) / 100;
+          }
+        }
+      });
+
+      if (rowWidth > totalTableWidth) {
+        totalTableWidth = rowWidth;
+      }
+    }
+
+    if (totalTableWidth > 0) {
+      const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
+      table.style.transformOrigin = 'left top';
+      table.style.transform = `scale(${scale})`;
     }
   });
 };

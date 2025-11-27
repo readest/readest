@@ -60,6 +60,10 @@ foliate-view {
   border: none;
 }
 
+foliate-fxl {
+  overflow: scroll;
+}
+
 @keyframes scaleUpAndDown {
   0% {
     transform: scale(1);
@@ -399,6 +403,16 @@ foliate-view {
   box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
 }
 
+.window-button {
+  position: relative;
+}
+
+.window-button::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
 @keyframes spin-counterclockwise {
   from {
     transform: rotate(0deg);
@@ -412,6 +426,38 @@ foliate-view {
   animation: spin-counterclockwise 1s linear;
 }
 
+[data-eink="true"] [class*="shadow-"] {
+  box-shadow: none !important;
+}
+
+[data-eink="true"] [class*="text-base-content"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="text-red"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="text-neutral-content"] {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="placeholder"]::placeholder {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="bg-base-content"] {
+  background-color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] [class*="font-light"] {
+  font-weight: normal !important;
+}
+
+[data-eink="true"] [class*="text-bold-in-eink"] {
+  font-weight: bold;
+}
+
 .no-transitions * {
-    transition: none !important;
+  transition: none !important;
 }

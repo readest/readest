@@ -9,7 +9,13 @@ type ColorInputProps = {
   pickerPosition?: 'left' | 'center' | 'right';
 };
 
-const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange, compact = false, pickerPosition = 'left' }) => {
+const ColorInput: React.FC<ColorInputProps> = ({
+  label,
+  value,
+  onChange,
+  compact = false,
+  pickerPosition = 'left',
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -53,9 +59,9 @@ const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange, compact
         />
 
         {isOpen && (
-          <div 
-            ref={pickerRef} 
-            className={`absolute top-full z-50 mt-1 ${getPickerPositionClass()}`}
+          <div
+            ref={pickerRef}
+            className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
           >
             <SketchPicker
               width='200px'

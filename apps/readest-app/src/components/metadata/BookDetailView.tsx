@@ -105,12 +105,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               </Dropdown>
             )}
             {book.uploadedAt && onDownload && (
-              <button onClick={onDownload}>
+              <button onClick={onDownload} title={_('Download from Cloud')}>
                 <MdOutlineCloudDownload className='fill-base-content' />
               </button>
             )}
             {book.downloadedAt && onUpload && (
-              <button onClick={onUpload}>
+              <button onClick={onUpload} title={_('Upload to Cloud')}>
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>
             )}
@@ -164,7 +164,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         <div>
           <span className='font-bold'>{_('Description')}</span>
           <p
-            className='text-neutral-content prose prose-sm text-sm'
+            className='text-neutral-content prose prose-sm max-w-full text-sm'
             dangerouslySetInnerHTML={{
               __html: metadata.description || _('No description available'),
             }}

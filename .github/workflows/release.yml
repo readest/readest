@@ -17,7 +17,7 @@ jobs:
       release_version: ${{ steps.get-release-notes.outputs.release_version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: setup node
         uses: actions/setup-node@v6
       - name: get version
@@ -87,7 +87,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: create KOReader plugin zip
         env:
@@ -146,7 +146,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: initialize git submodules
         run: git submodule update --init --recursive
@@ -180,8 +180,8 @@ jobs:
       - name: install dependencies
         run: pnpm install
 
-      - name: copy pdfjs-dist to public directory
-        run: pnpm --filter @readest/readest-app setup-pdfjs
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable

@@ -32,6 +32,7 @@ import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
+import useShortcuts from '@/hooks/useShortcuts';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -49,6 +50,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const bookData = getBookData(bookKey)!;
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
@@ -78,6 +81,57 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
+
+  // Reposition popups on scroll without dismissing them
+  const repositionPopups = useCallback(() => {
+    if (!selection || !selection.text) return;
+    const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
+    if (!gridFrame) return;
+    const rect = gridFrame.getBoundingClientRect();
+    const triangPos = getPosition(selection.range, rect, popupPadding, viewSettings.vertical);
+    const annotPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      viewSettings.vertical ? annotPopupHeight : annotPopupWidth,
+      viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
+      popupPadding,
+    );
+    if (annotPopupPos.dir === 'down' && osPlatform === 'android') {
+      triangPos.point.y += androidSelectionHandlerHeight;
+      annotPopupPos.point.y += androidSelectionHandlerHeight;
+    }
+    const dictPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      dictPopupWidth,
+      dictPopupHeight,
+      popupPadding,
+    );
+    const transPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      transPopupWidth,
+      transPopupHeight,
+      popupPadding,
+    );
+    if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
+    setAnnotPopupPosition(annotPopupPos);
+    setDictPopupPosition(dictPopupPos);
+    setTranslatorPopupPosition(transPopupPos);
+    setTrianglePosition(triangPos);
+  }, [
+    selection,
+    bookKey,
+    osPlatform,
+    popupPadding,
+    viewSettings.vertical,
+    annotPopupHeight,
+    annotPopupWidth,
+    dictPopupWidth,
+    dictPopupHeight,
+    transPopupWidth,
+    transPopupHeight,
+  ]);
 
   useEffect(() => {
     setSelectedStyle(settings.globalReadSettings.highlightStyle);
@@ -120,28 +174,59 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     const handleTouchmove = () => {
       // Available on iOS, on Android not fired
-      // To make the popup not to follow the selection
+      // To make the popup not follow the selection while dragging
       setShowAnnotPopup(false);
     };
-    if (bookData.book?.format !== 'PDF') {
-      view?.renderer?.addEventListener('scroll', handleScroll);
-      detail.doc?.addEventListener('touchstart', handleTouchStart);
-      detail.doc?.addEventListener('touchmove', handleTouchmove);
-      detail.doc?.addEventListener('touchend', handleTouchEnd);
-      detail.doc?.addEventListener('pointerup', (ev: PointerEvent) =>
-        handlePointerup(doc, index, ev),
-      );
-      detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
 
-      // Disable the default context menu on mobile devices,
-      // although it should but doesn't work on iOS
-      if (appService?.isMobile) {
-        detail.doc?.addEventListener('contextmenu', (event: Event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          return false;
-        });
-      }
+    // Attach generic selection listeners for all formats, including PDF.
+    // For PDF we only guarantee Copy & Translate; highlight/annotate may be limited by CFI support.
+    view?.renderer?.addEventListener('scroll', handleScroll);
+    // Reposition popups on scroll to keep them in view
+    view?.renderer?.addEventListener('scroll', () => {
+      repositionPopups();
+    });
+    detail.doc?.addEventListener('touchstart', handleTouchStart);
+    detail.doc?.addEventListener('touchmove', handleTouchmove);
+    detail.doc?.addEventListener('touchend', handleTouchEnd);
+    detail.doc?.addEventListener('pointerup', (ev: PointerEvent) =>
+      handlePointerup(doc, index, ev),
+    );
+    detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
+
+    // For PDF selections, enable right-click context menu to directly open translator popup.
+    if (bookData.book?.format === 'PDF') {
+      detail.doc?.addEventListener('contextmenu', (e: Event) => {
+        try {
+          const sel = doc.getSelection?.();
+          if (sel && !sel.isCollapsed) {
+            const range = sel.getRangeAt(0);
+            const text = sel.toString();
+            if (text.trim()) {
+              setSelection({ key: bookKey, text, range, index });
+              // Show translation popup preferentially for PDF right-click
+              setShowAnnotPopup(false);
+              setShowDeepLPopup(true);
+              setShowWiktionaryPopup(false);
+              setShowWikipediaPopup(false);
+            }
+          }
+        } catch (err) {
+          console.warn('PDF context menu translation failed:', err);
+        }
+        // Prevent native menu to keep experience consistent
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      });
+    }
+
+    // Disable the default context menu on mobile devices (selection handles suffice)
+    if (appService?.isMobile) {
+      detail.doc?.addEventListener('contextmenu', (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      });
     }
   };
 
@@ -193,6 +278,29 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup(showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAnnotPopup, showWiktionaryPopup, showWikipediaPopup, showDeepLPopup]);
+
+  // When popups are visible, update their positions on scroll events
+  useEffect(() => {
+    const view = getView(bookKey);
+    if (!view?.renderer) return;
+    const onScroll = () => {
+      if (showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup) {
+        repositionPopups();
+      }
+    };
+    view.renderer.addEventListener('scroll', onScroll);
+    return () => {
+      view.renderer.removeEventListener('scroll', onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    bookKey,
+    showAnnotPopup,
+    showWiktionaryPopup,
+    showWikipediaPopup,
+    showDeepLPopup,
+    repositionPopups,
+  ]);
 
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
@@ -267,6 +375,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [progress]);
 
   const handleShowAnnotPopup = () => {
+    if (!appService?.isMobile) {
+      containerRef.current?.focus();
+    }
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowWiktionaryPopup(false);
@@ -315,13 +426,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-  const handleHighlight = (update = false) => {
+  const handleHighlight = (update = false, highlightStyle?: HighlightStyle) => {
     if (!selection || !selection.text) return;
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
-    const style = settings.globalReadSettings.highlightStyle;
+    const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
     const annotation: BookNote = {
       id: uniqueId(),
@@ -373,7 +484,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleSearch = () => {
     if (!selection || !selection.text) return;
-    setShowAnnotPopup(false);
+    handleDismissPopupAndSelection();
     eventDispatcher.dispatch('search', { term: selection.text });
   };
 
@@ -400,6 +511,40 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowAnnotPopup(false);
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
+
+  // Keyboard shortcuts: trigger actions only if there's an active selection and popup hidden
+  useShortcuts(
+    {
+      onHighlightSelection: () => {
+        handleHighlight(false, 'highlight');
+      },
+      onUnderlineSelection: () => {
+        handleHighlight(false, 'underline');
+      },
+      onAnnotateSelection: () => {
+        handleAnnotate();
+      },
+      onSearchSelection: () => {
+        handleSearch();
+      },
+      onCopySelection: () => {
+        handleCopy();
+      },
+      onTranslateSelection: () => {
+        handleTranslation();
+      },
+      onDictionarySelection: () => {
+        handleDictionary();
+      },
+      onWikipediaSelection: () => {
+        handleWikipedia();
+      },
+      onReadAloudSelection: () => {
+        handleSpeakText();
+      },
+    },
+    [selection?.text],
+  );
 
   const handleExportMarkdown = (event: CustomEvent) => {
     const { bookKey: exportBookKey } = event.detail;
@@ -493,17 +638,33 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
       Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
       onClick: handleHighlight,
+      disabled: bookData.book?.format === 'PDF',
     },
-    { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
-    { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
+    {
+      tooltipText: _('Annotate'),
+      Icon: BsPencilSquare,
+      onClick: handleAnnotate,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    {
+      tooltipText: _('Search'),
+      Icon: FiSearch,
+      onClick: handleSearch,
+      disabled: bookData.book?.format === 'PDF',
+    },
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
     { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
-    { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
+    {
+      tooltipText: _('Speak'),
+      Icon: FaHeadphones,
+      onClick: handleSpeakText,
+      disabled: bookData.book?.format === 'PDF',
+    },
   ];
 
   return (
-    <div>
+    <div ref={containerRef} role='toolbar' tabIndex={-1}>
       {showWiktionaryPopup && trianglePosition && dictPopupPosition && (
         <WiktionaryPopup
           word={selection?.text as string}
@@ -512,6 +673,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={dictPopupWidth}
           popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
       {showWikipediaPopup && trianglePosition && dictPopupPosition && (
@@ -522,6 +684,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={dictPopupWidth}
           popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
@@ -531,6 +694,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={transPopupWidth}
           popupHeight={transPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
       {showAnnotPopup && trianglePosition && annotPopupPosition && (
@@ -546,6 +710,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupWidth={annotPopupWidth}
           popupHeight={annotPopupHeight}
           onHighlight={handleHighlight}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
     </div>

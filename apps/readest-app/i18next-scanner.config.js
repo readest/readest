@@ -27,6 +27,7 @@ module.exports = {
       'hi',
       'id',
       'vi',
+      'ms',
       'ar',
       'th',
       'bo',

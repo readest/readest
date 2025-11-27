@@ -7,6 +7,7 @@ export const useEinkMode = () => {
     } else {
       document.body.classList.remove('no-transitions');
     }
+    document.documentElement.setAttribute('data-eink', isEink.toString());
   }, []);
 
   return { applyEinkMode };

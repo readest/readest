@@ -19,6 +19,7 @@ interface MenuItemProps {
   Icon?: React.ReactNode | IconType;
   iconClassName?: string;
   children?: React.ReactNode;
+  siblings?: React.ReactNode;
   onClick?: () => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
@@ -37,6 +38,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   Icon,
   iconClassName,
   children,
+  siblings,
   onClick,
   setIsDropdownOpen,
 }) => {
@@ -123,22 +125,27 @@ const MenuItem: React.FC<MenuItemProps> = ({
   }
 
   return (
-    <button
-      role={disabled ? 'none' : 'menuitem'}
-      aria-label={toggled !== undefined ? `${label} - ${toggled ? _('ON') : _('OFF')}` : undefined}
-      aria-live={toggled === undefined ? 'polite' : 'off'}
-      tabIndex={disabled ? -1 : 0}
-      className={clsx(
-        'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
-        disabled && 'btn-disabled text-gray-400',
-        buttonClass,
-      )}
-      title={tooltip ? tooltip : ''}
-      onClick={handleClick}
-      disabled={disabled}
-    >
-      {buttonContent}
-    </button>
+    <div className='flex'>
+      <button
+        role={disabled ? 'none' : 'menuitem'}
+        aria-label={
+          toggled !== undefined ? `${label} - ${toggled ? _('ON') : _('OFF')}` : undefined
+        }
+        aria-live={toggled === undefined ? 'polite' : 'off'}
+        tabIndex={disabled ? -1 : 0}
+        className={clsx(
+          'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
+          disabled && 'btn-disabled text-gray-400',
+          buttonClass,
+        )}
+        title={tooltip ? tooltip : ''}
+        onClick={handleClick}
+        disabled={disabled}
+      >
+        {buttonContent}
+      </button>
+      {siblings}
+    </div>
   );
 };
 

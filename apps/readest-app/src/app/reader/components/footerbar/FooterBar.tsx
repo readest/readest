@@ -1,10 +1,11 @@
 import clsx from 'clsx';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
@@ -23,13 +24,15 @@ const FooterBar: React.FC<FooterBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getConfig, setConfig } = useBookDataStore();
+  const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, setSideBarVisible } = useSidebarStore();
+  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
 
   const view = getView(bookKey);
   const config = getConfig(bookKey);
+  const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
@@ -147,6 +150,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
     ],
   );
 
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent | CustomEvent) => {
+      if (event instanceof CustomEvent) {
+        if (event.detail.keyName === 'Back') {
+          setHoveredBookKey('');
+          return true;
+        }
+      } else {
+        if (event.key === 'Escape') {
+          setHoveredBookKey('');
+        }
+        event.stopPropagation();
+      }
+      return false;
+    },
+    [setHoveredBookKey],
+  );
+
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+
+    if (hoveredBookKey) {
+      acquireBackKeyInterception();
+      eventDispatcher.onSync('native-key-down', handleKeyDown);
+    }
+    return () => {
+      if (hoveredBookKey) {
+        releaseBackKeyInterception();
+        eventDispatcher.offSync('native-key-down', handleKeyDown);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredBookKey]);
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -158,6 +195,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
     onSpeakText: handleSpeakText,
   };
 
+  const needHorizontalScroll =
+    (viewSettings?.vertical && viewSettings?.scrolled) ||
+    (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
+
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 z-10 flex w-full flex-col',
     'sm:h-[52px] sm:justify-center',
@@ -167,7 +208,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
+    needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
@@ -180,8 +221,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
         role='none'
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
-          viewSettings?.vertical && viewSettings?.scrolled && 'sm:!bottom-3 sm:!h-7',
+          needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
         )}
+        onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
       />

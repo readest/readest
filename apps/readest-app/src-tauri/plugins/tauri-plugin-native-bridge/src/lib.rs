@@ -56,6 +56,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_screen_brightness,
             commands::set_screen_brightness,
             commands::get_external_sdcard_path,
+            commands::open_external_url,
+            commands::select_directory,
             commands::request_manage_storage_permission,
         ])
         .setup(|app, api| {

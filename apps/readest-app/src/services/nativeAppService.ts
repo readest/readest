@@ -38,6 +38,7 @@ import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import { copyURIToPath } from '@/utils/bridge';
+import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
 import {
@@ -78,7 +79,8 @@ const getPathResolver = ({
   const getCustomBasePrefixSync = isCustomBaseDir
     ? (baseDir: BaseDir) => {
         return () => {
-          const leafDir = ['Settings', 'Data', 'Books', 'Fonts'].includes(baseDir) ? '' : baseDir;
+          const dataDirs = ['Settings', 'Data', 'Books', 'Fonts', 'Images'];
+          const leafDir = dataDirs.includes(baseDir) ? '' : baseDir;
           return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
         };
       }
@@ -222,8 +224,12 @@ export const nativeFileSystem: FileSystem = {
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    if (!(await this.exists(getDirPath(dstPath), base))) {
-      await this.createDir(getDirPath(dstPath), base, true);
+    try {
+      if (!(await this.exists(getDirPath(dstPath), base))) {
+        await this.createDir(getDirPath(dstPath), base, true);
+      }
+    } catch (error) {
+      console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
       const prefix = await this.getPrefix(base);
@@ -392,6 +398,33 @@ export class NativeAppService extends BaseAppService {
       });
     }
     await this.prepareBooksDir();
+    await this.runMigrations();
+  }
+
+  override async runMigrations() {
+    try {
+      const settings = await this.loadSettings();
+      const lastMigrationVersion = settings.migrationVersion || 0;
+
+      await super.runMigrations(lastMigrationVersion);
+
+      if (lastMigrationVersion < 20251029) {
+        try {
+          await this.migrate20251029();
+        } catch (error) {
+          console.error('Error migrating to version 20251029:', error);
+        }
+      }
+
+      if (lastMigrationVersion < this.CURRENT_MIGRATION_VERSION) {
+        await this.saveSettings({
+          ...settings,
+          migrationVersion: this.CURRENT_MIGRATION_VERSION,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to run migrations:', error);
+    }
   }
 
   override resolvePath(fp: string, base: BaseDir): ResolvedPath {
@@ -421,5 +454,17 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     return Array.isArray(selected) ? selected : selected ? [selected] : [];
+  }
+
+  async migrate20251029() {
+    console.log('Running migration 20251029 to update paths in Images dir...');
+    const rootPath = await this.resolveFilePath('..', 'Data');
+    const newDir = await this.fs.getPrefix('Images');
+    const oldDir = await join(rootPath, 'Images', 'Readest', 'Images');
+
+    await copyFiles(this, oldDir, newDir);
+
+    const dirToDelete = await join(rootPath, 'Images', 'Readest');
+    await this.deleteDir(dirToDelete, 'None', true);
   }
 }

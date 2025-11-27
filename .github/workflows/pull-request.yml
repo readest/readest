@@ -11,7 +11,7 @@ jobs:
     env:
       RUSTFLAGS: '-C target-cpu=skylake'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'true'
       - name: Install minimal stable with clippy and rustfmt
@@ -39,7 +39,7 @@ jobs:
           - platform: 'web'
           - platform: 'tauri'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'true'
 
@@ -66,7 +66,7 @@ jobs:
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-pdfjs
+          pnpm install && pnpm setup-vendors
 
       - name: run tests
         working-directory: apps/readest-app

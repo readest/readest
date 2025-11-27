@@ -1,14 +1,18 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef } from 'react';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 
 interface MenuProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  onCancel?: () => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ children, className, style }) => {
+const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useKeyDownActions({ onCancel, elementRef: menuRef });
 
   useEffect(() => {
     setTimeout(() => {

@@ -84,6 +84,13 @@ interface GetExternalSDCardPathResponse {
   error?: string;
 }
 
+interface SelectDirectoryResponse {
+  cancelled?: boolean;
+  uri?: string;
+  path?: string;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -188,5 +195,10 @@ export async function getExternalSDCardPath(): Promise<GetExternalSDCardPathResp
   const result = await invoke<GetExternalSDCardPathResponse>(
     'plugin:native-bridge|get_external_sdcard_path',
   );
+  return result;
+}
+
+export async function selectDirectory(): Promise<SelectDirectoryResponse> {
+  const result = await invoke<SelectDirectoryResponse>('plugin:native-bridge|select_directory');
   return result;
 }

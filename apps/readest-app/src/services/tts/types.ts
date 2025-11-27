@@ -1,7 +1,7 @@
 export type TTSGranularity = 'sentence' | 'word';
 
 export type TTSHighlightOptions = {
-  style: 'highlight' | 'underline' | 'squiggly' | 'outline';
+  style: 'highlight' | 'underline' | 'strikethrough' | 'squiggly' | 'outline';
   color: string;
 };
 

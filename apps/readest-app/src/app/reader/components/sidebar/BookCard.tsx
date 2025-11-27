@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
-import Image from 'next/image';
+import React, { useRef } from 'react';
 import { MdInfoOutline } from 'react-icons/md';
 import { Book } from '@/types/book';
 import { useThemeStore } from '@/store/themeStore';
@@ -8,12 +7,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { formatAuthors, formatTitle } from '@/utils/book';
+import BookCover from '@/components/BookCover';
 
 const BookCard = ({ book }: { book: Book }) => {
-  const { coverImageUrl, title, author, metadata } = book;
+  const { title, author } = book;
   const _ = useTranslation();
   const { isDarkMode } = useThemeStore();
   const iconSize18 = useResponsiveSize(18);
+  const bookCoverRef = useRef<HTMLDivElement | null>(null);
 
   const showBookDetails = () => {
     eventDispatcher.dispatchSync('show-book-details', book);
@@ -21,19 +22,21 @@ const BookCard = ({ book }: { book: Book }) => {
 
   return (
     <div className='flex h-20 w-full items-center'>
-      <Image
-        src={metadata?.coverImageUrl || coverImageUrl!}
-        alt={_('Book Cover')}
-        width={56}
-        height={80}
+      <div
+        ref={bookCoverRef}
         className={clsx(
-          'me-4 aspect-auto max-h-16 w-[15%] max-w-12 rounded-sm object-cover shadow-md',
+          'me-4 aspect-[28/41] max-h-16 w-[15%] max-w-12 overflow-hidden rounded-sm shadow-md',
           isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
         )}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
-      />
+      >
+        <BookCover
+          book={book}
+          mode='list'
+          coverFit='crop'
+          imageClassName='rounded-sm'
+          onImageError={() => (bookCoverRef.current!.style.display = 'none')}
+        />
+      </div>
       <div className='min-w-0 flex-1'>
         <h4 className='line-clamp-2 w-[90%] text-sm font-semibold'>{formatTitle(title)}</h4>
         <p className='truncate text-xs opacity-75'>{formatAuthors(author)}</p>

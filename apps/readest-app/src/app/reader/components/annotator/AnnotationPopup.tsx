@@ -10,7 +10,12 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 interface AnnotationPopupProps {
   dir: 'ltr' | 'rtl';
   isVertical: boolean;
-  buttons: Array<{ tooltipText: string; Icon: React.ElementType; onClick: () => void }>;
+  buttons: Array<{
+    tooltipText: string;
+    Icon: React.ElementType;
+    onClick: () => void;
+    disabled?: boolean;
+  }>;
   position: Position;
   trianglePosition: Position;
   highlightOptionsVisible: boolean;
@@ -19,6 +24,7 @@ interface AnnotationPopupProps {
   popupWidth: number;
   popupHeight: number;
   onHighlight: (update?: boolean) => void;
+  onDismiss?: () => void;
 }
 
 const OPTIONS_HEIGHT_PIX = 28;
@@ -36,6 +42,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   popupWidth,
   popupHeight,
   onHighlight,
+  onDismiss,
 }) => {
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
@@ -48,6 +55,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         trianglePosition={trianglePosition}
         className='selection-popup bg-gray-600 text-white'
         triangleClassName='text-gray-600'
+        onDismiss={onDismiss}
       >
         <div
           className={clsx(
@@ -65,6 +73,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               tooltipText={button.tooltipText}
               Icon={button.Icon}
               onClick={button.onClick}
+              disabled={button.disabled}
             />
           ))}
         </div>

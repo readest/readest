@@ -13,6 +13,7 @@ interface BookCoverProps {
   imageClassName?: string;
   showSpine?: boolean;
   isPreview?: boolean;
+  onImageError?: () => void;
 }
 
 const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
@@ -24,6 +25,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     className,
     imageClassName,
     isPreview,
+    onImageError,
   }) => {
     const coverRef = useRef<HTMLDivElement>(null);
     const [imageLoaded, setImageLoaded] = useState(false);
@@ -54,6 +56,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       setImageLoaded(false);
       setImageError(true);
       toggleImageVisibility(false);
+      onImageError?.();
     };
 
     useEffect(() => {

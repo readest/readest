@@ -191,7 +191,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     <div className='relative p-2'>
       <div className='bg-base-100 flex h-8 items-center rounded-lg'>
         <div className='pl-3'>
-          <FaSearch size={iconSize16} className='text-gray-500' />
+          <FaSearch size={iconSize16} className='text-base-content/50' />
         </div>
 
         <input
@@ -213,7 +213,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             )}
             menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg'
-            toggleButton={<FaChevronDown size={iconSize12} className='text-gray-500' />}
+            toggleButton={<FaChevronDown size={iconSize12} className='text-base-content/50' />}
           >
             <SearchOptions
               searchConfig={searchConfig}

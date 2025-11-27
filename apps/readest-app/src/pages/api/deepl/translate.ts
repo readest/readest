@@ -2,7 +2,11 @@ import crypto from 'crypto';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { getDailyTranslationPlanData, getUserPlan, validateUserAndToken } from '@/utils/access';
+import {
+  getDailyTranslationPlanData,
+  getSubscriptionPlan,
+  validateUserAndToken,
+} from '@/utils/access';
 import { ErrorCodes } from '@/services/translators';
 import { UsageStatsManager } from '@/utils/usage';
 
@@ -53,7 +57,7 @@ const updateDailyUsage = async (
   if (!userId || !token) return 0;
 
   try {
-    const userPlan = getUserPlan(token);
+    const userPlan = getSubscriptionPlan(token);
     const newUsage = await UsageStatsManager.trackUsage(
       userId,
       'translation_chars',
@@ -90,7 +94,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   let deeplApiUrl = deepFreeApiUrl;
   let userPlan = 'free';
   if (user && token) {
-    userPlan = getUserPlan(token);
+    userPlan = getSubscriptionPlan(token);
     if (userPlan === 'pro') deeplApiUrl = deeplProApiUrl;
   }
   const deeplAuthKey =

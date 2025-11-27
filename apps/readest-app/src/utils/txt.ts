@@ -55,6 +55,7 @@ export class TxtToEpubConverter {
 
     const fileContent = await txtFile.arrayBuffer();
     const detectedEncoding = this.detectEncoding(fileContent) || 'utf-8';
+    console.log(`Detected encoding: ${detectedEncoding}`);
     const decoder = new TextDecoder(detectedEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
@@ -145,7 +146,7 @@ export class TxtToEpubConverter {
         'Afterword',
       ];
 
-      const numberPattern = String.raw`(\d+|[IVXLCDM]+)`;
+      const numberPattern = String.raw`(\d+|(?:[IVXLCDM]{2,}|V|X|L|C|D|M)\b)`;
       const dotNumberPattern = String.raw`\.\d{1,4}`;
       const titlePattern = String.raw`[^\n]{0,50}`;
 
@@ -194,7 +195,7 @@ export class TxtToEpubConverter {
       }, []);
 
     const isGoodMatches = (matches: string[], maxLength: number = 100000): boolean => {
-      const meaningfulParts = matches.filter((part) => part.trim().length > 0);
+      const meaningfulParts = matches.filter((part) => part && part.trim().length > 0);
       if (meaningfulParts.length <= 1) return false;
 
       const hasLongParts = meaningfulParts.some((part) => part.length > maxLength);
@@ -384,6 +385,7 @@ export class TxtToEpubConverter {
     }
 
     const tocManifest = `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>`;
+    const styleManifest = `<item id="css" href="style.css" media-type="text/css"/>`;
 
     // Add content.opf file
     const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
@@ -397,6 +399,7 @@ export class TxtToEpubConverter {
         <manifest>
           ${manifest}
           ${tocManifest}
+          ${styleManifest}
         </manifest>
         <spine toc="ncx">
           ${spine}
@@ -413,6 +416,31 @@ export class TxtToEpubConverter {
       new TextDecoder('utf-8', { fatal: true }).decode(buffer);
       return 'utf-8';
     } catch {
+      const uint8Array = new Uint8Array(buffer);
+      // Try tolerant UTF-8 detection - check if most of it is valid UTF-8
+      let validBytes = 0;
+      let checkedBytes = 0;
+      const sampleSize = Math.min(uint8Array.length, 10000);
+
+      for (let i = 0; i < sampleSize; i++) {
+        try {
+          new TextDecoder('utf-8', { fatal: true }).decode(uint8Array.slice(i, i + 100));
+          validBytes += 100;
+          checkedBytes += 100;
+          i += 99;
+        } catch {
+          checkedBytes++;
+        }
+      }
+
+      const validPercentage = (validBytes / checkedBytes) * 100;
+      console.log(`UTF-8 validity: ${validPercentage.toFixed(2)}%`);
+
+      // If more than 80% is valid UTF-8, consider it UTF-8 with some corruption
+      if (validPercentage > 80) {
+        console.log('Treating as UTF-8 despite some invalid sequences');
+        return 'utf-8';
+      }
       // If UTF-8 decoding fails, try to detect other encodings
     }
 

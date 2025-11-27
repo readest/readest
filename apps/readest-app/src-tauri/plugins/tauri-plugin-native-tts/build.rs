@@ -11,10 +11,12 @@ const COMMANDS: &[&str] = &[
     "set_media_session_active",
     "update_media_session_state",
     "update_media_session_metadata",
+    "register_listener",
+    "remove_listener",
+    "check_permissions",
+    "request_permissions",
     "checkPermissions",
     "requestPermissions",
-    "registerListener",
-    "remove_listener",
 ];
 
 fn main() {

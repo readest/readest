@@ -31,7 +31,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { hoveredBookKey } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const topInset = Math.max(
     gridInsets.top,
@@ -56,8 +56,8 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0 h-[44px]',
           isScrolled && !isVertical && 'bg-base-100',
         )}
-        role='banner'
-        aria-label={section ? _('Section Title') + `: ${section}` : ''}
+        role='none'
+        onClick={() => setHoveredBookKey(bookKey)}
         style={
           isVertical
             ? {
@@ -76,7 +76,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         }
       >
         <span
-          aria-hidden='true'
+          aria-label={section ? _('Section Title') + `: ${section}` : ''}
           className={clsx(
             'text-center',
             isVertical ? '' : 'line-clamp-1',

@@ -15,26 +15,45 @@ import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
-import { Book, BookGroupType, BooksGroup } from '@/types/book';
+import { Book, BooksGroup } from '@/types/book';
+import { md5Fingerprint } from '@/utils/md5';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 
-export type BookshelfItem = Book | BooksGroup;
-
-export const generateBookshelfItems = (books: Book[]): (Book | BooksGroup)[] => {
+export const generateBookshelfItems = (
+  books: Book[],
+  parentGroupName: string,
+): (Book | BooksGroup)[] => {
   const groups: BooksGroup[] = books.reduce((acc: BooksGroup[], book: Book) => {
     if (book.deletedAt) return acc;
+    if (parentGroupName && (!book.groupName || !book.groupName.startsWith(parentGroupName)))
+      return acc;
     book.groupId = book.groupId || BOOK_UNGROUPED_ID;
     book.groupName = book.groupName || BOOK_UNGROUPED_NAME;
-    const groupIndex = acc.findIndex((group) => group.id === book.groupId);
-    const booksGroup = acc[acc.findIndex((group) => group.id === book.groupId)];
+    const slashIndex = book.groupName.indexOf('/', parentGroupName.length + 1);
+    const leafGroupName = book.groupName.substring(
+      parentGroupName ? parentGroupName.length + 1 : 0,
+      slashIndex > 0 ? slashIndex : undefined,
+    );
+    const fullGroupName = parentGroupName
+      ? `${parentGroupName}${leafGroupName ? `/${leafGroupName}` : ''}`
+      : leafGroupName;
+    const groupIndex = acc.findIndex(
+      (group) =>
+        group.name === fullGroupName ||
+        (parentGroupName && group.name === parentGroupName) ||
+        (leafGroupName === BOOK_UNGROUPED_NAME && group.name === BOOK_UNGROUPED_NAME),
+    );
+    const booksGroup = acc[groupIndex];
     if (booksGroup) {
       booksGroup.books.push(book);
-      booksGroup.updatedAt = Math.max(acc[groupIndex]!.updatedAt, book.updatedAt);
+      booksGroup.updatedAt = Math.max(booksGroup.updatedAt, book.updatedAt);
     } else {
+      let groupName = fullGroupName;
       acc.push({
-        id: book.groupId,
-        name: book.groupName,
+        id: groupName === parentGroupName ? BOOK_UNGROUPED_ID : md5Fingerprint(groupName),
+        name: groupName === parentGroupName ? BOOK_UNGROUPED_NAME : groupName,
+        displayName: leafGroupName,
         books: [book],
         updatedAt: book.updatedAt,
       });
@@ -45,32 +64,17 @@ export const generateBookshelfItems = (books: Book[]): (Book | BooksGroup)[] => 
     group.books.sort((a, b) => b.updatedAt - a.updatedAt);
   });
   const ungroupedBooks: Book[] =
-    groups.find((group) => group.name === BOOK_UNGROUPED_NAME)?.books || [];
-  const groupedBooks: BooksGroup[] = groups.filter((group) => group.name !== BOOK_UNGROUPED_NAME);
+    groups.find((group) => group.name === BOOK_UNGROUPED_NAME || group.name === parentGroupName)
+      ?.books || [];
+  const groupedBooks: BooksGroup[] = groups.filter(
+    (group) => group.name !== BOOK_UNGROUPED_NAME && group.name !== parentGroupName,
+  );
   return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
-};
-
-export const generateGroupsList = (items: Book[]): BookGroupType[] => {
-  return items
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .reduce((acc: BookGroupType[], item: Book) => {
-      if (item.deletedAt) return acc;
-      if (
-        item.groupId &&
-        item.groupName &&
-        item.groupId !== BOOK_UNGROUPED_ID &&
-        item.groupName !== BOOK_UNGROUPED_NAME &&
-        !acc.find((group) => group.id === item.groupId)
-      ) {
-        acc.push({ id: item.groupId, name: item.groupName });
-      }
-      return acc;
-    }, []) as BookGroupType[];
 };
 
 interface BookshelfItemProps {
   mode: LibraryViewModeType;
-  item: BookshelfItem;
+  item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
   isSelectMode: boolean;
   itemSelected: boolean;
@@ -328,7 +332,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       <div
         className={clsx(
           'visible-focus-inset-2 group',
-          mode === 'grid' && 'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-4 sm:px-4',
+          mode === 'grid' &&
+            'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-2 sm:px-4 sm:py-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'scale-95' : 'scale-100',

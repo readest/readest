@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.bilingify.readest</id>
+
+  <name>Readest</name>
+  <summary>Modern, feature-rich ebook reader</summary>
+
+  <description>
+    <p>Readest is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
+    <p>Built as a modern rewrite of Foliate, Readest leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
+    <p>Whether you're analyzing complex texts, immersing yourself in stories, or exploring new ideas, Readest adapts to your needs with powerful features for deep, thoughtful reading.</p>
+    <p>Key features include:</p>
+    <ul>
+      <li>Multi-format support for EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, and PDF (experimental).</li>
+      <li>Switch between scrolling or paginated reading modes for your preferred reading style.</li>
+      <li>Full-text search across the entire book to find relevant sections quickly.</li>
+      <li>Add highlights, bookmarks, and notes to enhance your reading experience and learning.</li>
+      <li>Easily excerpt text from books for detailed notes and analysis.</li>
+      <li>Instantly look up words and terms with built-in dictionary and Wikipedia integration.</li>
+      <li>Translate selected text instantly using DeepL for accurate translations.</li>
+      <li>Parallel Reading: Read two books or documents simultaneously in a split-screen view, perfect for researchers, language learners, and multitaskers.</li>
+      <li>Customize fonts, layout, theme mode, and theme colors for a personalized reading experience.</li>
+      <li>Cross-platform synchronization of book files, reading progress, notes, and bookmarks across all supported platforms.</li>
+      <li>Text-to-Speech functionality for a more accessible reading experience.</li>
+      <li>Organize, sort, and manage your entire ebook library with advanced library management tools.</li>
+      <li>One-click file association to quickly open files in Readest from your file browser.</li>
+    </ul>
+    <p>Readest also includes custom CSS support for personalized styling, and code syntax highlighting for technical books. The application is designed to honor the legacy of deep reading while embracing modern technology for an enhanced experience.</p>
+  </description>
+
+  <categories>
+    <category>Office</category>
+    <category>Education</category>
+    <category>Literature</category>
+  </categories>
+
+  <keywords>
+    <keyword translate="no">readest</keyword>
+    <keyword>ebook</keyword>
+    <keyword>reader</keyword>
+    <keyword>epub</keyword>
+    <keyword>mobi</keyword>
+    <keyword>pdf</keyword>
+    <keyword>reading</keyword>
+    <keyword>books</keyword>
+    <keyword>annotation</keyword>
+    <keyword>highlight</keyword>
+    <keyword>notes</keyword>
+    <keyword>translation</keyword>
+    <keyword>tts</keyword>
+    <keyword>sync</keyword>
+  </keywords>
+
+  <url type="homepage">https://github.com/readest/readest</url>
+  <url type="bugtracker">https://github.com/readest/readest/issues</url>
+  <url type="help">https://github.com/readest/readest/wiki</url>
+  <url type="donation">https://github.com/sponsors/readest</url>
+
+  <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
+
+  <releases>
+    <release version="0.9.93" date="2025-11-20">
+      <description>
+        <ul>
+          <li>Sync: Improved reliability for new accounts so your books sync correctly from the start</li>
+          <li>Library: Fixed an occasional issue where returning to the library could get stuck</li>
+          <li>Layout: Improved image display in paginated mode so images won't exceed the available height</li>
+          <li>TXT: Improved performance and stability when opening and parsing TXT files</li>
+          <li>Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.92" date="2025-11-18">
+      <description>
+        <ul>
+          <li>Bookshelf: Added support for nested groups to organize your books more flexibly</li>
+          <li>Sync: Improved reliability by automatically retrying failed book syncs</li>
+          <li>Sync: Improved token refresh so login sessions stay active longer on KOReader</li>
+          <li>E-Ink: Enhanced readability on the library page for E-Ink devices</li>
+          <li>UI: Storage capacity is now displayed with precise values in the user profile</li>
+          <li>Reader: You can now import files directly into the currently selected book group</li>
+          <li>Account: You can now update the email address linked to your Readest account</li>
+          <li>Footnotes: Added compatibility for more footnote formats</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.91" date="2025-10-29">
+      <description>
+        <ul>
+          <li>TTS: Fixed an issue where system voices were not working on Android</li>
+          <li>TTS: Added options to customize the highlight style during read-aloud</li>
+          <li>E-Ink: Disabled all shadows to improve display clarity</li>
+          <li>E-Ink: Added an option to save the last book cover on Android</li>
+          <li>Android: Fixed a crash that occurred when toggling 'Allow Script'</li>
+          <li>Android: Adjusted launcher icon size for better compatibility across devices</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.90" date="2025-10-28">
+      <description>
+        <ul>
+          <li>Sync: Faster library syncing and support for in-app one-time purchases of extra cloud storage</li>
+          <li>TTS: You can now choose the target language for read-aloud on translated books</li>
+          <li>Reader: New keyboard shortcuts make it easier to move between sections</li>
+          <li>Reader: Smoother scrolling for a more comfortable reading experience</li>
+          <li>Reader: Footnotes in definition lists are now fully supported</li>
+          <li>Reader: Improved search accuracy and display of search results</li>
+          <li>Reader: Clearer error messages when importing books</li>
+          <li>Reader: Improved safety when loading book content</li>
+          <li>Settings: You can now choose your own highlight colors</li>
+          <li>Settings: Added option to adjust screen brightness automatically</li>
+          <li>E-Ink: Better readability and clearer progress display with underlined links</li>
+          <li>Android: You can now store app data on an external SD card</li>
+          <li>iOS: Restores your last reading page if the app was closed in the background</li>
+          <li>Localization: Added Persian (Farsi) language support</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.88" date="2025-10-18">
+      <description>
+        <ul>
+          <li>TTS: Fixed issue where the read-aloud indicator disappeared too quickly</li>
+          <li>Layout: Overriding book layout no longer affects explicitly set text alignment</li>
+          <li>Reader: Added localized number display for reading progress in vertical layout</li>
+          <li>Reader: Enhanced swipe responsiveness for smoother page transitions</li>
+          <li>Settings: Added an option to disable animations when using E-Ink mode</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.87" date="2025-10-16">
+      <description>
+        <ul>
+          <li>Reader: Improved chapter detection with better chapter title recognition</li>
+          <li>Reader: Enhanced compatibility for parsing more footnote formats</li>
+          <li>Theme: Fixed auto theme switching in new reader windows</li>
+          <li>TTS: Improved scrolling accuracy to highlighted text during read-aloud</li>
+          <li>TTS: Fixed crash issues on certain Android systems</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.86" date="2025-10-14">
+      <description>
+        <ul>
+          <li>Reader: Added support for per-book background image customization</li>
+          <li>Reader: Added option to override book language metadata for improved hyphenation accuracy</li>
+          <li>Sync: Readest sync in KOReader can now be triggered using gesture controls</li>
+          <li>Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book</li>
+          <li>Sync: Improved upload performance with concurrent upload support</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.85" date="2025-10-14">
+      <description>
+        <ul>
+          <li>TTS: Improved media session control compatibility across more Android systems</li>
+          <li>TTS: Made the TTS icon less distracting during read-aloud mode</li>
+          <li>Settings: Added an option to adjust screen brightness while reading</li>
+          <li>Settings: Added support for custom background images</li>
+          <li>PDF: Fixed an issue where scrolling and panning didn’t work correctly when zoomed in</li>
+          <li>Android: Added adaptive launcher icon for better system integration</li>
+          <li>Reader: Added keyboard shortcuts for toggling bookmarks</li>
+          <li>Reader: Annotations are now rendered instantly when opening files</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.82" date="2025-10-01">
+      <description>
+        <ul>
+          <li>Sync: More reliable syncing between KOReader and Readest</li>
+          <li>MOBI: Fixed an issue where some footnotes in MOBI/AZW files were not parsed correctly</li>
+          <li>Storage: Added support for changing data location on Windows, macOS, Linux, and Android</li>
+          <li>Windows: Portable EXE version now stores all reading data in the directory of the executable</li>
+          <li>Android: Added background TTS support with media session controls</li>
+          <li>WebView: Extended compatibility down to version 92</li>
+          <li>Settings: Added global settings menu to the library page</li>
+          <li>iOS: Fixed an issue where custom theme colors were not handled correctly on older Safari versions</li>
+          <li>TTS: Added more languages for Edge TTS</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.81" date="2025-09-19">
+      <description>
+        <ul>
+          <li>TTS: Added desktop common media control support when TTS is playing</li>
+          <li>PDF: Disabled swipe-up gesture for toggling the action bar when zoomed in</li>
+          <li>Fonts: Fixed an issue where embedded fonts in ebooks were occasionally not applied</li>
+          <li>Reader: Fixed an issue where newly created highlights sometimes would not appear</li>
+          <li>Reader: Enabled scrolling in the menu when the menu is too long</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+
+  <developer id="com.readest">
+    <name>Readest Team</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Readest main interface with annotation</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/annotations.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading interface with dark mode</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/dark_mode.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading with TTS speak out</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/tts_speak_aloud.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Reading tools with Wikipedia integration</caption>
+      <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/wikipedia_vertical.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">moderate</content_attribute>
+  </content_rating>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#d97706</color>
+    <color type="primary" scheme_preference="dark">#b45309</color>
+  </branding>
+</component>

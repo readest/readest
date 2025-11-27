@@ -23,6 +23,7 @@ export interface ReadSettings {
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
   customHighlightColors: Record<HighlightColor, string>;
+  customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
 }
 
@@ -55,11 +56,15 @@ export interface SystemSettings {
   openLastBooks: boolean;
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;
+  savedBookCoverForLockScreen: string;
+  savedBookCoverForLockScreenPath: string;
   telemetryEnabled: boolean;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
+  libraryAutoColumns: boolean;
+  libraryColumns: number;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
 
@@ -68,6 +73,8 @@ export interface SystemSettings {
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;
   lastSyncedAtNotes: number;
+
+  migrationVersion: number;
 
   globalReadSettings: ReadSettings;
   globalViewSettings: ViewSettings;

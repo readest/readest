@@ -4,6 +4,7 @@ import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { getNavigationIcon, getNavigationLabel, getNavigationHandler } from './utils';
+import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ViewSettings } from '@/types/book';
 import { NavigationHandlers } from './types';
@@ -11,6 +12,7 @@ import Button from '@/components/Button';
 import Slider from '@/components/Slider';
 
 interface NavigationPanelProps {
+  bookKey: string;
   actionTab: string;
   progressFraction: number;
   progressValid: boolean;
@@ -21,6 +23,7 @@ interface NavigationPanelProps {
 }
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({
+  bookKey,
   actionTab,
   progressFraction,
   progressValid,
@@ -30,6 +33,8 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   sliderHeight,
 }) => {
   const _ = useTranslation();
+  const { getView } = useReaderStore();
+  const view = getView(bookKey);
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
@@ -99,7 +104,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           )}
           onClick={navigationHandlers.onGoBack}
           label={_('Go Back')}
-          disabled={!navigationHandlers.onGoBack}
+          disabled={!view?.history.canGoBack}
         />
         <Button
           icon={getNavigationIcon(
@@ -109,7 +114,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           )}
           onClick={navigationHandlers.onGoForward}
           label={_('Go Forward')}
-          disabled={!navigationHandlers.onGoForward}
+          disabled={!view?.history.canGoForward}
         />
         <Button
           icon={getNavigationIcon(viewSettings?.rtl, <RiArrowRightSLine />, <RiArrowLeftSLine />)}

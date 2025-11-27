@@ -1,5 +1,6 @@
 import {
   BookFont,
+  BookLanguage,
   BookLayout,
   BookSearchConfig,
   BookStyle,
@@ -71,12 +72,18 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   librarySortBy: 'updated',
   librarySortAscending: false,
   libraryCoverFit: 'crop',
+  libraryAutoColumns: true,
+  libraryColumns: 6,
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
+};
+
+export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
+  libraryColumns: 3,
 };
 
 export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
@@ -104,6 +111,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     squiggly: 'blue',
   },
   customHighlightColors: HIGHLIGHT_COLOR_HEX,
+  customTtsHighlightColors: [],
 };
 
 export const DEFAULT_MOBILE_READSETTINGS: Partial<ReadSettings> = {
@@ -151,6 +159,11 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   allowScript: false,
 };
 
+export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
+  replaceQuotationMarks: true,
+  convertChineseVariant: 'none',
+};
+
 export const DEFAULT_BOOK_STYLE: BookStyle = {
   zoomLevel: 100,
   paragraphMargin: 0.6,
@@ -194,7 +207,7 @@ export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
 };
 
 export const DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS: Partial<ViewSettings> = {
-  overrideColor: true,
+  overrideColor: false,
 };
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
@@ -211,6 +224,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  showMarginsOnScroll: false,
   progressStyle: 'fraction',
 };
 
@@ -219,6 +233,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsVoice: '',
   ttsLocation: '',
   showTTSBar: false,
+  ttsHighlightOptions: { style: 'highlight', color: '#808080' },
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
@@ -605,8 +620,6 @@ export const SYNC_NOTES_INTERVAL_SEC = 5;
 export const SYNC_BOOKS_INTERVAL_SEC = 5;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
 
-export const RELOAD_BEFORE_SAVED_TIMEOUT_MS = 300;
-
 export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
@@ -704,6 +717,7 @@ export const TRANSLATED_LANGS = {
   id: 'Indonesia',
   vi: 'Tiếng Việt',
   th: 'ภาษาไทย',
+  ms: 'Melayu',
   bo: 'བོད་སྐད་',
   bn: 'বাংলা',
   ta: 'தமிழ்',

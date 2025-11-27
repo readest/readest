@@ -108,8 +108,9 @@ export function useSync(bookKey?: string) {
       const result = await syncClient.pullChanges(since, type, bookId, metaHash);
       setSyncResult({ ...syncResult, [type]: result[type] });
       const records = result[type];
-      if (!records?.length) return;
-      const maxTime = computeMaxTimestamp(records);
+      if (since > 0 && !records?.length) return;
+      // For since = 0, we set lastSyncedAt to now if no records returned
+      const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
       setLastSyncedAt(maxTime);
 
       // due to closures in React hooks the settings might be stale

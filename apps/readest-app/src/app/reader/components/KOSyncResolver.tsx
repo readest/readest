@@ -33,7 +33,7 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
           onClick={onResolveWithLocal}
         >
           <span>{_('Local Progress')}</span>
-          <span className='text-xs font-normal normal-case text-gray-500'>
+          <span className='text-base-content/50 text-xs font-normal normal-case'>
             {details.local.preview}
           </span>
         </button>

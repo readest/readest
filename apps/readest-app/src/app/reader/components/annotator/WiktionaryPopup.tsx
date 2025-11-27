@@ -20,6 +20,7 @@ interface WiktionaryPopupProps {
   trianglePosition: Position;
   popupWidth: number;
   popupHeight: number;
+  onDismiss?: () => void;
 }
 
 const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
@@ -29,6 +30,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
   trianglePosition,
   popupWidth,
   popupHeight,
+  onDismiss,
 }) => {
   const [lookupWord, setLookupWord] = useState(word);
   const isLookingUp = useRef(false);
@@ -164,6 +166,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
         height={popupHeight}
         position={position}
         className='select-text'
+        onDismiss={onDismiss}
       >
         <div className='flex h-full flex-col'>
           <main className='flex-grow overflow-y-auto p-4 font-sans' />

@@ -80,7 +80,14 @@ export const navigateToLibrary = (
   router: ReturnType<typeof useRouter>,
   queryParams?: string,
   navOptions?: { scroll?: boolean },
+  navBack?: boolean,
 ) => {
+  const lastLibraryParams =
+    typeof window !== 'undefined' ? sessionStorage.getItem('lastLibraryParams') : null;
+  if (navBack && lastLibraryParams) {
+    queryParams = lastLibraryParams;
+  }
+
   router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
 };
 
@@ -93,4 +100,11 @@ export const navigateToResetPassword = (router: ReturnType<typeof useRouter>) =>
   const search = window.location.search;
   const currentPath = pathname !== '/auth' ? pathname + search : '/';
   router.push(`/auth/recovery?redirect=${encodeURIComponent(currentPath)}`);
+};
+
+export const navigateToUpdatePassword = (router: ReturnType<typeof useRouter>) => {
+  const pathname = window.location.pathname;
+  const search = window.location.search;
+  const currentPath = pathname !== '/auth' ? pathname + search : '/';
+  router.push(`/auth/update?redirect=${encodeURIComponent(currentPath)}`);
 };

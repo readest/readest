@@ -1,5 +1,6 @@
 'use client';
 
+import '@/utils/polyfill';
 import i18n from '@/i18n/i18n';
 import { useEffect } from 'react';
 import { IconContext } from 'react-icons';
@@ -59,8 +60,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           setScreenBrightness(brightness / 100);
         }
         applyBackgroundTexture(envConfig, globalViewSettings);
-        if (appService.isAndroidApp) {
-          applyEinkMode(globalViewSettings.isEink);
+        if (globalViewSettings.isEink) {
+          applyEinkMode(true);
         }
       });
     }

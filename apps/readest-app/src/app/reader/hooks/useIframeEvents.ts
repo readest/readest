@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
 import { ScrollSource } from './usePagination';
+import { eventDispatcher } from '@/utils/event';
 
 export const useMouseEvent = (
   bookKey: string,
@@ -19,7 +20,15 @@ export const useMouseEvent = (
           debounceScroll('mouse', -msg.data.deltaY, 0);
         }
         if (msg.data.type === 'iframe-wheel') {
-          debounceFlip(msg);
+          if (msg.data.ctrlKey) {
+            if (msg.data.deltaY > 0) {
+              eventDispatcher.dispatch('zoom-out', { factor: Math.abs(msg.data.deltaY) / 100 });
+            } else if (msg.data.deltaY < 0) {
+              eventDispatcher.dispatch('zoom-in', { factor: Math.abs(msg.data.deltaY) / 100 });
+            }
+          } else {
+            debounceFlip(msg);
+          }
         } else {
           handlePageFlip(msg);
         }
@@ -54,6 +63,7 @@ interface IframeTouch {
 }
 
 interface IframeTouchEvent {
+  timeStamp: number;
   targetTouches: IframeTouch[];
 }
 
@@ -65,22 +75,27 @@ export const useTouchEvent = (
   const { getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
 
-  let touchStart: IframeTouch | null = null;
-  let touchEnd: IframeTouch | null = null;
+  const touchStartRef = useRef<IframeTouch | null>(null);
+  const touchEndRef = useRef<IframeTouch | null>(null);
+  const touchStartTimeRef = useRef<number | null>(null);
+  const touchEndTimeRef = useRef<number | null>(null);
 
   const onTouchStart = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
-    touchEnd = null;
     const touch = e.targetTouches[0];
     if (!touch) return;
-    touchStart = touch;
+    touchStartRef.current = touch;
+    touchStartTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
   };
 
   const onTouchMove = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
-    if (!touchStart) return;
+    if (!touchStartRef.current) return;
     const touch = e.targetTouches[0];
     if (touch) {
-      touchEnd = touch;
+      touchEndRef.current = touch;
+      touchEndTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
     }
+    const { current: touchStart } = touchStartRef;
+    const { current: touchEnd } = touchEndRef;
     if (hoveredBookKey && touchEnd) {
       const viewSettings = getViewSettings(bookKey)!;
       const deltaY = touchEnd.screenY - touchStart.screenY;
@@ -96,19 +111,25 @@ export const useTouchEvent = (
   };
 
   const onTouchEnd = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
-    if (!touchStart) return;
+    if (!touchStartRef.current) return;
 
     const touch = e.targetTouches[0];
     if (touch) {
-      touchEnd = touch;
+      touchEndRef.current = touch;
+      touchEndTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
     }
 
     const windowWidth = window.innerWidth;
+    const { current: touchStart } = touchStartRef;
+    const { current: touchEnd } = touchEndRef;
+    const { current: touchStartTime } = touchStartTimeRef;
+    const { current: touchEndTime } = touchEndTimeRef;
     if (touchEnd) {
       const viewSettings = getViewSettings(bookKey)!;
       const bookData = getBookData(bookKey)!;
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
+      const deltaT = touchEndTime && touchStartTime ? touchEndTime - touchStartTime : 0;
       // also check for deltaX to prevent swipe page turn from triggering the toggle
       if (
         deltaY < -10 &&
@@ -133,6 +154,7 @@ export const useTouchEvent = (
           detail: {
             deltaX,
             deltaY,
+            deltaT,
             startX: touchStart.screenX,
             startY: touchStart.screenY,
             endX: touchEnd.screenX,
@@ -143,8 +165,8 @@ export const useTouchEvent = (
       handleContinuousScroll('touch', deltaY, 30);
     }
 
-    touchStart = null;
-    touchEnd = null;
+    touchStartRef.current = null;
+    touchEndRef.current = null;
   };
 
   const handleTouch = (msg: MessageEvent) => {

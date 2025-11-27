@@ -13,9 +13,8 @@ export function useTextTranslation(
   widthLineBreak = false,
   targetBlockClassName = 'translation-target-block',
 ) {
-  const { getViewSettings, getViewState, getProgress } = useReaderStore();
+  const { getViewSettings, getProgress } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
-  const viewState = getViewState(bookKey);
   const progress = getProgress(bookKey);
 
   const enabled = useRef(viewSettings?.translationEnabled);
@@ -55,7 +54,11 @@ export function useTextTranslation(
     const observer = createTranslationObserver();
     observerRef.current = observer;
     const nodes = walkTextNodes(view, ['pre', 'code', 'math']);
-    console.log('Observing text nodes for translation:', nodes.length);
+    console.log(
+      'Observing text nodes for translation:',
+      nodes.length,
+      // nodes.map((n) => n.textContent),
+    );
     allTextNodes.current = nodes;
     nodes.forEach((el) => observer.observe(el));
   };
@@ -250,8 +253,10 @@ export function useTextTranslation(
         console.log('Range not found in text nodes');
         return;
       }
-      const beforeStart = Math.max(0, startIndex - 2);
-      const afterEnd = Math.min(nodes.length - 1, endIndex + 2);
+      const beforeContext = 2;
+      const afterContext = 5;
+      const beforeStart = Math.max(0, startIndex - beforeContext);
+      const afterEnd = Math.min(nodes.length - 1, endIndex + afterContext);
       for (let i = beforeStart; i <= afterEnd; i++) {
         const node = nodes[i];
         if (node) {
@@ -263,12 +268,12 @@ export function useTextTranslation(
   );
 
   useEffect(() => {
-    if (enabled.current && viewState?.ttsEnabled && progress && document.hidden) {
+    if (enabled.current && progress) {
       const { range } = progress;
       translateInRange(range);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewState?.ttsEnabled, progress]);
+  }, [progress]);
 
   useEffect(() => {
     if (!viewSettings) return;

@@ -21,6 +21,7 @@ import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { saveSysSettings } from '@/helpers/settings';
+import { selectDirectory } from '@/utils/bridge';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -32,6 +33,7 @@ interface SettingsMenuProps {
 
 interface Permissions {
   postNotification: PermissionState;
+  manageStorage: PermissionState;
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
@@ -39,7 +41,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { userPlan, quotas } = useQuotaStats(true);
+  const { userProfilePlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -53,6 +55,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   );
   const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
   const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
+  const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
+    settings.savedBookCoverForLockScreen || '',
+  );
   const iconSize = useResponsiveSize(16);
 
   const showAboutReadest = () => {
@@ -169,6 +174,26 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setSettingsDialogOpen(true);
   };
 
+  const handleSetSavedBookCoverForLockScreen = async () => {
+    let permission = await invoke<Permissions>('plugin:native-bridge|checkPermissions');
+    if (permission.manageStorage !== 'granted') {
+      permission = await invoke<Permissions>(
+        'plugin:native-bridge|request_manage_storage_permission',
+      );
+    }
+    if (permission.manageStorage !== 'granted' && appService?.distChannel === 'readest') return;
+
+    const newValue = settings.savedBookCoverForLockScreen ? '' : 'default';
+    if (newValue) {
+      const response = await selectDirectory();
+      if (response.path) {
+        saveSysSettings(envConfig, 'savedBookCoverForLockScreenPath', response.path);
+      }
+    }
+    saveSysSettings(envConfig, 'savedBookCoverForLockScreen', newValue);
+    setSavedBookCoverForLockScreen(newValue);
+  };
+
   const toggleAlwaysInForeground = async () => {
     const requestAlwaysInForeground = !settings.alwaysInForeground;
 
@@ -196,12 +221,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         ? _('Light Mode')
         : _('Auto Mode');
 
+  const savedBookCoverPath = settings.savedBookCoverForLockScreenPath;
+  const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
+  const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
+
   return (
     <Menu
       className={clsx(
         'settings-menu dropdown-content no-triangle border-base-100',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
+      onCancel={() => setIsDropdownOpen?.(false)}
     >
       {user ? (
         <MenuItem
@@ -299,13 +329,26 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <MenuItem label={_('Advanced Settings')}>
             <ul className='flex flex-col'>
-              <MenuItem label={_('Change Data Location')} noIcon onClick={handleSetRootDir} />
+              <MenuItem
+                label={_('Change Data Location')}
+                noIcon={!appService?.isAndroidApp}
+                onClick={handleSetRootDir}
+              />
+              {appService?.isAndroidApp && (
+                <MenuItem
+                  label={_('Save Book Cover')}
+                  tooltip={_('Auto-save last book cover')}
+                  description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
+                  toggled={!!savedBookCoverForLockScreen}
+                  onClick={handleSetSavedBookCoverForLockScreen}
+                />
+              )}
             </ul>
           </MenuItem>
         </>
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {user && userPlan === 'free' && !appService?.isIOSApp && (
+      {user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

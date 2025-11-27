@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { useEnv } from '@/context/EnvContext';
@@ -30,7 +30,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor } = useThemeStore();
 
-  const [screenBrightnessValue, setScreenBrightnessValue] = React.useState(
+  const [screenBrightnessValue, setScreenBrightnessValue] = useState(
     settings.screenBrightness >= 0 ? settings.screenBrightness : SCREEN_BRIGHTNESS_LIMITS.DEFAULT,
   );
 

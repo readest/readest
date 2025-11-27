@@ -2,6 +2,7 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
+import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
@@ -9,7 +10,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
-import { navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
@@ -18,7 +19,6 @@ import { getFilename } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
-import { BOOK_ACCEPT_FORMATS } from '@/services/constants';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 
@@ -28,6 +28,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -49,7 +50,9 @@ import { AboutWindow } from '@/components/AboutWindow';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
+import { useDragDropImport } from './hooks/useDragDropImport';
 import { Toast } from '@/components/Toast';
+import { getBreadcrumbs } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
@@ -72,6 +75,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     syncProgress,
     updateBook,
     setLibrary,
+    getGroupId,
+    getGroupName,
+    refreshGroups,
     checkOpenWithBooks,
     checkLastOpenBooks,
     setCheckOpenWithBooks,
@@ -88,13 +94,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
     [key: string]: number | null;
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const isInitiating = useRef(false);
 
+  const iconSize = useResponsiveSize(18);
+  const viewSettings = settings.globalViewSettings;
   const demoBooks = useDemoBooks();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
   const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
@@ -106,6 +114,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenWithBooks();
 
   const { pullLibrary, pushLibrary } = useBooksSync();
+  const { isDragging } = useDragDropImport();
 
   usePullToRefresh(containerRef, pullLibrary);
   useScreenWakeLock(settings.screenWakeLock);
@@ -135,6 +144,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   });
 
   useEffect(() => {
+    sessionStorage.setItem('lastLibraryParams', searchParams?.toString() || '');
+  }, [searchParams]);
+
+  useEffect(() => {
     const doCheckAppUpdates = async () => {
       if (appService?.hasUpdater && settings.autoCheckUpdates) {
         await checkForAppUpdates(_);
@@ -154,64 +167,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       lockScreenOrientation({ orientation: 'auto' });
     }
   }, [appService]);
-
-  const handleDropedFiles = async (files: File[] | string[]) => {
-    if (files.length === 0) return;
-    const supportedFiles = files.filter((file) => {
-      let fileExt;
-      if (typeof file === 'string') {
-        fileExt = file.split('.').pop()?.toLowerCase();
-      } else {
-        fileExt = file.name.split('.').pop()?.toLowerCase();
-      }
-      return BOOK_ACCEPT_FORMATS.includes(`.${fileExt}`);
-    });
-    if (supportedFiles.length === 0) {
-      eventDispatcher.dispatch('toast', {
-        message: _('No supported files found. Supported formats: {{formats}}', {
-          formats: BOOK_ACCEPT_FORMATS,
-        }),
-        type: 'error',
-      });
-      return;
-    }
-
-    if (appService?.hasHaptics) {
-      impactFeedback('medium');
-    }
-
-    const selectedFiles = supportedFiles.map(
-      (file) =>
-        ({
-          file: typeof file === 'string' ? undefined : file,
-          path: typeof file === 'string' ? file : undefined,
-        }) as SelectedFile,
-    );
-    await importBooks(selectedFiles);
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement> | DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-
-    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      const files = Array.from(event.dataTransfer.files);
-      handleDropedFiles(files);
-    }
-  };
 
   const handleRefreshLibrary = useCallback(async () => {
     const appService = await envConfig.getAppService();
@@ -235,48 +190,30 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     return;
   }, [appService, handleRefreshLibrary]);
 
-  useEffect(() => {
-    const libraryPage = document.querySelector('.library-page');
-    if (!appService?.isMobile) {
-      libraryPage?.addEventListener('dragover', handleDragOver as unknown as EventListener);
-      libraryPage?.addEventListener('dragleave', handleDragLeave as unknown as EventListener);
-      libraryPage?.addEventListener('drop', handleDrop as unknown as EventListener);
-    }
-
-    if (isTauriAppPlatform()) {
-      const unlisten = getCurrentWebview().onDragDropEvent((event) => {
-        if (event.payload.type === 'over') {
-          setIsDragging(true);
-        } else if (event.payload.type === 'drop') {
-          setIsDragging(false);
-          handleDropedFiles(event.payload.paths);
-        } else {
-          setIsDragging(false);
-        }
-      });
-      return () => {
-        unlisten.then((fn) => fn());
-      };
-    }
-
-    return () => {
-      if (!appService?.isMobile) {
-        libraryPage?.removeEventListener('dragover', handleDragOver as unknown as EventListener);
-        libraryPage?.removeEventListener('dragleave', handleDragLeave as unknown as EventListener);
-        libraryPage?.removeEventListener('drop', handleDrop as unknown as EventListener);
-      }
-    };
+  const handleImportBookFiles = useCallback(async (event: CustomEvent) => {
+    const selectedFiles: SelectedFile[] = event.detail.files;
+    const groupId: string = event.detail.groupId || '';
+    if (selectedFiles.length === 0) return;
+    await importBooks(selectedFiles, groupId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageRef.current]);
+  }, []);
 
   useEffect(() => {
+    eventDispatcher.on('import-book-files', handleImportBookFiles);
+    return () => {
+      eventDispatcher.off('import-book-files', handleImportBookFiles);
+    };
+  }, [handleImportBookFiles]);
+
+  useEffect(() => {
+    refreshGroups();
     if (!libraryBooks.some((book) => !book.deletedAt)) {
       handleSetSelectMode(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [libraryBooks]);
 
-  const processOpenWithFiles = React.useCallback(
+  const processOpenWithFiles = useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
       const settings = await appService.loadSettings();
       const bookIds: string[] = [];
@@ -399,6 +336,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }, [searchParams]);
 
   useEffect(() => {
+    const group = searchParams?.get('group') || '';
+    const groupName = getGroupName(group);
+    setCurrentGroupPath(groupName);
+  }, [libraryBooks, searchParams, getGroupName]);
+
+  useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
       const newLibrary = [...libraryBooks];
       for (const book of demoBooks) {
@@ -415,7 +358,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoBooks, libraryLoaded]);
 
-  const importBooks = async (files: SelectedFile[]) => {
+  const importBooks = async (files: SelectedFile[], groupId?: string) => {
     setLoading(true);
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
@@ -433,6 +376,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       if (!file) return;
       try {
         const book = await appService?.importBook(file, library);
+        if (book && groupId) {
+          book.groupId = groupId;
+          book.groupName = getGroupName(groupId);
+          await updateBook(envConfig, book);
+        }
         if (user && book && !book.uploadedAt && settings.autoUpload) {
           console.log('Uploading book:', book.title);
           handleBookUpload(book, false);
@@ -634,7 +582,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     console.log('Importing books...');
     selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
-      importBooks(result.files);
+      const groupId = searchParams?.get('group') || '';
+      importBooks(result.files, groupId);
     });
   };
 
@@ -661,6 +610,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setShowDetailsBook(book);
   };
 
+  const handleNavigateToPath = (path: string | undefined) => {
+    const group = path ? getGroupId(path) : '';
+    const params = new URLSearchParams(searchParams?.toString());
+    if (group) {
+      params.set('group', group);
+    } else {
+      params.delete('group');
+    }
+    setIsSelectAll(false);
+    setIsSelectNone(false);
+    navigateToLibrary(router, `${params.toString()}`);
+    setTimeout(() => {
+      setCurrentGroupPath(path);
+    }, 300);
+  };
+
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
     return <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
@@ -672,12 +637,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ref={pageRef}
       aria-label='Your Library'
       className={clsx(
-        'library-page bg-base-200 text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        'library-page text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div
-        className='top-0 z-40 w-full'
+        className='relative top-0 z-40 w-full'
         role='banner'
         tabIndex={-1}
         aria-label={_('Library Header')}
@@ -690,10 +656,52 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
         />
+        <progress
+          className={clsx(
+            'progress progress-success absolute bottom-0 left-0 right-0 h-1 translate-y-[2px] transition-opacity duration-200 sm:translate-y-[4px]',
+            isSyncing ? 'opacity-100' : 'opacity-0',
+          )}
+          value={syncProgress * 100}
+          max='100'
+        />
       </div>
       {(loading || isSyncing) && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
+        </div>
+      )}
+      {currentGroupPath && (
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            currentGroupPath ? 'opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className='flex flex-wrap items-center gap-y-1 px-4 text-base'>
+            <button
+              onClick={() => handleNavigateToPath(undefined)}
+              className='hover:bg-base-300 text-base-content/85 rounded px-2 py-1'
+            >
+              {_('All')}
+            </button>
+            {getBreadcrumbs(currentGroupPath).map((crumb, index, array) => {
+              const isLast = index === array.length - 1;
+              return (
+                <React.Fragment key={index}>
+                  <MdChevronRight size={iconSize} className='text-neutral-content' />
+                  {isLast ? (
+                    <span className='truncate rounded px-2 py-1'>{crumb.name}</span>
+                  ) : (
+                    <button
+                      onClick={() => handleNavigateToPath(crumb.path)}
+                      className='hover:bg-base-300 text-base-content/85 truncate rounded px-2 py-1'
+                    >
+                      {crumb.name}
+                    </button>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       )}
       {showBookshelf &&
@@ -722,14 +730,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 paddingLeft: `${insets.left}px`,
               }}
             >
-              <progress
-                className={clsx(
-                  'progress progress-success absolute left-0 right-0 top-[2px] z-30 h-1 transition-opacity duration-200',
-                  isSyncing ? 'opacity-100' : 'opacity-0',
-                )}
-                value={syncProgress * 100}
-                max='100'
-              ></progress>
               <DropIndicator />
               <Bookshelf
                 libraryBooks={libraryBooks}
