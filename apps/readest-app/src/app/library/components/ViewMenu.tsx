@@ -51,8 +51,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Descending'), value: false },
   ];
 
-  const handleSetViewMode = (value: LibraryViewModeType) => {
-    saveSysSettings(envConfig, 'libraryViewMode', value);
+  const handleSetViewMode = async (value: LibraryViewModeType) => {
+    await saveSysSettings(envConfig, 'libraryViewMode', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -60,8 +60,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleCropCovers = (value: LibraryCoverFitType) => {
-    saveSysSettings(envConfig, 'libraryCoverFit', value);
+  const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
+    await saveSysSettings(envConfig, 'libraryCoverFit', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -69,18 +69,18 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleAutoColumns = () => {
+  const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
-    saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
+    await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
   };
 
-  const handleSetColumns = (value: number) => {
-    saveSysSettings(envConfig, 'libraryColumns', value);
-    saveSysSettings(envConfig, 'libraryAutoColumns', false);
+  const handleSetColumns = async (value: number) => {
+    await saveSysSettings(envConfig, 'libraryColumns', value);
+    await saveSysSettings(envConfig, 'libraryAutoColumns', false);
   };
 
-  const handleSetSortBy = (value: LibrarySortByType) => {
-    saveSysSettings(envConfig, 'librarySortBy', value);
+  const handleSetSortBy = async (value: LibrarySortByType) => {
+    await saveSysSettings(envConfig, 'librarySortBy', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
@@ -88,8 +88,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortAscending = (value: boolean) => {
-    saveSysSettings(envConfig, 'librarySortAscending', value);
+  const handleSetSortAscending = async (value: boolean) => {
+    await saveSysSettings(envConfig, 'librarySortAscending', value);
     setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
