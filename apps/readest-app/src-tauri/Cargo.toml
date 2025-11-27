@@ -69,3 +69,22 @@ tauri-plugin-cli = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_UI_Shell",
+] }
+windows-core = "0.62"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+zip = { version = "2.1", default-features = false, features = ["deflate"] }
+anyhow = "1.0"
+base64 = "0.22"
+md5 = "0.8"
+directories-next = "2.0"
+once_cell = "1.19"

@@ -49,10 +49,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [],
+    "resources": {
+      "../../../target/release/windows_thumbnail.dll": "readest_thumbnail.dll"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "installerHooks": "nsis/installer-hooks.nsh",
+        "installMode": "both"
       }
     },
     "macOS": {
