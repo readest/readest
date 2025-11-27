@@ -6,6 +6,9 @@ extern crate cocoa;
 #[macro_use]
 extern crate objc;
 
+#[cfg(target_os = "windows")]
+mod windows;
+
 use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
