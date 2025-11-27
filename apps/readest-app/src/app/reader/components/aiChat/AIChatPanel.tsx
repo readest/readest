@@ -23,12 +23,16 @@ import AIChatHeader from './AIChatHeader';
 import AIChatMessage from './AIChatMessage';
 import AIChatInput from './AIChatInput';
 import SnippetSelector from './SnippetSelector';
+import SpeechConversationTrigger from './SpeechConversationTrigger';
+import SpeechConversationStatus from './SpeechConversationStatus';
+import { RealtimeSpeechService } from '@/services/realtimeSpeechService';
 
 const MIN_AI_CHAT_WIDTH = 0.2;
 const MAX_AI_CHAT_WIDTH = 0.5;
 
 const AIChatPanel: React.FC = () => {
   const _ = useTranslation();
+  console.log('AIChatPanel@!!');
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -42,6 +46,8 @@ const AIChatPanel: React.FC = () => {
     activeSnippet,
     isLoading,
     error,
+    isSpeechModeActive,
+    isRecording,
     setAIChatVisible,
     toggleAIChatPin,
     setAIChatWidth,
@@ -53,10 +59,14 @@ const AIChatPanel: React.FC = () => {
     setConversations,
     setLoading,
     setError,
+    startSpeechConversation,
+    stopSpeechConversation,
+    setRecording,
   } = useAIChatStore();
   const { getBookData } = useBookDataStore();
   const { getView, getProgress, getViewSettings } = useReaderStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechServiceRef = useRef<RealtimeSpeechService | null>(null);
 
   const currentConversation = conversations.find((c) => c.id === currentConversationId) || null;
 
@@ -80,6 +90,16 @@ const AIChatPanel: React.FC = () => {
     // Scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentConversation?.messages]);
+
+  // Cleanup speech service on unmount
+  useEffect(() => {
+    return () => {
+      if (speechServiceRef.current) {
+        speechServiceRef.current.disconnect().catch(console.error);
+        speechServiceRef.current = null;
+      }
+    };
+  }, []);
 
   const handleHideAIChat = useCallback(() => {
     if (!isAIChatPinned) {
@@ -287,6 +307,100 @@ const AIChatPanel: React.FC = () => {
 
   const { handleDragStart, handleDragKeyDown } = useDrag(onDragMove, onDragKeyDown);
 
+  const handleStartSpeechConversation = async () => {
+    if (!settings.globalReadSettings.openaiApiKey || !activeSnippet) {
+      setError(_('OpenAI API key is not configured. Please add your API key in Settings > AI.'));
+      return;
+    }
+
+    try {
+      // Create or get conversation
+      let conversationId = currentConversationId;
+      if (!conversationId && activeSnippet) {
+        const newConversationId = await handleCreateConversation(
+          activeSnippet.text,
+          activeSnippet.type as 'page' | 'chapter',
+        );
+        if (!newConversationId) {
+          setError(_('Failed to create conversation. Please try again.'));
+          return;
+        }
+        conversationId = newConversationId;
+      }
+
+      if (!conversationId) {
+        setError(_('Failed to create conversation. Please try again.'));
+        return;
+      }
+
+      // Create system prompt
+      const openaiService = new OpenAIService(settings.globalReadSettings.openaiApiKey);
+      const systemPrompt = openaiService.createSystemPrompt(
+        activeSnippet.bookTitle,
+        activeSnippet.bookAuthor,
+        activeSnippet.text,
+      );
+
+      // Initialize speech service
+      console.error('[AIChatPanel] *** Creating RealtimeSpeechService ***');
+      const service = new RealtimeSpeechService(settings.globalReadSettings.openaiApiKey, {
+        onTranscript: async (text, role) => {
+          console.error('[AIChatPanel] onTranscript:', role, text.substring(0, 50));
+          if (conversationId) {
+            const message: AIChatMessageType = {
+              role,
+              content: text,
+              timestamp: Date.now(),
+            };
+            await addMessage(conversationId, message);
+          }
+        },
+        onError: (errorMessage) => {
+          console.error('[AIChatPanel] *** onError callback ***: ', errorMessage);
+          setError(`[DEBUG v2] ${errorMessage}`);
+        },
+        onConnectionStateChange: (connected) => {
+          console.error('[AIChatPanel] onConnectionStateChange:', connected);
+          if (!connected) {
+            stopSpeechConversation();
+          }
+        },
+        onRecordingStateChange: (recording) => {
+          console.error('[AIChatPanel] onRecordingStateChange:', recording);
+          setRecording(recording);
+        },
+      });
+
+      speechServiceRef.current = service;
+
+      // Connect and start recording
+      console.error('[AIChatPanel] *** Calling service.connect ***');
+      await service.connect(systemPrompt);
+      console.error('[AIChatPanel] *** Calling service.startRecording ***');
+      await service.startRecording();
+      console.error('[AIChatPanel] *** Recording started successfully ***');
+
+      // Start speech conversation in store
+      startSpeechConversation(conversationId);
+      setError(null);
+    } catch (error) {
+      console.error('Error starting speech conversation:', error);
+      setError(_('Failed to start voice conversation. Please try again.'));
+      if (speechServiceRef.current) {
+        await speechServiceRef.current.disconnect();
+        speechServiceRef.current = null;
+      }
+    }
+  };
+
+  const handleStopSpeechConversation = async () => {
+    if (speechServiceRef.current) {
+      await speechServiceRef.current.disconnect();
+      speechServiceRef.current = null;
+    }
+    stopSpeechConversation();
+  };
+
   if (!sideBarBookKey) return null;
 
   const bookData = getBookData(sideBarBookKey);
@@ -363,7 +477,22 @@ const AIChatPanel: React.FC = () => {
           </div>
         )}
         <div className='flex-grow overflow-y-auto px-4 py-4'>
-          {currentConversation && currentConversation.messages.length > 0 ? (
+          {isSpeechModeActive ? (
+            <div className='flex h-full flex-col items-center justify-center'>
+              {currentConversation && currentConversation.messages.length > 0 && (
+                <div className='mb-4 w-full'>
+                  {currentConversation.messages.map((message, index) => (
+                    <AIChatMessage key={`${message.timestamp}-${index}`} message={message} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+              <SpeechConversationStatus
+                isRecording={isRecording}
+                onStop={handleStopSpeechConversation}
+              />
+            </div>
+          ) : currentConversation && currentConversation.messages.length > 0 ? (
             <div>
               {currentConversation.messages.map((message, index) => (
                 <AIChatMessage key={`${message.timestamp}-${index}`} message={message} />
@@ -381,16 +510,17 @@ const AIChatPanel: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
           ) : activeSnippet ? (
-            <div className='text-base-content/70 flex h-full items-center justify-center'>
-              <p className='text-center text-sm'>{_('Start a conversation about this content')}</p>
-            </div>
+            <SpeechConversationTrigger
+              onClick={handleStartSpeechConversation}
+              disabled={!settings.globalReadSettings.openaiApiKey || isLoading}
+            />
           ) : (
             <div className='text-base-content/70 flex h-full items-center justify-center'>
               <p className='text-center text-sm'>{_('Select content to start chatting')}</p>
             </div>
           )}
         </div>
-        {activeSnippet && (
+        {activeSnippet && !isSpeechModeActive && (
           <AIChatInput
             onSend={handleSendMessage}
             disabled={isLoading || !settings.globalReadSettings.openaiApiKey}

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { IoSend } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -10,11 +10,7 @@ interface AIChatInputProps {
   placeholder?: string;
 }
 
-const AIChatInput: React.FC<AIChatInputProps> = ({
-  onSend,
-  disabled = false,
-  placeholder,
-}) => {
+const AIChatInput: React.FC<AIChatInputProps> = ({ onSend, disabled = false, placeholder }) => {
   const _ = useTranslation();
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -47,7 +43,7 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
   };
 
   return (
-    <div className='ai-chat-input border-t-base-300 border-t bg-base-100 p-3'>
+    <div className='ai-chat-input border-t-base-300 bg-base-100 border-t p-3'>
       <div className='flex items-end gap-2'>
         <textarea
           ref={textareaRef}
@@ -77,4 +73,3 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
 };
 
 export default AIChatInput;
-

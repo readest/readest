@@ -19,6 +19,9 @@ interface AIChatState {
   activeSnippet: ActiveSnippet | null;
   isLoading: boolean;
   error: string | null;
+  isSpeechModeActive: boolean;
+  isRecording: boolean;
+  speechConversationId: string | null;
 
   // Getters
   getIsAIChatVisible: () => boolean;
@@ -39,6 +42,9 @@ interface AIChatState {
   loadConversations: (appService: AppService) => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  startSpeechConversation: (conversationId: string) => void;
+  stopSpeechConversation: () => void;
+  setRecording: (recording: boolean) => void;
 }
 
 let chatService: AIChatService | null = null;
@@ -52,6 +58,9 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
   activeSnippet: null,
   isLoading: false,
   error: null,
+  isSpeechModeActive: false,
+  isRecording: false,
+  speechConversationId: null,
 
   getIsAIChatVisible: () => get().isAIChatVisible,
   getAIChatWidth: () => get().aiChatWidth,
@@ -107,6 +116,26 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
     }
     const conversations = await chatService.loadConversations();
     set({ conversations });
+  },
+
+  startSpeechConversation: (conversationId: string) => {
+    set({
+      isSpeechModeActive: true,
+      speechConversationId: conversationId,
+      currentConversationId: conversationId,
+    });
+  },
+
+  stopSpeechConversation: () => {
+    set({
+      isSpeechModeActive: false,
+      isRecording: false,
+      speechConversationId: null,
+    });
+  },
+
+  setRecording: (recording: boolean) => {
+    set({ isRecording: recording });
   },
 }));
 

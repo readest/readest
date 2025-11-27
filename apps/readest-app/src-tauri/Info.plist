@@ -12,6 +12,8 @@
     <true/>
     <key>UIRequiresFullScreen</key>
     <false/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Readest needs microphone access to enable voice conversations with AI about your reading content.</string>
     <key>CFBundleDocumentTypes</key>
     <array>
       <dict>

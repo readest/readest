@@ -5,10 +5,7 @@ import { getTextFromRange } from './sel';
 /**
  * Extract text from the current page visible in the view
  */
-export async function getCurrentPageText(
-  bookKey: string,
-  view: FoliateView,
-): Promise<string> {
+export async function getCurrentPageText(_bookKey: string, view: FoliateView): Promise<string> {
   if (!view || !view.renderer) {
     return '';
   }
@@ -37,7 +34,7 @@ export async function getCurrentPageText(
 
       // Clone the document to avoid modifying the original
       const clone = doc.cloneNode(true) as Document;
-      
+
       // Remove script and style elements
       const scripts = clone.querySelectorAll('script, style');
       scripts.forEach((el) => el.remove());
@@ -60,7 +57,7 @@ export async function getCurrentPageText(
  * Extract text from the current chapter/section
  */
 export async function getCurrentChapterText(
-  bookKey: string,
+  _bookKey: string,
   view: FoliateView,
   progress: BookProgress,
 ): Promise<string> {
@@ -74,8 +71,6 @@ export async function getCurrentChapterText(
       return '';
     }
 
-    // Get the current section index from progress
-    const currentSectionIndex = progress.section?.current ?? 0;
     const sectionHref = progress.sectionHref;
 
     if (sectionHref) {
@@ -123,4 +118,3 @@ export function getTextFromSelection(range: Range): string {
     return '';
   }
 }
-

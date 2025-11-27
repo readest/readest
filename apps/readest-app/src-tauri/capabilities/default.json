@@ -157,6 +157,15 @@
     "haptics:allow-selection-feedback",
     "native-bridge:default",
     "native-tts:default",
-    "deep-link:default"
+    "deep-link:default",
+    {
+      "identifier": "websocket:allow-connect",
+      "allow": [
+        {
+          "url": "wss://api.openai.com"
+        }
+      ]
+    },
+    "websocket:allow-send"
   ]
 }
