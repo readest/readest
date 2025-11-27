@@ -14,7 +14,7 @@ use zip::ZipArchive;
 
 /// Thumbnail cache directory (per-user)
 static CACHE_DIR: Lazy<Option<std::path::PathBuf>> = Lazy::new(|| {
-    ProjectDirs::from("app", "Readest", "Readest").map(|pd| {
+    ProjectDirs::from("app", "Readest", "").map(|pd| {
         let dir = pd.cache_dir().join("thumbnails");
         let _ = std::fs::create_dir_all(&dir);
         dir

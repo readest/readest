@@ -49,9 +49,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../../../target/release/windows_thumbnail.dll": "readest_thumbnail.dll"
-    },
+    "resources": [],
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
