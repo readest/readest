@@ -434,7 +434,7 @@ pub fn create_thumbnail_with_overlay(cover_bytes: &[u8], requested_size: u32) ->
 /// Load the Readest overlay icon.
 fn load_overlay_icon() -> Option<DynamicImage> {
     // Try embedded icon
-    let icon_bytes = include_bytes!("../../../../public/icon.png");
+    let icon_bytes = include_bytes!("../../../public/icon.png");
     if let Ok(img) = image::load_from_memory(icon_bytes) {
         return Some(img);
     }

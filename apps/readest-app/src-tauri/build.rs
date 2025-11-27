@@ -1,7 +1,7 @@
 use std::{env, fs, path::PathBuf, process::Command};
 
 fn main() {
-    println!("cargo:rerun-if-changed=src/windows/thumbnail");
+    println!("cargo:rerun-if-changed=../extensions/windows-thumbnail/src");
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     if target_os == "windows" {
         build_windows_thumbnail();
@@ -12,7 +12,10 @@ fn main() {
 
 fn build_windows_thumbnail() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let dll_crate_dir = manifest_dir.join("src/windows/thumbnail");
+    let dll_crate_dir = manifest_dir
+        .join("..")
+        .join("extensions")
+        .join("windows-thumbnail");
     let dll_crate_manifest = dll_crate_dir.join("Cargo.toml");
     let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".into());
 
