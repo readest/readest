@@ -14,11 +14,20 @@ import BookMenu from './BookMenu';
 const SidebarHeader: React.FC<{
   isPinned: boolean;
   isSearchBarVisible: boolean;
+  isPDF?: boolean;
   onGoToLibrary: () => void;
   onClose: () => void;
   onTogglePin: () => void;
   onToggleSearchBar: () => void;
-}> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
+}> = ({
+  isPinned,
+  isSearchBarVisible,
+  isPDF,
+  onGoToLibrary,
+  onClose,
+  onTogglePin,
+  onToggleSearchBar,
+}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const {
@@ -69,16 +78,18 @@ const SidebarHeader: React.FC<{
         </button>
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:size-[70%]'>
-        <button
-          title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
-          onClick={onToggleSearchBar}
-          className={clsx(
-            'btn btn-ghost left-0 h-8 min-h-8 w-8 p-0',
-            isSearchBarVisible ? 'bg-base-300' : '',
-          )}
-        >
-          <FiSearch size={iconSize18} className='text-base-content' />
-        </button>
+        {!isPDF && (
+          <button
+            title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
+            onClick={onToggleSearchBar}
+            className={clsx(
+              'btn btn-ghost left-0 h-8 min-h-8 w-8 p-0',
+              isSearchBarVisible ? 'bg-base-300' : '',
+            )}
+          >
+            <FiSearch size={iconSize18} className='text-base-content' />
+          </button>
+        )}
         <Dropdown
           label={_('Book Menu')}
           className={clsx(
