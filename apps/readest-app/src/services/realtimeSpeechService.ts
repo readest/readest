@@ -17,10 +17,9 @@ interface TauriWebSocket {
 const WS_URL = 'wss://api.openai.com/v1/realtime?model=gpt-realtime';
 const SAMPLE_RATE = 24000;
 const MIN_AUDIO_SAMPLES = 100;
-const BASE_INPUT_THRESHOLD = 0.0005;
-const PLAYBACK_INPUT_THRESHOLD = 0.003;
+const BASE_INPUT_THRESHOLD = 0.005;
+const PLAYBACK_INPUT_THRESHOLD = 0.03;
 const ENERGY_SMOOTHING_ALPHA = 0.25;
-const CANCELLED_RESPONSE_TTL_MS = 2000;
 
 export class RealtimeSpeechService {
   private ws: WebSocket | TauriWebSocket | null = null;
@@ -184,9 +183,6 @@ export class RealtimeSpeechService {
           this.handleAudioChunk(data.delta, data.response_id || data.response?.id);
         }
         break;
-      case 'response.audio.delta':
-        // Older event name; ignore to avoid duplicate playback streams
-        break;
 
       case 'error':
         const errorMessage = data.error?.message || 'Unknown error occurred';
@@ -200,14 +196,8 @@ export class RealtimeSpeechService {
     try {
       if (responseId) {
         const cancelledAt = this.cancelledResponseIds.get(responseId);
-        if (cancelledAt && Date.now() - cancelledAt < CANCELLED_RESPONSE_TTL_MS) {
+        if (cancelledAt) {
           return;
-        } else if (cancelledAt) {
-          this.cancelledResponseIds.delete(responseId);
-        }
-        if (this.currentResponseId && this.currentResponseId !== responseId) {
-          this.cancelledResponseIds.set(this.currentResponseId, Date.now());
-          this.interruptPlayback(false);
         }
         this.currentResponseId = responseId;
       }
@@ -252,10 +242,8 @@ export class RealtimeSpeechService {
         if (!chunk) continue;
         if (chunk.responseId) {
           const cancelledAt = this.cancelledResponseIds.get(chunk.responseId);
-          if (cancelledAt && Date.now() - cancelledAt < CANCELLED_RESPONSE_TTL_MS) {
+          if (cancelledAt) {
             continue;
-          } else if (cancelledAt) {
-            this.cancelledResponseIds.delete(chunk.responseId);
           }
         }
         const audioData = chunk.data;
