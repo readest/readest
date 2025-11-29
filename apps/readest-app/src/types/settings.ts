@@ -53,6 +53,7 @@ export interface SystemSettings {
   autoScreenBrightness: boolean;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;
+  viewAnnotationsOnClick: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;
