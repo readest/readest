@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
-import { RiDashboardLine, RiTranslate, RiRobotLine } from 'react-icons/ri';
+import { RiDashboardLine, RiTranslate, RiBrainLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
@@ -84,7 +84,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     },
     {
       tab: 'AI',
-      icon: RiRobotLine,
+      icon: RiBrainLine,
       label: _('AI'),
     },
   ] as TabConfig[];

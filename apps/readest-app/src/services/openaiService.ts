@@ -5,14 +5,24 @@ export interface OpenAIResponse {
   error?: string;
 }
 
-export function createSystemPrompt(bookTitle: string, bookAuthor: string, snippet: string): string {
-  return `User wants to talk about a book snippet coming from "${bookTitle}" by ${bookAuthor}: ${snippet}. And then the conversation.`;
+export function createSystemPrompt(
+  bookTitle: string,
+  bookAuthor: string,
+  snippet: string,
+  userCustomPrompt?: string,
+): string {
+  const basePrompt = `User wants to talk specifically about a book snippet coming from "${bookTitle}" by ${bookAuthor}: "${snippet}". User refers specifically to this snippet.`;
+  if (userCustomPrompt) {
+    return `${basePrompt}\n\n${userCustomPrompt}`;
+  }
+  return basePrompt;
 }
 
 export async function sendChatMessage(
   apiKey: string,
   messages: AIChatMessage[],
   systemPrompt: string,
+  modelSlug: string = 'gpt-4o-mini',
 ): Promise<OpenAIResponse> {
   if (!apiKey) {
     return {
@@ -29,7 +39,7 @@ export async function sendChatMessage(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: modelSlug,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages.map((msg) => ({ role: msg.role, content: msg.content })),

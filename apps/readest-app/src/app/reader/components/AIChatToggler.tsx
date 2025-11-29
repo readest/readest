@@ -1,5 +1,5 @@
 import React from 'react';
-import { RiRobotLine } from 'react-icons/ri';
+import { RiBrainLine } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -32,7 +32,7 @@ const AIChatToggler: React.FC<AIChatTogglerProps> = ({ bookKey }) => {
 
   return (
     <Button
-      icon={<RiRobotLine size={iconSize16} className='text-base-content' />}
+      icon={<RiBrainLine size={iconSize16} className='text-base-content' />}
       onClick={handleToggleSidebar}
       label={_('AI Chat')}
     />

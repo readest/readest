@@ -20,6 +20,10 @@ export interface ReadSettings {
   translationProvider: string;
   translateTargetLang: string;
   openaiApiKey?: string;
+  conversationalModelSlug?: string;
+  realtimeModelSlug?: string;
+  realtimeVoice?: string;
+  userCustomPrompt?: string;
 
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;

@@ -14,7 +14,6 @@ interface TauriWebSocket {
   disconnect: () => Promise<void>;
 }
 
-const WS_URL = 'wss://api.openai.com/v1/realtime?model=gpt-realtime';
 const SAMPLE_RATE = 24000;
 const MIN_AUDIO_SAMPLES = 100;
 const BASE_INPUT_THRESHOLD = 0.005;
@@ -36,6 +35,8 @@ export class RealtimeSpeechService {
   private hasSentValidAudio = false;
   private sessionReady = false;
   private apiKey: string;
+  private modelSlug: string;
+  private voice: string;
   private callbacks: RealtimeSpeechCallbacks;
   private currentAssistantTranscript = '';
   private tauriUnlisten: (() => void) | null = null;
@@ -46,9 +47,20 @@ export class RealtimeSpeechService {
   private isSchedulingPlayback = false;
   private activePlaybackSources = new Set<AudioBufferSourceNode>();
 
-  constructor(apiKey: string, callbacks: RealtimeSpeechCallbacks) {
+  constructor(
+    apiKey: string,
+    callbacks: RealtimeSpeechCallbacks,
+    modelSlug: string = 'gpt-realtime',
+    voice: string = 'marin',
+  ) {
     this.apiKey = apiKey;
+    this.modelSlug = modelSlug;
+    this.voice = voice.toLowerCase();
     this.callbacks = callbacks;
+  }
+
+  private getWsUrl(): string {
+    return `wss://api.openai.com/v1/realtime?model=${this.modelSlug}`;
   }
 
   private createSessionConfig(systemPrompt: string) {
@@ -56,7 +68,7 @@ export class RealtimeSpeechService {
       type: 'session.update',
       session: {
         type: 'realtime',
-        model: 'gpt-realtime',
+        model: this.modelSlug,
         instructions: systemPrompt,
         output_modalities: ['audio'],
         audio: {
@@ -66,7 +78,7 @@ export class RealtimeSpeechService {
           },
           output: {
             format: { type: 'audio/pcm', rate: SAMPLE_RATE },
-            voice: 'marin',
+            voice: this.voice,
           },
         },
       },
@@ -83,7 +95,7 @@ export class RealtimeSpeechService {
 
   private async connectTauri(systemPrompt: string): Promise<void> {
     try {
-      this.ws = (await TauriWebSocketClass.connect(WS_URL, {
+      this.ws = (await TauriWebSocketClass.connect(this.getWsUrl(), {
         headers: { Authorization: `Bearer ${this.apiKey}` },
       })) as TauriWebSocket;
 
@@ -115,7 +127,7 @@ export class RealtimeSpeechService {
   private connectBrowser(systemPrompt: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(WS_URL);
+        this.ws = new WebSocket(this.getWsUrl());
 
         this.ws.onopen = () => {
           this.send(this.createSessionConfig(systemPrompt));

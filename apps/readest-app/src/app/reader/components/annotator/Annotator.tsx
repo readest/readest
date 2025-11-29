@@ -8,7 +8,7 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
 import { FaHeadphones } from 'react-icons/fa6';
-import { RiRobotLine } from 'react-icons/ri';
+import { RiBrainLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -680,7 +680,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
     {
       tooltipText: _('Ask AI'),
-      Icon: RiRobotLine,
+      Icon: RiBrainLine,
       onClick: handleAskAI,
     },
     {

@@ -207,15 +207,20 @@ const AIChatPanel: React.FC = () => {
         return;
       }
 
+      const conversationalModelSlug =
+        settings.globalReadSettings.conversationalModelSlug || 'gpt-4o-mini';
+      const userCustomPrompt = settings.globalReadSettings.userCustomPrompt;
       const systemPrompt = createSystemPrompt(
         activeSnippet.bookTitle,
         activeSnippet.bookAuthor,
         activeSnippet.text,
+        userCustomPrompt,
       );
       const response = await sendChatMessage(
         apiKey,
         [...conversation.messages, userMessage],
         systemPrompt,
+        conversationalModelSlug,
       );
 
       if (response.error) {
@@ -265,21 +270,30 @@ const AIChatPanel: React.FC = () => {
         return;
       }
 
+      const realtimeModelSlug = settings.globalReadSettings.realtimeModelSlug || 'gpt-realtime';
+      const realtimeVoice = settings.globalReadSettings.realtimeVoice || 'marin';
+      const userCustomPrompt = settings.globalReadSettings.userCustomPrompt;
       const systemPrompt = createSystemPrompt(
         activeSnippet.bookTitle,
         activeSnippet.bookAuthor,
         activeSnippet.text,
+        userCustomPrompt,
       );
-      const service = new RealtimeSpeechService(apiKey, {
-        onTranscript: async (text, role) => {
-          await addMessage(conversationId, { role, content: text, timestamp: Date.now() });
+      const service = new RealtimeSpeechService(
+        apiKey,
+        {
+          onTranscript: async (text, role) => {
+            await addMessage(conversationId, { role, content: text, timestamp: Date.now() });
+          },
+          onError: setError,
+          onConnectionStateChange: (connected) => {
+            if (!connected) stopSpeechConversation();
+          },
+          onRecordingStateChange: setRecording,
         },
-        onError: setError,
-        onConnectionStateChange: (connected) => {
-          if (!connected) stopSpeechConversation();
-        },
-        onRecordingStateChange: setRecording,
-      });
+        realtimeModelSlug,
+        realtimeVoice,
+      );
 
       speechServiceRef.current = service;
       await service.connect(systemPrompt);

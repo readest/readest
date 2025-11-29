@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
-import { RiRobotLine } from 'react-icons/ri';
+import { RiBrainLine } from 'react-icons/ri';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
@@ -17,7 +17,7 @@ const AIChatHeader: React.FC<{
   return (
     <div className='ai-chat-header relative flex h-11 items-center px-3' dir='ltr'>
       <div className='absolute inset-0 z-[-1] flex items-center justify-center space-x-2'>
-        <RiRobotLine size={iconSize18} />
+        <RiBrainLine size={iconSize18} />
         <div className='ai-chat-title hidden text-sm font-medium sm:flex'>{_('AI Chat')}</div>
       </div>
       <div className='flex w-full items-center gap-x-4'>
