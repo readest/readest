@@ -105,12 +105,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               </Dropdown>
             )}
             {book.uploadedAt && onDownload && (
-              <button onClick={onDownload}>
+              <button onClick={onDownload} title={_('Download from Cloud')}>
                 <MdOutlineCloudDownload className='fill-base-content' />
               </button>
             )}
             {book.downloadedAt && onUpload && (
-              <button onClick={onUpload}>
+              <button onClick={onUpload} title={_('Upload to Cloud')}>
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>
             )}

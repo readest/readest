@@ -53,8 +53,9 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { setLibrary } = useLibraryStore();
-  const { hoveredBookKey } = useReaderStore();
+  const { hoveredBookKey, getView } = useReaderStore();
   const { settings, setSettings } = useSettingsStore();
+  const { sideBarBookKey } = useSidebarStore();
   const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
   const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
@@ -76,11 +77,14 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, []);
 
   const handleKeyDown = (event: CustomEvent) => {
+    const view = getView(sideBarBookKey!);
     if (event.detail.keyName === 'Back') {
       if (getIsSideBarVisible()) {
         setSideBarVisible(false);
       } else if (getIsNotebookVisible()) {
         setNotebookVisible(false);
+      } else if (view?.history.canGoBack) {
+        view.history.back();
       } else {
         eventDispatcher.dispatch('close-reader');
         router.back();
@@ -100,15 +104,16 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, [appService?.isAndroidApp]);
 
   useEffect(() => {
-    if (!appService?.isAndroidApp) return;
-    eventDispatcher.onSync('native-key-down', handleKeyDown);
+    if (appService?.isAndroidApp) {
+      eventDispatcher.onSync('native-key-down', handleKeyDown);
+    }
     return () => {
       if (appService?.isAndroidApp) {
         eventDispatcher.offSync('native-key-down', handleKeyDown);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.isAndroidApp, isSideBarVisible, isNotebookVisible]);
+  }, [appService?.isAndroidApp, sideBarBookKey, isSideBarVisible, isNotebookVisible]);
 
   useEffect(() => {
     if (isInitiating.current) return;

@@ -213,6 +213,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         setViewSettings(bookKey, viewSettings);
       }
 
+      const docs = view.renderer.getContents();
+      if (docs.some(({ doc }) => doc.getSelection())) {
+        return;
+      }
+
       if (!view.renderer.scrolled) {
         view.renderer.scrollToAnchor(range);
       } else {
@@ -660,6 +665,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           position={panelPosition}
           trianglePosition={trianglePosition}
           className='bg-base-200 flex shadow-lg'
+          onDismiss={handleDismissPopup}
         >
           <TTSPanel
             bookKey={bookKey}

@@ -156,7 +156,11 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         const { file, config } = content;
         console.log('Loading book', key);
         const { book: bookDoc } = await new DocumentLoader(file).open();
-        updateToc(bookDoc, config.viewSettings?.sortedTOC ?? false);
+        await updateToc(
+          bookDoc,
+          config.viewSettings?.sortedTOC ?? false,
+          config.viewSettings?.convertChineseVariant ?? 'none',
+        );
         if (!bookDoc.metadata.title) {
           bookDoc.metadata.title = getBaseFilename(file.name);
         }
@@ -231,6 +235,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           },
         },
       }));
+      throw error;
     }
   },
   getViewSettings: (key: string) => get().viewStates[key]?.viewSettings || null,

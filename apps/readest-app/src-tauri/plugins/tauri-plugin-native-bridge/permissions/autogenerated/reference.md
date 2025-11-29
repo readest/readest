@@ -23,6 +23,8 @@ Default permissions for the plugin
 - `allow-get-screen-brightness`
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
+- `allow-open-external-url`
+- `allow-select-directory`
 - `allow-request-manage-storage-permission`
 - `allow-check-permissions`
 - `allow-request-permissions`
@@ -535,6 +537,32 @@ Denies the lock_screen_orientation command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-open-external-url`
+
+</td>
+<td>
+
+Enables the open_external_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-open-external-url`
+
+</td>
+<td>
+
+Denies the open_external_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-request-permissions`
 
 </td>
@@ -632,6 +660,32 @@ Enables the request_permissions command without any pre-configured scope.
 <td>
 
 Denies the request_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-select-directory`
+
+</td>
+<td>
+
+Enables the select_directory command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-select-directory`
+
+</td>
+<td>
+
+Denies the select_directory command without any pre-configured scope.
 
 </td>
 </tr>

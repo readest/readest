@@ -53,6 +53,10 @@
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "installerHooks": "nsis/installer-hooks.nsh",
+        "installMode": "both"
       }
     },
     "macOS": {

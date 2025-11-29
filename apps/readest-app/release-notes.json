@@ -1,5 +1,28 @@
 {
   "releases": {
+    "0.9.93": {
+      "date": "2025-11-20",
+      "notes": [
+        "Sync: Improved reliability for new accounts so your books sync correctly from the start",
+        "Library: Fixed an occasional issue where returning to the library could get stuck",
+        "Layout: Improved image display in paginated mode so images won't exceed the available height",
+        "TXT: Improved performance and stability when opening and parsing TXT files",
+        "Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks"
+      ]
+    },
+    "0.9.92": {
+      "date": "2025-11-18",
+      "notes": [
+        "Bookshelf: Added support for nested groups to organize your books more flexibly",
+        "Sync: Improved reliability by automatically retrying failed book syncs",
+        "Sync: Improved token refresh so login sessions stay active longer on KOReader",
+        "E-Ink: Enhanced readability on the library page for E-Ink devices",
+        "UI: Storage capacity is now displayed with precise values in the user profile",
+        "Reader: You can now import files directly into the currently selected book group",
+        "Account: You can now update the email address linked to your Readest account",
+        "Footnotes: Added compatibility for more footnote formats"
+      ]
+    },
     "0.9.91": {
       "date": "2025-10-29",
       "notes": [

@@ -18,7 +18,10 @@ export const useBooksSync = () => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
     const newBooks = library.filter(
-      (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
+      (book) =>
+        !book.syncedAt ||
+        lastSyncedAtBooks < book.updatedAt ||
+        lastSyncedAtBooks < (book.deletedAt ?? 0),
     );
     return {
       books: newBooks,
@@ -67,7 +70,9 @@ export const useBooksSync = () => {
   const pushLibrary = useCallback(async () => {
     if (!user) return;
     const newBooks = getNewBooks();
-    await syncBooks(newBooks?.books, 'push');
+    if (newBooks.lastSyncedAt) {
+      await syncBooks(newBooks?.books, 'push');
+    }
   }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
@@ -94,9 +99,9 @@ export const useBooksSync = () => {
           oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
         }
         const mergedBook =
-          matchingBook.updatedAt > oldBook.updatedAt
-            ? { ...oldBook, ...matchingBook }
-            : { ...matchingBook, ...oldBook };
+          matchingBook.updatedAt >= oldBook.updatedAt
+            ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
+            : { ...matchingBook, ...oldBook, syncedAt: Date.now() };
         return mergedBook;
       }
       return oldBook;
@@ -117,28 +122,29 @@ export const useBooksSync = () => {
 
     const processNewBook = async (newBook: Book) => {
       newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+      newBook.syncedAt = Date.now();
       updatedLibrary.push(newBook);
     };
 
     if (newBooks.length > 0) {
       setIsSyncing(true);
     }
-
-    const batchSize = 10;
-    for (let i = 0; i < newBooks.length; i += batchSize) {
-      const batch = newBooks.slice(i, i + batchSize);
-      await appService?.downloadBookCovers(batch);
-      await Promise.all(batch.map(processNewBook));
-      const progress = Math.min((i + batchSize) / newBooks.length, 1);
-      setLibrary([...updatedLibrary]);
-      setSyncProgress(progress);
-    }
-
-    setLibrary(updatedLibrary);
-    appService?.saveLibraryBooks(updatedLibrary);
-
-    if (newBooks.length > 0) {
-      setIsSyncing(false);
+    try {
+      const batchSize = 10;
+      for (let i = 0; i < newBooks.length; i += batchSize) {
+        const batch = newBooks.slice(i, i + batchSize);
+        await appService?.downloadBookCovers(batch);
+        await Promise.all(batch.map(processNewBook));
+        const progress = Math.min((i + batchSize) / newBooks.length, 1);
+        setLibrary([...updatedLibrary]);
+        setSyncProgress(progress);
+      }
+      setLibrary(updatedLibrary);
+      appService?.saveLibraryBooks(updatedLibrary);
+    } finally {
+      if (newBooks.length > 0) {
+        setIsSyncing(false);
+      }
     }
   };
 

@@ -45,7 +45,7 @@ export class KOSyncClient {
       headers.set('X-Auth-Key', this.config.userkey);
     }
 
-    if (this.isLanServer) {
+    if (this.isLanServer || isTauriAppPlatform()) {
       const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
       const directUrl = `${this.config.serverUrl}${endpoint}`;
 

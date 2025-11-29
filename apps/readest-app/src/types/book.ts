@@ -34,6 +34,7 @@ export interface Book {
   uploadedAt?: number | null;
   downloadedAt?: number | null;
   coverDownloadedAt?: number | null;
+  syncedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
@@ -154,6 +155,22 @@ export interface BookFont {
   fontWeight: number;
 }
 
+export type ConvertChineseVariant =
+  | 'none'
+  | 's2t'
+  | 't2s'
+  | 's2tw'
+  | 's2hk'
+  | 's2twp'
+  | 'tw2s'
+  | 'hk2s'
+  | 'tw2sp';
+
+export interface BookLanguage {
+  replaceQuotationMarks: boolean;
+  convertChineseVariant: ConvertChineseVariant;
+}
+
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -168,6 +185,7 @@ export interface ViewConfig {
   showRemainingPages: boolean;
   showProgressInfo: boolean;
   showBarsOnScroll: boolean;
+  showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
 }
 
@@ -195,6 +213,7 @@ export interface ViewSettings
   extends BookLayout,
     BookStyle,
     BookFont,
+    BookLanguage,
     ViewConfig,
     TTSConfig,
     TranslatorConfig,
@@ -266,6 +285,7 @@ export interface BookDataRecord {
 export interface BooksGroup {
   id: string;
   name: string;
+  displayName: string;
   books: Book[];
 
   updatedAt: number;

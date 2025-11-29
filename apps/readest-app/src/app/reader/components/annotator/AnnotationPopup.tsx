@@ -27,6 +27,7 @@ interface AnnotationPopupProps {
   onHighlight: (update?: boolean) => void;
   showInstantNote?: boolean;
   noteText?: string;
+  onDismiss?: () => void;
 }
 
 const OPTIONS_HEIGHT_PIX = 28;
@@ -46,6 +47,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   onHighlight,
   showInstantNote,
   noteText,
+  onDismiss,
 }) => {
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
@@ -85,6 +87,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         trianglePosition={trianglePosition}
         className='selection-popup bg-gray-600 text-white'
         triangleClassName='text-gray-600'
+        onDismiss={onDismiss}
       >
         <div
           className={clsx(

@@ -21,6 +21,7 @@ import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { saveSysSettings } from '@/helpers/settings';
+import { selectDirectory } from '@/utils/bridge';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -32,6 +33,7 @@ interface SettingsMenuProps {
 
 interface Permissions {
   postNotification: PermissionState;
+  manageStorage: PermissionState;
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
@@ -172,8 +174,22 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setSettingsDialogOpen(true);
   };
 
-  const handleSetSavedBookCoverForLockScreen = () => {
+  const handleSetSavedBookCoverForLockScreen = async () => {
+    let permission = await invoke<Permissions>('plugin:native-bridge|checkPermissions');
+    if (permission.manageStorage !== 'granted') {
+      permission = await invoke<Permissions>(
+        'plugin:native-bridge|request_manage_storage_permission',
+      );
+    }
+    if (permission.manageStorage !== 'granted' && appService?.distChannel === 'readest') return;
+
     const newValue = settings.savedBookCoverForLockScreen ? '' : 'default';
+    if (newValue) {
+      const response = await selectDirectory();
+      if (response.path) {
+        saveSysSettings(envConfig, 'savedBookCoverForLockScreenPath', response.path);
+      }
+    }
     saveSysSettings(envConfig, 'savedBookCoverForLockScreen', newValue);
     setSavedBookCoverForLockScreen(newValue);
   };
@@ -205,12 +221,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         ? _('Light Mode')
         : _('Auto Mode');
 
+  const savedBookCoverPath = settings.savedBookCoverForLockScreenPath;
+  const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
+  const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
+
   return (
     <Menu
       className={clsx(
         'settings-menu dropdown-content no-triangle border-base-100',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
+      onCancel={() => setIsDropdownOpen?.(false)}
     >
       {user ? (
         <MenuItem
@@ -317,7 +338,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
                 <MenuItem
                   label={_('Save Book Cover')}
                   tooltip={_('Auto-save last book cover')}
-                  description={savedBookCoverForLockScreen ? '💾 Images/last-book-cover.png' : ''}
+                  description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
                   toggled={!!savedBookCoverForLockScreen}
                   onClick={handleSetSavedBookCoverForLockScreen}
                 />

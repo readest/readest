@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { Position } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 
 const Popup = ({
   width,
@@ -14,7 +15,10 @@ const Popup = ({
   className = '',
   triangleClassName = '',
   additionalStyle = {},
+  isOpen = true,
+  onDismiss,
 }: {
+  isOpen?: boolean;
   width: number;
   height?: number;
   minHeight?: number;
@@ -25,10 +29,13 @@ const Popup = ({
   className?: string;
   triangleClassName?: string;
   additionalStyle?: React.CSSProperties;
+  onDismiss?: () => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
   const [childrenHeight, setChildrenHeight] = useState(height || minHeight || 0);
+
+  useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
   const popupPadding = useResponsiveSize(10);
   let availableHeight = window.innerHeight - 2 * popupPadding;

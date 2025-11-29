@@ -5,7 +5,7 @@ import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
-import { MdOutlineMenu, MdArrowBackIosNew } from 'react-icons/md';
+import { MdOutlineMenu } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 import { useEnv } from '@/context/EnvContext';
@@ -15,7 +15,6 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { navigateToLibrary } from '@/utils/nav';
 import { debounce } from '@/utils/debounce';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
@@ -60,7 +59,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const viewSettings = settings.globalViewSettings;
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
-  const iconSize20 = useResponsiveSize(20);
   const { safeAreaInsets: insets } = useThemeStore();
 
   useShortcuts({
@@ -100,13 +98,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   }, [appService?.hasTrafficLight]);
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
-  const isInGroupView = !!searchParams?.get('group');
   const currentBooksCount = currentBookshelf.reduce(
     (acc, item) => acc + ('books' in item ? item.books.length : 1),
     0,
   );
 
   if (!insets) return null;
+
+  const isMobile = appService?.isMobile || window.innerWidth <= 640;
 
   return (
     <div
@@ -124,18 +123,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
-          {isInGroupView && (
-            <button
-              onClick={() => {
-                navigateToLibrary(router);
-              }}
-              className='ml-[-6px] mr-4 flex h-7 min-h-7 w-7 items-center p-0'
-            >
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Go Back')}>
-                <MdArrowBackIosNew size={iconSize20} />
-              </div>
-            </button>
-          )}
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             <span className='text-base-content/50 absolute left-3'>
               <FaSearch className='h-4 w-4' />
@@ -153,12 +140,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge h-9 w-full pl-10 pr-10 sm:h-7',
+                'input rounded-badge h-9 w-full pl-10 pr-[30%] sm:h-7',
                 viewSettings?.isEink
                   ? 'border-1 border-base-content focus:border-base-content'
                   : 'bg-base-300/45 border-none',
                 'font-sans text-sm font-light',
-                'placeholder:text-base-content/50',
+                'placeholder:text-base-content/50 truncate',
                 'focus:outline-none focus:ring-0',
               )}
             />
@@ -182,14 +169,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               label={_('Import Books')}
               className={clsx(
                 'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
-                appService?.isMobile ? 'dropdown-end' : 'dropdown-center',
+                isMobile ? 'dropdown-end' : 'dropdown-center',
               )}
               buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu onImportBooks={onImportBooks} />
             </Dropdown>
-            {appService?.isMobile ? null : (
+            {isMobile ? null : (
               <button
                 onClick={onToggleSelectMode}
                 aria-label={_('Select Books')}

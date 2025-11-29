@@ -49,7 +49,8 @@ export const tauriHandleClose = async () => {
 
 export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
-  return currentWindow.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async () => {
+  return await currentWindow.onCloseRequested(async (event) => {
+    event.preventDefault();
     await callback();
     if (currentWindow.label.startsWith('reader')) {
       await emitTo('main', 'close-reader-window', { label: currentWindow.label });

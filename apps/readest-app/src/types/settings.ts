@@ -58,11 +58,14 @@ export interface SystemSettings {
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;
   savedBookCoverForLockScreen: string;
+  savedBookCoverForLockScreenPath: string;
   telemetryEnabled: boolean;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
+  libraryAutoColumns: boolean;
+  libraryColumns: number;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
 

@@ -23,6 +23,8 @@ import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyScrollModeClass,
+  applyTableStyle,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -34,6 +36,7 @@ import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book'
 import { useUICSS } from '@/hooks/useUICSS';
 import {
   handleKeydown,
+  handleKeyup,
   handleMousedown,
   handleMouseup,
   handleClick,
@@ -44,7 +47,6 @@ import {
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
-import { isCJKLang } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -54,6 +56,8 @@ import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { removeTabIndex } from '@/utils/a11y';
+import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 
@@ -135,6 +139,7 @@ const FoliateViewer: React.FC<{
               width,
               height,
               primaryLanguage: bookData.book?.primaryLanguage,
+              userLocale: getLocale(),
               content: data,
               transformers: [
                 'style',
@@ -143,6 +148,7 @@ const FoliateViewer: React.FC<{
                 'whitespace',
                 'language',
                 'sanitizer',
+                'simplecc',
               ],
             };
             return Promise.resolve(transformContent(ctx));
@@ -190,7 +196,9 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
+      applyTableStyle(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
+      applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       keepTextAlignment(detail.doc);
       removeTabIndex(detail.doc);
 
@@ -217,6 +225,7 @@ const FoliateViewer: React.FC<{
         // and more gesture events can be detected in the iframeEventHandlers
         detail.doc.isEventListenersAdded = true;
         detail.doc.addEventListener('keydown', handleKeydown.bind(null, bookKey));
+        detail.doc.addEventListener('keyup', handleKeyup.bind(null, bookKey));
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('click', handleClick.bind(null, bookKey, doubleClickDisabled));
@@ -391,10 +400,11 @@ const FoliateViewer: React.FC<{
     const rightMargin = insets.right + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
     const leftMargin = insets.left + moreLeftInset;
+    const viewMargins = viewSettings.showMarginsOnScroll && viewSettings.scrolled;
 
-    viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-top', `${viewMargins ? 0 : topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
-    viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
@@ -412,10 +422,17 @@ const FoliateViewer: React.FC<{
           applyFixedlayoutStyles(doc, viewSettings);
         }
         applyThemeModeClass(doc, isDarkMode);
+        applyScrollModeClass(doc, viewSettings.scrolled || false);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeCode, isDarkMode, viewSettings?.overrideColor, viewSettings?.invertImgColorInDark]);
+  }, [
+    themeCode,
+    isDarkMode,
+    viewSettings?.scrolled,
+    viewSettings?.overrideColor,
+    viewSettings?.invertImgColorInDark,
+  ]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {
@@ -466,6 +483,8 @@ const FoliateViewer: React.FC<{
     viewState?.ttsEnabled,
   ]);
 
+  const showViewMargins = viewSettings?.showMarginsOnScroll && viewSettings?.scrolled;
+
   return (
     <>
       <div
@@ -474,6 +493,10 @@ const FoliateViewer: React.FC<{
         role='document'
         aria-label={_('Book Content')}
         className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
+        style={{
+          paddingTop: showViewMargins ? insets.top : 0,
+          paddingBottom: showViewMargins ? insets.bottom : 0,
+        }}
         {...mouseHandlers}
         {...touchHandlers}
       />

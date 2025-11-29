@@ -24,11 +24,13 @@ interface LibraryState {
   setLibrary: (books: Book[]) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
-
   refreshGroups: () => void;
   addGroup: (name: string) => BookGroupType;
   getGroups: () => BookGroupType[];
+  getGroupId: (path: string) => string | undefined;
   getGroupName: (id: string) => string | undefined;
+  getParentPath: (path: string) => string | undefined;
+  getGroupsByParent: (parentPath?: string) => BookGroupType[];
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -40,15 +42,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   groups: {},
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
+
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
   setSyncProgress: (progress: number) => set({ syncProgress: progress }),
   getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
+
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => {
     set({ currentBookshelf: bookshelf });
   },
+
   setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setCheckLastOpenBooks: (check) => set({ checkLastOpenBooks: check }),
-  setLibrary: (books) => set({ library: books }),
+  setLibrary: (books) => {
+    const { refreshGroups } = get();
+    set({ library: books });
+    refreshGroups();
+  },
   updateBook: async (envConfig: EnvConfigType, book: Book) => {
     const appService = await envConfig.getAppService();
     const { library } = get();
@@ -59,12 +68,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ library: [...library] });
     await appService.saveLibraryBooks(library);
   },
+
   setSelectedBooks: (ids: string[]) => {
     set({ selectedBooks: new Set(ids) });
   },
+
   getSelectedBooks: () => {
     return Array.from(get().selectedBooks);
   },
+
   toggleSelectedBook: (id: string) => {
     set((state) => {
       const newSelection = new Set(state.selectedBooks);
@@ -76,6 +88,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       return { selectedBooks: newSelection };
     });
   },
+
   refreshGroups: () => {
     const { library } = get();
     const groups: Record<string, string> = {};
@@ -89,11 +102,19 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         !book.deletedAt
       ) {
         groups[book.groupId] = book.groupName;
+        let nextSlashIndex = book.groupName.indexOf('/', 0);
+        while (nextSlashIndex > 0) {
+          const groupName = book.groupName.substring(0, nextSlashIndex);
+          const groupId = md5Fingerprint(groupName);
+          groups[groupId] = groupName;
+          nextSlashIndex = book.groupName.indexOf('/', nextSlashIndex + 1);
+        }
       }
     });
 
     set({ groups });
   },
+
   addGroup: (name: string) => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -107,13 +128,44 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     return { id, name: trimmedName };
   },
+
   getGroups: () => {
     const { groups } = get();
     return Object.entries(groups)
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   },
+
+  getGroupId: (path: string) => {
+    const { groups } = get();
+
+    const directId = Object.entries(groups).find(([_, name]) => name === path)?.[0];
+    if (directId) {
+      return directId;
+    }
+
+    return md5Fingerprint(path);
+  },
+
   getGroupName: (id: string) => {
     return get().groups[id];
+  },
+
+  getParentPath: (path: string) => {
+    const lastSlashIndex = path.lastIndexOf('/');
+    if (lastSlashIndex === -1) return '';
+    return path.slice(0, lastSlashIndex);
+  },
+
+  getGroupsByParent: (parentPath?: string) => {
+    const { groups } = get();
+    const result: BookGroupType[] = [];
+    Object.entries(groups).forEach(([id, name]) => {
+      const groupParentPath = get().getParentPath(name);
+      if (groupParentPath === (parentPath || '')) {
+        result.push({ id, name });
+      }
+    });
+    return result;
   },
 }));

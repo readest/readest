@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "resources": {
+      "../extensions/windows-thumbnail/target/windows_thumbnail.dll": "readest_thumbnail.dll"
+    }
+  }
+}

@@ -9,6 +9,7 @@ interface WikipediaPopupProps {
   trianglePosition: Position;
   popupWidth: number;
   popupHeight: number;
+  onDismiss?: () => void;
 }
 
 const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
@@ -18,6 +19,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
   trianglePosition,
   popupWidth,
   popupHeight,
+  onDismiss,
 }) => {
   const isLoading = useRef(false);
 
@@ -109,6 +111,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
         position={position}
         trianglePosition={trianglePosition}
         className='select-text'
+        onDismiss={onDismiss}
       >
         <div className='text-base-content flex h-full flex-col pt-2'>
           <main className='flex-grow overflow-y-auto px-2 font-sans'></main>

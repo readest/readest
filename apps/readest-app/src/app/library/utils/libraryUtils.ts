@@ -51,3 +51,12 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
   }
 };
+
+export const getBreadcrumbs = (currentPath: string) => {
+  if (!currentPath) return [];
+  const segments = currentPath.split('/');
+  return segments.map((segment, index) => ({
+    name: segment,
+    path: segments.slice(0, index + 1).join('/'),
+  }));
+};

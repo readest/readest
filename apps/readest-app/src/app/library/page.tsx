@@ -2,6 +2,7 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
+import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
@@ -9,7 +10,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
-import { navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
@@ -27,6 +28,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -50,6 +52,7 @@ import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { Toast } from '@/components/Toast';
+import { getBreadcrumbs } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
@@ -72,6 +75,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     syncProgress,
     updateBook,
     setLibrary,
+    getGroupId,
     getGroupName,
     refreshGroups,
     checkOpenWithBooks,
@@ -90,12 +94,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
     [key: string]: number | null;
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const isInitiating = useRef(false);
 
+  const iconSize = useResponsiveSize(18);
   const viewSettings = settings.globalViewSettings;
   const demoBooks = useDemoBooks();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
@@ -136,6 +142,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       handleImportBooks();
     },
   });
+
+  useEffect(() => {
+    sessionStorage.setItem('lastLibraryParams', searchParams?.toString() || '');
+  }, [searchParams]);
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {
@@ -324,6 +334,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  useEffect(() => {
+    const group = searchParams?.get('group') || '';
+    const groupName = getGroupName(group);
+    setCurrentGroupPath(groupName);
+  }, [libraryBooks, searchParams, getGroupName]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -594,6 +610,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setShowDetailsBook(book);
   };
 
+  const handleNavigateToPath = (path: string | undefined) => {
+    const group = path ? getGroupId(path) : '';
+    const params = new URLSearchParams(searchParams?.toString());
+    if (group) {
+      params.set('group', group);
+    } else {
+      params.delete('group');
+    }
+    setIsSelectAll(false);
+    setIsSelectNone(false);
+    navigateToLibrary(router, `${params.toString()}`);
+    setTimeout(() => {
+      setCurrentGroupPath(path);
+    }, 300);
+  };
+
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
     return <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
@@ -611,7 +643,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
     >
       <div
-        className='top-0 z-40 w-full'
+        className='relative top-0 z-40 w-full'
         role='banner'
         tabIndex={-1}
         aria-label={_('Library Header')}
@@ -624,10 +656,52 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
         />
+        <progress
+          className={clsx(
+            'progress progress-success absolute bottom-0 left-0 right-0 h-1 translate-y-[2px] transition-opacity duration-200 sm:translate-y-[4px]',
+            isSyncing ? 'opacity-100' : 'opacity-0',
+          )}
+          value={syncProgress * 100}
+          max='100'
+        />
       </div>
       {(loading || isSyncing) && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
+        </div>
+      )}
+      {currentGroupPath && (
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            currentGroupPath ? 'opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className='flex flex-wrap items-center gap-y-1 px-4 text-base'>
+            <button
+              onClick={() => handleNavigateToPath(undefined)}
+              className='hover:bg-base-300 text-base-content/85 rounded px-2 py-1'
+            >
+              {_('All')}
+            </button>
+            {getBreadcrumbs(currentGroupPath).map((crumb, index, array) => {
+              const isLast = index === array.length - 1;
+              return (
+                <React.Fragment key={index}>
+                  <MdChevronRight size={iconSize} className='text-neutral-content' />
+                  {isLast ? (
+                    <span className='truncate rounded px-2 py-1'>{crumb.name}</span>
+                  ) : (
+                    <button
+                      onClick={() => handleNavigateToPath(crumb.path)}
+                      className='hover:bg-base-300 text-base-content/85 truncate rounded px-2 py-1'
+                    >
+                      {crumb.name}
+                    </button>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       )}
       {showBookshelf &&
@@ -656,14 +730,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 paddingLeft: `${insets.left}px`,
               }}
             >
-              <progress
-                className={clsx(
-                  'progress progress-success absolute left-0 right-0 top-[2px] z-30 h-1 transition-opacity duration-200',
-                  isSyncing ? 'opacity-100' : 'opacity-0',
-                )}
-                value={syncProgress * 100}
-                max='100'
-              ></progress>
               <DropIndicator />
               <Bookshelf
                 libraryBooks={libraryBooks}

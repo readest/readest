@@ -7,3 +7,6 @@
 [submodule "packages/tauri-plugins"]
 	path = packages/tauri-plugins
 	url = https://github.com/readest/tauri-plugins-workspace.git
+[submodule "packages/simplecc-wasm"]
+	path = packages/simplecc-wasm
+	url = https://github.com/readest/simplecc-wasm.git

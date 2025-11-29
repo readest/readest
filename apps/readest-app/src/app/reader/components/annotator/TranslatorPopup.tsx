@@ -25,6 +25,7 @@ interface TranslatorPopupProps {
   trianglePosition: Position;
   popupWidth: number;
   popupHeight: number;
+  onDismiss?: () => void;
 }
 
 interface TranslatorType {
@@ -38,6 +39,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   trianglePosition,
   popupWidth,
   popupHeight,
+  onDismiss,
 }) => {
   const _ = useTranslation();
   const { token } = useAuth();
@@ -141,6 +143,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         position={position}
         className='grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600 text-white'
         triangleClassName='text-gray-600'
+        onDismiss={onDismiss}
       >
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>

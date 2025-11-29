@@ -100,7 +100,7 @@ const getFontStyles = (
     pre, code, kbd {
       font-family: var(--monospace);
     }
-    body *:not(pre):not(code):not(kbd):not(pre *):not(code *):not(kbd *) {
+    body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
   `;
@@ -171,6 +171,9 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 90%, #000);` : ''}
       ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
     }
+    blockquote {
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+    }
     blockquote, table * {
       ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
       ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
@@ -236,10 +239,6 @@ const getLayoutStyles = (
   :is(hgroup, header) p {
       text-align: unset;
       hyphens: unset;
-  }
-  pre {
-      white-space: pre-wrap !important;
-      tab-size: 2;
   }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
@@ -329,6 +328,10 @@ const getLayoutStyles = (
     white-space: pre-wrap !important;
   }
 
+  body:not([dir="rtl"]) {
+    overflow-x: clip;
+  }
+
   .epubtype-footnote,
   aside[epub|type~="endnote"],
   aside[epub|type~="footnote"],
@@ -359,6 +362,10 @@ const getLayoutStyles = (
     max-width: 100% !important;
   }
 
+  body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
+    max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
   /* some epubs set insane inline-block for p */
   p {
     display: block;
@@ -384,6 +391,11 @@ const getLayoutStyles = (
   .duokan-footnote img:not([class]) {
     width: 0.8em;
     height: 0.8em;
+  }
+  div:has(img.singlepage) {
+    position: relative;
+    width: auto;
+    height: auto;
   }
 
   /* workaround for some badly designed epubs */
@@ -649,6 +661,11 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
   document.body.classList.add(isDarkMode ? 'theme-dark' : 'theme-light');
 };
 
+export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
+  document.body.classList.remove('scroll-mode', 'paginated-mode');
+  document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
 export const applyImageStyle = (document: Document) => {
   document.querySelectorAll('img').forEach((img) => {
     const parent = img.parentNode;
@@ -661,6 +678,52 @@ export const applyImageStyle = (document: Document) => {
     );
     if (hasTextSiblings && isInline) {
       img.classList.add('has-text-siblings');
+    }
+  });
+};
+
+export const applyTableStyle = (document: Document) => {
+  document.querySelectorAll('table').forEach((table) => {
+    const parent = table.parentNode;
+    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
+
+    // Calculate total width from td elements with width attribute or inline style
+    let totalTableWidth = 0;
+    const rows = table.querySelectorAll('tr');
+
+    // Check all rows and use the widest one
+    for (const row of rows) {
+      const cells = row.querySelectorAll('td, th');
+      let rowWidth = 0;
+
+      cells.forEach((cell) => {
+        const cellElement = cell as HTMLElement;
+
+        const widthAttr = cellElement.getAttribute('width');
+        const styleWidth = cellElement.style.width;
+        const widthStr = widthAttr || styleWidth;
+
+        if (widthStr) {
+          const widthValue = parseFloat(widthStr);
+          const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
+
+          if (widthUnit === 'px' || !widthUnit) {
+            rowWidth += widthValue + 6;
+          } else if (widthUnit === '%') {
+            rowWidth += (window.innerWidth * widthValue) / 100;
+          }
+        }
+      });
+
+      if (rowWidth > totalTableWidth) {
+        totalTableWidth = rowWidth;
+      }
+    }
+
+    if (totalTableWidth > 0) {
+      const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
+      table.style.transformOrigin = 'left top';
+      table.style.transform = `scale(${scale})`;
     }
   });
 };
