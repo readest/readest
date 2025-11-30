@@ -29,6 +29,7 @@ export interface FileSystem {
   resolvePath(path: string, base: BaseDir): ResolvedPath;
   getURL(path: string): string;
   getBlobURL(path: string, base: BaseDir): Promise<string>;
+  getImageURL(path: string): Promise<string>;
   openFile(path: string, base: BaseDir, filename?: string): Promise<File>;
   copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void>;
   readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
@@ -74,6 +75,8 @@ export interface AppService {
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   deleteFile(path: string, base: BaseDir): Promise<void>;
   deleteDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
+  exists(path: string, base: BaseDir): Promise<boolean>;
+  getImageURL(path: string): Promise<string>;
 
   setCustomRootDir(customRootDir: string): Promise<void>;
   resolveFilePath(path: string, base: BaseDir): Promise<string>;

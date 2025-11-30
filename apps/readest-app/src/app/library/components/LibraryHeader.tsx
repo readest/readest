@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
@@ -13,8 +13,8 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { debounce } from '@/utils/debounce';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
@@ -27,6 +27,7 @@ interface LibraryHeaderProps {
   isSelectMode: boolean;
   isSelectAll: boolean;
   onImportBooks: () => void;
+  onOpenCatalogManager: () => void;
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
@@ -36,6 +37,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   isSelectMode,
   isSelectAll,
   onImportBooks,
+  onOpenCatalogManager,
   onToggleSelectMode,
   onSelectAll,
   onDeselectAll,
@@ -47,13 +49,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const { settings } = useSettingsStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
-  const {
-    isTrafficLightVisible,
-    initializeTrafficLightStore,
-    initializeTrafficLightListeners,
-    setTrafficLightVisibility,
-    cleanupTrafficLightListeners,
-  } = useTrafficLightStore();
+  const { isTrafficLightVisible } = useTrafficLight();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
   const viewSettings = settings.globalViewSettings;
@@ -84,18 +80,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     setSearchQuery(newQuery);
     debouncedUpdateQueryParam(newQuery);
   };
-
-  useEffect(() => {
-    if (!appService?.hasTrafficLight) return;
-
-    initializeTrafficLightStore(appService);
-    initializeTrafficLightListeners();
-    setTrafficLightVisibility(true);
-    return () => {
-      cleanupTrafficLightListeners();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.hasTrafficLight]);
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const currentBooksCount = currentBookshelf.reduce(
@@ -171,10 +155,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
                 isMobile ? 'dropdown-end' : 'dropdown-center',
               )}
-              buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center'
+              buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center !bg-transparent'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
-              <ImportMenu onImportBooks={onImportBooks} />
+              <ImportMenu
+                onImportBooks={onImportBooks}
+                onOpenCatalogManager={onOpenCatalogManager}
+              />
             </Dropdown>
             {isMobile ? null : (
               <button

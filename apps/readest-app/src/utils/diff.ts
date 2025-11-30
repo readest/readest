@@ -23,8 +23,8 @@ export function diff(str1: string, str2: string) {
       j++;
       k++;
     } else {
-      let delStart = i;
-      let addStart = j;
+      const delStart = i;
+      const addStart = j;
 
       while (i < lines1.length && (k >= lcs.length || !trimCompare(lines1[i], lcs[k]))) i++;
       while (j < lines2.length && (k >= lcs.length || !trimCompare(lines2[j], lcs[k]))) j++;

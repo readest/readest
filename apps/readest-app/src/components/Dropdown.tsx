@@ -14,6 +14,7 @@ interface DropdownProps {
     menuClassName?: string;
     children: ReactNode;
   }>;
+  disabled?: boolean;
   onToggle?: (isOpen: boolean) => void;
 }
 
@@ -58,6 +59,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   buttonClassName,
   toggleButton,
   children,
+  disabled,
   onToggle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,6 +68,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const setIsDropdownOpen = (open: boolean) => {
+    if (disabled) return;
     setIsOpen(open);
     onToggle?.(open);
   };

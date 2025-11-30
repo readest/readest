@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Create lookup map
-      const serverRecordsMap = new Map<string, any>();
+      const serverRecordsMap = new Map<string, BookDataRecord>();
       (serverRecords || []).forEach((record) => {
         const key = primaryKeys.map((pk) => record[pk]).join('|');
         serverRecordsMap.set(key, record);

@@ -107,6 +107,7 @@ pub async fn download_file(
     file_path: &str,
     headers: HashMap<String, String>,
     body: Option<String>,
+    single_threaded: Option<bool>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<()> {
     use futures::stream::{self, StreamExt};
@@ -116,32 +117,23 @@ pub async fn download_file(
     const PART_SIZE: u64 = 1024 * 1024;
 
     let client = reqwest::Client::new();
+    let force_single = single_threaded.unwrap_or(false);
 
-    // Check if server supports range requests
-    let range_resp = client.get(url).header("Range", "bytes=0-0").send().await?;
-    let accept_ranges = range_resp
-        .headers()
-        .get("accept-ranges")
-        .map(|v| v.to_str().unwrap_or(""))
-        .unwrap_or("")
-        .eq_ignore_ascii_case("bytes");
-    let total = range_resp
-        .headers()
-        .get("content-range")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.split('/').nth(1))
-        .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(0);
-
-    if !accept_ranges || total == 0 {
-        // Fallback to original single-threaded logic
+    async fn single_threaded_download(
+        client: &reqwest::Client,
+        url: &str,
+        file_path: &str,
+        headers: &HashMap<String, String>,
+        body: &Option<String>,
+        on_progress: Channel<ProgressPayload>,
+    ) -> Result<()> {
         let mut request = if let Some(body) = body {
-            client.post(url).body(body)
+            client.post(url).body(body.clone())
         } else {
             client.get(url)
         };
 
-        for (key, value) in headers.iter() {
+        for (key, value) in headers {
             request = request.header(key, value);
         }
 
@@ -168,7 +160,38 @@ pub async fn download_file(
             });
         }
         file.flush().await?;
-        return Ok(());
+
+        Ok(())
+    }
+
+    if force_single {
+        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
+            .await;
+    }
+
+    // Check if server supports range requests
+    let mut range_req = client.get(url).header("Range", "bytes=0-0");
+    for (key, value) in headers.iter() {
+        range_req = range_req.header(key, value);
+    }
+    let range_resp = range_req.send().await?;
+    let accept_ranges = range_resp
+        .headers()
+        .get("accept-ranges")
+        .map(|v| v.to_str().unwrap_or(""))
+        .unwrap_or("")
+        .eq_ignore_ascii_case("bytes");
+    let total = range_resp
+        .headers()
+        .get("content-range")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split('/').nth(1))
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(0);
+
+    if !accept_ranges || total == 0 {
+        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
+            .await;
     }
 
     // Multi-part download with range access

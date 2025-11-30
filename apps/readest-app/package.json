@@ -130,6 +130,8 @@
     "@types/semver": "^7.7.0",
     "@types/tinycolor2": "^1.4.6",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "caniuse-lite": "^1.0.30001746",

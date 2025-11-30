@@ -49,7 +49,7 @@ export const generateBookshelfItems = (
       booksGroup.books.push(book);
       booksGroup.updatedAt = Math.max(booksGroup.updatedAt, book.updatedAt);
     } else {
-      let groupName = fullGroupName;
+      const groupName = fullGroupName;
       acc.push({
         id: groupName === parentGroupName ? BOOK_UNGROUPED_ID : md5Fingerprint(groupName),
         name: groupName === parentGroupName ? BOOK_UNGROUPED_NAME : groupName,

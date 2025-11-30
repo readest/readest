@@ -9,6 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
+import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -39,14 +40,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const headerRef = useRef<HTMLDivElement>(null);
-  const {
-    isTrafficLightVisible,
-    trafficLightInFullscreen,
-    setTrafficLightVisibility,
-    initializeTrafficLightStore,
-    initializeTrafficLightListeners,
-    cleanupTrafficLightListeners,
-  } = useTrafficLightStore();
+  const { isTrafficLightVisible } = useTrafficLight();
+  const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { bookKeys, hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
@@ -59,17 +54,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     setIsDropdownOpen(isOpen);
     if (!isOpen) setHoveredBookKey('');
   };
-
-  useEffect(() => {
-    if (!appService?.hasTrafficLight) return;
-
-    initializeTrafficLightStore(appService);
-    initializeTrafficLightListeners();
-    return () => {
-      cleanupTrafficLightListeners();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService]);
 
   useEffect(() => {
     if (!appService?.hasTrafficLight) return;

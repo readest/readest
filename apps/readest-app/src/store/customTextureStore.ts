@@ -37,6 +37,7 @@ interface TextureStoreState {
 }
 
 function toSettingsTexture(texture: CustomTexture): CustomTexture {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { blobUrl, loaded, error, ...settingsTexture } = texture;
   return settingsTexture;
 }
