@@ -186,6 +186,9 @@ export const nativeFileSystem: FileSystem = {
     const content = await this.readFile(path, base, 'binary');
     return URL.createObjectURL(new Blob([content]));
   },
+  async getImageURL(path: string) {
+    return this.getURL(path);
+  },
   async openFile(path: string, base: BaseDir, name?: string) {
     const { fp, baseDir } = this.resolvePath(path, base);
     let fname = name || getFilename(fp);
@@ -280,7 +283,7 @@ export const nativeFileSystem: FileSystem = {
   async removeFile(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
-    return remove(fp, baseDir ? { baseDir } : undefined);
+    await remove(fp, baseDir ? { baseDir } : undefined);
   },
   async createDir(path: string, base: BaseDir, recursive = false) {
     const { fp, baseDir } = this.resolvePath(path, base);

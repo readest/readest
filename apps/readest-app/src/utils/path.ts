@@ -12,8 +12,14 @@ export const getFilename = (fileOrUri: string) => {
 
 export const getBaseFilename = (filename: string) => {
   const normalizedPath = filename.replace(/\\/g, '/');
-  const baseName = normalizedPath.split('/').pop()?.split('.').slice(0, -1).join('.') || '';
-  return baseName;
+  const name = normalizedPath.split('/').pop() || '';
+
+  const parts = name.split('.');
+  if (parts.length <= 1) {
+    return name;
+  }
+
+  return parts.slice(0, -1).join('.');
 };
 
 export const getDirPath = (filePath: string) => {

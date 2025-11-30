@@ -45,6 +45,7 @@ export const setupSupabaseMocks = async (
       eq: vi.fn().mockResolvedValue(customResponses.update || { data: {}, error: null }),
     })),
     insert: vi.fn().mockResolvedValue(customResponses.insert || { data: {}, error: null }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 
   vi.mocked(createSupabaseAdminClient).mockReturnValue({
@@ -101,5 +102,6 @@ export const setupSupabaseMocks = async (
         match: vi.fn().mockResolvedValue(customResponses.adminDelete || { data: {}, error: null }),
       })),
     })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 };

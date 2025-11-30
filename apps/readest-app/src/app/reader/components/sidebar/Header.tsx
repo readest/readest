@@ -1,13 +1,12 @@
 import clsx from 'clsx';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { GiBookshelf } from 'react-icons/gi';
 import { FiSearch } from 'react-icons/fi';
 import { MdOutlineMenu, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { MdArrowBackIosNew } from 'react-icons/md';
-import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import Dropdown from '@/components/Dropdown';
 import BookMenu from './BookMenu';
 
@@ -20,29 +19,10 @@ const SidebarHeader: React.FC<{
   onToggleSearchBar: () => void;
 }> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
-  const {
-    isTrafficLightVisible,
-    initializeTrafficLightStore,
-    initializeTrafficLightListeners,
-    setTrafficLightVisibility,
-    cleanupTrafficLightListeners,
-  } = useTrafficLightStore();
+  const { isTrafficLightVisible } = useTrafficLight();
   const iconSize14 = useResponsiveSize(14);
   const iconSize18 = useResponsiveSize(18);
   const iconSize22 = useResponsiveSize(22);
-
-  useEffect(() => {
-    if (!appService?.hasTrafficLight) return;
-
-    initializeTrafficLightStore(appService);
-    initializeTrafficLightListeners();
-    setTrafficLightVisibility(true);
-    return () => {
-      cleanupTrafficLightListeners();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.hasTrafficLight]);
 
   return (
     <div

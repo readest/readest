@@ -157,6 +157,14 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.readDir(path, base);
   }
 
+  async exists(path: string, base: BaseDir): Promise<boolean> {
+    return await this.fs.exists(path, base);
+  }
+
+  async getImageURL(path: string): Promise<string> {
+    return await this.fs.getImageURL(path);
+  }
+
   getCoverImageUrl = (book: Book): string => {
     return this.fs.getURL(`${this.localBooksDir}/${getCoverFilename(book)}`);
   };
@@ -170,11 +178,11 @@ export abstract class BaseAppService implements AppService {
     const cachePrefix = await this.fs.getPrefix('Cache');
     const cachedPath = `${cachePrefix}/${cachedKey}`;
     if (await this.fs.exists(cachedPath, 'None')) {
-      return this.fs.getURL(cachedPath);
+      return await this.fs.getImageURL(cachedPath);
     } else {
       const file = await this.fs.openFile(pathOrUrl, 'None');
       await this.fs.writeFile(cachedKey, 'Cache', await file.arrayBuffer());
-      return this.fs.getURL(cachedPath);
+      return await this.fs.getImageURL(cachedPath);
     }
   }
 
@@ -759,6 +767,7 @@ export abstract class BaseAppService implements AppService {
   }
 
   async saveLibraryBooks(books: Book[]): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
     await this.safeSaveJSON(getLibraryFilename(), 'Books', libraryBooks);
   }

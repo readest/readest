@@ -106,6 +106,8 @@ type DownloadFileParams = {
   dst: string;
   cfp: string;
   url?: string;
+  headers?: Record<string, string>;
+  singleThreaded?: boolean;
   onProgress?: ProgressHandler;
 };
 
@@ -114,16 +116,17 @@ export const downloadFile = async ({
   dst,
   cfp,
   url,
+  headers,
+  singleThreaded,
   onProgress,
 }: DownloadFileParams) => {
   try {
-    const userId = await getUserID();
-    if (!userId) {
-      throw new Error('Not authenticated');
-    }
-
     let downloadUrl = url;
     if (!downloadUrl) {
+      const userId = await getUserID();
+      if (!userId) {
+        throw new Error('Not authenticated');
+      }
       const fileKey = `${userId}/${cfp}`;
       const response = await fetchWithAuth(
         `${API_ENDPOINTS.download}?fileKey=${encodeURIComponent(fileKey)}`,
@@ -141,14 +144,14 @@ export const downloadFile = async ({
     }
 
     if (isWebAppPlatform()) {
-      const file = await webDownload(downloadUrl, onProgress);
+      const file = await webDownload(downloadUrl, onProgress, headers);
       await appService.writeFile(dst, 'None', await file.arrayBuffer());
     } else {
-      await tauriDownload(downloadUrl, dst, onProgress);
+      await tauriDownload(downloadUrl, dst, onProgress, headers, undefined, singleThreaded);
     }
   } catch (error) {
     console.error(`File '${dst}' download failed:`, error);
-    throw new Error('File download failed');
+    throw error;
   }
 };
 

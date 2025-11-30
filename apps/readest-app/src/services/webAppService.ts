@@ -71,6 +71,9 @@ const indexedDBFileSystem: FileSystem = {
       return path;
     }
   },
+  async getImageURL(path: string) {
+    return await this.getBlobURL(path, 'None');
+  },
   async openFile(path: string, base: BaseDir, filename?: string) {
     if (isValidURL(path)) {
       return await new RemoteFile(path, filename).open();
