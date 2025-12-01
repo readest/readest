@@ -44,7 +44,15 @@ fn build_windows_thumbnail() {
     }
 
     let dll_name = "windows_thumbnail.dll";
-    let dll_src = dll_crate_dir.join("target").join(&profile).join(dll_name);
+    let dll_src = if !target_triple.is_empty() {
+        dll_crate_dir
+            .join("target")
+            .join(&target_triple)
+            .join(&profile)
+            .join(dll_name)
+    } else {
+        dll_crate_dir.join("target").join(&profile).join(dll_name)
+    };
     let dll_dest = dll_crate_dir.join("target").join(dll_name);
 
     fs::copy(&dll_src, &dll_dest).expect("Failed to copy windows_thumbnail DLL");
