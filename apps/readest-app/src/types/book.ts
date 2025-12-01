@@ -210,6 +210,20 @@ export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
 
+// generated with copilot
+export interface ReplacementRule {
+  id: string;
+  pattern: string;
+  replacement: string;
+  enabled: boolean;
+  isRegex: boolean;
+  order: number; // Lower numbers apply first
+}
+
+export interface ReplacementRulesConfig {
+  replacementRules?: ReplacementRule[];
+}
+
 export interface ViewSettings
   extends BookLayout,
     BookStyle,
@@ -218,7 +232,8 @@ export interface ViewSettings
     ViewConfig,
     TTSConfig,
     TranslatorConfig,
-    ScreenConfig {}
+    ScreenConfig,
+    ReplacementRulesConfig {}
 
 export interface BookProgress {
   location: string;
