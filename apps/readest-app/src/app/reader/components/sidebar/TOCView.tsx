@@ -111,7 +111,7 @@ const TOCView: React.FC<{
       };
     }
     return;
-  }, [initialize]);
+  }, [initialize, handleInteraction]);
 
   useTextTranslation(
     bookKey,
@@ -162,7 +162,7 @@ const TOCView: React.FC<{
         scrollContainer.removeEventListener('scroll', handleInteraction);
       }
     };
-  }, [expandedItems]);
+  }, [expandedItems, handleInteraction]);
 
   const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
   const flatItems = useFlattenedTOC(toc, expandedItems);
@@ -170,19 +170,22 @@ const TOCView: React.FC<{
     return flatItems.findIndex((item) => item.item.href === activeHref);
   }, [flatItems, activeHref]);
 
-  const handleToggleExpand = useCallback((item: TOCItem) => {
-    const itemId = getItemIdentifier(item);
-    handleInteraction();
-    setExpandedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  }, []);
+  const handleToggleExpand = useCallback(
+    (item: TOCItem) => {
+      const itemId = getItemIdentifier(item);
+      handleInteraction();
+      setExpandedItems((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemId)) {
+          newSet.delete(itemId);
+        } else {
+          newSet.add(itemId);
+        }
+        return newSet;
+      });
+    },
+    [handleInteraction],
+  );
 
   const handleItemClick = useCallback(
     (item: TOCItem) => {

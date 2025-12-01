@@ -202,8 +202,15 @@ export function PublicationView({
               <div className='flex h-12 w-12 items-center justify-center'>
                 {downloading && progress && progress > 0 && (
                   <div
-                    className='radial-progress flex items-center justify-center text-xs'
-                    style={{ '--value': progress, '--size': '2.5rem' } as React.CSSProperties}
+                    className='radial-progress flex items-center justify-center'
+                    style={
+                      {
+                        '--value': progress,
+                        '--size': '2.5rem',
+                        fontSize: '0.6rem',
+                        lineHeight: '0.8rem',
+                      } as React.CSSProperties
+                    }
                     aria-valuenow={progress || 0}
                     role='progressbar'
                   >
