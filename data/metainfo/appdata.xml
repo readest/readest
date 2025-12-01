@@ -59,6 +59,26 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.94" date="2025-12-02">
+      <description>
+        <ul>
+          <li>OPDS: You can now browse and download ebooks directly from OPDS catalogs</li>
+          <li>PDF: Added a hand-tool mode that makes navigating PDF pages easier</li>
+          <li>Covers: You can now choose a folder to save the latest book cover image</li>
+          <li>CJK: Added one-tap conversion between Simplified and Traditional Chinese</li>
+          <li>Shortcuts: Use Ctrl + mouse wheel to quickly zoom in or out</li>
+          <li>Library: Added a new option to adjust cover sizes in grid view</li>
+          <li>Windows: Added Ebook thumbnails with book covers in Windows Explorer</li>
+          <li>TTS: Fixed an issue where the page would scroll when showing the annotator</li>
+          <li>Annotations: Resolved layout shifts when selecting text in paginated mode on Android</li>
+          <li>Files: Improved backup handling to prevent file corruption</li>
+          <li>Layout: Fixed text clipping caused by negative indents</li>
+          <li>E-ink: Improved sidebar and notebook background colors for e-ink devices</li>
+          <li>Android: The Back button now works properly in menus, dialogs, and alerts</li>
+          <li>iOS: Fixed occasional failures when opening books on older iOS versions (16.4 and below)</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.93" date="2025-11-20">
       <description>
         <ul>
@@ -175,17 +195,6 @@
           <li>Settings: Added global settings menu to the library page</li>
           <li>iOS: Fixed an issue where custom theme colors were not handled correctly on older Safari versions</li>
           <li>TTS: Added more languages for Edge TTS</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.81" date="2025-09-19">
-      <description>
-        <ul>
-          <li>TTS: Added desktop common media control support when TTS is playing</li>
-          <li>PDF: Disabled swipe-up gesture for toggling the action bar when zoomed in</li>
-          <li>Fonts: Fixed an issue where embedded fonts in ebooks were occasionally not applied</li>
-          <li>Reader: Fixed an issue where newly created highlights sometimes would not appear</li>
-          <li>Reader: Enabled scrolling in the menu when the menu is too long</li>
         </ul>
       </description>
     </release>
