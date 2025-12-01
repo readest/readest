@@ -321,7 +321,7 @@ jobs:
           echo "Building Portable Binaries"
           pushd apps/readest-app/
           echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
-          pnpm tauri build
+          pnpm tauri build ${{ matrix.config.args }}
 
           popd
           echo "Uploading Portable Binaries"
