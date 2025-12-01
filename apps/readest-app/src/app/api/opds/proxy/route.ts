@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
-  const url = request.nextUrl.searchParams.get('url');
+  // Cloudflare Workers incorrectly decodes %26 to & in the url parameter value,
+  // causing query parameters within the proxied URL (like &start_index=26) to be
+  // treated as separate top-level parameters instead of part of the url value.
+  // We work around this by manually extracting the url parameter - capturing everything
+  // from 'url=' until we hit our known parameters (&stream= or &auth=), then decoding it.
+  const fullUrl = request.url;
+  const urlParamStart = fullUrl.indexOf('url=') + 4;
+  const streamParam = fullUrl.lastIndexOf('&stream=');
+  const authParam = fullUrl.lastIndexOf('&auth=');
+  const urlParamEnd = Math.min(...[streamParam, authParam].filter((i) => i > 0), fullUrl.length);
+  const encodedUrl = fullUrl.substring(urlParamStart, urlParamEnd);
+  const url = decodeURIComponent(encodedUrl);
   const auth = request.nextUrl.searchParams.get('auth');
   const stream = request.nextUrl.searchParams.get('stream');
 
