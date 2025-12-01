@@ -27,6 +27,7 @@ import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
 import { throttle } from '@/utils/throttle';
+import { runSimpleCC } from '@/utils/simplecc';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -485,7 +486,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSearch = () => {
     if (!selection || !selection.text) return;
     handleDismissPopupAndSelection();
-    eventDispatcher.dispatch('search', { term: selection.text });
+
+    let term = selection.text;
+    const convertChineseVariant = viewSettings.convertChineseVariant;
+    if (convertChineseVariant && convertChineseVariant !== 'none') {
+      term = runSimpleCC(term, convertChineseVariant, true);
+    }
+    eventDispatcher.dispatch('search', { term });
   };
 
   const handleDictionary = () => {

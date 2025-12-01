@@ -1,5 +1,5 @@
 import type { Transformer } from './types';
-import { simplecc, initSimpleCC } from '@/utils/simplecc';
+import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
 
 export const simpleccTransformer: Transformer = {
   name: 'simplecc',
@@ -36,7 +36,7 @@ export const simpleccTransformer: Transformer = {
 
     for (const textNode of textNodes) {
       if (textNode.textContent) {
-        textNode.textContent = simplecc(textNode.textContent, convertChineseVariant);
+        textNode.textContent = runSimpleCC(textNode.textContent, convertChineseVariant);
       }
     }
 
