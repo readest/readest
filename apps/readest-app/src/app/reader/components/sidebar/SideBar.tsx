@@ -240,9 +240,8 @@ const SideBar: React.FC<{
       <div
         className={clsx(
           'sidebar-container flex min-w-60 select-none flex-col',
-          'transition-[padding-top] duration-300',
+          'full-height transition-[padding-top] duration-300',
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
-          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
           !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',

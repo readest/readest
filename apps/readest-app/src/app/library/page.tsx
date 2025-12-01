@@ -629,7 +629,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
-    return <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-200')} />;
+    return <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
 
   const showBookshelf = libraryLoaded || libraryBooks.length > 0;
@@ -639,7 +639,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ref={pageRef}
       aria-label='Your Library'
       className={clsx(
-        'library-page text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
         viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
@@ -793,7 +793,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
 const LibraryPage = () => {
   return (
-    <Suspense fallback={<div className='h-[100vh]' />}>
+    <Suspense fallback={<div className='full-height' />}>
       <LibraryPageWithSearchParams />
     </Suspense>
   );
