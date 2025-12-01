@@ -129,11 +129,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   return libraryLoaded && settings.globalReadSettings ? (
     <div
       className={clsx(
-        'reader-page bg-base-100 text-base-content h-[100vh] select-none overflow-hidden',
+        'reader-page bg-base-100 text-base-content full-height select-none overflow-hidden',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
-      <Suspense fallback={<div className='h-[100vh]'></div>}>
+      <Suspense fallback={<div className='full-height'></div>}>
         <ReaderContent ids={ids} settings={settings} />
         <AboutWindow />
         <UpdaterWindow />
@@ -142,7 +142,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       </Suspense>
     </div>
   ) : (
-    <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-100')}></div>
+    <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-100')}></div>
   );
 };
 

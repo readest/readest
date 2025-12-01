@@ -271,6 +271,7 @@ pub fn run() {
                 .initialization_script(
                     r#"
                         window.addEventListener('DOMContentLoaded', function() {
+                            document.documentElement.classList.add('edge-to-edge');
                             const isTauriLocal = window.location.protocol === 'tauri:' ||
                                                 window.location.protocol === 'about:' ||
                                                 window.location.hostname === 'tauri.localhost';

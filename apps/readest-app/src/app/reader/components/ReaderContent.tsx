@@ -200,7 +200,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     return (
       loading &&
       !errorLoading && (
-        <div className='hero hero-content h-[100vh]'>
+        <div className='hero hero-content full-height'>
           <Spinner loading={true} />
         </div>
       )
@@ -208,7 +208,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }
 
   return (
-    <div className='reader-content flex h-[100vh]'>
+    <div className='reader-content full-height flex'>
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
       <Notebook />

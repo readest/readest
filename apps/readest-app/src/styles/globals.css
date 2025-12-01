@@ -53,6 +53,20 @@ body {
   }
 }
 
+.full-height {
+  height: -webkit-fill-available;
+}
+
+@supports (height: 100dvh) {
+  .full-height {
+    height: 100dvh;
+  }
+}
+
+:root.edge-to-edge .full-height {
+  height: 100vh !important;
+}
+
 foliate-view {
   display: block;
   width: 100%;

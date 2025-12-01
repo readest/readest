@@ -219,9 +219,8 @@ const Notebook: React.FC = ({}) => {
       <div
         className={clsx(
           'notebook-container right-0 flex min-w-60 select-none flex-col',
-          'font-sans text-base font-normal sm:text-sm',
+          'full-height font-sans text-base font-normal sm:text-sm',
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
-          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
           !isNotebookPinned && viewSettings?.isEink && 'border-base-content border-s',

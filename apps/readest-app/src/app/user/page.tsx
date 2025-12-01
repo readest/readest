@@ -225,7 +225,7 @@ const ProfilePage = () => {
   return (
     <div
       className={clsx(
-        'bg-base-100 inset-0 h-[100vh] select-none overflow-hidden',
+        'bg-base-100 full-height inset-0 select-none overflow-hidden',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
