@@ -61,7 +61,8 @@ export const webDownload = async (
     throw new Error(UploadFileError.DownloadFailed);
   }
 
-  const contentLength = response.headers.get('Content-Length');
+  const contentLength =
+    response.headers.get('Content-Length') || response.headers.get('X-Content-Length');
   if (!contentLength) throw new Error('Cannot track progress: Content-Length missing');
 
   const totalSize = parseInt(contentLength, 10);

@@ -111,7 +111,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Content-Length': contentLength || '',
+          'X-Content-Length': contentLength || '',
           'Cache-Control': 'public, max-age=300',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',

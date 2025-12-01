@@ -134,8 +134,8 @@ export function CatalogManager() {
   return (
     <div className='container max-w-2xl'>
       <div className='mb-8'>
-        <h1 className='mb-2 text-lg font-bold'>{_('OPDS Catalogs')}</h1>
-        <p className='text-base-content/70 text-sm'>
+        <h1 className='mb-2 text-base font-bold'>{_('OPDS Catalogs')}</h1>
+        <p className='text-base-content/70 text-xs'>
           {_('Browse and download books from online catalogs')}
         </p>
       </div>

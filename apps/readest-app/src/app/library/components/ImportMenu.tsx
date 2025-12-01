@@ -45,7 +45,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         onClick={handleImportBooks}
       />
       <MenuItem
-        label={_('OPDS Catalogs')}
+        label={_('Online Library')}
         Icon={<MdRssFeed className='h-5 w-5' />}
         onClick={handleOpenCatalogManager}
       />
