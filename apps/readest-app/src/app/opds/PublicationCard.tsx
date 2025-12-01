@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { groupByArray } from './utils/opdsUtils';
 import { CachedImage } from '@/components/CachedImage';
 import { OPDSPublication, REL } from '@/types/opds';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface PublicationCardProps {
   publication: OPDSPublication;
@@ -20,6 +21,7 @@ export function PublicationCard({
   resolveURL,
   onGenerateCachedImageUrl,
 }: PublicationCardProps) {
+  const _ = useTranslation();
   const linksByRel = useMemo(
     () => groupByArray(publication.links, (link) => link.rel),
     [publication.links],
@@ -55,9 +57,10 @@ export function PublicationCard({
       return `${currency} ${value}`;
     }
     if (linksByRel.has(REL.ACQ + '/open-access')) {
-      return 'Open Access';
+      return _('Open Access');
     }
     return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publication.links, linksByRel]);
 
   return (

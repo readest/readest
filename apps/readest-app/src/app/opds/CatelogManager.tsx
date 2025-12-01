@@ -173,7 +173,7 @@ export function CatalogManager() {
                     <div className='min-w-0 flex-1'>
                       <div className='mb-1 flex items-center justify-between'>
                         <h3 className='card-title truncate text-sm'>
-                          {catalog.icon && <span className='mr-2'>{catalog.icon}</span>}
+                          {catalog.icon && <span className=''>{catalog.icon}</span>}
                           {catalog.name}
                         </h3>
                         <button
@@ -226,7 +226,7 @@ export function CatalogManager() {
               >
                 <div className='card-body p-4'>
                   <h3 className='card-title mb-1 text-sm'>
-                    {catalog.icon && <span className='mr-2'>{catalog.icon}</span>}
+                    {catalog.icon && <span className=''>{catalog.icon}</span>}
                     {catalog.name}
                   </h3>
                   {catalog.description && (
