@@ -153,6 +153,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowWiktionaryPopup(false);
       setShowWikipediaPopup(false);
       setShowDeepLPopup(false);
+      setShowReplacementOptions(false);
     }, 500),
     [],
   );
@@ -549,13 +550,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleDismissPopupAndSelection();
   };
 
-  const handleFixAllFuture = () => {
-    if (!selection || !selection.text) return;
-    console.log('Fix all future:', selection.text);
-    setShowReplacementOptions(false);
-    // TODO: Implement actual fix logic
-    handleDismissPopupAndSelection();
-  };
+
 
   const handleShowReplacementOptions = () => {
     setShowReplacementOptions(!showReplacementOptions);
@@ -779,7 +774,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         onFixOnce={handleFixOnce}
         onFixInBook={handleFixInBook}
         onFixInLibrary={handleFixInLibrary}
-        onFixAllFuture={handleFixAllFuture}
+        onClose={() => setShowReplacementOptions(false)}
       />
     )}
     </div>
