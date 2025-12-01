@@ -1,5 +1,24 @@
 {
   "releases": {
+    "0.9.94": {
+      "date": "2025-12-02",
+      "notes": [
+        "OPDS: You can now browse and download ebooks directly from OPDS catalogs",
+        "PDF: Added a hand-tool mode that makes navigating PDF pages easier",
+        "Covers: You can now choose a folder to save the latest book cover image",
+        "CJK: Added one-tap conversion between Simplified and Traditional Chinese",
+        "Shortcuts: Use Ctrl + mouse wheel to quickly zoom in or out",
+        "Library: Added a new option to adjust cover sizes in grid view",
+        "Windows: Added Ebook thumbnails with book covers in Windows Explorer",
+        "TTS: Fixed an issue where the page would scroll when showing the annotator",
+        "Annotations: Resolved layout shifts when selecting text in paginated mode on Android",
+        "Files: Improved backup handling to prevent file corruption",
+        "Layout: Fixed text clipping caused by negative indents",
+        "E-ink: Improved sidebar and notebook background colors for e-ink devices",
+        "Android: The Back button now works properly in menus, dialogs, and alerts",
+        "iOS: Fixed occasional failures when opening books on older iOS versions (16.4 and below)"
+      ]
+    },
     "0.9.93": {
       "date": "2025-11-20",
       "notes": [
