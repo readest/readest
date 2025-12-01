@@ -5327,7 +5327,7 @@ dependencies = [
  "tauri-macros",
  "tauri-runtime",
  "tauri-runtime-wry",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "thiserror 2.0.17",
  "tokio",
  "tracing",
@@ -5356,7 +5356,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri-codegen",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "tauri-winres",
  "toml 0.9.8",
  "walkdir",
@@ -5396,7 +5396,7 @@ dependencies = [
  "quote",
  "syn 2.0.111",
  "tauri-codegen",
- "tauri-utils",
+ "tauri-utils 2.8.0",
 ]
 
 [[package]]
@@ -5411,7 +5411,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "tauri-utils",
+ "tauri-utils 2.8.1",
  "toml 0.9.8",
  "walkdir",
 ]
@@ -5444,7 +5444,7 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-plugin",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "thiserror 2.0.17",
  "tracing",
  "url",
@@ -5486,7 +5486,7 @@ dependencies = [
  "serde_repr",
  "tauri",
  "tauri-plugin",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "thiserror 2.0.17",
  "toml 0.9.8",
  "url",
@@ -5766,7 +5766,7 @@ dependencies = [
  "raw-window-handle",
  "serde",
  "serde_json",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "thiserror 2.0.17",
  "url",
  "webkit2gtk",
@@ -5791,7 +5791,7 @@ dependencies = [
  "softbuffer",
  "tao",
  "tauri-runtime",
- "tauri-utils",
+ "tauri-utils 2.8.0",
  "tracing",
  "url",
  "webkit2gtk",
@@ -5839,6 +5839,42 @@ dependencies = [
  "urlpattern",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "tauri-utils"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76a423c51176eb3616ee9b516a9fa67fed5f0e78baaba680e44eb5dd2cc37490"
+dependencies = [
+ "anyhow",
+ "cargo_metadata",
+ "ctor",
+ "dunce",
+ "glob",
+ "html5ever",
+ "http",
+ "infer",
+ "json-patch",
+ "kuchikiki",
+ "log",
+ "memchr",
+ "phf 0.11.3",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "schemars 0.8.22",
+ "semver",
+ "serde",
+ "serde-untagged",
+ "serde_json",
+ "serde_with",
+ "swift-rs",
+ "thiserror 2.0.17",
+ "toml 0.9.8",
+ "url",
+ "urlpattern",
+ "uuid",
 ]
 
 [[package]]
