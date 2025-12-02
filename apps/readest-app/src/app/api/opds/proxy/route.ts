@@ -54,7 +54,6 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
     if (!response.ok) {
       console.error(`[OPDS Proxy] HTTP ${response.status} for ${url}`);
       if (method === 'HEAD') {
-        console.log(`[OPDS Proxy] Response headers:`, response.headers);
         if (response.status === 401) {
           return new NextResponse(null, {
             status: 403,

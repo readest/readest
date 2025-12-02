@@ -11,7 +11,6 @@ import { FeedView } from './FeedView';
 import { PublicationView } from './PublicationView';
 import { SearchView } from './SearchView';
 import { Navigation } from './Navigation';
-import { getBaseFilename } from '@/utils/path';
 import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -284,7 +283,7 @@ export default function BrowserPage() {
           return;
         } else {
           const ext = parsed?.mediaType ? getFileExtFromMimeType(parsed.mediaType) : '';
-          const basename = getBaseFilename(url);
+          const basename = new URL(url).pathname.replaceAll('/', '_');
           const filename = ext ? `${basename}.${ext}` : basename;
           const dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
           if (dstFilePath) {
@@ -292,7 +291,9 @@ export default function BrowserPage() {
             const password = passwordRef.current || '';
             const useProxy = needsProxy(url);
             let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
-            const headers: Record<string, string> = {};
+            const headers: Record<string, string> = {
+              'User-Agent': 'Readest/1.0 (OPDS Browser)',
+            };
             if (username || password) {
               const authHeader = await probeAuth(url, username, password, useProxy);
               if (authHeader) {
