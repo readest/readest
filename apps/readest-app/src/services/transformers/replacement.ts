@@ -18,9 +18,10 @@ export const replacementTransformer: Transformer = {
 
   transform: async (ctx) => {
     // Get merged rules (global + book rules)
-    const globalRules = useSettingsStore.getState().settings.globalViewSettings.replacementRules;
+    const globalRules = useSettingsStore.getState().settings?.globalViewSettings?.replacementRules;
     const bookRules = ctx.viewSettings.replacementRules;
     const replacementRules = mergeReplacementRules(globalRules, bookRules);
+        
     
     // Log when transformer is called
     console.log('[REPLACEMENT] Transformer called!', {
