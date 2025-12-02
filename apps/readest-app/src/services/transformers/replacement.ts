@@ -31,7 +31,7 @@ export const replacementTransformer: Transformer = {
     const doc = parser.parseFromString(ctx.content, 'text/html');
 
     // Create tree walker to iterate through text nodes
-    const walker = document.createTreeWalker(
+    const walker = doc.createTreeWalker(
       doc.body || doc.documentElement,
       NodeFilter.SHOW_TEXT,
       {
