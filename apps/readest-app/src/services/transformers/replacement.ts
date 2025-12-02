@@ -14,6 +14,7 @@ export const replacementTransformer: Transformer = {
     
     // If no rules defined, return content unchanged
     if (!replacementRules || replacementRules.length === 0) {
+      console.log('[REPLACEMENT] No rules defined, returning unchanged');
       return ctx.content;
     }
 
@@ -23,8 +24,12 @@ export const replacementTransformer: Transformer = {
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
     if (enabledRules.length === 0) {
+      console.log('[REPLACEMENT] No enabled rules, returning unchanged');
       return ctx.content;
     }
+
+    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
+
 
     // Parse HTML to work with text nodes only (preserve HTML structure)
     const parser = new DOMParser();
@@ -86,6 +91,8 @@ export const replacementTransformer: Transformer = {
 
       textNode.textContent = transformedText;
     }
+
+    console.log('[REPLACEMENT] Transformation complete');
 
     // Serialize back to HTML string
     const serializer = new XMLSerializer();
