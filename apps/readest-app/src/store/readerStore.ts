@@ -413,4 +413,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         }));
       });
   },
+
+  
 }));
+
+// TEMPORARY: For testing only - remove after verification
+if (typeof window !== 'undefined') {
+  (window as any).__READEST_READER_STORE__ = useReaderStore;
+  (window as any).__READEST_GET_STATE__ = () => useReaderStore.getState();
+}
