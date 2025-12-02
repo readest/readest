@@ -8,10 +8,6 @@ import { simpleccTransformer } from './simplecc';
 import { styleTransformer } from './style';
 import { replacementTransformer } from './replacement';
 
-console.log('[MODULE LOAD] transformers/index.ts loaded');
-console.log('[MODULE LOAD] Replacement transformer:', replacementTransformer.name);
-
-
 export const availableTransformers: Transformer[] = [
   punctuationTransformer,
   footnoteTransformer,
@@ -20,6 +16,6 @@ export const availableTransformers: Transformer[] = [
   whitespaceTransformer,
   sanitizerTransformer,
   simpleccTransformer,
-  replacementTransformer, // Add replacement transformer
+  replacementTransformer,
   // Add more transformers here
 ];

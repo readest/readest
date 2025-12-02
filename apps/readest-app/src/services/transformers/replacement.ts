@@ -1,10 +1,7 @@
 // copilot generated
 import type { Transformer } from './types';
 
-console.log('   [MODULE LOAD] replacement.ts module loaded');
-
-
-/** 
+/**
  * Replacement transformer that applies user-defined text replacement rules.
  * Supports both simple string replacements and regex patterns.
  * Rules are applied in order (by order field), with per-book rules taking precedence over global rules.
@@ -13,13 +10,12 @@ export const replacementTransformer: Transformer = {
   name: 'replacement',
 
   transform: async (ctx) => {
-    console.log('[REPLACEMENT] ===== TRANSFORMER CALLED =====', {
+    // Log when transformer is called
+    console.log('[REPLACEMENT] Transformer called!', {
       bookKey: ctx.bookKey,
-      contentLength: ctx.content?.length || 0,
       hasRules: !!ctx.viewSettings.replacementRules,
       ruleCount: ctx.viewSettings.replacementRules?.length || 0
     });
-
 
     const replacementRules = ctx.viewSettings.replacementRules;
     
@@ -40,7 +36,6 @@ export const replacementTransformer: Transformer = {
     }
 
     console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
-
 
     // Parse HTML to work with text nodes only (preserve HTML structure)
     const parser = new DOMParser();

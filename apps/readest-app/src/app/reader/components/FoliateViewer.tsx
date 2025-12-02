@@ -126,23 +126,12 @@ const FoliateViewer: React.FC<{
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
       const { detail } = event as CustomEvent;
-
-      // testing code
-      console.log('[FOLIATE] Transform handler called!', {
-        type: detail.type,
-        name: detail.name
-      });
-
+  
       detail.data = Promise.resolve(detail.data)
         .then((data) => {
           const viewSettings = getViewSettings(bookKey);
           const bookData = getBookData(bookKey);
-
-          // testing code
-          if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
-            console.log('[FOLIATE] About to transform XHTML content');
-          }
-
+  
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(width, height, data);
           if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
@@ -162,7 +151,7 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
-                'replacement', // Add this line
+                'replacement',
               ],
             };
             return Promise.resolve(transformContent(ctx));
