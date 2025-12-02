@@ -3,6 +3,14 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { replacementTransformer } from '@/services/transformers/replacement';
 import { TransformContext } from '@/services/transformers/types';
 import { ViewSettings, ReplacementRule } from '@/types/book';
+import {
+    createReplacementRule,
+    mergeReplacementRules,
+    getMergedReplacementRules,
+    validateReplacementRulePattern,
+    type CreateReplacementRuleOptions,
+    type ReplacementRuleScope,
+  } from '@/services/transformers/replacement';
 
 describe('replacementTransformer', () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
@@ -541,6 +549,173 @@ describe('replacementTransformer', () => {
       
       expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Applying', 1, 'rules:', ['test']);
       expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Transformation complete');
+    });
+  })
+  
+  describe('replacement rule management functions', () => {
+    describe('createReplacementRule', () => {
+      test('should create a rule with default values', () => {
+        const rule = createReplacementRule({
+          pattern: 'test',
+          replacement: 'TEST',
+        });
+  
+        expect(rule).toMatchObject({
+          pattern: 'test',
+          replacement: 'TEST',
+          isRegex: false,
+          enabled: true,
+          order: 1000,
+        });
+        expect(rule.id).toBeDefined();
+        expect(typeof rule.id).toBe('string');
+      });
+  
+      test('should create a rule with custom values', () => {
+        const rule = createReplacementRule({
+          pattern: '\\d+',
+          replacement: 'NUMBER',
+          isRegex: true,
+          enabled: false,
+          order: 1,
+        });
+  
+        expect(rule).toMatchObject({
+          pattern: '\\d+',
+          replacement: 'NUMBER',
+          isRegex: true,
+          enabled: false,
+          order: 1,
+        });
+      });
+    });
+  
+    describe('mergeReplacementRules', () => {
+      test('should merge global and book rules', () => {
+        const globalRules: ReplacementRule[] = [
+          {
+            id: 'global-1',
+            pattern: 'the',
+            replacement: 'THE',
+            enabled: true,
+            isRegex: false,
+            order: 1,
+          },
+        ];
+  
+        const bookRules: ReplacementRule[] = [
+          {
+            id: 'book-1',
+            pattern: 'cat',
+            replacement: 'dog',
+            enabled: true,
+            isRegex: false,
+            order: 2,
+          },
+        ];
+  
+        const merged = mergeReplacementRules(globalRules, bookRules);
+  
+        expect(merged).toHaveLength(2);
+        expect(merged[0]!.id).toBe('global-1');
+        expect(merged[1]!.id).toBe('book-1');
+      });
+  
+      test('should prioritize book rules over global rules with same ID', () => {
+        const globalRules: ReplacementRule[] = [
+          {
+            id: 'rule-1',
+            pattern: 'the',
+            replacement: 'THE',
+            enabled: true,
+            isRegex: false,
+            order: 1,
+          },
+        ];
+  
+        const bookRules: ReplacementRule[] = [
+          {
+            id: 'rule-1',
+            pattern: 'the',
+            replacement: '>THE<',
+            enabled: true,
+            isRegex: false,
+            order: 1,
+          },
+        ];
+  
+        const merged = mergeReplacementRules(globalRules, bookRules);
+  
+        expect(merged).toHaveLength(1);
+        expect(merged[0]!.replacement).toBe('>THE<'); // Book rule wins
+      });
+  
+      test('should sort rules by order', () => {
+        const globalRules: ReplacementRule[] = [
+          {
+            id: 'rule-3',
+            pattern: 'c',
+            replacement: 'C',
+            enabled: true,
+            isRegex: false,
+            order: 3,
+          },
+          {
+            id: 'rule-1',
+            pattern: 'a',
+            replacement: 'A',
+            enabled: true,
+            isRegex: false,
+            order: 1,
+          },
+        ];
+  
+        const bookRules: ReplacementRule[] = [
+          {
+            id: 'rule-2',
+            pattern: 'b',
+            replacement: 'B',
+            enabled: true,
+            isRegex: false,
+            order: 2,
+          },
+        ];
+  
+        const merged = mergeReplacementRules(globalRules, bookRules);
+  
+        expect(merged[0]!.pattern).toBe('a');
+        expect(merged[1]!.pattern).toBe('b');
+        expect(merged[2]!.pattern).toBe('c');
+      });
+  
+      test('should handle undefined rules', () => {
+        const merged = mergeReplacementRules(undefined, undefined);
+        expect(merged).toEqual([]);
+      });
+    });
+  
+    describe('validateReplacementRulePattern', () => {
+      test('should validate simple string pattern', () => {
+        const result = validateReplacementRulePattern('test', false);
+        expect(result.valid).toBe(true);
+      });
+  
+      test('should reject empty pattern', () => {
+        const result = validateReplacementRulePattern('', false);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain('empty');
+      });
+  
+      test('should validate valid regex pattern', () => {
+        const result = validateReplacementRulePattern('\\d+', true);
+        expect(result.valid).toBe(true);
+      });
+  
+      test('should reject invalid regex pattern', () => {
+        const result = validateReplacementRulePattern('[invalid', true);
+        expect(result.valid).toBe(false);
+        expect(result.error).toBeDefined();
+      });
     });
   });
 });
