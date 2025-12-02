@@ -417,8 +417,16 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
   
 }));
 
+// copilot generated
 // TEMPORARY: For testing only - remove after verification
+declare global {
+  interface Window {
+    __READEST_READER_STORE__?: typeof useReaderStore;
+    __READEST_GET_STATE__?: () => ReturnType<typeof useReaderStore.getState>;
+  }
+}
+
 if (typeof window !== 'undefined') {
-  (window as any).__READEST_READER_STORE__ = useReaderStore;
-  (window as any).__READEST_GET_STATE__ = () => useReaderStore.getState();
+  window.__READEST_READER_STORE__ = useReaderStore;
+  window.__READEST_GET_STATE__ = () => useReaderStore.getState();
 }
