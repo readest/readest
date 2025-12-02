@@ -6,10 +6,7 @@ import { ViewSettings, ReplacementRule } from '@/types/book';
 import {
     createReplacementRule,
     mergeReplacementRules,
-    getMergedReplacementRules,
     validateReplacementRulePattern,
-    type CreateReplacementRuleOptions,
-    type ReplacementRuleScope,
   } from '@/services/transformers/replacement';
 
 describe('replacementTransformer', () => {
@@ -53,8 +50,12 @@ describe('replacementTransformer', () => {
         '[REPLACEMENT] Transformer called!',
         expect.objectContaining({
           bookKey: 'test-book',
-          hasRules: false,
-          ruleCount: 0,
+          hasGlobalRules: false,
+          globalRuleCount: 0,
+          hasBookRules: false,
+          bookRuleCount: 0,
+          hasMergedRules: true,
+          mergedRuleCount: 0,
         }),
       );
       expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No rules defined, returning unchanged');
@@ -526,8 +527,12 @@ describe('replacementTransformer', () => {
         '[REPLACEMENT] Transformer called!',
         expect.objectContaining({
           bookKey: 'test-book',
-          hasRules: true,
-          ruleCount: 1,
+          hasGlobalRules: false,
+          globalRuleCount: 0,
+          hasBookRules: true,
+          bookRuleCount: 1,
+          hasMergedRules: true,
+          mergedRuleCount: 1,
         }),
       );
     });
