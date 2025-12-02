@@ -149,6 +149,7 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
+                'replacement', // Add replacement transformer
               ],
             };
             return Promise.resolve(transformContent(ctx));
