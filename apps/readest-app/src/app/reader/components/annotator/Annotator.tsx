@@ -526,33 +526,66 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
 
-  const handleFixOnce = () => {
-  if (!selection || !selection.text) return;
-  console.log('Fix this once:', selection.text);
-  setShowReplacementOptions(false);
-  // TODO: Implement actual fix logic
-  handleDismissPopupAndSelection();
-};
+  const MAX_REPLACEMENT_WORDS = 30;
 
-  const handleFixInBook = () => {
-    if (!selection || !selection.text) return;
-    console.log('Fix in this book:', selection.text);
-    setShowReplacementOptions(false);
-    // TODO: Implement actual fix logic
-    handleDismissPopupAndSelection();
+  const getWordCount = (text: string): number => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
-  const handleFixInLibrary = () => {
+  // Import type for ReplacementConfig
+  type ReplacementConfig = {
+    replacementText: string;
+    caseSensitive: boolean;
+    scope: 'once' | 'book' | 'library';
+  };
+
+  const handleReplacementConfirm = (config: ReplacementConfig) => {
     if (!selection || !selection.text) return;
-    console.log('Fix in library:', selection.text);
+    
+    const { replacementText, caseSensitive, scope } = config;
+    
+    console.log('Replacement confirmed:', {
+      originalText: selection.text,
+      replacementText,
+      caseSensitive,
+      scope,
+    });
+
+    // TODO: Implement actual replacement logic based on scope
+    // For now, show a success toast
+    const scopeLabels = {
+      once: 'this instance',
+      book: 'this book',
+      library: 'your library',
+    };
+
+    eventDispatcher.dispatch('toast', {
+      type: 'success',
+      message: `Text replaced in ${scopeLabels[scope]}${caseSensitive ? ' (case-sensitive)' : ''}.`,
+      timeout: 3000,
+    });
+
     setShowReplacementOptions(false);
-    // TODO: Implement actual fix logic
     handleDismissPopupAndSelection();
   };
 
 
 
   const handleShowReplacementOptions = () => {
+    if (!selection || !selection.text) {
+      return;
+    }
+
+    const wordCount = getWordCount(selection.text);
+    if (wordCount > MAX_REPLACEMENT_WORDS) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: 'Word limit exceeded. Please select 30 words or fewer.',
+        timeout: 3000,
+      });
+      return;
+    }
+
     setShowReplacementOptions(!showReplacementOptions);
   };
 
@@ -762,7 +795,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <ReplacementOptions
         isVertical={viewSettings.vertical}
         style={{
-          width: `${viewSettings.vertical ? annotPopupHeight : annotPopupWidth}px`,
           height: 'auto',
           left: `${annotPopupPosition.point.x}px`,
           top: `${
@@ -771,9 +803,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           }px`,
         }}
         selectedText={selection?.text || ''}
-        onFixOnce={handleFixOnce}
-        onFixInBook={handleFixInBook}
-        onFixInLibrary={handleFixInLibrary}
+        onConfirm={handleReplacementConfirm}
         onClose={() => setShowReplacementOptions(false)}
       />
     )}
