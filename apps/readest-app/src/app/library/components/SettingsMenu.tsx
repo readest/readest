@@ -334,7 +334,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
                 noIcon={!appService?.isAndroidApp}
                 onClick={handleSetRootDir}
               />
-              {appService?.isAndroidApp && (
+              {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
                 <MenuItem
                   label={_('Save Book Cover')}
                   tooltip={_('Auto-save last book cover')}
