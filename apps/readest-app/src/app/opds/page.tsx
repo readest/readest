@@ -1,29 +1,30 @@
 'use client';
 
+import clsx from 'clsx';
+import { md5 } from 'js-md5';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
-import { md5 } from 'js-md5';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { isWebAppPlatform } from '@/services/environment';
-import { FeedView } from './FeedView';
-import { PublicationView } from './PublicationView';
-import { SearchView } from './SearchView';
-import { Navigation } from './Navigation';
 import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
 import { MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
 import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
-import clsx from 'clsx';
-import { useThemeStore } from '@/store/themeStore';
-import { useTheme } from '@/hooks/useTheme';
+import { FeedView } from './components/FeedView';
+import { PublicationView } from './components/PublicationView';
+import { SearchView } from './components/SearchView';
+import { Navigation } from './components/Navigation';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -49,6 +50,7 @@ export default function BrowserPage() {
   const { appService } = useEnv();
   const { libraryLoaded } = useLibrary();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { settings } = useSettingsStore();
   const [viewMode, setViewMode] = useState<ViewMode>('loading');
   const [state, setState] = useState<OPDSState>({
     baseURL: '',
@@ -64,10 +66,10 @@ export default function BrowserPage() {
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const searchParams = useSearchParams();
-  const usernameRef = useRef(searchParams?.get('username'));
-  const passwordRef = useRef(searchParams?.get('password'));
+  const usernameRef = useRef<string | null | undefined>(undefined);
+  const passwordRef = useRef<string | null | undefined>(undefined);
+  const startURLRef = useRef<string | null | undefined>(undefined);
   const loadingOPDSRef = useRef(false);
-  const startURLRef = useRef<string | undefined>(undefined);
   const historyIndexRef = useRef(-1);
   const isNavigatingHistoryRef = useRef(false);
 
@@ -235,9 +237,10 @@ export default function BrowserPage() {
 
   useEffect(() => {
     const url = searchParams?.get('url');
-    const username = searchParams?.get('username');
-    const password = searchParams?.get('password');
     if (url && !isNavigatingHistoryRef.current) {
+      const catalogId = searchParams?.get('id') || '';
+      const catalog = settings.opdsCatalogs?.find((cat) => cat.id === catalogId);
+      const { username, password } = catalog || {};
       if (username || password) {
         usernameRef.current = username;
         passwordRef.current = password;
@@ -245,14 +248,16 @@ export default function BrowserPage() {
         usernameRef.current = null;
         passwordRef.current = null;
       }
-      loadOPDS(url);
+      if (libraryLoaded) {
+        loadOPDS(url);
+      }
     } else if (isNavigatingHistoryRef.current) {
       isNavigatingHistoryRef.current = false;
     } else {
       setViewMode('error');
       setError(new Error('No OPDS URL provided'));
     }
-  }, [searchParams, loadOPDS]);
+  }, [searchParams, settings, libraryLoaded, loadOPDS]);
 
   const handleNavigate = useCallback(
     (url: string) => {

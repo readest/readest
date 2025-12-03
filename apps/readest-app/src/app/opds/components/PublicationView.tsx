@@ -5,13 +5,13 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
-import { groupByArray } from './utils/opdsUtils';
+import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatDate, formatLanguage } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { CachedImage } from '@/components/CachedImage';
-import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
+import { groupByArray } from '../utils/opdsUtils';
 import Dropdown from '@/components/Dropdown';
 import MenuItem from '@/components/MenuItem';
 
