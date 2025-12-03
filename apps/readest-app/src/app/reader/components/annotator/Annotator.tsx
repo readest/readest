@@ -385,8 +385,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowWikipediaPopup(false);
   };
 
-  const handleCopy = () => {
+  const handleCopy = (copyToNotebook = true) => {
     if (!selection || !selection.text) return;
+    navigator.clipboard?.writeText(selection.text);
+    handleDismissPopupAndSelection();
+
+    if (!copyToNotebook) return;
+
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: _('Copied to notebook'),
@@ -395,7 +400,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     });
 
     const { booknotes: annotations = [] } = config;
-    if (selection) navigator.clipboard?.writeText(selection.text);
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
     const annotation: BookNote = {
@@ -421,7 +425,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
-    handleDismissPopupAndSelection();
     if (!appService?.isMobile) {
       setNotebookVisible(true);
     }
@@ -535,7 +538,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         handleSearch();
       },
       onCopySelection: () => {
-        handleCopy();
+        handleCopy(false);
       },
       onTranslateSelection: () => {
         handleTranslation();
