@@ -10,7 +10,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { saveSysSettings } from '@/helpers/settings';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
-import { validateOPDSURL } from './utils/opdsUtils';
+import { validateOPDSURL } from '../utils/opdsUtils';
 import ModalPortal from '@/components/ModalPortal';
 
 const POPULAR_CATALOGS: OPDSCatalog[] = [
@@ -119,8 +119,7 @@ export function CatalogManager() {
 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
-    if (catalog.username) params.set('username', catalog.username);
-    if (catalog.password) params.set('password', catalog.password);
+    if (catalog.username) params.set('id', catalog.id);
     router.push(`/opds?${params.toString()}`);
   };
 

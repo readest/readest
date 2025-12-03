@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSFeed, OPDSLink } from '@/types/opds';
 import { PublicationCard } from './PublicationCard';
 import { NavigationCard } from './NavigationCard';
-import { groupByArray } from './utils/opdsUtils';
+import { groupByArray } from '../utils/opdsUtils';
 
 interface FeedViewProps {
   feed: OPDSFeed;
