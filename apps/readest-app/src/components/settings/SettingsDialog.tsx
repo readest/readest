@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
-import { RiFontSize } from 'react-icons/ri';
+import { RiFontSize, RiToolsLine, RiEdit2Line, RiDeleteBinLine, RiCheckLine, RiCloseLine } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
@@ -22,7 +22,14 @@ import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 
-export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType =
+  | 'Font'
+  | 'Layout'
+  | 'Color'
+  | 'Control'
+  | 'Language'
+  | 'Custom'
+  | 'Replacement';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -41,7 +48,12 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontPanelView, setSettingsDialogOpen } = useSettingsStore();
+  const { setFontPanelView, setSettingsDialogOpen, setSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
+
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [editPattern, setEditPattern] = useState('');
+  const [editReplacement, setEditReplacement] = useState('');
 
   const tabConfig = [
     {
@@ -74,6 +86,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       icon: IoAccessibilityOutline,
       label: _('Custom'),
     },
+    {
+      tab: 'Replacement',
+      icon: RiToolsLine,
+      label: _('Text Replacements'),
+    },
   ] as TabConfig[];
 
   const [activePanel, setActivePanel] = useState<SettingsPanelType>(() => {
@@ -99,6 +116,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Control: null,
     Language: null,
     Custom: null,
+    Replacement: null,
   });
 
   const registerResetFunction = (panel: SettingsPanelType, resetFn: () => void) => {
@@ -283,6 +301,105 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             bookKey={bookKey}
             onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
           />
+        )}
+        {activePanel === 'Replacement' && (
+          <div className='my-4 w-full'>
+            <h2 className='mb-2 font-medium'>{_('Global Replacement Rules')}</h2>
+            <div className='card border-base-200 border shadow'>
+              <div className='divide-base-200 divide-y'>
+                {settings?.globalViewSettings?.replacementRules?.length === 0 ? (
+                  <div className='p-4 text-sm text-base-content/70'>
+                    {_('No global replacement rules')}
+                  </div>
+                ) : (
+                  settings?.globalViewSettings?.replacementRules?.map((r: any) => (
+                    <div key={r.id} className='config-item p-2 flex items-start justify-between'>
+                      <div className='min-w-0'>
+                        {editingRuleId === r.id ? (
+                          <div className='flex flex-col gap-2'>
+                            <input
+                              value={editPattern}
+                              onChange={(e) => setEditPattern(e.target.value)}
+                              className='input input-sm bg-base-200 text-sm'
+                              placeholder={_('Pattern')}
+                            />
+                            <input
+                              value={editReplacement}
+                              onChange={(e) => setEditReplacement(e.target.value)}
+                              className='input input-sm bg-base-200 text-sm'
+                              placeholder={_('Replacement')}
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <div className='font-medium text-sm truncate'>{r.pattern}</div>
+                            <div className='text-xs text-base-content/70 break-all'>{r.replacement}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className='flex items-center gap-2 ml-4'>
+                        {editingRuleId === r.id ? (
+                          <>
+                            <button
+                              className='btn btn-ghost btn-sm p-1'
+                              onClick={() => {
+                                // save
+                                const updated = (settings?.globalViewSettings?.replacementRules || []).map((rr: any) =>
+                                  rr.id === r.id ? { ...rr, pattern: editPattern, replacement: editReplacement } : rr,
+                                );
+                                const newSettings = { ...settings } as any;
+                                newSettings.globalViewSettings = { ...newSettings.globalViewSettings, replacementRules: updated };
+                                setSettings(newSettings);
+                                setEditingRuleId(null);
+                              }}
+                              aria-label={_('Save')}
+                            >
+                              <RiCheckLine />
+                            </button>
+                            <button
+                              className='btn btn-ghost btn-sm p-1'
+                              onClick={() => setEditingRuleId(null)}
+                              aria-label={_('Cancel')}
+                            >
+                              <RiCloseLine />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className='btn btn-ghost btn-sm p-1'
+                              onClick={() => {
+                                setEditingRuleId(r.id);
+                                setEditPattern(r.pattern || '');
+                                setEditReplacement(r.replacement || '');
+                              }}
+                              aria-label={_('Edit')}
+                            >
+                              <RiEdit2Line />
+                            </button>
+                            <button
+                              className='btn btn-ghost btn-sm p-1'
+                              onClick={() => {
+                                const updated = (settings?.globalViewSettings?.replacementRules || []).filter(
+                                  (rr: any) => rr.id !== r.id,
+                                );
+                                const newSettings = { ...settings } as any;
+                                newSettings.globalViewSettings = { ...newSettings.globalViewSettings, replacementRules: updated };
+                                setSettings(newSettings);
+                              }}
+                              aria-label={_('Delete')}
+                            >
+                              <RiDeleteBinLine />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </Dialog>
