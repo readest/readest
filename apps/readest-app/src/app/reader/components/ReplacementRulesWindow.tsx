@@ -6,12 +6,16 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 
 export const setReplacementRulesWindowVisible = (visible: boolean) => {
-  const dialog = document.getElementById('replacement_rules_window');
-  if (dialog) {
-    const event = new CustomEvent('setReplacementRulesVisibility', {
-      detail: { visible },
-    });
-    dialog.dispatchEvent(event);
+  // Persist desired visibility on window so components that mount later can read it
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ = visible;
+  const event = new CustomEvent('setReplacementRulesVisibility', {
+    detail: { visible },
+  });
+  // Dispatch on window so listeners attached to window/document will receive it
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(event);
   }
 };
 
@@ -24,13 +28,26 @@ export const ReplacementRulesWindow: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const handleCustomEvent = (event: CustomEvent) => {
-      setIsOpen(event.detail.visible);
+    const handleCustomEvent = (event: Event) => {
+      const ev = event as CustomEvent;
+      setIsOpen(!!ev.detail?.visible);
     };
-    const el = document.getElementById('replacement_rules_window');
-    el?.addEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
+
+    // Initialize from window flag in case the open request fired before mount
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const initial = typeof window !== 'undefined' ? !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ : false;
+    setIsOpen(initial);
+
+    // Listen on window for visibility events
+    if (typeof window !== 'undefined') {
+      window.addEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
+    }
+
     return () => {
-      el?.removeEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
+      }
     };
   }, []);
 
