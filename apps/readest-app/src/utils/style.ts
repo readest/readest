@@ -612,14 +612,27 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
   // Process duokan-bleed
   css = css.replace(ruleRegex, (_, selector, block) => {
     const directions = ['top', 'bottom', 'left', 'right'];
+    let hasBleed = false;
     for (const dir of directions) {
       const bleedRegex = new RegExp(`duokan-bleed\\s*:\\s*[^;]*${dir}[^;]*;`);
       const marginRegex = new RegExp(`margin-${dir}\\s*:`);
       if (bleedRegex.test(block) && !marginRegex.test(block)) {
+        hasBleed = true;
         block = block.replace(
           /}$/,
           ` margin-${dir}: calc(-1 * var(--margin-${dir})) !important; }`,
         );
+      }
+    }
+    if (hasBleed) {
+      if (!/position\s*:/.test(block)) {
+        block = block.replace(/}$/, ' position: relative !important; }');
+      }
+      if (!/overflow\s*:/.test(block)) {
+        block = block.replace(/}$/, ' overflow: hidden !important; }');
+      }
+      if (!/display\s*:/.test(block)) {
+        block = block.replace(/}$/, ' display: flow-root !important; }');
       }
     }
     return selector + block;
