@@ -76,20 +76,6 @@ export interface BookNote {
   deletedAt?: number | null;
 }
 
-export interface Replacement {
-  id: string;
-  // cfi for single-scope replacements; for book-scope this may be empty
-  cfi?: string;
-  original: string;
-  replacement: string;
-  // scope: 'single' applies to this CFI only; 'book' applies to all matches in the book
-  scope: 'single' | 'book';
-  deviceId?: string;
-  createdAt: number;
-  updatedAt: number;
-  deletedAt?: number | null;
-}
-
 export interface BooknoteGroup {
   id: number;
   href: string;
