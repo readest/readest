@@ -26,6 +26,7 @@ export const useTextSelector = (
   const isTextSelected = useRef(false);
   const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
+  const lastPointerType = useRef<string>('mouse');
   const [textSelected, setTextSelected] = useState(false);
 
   const isValidSelection = (sel: Selection) => {
@@ -111,6 +112,9 @@ export const useTextSelector = (
     }
     return false;
   };
+  const handlePointerdown = (e: PointerEvent) => {
+    lastPointerType.current = e.pointerType;
+  };
   const handlePointerup = (doc: Document, index: number, ev: PointerEvent) => {
     // Available on iOS and Desktop, fired at touchend or mouseup
     // Note that on Android, pointerup event is fired after an additional touch event
@@ -162,6 +166,19 @@ export const useTextSelector = (
     isUpToPopup.current = true;
   };
 
+  const handleContextmenu = (event: Event) => {
+    if (appService?.isMobile) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    } else if (lastPointerType.current === 'touch' || lastPointerType.current === 'pen') {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+    return;
+  };
+
   useEffect(() => {
     if (isTextSelected.current && !selectionPosition.current) {
       selectionPosition.current = view?.renderer?.start || null;
@@ -202,9 +219,11 @@ export const useTextSelector = (
     handleScroll,
     handleTouchStart,
     handleTouchEnd,
+    handlePointerdown,
     handlePointerup,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,
+    handleContextmenu,
   };
 };
