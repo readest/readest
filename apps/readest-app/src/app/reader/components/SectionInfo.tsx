@@ -70,7 +70,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               }
             : {
                 top: `${topInset}px`,
-                paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
+                paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
                 width: '100%',
               }
         }
