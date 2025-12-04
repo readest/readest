@@ -14,6 +14,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
+import { setReplacementRulesWindowVisible } from '@/app/reader/components/ReplacementRulesWindow';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
@@ -78,6 +79,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setKOSyncSettingsWindowVisible(true);
     setIsDropdownOpen?.(false);
   };
+  const showReplacementRulesWindow = () => {
+    setReplacementRulesWindowVisible(true);
+    setIsDropdownOpen?.(false);
+  };
   const handlePullKOSync = () => {
     eventDispatcher.dispatch('pull-kosync', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
@@ -140,6 +145,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ))}
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
+      <MenuItem label={_('Replacement Rules')} onClick={showReplacementRulesWindow} />
       {settings.kosync.enabled && (
         <>
           <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
