@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { SystemSettings } from '@/types/settings';
-import { Book, BookConfig, BookNote, Replacement } from '@/types/book';
+import { Book, BookConfig, BookNote } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { BookDoc } from '@/libs/document';
 import { useLibraryStore } from './libraryStore';
@@ -26,7 +26,6 @@ interface BookDataState {
     settings: SystemSettings,
   ) => void;
   updateBooknotes: (key: string, booknotes: BookNote[]) => BookConfig | undefined;
-  updateReplacements: (key: string, replacements: Replacement[]) => BookConfig | undefined;
   getBookData: (keyOrId: string) => BookData | null;
   clearBookData: (keyOrId: string) => void;
 }
@@ -115,40 +114,6 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
               ...book.config,
               updatedAt: Date.now(),
               booknotes: dedupedBooknotes,
-            },
-          },
-        },
-      };
-    });
-    return updatedConfig;
-  },
-  updateReplacements: (key: string, replacements: Replacement[]) => {
-    let updatedConfig: BookConfig | undefined;
-    set((state) => {
-      const id = key.split('-')[0]!;
-      const book = state.booksData[id];
-      if (!book) return state;
-      const deduped = Array.from(new Map(replacements.map((r) => [r.id, r])).values());
-      updatedConfig = {
-        ...book.config,
-        updatedAt: Date.now(),
-        viewSettings: {
-          ...book.config?.viewSettings,
-          replacements: deduped,
-        },
-      } as BookConfig;
-      return {
-        booksData: {
-          ...state.booksData,
-          [id]: {
-            ...book,
-            config: {
-              ...book.config,
-              updatedAt: Date.now(),
-              viewSettings: {
-                ...book.config?.viewSettings,
-                replacements: deduped,
-              },
             },
           },
         },
