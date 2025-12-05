@@ -19,7 +19,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { token } = useAuth();
   const { envConfig } = useEnv();
   const { settings, applyUILanguage } = useSettingsStore();
-  const { getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
+  const { getView, getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
+  const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage);
@@ -191,7 +192,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       bookKey,
       'replaceQuotationMarks',
       replaceQuotationMarks,
-      true,
+      false,
       false,
     ).then(() => {
       recreateViewer(envConfig, bookKey);
@@ -231,7 +232,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       bookKey,
       'convertChineseVariant',
       convertChineseVariant,
-      true,
+      false,
       false,
     ).then(() => {
       recreateViewer(envConfig, bookKey);
@@ -268,6 +269,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
                 className='toggle'
                 checked={translationEnabled}
                 onChange={() => setTranslationEnabled(!translationEnabled)}
+                disabled={!bookKey}
               />
             </div>
 
@@ -311,7 +313,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         </div>
       </div>
 
-      {isCJKEnv() && (
+      {(isCJKEnv() || view?.language.isCJK) && (
         <div className='w-full'>
           <h2 className='mb-2 font-medium'>{_('Punctuation')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
@@ -333,7 +335,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         </div>
       )}
 
-      {isCJKEnv() && (
+      {(isCJKEnv() || view?.language.isCJK) && (
         <div className='w-full'>
           <h2 className='mb-2 font-medium'>{_('Convert Simplified and Traditional Chinese')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>

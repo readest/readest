@@ -112,9 +112,9 @@ export interface AppService {
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
-  fetchBookDetails(book: Book, settings: SystemSettings): Promise<BookMetadata>;
+  fetchBookDetails(book: Book): Promise<BookMetadata>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
-  loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent>;
+  loadBookContent(book: Book): Promise<BookContent>;
   loadLibraryBooks(): Promise<Book[]>;
   saveLibraryBooks(books: Book[]): Promise<void>;
   getCoverImageUrl(book: Book): string;

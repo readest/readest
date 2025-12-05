@@ -668,7 +668,7 @@ export abstract class BaseAppService implements AppService {
     return null;
   }
 
-  async loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent> {
+  async loadBookContent(book: Book): Promise<BookContent> {
     let file: File;
     const fp = getLocalBookFilename(book);
     if (await this.fs.exists(fp, 'Books')) {
@@ -692,7 +692,7 @@ export abstract class BaseAppService implements AppService {
         throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
       }
     }
-    return { book, file, config: await this.loadBookConfig(book, settings) };
+    return { book, file };
   }
 
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
@@ -711,13 +711,13 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async fetchBookDetails(book: Book, settings: SystemSettings) {
+  async fetchBookDetails(book: Book) {
     const fp = getLocalBookFilename(book);
     if (!(await this.fs.exists(fp, 'Books')) && book.uploadedAt) {
       await this.downloadBook(book);
     }
-    const { file } = (await this.loadBookContent(book, settings)) as BookContent;
-    const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
+    const { file } = await this.loadBookContent(book);
+    const bookDoc = (await new DocumentLoader(file).open()).book;
     const f = file as ClosableFile;
     if (f && f.close) {
       await f.close();

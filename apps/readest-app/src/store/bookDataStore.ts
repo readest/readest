@@ -27,6 +27,7 @@ interface BookDataState {
   ) => void;
   updateBooknotes: (key: string, booknotes: BookNote[]) => BookConfig | undefined;
   getBookData: (keyOrId: string) => BookData | null;
+  clearBookData: (keyOrId: string) => void;
 }
 
 export const useBookDataStore = create<BookDataState>((set, get) => ({
@@ -34,6 +35,16 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
   getBookData: (keyOrId: string) => {
     const id = keyOrId.split('-')[0]!;
     return get().booksData[id] || null;
+  },
+  clearBookData: (keyOrId: string) => {
+    const id = keyOrId.split('-')[0]!;
+    set((state) => {
+      const newBooksData = { ...state.booksData };
+      delete newBooksData[id];
+      return {
+        booksData: newBooksData,
+      };
+    });
   },
   getConfig: (key: string | null) => {
     if (!key) return null;

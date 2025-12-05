@@ -5,7 +5,6 @@ import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
@@ -46,14 +45,13 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
+  const { envConfig } = useEnv();
   const { safeAreaInsets } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
-  const { envConfig } = useEnv();
-  const { settings } = useSettingsStore();
 
   // Initialize metadata edit hook
   const {
@@ -97,7 +95,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     const fetchBookDetails = async () => {
       const appService = await envConfig.getAppService();
       try {
-        const details = book.metadata || (await appService.fetchBookDetails(book, settings));
+        const details = book.metadata || (await appService.fetchBookDetails(book));
         setBookMeta(details);
         const size = await appService.getBookFileSize(book);
         setFileSize(size);
