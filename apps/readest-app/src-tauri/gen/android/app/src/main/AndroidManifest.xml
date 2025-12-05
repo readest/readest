@@ -17,6 +17,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:largeHeap="true"
+        android:enableOnBackInvokedCallback="false"
         android:label="@string/app_name"
         android:theme="@style/Theme.readest"
         android:hardwareAccelerated="true"
