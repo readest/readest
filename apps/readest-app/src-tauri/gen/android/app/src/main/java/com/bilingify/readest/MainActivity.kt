@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.webkit.WebView
+import android.net.Uri
 import android.util.Log
 import android.content.Intent
 import android.graphics.Color
@@ -16,6 +17,8 @@ import androidx.activity.OnBackPressedCallback
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import app.tauri.plugin.JSArray
+import app.tauri.plugin.JSObject
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 
@@ -113,6 +116,8 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        handleIncomingIntent(intent)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             setTaskDescription(
                 ActivityManager.TaskDescription(
@@ -163,5 +168,49 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         super.onActivityResult(requestCode, resultCode, data)
 
         NativeBridgePlugin.getInstance()?.handleActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent?.let { handleIncomingIntent(it) }
+    }
+
+    private fun handleIncomingIntent(intent: Intent) {
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                if (intent.type != null) {
+                    handleSingleFile(intent)
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                if (intent.type != null) {
+                    handleMultipleFiles(intent)
+                }
+            }
+        }
+    }
+
+    private fun handleSingleFile(intent: Intent) {
+        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        uri?.let { fileUri ->
+            val payload = JSObject().apply {
+                var urls = JSArray()
+                urls.put(fileUri.toString())
+                put("urls", urls)
+            }
+            NativeBridgePlugin.getInstance()?.triggerEvent("shared-intent", payload)
+        }
+    }
+
+    private fun handleMultipleFiles(intent: Intent) {
+        val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+        uris?.let { fileUris ->
+            val payload = JSObject().apply {
+                var urls = JSArray()
+                fileUris.forEach { urls.put(it.toString()) }
+                put("urls", urls)
+            }
+            NativeBridgePlugin.getInstance()?.triggerEvent("shared-intent", payload)
+        }
     }
 }
