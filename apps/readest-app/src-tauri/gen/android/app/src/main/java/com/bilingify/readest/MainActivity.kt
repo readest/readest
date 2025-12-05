@@ -2,7 +2,6 @@ package com.bilingify.readest
 
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import android.view.KeyEvent
 import android.webkit.WebView
 import android.util.Log
@@ -10,6 +9,10 @@ import android.content.Intent
 import android.graphics.Color
 import android.app.ActivityManager
 import android.content.res.Configuration
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.OnBackPressedCallback
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,6 +42,32 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun interceptBackKey(enabled: Boolean) {
         Log.d("MainActivity", "Intercept back key: $enabled")
         interceptBackKeyEnabled = enabled
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            val keyCode = event.keyCode
+            val keyName = keyEventMap[keyCode]
+
+            if (keyName != null) {
+                val shouldIntercept = when (keyCode) {
+                    KeyEvent.KEYCODE_BACK -> interceptBackKeyEnabled
+                    KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> interceptVolumeKeysEnabled
+                    else -> false
+                }
+
+                if (shouldIntercept) {
+                    wv.evaluateJavascript(
+                        """
+                        try { window.onNativeKeyDown("$keyName", $keyCode); } catch (_) {}
+                        """.trimIndent(),
+                        null
+                    )
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -93,6 +122,41 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 )
             )
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                OnBackInvokedCallback {
+                    Log.d("MainActivity", "Back invoked callback triggered ${interceptBackKeyEnabled}")
+                    if (interceptBackKeyEnabled) {
+                        Log.d("MainActivity", "Back intercepted (OnBackInvokedCallback)")
+                        wv.evaluateJavascript(
+                            """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
+                            null
+                        )
+                    } else {
+                        finish()
+                    }
+                }
+            )
+        }
+
+        onBackPressedDispatcher.addCallback(this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (interceptBackKeyEnabled) {
+                        Log.d("MainActivity", "Back intercepted (OnBackPressedDispatcher)")
+                        wv.evaluateJavascript(
+                            """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
+                            null
+                        )
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            }
+        )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
