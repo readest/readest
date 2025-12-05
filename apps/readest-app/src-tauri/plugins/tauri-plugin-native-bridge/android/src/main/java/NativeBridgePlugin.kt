@@ -773,4 +773,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             path
         }
     }
+
+    fun triggerEvent(eventName: String, payload: JSObject) {
+        activity.runOnUiThread {
+            trigger(eventName, payload)
+        }
+    }
 }

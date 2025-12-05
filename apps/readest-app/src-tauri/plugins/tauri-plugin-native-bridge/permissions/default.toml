@@ -23,6 +23,8 @@ permissions = [
   "allow-open-external-url",
   "allow-select-directory",
   "allow-request-manage-storage-permission",
+  "allow-register-listener",
+  "allow-remove-listener",
   "allow-check-permissions",
   "allow-request-permissions",
   "allow-checkPermissions",
