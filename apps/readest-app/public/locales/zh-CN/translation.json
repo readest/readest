@@ -716,5 +716,13 @@
   "Last": "末页",
   "Cannot Load Page": "无法加载页面",
   "An error occurred": "发生错误",
-  "Online Library": "在线书库"
+  "Online Library": "在线书库",
+  "URL must start with http:// or https://": "URL 必须以 http:// 或 https:// 开头",
+  "Title, Author, Tag, etc...": "标题，作者，标签等...",
+  "Query": "查询",
+  "Subject": "主题",
+  "Enter {{terms}}": "输入 {{terms}}",
+  "No search results found": "未找到搜索结果",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "加载 OPDS 源失败：{{status}} {{statusText}}",
+  "Search in {{title}}": "在 {{title}} 中搜索"
 }

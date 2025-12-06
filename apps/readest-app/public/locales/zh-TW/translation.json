@@ -716,5 +716,13 @@
   "Last": "最後一頁",
   "Cannot Load Page": "無法載入頁面",
   "An error occurred": "發生錯誤",
-  "Online Library": "線上書庫"
+  "Online Library": "線上書庫",
+  "URL must start with http:// or https://": "URL 必須以 http:// 或 https:// 開頭",
+  "Title, Author, Tag, etc...": "標題、作者、標籤等...",
+  "Query": "查詢",
+  "Subject": "主題",
+  "Enter {{terms}}": "輸入 {{terms}}",
+  "No search results found": "未找到搜尋結果",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "載入 OPDS 資料源失敗：{{status}} {{statusText}}",
+  "Search in {{title}}": "在 {{title}} 中搜尋"
 }

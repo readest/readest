@@ -721,5 +721,13 @@
   "Last": "Son",
   "Cannot Load Page": "Sayfa yüklenemiyor",
   "An error occurred": "Bir hata oluştu",
-  "Online Library": "Çevrimiçi Kütüphane"
+  "Online Library": "Çevrimiçi Kütüphane",
+  "URL must start with http:// or https://": "URL http:// veya https:// ile başlamalıdır",
+  "Title, Author, Tag, etc...": "Başlık, Yazar, Etiket, vb...",
+  "Query": "Sorgu",
+  "Subject": "Konu",
+  "Enter {{terms}}": "{{terms}} girin",
+  "No search results found": "Arama sonucu bulunamadı",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS beslemesi yüklenemedi: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} içinde ara"
 }

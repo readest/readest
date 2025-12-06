@@ -721,5 +721,13 @@
   "Last": "අවසාන",
   "Cannot Load Page": "පිටුවට ප්‍රවේශ විය නොහැක",
   "An error occurred": "දෝෂයක් සිදු විය",
-  "Online Library": "ඔන්ලයින් පුස්තකාලය"
+  "Online Library": "ඔන්ලයින් පුස්තකාලය",
+  "URL must start with http:// or https://": "URL එක http:// හෝ https:// සමඟ ආරම්භ විය යුතුය",
+  "Title, Author, Tag, etc...": "ශීර්ෂය, කතුවරයා, ටැග්, ආදිය...",
+  "Query": "විමසුම",
+  "Subject": "විෂය",
+  "Enter {{terms}}": "{{terms}} ඇතුළත් කරන්න",
+  "No search results found": "සෙවුම් ප්‍රතිඵල නොමැත",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS ආහාරය පූරණය කිරීමට අසමත් විය: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} තුළ සෙවීම"
 }

@@ -721,5 +721,13 @@
   "Last": "آخرین",
   "Cannot Load Page": "بارگذاری صفحه امکان‌پذیر نیست",
   "An error occurred": "خطایی رخ داد",
-  "Online Library": "کتابخانه آنلاین"
+  "Online Library": "کتابخانه آنلاین",
+  "URL must start with http:// or https://": "آدرس باید با http:// یا https:// شروع شود",
+  "Title, Author, Tag, etc...": "عنوان، نویسنده، برچسب و غیره...",
+  "Query": "پرس‌وجو",
+  "Subject": "موضوع",
+  "Enter {{terms}}": "وارد کردن {{terms}}",
+  "No search results found": "هیچ نتیجه‌ای یافت نشد",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "بارگذاری فید OPDS ناموفق بود: {{status}} {{statusText}}",
+  "Search in {{title}}": "جستجو در {{title}}"
 }

@@ -721,5 +721,13 @@
   "Last": "Sista",
   "Cannot Load Page": "Kan inte ladda sidan",
   "An error occurred": "Ett fel uppstod",
-  "Online Library": "Onlinebibliotek"
+  "Online Library": "Onlinebibliotek",
+  "URL must start with http:// or https://": "URL måste börja med http:// eller https://",
+  "Title, Author, Tag, etc...": "Titel, författare, tagg, etc...",
+  "Query": "Fråga",
+  "Subject": "Ämne",
+  "Enter {{terms}}": "Ange {{terms}}",
+  "No search results found": "Inga sökresultat hittades",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Misslyckades med att ladda OPDS-flöde: {{status}} {{statusText}}",
+  "Search in {{title}}": "Sök i {{title}}"
 }

@@ -731,5 +731,13 @@
   "Last": "Остання",
   "Cannot Load Page": "Не вдалося завантажити сторінку",
   "An error occurred": "Сталася помилка",
-  "Online Library": "Онлайн бібліотека"
+  "Online Library": "Онлайн бібліотека",
+  "URL must start with http:// or https://": "URL повинен починатися з http:// або https://",
+  "Title, Author, Tag, etc...": "Назва, автор, тег тощо...",
+  "Query": "Запит",
+  "Subject": "Тема",
+  "Enter {{terms}}": "Введіть {{terms}}",
+  "No search results found": "Результатів пошуку не знайдено",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Не вдалося завантажити стрічку OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Пошук у {{title}}"
 }

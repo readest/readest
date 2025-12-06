@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GiBookshelf } from 'react-icons/gi';
-import { IoChevronBack, IoChevronForward, IoHome } from 'react-icons/io5';
+import { IoChevronBack, IoChevronForward, IoHome, IoSearch } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
@@ -16,8 +16,10 @@ interface NavigationProps {
   onNavigate: (url: string) => void;
   onBack?: () => void;
   onForward?: () => void;
+  onSearch: () => void;
   canGoBack: boolean;
   canGoForward: boolean;
+  hasSearch: boolean;
 }
 
 export function Navigation({
@@ -25,8 +27,10 @@ export function Navigation({
   onNavigate,
   onBack,
   onForward,
+  onSearch,
   canGoBack,
   canGoForward,
+  hasSearch = false,
 }: NavigationProps) {
   const _ = useTranslation();
   const router = useRouter();
@@ -43,6 +47,10 @@ export function Navigation({
   const handleGoLibrary = useCallback(() => {
     navigateToLibrary(router, '', {}, true);
   }, [router]);
+
+  const handleSearch = useCallback(() => {
+    onSearch();
+  }, [onSearch]);
 
   return (
     <header
@@ -80,6 +88,11 @@ export function Navigation({
       </div>
 
       <div className='navbar-end gap-2'>
+        {hasSearch && (
+          <button className='btn btn-ghost btn-sm' onClick={handleSearch} title={_('Search')}>
+            <IoSearch className='h-5 w-5' />
+          </button>
+        )}
         <button className='btn btn-ghost btn-sm' onClick={handleGoHome} title={_('Home')}>
           <IoHome className='h-5 w-5' />
         </button>

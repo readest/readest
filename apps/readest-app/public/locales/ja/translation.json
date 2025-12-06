@@ -716,5 +716,13 @@
   "Last": "最後",
   "Cannot Load Page": "ページを読み込めません",
   "An error occurred": "エラーが発生しました",
-  "Online Library": "オンラインライブラリ"
+  "Online Library": "オンラインライブラリ",
+  "URL must start with http:// or https://": "URLはhttp://またはhttps://で始まる必要があります",
+  "Title, Author, Tag, etc...": "タイトル、著者、タグなど...",
+  "Query": "クエリ",
+  "Subject": "件名",
+  "Enter {{terms}}": "{{terms}}を入力してください",
+  "No search results found": "検索結果が見つかりません",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDSフィードの読み込みに失敗しました: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}}内を検索"
 }

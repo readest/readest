@@ -721,5 +721,13 @@
   "Last": "अंतिम",
   "Cannot Load Page": "पृष्ठ लोड नहीं किया जा सका",
   "An error occurred": "एक त्रुटि हुई",
-  "Online Library": "ऑनलाइन लाइब्रेरी"
+  "Online Library": "ऑनलाइन लाइब्रेरी",
+  "URL must start with http:// or https://": "URL http:// या https:// से शुरू होना चाहिए",
+  "Title, Author, Tag, etc...": "शीर्षक, लेखक, टैग, आदि...",
+  "Query": "प्रश्न",
+  "Subject": "विषय",
+  "Enter {{terms}}": "{{terms}} दर्ज करें",
+  "No search results found": "कोई खोज परिणाम नहीं मिला",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS फ़ीड लोड करने में विफल: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} में खोजें"
 }

@@ -731,5 +731,13 @@
   "Last": "Ostatnia",
   "Cannot Load Page": "Nie można załadować strony",
   "An error occurred": "Wystąpił błąd",
-  "Online Library": "Biblioteka online"
+  "Online Library": "Biblioteka online",
+  "URL must start with http:// or https://": "URL musi zaczynać się od http:// lub https://",
+  "Title, Author, Tag, etc...": "Tytuł, Autor, Tag, itp...",
+  "Query": "Zapytanie",
+  "Subject": "Temat",
+  "Enter {{terms}}": "Wprowadź {{terms}}",
+  "No search results found": "Nie znaleziono wyników wyszukiwania",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Nie udało się załadować kanału OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Szukaj w {{title}}"
 }
