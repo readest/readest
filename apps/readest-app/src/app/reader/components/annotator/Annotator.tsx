@@ -549,15 +549,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       caseSensitive,
       scope,
     });
+
+    // Note: Currently the backend only supports case-sensitive replacements
+    // The caseSensitive parameter is passed but not yet used in the transformer
+    // TODO: Implement case-insensitive matching by adding 'i' flag support to transformer
     try {
-      
       // Map UI scope to backend scope
       const backendScope = scope === 'once' ? 'single' : scope === 'book' ? 'book' : 'global';
-     
-      // Note: Currently the backend only supports case-sensitive replacements
-      // The caseSensitive parameter is passed but not yet used in the transformer
-      // TODO: Implement case-insensitive matching by adding 'i' flag support to transformer
-      
       // Create the replacement rule
       await addReplacementRule(
         envConfig,
@@ -571,54 +569,18 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         backendScope as 'single' | 'book' | 'global',
       );
 
-      // Show success toast
-      // const scopeLabels = {
-      //   once: 'this instance',
-      //   book: 'this book',
-      //   library: 'your library',
-      // };
-
       eventDispatcher.dispatch('toast', {
         type: 'success',
         message: `Rule added! Reloading book to apply changes...`,
         timeout: 3000,
       });
 
-      // Close the replacement options menu
       setShowReplacementOptions(false);
       handleDismissPopupAndSelection();
 
-      // For EPUB: Navigate to a different section and back to reload content
-      // For PDF: We can't easily reload, so show a message
-      const view = getView(bookKey);
-      if (view && bookData.book?.format !== 'PDF') {
-        const currentCfi = progress?.location;
-        // Get the book sections
-        const sections = view.book?.sections;
-        if (sections && sections.length > 1) {
-          // Find current section index
-          const currentIndex = sections.findIndex((s) => 
-            currentCfi?.includes(s.id)
-          );
-          // Navigate to next section (or previous if we're at the end)
-          const nextIndex = currentIndex < sections.length - 1 ? currentIndex + 1 : currentIndex - 1;
-          if (nextIndex >= 0 && nextIndex < sections.length) {
-            await view.goTo(sections[nextIndex].cfi);
-            // Wait a bit, then go back
-            setTimeout(async () => {
-              if (currentCfi) {
-                await view.goTo(currentCfi);
-              }
-            }, 300);
-          }
-        }
-      } else if (bookData.book?.format === 'PDF') {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          message: 'Please turn the page to see the replacement applied.',
-          timeout: 4000,
-        });
-      }
+      // Fully reload the book view to apply the replacement
+      const { recreateViewer } = useReaderStore.getState();
+      await recreateViewer(envConfig, bookKey);
     } catch (error) {
       console.error('Failed to apply replacement:', error);
       eventDispatcher.dispatch('toast', {
