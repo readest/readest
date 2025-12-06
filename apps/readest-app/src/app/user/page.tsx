@@ -22,6 +22,7 @@ import {
   restoreIAPPurchases,
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
+import { isPurchaseProduct } from '@/libs/payment/iap/utils';
 import {
   createStripeCheckoutSession,
   redirectToStripeCheckout,
@@ -38,8 +39,8 @@ import UserInfo from './components/UserInfo';
 import UsageStats from './components/UsageStats';
 import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
+import StorageManager from './components/StorageManager';
 import Checkout from './components/Checkout';
-import { isPurchaseProduct } from '@/libs/payment/iap/utils';
 
 type CheckoutState = {
   clientSecret: string;
@@ -56,6 +57,7 @@ const ProfilePage = () => {
 
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
+  const [showStorageManager, setShowStorageManager] = useState(false);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
     sessionId: '',
@@ -87,6 +89,8 @@ const ProfilePage = () => {
   const handleGoBack = () => {
     if (showEmbeddedCheckout) {
       setShowEmbeddedCheckout(false);
+    } else if (showStorageManager) {
+      setShowStorageManager(false);
     } else {
       navigateToLibrary(router);
     }
@@ -200,6 +204,10 @@ const ProfilePage = () => {
     handleConfirmDelete(_('Failed to delete user. Please try again later.'));
   };
 
+  const handleManageStorage = () => {
+    setShowStorageManager(true);
+  };
+
   if (!mounted) {
     return null;
   }
@@ -262,28 +270,37 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  <UsageStats quotas={quotas} />
+                  {!showStorageManager && <UsageStats quotas={quotas} />}
                 </div>
 
-                <div className='flex flex-col gap-y-8 sm:px-6'>
-                  <PlansComparison
-                    availablePlans={availablePlans}
-                    userPlan={userProfilePlan}
-                    onSubscribe={appService.hasIAP ? handleIAPSubscribe : handleStripeSubscribe}
-                  />
-                </div>
+                {showStorageManager ? (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <StorageManager />
+                  </div>
+                ) : (
+                  <>
+                    <div className='flex flex-col gap-y-8 sm:px-6'>
+                      <PlansComparison
+                        availablePlans={availablePlans}
+                        userPlan={userProfilePlan}
+                        onSubscribe={appService.hasIAP ? handleIAPSubscribe : handleStripeSubscribe}
+                      />
+                    </div>
+                    <div className='flex flex-col gap-y-8 px-6'>
+                      <AccountActions
+                        userPlan={userProfilePlan}
+                        onLogout={handleLogout}
+                        onResetPassword={handleResetPassword}
+                        onUpdateEmail={handleUpdateEmail}
+                        onConfirmDelete={handleDeleteWithMessage}
+                        onRestorePurchase={handleIAPRestorePurchase}
+                        onManageSubscription={handleManageSubscription}
+                        onManageStorage={handleManageStorage}
+                      />
+                    </div>
+                  </>
+                )}
 
-                <div className='flex flex-col gap-y-8 px-6'>
-                  <AccountActions
-                    userPlan={userProfilePlan}
-                    onLogout={handleLogout}
-                    onResetPassword={handleResetPassword}
-                    onUpdateEmail={handleUpdateEmail}
-                    onConfirmDelete={handleDeleteWithMessage}
-                    onRestorePurchase={handleIAPRestorePurchase}
-                    onManageSubscription={handleManageSubscription}
-                  />
-                </div>
                 <LegalLinks />
               </div>
             </div>
