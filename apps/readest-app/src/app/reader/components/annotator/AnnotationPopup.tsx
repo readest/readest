@@ -3,6 +3,7 @@ import React from 'react';
 import Popup from '@/components/Popup';
 import PopupButton from './PopupButton';
 import HighlightOptions from './HighlightOptions';
+import NotePreview from './NotePreview';
 import { Position } from '@/utils/sel';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -24,6 +25,8 @@ interface AnnotationPopupProps {
   popupWidth: number;
   popupHeight: number;
   onHighlight: (update?: boolean) => void;
+  showInstantNote?: boolean;
+  noteText?: string;
   onDismiss?: () => void;
 }
 
@@ -42,10 +45,39 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   popupWidth,
   popupHeight,
   onHighlight,
+  showInstantNote,
+  noteText,
   onDismiss,
 }) => {
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
+
+  let highlightOptionsTop: number | null = null;
+
+  if (highlightOptionsVisible && trianglePosition) {
+    if (isVertical) {
+      highlightOptionsTop = position.point.y;
+    } else {
+      highlightOptionsTop =
+        position.point.y +
+        (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
+          (trianglePosition.dir === 'up' ? -1 : 1);
+    }
+  }
+
+  const popupBaseOffset = isVertical ? popupWidth : popupHeight;
+  let notePreviewOffset = popupBaseOffset + 6; 
+
+  if (highlightOptionsVisible && highlightOptionsTop !== null) {
+    if (trianglePosition.dir === 'up') {
+      notePreviewOffset =
+        popupBaseOffset + 10;
+    }
+    if (trianglePosition.dir === 'down') {
+      notePreviewOffset =
+        popupBaseOffset + highlightOptionsHeightPx + 10;
+    }
+  }
   return (
     <div dir={dir}>
       <Popup
@@ -78,6 +110,17 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
           ))}
         </div>
       </Popup>
+      {showInstantNote && noteText && (
+        <NotePreview
+          text={noteText}
+          width={isVertical ? popupHeight : popupWidth}
+          left={position.point.x}              
+          top={
+            position.point.y +                
+            notePreviewOffset                  
+          }
+        />
+      )}
       {highlightOptionsVisible && (
         <HighlightOptions
           isVertical={isVertical}
