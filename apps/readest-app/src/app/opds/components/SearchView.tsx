@@ -2,16 +2,18 @@
 
 import { useState, FormEvent } from 'react';
 import { IoSearch } from 'react-icons/io5';
+import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSSearch } from '@/types/opds';
 
 interface SearchViewProps {
   search: OPDSSearch;
   baseURL: string;
-  onNavigate: (url: string) => void;
+  onNavigate: (url: string, isSearch?: boolean) => void;
   resolveURL: (url: string, base: string) => string;
 }
 
 export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchViewProps) {
+  const _ = useTranslation();
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     search.params?.forEach((param) => {
@@ -38,7 +40,7 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
 
     const searchURL = search.search(map);
     const resolvedURL = resolveURL(searchURL, baseURL);
-    onNavigate(resolvedURL);
+    onNavigate(resolvedURL, true);
   };
 
   const handleInputChange = (name: string, value: string) => {
@@ -47,21 +49,21 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
 
   const getParamLabel = (name: string): string => {
     const labels: Record<string, string> = {
-      searchTerms: 'Search',
-      query: 'Query',
-      title: 'Title',
-      author: 'Author',
-      publisher: 'Publisher',
-      language: 'Language',
-      subject: 'Subject',
+      searchTerms: _('Title, Author, Tag, etc...'),
+      query: _('Query'),
+      title: _('Title'),
+      author: _('Author'),
+      publisher: _('Publisher'),
+      language: _('Language'),
+      subject: _('Subject'),
     };
     return labels[name] || name;
   };
 
   return (
-    <div className='container mx-auto max-w-2xl px-4 py-12'>
+    <div className='container mx-auto max-w-md px-4 py-12'>
       <div className='mb-8 text-center'>
-        <h1 className='mb-2 text-3xl font-bold'>{search.metadata?.title || 'Search'}</h1>
+        <h1 className='mb-2 text-xl font-bold'>{search.metadata?.title || _('Search')}</h1>
         {search.metadata?.description && (
           <p className='text-base-content/70'>{search.metadata.description}</p>
         )}
@@ -81,7 +83,7 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
               value={formData[param.name] || ''}
               onChange={(e) => handleInputChange(param.name, e.target.value)}
               required={param.required}
-              placeholder={`Enter ${getParamLabel(param.name).toLowerCase()}`}
+              placeholder={`${_('Enter {{terms}}', { terms: getParamLabel(param.name).toLowerCase() })}`}
               className='input input-bordered w-full'
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus={
@@ -96,7 +98,7 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
         <div className='pt-4'>
           <button type='submit' className='btn btn-primary w-full'>
             <IoSearch className='h-5 w-5' />
-            Search
+            {_('Search')}
           </button>
         </div>
       </form>

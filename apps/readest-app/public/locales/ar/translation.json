@@ -741,5 +741,13 @@
   "Last": "الأخير",
   "Cannot Load Page": "تعذر تحميل الصفحة",
   "An error occurred": "حدث خطأ ما",
-  "Online Library": "المكتبة عبر الإنترنت"
+  "Online Library": "المكتبة عبر الإنترنت",
+  "URL must start with http:// or https://": "يجب أن يبدأ عنوان URL بـ http:// أو https://",
+  "Title, Author, Tag, etc...": "العنوان، المؤلف، العلامة، إلخ...",
+  "Query": "استعلام",
+  "Subject": "موضوع",
+  "Enter {{terms}}": "أدخل {{terms}}",
+  "No search results found": "لم يتم العثور على نتائج بحث",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "فشل في تحميل تغذية OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "البحث في {{title}}"
 }

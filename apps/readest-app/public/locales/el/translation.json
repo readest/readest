@@ -721,5 +721,13 @@
   "Last": "Τελευταίο",
   "Cannot Load Page": "Δεν είναι δυνατή η φόρτωση της σελίδας",
   "An error occurred": "Προέκυψε σφάλμα",
-  "Online Library": "Online Βιβλιοθήκη"
+  "Online Library": "Online Βιβλιοθήκη",
+  "URL must start with http:// or https://": "Το URL πρέπει να ξεκινά με http:// ή https://",
+  "Title, Author, Tag, etc...": "Τίτλος, Συγγραφέας, Ετικέτα, κ.λπ...",
+  "Query": "Ερώτημα",
+  "Subject": "Θέμα",
+  "Enter {{terms}}": "Εισαγάγετε {{terms}}",
+  "No search results found": "Δεν βρέθηκαν αποτελέσματα αναζήτησης",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Αποτυχία φόρτωσης ροής OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Αναζήτηση στο {{title}}"
 }

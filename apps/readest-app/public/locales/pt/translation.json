@@ -726,5 +726,13 @@
   "Last": "Ostatnia",
   "Cannot Load Page": "Nie można załadować strony",
   "An error occurred": "Wystąpił błąd",
-  "Online Library": "Biblioteka online"
+  "Online Library": "Biblioteca online",
+  "URL must start with http:// or https://": "URL deve começar com http:// ou https://",
+  "Title, Author, Tag, etc...": "Título, Autor, Etiqueta, etc...",
+  "Query": "Consulta",
+  "Subject": "Assunto",
+  "Enter {{terms}}": "Insira {{terms}}",
+  "No search results found": "Nenhum resultado encontrado",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Falha ao carregar o feed OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Pesquisar em {{title}}"
 }

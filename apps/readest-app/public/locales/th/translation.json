@@ -716,5 +716,13 @@
   "Last": "สุดท้าย",
   "Cannot Load Page": "ไม่สามารถโหลดหน้าหน้าได้",
   "An error occurred": "เกิดข้อผิดพลาด",
-  "Online Library": "ห้องสมุดออนไลน์"
+  "Online Library": "ห้องสมุดออนไลน์",
+  "URL must start with http:// or https://": "URL ต้องเริ่มต้นด้วย http:// หรือ https://",
+  "Title, Author, Tag, etc...": "ชื่อเรื่อง ผู้แต่ง แท็ก ฯลฯ...",
+  "Query": "แบบสอบถาม",
+  "Subject": "หัวข้อ",
+  "Enter {{terms}}": "ป้อน {{terms}}",
+  "No search results found": "ไม่พบผลการค้นหา",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "ไม่สามารถโหลดฟีด OPDS ได้: {{status}} {{statusText}}",
+  "Search in {{title}}": "ค้นหาใน {{title}}"
 }

@@ -721,5 +721,13 @@
   "Last": "শেষ",
   "Cannot Load Page": "পৃষ্ঠা লোড করা যায়নি",
   "An error occurred": "একটি ত্রুটি ঘটেছে",
-  "Online Library": "অনলাইন লাইব্রেরি"
+  "Online Library": "অনলাইন লাইব্রেরি",
+  "URL must start with http:// or https://": "URL অবশ্যই http:// বা https:// দিয়ে শুরু হতে হবে",
+  "Title, Author, Tag, etc...": "শিরোনাম, লেখক, ট্যাগ, ইত্যাদি...",
+  "Query": "কোয়েরি",
+  "Subject": "বিষয়",
+  "Enter {{terms}}": "{{terms}} লিখুন",
+  "No search results found": "কোনও অনুসন্ধান ফলাফল পাওয়া যায়নি",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS ফিড লোড করতে ব্যর্থ: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} এ অনুসন্ধান করুন"
 }

@@ -721,5 +721,13 @@
   "Last": "இறுதி",
   "Cannot Load Page": "பக்கம் ஏற்ற முடியவில்லை",
   "An error occurred": "ஒரு பிழை ஏற்பட்டது",
-  "Online Library": "ஆன்லைன் நூலகம்"
+  "Online Library": "ஆன்லைன் நூலகம்",
+  "URL must start with http:// or https://": "URL http:// அல்லது https:// கொண்டு தொடங்க வேண்டும்",
+  "Title, Author, Tag, etc...": "தலைப்பு, ஆசிரியர், குறிச்சொல், மற்றும் பல...",
+  "Query": "கேள்வி",
+  "Subject": "பொருள்",
+  "Enter {{terms}}": "{{terms}} உள்ளிடவும்",
+  "No search results found": "தேடல் முடிவுகள் இல்லை",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS ஊட்டத்தை ஏற்ற முடியவில்லை: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} இல் தேடவும்"
 }

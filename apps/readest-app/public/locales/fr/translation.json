@@ -726,5 +726,13 @@
   "Last": "Dernier",
   "Cannot Load Page": "Impossible de charger la page",
   "An error occurred": "Une erreur est survenue",
-  "Online Library": "Bibliothèque en ligne"
+  "Online Library": "Bibliothèque en ligne",
+  "URL must start with http:// or https://": "URL doit commencer par http:// ou https://",
+  "Title, Author, Tag, etc...": "Titre, Auteur, Tag, etc...",
+  "Query": "Requête",
+  "Subject": "Sujet",
+  "Enter {{terms}}": "Entrez {{terms}}",
+  "No search results found": "Aucun résultat trouvé",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Échec du chargement du flux OPDS : {{status}} {{statusText}}",
+  "Search in {{title}}": "Rechercher dans {{title}}"
 }

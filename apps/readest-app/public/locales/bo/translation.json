@@ -716,5 +716,13 @@
   "Last": "མཐའ་མ།",
   "Cannot Load Page": "ཤོག་ངོས་འགུལ་སྐྱོང་བྱེད་ཐུབ་མེད།",
   "An error occurred": "ནོར་འཁྲུལ་ཞིག་བྱུང་སོང་།",
-  "Online Library": "དྲ་རྒྱུན་དེབ་མཛོད།"
+  "Online Library": "དྲ་རྒྱུན་དེབ་མཛོད།",
+  "URL must start with http:// or https://": "URL ནི་ http:// ཡང་ https:// ནས་འགོ་བཙུགས་དགོ།",
+  "Title, Author, Tag, etc...": "མིང་།, རྩོམ་པ།, མཚོན་འགྲེལ།, དེ་ལས་སྐུགས་...",
+  "Query": "འཚོལ་ཞིབ་",
+  "Subject": "དོན་ཚན་",
+  "Enter {{terms}}": "{{terms}} ལ་འགྲོ།",
+  "No search results found": "འཚོལ་ཞིབ་རྫོགས་མ་ཐུབ།",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS འཕྲིན་འདེམས་བྱས་མ་ཐུབ།: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}} ནང་འཚོལ།"
 }

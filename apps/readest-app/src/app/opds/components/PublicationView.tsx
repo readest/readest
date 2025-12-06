@@ -7,6 +7,7 @@ import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
 import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getFileExtFromMimeType } from '@/libs/document';
 import { formatDate, formatLanguage } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
@@ -190,7 +191,11 @@ export function PublicationView({
                             key={idx}
                             noIcon
                             transient
-                            label={link.title || link.type || ''}
+                            label={
+                              link.title ||
+                              getFileExtFromMimeType(link.type || '').toUpperCase() ||
+                              idx.toString()
+                            }
                             onClick={() => handleActionButton(link.href, link.type)}
                           />
                         ))}

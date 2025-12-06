@@ -716,5 +716,13 @@
   "Last": "Cuối cùng",
   "Cannot Load Page": "Không thể tải trang",
   "An error occurred": "Đã xảy ra lỗi",
-  "Online Library": "Thư viện trực tuyến"
+  "Online Library": "Thư viện trực tuyến",
+  "URL must start with http:// or https://": "URL phải bắt đầu bằng http:// hoặc https://",
+  "Title, Author, Tag, etc...": "Tiêu đề, Tác giả, Thẻ, v.v...",
+  "Query": "Truy vấn",
+  "Subject": "Chủ đề",
+  "Enter {{terms}}": "Nhập {{terms}}",
+  "No search results found": "Không tìm thấy kết quả tìm kiếm",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Không tải được nguồn cấp OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Tìm kiếm trong {{title}}"
 }

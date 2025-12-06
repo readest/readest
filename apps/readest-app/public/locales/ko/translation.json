@@ -716,5 +716,13 @@
   "Last": "마지막",
   "Cannot Load Page": "페이지를 불러올 수 없습니다",
   "An error occurred": "오류가 발생했습니다",
-  "Online Library": "온라인 라이브러리"
+  "Online Library": "온라인 라이브러리",
+  "URL must start with http:// or https://": "URL은 http:// 또는 https://로 시작해야 합니다",
+  "Title, Author, Tag, etc...": "제목, 저자, 태그 등...",
+  "Query": "쿼리",
+  "Subject": "주제",
+  "Enter {{terms}}": "{{terms}} 입력",
+  "No search results found": "검색 결과가 없습니다",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "OPDS 피드를 불러오지 못했습니다: {{status}} {{statusText}}",
+  "Search in {{title}}": "{{title}}에서 검색"
 }

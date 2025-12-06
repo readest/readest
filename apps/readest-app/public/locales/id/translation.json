@@ -716,5 +716,13 @@
   "Last": "Terakhir",
   "Cannot Load Page": "Tidak dapat memuat halaman",
   "An error occurred": "Terjadi kesalahan",
-  "Online Library": "Perpustakaan Online"
+  "Online Library": "Perpustakaan Online",
+  "URL must start with http:// or https://": "URL harus diawali dengan http:// atau https://",
+  "Title, Author, Tag, etc...": "Judul, Penulis, Tag, dll...",
+  "Query": "Kueri",
+  "Subject": "Subjek",
+  "Enter {{terms}}": "Masukkan {{terms}}",
+  "No search results found": "Tidak ada hasil pencarian ditemukan",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Gagal memuat feed OPDS: {{status}} {{statusText}}",
+  "Search in {{title}}": "Cari di {{title}}"
 }

@@ -721,5 +721,13 @@
   "Last": "Laatste",
   "Cannot Load Page": "Pagina kan niet worden geladen",
   "An error occurred": "Er is een fout opgetreden",
-  "Online Library": "Online Bibliotheek"
+  "Online Library": "Online Bibliotheek",
+  "URL must start with http:// or https://": "URL moet beginnen met http:// of https://",
+  "Title, Author, Tag, etc...": "Titel, Auteur, Tag, enzovoort...",
+  "Query": "Zoekopdracht",
+  "Subject": "Onderwerp",
+  "Enter {{terms}}": "Voer {{terms}} in",
+  "No search results found": "Geen zoekresultaten gevonden",
+  "Failed to load OPDS feed: {{status}} {{statusText}}": "Het laden van de OPDS-feed is mislukt: {{status}} {{statusText}}",
+  "Search in {{title}}": "Zoeken in {{title}}"
 }
