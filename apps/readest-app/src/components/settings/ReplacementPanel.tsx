@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { RiDeleteBin7Line, RiEditLine } from 'react-icons/ri';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useSidebarStore } from '@/store/sidebarStore';
+import { useReaderStore } from '@/store/readerStore';
 import environmentConfig from '@/services/environment';
 import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
 import { eventDispatcher } from '@/utils/event';
@@ -9,6 +11,7 @@ import { eventDispatcher } from '@/utils/event';
 const ReplacementPanel: React.FC = () => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
+  const { sideBarBookKey } = useSidebarStore();
 
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [editPattern, setEditPattern] = useState('');
@@ -60,9 +63,13 @@ const ReplacementPanel: React.FC = () => {
                           setEditingRuleId(null);
                           eventDispatcher.dispatch('toast', {
                             type: 'success',
-                            message: _('Replacement rule updated successfully'),
+                            message: _('Replacement rule updated. Reloading book to apply changes...'),
                             timeout: 3000,
                           });
+                          if (sideBarBookKey) {
+                            const { recreateViewer } = useReaderStore.getState();
+                            await recreateViewer(environmentConfig, sideBarBookKey);
+                          }
                         } catch (err) {
                           // eslint-disable-next-line no-console
                           console.error('Failed to save replacement rule', err);
@@ -105,14 +112,17 @@ const ReplacementPanel: React.FC = () => {
                     <button
                       className='btn btn-ghost btn-sm p-1'
                       onClick={async () => {
-                        if (!window.confirm('Delete this replacement rule?')) return;
                         try {
                           await removeReplacementRule(environmentConfig, '', r.id, 'global');
                           eventDispatcher.dispatch('toast', {
                             type: 'success',
-                            message: _('Replacement rule deleted successfully'),
+                            message: _('Replacement rule deleted. Reloading book to apply changes...'),
                             timeout: 3000,
                           });
+                          if (sideBarBookKey) {
+                            const { recreateViewer } = useReaderStore.getState();
+                            await recreateViewer(environmentConfig, sideBarBookKey);
+                          }
                         } catch (err) {
                           // eslint-disable-next-line no-console
                           console.error('Failed to delete replacement rule', err);

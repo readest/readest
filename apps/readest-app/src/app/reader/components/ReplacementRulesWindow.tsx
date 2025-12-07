@@ -117,9 +117,13 @@ export const ReplacementRulesWindow: React.FC = () => {
       cancelEdit();
       eventDispatcher.dispatch('toast', {
         type: 'success',
-        message: _('Replacement rule updated successfully'),
+        message: _('Replacement rule updated. Reloading book to apply changes...'),
         timeout: 3000,
       });
+      if (sideBarBookKey) {
+        const { recreateViewer } = useReaderStore.getState();
+        await recreateViewer(environmentConfig, sideBarBookKey);
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to save replacement rule', err);
@@ -137,9 +141,13 @@ export const ReplacementRulesWindow: React.FC = () => {
       await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
       eventDispatcher.dispatch('toast', {
         type: 'success',
-        message: _('Replacement rule deleted successfully'),
+        message: _('Replacement rule deleted. Reloading book to apply changes...'),
         timeout: 3000,
       });
+      if (sideBarBookKey) {
+        const { recreateViewer } = useReaderStore.getState();
+        await recreateViewer(environmentConfig, sideBarBookKey);
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to delete replacement rule', err);
@@ -220,51 +228,55 @@ export const ReplacementRulesWindow: React.FC = () => {
               <p className='text-sm text-base-content/70 mt-2'>{_('No book-level replacement rules')}</p>
             ) : (
               <ul className='mt-2 space-y-2'>
-                {bookRules.map((r) => (
-                  <li key={r.id} className='rounded border p-2'>
-                    {editing.id === r.id && editing.scope === 'book' ? (
-                      <div className='flex flex-col gap-2'>
-                        <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
-                          <input
-                            className='input input-sm text-sm flex-1 opacity-60'
-                            value={editing.pattern}
-                            disabled
-                          />
-                        </div>
+                {bookRules.map((r) => {
+                  const ruleScope = getRuleScope(r);
+                  const isEditing = editing.id === r.id && editing.scope === ruleScope;
+                  return (
+                    <li key={r.id} className='rounded border p-2'>
+                      {isEditing ? (
+                        <div className='flex flex-col gap-2'>
+                          <div className='flex items-center gap-2'>
+                            <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                            <input
+                              className='input input-sm text-sm flex-1 opacity-60'
+                              value={editing.pattern}
+                              disabled
+                            />
+                          </div>
 
-                        <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
-                          <input
-                            className='input input-sm flex-1'
-                            value={editing.replacement}
-                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
-                          />
-                        </div>
+                          <div className='flex items-center gap-2'>
+                            <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                            <input
+                              className='input input-sm flex-1'
+                              value={editing.replacement}
+                              onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                            />
+                          </div>
 
-                        <div className='flex gap-2'>
-                          <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
-                          <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
+                          <div className='flex gap-2'>
+                            <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
+                            <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className='flex items-center justify-between'>
-                        <div className='flex flex-col'>
-                          <div className='font-medium text-base leading-tight'>{r.pattern}</div>
-                          <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
+                      ) : (
+                        <div className='flex items-center justify-between'>
+                          <div className='flex flex-col'>
+                            <div className='font-medium text-base leading-tight'>{r.pattern}</div>
+                            <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, ruleScope)} aria-label={_('Edit')}>
+                              <RiEditLine />
+                            </button>
+                            <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, ruleScope)} aria-label={_('Delete')}>
+                              <RiDeleteBin7Line />
+                            </button>
+                          </div>
                         </div>
-                        <div className='flex items-center gap-2'>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'book')} aria-label={_('Edit')}>
-                            <RiEditLine />
-                          </button>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'book')} aria-label={_('Delete')}>
-                            <RiDeleteBin7Line />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
