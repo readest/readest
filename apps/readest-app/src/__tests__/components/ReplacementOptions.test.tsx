@@ -259,6 +259,9 @@ describe('ReplacementOptions Component', () => {
 
       fireEvent.click(screen.getByText('Fix this once'));
       const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
       fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
@@ -274,6 +277,9 @@ describe('ReplacementOptions Component', () => {
 
       fireEvent.click(screen.getByText('Fix in this book'));
       const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
       fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
@@ -289,6 +295,9 @@ describe('ReplacementOptions Component', () => {
 
       fireEvent.click(screen.getByText('Fix in library'));
       const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
       fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
@@ -409,6 +418,9 @@ describe('ReplacementOptions Component', () => {
 
       // 5. Confirm
       const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
       fireEvent.click(confirmButtons[0]);
 
       // 6. Verify callback
@@ -511,14 +523,17 @@ describe('Replacement Propagation Integration Tests', () => {
         onClose={vi.fn()}
       />);
 
-      const input = screen.getByPlaceholderText('Enter replacement text...');
-      fireEvent.change(input, { target: { value: 'temp' } });
-      fireEvent.click(screen.getByText('Fix this once'));
-      fireEvent.click(screen.getByText('Confirm'));
+    const input = screen.getByPlaceholderText('Enter replacement text...');
+    fireEvent.change(input, { target: { value: 'temp' } });
 
-      const result = mockOnConfirm.mock.results[0].value;
-      expect(result.applied).toBe(true);
-      expect(result.persisted).toBe(false);
+    fireEvent.click(screen.getByText('Fix this once'));
+    fireEvent.click(screen.getByText('Confirm'));
+    const call = mockOnConfirm.mock.calls[0]!;
+    // ✅ Assert what was SENT to the backend
+    const [text] = call;
+
+    expect(text.replacementText).toBe('temp');
+    expect(text.scope).toBe('once'); // "Fix this once" == single scope
     });
   });
 
@@ -583,7 +598,9 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.click(screen.getByText('Fix in this book'));
       fireEvent.click(screen.getByText('Confirm'));
 
-      const result = mockOnConfirm.mock.results[0].value;
+      const call = mockOnConfirm.mock.results[0]!;
+
+      const result = call.value;
       expect(result.applied).toBe(true);
       expect(result.persisted).toBe(true);
       expect(result.sectionsTransformed).toBe(3);
@@ -688,7 +705,8 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.click(screen.getByText('Fix in library'));
       fireEvent.click(screen.getByText('Confirm'));
 
-      const result = mockOnConfirm.mock.results[0].value;
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
       expect(result.applied).toBe(true);
       expect(result.persisted).toBe(true);
       expect(result.scope).toBe('global');
@@ -736,7 +754,8 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.click(screen.getByText('Fix in this book'));
       fireEvent.click(screen.getByText('Confirm'));
 
-      const result = mockOnConfirm.mock.results[0].value;
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
       
       // With case-sensitive, only 'Test' should be replaced
       expect(result).toContain('Example');
@@ -772,7 +791,8 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.click(screen.getByText('Fix in this book'));
       fireEvent.click(screen.getByText('Confirm'));
 
-      const result = mockOnConfirm.mock.results[0].value;
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
       
       // All variants should be replaced
       expect(result).toContain('Example');
