@@ -777,5 +777,6 @@
   "Are you sure to delete {{count}} selected file(s)?_few": "Вы уверены, что хотите удалить {{count}} выбранных файла?",
   "Are you sure to delete {{count}} selected file(s)?_many": "Вы уверены, что хотите удалить {{count}} выбранных файлов?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Вы уверены, что хотите удалить {{count}} выбранный файл?",
-  "Cloud Storage Usage": "Использование облачного хранилища"
+  "Cloud Storage Usage": "Использование облачного хранилища",
+  "Rename Group": "Переименовать группу"
 }

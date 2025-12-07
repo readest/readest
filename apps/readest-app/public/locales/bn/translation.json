@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "{{total}}টির মধ্যে {{current}} পৃষ্ঠা",
   "Are you sure to delete {{count}} selected file(s)?_one": "আপনি কি নিশ্চিত যে {{count}}টি নির্বাচিত ফাইল মুছতে চান?",
   "Are you sure to delete {{count}} selected file(s)?_other": "আপনি কি নিশ্চিত যে {{count}}টি নির্বাচিত ফাইল মুছতে চান?",
-  "Cloud Storage Usage": "ক্লাউড স্টোরেজ ব্যবহৃত"
+  "Cloud Storage Usage": "ক্লাউড স্টোরেজ ব্যবহৃত",
+  "Rename Group": "গ্রুপের নাম পরিবর্তন করুন"
 }

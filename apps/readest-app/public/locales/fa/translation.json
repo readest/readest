@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "صفحه {{current}} از {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_one": "آیا از حذف {{count}} فایل انتخاب‌شده مطمئن هستید؟",
   "Are you sure to delete {{count}} selected file(s)?_other": "آیا از حذف {{count}} فایل انتخاب‌شده مطمئن هستید؟",
-  "Cloud Storage Usage": "استفاده از فضای ذخیره‌سازی ابری"
+  "Cloud Storage Usage": "استفاده از فضای ذخیره‌سازی ابری",
+  "Rename Group": "تغییر نام گروه"
 }

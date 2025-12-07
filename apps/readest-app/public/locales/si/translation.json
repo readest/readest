@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "පිටුව {{current}} / {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_one": "තෝරාගත් ගොනුව මකන්නට විශ්වාසද?",
   "Are you sure to delete {{count}} selected file(s)?_other": "තෝරාගත් ගොනු මකන්නට විශ්වාසද?",
-  "Cloud Storage Usage": "කලාප ගබඩා භාවිතය"
+  "Cloud Storage Usage": "කලාප ගබඩා භාවිතය",
+  "Rename Group": "කණ්ඩායම නැවත නම් කරන්න"
 }

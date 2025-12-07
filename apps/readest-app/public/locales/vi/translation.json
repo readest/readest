@@ -750,5 +750,6 @@
   "files": "tệp",
   "Page {{current}} of {{total}}": "Trang {{current}} trên {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "Bạn có chắc muốn xóa {{count}} tệp đã chọn không?",
-  "Cloud Storage Usage": "Sử dụng lưu trữ đám mây"
+  "Cloud Storage Usage": "Sử dụng lưu trữ đám mây",
+  "Rename Group": "Đổi tên nhóm"
 }

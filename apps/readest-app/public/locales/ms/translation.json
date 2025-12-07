@@ -750,5 +750,6 @@
   "files": "fail",
   "Page {{current}} of {{total}}": "Halaman {{current}} daripada {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "Adakah anda pasti mahu memadam {{count}} fail yang dipilih?",
-  "Cloud Storage Usage": "Penggunaan Storan Awan"
+  "Cloud Storage Usage": "Penggunaan Storan Awan",
+  "Rename Group": "Namakan Semula Kumpulan"
 }

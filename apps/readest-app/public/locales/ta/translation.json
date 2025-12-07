@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "பக்கம் {{current}} / {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_one": "இந்த கோப்பை நீக்க விரும்புகிறீர்களா?",
   "Are you sure to delete {{count}} selected file(s)?_other": "இந்த கோப்புகளை நீக்க விரும்புகிறீர்களா?",
-  "Cloud Storage Usage": "மேக சேமிப்பு பயன்பாடு"
+  "Cloud Storage Usage": "மேக சேமிப்பு பயன்பாடு",
+  "Rename Group": "குழுவை மறுபெயரிடவும்"
 }
