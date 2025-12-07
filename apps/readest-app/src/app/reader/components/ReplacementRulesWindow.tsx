@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { ReplacementRule } from '@/types/book';
 import environmentConfig from '@/services/environment';
 import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
 import { eventDispatcher } from '@/utils/event';
@@ -136,12 +137,50 @@ export const ReplacementRulesWindow: React.FC = () => {
   };
 
   const deleteRule = async (ruleId: string, scope: 'single' | 'book' | 'global') => {
+    console.log('Deleting rule', ruleId, 'scope', scope);
+    const disableGlobalRuleForBook = async (rule: ReplacementRule) => {
+      const { getViewSettings, setViewSettings } = useReaderStore.getState();
+      const { getConfig, saveConfig } = useBookDataStore.getState();
+      const { settings } = useSettingsStore.getState();
+
+      if (!sideBarBookKey) return;
+
+      const viewSettings = getViewSettings(sideBarBookKey);
+      if (!viewSettings) return;
+
+      const existingRules = viewSettings.replacementRules || [];
+      const updatedRules = existingRules.some((r) => r.id === rule.id)
+        ? existingRules.map((r) => (r.id === rule.id ? { ...r, enabled: false } : r))
+        : [...existingRules, { ...rule, enabled: false }];
+
+      const updatedViewSettings = { ...viewSettings, replacementRules: updatedRules };
+      setViewSettings(sideBarBookKey, updatedViewSettings);
+
+      const config = getConfig(sideBarBookKey);
+      if (config) {
+        const updatedConfig = { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() };
+        await saveConfig(environmentConfig, sideBarBookKey, updatedConfig, settings);
+      }
+    };
+
     try {
       const bookKey = sideBarBookKey || '';
-      await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
+      if (scope === 'global' && sideBarBookKey) {
+        // Disable the global rule only for this book by overriding it locally
+        const globalRule = (settings?.globalViewSettings?.replacementRules || []).find((r) => r.id === ruleId);
+        if (globalRule) {
+          await disableGlobalRuleForBook(globalRule);
+        }
+      } else {
+        await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
+      }
+      const successMessage = scope === 'global'
+        ? _('Global replacement rule disabled for this book. Reloading book to apply changes...')
+        : _('Replacement rule deleted. Reloading book to apply changes...');
+
       eventDispatcher.dispatch('toast', {
         type: 'success',
-        message: _('Replacement rule deleted. Reloading book to apply changes...'),
+        message: successMessage,
         timeout: 3000,
       });
       if (sideBarBookKey) {

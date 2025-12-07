@@ -116,7 +116,7 @@ const ReplacementPanel: React.FC = () => {
                           await removeReplacementRule(environmentConfig, '', r.id, 'global');
                           eventDispatcher.dispatch('toast', {
                             type: 'success',
-                            message: _('Replacement rule deleted. Reloading book to apply changes...'),
+                            message: _('Replacement rule deleted. Reloading library to apply changes...'),
                             timeout: 3000,
                           });
                           if (sideBarBookKey) {
