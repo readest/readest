@@ -7,6 +7,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import environmentConfig from '@/services/environment';
 import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
+import { eventDispatcher } from '@/utils/event';
 import { RiEditLine, RiDeleteBin7Line } from 'react-icons/ri';
 
 export const setReplacementRulesWindowVisible = (visible: boolean) => {
@@ -55,14 +56,26 @@ export const ReplacementRulesWindow: React.FC = () => {
     };
   }, []);
 
-  const globalRules = settings?.globalViewSettings?.replacementRules || [];
+  // const globalRules = settings?.globalViewSettings?.replacementRules || [];
   const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
   const inMemoryRules = viewSettings?.replacementRules || [];
   const persistedConfig = sideBarBookKey ? useBookDataStore.getState().getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
   // Single rules = in-memory rules that are not persisted in the book config
-  const singleRules = inMemoryRules.filter((r) => !persistedBookRules.find((p) => p.id === r.id));
-  const bookRules = persistedBookRules;
+  const singleRules = inMemoryRules.filter((r: any) => !persistedBookRules.find((p: any) => p.id === r.id));
+  // Book rules = persisted book rules + global rules (merged for display)
+  // Remove duplicates: if a pattern exists in both book and global rules, keep the book rule
+  const globalRules = settings?.globalViewSettings?.replacementRules || [];
+  const mergedRules = persistedBookRules.concat(
+    globalRules.filter((gr: any) => !persistedBookRules.find((br: any) => br.pattern === gr.pattern))
+  );
+  
+  // Create a map to track the scope of each rule for editing/deleting
+  const getRuleScope = (rule: any): 'book' | 'global' => {
+    return persistedBookRules.find((br: any) => br.id === rule.id) ? 'book' : 'global';
+  };
+  
+  const bookRules = mergedRules;
 
   const [editing, setEditing] = useState<{
     id: string | null;
@@ -102,20 +115,39 @@ export const ReplacementRulesWindow: React.FC = () => {
         }, 'single');
       }
       cancelEdit();
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Replacement rule updated successfully'),
+        timeout: 3000,
+      });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to save replacement rule', err);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to update replacement rule'),
+        timeout: 3000,
+      });
     }
   };
 
   const deleteRule = async (ruleId: string, scope: 'single' | 'book' | 'global') => {
-    if (!window.confirm('Delete this replacement rule?')) return;
     try {
       const bookKey = sideBarBookKey || '';
       await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Replacement rule deleted successfully'),
+        timeout: 3000,
+      });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to delete replacement rule', err);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to delete replacement rule'),
+        timeout: 3000,
+      });
     }
   };
 
@@ -183,7 +215,7 @@ export const ReplacementRulesWindow: React.FC = () => {
               </ul>
             )}
 
-            <h3 className='text-sm font-semibold mt-4'>{_('Book Rules')}</h3>
+            <h3 className='text-sm font-semibold mt-4'>{_('Book Specific Rules')}</h3>
                 {bookRules.length === 0 ? (
               <p className='text-sm text-base-content/70 mt-2'>{_('No book-level replacement rules')}</p>
             ) : (
@@ -226,61 +258,6 @@ export const ReplacementRulesWindow: React.FC = () => {
                             <RiEditLine />
                           </button>
                           <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'book')} aria-label={_('Delete')}>
-                            <RiDeleteBin7Line />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div>
-            <h3 className='text-sm font-semibold'>{_('Global Rules')}</h3>
-            {globalRules.length === 0 ? (
-              <p className='text-sm text-base-content/70 mt-2'>{_('No global replacement rules')}</p>
-            ) : (
-              <ul className='mt-2 space-y-2'>
-                {globalRules.map((r) => (
-                  <li key={r.id} className='rounded border p-2'>
-                    {editing.id === r.id && editing.scope === 'global' ? (
-                      <div className='flex flex-col gap-2'>
-                        <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
-                          <input
-                            className='input input-sm text-sm flex-1 opacity-60'
-                            value={editing.pattern}
-                            disabled
-                          />
-                        </div>
-
-                        <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
-                          <input
-                            className='input input-sm flex-1'
-                            value={editing.replacement}
-                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
-                          />
-                        </div>
-
-                        <div className='flex gap-2'>
-                          <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
-                          <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className='flex items-center justify-between'>
-                        <div className='flex flex-col'>
-                          <div className='font-medium text-base leading-tight'>{r.pattern}</div>
-                          <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'global')} aria-label={_('Edit')}>
-                            <RiEditLine />
-                          </button>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'global')} aria-label={_('Delete')}>
                             <RiDeleteBin7Line />
                           </button>
                         </div>

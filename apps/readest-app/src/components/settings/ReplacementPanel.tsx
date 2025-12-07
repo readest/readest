@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { RiDeleteBin7Line, RiEditLine } from 'react-icons/ri';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import environmentConfig from '@/services/environment';
+import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
+import { eventDispatcher } from '@/utils/event';
 
 const ReplacementPanel: React.FC = () => {
   const _ = useTranslation();
-  const { settings, setSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
 
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [editPattern, setEditPattern] = useState('');
@@ -47,17 +50,28 @@ const ReplacementPanel: React.FC = () => {
                   <div className='flex gap-2'>
                     <button
                       className='btn btn-sm btn-primary'
-                      onClick={() => {
-                        const updated = rules.map((rr: any) =>
-                          rr.id === r.id ? { ...rr, replacement: editReplacement } : rr,
-                        );
-                        const newSettings = { ...settings } as any;
-                        newSettings.globalViewSettings = {
-                          ...newSettings.globalViewSettings,
-                          replacementRules: updated,
-                        };
-                        setSettings(newSettings);
-                        setEditingRuleId(null);
+                      onClick={async () => {
+                        try {
+                          await updateReplacementRule(environmentConfig, '', r.id, {
+                            pattern: editPattern,
+                            replacement: editReplacement,
+                            enabled: true,
+                          }, 'global');
+                          setEditingRuleId(null);
+                          eventDispatcher.dispatch('toast', {
+                            type: 'success',
+                            message: _('Replacement rule updated successfully'),
+                            timeout: 3000,
+                          });
+                        } catch (err) {
+                          // eslint-disable-next-line no-console
+                          console.error('Failed to save replacement rule', err);
+                          eventDispatcher.dispatch('toast', {
+                            type: 'error',
+                            message: _('Failed to update replacement rule'),
+                            timeout: 3000,
+                          });
+                        }
                       }}
                     >
                       {_('Save')}
@@ -90,14 +104,24 @@ const ReplacementPanel: React.FC = () => {
                     </button>
                     <button
                       className='btn btn-ghost btn-sm p-1'
-                      onClick={() => {
-                        const updated = rules.filter((rr: any) => rr.id !== r.id);
-                        const newSettings = { ...settings } as any;
-                        newSettings.globalViewSettings = {
-                          ...newSettings.globalViewSettings,
-                          replacementRules: updated,
-                        };
-                        setSettings(newSettings);
+                      onClick={async () => {
+                        if (!window.confirm('Delete this replacement rule?')) return;
+                        try {
+                          await removeReplacementRule(environmentConfig, '', r.id, 'global');
+                          eventDispatcher.dispatch('toast', {
+                            type: 'success',
+                            message: _('Replacement rule deleted successfully'),
+                            timeout: 3000,
+                          });
+                        } catch (err) {
+                          // eslint-disable-next-line no-console
+                          console.error('Failed to delete replacement rule', err);
+                          eventDispatcher.dispatch('toast', {
+                            type: 'error',
+                            message: _('Failed to delete replacement rule'),
+                            timeout: 3000,
+                          });
+                        }
                       }}
                       aria-label={_('Delete')}
                     >
