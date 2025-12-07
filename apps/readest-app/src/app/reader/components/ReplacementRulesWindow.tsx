@@ -7,6 +7,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import environmentConfig from '@/services/environment';
 import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
+import { RiEditLine, RiDeleteBin7Line } from 'react-icons/ri';
 
 export const setReplacementRulesWindowVisible = (visible: boolean) => {
   // Persist desired visibility on window so components that mount later can read it
@@ -138,19 +139,23 @@ export const ReplacementRulesWindow: React.FC = () => {
                   <li key={r.id} className='rounded border p-2'>
                     {editing.id === r.id && editing.scope === 'single' ? (
                       <div className='flex flex-col gap-2'>
-                        <label className='text-xs text-base-content/70'>{_('Selected phrase:')}</label>
-                        <input
-                          className='input input-sm text-sm'
-                          value={editing.pattern}
-                          onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                          <input
+                            className='input input-sm text-sm flex-1'
+                            value={editing.pattern}
+                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                          />
+                        </div>
 
-                        <label className='text-xs text-base-content/70'>{_('Replace with:')}</label>
-                        <input
-                          className='input input-sm'
-                          value={editing.replacement}
-                          onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                          <input
+                            className='input input-sm flex-1'
+                            value={editing.replacement}
+                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                          />
+                        </div>
 
                         <div className='flex gap-2'>
                           <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
@@ -164,8 +169,12 @@ export const ReplacementRulesWindow: React.FC = () => {
                           <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
                         </div>
                         <div className='flex items-center gap-2'>
-                          <button className='btn btn-xs' onClick={() => startEdit(r, 'single')}>{_('Edit')}</button>
-                          <button className='btn btn-xs btn-error' onClick={() => deleteRule(r.id, 'single')}>{_('Delete')}</button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'single')} aria-label={_('Edit')}>
+                            <RiEditLine />
+                          </button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'single')} aria-label={_('Delete')}>
+                            <RiDeleteBin7Line />
+                          </button>
                         </div>
                       </div>
                     )}
@@ -183,19 +192,23 @@ export const ReplacementRulesWindow: React.FC = () => {
                   <li key={r.id} className='rounded border p-2'>
                     {editing.id === r.id && editing.scope === 'book' ? (
                       <div className='flex flex-col gap-2'>
-                        <label className='text-xs text-base-content/70'>{_('Selected phrase:')}</label>
-                        <input
-                          className='input input-sm text-sm'
-                          value={editing.pattern}
-                          onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                          <input
+                            className='input input-sm text-sm flex-1'
+                            value={editing.pattern}
+                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                          />
+                        </div>
 
-                        <label className='text-xs text-base-content/70'>{_('Replace with:')}</label>
-                        <input
-                          className='input input-sm'
-                          value={editing.replacement}
-                          onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                          <input
+                            className='input input-sm flex-1'
+                            value={editing.replacement}
+                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                          />
+                        </div>
 
                         <div className='flex gap-2'>
                           <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
@@ -209,8 +222,12 @@ export const ReplacementRulesWindow: React.FC = () => {
                           <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
                         </div>
                         <div className='flex items-center gap-2'>
-                          <button className='btn btn-xs' onClick={() => startEdit(r, 'book')}>{_('Edit')}</button>
-                          <button className='btn btn-xs btn-error' onClick={() => deleteRule(r.id, 'book')}>{_('Delete')}</button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'book')} aria-label={_('Edit')}>
+                            <RiEditLine />
+                          </button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'book')} aria-label={_('Delete')}>
+                            <RiDeleteBin7Line />
+                          </button>
                         </div>
                       </div>
                     )}
@@ -230,19 +247,23 @@ export const ReplacementRulesWindow: React.FC = () => {
                   <li key={r.id} className='rounded border p-2'>
                     {editing.id === r.id && editing.scope === 'global' ? (
                       <div className='flex flex-col gap-2'>
-                        <label className='text-xs text-base-content/70'>{_('Selected phrase:')}</label>
-                        <input
-                          className='input input-sm text-sm'
-                          value={editing.pattern}
-                          onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                          <input
+                            className='input input-sm text-sm flex-1'
+                            value={editing.pattern}
+                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                          />
+                        </div>
 
-                        <label className='text-xs text-base-content/70'>{_('Replace with:')}</label>
-                        <input
-                          className='input input-sm'
-                          value={editing.replacement}
-                          onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                          <input
+                            className='input input-sm flex-1'
+                            value={editing.replacement}
+                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                          />
+                        </div>
 
                         <div className='flex gap-2'>
                           <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
@@ -256,8 +277,12 @@ export const ReplacementRulesWindow: React.FC = () => {
                           <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
                         </div>
                         <div className='flex items-center gap-2'>
-                          <button className='btn btn-xs' onClick={() => startEdit(r, 'global')}>{_('Edit')}</button>
-                          <button className='btn btn-xs btn-error' onClick={() => deleteRule(r.id, 'global')}>{_('Delete')}</button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'global')} aria-label={_('Edit')}>
+                            <RiEditLine />
+                          </button>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'global')} aria-label={_('Delete')}>
+                            <RiDeleteBin7Line />
+                          </button>
                         </div>
                       </div>
                     )}
