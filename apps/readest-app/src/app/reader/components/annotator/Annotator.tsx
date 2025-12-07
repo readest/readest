@@ -676,7 +676,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       if (!booknoteGroups[href]) {
         booknoteGroups[href] = { id, href, label, booknotes: [] };
       }
-      booknoteGroups[href].booknotes.push(booknote);
+      booknoteGroups[href]!.booknotes.push(booknote); //booknoteGroups[href] is initialized in above case if originally undefined
     }
 
     Object.values(booknoteGroups).forEach((group) => {
