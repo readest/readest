@@ -142,9 +142,9 @@ export const ReplacementRulesWindow: React.FC = () => {
                         <div className='flex items-center gap-2'>
                           <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
                           <input
-                            className='input input-sm text-sm flex-1'
+                            className='input input-sm text-sm flex-1 opacity-60'
                             value={editing.pattern}
-                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                            disabled
                           />
                         </div>
 
@@ -195,9 +195,9 @@ export const ReplacementRulesWindow: React.FC = () => {
                         <div className='flex items-center gap-2'>
                           <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
                           <input
-                            className='input input-sm text-sm flex-1'
+                            className='input input-sm text-sm flex-1 opacity-60'
                             value={editing.pattern}
-                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                            disabled
                           />
                         </div>
 
@@ -250,9 +250,9 @@ export const ReplacementRulesWindow: React.FC = () => {
                         <div className='flex items-center gap-2'>
                           <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
                           <input
-                            className='input input-sm text-sm flex-1'
+                            className='input input-sm text-sm flex-1 opacity-60'
                             value={editing.pattern}
-                            onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                            disabled
                           />
                         </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RiCheckLine, RiCloseLine, RiDeleteBin7Line, RiEditLine } from 'react-icons/ri';
+import { RiDeleteBin7Line, RiEditLine } from 'react-icons/ri';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -30,8 +30,8 @@ const ReplacementPanel: React.FC = () => {
                     <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
                     <input
                       value={editPattern}
-                      onChange={(e) => setEditPattern(e.target.value)}
-                      className='input input-sm text-sm flex-1 w-full'
+                      disabled
+                      className='input input-sm text-sm flex-1 w-full opacity-60'
                       placeholder={_('Pattern')}
                     />
                   </div>
@@ -49,7 +49,7 @@ const ReplacementPanel: React.FC = () => {
                       className='btn btn-sm btn-primary'
                       onClick={() => {
                         const updated = rules.map((rr: any) =>
-                          rr.id === r.id ? { ...rr, pattern: editPattern, replacement: editReplacement } : rr,
+                          rr.id === r.id ? { ...rr, replacement: editReplacement } : rr,
                         );
                         const newSettings = { ...settings } as any;
                         newSettings.globalViewSettings = {
@@ -59,16 +59,14 @@ const ReplacementPanel: React.FC = () => {
                         setSettings(newSettings);
                         setEditingRuleId(null);
                       }}
-                      aria-label={_('Save')}
                     >
-                      <RiCheckLine />
+                      {_('Save')}
                     </button>
                     <button
                       className='btn btn-sm'
                       onClick={() => setEditingRuleId(null)}
-                      aria-label={_('Cancel')}
                     >
-                      <RiCloseLine />
+                      {_('Cancel')}
                     </button>
                   </div>
                 </div>
