@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { addPluginListener } from '@tauri-apps/api/core';
+import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { getCurrentWindow, getAllWindows } from '@tauri-apps/api/window';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -56,6 +56,18 @@ export function useOpenWithBooks() {
     }
   };
 
+  const initializeListeners = async () => {
+    return await addPluginListener<SharedIntentPayload>(
+      'native-bridge',
+      'shared-intent',
+      (payload) => {
+        console.log('Received shared intent:', payload);
+        const { urls } = payload;
+        handleOpenWithFileUrl(urls);
+      },
+    );
+  };
+
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
     if (listenedOpenWithBooks.current) return;
@@ -68,15 +80,13 @@ export function useOpenWithBooks() {
         handleOpenWithFileUrl([args[1]]);
       }
     });
-    const unlistenSharedIntent = addPluginListener<SharedIntentPayload>(
-      'native-bridge',
-      'shared-intent',
-      (payload) => {
-        console.log('Received shared intent:', payload);
-        const { urls } = payload;
-        handleOpenWithFileUrl(urls);
-      },
-    );
+
+    let unlistenSharedIntent: Promise<PluginListener> | null = null;
+    // FIXME: register/unregister plugin listeniner on iOS might cause app freeze for unknown reason
+    // so we only register it on Android for now to support "Shared to Readest" feature
+    if (appService?.isAndroidApp) {
+      unlistenSharedIntent = initializeListeners();
+    }
     const listenOpenWithFiles = async () => {
       return await onOpenUrl((urls) => {
         handleOpenWithFileUrl(urls);
@@ -85,8 +95,8 @@ export function useOpenWithBooks() {
     const unlistenOpenUrl = listenOpenWithFiles();
     return () => {
       unlistenDeeplink.then((f) => f());
-      unlistenSharedIntent.then((f) => f.unregister());
       unlistenOpenUrl.then((f) => f());
+      unlistenSharedIntent?.then((f) => f.unregister());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
