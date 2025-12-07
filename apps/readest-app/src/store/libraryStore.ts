@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Book, BookGroupType, BooksGroup } from '@/types/book';
 import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
-import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
+import { BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
 
 interface LibraryState {
@@ -94,19 +94,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const groups: Record<string, string> = {};
 
     library.forEach((book) => {
-      if (
-        book.groupId &&
-        book.groupName &&
-        book.groupId !== BOOK_UNGROUPED_ID &&
-        book.groupName !== BOOK_UNGROUPED_NAME &&
-        !book.deletedAt
-      ) {
-        groups[book.groupId] = book.groupName;
+      if (book.groupName && book.groupName !== BOOK_UNGROUPED_NAME && !book.deletedAt) {
+        groups[md5Fingerprint(book.groupName)] = book.groupName;
         let nextSlashIndex = book.groupName.indexOf('/', 0);
         while (nextSlashIndex > 0) {
           const groupName = book.groupName.substring(0, nextSlashIndex);
-          const groupId = md5Fingerprint(groupName);
-          groups[groupId] = groupName;
+          groups[md5Fingerprint(groupName)] = groupName;
           nextSlashIndex = book.groupName.indexOf('/', nextSlashIndex + 1);
         }
       }

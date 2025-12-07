@@ -777,5 +777,6 @@
   "Are you sure to delete {{count}} selected file(s)?_few": "Czy na pewno chcesz usunąć {{count}} wybrane pliki?",
   "Are you sure to delete {{count}} selected file(s)?_many": "Czy na pewno chcesz usunąć {{count}} wybranych plików?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Czy na pewno chcesz usunąć {{count}} wybrany plik?",
-  "Cloud Storage Usage": "Użycie pamięci w chmurze"
+  "Cloud Storage Usage": "Użycie pamięci w chmurze",
+  "Rename Group": "Zmień nazwę grupy"
 }

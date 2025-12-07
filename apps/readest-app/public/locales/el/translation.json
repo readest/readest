@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "Σελίδα {{current}} από {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_one": "Σίγουρα θέλετε να διαγράψετε {{count}} επιλεγμένο αρχείο;",
   "Are you sure to delete {{count}} selected file(s)?_other": "Σίγουρα θέλετε να διαγράψετε {{count}} επιλεγμένα αρχεία;",
-  "Cloud Storage Usage": "Χρήση αποθήκευσης cloud"
+  "Cloud Storage Usage": "Χρήση αποθήκευσης cloud",
+  "Rename Group": "Μετονομασία ομάδας"
 }

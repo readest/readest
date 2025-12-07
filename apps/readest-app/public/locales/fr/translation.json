@@ -768,5 +768,6 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Voulez-vous vraiment supprimer {{count}} fichier sélectionné ?",
   "Are you sure to delete {{count}} selected file(s)?_many": "Voulez-vous vraiment supprimer {{count}} fichiers sélectionnés ?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Voulez-vous vraiment supprimer {{count}} fichiers sélectionnés ?",
-  "Cloud Storage Usage": "Utilisation du stockage cloud"
+  "Cloud Storage Usage": "Utilisation du stockage cloud",
+  "Rename Group": "Renommer le groupe"
 }

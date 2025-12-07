@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "Sida {{current}} av {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_one": "Är du säker på att du vill radera filen?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Är du säker på att du vill radera filerna?",
-  "Cloud Storage Usage": "Användning av molnlagring"
+  "Cloud Storage Usage": "Användning av molnlagring",
+  "Rename Group": "Byt namn på grupp"
 }

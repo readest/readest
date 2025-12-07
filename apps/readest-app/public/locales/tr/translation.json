@@ -759,5 +759,6 @@
   "Page {{current}} of {{total}}": "{{total}} sayfa içinde {{current}}. sayfa",
   "Are you sure to delete {{count}} selected file(s)?_one": "Seçilen {{count}} dosyayı silmek istediğinizden emin misiniz?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Seçilen {{count}} dosyayı silmek istediğinizden emin misiniz?",
-  "Cloud Storage Usage": "Bulut Depolama Kullanımı"
+  "Cloud Storage Usage": "Bulut Depolama Kullanımı",
+  "Rename Group": "Grubu Yeniden Adlandır"
 }

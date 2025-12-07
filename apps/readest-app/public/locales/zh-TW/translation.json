@@ -750,5 +750,6 @@
   "files": "檔案",
   "Page {{current}} of {{total}}": "第 {{current}} 頁，共 {{total}} 頁",
   "Are you sure to delete {{count}} selected file(s)?_other": "確定要刪除已選擇的 {{count}} 個檔案嗎？",
-  "Cloud Storage Usage": "雲端儲存使用情況"
+  "Cloud Storage Usage": "雲端儲存使用情況",
+  "Rename Group": "重新命名"
 }

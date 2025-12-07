@@ -750,5 +750,6 @@
   "files": "ཡིག་ཆ",
   "Page {{current}} of {{total}}": "ཤོག་ངོས་ {{total}} ནས་ {{current}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "ཁྱེད་ཀྱིས་འདེམས་པའི་ཡིག་ཆ་ {{count}} བསུབས་དགོས་པ་ངེས་ཡིན་ན?",
-  "Cloud Storage Usage": "སྤྲིན་གནས་སྣོད་གསོག་ལུས་སྐོར།"
+  "Cloud Storage Usage": "སྤྲིན་གནས་སྣོད་གསོག་ལུས་སྐོར།",
+  "Rename Group": "ཚོགས་མིང་བསྒྱུར་བ།"
 }

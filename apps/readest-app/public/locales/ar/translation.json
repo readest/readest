@@ -795,5 +795,6 @@
   "Are you sure to delete {{count}} selected file(s)?_few": "هل أنت متأكد من حذف {{count}} ملفات محددة؟",
   "Are you sure to delete {{count}} selected file(s)?_many": "هل أنت متأكد من حذف {{count}} ملفًا محددًا؟",
   "Are you sure to delete {{count}} selected file(s)?_other": "هل أنت متأكد من حذف {{count}} ملف محدد؟",
-  "Cloud Storage Usage": "استخدام التخزين السحابي"
+  "Cloud Storage Usage": "استخدام التخزين السحابي",
+  "Rename Group": "إعادة تسمية المجموعة"
 }
