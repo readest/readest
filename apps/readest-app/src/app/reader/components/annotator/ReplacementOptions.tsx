@@ -31,6 +31,48 @@ const ReplacementOptions: React.FC<ReplacementOptionsProps> = ({
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [selectedScope, setSelectedScope] = useState<'once' | 'book' | 'library' | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [adjustedStyle, setAdjustedStyle] = useState<React.CSSProperties | null>(null);
+  const [isPositioned, setIsPositioned] = useState(false);
+  const hasAdjusted = useRef(false);
+
+  // Adjust position to stay within viewport - only once on initial render
+  useEffect(() => {
+    // Only adjust once to prevent jumping when other UI elements appear
+    if (menuRef.current && !hasAdjusted.current) {
+      // Use requestAnimationFrame to ensure the element is rendered before measuring
+      requestAnimationFrame(() => {
+        if (menuRef.current) {
+          const rect = menuRef.current.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
+          const padding = 10;
+          
+          let newStyle = { ...style };
+          
+          // Check if popup extends beyond bottom of viewport
+          if (rect.bottom > viewportHeight - padding) {
+            const currentTop = parseFloat(String(style.top)) || 0;
+            // Move popup above the selection instead
+            newStyle.top = `${Math.max(padding, currentTop - rect.height - 40)}px`;
+          }
+          
+          // Check if popup extends beyond right of viewport
+          if (rect.right > viewportWidth - padding) {
+            newStyle.left = `${Math.max(padding, viewportWidth - rect.width - padding)}px`;
+          }
+          
+          // Check if popup extends beyond left of viewport
+          if (rect.left < padding) {
+            newStyle.left = `${padding}px`;
+          }
+          
+          setAdjustedStyle(newStyle);
+          hasAdjusted.current = true;
+          setIsPositioned(true);
+        }
+      });
+    }
+  }, [style]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -97,7 +139,13 @@ const ReplacementOptions: React.FC<ReplacementOptionsProps> = ({
         className={clsx(
           'replacement-options absolute flex flex-col gap-3 rounded-lg bg-gray-700 p-4',
         )}
-        style={{ ...style, minWidth: '320px' }}
+        style={{ 
+          ...(adjustedStyle || style), 
+          minWidth: '320px', 
+          maxHeight: 'calc(100vh - 40px)', 
+          overflowY: 'auto',
+          visibility: isPositioned ? 'visible' : 'hidden',
+        }}
       >
         <div className="text-sm text-white">
           <p className="font-semibold mb-2">Confirm Replacement</p>
@@ -140,7 +188,13 @@ const ReplacementOptions: React.FC<ReplacementOptionsProps> = ({
         'replacement-options absolute flex flex-col gap-3 rounded-lg bg-gray-700 p-4',
         isVertical ? 'flex-col' : 'flex-col',
       )}
-      style={{ ...style, minWidth: '280px' }}
+      style={{ 
+        ...(adjustedStyle || style), 
+        minWidth: '280px', 
+        maxHeight: 'calc(100vh - 40px)', 
+        overflowY: 'auto',
+        visibility: isPositioned ? 'visible' : 'hidden',
+      }}
     >
       {/* Selected text preview */}
       <div className="text-xs text-gray-400">
