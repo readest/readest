@@ -30,6 +30,7 @@ import { findTocItemBS } from '@/utils/toc';
 import { throttle } from '@/utils/throttle';
 import { runSimpleCC } from '@/utils/simplecc';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
+import { addReplacementRule } from '@/services/transformers/replacement';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
@@ -536,7 +537,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     scope: 'once' | 'book' | 'library';
   };
 
-  const handleReplacementConfirm = (config: ReplacementConfig) => {
+  const handleReplacementConfirm = async (config: ReplacementConfig) => {
+    console.log('handleReplacementConfirm CALLED!', config);
     if (!selection || !selection.text) return;
     
     const { replacementText, caseSensitive, scope } = config;
@@ -548,22 +550,45 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       scope,
     });
 
-    // TODO: Implement actual replacement logic based on scope
-    // For now, show a success toast
-    const scopeLabels = {
-      once: 'this instance',
-      book: 'this book',
-      library: 'your library',
-    };
+    // Note: Currently the backend only supports case-sensitive replacements
+    // The caseSensitive parameter is passed but not yet used in the transformer
+    // TODO: Implement case-insensitive matching by adding 'i' flag support to transformer
+    try {
+      // Map UI scope to backend scope
+      const backendScope = scope === 'once' ? 'single' : scope === 'book' ? 'book' : 'global';
+      // Create the replacement rule
+      await addReplacementRule(
+        envConfig,
+        bookKey,
+        {
+          pattern: selection.text,
+          replacement: replacementText,
+          isRegex: false, // Use simple string matching
+          enabled: true,
+        },
+        backendScope as 'single' | 'book' | 'global',
+      );
 
-    eventDispatcher.dispatch('toast', {
-      type: 'success',
-      message: `Text replaced in ${scopeLabels[scope]}${caseSensitive ? ' (case-sensitive)' : ''}.`,
-      timeout: 3000,
-    });
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: `Rule added! Reloading book to apply changes...`,
+        timeout: 3000,
+      });
 
-    setShowReplacementOptions(false);
-    handleDismissPopupAndSelection();
+      setShowReplacementOptions(false);
+      handleDismissPopupAndSelection();
+
+      // Fully reload the book view to apply the replacement
+      const { recreateViewer } = useReaderStore.getState();
+      await recreateViewer(envConfig, bookKey);
+    } catch (error) {
+      console.error('Failed to apply replacement:', error);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: 'Failed to apply replacement. Please try again.',
+        timeout: 3000,
+      });
+    }
   };
 
 
@@ -648,7 +673,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       if (!booknoteGroups[href]) {
         booknoteGroups[href] = { id, href, label, booknotes: [] };
       }
-      booknoteGroups[href].booknotes.push(booknote);
+      booknoteGroups[href]!.booknotes.push(booknote); //booknoteGroups[href] is initialized in above case if originally undefined
     }
 
     Object.values(booknoteGroups).forEach((group) => {

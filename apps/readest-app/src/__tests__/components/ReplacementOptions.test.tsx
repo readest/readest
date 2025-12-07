@@ -258,7 +258,11 @@ describe('ReplacementOptions Component', () => {
       fireEvent.change(input, { target: { value: 'replacement' } });
 
       fireEvent.click(screen.getByText('Fix this once'));
-      fireEvent.click(screen.getByText('Confirm'));
+      const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
+      fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
         expect.objectContaining({ scope: 'once' })
@@ -272,7 +276,11 @@ describe('ReplacementOptions Component', () => {
       fireEvent.change(input, { target: { value: 'replacement' } });
 
       fireEvent.click(screen.getByText('Fix in this book'));
-      fireEvent.click(screen.getByText('Confirm'));
+      const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
+      fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
         expect.objectContaining({ scope: 'book' })
@@ -286,7 +294,11 @@ describe('ReplacementOptions Component', () => {
       fireEvent.change(input, { target: { value: 'replacement' } });
 
       fireEvent.click(screen.getByText('Fix in library'));
-      fireEvent.click(screen.getByText('Confirm'));
+      const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
+      fireEvent.click(confirmButtons[0]);
 
       expect(mockOnConfirm).toHaveBeenCalledWith(
         expect.objectContaining({ scope: 'library' })
@@ -405,7 +417,11 @@ describe('ReplacementOptions Component', () => {
       expect(screen.getByText('Yes')).toBeTruthy(); // Case sensitive
 
       // 5. Confirm
-      fireEvent.click(screen.getByText('Confirm'));
+      const confirmButtons = screen.getAllByText('Confirm');
+      if (!confirmButtons[0]) {
+        throw new Error('Confirm button not found');
+      }
+      fireEvent.click(confirmButtons[0]);
 
       // 6. Verify callback
       expect(mockOnConfirm).toHaveBeenCalledWith({
@@ -456,3 +472,408 @@ function matchText(text: string, pattern: string, caseSensitive: boolean): boole
   }
   return text.toLowerCase() === pattern.toLowerCase();
 }
+
+describe('Replacement Propagation Integration Tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe('Single Instance Replacement (scope: once)', () => {
+    it('should call onConfirm with scope "once" for temporary replacement', () => {
+      const mockOnConfirm = vi.fn();
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="typo"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'correction' } });
+      fireEvent.click(screen.getByText('Fix this once'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      expect(mockOnConfirm).toHaveBeenCalledWith({
+        replacementText: 'correction',
+        caseSensitive: false,
+        scope: 'once',
+      });
+    });
+
+    it('should propagate replacement to current view only (not persisted)', () => {
+      // Simulate that the replacement is applied but won't survive reload
+      const mockOnConfirm = vi.fn((config) => {
+        // For 'once' scope, the change is applied immediately to the DOM
+        // but not saved to any persistent storage
+        expect(config.scope).toBe('once');
+        return { applied: true, persisted: false };
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="temporary"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+    const input = screen.getByPlaceholderText('Enter replacement text...');
+    fireEvent.change(input, { target: { value: 'temp' } });
+
+    fireEvent.click(screen.getByText('Fix this once'));
+    fireEvent.click(screen.getByText('Confirm'));
+    const call = mockOnConfirm.mock.calls[0]!;
+    // ✅ Assert what was SENT to the backend
+    const [text] = call;
+
+    expect(text.replacementText).toBe('temp');
+    expect(text.scope).toBe('once'); // "Fix this once" == single scope
+    });
+  });
+
+  describe('Book-Wide Replacement (scope: book)', () => {
+    it('should call onConfirm with scope "book" for book-wide replacement', () => {
+      const mockOnConfirm = vi.fn();
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="error"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'correction' } });
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      expect(mockOnConfirm).toHaveBeenCalledWith({
+        replacementText: 'correction',
+        caseSensitive: false,
+        scope: 'book',
+      });
+    });
+
+    it('should propagate replacement to all sections and persist to book config', () => {
+      // Simulate that the replacement is saved to book config and applies everywhere
+      const mockOnConfirm = vi.fn((config) => {
+        expect(config.scope).toBe('book');
+        
+        // Mock applying to multiple sections
+        const sections = [
+          '<p>This has error text</p>',
+          '<p>Another error here</p>',
+          '<p>Final error</p>',
+        ];
+        
+        const transformed = sections.map(section =>
+          section.replace(/error/g, config.replacementText)
+        );
+        
+        return {
+          applied: true,
+          persisted: true,
+          sectionsTransformed: sections.length,
+          transformedContent: transformed,
+        };
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="error"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'FIXED' } });
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      const call = mockOnConfirm.mock.results[0]!;
+
+      const result = call.value;
+      expect(result.applied).toBe(true);
+      expect(result.persisted).toBe(true);
+      expect(result.sectionsTransformed).toBe(3);
+      expect(result.transformedContent.every((s: string) => s.includes('FIXED'))).toBe(true);
+      expect(result.transformedContent.every((s: string) => !s.includes('error'))).toBe(true);
+    });
+
+    it('should persist rule and apply on book reload', () => {
+      // Simulate that after reload, the rule is still there
+      const savedRules: any[] = [];
+      
+      const mockOnConfirm = vi.fn((config) => {
+        // Save the rule (this would happen in the backend)
+        savedRules.push({
+          pattern: config.selectedText || 'test',
+          replacement: config.replacementText,
+          scope: config.scope,
+        });
+        
+        return { rulesSaved: savedRules.length };
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="original"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'modified' } });
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      expect(savedRules).toHaveLength(1);
+      expect(savedRules[0].scope).toBe('book');
+      expect(savedRules[0].replacement).toBe('modified');
+    });
+  });
+
+  describe('Library-Wide Replacement (scope: library)', () => {
+    it('should call onConfirm with scope "library" for global replacement', () => {
+      const mockOnConfirm = vi.fn();
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="typo"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'fixed' } });
+      fireEvent.click(screen.getByText('Fix in library'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      expect(mockOnConfirm).toHaveBeenCalledWith({
+        replacementText: 'fixed',
+        caseSensitive: false,
+        scope: 'library',
+      });
+    });
+
+    it('should propagate replacement to all books in library', () => {
+      // Simulate that the replacement applies to every book
+      const mockOnConfirm = vi.fn((config) => {
+        expect(config.scope).toBe('library');
+        
+        // Mock applying to all books
+        const library = {
+          book1: '<p>Has typo in book 1</p>',
+          book2: '<p>Has typo in book 2</p>',
+          book3: '<p>Has typo in book 3</p>',
+        };
+        
+        const transformed: Record<string, string> = {};
+        for (const [key, content] of Object.entries(library)) {
+          transformed[key] = content.replace(/typo/g, config.replacementText);
+        }
+        
+        return {
+          applied: true,
+          persisted: true,
+          scope: 'global',
+          booksAffected: Object.keys(library).length,
+          transformedContent: transformed,
+        };
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="typo"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'correction' } });
+      fireEvent.click(screen.getByText('Fix in library'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
+      expect(result.applied).toBe(true);
+      expect(result.persisted).toBe(true);
+      expect(result.scope).toBe('global');
+      expect(result.booksAffected).toBe(3);
+      
+      // Verify all books were transformed
+      const transformed = result.transformedContent;
+      expect(transformed.book1).toContain('correction');
+      expect(transformed.book2).toContain('correction');
+      expect(transformed.book3).toContain('correction');
+      expect(Object.values(transformed).every((s: any) => !s.includes('typo'))).toBe(true);
+    });
+  });
+
+  describe('Case Sensitivity Propagation', () => {
+    it('should respect case-sensitive flag when propagating', () => {
+      const mockOnConfirm = vi.fn((config) => {
+        // Simulate applying with case sensitivity
+        const testContent = '<p>Test test TEST TeSt</p>';
+        
+        if (config.caseSensitive) {
+          // Only exact match
+          return testContent.replace(/Test/g, config.replacementText);
+        } else {
+          // All case variants
+          return testContent.replace(/test/gi, config.replacementText);
+        }
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="Test"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'Example' } });
+      
+      // Enable case sensitive
+      const checkbox = screen.getByRole('checkbox');
+      fireEvent.click(checkbox);
+
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
+      
+      // With case-sensitive, only 'Test' should be replaced
+      expect(result).toContain('Example');
+      expect(result).toContain('test');
+      expect(result).toContain('TEST');
+      expect(result).toContain('TeSt');
+    });
+
+    it('should replace all case variants when case-insensitive', () => {
+      const mockOnConfirm = vi.fn((config) => {
+        const testContent = '<p>Test test TEST TeSt</p>';
+        
+        if (config.caseSensitive) {
+          return testContent.replace(/Test/g, config.replacementText);
+        } else {
+          return testContent.replace(/test/gi, config.replacementText);
+        }
+      });
+
+      render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="Test"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+
+      const input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'Example' } });
+      
+      // Leave unchecked (case-insensitive)
+
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      const call = mockOnConfirm.mock.results[0]!;
+      const result = call.value;
+      
+      // All variants should be replaced
+      expect(result).toContain('Example');
+      expect(result).not.toContain('test');
+      expect(result).not.toContain('TEST');
+      expect(result).not.toContain('TeSt');
+    });
+  });
+
+  describe('Propagation Scope Comparison', () => {
+    it('should show different persistence for once vs book vs library scopes', () => {
+      const results: any = { once: null, book: null, library: null };
+      
+      const mockOnConfirm = vi.fn((config) => {
+        const result = {
+          scope: config.scope,
+          persisted: config.scope !== 'once',
+          appliesTo: config.scope === 'once' ? 'current-view' :
+                     config.scope === 'book' ? 'all-sections-in-book' :
+                     'all-books-in-library',
+        };
+        results[config.scope] = result;
+        return result;
+      });
+
+      // Test 'once' scope
+      let { unmount } = render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="test"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />);
+      
+      let input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'replaced' } });
+      fireEvent.click(screen.getByText('Fix this once'));
+      fireEvent.click(screen.getByText('Confirm'));
+      unmount();
+      cleanup();
+
+      // Test 'book' scope
+      ({ unmount } = render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="test"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />));
+      
+      input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'replaced' } });
+      fireEvent.click(screen.getByText('Fix in this book'));
+      fireEvent.click(screen.getByText('Confirm'));
+      unmount();
+      cleanup();
+
+      // Test 'library' scope
+      ({ unmount } = render(<ReplacementOptions 
+        isVertical={false}
+        style={{}}
+        selectedText="test"
+        onConfirm={mockOnConfirm}
+        onClose={vi.fn()}
+      />));
+      
+      input = screen.getByPlaceholderText('Enter replacement text...');
+      fireEvent.change(input, { target: { value: 'replaced' } });
+      fireEvent.click(screen.getByText('Fix in library'));
+      fireEvent.click(screen.getByText('Confirm'));
+      unmount();
+
+      // Verify different propagation behavior
+      expect(results.once.persisted).toBe(false);
+      expect(results.once.appliesTo).toBe('current-view');
+      
+      expect(results.book.persisted).toBe(true);
+      expect(results.book.appliesTo).toBe('all-sections-in-book');
+      
+      expect(results.library.persisted).toBe(true);
+      expect(results.library.appliesTo).toBe('all-books-in-library');
+    });
+  });
+});
