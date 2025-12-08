@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "페이지 {{current}} / {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "선택한 {{count}}개의 파일을 삭제하시겠습니까?",
   "Cloud Storage Usage": "클라우드 저장소 사용량",
-  "Rename Group": "그룹 이름 바꾸기"
+  "Rename Group": "그룹 이름 바꾸기",
+  "From Directory": "디렉토리에서",
+  "Successfully imported {{count}} book(s)_other": "성공적으로 {{count}} 권의 책이 가져와졌습니다"
 }

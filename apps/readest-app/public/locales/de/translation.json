@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Möchten Sie {{count}} ausgewählte Datei wirklich löschen?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Möchten Sie {{count}} ausgewählte Dateien wirklich löschen?",
   "Cloud Storage Usage": "Cloud-Speichernutzung",
-  "Rename Group": "Gruppe umbenennen"
+  "Rename Group": "Gruppe umbenennen",
+  "From Directory": "Aus Verzeichnis",
+  "Successfully imported {{count}} book(s)_one": "Erfolgreich 1 Buch importiert",
+  "Successfully imported {{count}} book(s)_other": "Erfolgreich {{count}} Bücher importiert"
 }

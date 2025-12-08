@@ -98,6 +98,7 @@ export abstract class BaseAppService implements AppService {
   hasScreenBrightness = false;
   hasIAP = false;
   canCustomizeRootDir = false;
+  canReadExternalDir = false;
   distChannel = 'readest' as DistChannel;
 
   protected CURRENT_MIGRATION_VERSION = 20251124;
@@ -354,7 +355,6 @@ export abstract class BaseAppService implements AppService {
           loadedBook.metadata.title = getBaseFilename(filename);
         }
       } catch (error) {
-        console.error(error);
         throw new Error(`Failed to open the book: ${(error as Error).message || error}`);
       }
 
@@ -405,7 +405,14 @@ export abstract class BaseAppService implements AppService {
         } else if (typeof file === 'string' && isContentURI(file)) {
           await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else if (typeof file === 'string' && !isValidURL(file)) {
-          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+          try {
+            // try to copy the file directly first in case of large files to avoid memory issues
+            // on desktop when reading recursively from selected directory the direct copy will fail
+            // due to permission issues, then fallback to read and write files
+            await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+          } catch {
+            await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+          }
         } else {
           await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
         }
@@ -441,6 +448,7 @@ export abstract class BaseAppService implements AppService {
 
       return existingBook || book;
     } catch (error) {
+      console.error('Error importing book:', error);
       throw error;
     }
   }

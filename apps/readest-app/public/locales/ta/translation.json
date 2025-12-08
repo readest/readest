@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "இந்த கோப்பை நீக்க விரும்புகிறீர்களா?",
   "Are you sure to delete {{count}} selected file(s)?_other": "இந்த கோப்புகளை நீக்க விரும்புகிறீர்களா?",
   "Cloud Storage Usage": "மேக சேமிப்பு பயன்பாடு",
-  "Rename Group": "குழுவை மறுபெயரிடவும்"
+  "Rename Group": "குழுவை மறுபெயரிடவும்",
+  "From Directory": "கோப்புறையிலிருந்து",
+  "Successfully imported {{count}} book(s)_one": "வெற்றிகரமாக 1 புத்தகம் இறக்குமதி செய்யப்பட்டது",
+  "Successfully imported {{count}} book(s)_other": "வெற்றிகரமாக {{count}} புத்தகங்கள் இறக்குமதி செய்யப்பட்டது"
 }

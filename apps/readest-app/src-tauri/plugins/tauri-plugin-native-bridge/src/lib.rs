@@ -1,3 +1,4 @@
+use std::sync::{Arc, Mutex};
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Manager, Runtime,
@@ -17,6 +18,9 @@ mod platform;
 
 pub use error::{Error, Result};
 
+use std::path::PathBuf;
+use tauri::AppHandle;
+
 #[cfg(desktop)]
 use desktop::NativeBridge;
 #[cfg(mobile)]
@@ -30,6 +34,20 @@ pub trait NativeBridgeExt<R: Runtime> {
 impl<R: Runtime, T: Manager<R>> crate::NativeBridgeExt<R> for T {
     fn native_bridge(&self) -> &NativeBridge<R> {
         self.state::<NativeBridge<R>>().inner()
+    }
+}
+
+type DirectoryCallback<R> = Box<dyn Fn(&AppHandle<R>, &PathBuf) + Send + Sync>;
+
+pub struct DirectoryCallbackState<R: Runtime> {
+    pub callback: Arc<Mutex<Option<DirectoryCallback<R>>>>,
+}
+
+impl<R: Runtime> Default for DirectoryCallbackState<R> {
+    fn default() -> Self {
+        Self {
+            callback: Arc::new(Mutex::new(None)),
+        }
     }
 }
 
@@ -66,7 +84,18 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             #[cfg(desktop)]
             let native_bridge = desktop::init(app, api)?;
             app.manage(native_bridge);
+            app.manage(DirectoryCallbackState::<R>::default());
             Ok(())
         })
         .build()
+}
+
+pub fn register_select_directory_callback<R: Runtime>(
+    app: &AppHandle<R>,
+    callback: impl Fn(&AppHandle<R>, &PathBuf) + Send + Sync + 'static,
+) {
+    if let Some(state) = app.try_state::<DirectoryCallbackState<R>>() {
+        let mut cb = state.callback.lock().unwrap();
+        *cb = Some(Box::new(callback));
+    }
 }

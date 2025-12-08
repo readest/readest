@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Weet je zeker dat je {{count}} geselecteerd bestand wilt verwijderen?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Weet je zeker dat je {{count}} geselecteerde bestanden wilt verwijderen?",
   "Cloud Storage Usage": "Cloudopslaggebruik",
-  "Rename Group": "Groep hernoemen"
+  "Rename Group": "Groep hernoemen",
+  "From Directory": "Vanuit map",
+  "Successfully imported {{count}} book(s)_one": "Succesvol 1 boek geïmporteerd",
+  "Successfully imported {{count}} book(s)_other": "Succesvol {{count}} boeken geïmporteerd"
 }

@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "第 {{current}} 页，共 {{total}} 页",
   "Are you sure to delete {{count}} selected file(s)?_other": "确定要删除已选择的 {{count}} 个文件吗？",
   "Cloud Storage Usage": "云存储使用情况",
-  "Rename Group": "重命名分组"
+  "Rename Group": "重命名分组",
+  "From Directory": "从文件夹导入",
+  "Successfully imported {{count}} book(s)_other": "成功导入 {{count}} 本书"
 }

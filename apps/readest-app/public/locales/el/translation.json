@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Σίγουρα θέλετε να διαγράψετε {{count}} επιλεγμένο αρχείο;",
   "Are you sure to delete {{count}} selected file(s)?_other": "Σίγουρα θέλετε να διαγράψετε {{count}} επιλεγμένα αρχεία;",
   "Cloud Storage Usage": "Χρήση αποθήκευσης cloud",
-  "Rename Group": "Μετονομασία ομάδας"
+  "Rename Group": "Μετονομασία ομάδας",
+  "From Directory": "Από κατάλογο",
+  "Successfully imported {{count}} book(s)_one": "Επιτυχής εισαγωγή 1 βιβλίου",
+  "Successfully imported {{count}} book(s)_other": "Επιτυχής εισαγωγή {{count}} βιβλίων"
 }
