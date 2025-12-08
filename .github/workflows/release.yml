@@ -69,7 +69,7 @@ jobs:
               repo: context.repo.repo,
               tag_name: process.env.release_tag,
             })
-            const notes = process.env.release_note.split(/(?:\d\.\s)/).filter(Boolean);
+            const notes = process.env.release_note.split(/\d+\.\s/).filter(Boolean);
             const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
             const body = `## Release Highlight\n${formattedNotes}\n\n${data.body}`;
             github.rest.repos.updateRelease({
