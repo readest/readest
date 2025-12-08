@@ -384,7 +384,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleCopy = (copyToNotebook = true) => {
     if (!selection || !selection.text) return;
-    navigator.clipboard?.writeText(selection.text);
+    setTimeout(() => {
+      // Delay to ensure it won't be overridden by system clipboard actions
+      navigator.clipboard?.writeText(selection.text);
+    }, 100);
     handleDismissPopupAndSelection();
 
     if (!copyToNotebook) return;
