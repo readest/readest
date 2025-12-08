@@ -18,6 +18,7 @@ export interface SelectedFile {
 
   // For Tauri file
   path?: string;
+  basePath?: string;
 }
 
 export interface FileSelectionResult {

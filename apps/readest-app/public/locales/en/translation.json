@@ -17,5 +17,7 @@
   "{{count}} selected_one": "{{count}} selected",
   "{{count}} selected_other": "{{count}} selected",
   "Are you sure to delete {{count}} selected file(s)?_one": "Are you sure to delete {{count}} selected file?",
-  "Are you sure to delete {{count}} selected file(s)?_other": "Are you sure to delete {{count}} selected files?"
+  "Are you sure to delete {{count}} selected file(s)?_other": "Are you sure to delete {{count}} selected files?",
+  "Successfully imported {{count}} book(s)_one": "Successfully imported {{count}} book",
+  "Successfully imported {{count}} book(s)_other": "Successfully imported {{count}} books"
 }

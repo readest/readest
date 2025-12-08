@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "หน้า {{current}} จาก {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "คุณแน่ใจหรือว่าต้องการลบไฟล์ที่เลือก?",
   "Cloud Storage Usage": "การใช้งานพื้นที่เก็บข้อมูลคลาวด์",
-  "Rename Group": "เปลี่ยนชื่อกลุ่ม"
+  "Rename Group": "เปลี่ยนชื่อกลุ่ม",
+  "From Directory": "จากไดเรกทอรี",
+  "Successfully imported {{count}} book(s)_other": "นำเข้า {{count}} หนังสือเรียบร้อยแล้ว"
 }

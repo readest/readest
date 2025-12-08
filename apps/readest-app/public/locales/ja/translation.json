@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "ページ {{current}} / {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "選択した {{count}} 件のファイルを削除してもよろしいですか？",
   "Cloud Storage Usage": "クラウドストレージ使用量",
-  "Rename Group": "グループ名を変更"
+  "Rename Group": "グループ名を変更",
+  "From Directory": "ディレクトリから",
+  "Successfully imported {{count}} book(s)_other": "成功裏に{{count}}冊の本をインポートしました"
 }

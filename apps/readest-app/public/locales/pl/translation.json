@@ -778,5 +778,10 @@
   "Are you sure to delete {{count}} selected file(s)?_many": "Czy na pewno chcesz usunąć {{count}} wybranych plików?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Czy na pewno chcesz usunąć {{count}} wybrany plik?",
   "Cloud Storage Usage": "Użycie pamięci w chmurze",
-  "Rename Group": "Zmień nazwę grupy"
+  "Rename Group": "Zmień nazwę grupy",
+  "From Directory": "Z katalogu",
+  "Successfully imported {{count}} book(s)_one": "Pomyślnie zaimportowano 1 książkę",
+  "Successfully imported {{count}} book(s)_few": "Pomyślnie zaimportowano {{count}} książki",
+  "Successfully imported {{count}} book(s)_many": "Pomyślnie zaimportowano {{count}} książek",
+  "Successfully imported {{count}} book(s)_other": "Pomyślnie zaimportowano {{count}} książek"
 }

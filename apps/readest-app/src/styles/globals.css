@@ -371,6 +371,16 @@ foliate-fxl {
   display: block;
 }
 
+.touch-target {
+  position: relative;
+}
+
+.touch-target::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
 .no-context-menu {
   -webkit-touch-callout: none;
   -webkit-user-select: none;

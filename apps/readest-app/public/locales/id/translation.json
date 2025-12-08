@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "Halaman {{current}} dari {{total}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "Yakin ingin menghapus {{count}} file yang dipilih?",
   "Cloud Storage Usage": "Penggunaan Penyimpanan Cloud",
-  "Rename Group": "Ganti Nama Grup"
+  "Rename Group": "Ganti Nama Grup",
+  "From Directory": "Dari Direktori",
+  "Successfully imported {{count}} book(s)_other": "Berhasil mengimpor {{count}} buku"
 }

@@ -751,5 +751,7 @@
   "Page {{current}} of {{total}}": "ཤོག་ངོས་ {{total}} ནས་ {{current}}",
   "Are you sure to delete {{count}} selected file(s)?_other": "ཁྱེད་ཀྱིས་འདེམས་པའི་ཡིག་ཆ་ {{count}} བསུབས་དགོས་པ་ངེས་ཡིན་ན?",
   "Cloud Storage Usage": "སྤྲིན་གནས་སྣོད་གསོག་ལུས་སྐོར།",
-  "Rename Group": "ཚོགས་མིང་བསྒྱུར་བ།"
+  "Rename Group": "ཚོགས་མིང་བསྒྱུར་བ།",
+  "From Directory": "སྐོར་འདེམས་པ་ནས།",
+  "Successfully imported {{count}} book(s)_other": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་ {{count}} དེབ་འདེམས་སོང་"
 }

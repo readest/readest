@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "আপনি কি নিশ্চিত যে {{count}}টি নির্বাচিত ফাইল মুছতে চান?",
   "Are you sure to delete {{count}} selected file(s)?_other": "আপনি কি নিশ্চিত যে {{count}}টি নির্বাচিত ফাইল মুছতে চান?",
   "Cloud Storage Usage": "ক্লাউড স্টোরেজ ব্যবহৃত",
-  "Rename Group": "গ্রুপের নাম পরিবর্তন করুন"
+  "Rename Group": "গ্রুপের নাম পরিবর্তন করুন",
+  "From Directory": "ডিরেক্টরি থেকে",
+  "Successfully imported {{count}} book(s)_one": "সফলভাবে ১টি বই আমদানি করা হয়েছে",
+  "Successfully imported {{count}} book(s)_other": "সফলভাবে {{count}}টি বই আমদানি করা হয়েছে"
 }

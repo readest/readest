@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Är du säker på att du vill radera filen?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Är du säker på att du vill radera filerna?",
   "Cloud Storage Usage": "Användning av molnlagring",
-  "Rename Group": "Byt namn på grupp"
+  "Rename Group": "Byt namn på grupp",
+  "From Directory": "Från katalog",
+  "Successfully imported {{count}} book(s)_one": "Importerat 1 bok",
+  "Successfully imported {{count}} book(s)_other": "Importerat {{count}} böcker"
 }

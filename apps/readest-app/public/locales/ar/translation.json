@@ -796,5 +796,12 @@
   "Are you sure to delete {{count}} selected file(s)?_many": "هل أنت متأكد من حذف {{count}} ملفًا محددًا؟",
   "Are you sure to delete {{count}} selected file(s)?_other": "هل أنت متأكد من حذف {{count}} ملف محدد؟",
   "Cloud Storage Usage": "استخدام التخزين السحابي",
-  "Rename Group": "إعادة تسمية المجموعة"
+  "Rename Group": "إعادة تسمية المجموعة",
+  "From Directory": "من الدليل",
+  "Successfully imported {{count}} book(s)_zero": "لم يتم استيراد أي كتب",
+  "Successfully imported {{count}} book(s)_one": "تم استيراد كتاب واحد",
+  "Successfully imported {{count}} book(s)_two": "تم استيراد كتابين",
+  "Successfully imported {{count}} book(s)_few": "تم استيراد {{count}} كتب",
+  "Successfully imported {{count}} book(s)_many": "تم استيراد {{count}} كتابًا",
+  "Successfully imported {{count}} book(s)_other": "تم استيراد {{count}} كتاب"
 }

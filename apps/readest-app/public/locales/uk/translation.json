@@ -778,5 +778,10 @@
   "Are you sure to delete {{count}} selected file(s)?_many": "Ви впевнені, що хочете видалити {{count}} файлів?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Ви впевнені, що хочете видалити {{count}} файлів?",
   "Cloud Storage Usage": "Використання хмарного сховища",
-  "Rename Group": "Перейменувати групу"
+  "Rename Group": "Перейменувати групу",
+  "From Directory": "З каталогу",
+  "Successfully imported {{count}} book(s)_one": "Успішно імпортовано 1 книгу",
+  "Successfully imported {{count}} book(s)_few": "Успішно імпортовано {{count}} книги",
+  "Successfully imported {{count}} book(s)_many": "Успішно імпортовано {{count}} книг",
+  "Successfully imported {{count}} book(s)_other": "Успішно імпортовано {{count}} книг"
 }

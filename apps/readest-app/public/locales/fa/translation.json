@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "آیا از حذف {{count}} فایل انتخاب‌شده مطمئن هستید؟",
   "Are you sure to delete {{count}} selected file(s)?_other": "آیا از حذف {{count}} فایل انتخاب‌شده مطمئن هستید؟",
   "Cloud Storage Usage": "استفاده از فضای ذخیره‌سازی ابری",
-  "Rename Group": "تغییر نام گروه"
+  "Rename Group": "تغییر نام گروه",
+  "From Directory": "از مسیر",
+  "Successfully imported {{count}} book(s)_one": "با موفقیت 1 کتاب وارد شد",
+  "Successfully imported {{count}} book(s)_other": "با موفقیت {{count}} کتاب وارد شد"
 }

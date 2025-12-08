@@ -760,5 +760,8 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Seçilen {{count}} dosyayı silmek istediğinizden emin misiniz?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Seçilen {{count}} dosyayı silmek istediğinizden emin misiniz?",
   "Cloud Storage Usage": "Bulut Depolama Kullanımı",
-  "Rename Group": "Grubu Yeniden Adlandır"
+  "Rename Group": "Grubu Yeniden Adlandır",
+  "From Directory": "Dizinden",
+  "Successfully imported {{count}} book(s)_one": "Başarıyla 1 kitap içe aktarıldı",
+  "Successfully imported {{count}} book(s)_other": "Başarıyla {{count}} kitap içe aktarıldı"
 }
