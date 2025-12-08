@@ -38,7 +38,6 @@ export function PublicationView({
   const _ = useTranslation();
   const router = useRouter();
   const [downloading, setDownloading] = useState(false);
-  const [downloaded, setDownloaded] = useState(false);
   const [downloadedBook, setDownloadedBook] = useState<Book | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
 
@@ -79,7 +78,6 @@ export function PublicationView({
     }
 
     setDownloading(true);
-    setDownloaded(false);
     setProgress(null);
 
     try {
@@ -150,13 +148,13 @@ export function PublicationView({
             <div className='flex flex-wrap gap-2'>
               {acquisitionLinks.map(({ rel, links }) => (
                 <div key={rel} className='flex gap-1'>
-                  {links.length === 1 ? (
+                  {links.length === 1 || downloadedBook ? (
                     <button
                       onClick={() => handleActionButton(links[0]!.href, links[0]!.type)}
                       disabled={downloading}
                       className={clsx(
                         'btn btn-primary min-w-20 rounded-3xl',
-                        downloaded && 'btn-success',
+                        downloadedBook && 'btn-success',
                       )}
                     >
                       {downloadedBook ? _('Open & Read') : getAcquisitionLabel(rel)}
@@ -173,7 +171,7 @@ export function PublicationView({
                           tabIndex={0}
                           className={clsx(
                             `btn btn-primary min-w-20 rounded-3xl ${downloading ? 'btn-disabled' : ''}`,
-                            downloaded && 'btn-success',
+                            downloadedBook && 'btn-success',
                           )}
                         >
                           {downloadedBook ? _('Open') : getAcquisitionLabel(rel)}

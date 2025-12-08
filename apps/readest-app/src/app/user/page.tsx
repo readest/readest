@@ -52,7 +52,7 @@ const ProfilePage = () => {
   const _ = useTranslation();
   const router = useRouter();
   const { appService } = useEnv();
-  const { token, user } = useAuth();
+  const { token, user, refresh } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const [loading, setLoading] = useState(false);
@@ -91,6 +91,7 @@ const ProfilePage = () => {
       setShowEmbeddedCheckout(false);
     } else if (showStorageManager) {
       setShowStorageManager(false);
+      refresh();
     } else {
       navigateToLibrary(router);
     }
