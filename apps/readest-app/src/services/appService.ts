@@ -72,6 +72,7 @@ import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { parseFontInfo } from '@/utils/font';
+import { svg2png } from '@/utils/svg';
 
 export abstract class BaseAppService implements AppService {
   osPlatform: OsPlatform = getOSPlatform();
@@ -418,7 +419,13 @@ export abstract class BaseAppService implements AppService {
         }
       }
       if (saveCover && (!(await this.fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
-        const cover = await loadedBook.getCover();
+        let cover = await loadedBook.getCover();
+        if (cover?.type === 'image/svg+xml') {
+          try {
+            console.log('Converting SVG cover to PNG...');
+            cover = await svg2png(cover);
+          } catch {}
+        }
         if (cover) {
           await this.fs.writeFile(getCoverFilename(book), 'Books', await cover.arrayBuffer());
         }
