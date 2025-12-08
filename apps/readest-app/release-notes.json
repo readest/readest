@@ -1,5 +1,25 @@
 {
   "releases": {
+    "0.9.95": {
+      "date": "2025-12-08",
+      "notes": [
+        "OPDS: You can now search, browse, and download ebooks directly from OPDS catalogs",
+        "OPDS: Improved compatibility with Calibre Web for reliable downloads",
+        "OPDS: Fixed an issue where book covers from self-hosted Calibre OPDS servers did not display correctly",
+        "Cloud Storage: You can view and delete files stored in your cloud storage directly from the app",
+        "Bookshelf: Added support for importing books from a folder recursively",
+        "Bookshelf: You can now rename your bookshelf groups",
+        "EPUB: Added support for SVG covers from Standard Ebooks",
+        "Annotations: Keyboard shortcuts no longer copy selected text into the notebook",
+        "Footnotes: Footnote popups now scale properly on small screens",
+        "Touch/Styli: Removed the context menu for smoother interaction on touch and stylus devices",
+        "Layout: Devices with unfoldable screens now automatically switch to a two-column layout",
+        "PDF: Improved zoomed-in navigation and hand-tool behavior for smoother page navigation",
+        "Android: Fixed highlighting of the current sentence when using native Android text-to-speech",
+        "Android: Back button handling now works correctly on Android 15 and above",
+        "Android: You can now open files shared from other apps"
+      ]
+    },
     "0.9.94": {
       "date": "2025-12-02",
       "notes": [
