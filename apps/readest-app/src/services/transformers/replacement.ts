@@ -115,9 +115,7 @@ export const replacementTransformer: Transformer = {
 
     console.log('[REPLACEMENT] Transformation complete');
 
-    // Serialize back to HTML string
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(doc);
+    return result;
   },
 };
 
@@ -139,20 +137,34 @@ export interface CreateReplacementRuleOptions {
   isRegex?: boolean;
   enabled?: boolean;
   order?: number;
+  singleInstance?: boolean; // If true, only replace the specific occurrence
+  sectionHref?: string; // Section where the single-instance replacement applies
+  occurrenceIndex?: number; // Which occurrence in the section (0-based)
 }
 
 /**
  * Creates a new replacement rule with default values
  */
 export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
-  return {
+  const rule: ReplacementRule = {
     id: uniqueId(),
     pattern: options.pattern,
     replacement: options.replacement,
     isRegex: options.isRegex ?? false,
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
+    singleInstance: options.singleInstance ?? false,
   };
+  
+  // Add single-instance specific fields if provided
+  if (options.sectionHref) {
+    rule.sectionHref = options.sectionHref;
+  }
+  if (typeof options.occurrenceIndex === 'number') {
+    rule.occurrenceIndex = options.occurrenceIndex;
+  }
+  
+  return rule;
 }
 
 /**
@@ -212,8 +224,8 @@ export async function addReplacementRule(
 
   switch (scope) {
     case 'single':
-      // Apply only to current book view (temporary, not persisted)
-      await addReplacementRuleToBook(envConfig, bookKey, rule, false);
+      // Single-instance replacement: persisted in book config for refresh persistence
+      await addReplacementRuleToBook(envConfig, bookKey, rule, true);
       break;
     case 'book':
       // Apply to entire book (persisted in book config)
@@ -259,6 +271,9 @@ async function addReplacementRuleToBook(
     existingRule.replacement = rule.replacement;
     existingRule.enabled = rule.enabled;
     existingRule.order = rule.order;
+    existingRule.singleInstance = rule.singleInstance;
+    existingRule.sectionHref = rule.sectionHref;
+    existingRule.occurrenceIndex = rule.occurrenceIndex;
   } else {
     // Add new rule
     existingRules.push(rule);
