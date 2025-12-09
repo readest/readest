@@ -261,22 +261,26 @@ async function addReplacementRuleToBook(
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
   
-  // Check if rule with same pattern already exists
-  const existingRule = existingRules.find(
-    (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex,
-  );
-
-  if (existingRule) {
-    // Update existing rule instead of creating duplicate
-    existingRule.replacement = rule.replacement;
-    existingRule.enabled = rule.enabled;
-    existingRule.order = rule.order;
-    existingRule.singleInstance = rule.singleInstance;
-    existingRule.sectionHref = rule.sectionHref;
-    existingRule.occurrenceIndex = rule.occurrenceIndex;
-  } else {
-    // Add new rule
+  if (rule.singleInstance) {
+    // Single-instance rules: ALWAYS create new rule (each has unique ID)
+    // Don't try to merge - after DOM modifications, occurrence indices shift
+    // and we can't reliably detect duplicates
     existingRules.push(rule);
+  } else {
+    // Non-single-instance: check if same pattern exists to avoid duplicates
+    const existingRule = existingRules.find(
+      (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex && !r.singleInstance,
+    );
+
+    if (existingRule) {
+      // Update existing rule
+      existingRule.replacement = rule.replacement;
+      existingRule.enabled = rule.enabled;
+      existingRule.order = rule.order;
+    } else {
+      // Add new rule
+      existingRules.push(rule);
+    }
   }
 
   // Update viewSettings
