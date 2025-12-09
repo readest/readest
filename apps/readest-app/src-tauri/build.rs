@@ -44,17 +44,22 @@ fn build_windows_thumbnail() {
     }
 
     let dll_name = "windows_thumbnail.dll";
-    let dll_src = if !target_triple.is_empty() {
+    let candidate_paths = [
+        dll_crate_dir.join("target").join(&profile).join(dll_name),
         dll_crate_dir
             .join("target")
             .join(&target_triple)
             .join(&profile)
-            .join(dll_name)
-    } else {
-        dll_crate_dir.join("target").join(&profile).join(dll_name)
-    };
-    let dll_dest = dll_crate_dir.join("target").join(dll_name);
+            .join(dll_name),
+    ];
 
-    fs::copy(&dll_src, &dll_dest).expect("Failed to copy windows_thumbnail DLL");
+    let dll_src = candidate_paths
+        .iter()
+        .find(|p| p.exists())
+        .expect("Failed to find built windows_thumbnail DLL");
+
+    let dll_dest = &dll_crate_dir.join("target").join(dll_name);
+
+    fs::copy(dll_src, dll_dest).expect("Failed to copy windows_thumbnail DLL");
     println!("cargo:rerun-if-changed={}", dll_dest.display());
 }

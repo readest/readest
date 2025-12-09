@@ -168,10 +168,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleScroll,
     handleTouchStart,
     handleTouchEnd,
+    handlePointerdown,
     handlePointerup,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,
+    handleContextmenu,
   } = useTextSelector(bookKey, setSelection, handleDismissPopup);
 
   const onLoad = (event: Event) => {
@@ -194,6 +196,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     detail.doc?.addEventListener('touchstart', handleTouchStart);
     detail.doc?.addEventListener('touchmove', handleTouchmove);
     detail.doc?.addEventListener('touchend', handleTouchEnd);
+    detail.doc?.addEventListener('pointerdown', handlePointerdown);
     detail.doc?.addEventListener('pointerup', (ev: PointerEvent) =>
       handlePointerup(doc, index, ev),
     );
@@ -227,13 +230,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
 
     // Disable the default context menu on mobile devices (selection handles suffice)
-    if (appService?.isMobile) {
-      detail.doc?.addEventListener('contextmenu', (event: Event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      });
-    }
+    detail.doc?.addEventListener('contextmenu', handleContextmenu);
   };
 
   const onDrawAnnotation = (event: Event) => {
@@ -390,8 +387,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowWikipediaPopup(false);
   };
 
-  const handleCopy = () => {
+  const handleCopy = (copyToNotebook = true) => {
     if (!selection || !selection.text) return;
+    setTimeout(() => {
+      // Delay to ensure it won't be overridden by system clipboard actions
+      navigator.clipboard?.writeText(selection.text);
+    }, 100);
+    handleDismissPopupAndSelection();
+
+    if (!copyToNotebook) return;
+
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: _('Copied to notebook'),
@@ -400,7 +405,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     });
 
     const { booknotes: annotations = [] } = config;
-    if (selection) navigator.clipboard?.writeText(selection.text);
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
     const annotation: BookNote = {
@@ -426,7 +430,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
-    handleDismissPopupAndSelection();
     if (!appService?.isMobile) {
       setNotebookVisible(true);
     }
@@ -627,7 +630,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         handleSearch();
       },
       onCopySelection: () => {
-        handleCopy();
+        handleCopy(false);
       },
       onTranslateSelection: () => {
         handleTranslation();

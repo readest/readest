@@ -1,4 +1,5 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
+import { OPDSLink } from '@/types/opds';
 import { fetchWithAuth } from './opdsReq';
 
 export const groupByArray = <T, K>(arr: T[] | undefined, f: (el: T) => K | K[]): Map<K, T[]> => {
@@ -64,6 +65,11 @@ export const parseMediaType = (str?: string) => {
         .filter((entry): entry is [string, string] => entry !== null),
     ),
   };
+};
+
+export const isSearchLink = (link: OPDSLink): boolean => {
+  const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
+  return rels.includes('search') && (link.type === MIME.OPENSEARCH || link.type === MIME.ATOM);
 };
 
 export const resolveURL = (url: string, relativeTo: string): string => {

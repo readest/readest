@@ -176,27 +176,22 @@ export const handleClick = (
   lastClickTime = now;
 
   const postSingleClick = () => {
-    let element: HTMLElement | null = event.target as HTMLElement;
-    while (element) {
-      if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
-        return;
-      }
-      if (
-        element.classList.contains('js_readerFooterNote') ||
-        element.classList.contains('zhangyue-footnote')
-      ) {
-        eventDispatcher.dispatch('footnote-popup', {
-          bookKey,
-          element,
-          footnote:
-            element.getAttribute('data-wr-footernote') ||
-            element.getAttribute('zy-footnote') ||
-            element.getAttribute('alt') ||
-            '',
-        });
-        return;
-      }
-      element = element.parentElement;
+    const element = event.target as HTMLElement | null;
+    if (element?.closest('sup, a, audio, video')) {
+      return;
+    }
+    const footnote = element?.closest('.js_readerFooterNote, .zhangyue-footnote');
+    if (footnote) {
+      eventDispatcher.dispatch('footnote-popup', {
+        bookKey,
+        element: footnote,
+        footnote:
+          footnote.getAttribute('data-wr-footernote') ||
+          footnote.getAttribute('zy-footnote') ||
+          footnote.getAttribute('alt') ||
+          '',
+      });
+      return;
     }
 
     // if long hold is detected, we don't want to send single click event

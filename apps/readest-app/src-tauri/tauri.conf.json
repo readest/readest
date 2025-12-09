@@ -16,7 +16,7 @@
       "csp": {
         "default-src": "'self' 'unsafe-inline' blob: data: customprotocol: asset: http://asset.localhost ipc: http://ipc.localhost",
         "connect-src": "'self' blob: data: asset: http://asset.localhost ipc: http://ipc.localhost http://*:* https://*:* https://*.sentry.io https://*.posthog.com https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.supabase.co https://*.readest.com wss://speech.platform.bing.com https://*.cloudflarestorage.com https://translate.googleapis.com https://translate.toil.cc https://*.microsofttranslator.com https://edge.microsoft.com https://*.googleusercontent.com",
-        "img-src": "'self' blob: data: asset: http://asset.localhost https://*",
+        "img-src": "'self' blob: data: asset: http://asset.localhost https://* https://*:* http://* http://*:*",
         "style-src": "'self' 'unsafe-inline' blob: asset: http://asset.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com https://chinese-fonts-cdn.netlify.app https://cdnjs.cloudflare.com",
         "font-src": "'self' blob: data: asset: http://asset.localhost tauri: https://db.onlinewebfonts.com https://cdn.jsdelivr.net https://fonts.gstatic.com https://chinese-fonts-cdn.netlify.app https://cdnjs.cloudflare.com",
         "frame-src": "'self' blob: asset: http://asset.localhost https://*.stripe.com",

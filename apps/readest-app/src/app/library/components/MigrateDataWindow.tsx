@@ -7,7 +7,6 @@ import {
   RiLoader2Line,
 } from 'react-icons/ri';
 import { documentDir, join } from '@tauri-apps/api/path';
-import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -20,6 +19,7 @@ import { formatBytes } from '@/utils/book';
 import { getOSPlatform } from '@/utils/misc';
 import { getExternalSDCardPath } from '@/utils/bridge';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
+import { requestStoragePermission } from '@/utils/permission';
 import Dialog from '@/components/Dialog';
 import Dropdown from '@/components/Dropdown';
 import MenuItem from '@/components/MenuItem';
@@ -40,10 +40,6 @@ interface MigrationProgress {
   current: number;
   total: number;
   currentFile?: string;
-}
-
-interface Permissions {
-  manageStorage: PermissionState;
 }
 
 export const MigrateDataWindow = () => {
@@ -158,13 +154,7 @@ export const MigrateDataWindow = () => {
     setErrorMessage('');
 
     if (!dir.includes('Android/data')) {
-      let permission = await invoke<Permissions>('plugin:native-bridge|checkPermissions');
-      if (permission.manageStorage !== 'granted') {
-        permission = await invoke<Permissions>(
-          'plugin:native-bridge|request_manage_storage_permission',
-        );
-      }
-      if (permission.manageStorage !== 'granted') return;
+      if (!(await requestStoragePermission())) return;
     }
 
     try {

@@ -1,29 +1,30 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import clsx from 'clsx';
+import { md5 } from 'js-md5';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
-import { md5 } from 'js-md5';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { isWebAppPlatform } from '@/services/environment';
-import { FeedView } from './FeedView';
-import { PublicationView } from './PublicationView';
-import { SearchView } from './SearchView';
-import { Navigation } from './Navigation';
 import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
-import { MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
+import { isSearchLink, MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
 import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
-import clsx from 'clsx';
-import { useThemeStore } from '@/store/themeStore';
-import { useTheme } from '@/hooks/useTheme';
+import { FeedView } from './components/FeedView';
+import { PublicationView } from './components/PublicationView';
+import { SearchView } from './components/SearchView';
+import { Navigation } from './components/Navigation';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -49,6 +50,7 @@ export default function BrowserPage() {
   const { appService } = useEnv();
   const { libraryLoaded } = useLibrary();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { settings } = useSettingsStore();
   const [viewMode, setViewMode] = useState<ViewMode>('loading');
   const [state, setState] = useState<OPDSState>({
     baseURL: '',
@@ -64,16 +66,15 @@ export default function BrowserPage() {
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const searchParams = useSearchParams();
-  const usernameRef = useRef(searchParams?.get('username'));
-  const passwordRef = useRef(searchParams?.get('password'));
+  const usernameRef = useRef<string | null | undefined>(undefined);
+  const passwordRef = useRef<string | null | undefined>(undefined);
+  const startURLRef = useRef<string | null | undefined>(undefined);
   const loadingOPDSRef = useRef(false);
-  const startURLRef = useRef<string | undefined>(undefined);
   const historyIndexRef = useRef(-1);
   const isNavigatingHistoryRef = useRef(false);
 
   useTheme({ systemUIVisible: false });
 
-  // Keep refs in sync with state
   useEffect(() => {
     startURLRef.current = state.startURL;
   }, [state.startURL]);
@@ -102,7 +103,9 @@ export default function BrowserPage() {
   );
 
   const loadOPDS = useCallback(
-    async (url: string, skipHistory = false) => {
+    async (url: string, options: { skipHistory?: boolean; isSearch?: boolean } = {}) => {
+      const { skipHistory = false, isSearch = false } = options;
+
       if (loadingOPDSRef.current) return;
       loadingOPDSRef.current = true;
 
@@ -116,15 +119,30 @@ export default function BrowserPage() {
         const res = await fetchWithAuth(url, username, password, useProxy);
 
         if (!res.ok) {
-          eventDispatcher.dispatch('toast', {
-            message: `Failed to load OPDS feed: ${res.status} ${res.statusText}`,
-            timeout: 5000,
-            type: 'error',
-          });
-          setTimeout(() => {
-            router.back();
-          }, 5000);
-          throw new Error(`Failed to load OPDS feed: ${res.status} ${res.statusText}`);
+          if (isSearch && res.status === 404) {
+            const warnMessage = _('No search results found');
+            eventDispatcher.dispatch('toast', {
+              message: warnMessage,
+              timeout: 2000,
+              type: 'warning',
+            });
+            setViewMode('search');
+            return;
+          } else {
+            const errorMessage = _('Failed to load OPDS feed: {{status}} {{statusText}}', {
+              status: res.status,
+              statusText: res.statusText,
+            });
+            eventDispatcher.dispatch('toast', {
+              message: errorMessage,
+              timeout: 5000,
+              type: 'error',
+            });
+            setTimeout(() => {
+              router.back();
+            }, 5000);
+            throw new Error(errorMessage);
+          }
         }
 
         const currentStartURL = startURLRef.current || url;
@@ -230,14 +248,15 @@ export default function BrowserPage() {
         loadingOPDSRef.current = false;
       }
     },
-    [router, addToHistory],
+    [_, router, addToHistory],
   );
 
   useEffect(() => {
     const url = searchParams?.get('url');
-    const username = searchParams?.get('username');
-    const password = searchParams?.get('password');
     if (url && !isNavigatingHistoryRef.current) {
+      const catalogId = searchParams?.get('id') || '';
+      const catalog = settings.opdsCatalogs?.find((cat) => cat.id === catalogId);
+      const { username, password } = catalog || {};
       if (username || password) {
         usernameRef.current = username;
         passwordRef.current = password;
@@ -245,24 +264,75 @@ export default function BrowserPage() {
         usernameRef.current = null;
         passwordRef.current = null;
       }
-      loadOPDS(url);
+      if (libraryLoaded) {
+        loadOPDS(url);
+      }
     } else if (isNavigatingHistoryRef.current) {
       isNavigatingHistoryRef.current = false;
     } else {
       setViewMode('error');
       setError(new Error('No OPDS URL provided'));
     }
-  }, [searchParams, loadOPDS]);
+  }, [searchParams, settings, libraryLoaded, loadOPDS]);
 
   const handleNavigate = useCallback(
-    (url: string) => {
+    (url: string, isSearch = false) => {
       const newURL = new URL(window.location.href);
       newURL.searchParams.set('url', url);
       window.history.pushState({}, '', newURL.toString());
-      loadOPDS(url);
+      loadOPDS(url, { isSearch });
     },
     [loadOPDS],
   );
+
+  const hasSearch = useMemo(() => {
+    return !!state.feed?.links?.find(isSearchLink);
+  }, [state.feed]);
+
+  const handleSearch = useCallback(() => {
+    if (!state.feed) return;
+
+    const searchLink = state.feed.links?.find(isSearchLink);
+
+    if (searchLink && searchLink.href) {
+      const searchURL = resolveURL(searchLink.href, state.baseURL);
+      if (searchLink.type === MIME.OPENSEARCH) {
+        handleNavigate(searchURL, true);
+      } else if (searchLink.type === MIME.ATOM) {
+        const search: OPDSSearch = {
+          metadata: {
+            title: _('Search'),
+            description: state.feed.metadata?.title
+              ? _('Search in {{title}}', { title: state.feed.metadata.title })
+              : undefined,
+          },
+          params: [
+            {
+              name: 'searchTerms',
+              required: true,
+            },
+          ],
+          search: (map: Map<string | null, Map<string | null, string>>) => {
+            const defaultParams = map.get(null);
+            const searchTerms = defaultParams?.get('searchTerms') || '';
+            const decodedURL = decodeURIComponent(searchURL);
+            return decodedURL.replace('{searchTerms}', encodeURIComponent(searchTerms));
+          },
+        };
+        const newState: OPDSState = {
+          feed: state.feed,
+          search,
+          baseURL: state.baseURL,
+          currentURL: state.currentURL,
+          startURL: state.startURL,
+        };
+        setState(newState);
+        setViewMode('search');
+        setSelectedPublication(null);
+        addToHistory(state.currentURL, newState, 'search', null);
+      }
+    }
+  }, [_, state, handleNavigate, addToHistory]);
 
   const handleDownload = useCallback(
     async (
@@ -452,8 +522,10 @@ export default function BrowserPage() {
           onNavigate={handleNavigate}
           onBack={handleBack}
           onForward={handleForward}
+          onSearch={handleSearch}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
+          hasSearch={hasSearch}
         />
       </div>
       <main className='flex-1 overflow-auto'>

@@ -34,7 +34,7 @@ import {
   FileItem,
   DistChannel,
 } from '@/types/system';
-import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import { copyURIToPath } from '@/utils/bridge';
@@ -212,17 +212,20 @@ export const nativeFileSystem: FileSystem = {
         }
         return await new NativeFile(dst, fname, baseDir ? baseDir : null).open();
       }
+    } else if (isFileURI(path)) {
+      return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else {
-      const prefix = await this.getPrefix(base);
-      const absolutePath = path.startsWith('/') ? path : prefix ? await join(prefix, path) : null;
-      if (absolutePath && OS_TYPE !== 'android') {
+      if (OS_TYPE === 'android') {
+        // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
+        // see https://issues.chromium.org/issues/40739128
+        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
+      } else {
         // NOTE: RemoteFile currently performs about 2× faster than NativeFile
         // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
         // Once the bug is resolved, we should switch back to using NativeFile.
-        // RemoteFile is not usable on Android due to unknown issues of range fetch with Android WebView.
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
         return await new RemoteFile(this.getURL(absolutePath), fname).open();
-      } else {
-        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       }
     }
   },
@@ -319,10 +322,13 @@ export const nativeFileSystem: FileSystem = {
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;
-          const fileInfo = await stat(filePath, baseDir ? { baseDir } : undefined);
+          const opts = baseDir ? { baseDir } : undefined;
+          const fileSize = await stat(filePath, opts)
+            .then((info) => info.size)
+            .catch(() => 0);
           fileList.push({
             path: relativePath,
-            size: fileInfo.size,
+            size: fileSize,
           });
         }
       }
@@ -374,6 +380,7 @@ export class NativeAppService extends BaseAppService {
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
+  override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
 
   private execDir?: string = undefined;

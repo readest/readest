@@ -116,7 +116,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useEffect(() => {
     if (!appService?.isMobileApp) return;
     const systemUIVisible = !!hoveredBookKey || settings.alwaysShowStatusBar;
-    const visible = systemUIVisible && !systemUIAlwaysHidden;
+    const visible = !!(systemUIVisible && !systemUIAlwaysHidden);
     setSystemUIVisibility({ visible, darkMode: isDarkMode });
     if (visible) {
       showSystemUI();

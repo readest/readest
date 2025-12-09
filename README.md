@@ -61,6 +61,7 @@
 | **Translate with DeepL and Yandex**     | From a single sentence to the entire book—translate instantly.                                                 | ✅         |
 | **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                                | ✅         |
 | **Library Management**                  | Organize, sort, and manage your entire ebook library.                                                          | ✅         |
+| **OPDS/Calibre Integration**            | Integrate OPDS/Calibre to access online libraries and catalogs.                                                | ✅         |
 | **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                                     | ✅         |
 
 ## Planned Features
@@ -72,7 +73,6 @@
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🛠           |
 | **AI-Powered Summarization**               | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
-| **Support OPDS/Calibre**                   | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
 | **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                        | 🔄           |
 | **Handwriting Annotations**                | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
 | **Advanced Reading Stats**                 | Track reading time, pages read, and more for detailed insights.                            | 🔄           |

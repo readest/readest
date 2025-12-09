@@ -1,3 +1,4 @@
+import { join } from '@tauri-apps/api/path';
 import { isContentURI, isFileURI, isValidURL } from './misc';
 
 export const getFilename = (fileOrUri: string) => {
@@ -27,4 +28,8 @@ export const getDirPath = (filePath: string) => {
   const parts = normalizedPath.split('/');
   parts.pop();
   return parts.join('/');
+};
+
+export const joinPaths = async (...paths: string[]) => {
+  return await join(...paths);
 };

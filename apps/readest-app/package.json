@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.9.94",
+  "version": "0.9.95",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.tauri -- next dev",
@@ -84,7 +84,7 @@
     "dompurify": "^3.3.0",
     "foliate-js": "workspace:*",
     "franc-min": "^6.2.0",
-    "google-auth-library": "^10.4.1",
+    "google-auth-library": "^10.5.0",
     "googleapis": "^164.1.0",
     "highlight.js": "^11.11.1",
     "i18next": "^24.2.0",
@@ -95,7 +95,7 @@
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
     "marked": "^15.0.12",
-    "next": "16.0.3",
+    "next": "16.0.7",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
     "posthog-js": "^1.246.0",
@@ -132,7 +132,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
     "caniuse-lite": "^1.0.30001746",
     "cpx2": "^8.0.0",
@@ -149,10 +149,10 @@
     "postcss-cli": "^11.0.0",
     "postcss-nested": "^7.0.2",
     "raw-loader": "^4.0.2",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^3.4.18",
     "typescript": "^5.7.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.15",
     "wrangler": "^4.50.0"
   }
 }

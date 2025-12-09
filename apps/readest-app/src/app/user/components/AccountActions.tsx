@@ -53,6 +53,7 @@ interface AccountActionsProps {
   onConfirmDelete: () => void;
   onRestorePurchase?: () => void;
   onManageSubscription?: () => void;
+  onManageStorage?: () => void;
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
@@ -63,6 +64,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   onConfirmDelete,
   onRestorePurchase,
   onManageSubscription,
+  onManageStorage,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -103,6 +105,14 @@ const AccountActions: React.FC<AccountActionsProps> = ({
               {_('Manage Subscription')}
             </button>
           )
+        )}
+        {onManageStorage && (
+          <button
+            onClick={onManageStorage}
+            className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
+          >
+            {_('Manage Storage')}
+          </button>
         )}
         <button
           onClick={onResetPassword}

@@ -308,5 +308,4 @@ export interface BooksGroup {
 export interface BookContent {
   book: Book;
   file: File;
-  config: BookConfig;
 }

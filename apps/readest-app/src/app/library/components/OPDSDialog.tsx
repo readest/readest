@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { CatalogManager } from '@/app/opds/CatelogManager';
+import { CatalogManager } from '@/app/opds/components/CatelogManager';
 import { useTranslation } from '@/hooks/useTranslation';
 import Dialog from '@/components/Dialog';
 

@@ -72,6 +72,7 @@ import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
 import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { parseFontInfo } from '@/utils/font';
+import { svg2png } from '@/utils/svg';
 
 export abstract class BaseAppService implements AppService {
   osPlatform: OsPlatform = getOSPlatform();
@@ -98,6 +99,7 @@ export abstract class BaseAppService implements AppService {
   hasScreenBrightness = false;
   hasIAP = false;
   canCustomizeRootDir = false;
+  canReadExternalDir = false;
   distChannel = 'readest' as DistChannel;
 
   protected CURRENT_MIGRATION_VERSION = 20251124;
@@ -354,7 +356,6 @@ export abstract class BaseAppService implements AppService {
           loadedBook.metadata.title = getBaseFilename(filename);
         }
       } catch (error) {
-        console.error(error);
         throw new Error(`Failed to open the book: ${(error as Error).message || error}`);
       }
 
@@ -405,13 +406,26 @@ export abstract class BaseAppService implements AppService {
         } else if (typeof file === 'string' && isContentURI(file)) {
           await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
         } else if (typeof file === 'string' && !isValidURL(file)) {
-          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+          try {
+            // try to copy the file directly first in case of large files to avoid memory issues
+            // on desktop when reading recursively from selected directory the direct copy will fail
+            // due to permission issues, then fallback to read and write files
+            await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+          } catch {
+            await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+          }
         } else {
           await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
         }
       }
       if (saveCover && (!(await this.fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
-        const cover = await loadedBook.getCover();
+        let cover = await loadedBook.getCover();
+        if (cover?.type === 'image/svg+xml') {
+          try {
+            console.log('Converting SVG cover to PNG...');
+            cover = await svg2png(cover);
+          } catch {}
+        }
         if (cover) {
           await this.fs.writeFile(getCoverFilename(book), 'Books', await cover.arrayBuffer());
         }
@@ -441,6 +455,7 @@ export abstract class BaseAppService implements AppService {
 
       return existingBook || book;
     } catch (error) {
+      console.error('Error importing book:', error);
       throw error;
     }
   }
@@ -668,7 +683,7 @@ export abstract class BaseAppService implements AppService {
     return null;
   }
 
-  async loadBookContent(book: Book, settings: SystemSettings): Promise<BookContent> {
+  async loadBookContent(book: Book): Promise<BookContent> {
     let file: File;
     const fp = getLocalBookFilename(book);
     if (await this.fs.exists(fp, 'Books')) {
@@ -692,7 +707,7 @@ export abstract class BaseAppService implements AppService {
         throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
       }
     }
-    return { book, file, config: await this.loadBookConfig(book, settings) };
+    return { book, file };
   }
 
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
@@ -711,13 +726,13 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async fetchBookDetails(book: Book, settings: SystemSettings) {
+  async fetchBookDetails(book: Book) {
     const fp = getLocalBookFilename(book);
     if (!(await this.fs.exists(fp, 'Books')) && book.uploadedAt) {
       await this.downloadBook(book);
     }
-    const { file } = (await this.loadBookContent(book, settings)) as BookContent;
-    const bookDoc = (await new DocumentLoader(file).open()).book as BookDoc;
+    const { file } = await this.loadBookContent(book);
+    const bookDoc = (await new DocumentLoader(file).open()).book;
     const f = file as ClosableFile;
     if (f && f.close) {
       await f.close();

@@ -10,7 +10,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { saveSysSettings } from '@/helpers/settings';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
-import { validateOPDSURL } from './utils/opdsUtils';
+import { validateOPDSURL } from '../utils/opdsUtils';
 import ModalPortal from '@/components/ModalPortal';
 
 const POPULAR_CATALOGS: OPDSCatalog[] = [
@@ -27,6 +27,21 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     url: 'https://manybooks.net/opds/index.php',
     description: 'Over 50,000 free ebooks',
     icon: '📖',
+  },
+  {
+    id: 'standardebooks',
+    name: 'Standard Ebooks',
+    url: 'https://standardebooks.org/feeds/opds',
+    description: 'Carefully formatted and lovingly produced free ebooks',
+    icon: '📚',
+    disabled: true,
+  },
+  {
+    id: 'unglue.it',
+    name: 'Unglue.it',
+    url: 'https://unglue.it/api/opds/',
+    description: 'Free ebooks from authors who have "unglued" their books',
+    icon: '📚',
   },
 ];
 
@@ -64,6 +79,12 @@ export function CatalogManager() {
 
   const handleAddCatalog = async () => {
     if (!newCatalog.name || !newCatalog.url) return;
+
+    const urlLower = newCatalog.url.trim().toLowerCase();
+    if (!urlLower.startsWith('http://') && !urlLower.startsWith('https://')) {
+      setUrlError(_('URL must start with http:// or https://'));
+      return;
+    }
 
     if (
       process.env['NODE_ENV'] === 'production' &&
@@ -119,8 +140,7 @@ export function CatalogManager() {
 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
-    if (catalog.username) params.set('username', catalog.username);
-    if (catalog.password) params.set('password', catalog.password);
+    if (catalog.username) params.set('id', catalog.id);
     router.push(`/opds?${params.toString()}`);
   };
 
@@ -217,7 +237,7 @@ export function CatalogManager() {
       <section className='text-base'>
         <h2 className='mb-4 font-semibold'>{_('Popular Catalogs')}</h2>
         <div className='grid gap-4 sm:grid-cols-2'>
-          {POPULAR_CATALOGS.map((catalog) => {
+          {POPULAR_CATALOGS.filter((catalog) => !catalog.disabled).map((catalog) => {
             const isAdded = catalogs.some((c) => c.url === catalog.url);
             return (
               <div

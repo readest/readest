@@ -181,6 +181,7 @@ export class NativeTTSClient implements TTSClient {
     const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
 
     for (const mark of marks) {
+      this.controller?.dispatchSpeakMark(mark);
       for await (const ev of this.speakMark(mark, preload, signal)) {
         if (signal.aborted) {
           yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;

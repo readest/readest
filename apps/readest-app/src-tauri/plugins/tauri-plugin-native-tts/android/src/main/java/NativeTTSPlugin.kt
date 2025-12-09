@@ -383,7 +383,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         val args = invoke.parseArgs(SetVoiceArgs::class.java)
         try {
             val voices = textToSpeech?.voices
-            val targetVoice = voices?.find { it.name == args.voice }
+            val targetVoice = voices?.find { voice ->
+                val languageTag = voice.locale.toLanguageTag()
+                voice.name == args.voice || (languageTag.contains(voice.name) && languageTag == args.voice)
+            }
             
             if (targetVoice != null) {
                 val result = textToSpeech?.setVoice(targetVoice)
@@ -404,10 +407,17 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     fun get_all_voices(invoke: Invoke) {
         try {
             val voices = textToSpeech?.voices?.map { voice ->
+                val voiceName = voice.name
+                val language = voice.locale.toLanguageTag()
+                val (id, name) = if (language.contains(voiceName)) {
+                    language to language
+                } else {
+                    voiceName to voiceName
+                }
                 JSObject().apply {
-                    put("id", voice.name)
-                    put("name", voice.name)
-                    put("lang", voice.locale.toLanguageTag())
+                    put("id", id)
+                    put("name", name)
+                    put("lang", language)
                     put("disabled", false)
                 }
             } ?: emptyList()

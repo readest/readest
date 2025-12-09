@@ -26,7 +26,8 @@ import ViewMenu from './ViewMenu';
 interface LibraryHeaderProps {
   isSelectMode: boolean;
   isSelectAll: boolean;
-  onImportBooks: () => void;
+  onImportBooksFromFiles: () => void;
+  onImportBooksFromDirectory?: () => void;
   onOpenCatalogManager: () => void;
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
@@ -36,7 +37,8 @@ interface LibraryHeaderProps {
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   isSelectMode,
   isSelectAll,
-  onImportBooks,
+  onImportBooksFromFiles,
+  onImportBooksFromDirectory,
   onOpenCatalogManager,
   onToggleSelectMode,
   onSelectAll,
@@ -152,14 +154,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <Dropdown
               label={_('Import Books')}
               className={clsx(
-                'exclude-title-bar-mousedown dropdown-bottom flex h-6 cursor-pointer justify-center',
-                isMobile ? 'dropdown-end' : 'dropdown-center',
+                'exclude-title-bar-mousedown dropdown-bottom dropdown-center flex h-6 cursor-pointer justify-center',
               )}
-              buttonClassName='p-0 h-6 min-h-6 w-6 flex items-center justify-center !bg-transparent'
+              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu
-                onImportBooks={onImportBooks}
+                onImportBooksFromFiles={onImportBooksFromFiles}
+                onImportBooksFromDirectory={onImportBooksFromDirectory}
                 onOpenCatalogManager={onOpenCatalogManager}
               />
             </Dropdown>

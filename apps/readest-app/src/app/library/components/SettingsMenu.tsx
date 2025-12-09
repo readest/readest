@@ -20,6 +20,7 @@ import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
+import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
 import { selectDirectory } from '@/utils/bridge';
 import UserAvatar from '@/components/UserAvatar';
@@ -175,13 +176,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleSetSavedBookCoverForLockScreen = async () => {
-    let permission = await invoke<Permissions>('plugin:native-bridge|checkPermissions');
-    if (permission.manageStorage !== 'granted') {
-      permission = await invoke<Permissions>(
-        'plugin:native-bridge|request_manage_storage_permission',
-      );
-    }
-    if (permission.manageStorage !== 'granted' && appService?.distChannel === 'readest') return;
+    if (!(await requestStoragePermission()) && appService?.distChannel === 'readest') return;
 
     const newValue = settings.savedBookCoverForLockScreen ? '' : 'default';
     if (newValue) {
@@ -334,7 +329,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
                 noIcon={!appService?.isAndroidApp}
                 onClick={handleSetRootDir}
               />
-              {appService?.isAndroidApp && (
+              {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
                 <MenuItem
                   label={_('Save Book Cover')}
                   tooltip={_('Auto-save last book cover')}
