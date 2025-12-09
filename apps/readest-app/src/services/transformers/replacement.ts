@@ -50,7 +50,15 @@ export const replacementTransformer: Transformer = {
       return ctx.content;
     }
 
-    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
+    // Separate single-instance rules from other rules
+    const singleInstanceRules = enabledRules.filter(r => r.singleInstance);
+    const otherRules = enabledRules.filter(r => !r.singleInstance);
+
+    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', {
+      singleInstance: singleInstanceRules.length,
+      other: otherRules.length,
+      patterns: enabledRules.map(r => r.pattern)
+    });
 
     // Parse HTML to work with text nodes only (preserve HTML structure)
     const parser = new DOMParser();
@@ -113,6 +121,75 @@ export const replacementTransformer: Transformer = {
       textNode.textContent = transformedText;
     }
 
+    // Now process other rules (book and global) with standard behavior
+    // But still respect replaced regions to prevent re-matching
+    for (const rule of otherRules) {
+      try {
+        let pattern: string;
+        if (rule.isRegex) {
+          pattern = rule.pattern;
+        } else {
+          // Escape special regex characters for simple string matching
+          pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          
+          // Add word boundaries if wholeWord is enabled
+          if (rule.wholeWord) {
+            pattern = `\\b${pattern}\\b`;
+          }
+        }
+        
+        try {
+          const regex = new RegExp(pattern, 'g');
+          // Collect all matches first, then apply replacements from right to left
+          // to preserve positions and track replaced regions
+          const matches: Array<{ match: string; index: number }> = [];
+          let match;
+          const currentText = result;
+          
+          while ((match = regex.exec(currentText)) !== null) {
+            const matchStart = match.index;
+            const matchEnd = matchStart + match[0]!.length;
+            
+            // Skip matches that are in replaced regions
+            if (!isInReplacedRegion(matchStart, matchEnd)) {
+              matches.push({
+                match: match[0]!,
+                index: matchStart
+              });
+            }
+          }
+          
+          // Apply replacements from right to left to preserve positions
+          for (let i = matches.length - 1; i >= 0; i--) {
+            const { match, index } = matches[i]!;
+            const matchEnd = index + match.length;
+            
+            // Update existing regions' positions BEFORE making the replacement
+            updateRegionsAfterReplacement(index, matchEnd, rule.replacement.length);
+            
+            // Apply the replacement
+            const before = result.substring(0, index);
+            const after = result.substring(matchEnd);
+            result = before + rule.replacement + after;
+            
+            // Track the ENTIRE replacement region (including replacement text)
+            const replacementStart = index;
+            const replacementEnd = index + rule.replacement.length;
+            replacedRegions.push({
+              start: replacementStart,
+              end: replacementEnd
+            });
+          }
+        } catch (regexError) {
+          console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
+          continue;
+        }
+      } catch (error) {
+        console.warn(`Error applying replacement rule "${rule.id}":`, error);
+        continue;
+      }
+    }
+
     console.log('[REPLACEMENT] Transformation complete');
 
     return result;
@@ -140,6 +217,7 @@ export interface CreateReplacementRuleOptions {
   singleInstance?: boolean; // If true, only replace the specific occurrence
   sectionHref?: string; // Section where the single-instance replacement applies
   occurrenceIndex?: number; // Which occurrence in the section (0-based)
+  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
 }
 
 /**
@@ -154,6 +232,7 @@ export function createReplacementRule(options: CreateReplacementRuleOptions): Re
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
     singleInstance: options.singleInstance ?? false,
+    wholeWord: options.wholeWord ?? false,
   };
   
   // Add single-instance specific fields if provided

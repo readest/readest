@@ -221,6 +221,7 @@ export interface ReplacementRule {
   singleInstance?: boolean; // If true, only replace the specific occurrence
   sectionHref?: string; // Section where the single-instance replacement applies
   occurrenceIndex?: number; // Which occurrence in the section (0-based)
+  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
 }
 
 export interface ReplacementRulesConfig {
