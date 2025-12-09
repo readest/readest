@@ -153,6 +153,7 @@ export interface BookFont {
   defaultFontSize: number;
   minimumFontSize: number;
   fontWeight: number;
+  bionicReading: boolean;
 }
 
 export type ConvertChineseVariant =

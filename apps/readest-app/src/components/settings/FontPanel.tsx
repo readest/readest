@@ -138,6 +138,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont);
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight);
+  const [bionicReading, setBionicReading] = useState(viewSettings.bionicReading || false);
 
   const [customFonts, setCustomFonts] = useState<string[]>(getFontFamilies());
   const [CJKFonts, setCJKFonts] = useState<string[]>(() => {
@@ -157,6 +158,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       sansSerifFont: setSansSerifFont,
       monospaceFont: setMonospaceFont,
       fontWeight: setFontWeight,
+      bionicReading: setBionicReading,
     });
   };
 
@@ -240,6 +242,11 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     saveViewSettings(envConfig, bookKey, 'fontWeight', fontWeight);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontWeight]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'bionicReading', bionicReading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bionicReading]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'serifFont', serifFont);
@@ -328,6 +335,15 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               max={900}
               step={100}
             />
+            <div className='config-item'>
+              <span className=''>{_('Bionic Reading')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={bionicReading}
+                onChange={() => setBionicReading(!bionicReading)}
+              />
+            </div>
           </div>
         </div>
       </div>
