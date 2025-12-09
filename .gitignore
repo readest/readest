@@ -43,3 +43,5 @@ fastlane/report.xml
 
 *.koplugin.zip
 
+# nix
+result*
