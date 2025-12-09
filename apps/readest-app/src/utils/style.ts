@@ -347,6 +347,10 @@ const getLayoutStyles = (
     display: none;
   }
 
+  .bionic-highlight {
+    font-weight: bold;
+  }
+
   .calibre {
     color: unset;
   }

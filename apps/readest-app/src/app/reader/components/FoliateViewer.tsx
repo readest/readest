@@ -149,6 +149,7 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
+                'bionic',
               ],
             };
             return Promise.resolve(transformContent(ctx));
@@ -465,6 +466,14 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = !!viewSettings?.disableDoubleClick;
     }
   }, [viewSettings?.disableDoubleClick]);
+
+  useEffect(() => {
+    const currentLocation = viewRef.current?.getCurrentLocation();
+    if (currentLocation) {
+      viewRef.current?.init({ lastLocation: currentLocation.cfi });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings?.bionicReading]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer && viewSettings) {
