@@ -52,72 +52,73 @@ export const replacementTransformer: Transformer = {
 
     console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
 
-    // Parse HTML to work with text nodes only (preserve HTML structure)
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(ctx.content, 'text/html');
+    // Use direct string replacement to preserve XHTML structure
+    let result = ctx.content;
 
-    // Create tree walker to iterate through text nodes
-    const walker = doc.createTreeWalker(
-      doc.body || doc.documentElement,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: (node) => {
-          const parent = node.parentElement;
-          // Skip script and style tags
-          if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-            return NodeFilter.FILTER_REJECT;
+    for (const rule of enabledRules) {
+      try {
+        // For single-instance rules, check section match
+        if (rule.singleInstance && rule.sectionHref) {
+          // Extract just the file path without fragment
+          const ruleSectionBase = rule.sectionHref.split('#')[0] || rule.sectionHref;
+          const ctxSectionBase = ctx.sectionHref?.split('#')[0] || ctx.sectionHref;
+          
+          const sectionMatch = ctxSectionBase && (
+            ctxSectionBase === ruleSectionBase ||
+            ctxSectionBase.includes(ruleSectionBase) ||
+            ruleSectionBase.includes(ctxSectionBase) ||
+            ctxSectionBase.endsWith(ruleSectionBase) ||
+            ruleSectionBase.endsWith(ctxSectionBase)
+          );
+          
+          if (!sectionMatch) {
+            continue; // Skip - wrong section
           }
-          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        },
-      },
-    );
-
-    const textNodes: Text[] = [];
-    let currentNode: Node | null;
-    while ((currentNode = walker.nextNode())) {
-      textNodes.push(currentNode as Text);
-    }
-
-    // Apply each rule to each text node
-    for (const textNode of textNodes) {
-      if (!textNode.textContent) continue;
-
-      let transformedText = textNode.textContent;
-
-      for (const rule of enabledRules) {
-        try {
-          if (rule.isRegex) {
-            // Regex replacement
-            try {
-              const regex = new RegExp(rule.pattern, 'g');
-              transformedText = transformedText.replace(regex, rule.replacement);
-            } catch (regexError) {
-              // Invalid regex - skip this rule and log warning
-              console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
-              continue;
-            }
-          } else {
-            // Simple string replacement
-            // Escape special regex characters for simple string matching
-            const escapedPattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(escapedPattern, 'g');
-            transformedText = transformedText.replace(regex, rule.replacement);
-          }
-        } catch (error) {
-          // Catch any other errors and continue with next rule
-          console.warn(`Error applying replacement rule "${rule.id}":`, error);
-          continue;
         }
-      }
 
-      textNode.textContent = transformedText;
+        let pattern: string;
+        if (rule.isRegex) {
+          pattern = rule.pattern;
+        } else {
+          // Escape special regex characters for simple string matching
+          pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // For single-instance with occurrence tracking, replace only the Nth occurrence
+        if (rule.singleInstance && typeof rule.occurrenceIndex === 'number') {
+          const targetIndex = rule.occurrenceIndex;
+          let currentIndex = 0;
+          
+          const regex = new RegExp(pattern, 'g');
+          result = result.replace(regex, (match) => {
+            if (currentIndex === targetIndex) {
+              currentIndex++;
+              return rule.replacement;
+            }
+            currentIndex++;
+            return match;
+          });
+        } else {
+          // For non-single-instance rules, use global replacement
+          const flags = rule.singleInstance ? '' : 'g';
+          
+          try {
+            const regex = new RegExp(pattern, flags);
+            result = result.replace(regex, rule.replacement);
+          } catch (regexError) {
+            console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
+            continue;
+          }
+        }
+      } catch (error) {
+        console.warn(`Error applying replacement rule "${rule.id}":`, error);
+        continue;
+      }
     }
 
     console.log('[REPLACEMENT] Transformation complete');
 
-    // Serialize back to HTML string
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(doc);
+    return result;
   },
 };
 
@@ -139,20 +140,34 @@ export interface CreateReplacementRuleOptions {
   isRegex?: boolean;
   enabled?: boolean;
   order?: number;
+  singleInstance?: boolean; // If true, only replace the specific occurrence
+  sectionHref?: string; // Section where the single-instance replacement applies
+  occurrenceIndex?: number; // Which occurrence in the section (0-based)
 }
 
 /**
  * Creates a new replacement rule with default values
  */
 export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
-  return {
+  const rule: ReplacementRule = {
     id: uniqueId(),
     pattern: options.pattern,
     replacement: options.replacement,
     isRegex: options.isRegex ?? false,
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
+    singleInstance: options.singleInstance ?? false,
   };
+  
+  // Add single-instance specific fields if provided
+  if (options.sectionHref) {
+    rule.sectionHref = options.sectionHref;
+  }
+  if (typeof options.occurrenceIndex === 'number') {
+    rule.occurrenceIndex = options.occurrenceIndex;
+  }
+  
+  return rule;
 }
 
 /**
@@ -212,8 +227,8 @@ export async function addReplacementRule(
 
   switch (scope) {
     case 'single':
-      // Apply only to current book view (temporary, not persisted)
-      await addReplacementRuleToBook(envConfig, bookKey, rule, false);
+      // Single-instance replacement: persisted in book config for refresh persistence
+      await addReplacementRuleToBook(envConfig, bookKey, rule, true);
       break;
     case 'book':
       // Apply to entire book (persisted in book config)
@@ -259,6 +274,9 @@ async function addReplacementRuleToBook(
     existingRule.replacement = rule.replacement;
     existingRule.enabled = rule.enabled;
     existingRule.order = rule.order;
+    existingRule.singleInstance = rule.singleInstance;
+    existingRule.sectionHref = rule.sectionHref;
+    existingRule.occurrenceIndex = rule.occurrenceIndex;
   } else {
     // Add new rule
     existingRules.push(rule);
