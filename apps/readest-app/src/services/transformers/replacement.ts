@@ -119,15 +119,30 @@ export const replacementTransformer: Transformer = {
         let pattern: string;
         if (rule.isRegex) {
           pattern = rule.pattern;
+          // For single-instance rules, ALWAYS enforce whole-word matching even for regex
+          // This prevents matching substrings inside larger words
+          if (!rule.pattern.includes('\\b')) {
+            pattern = `\\b${pattern}\\b`;
+          }
         } else {
           // Escape special regex characters for simple string matching
           pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           
-          // Add word boundaries if wholeWord is enabled
-          if (rule.wholeWord) {
-            pattern = `\\b${pattern}\\b`;
-          }
+          // For single-instance replacements, ALWAYS enforce whole-word matching
+          // This ensures only standalone words are replaced, not substrings inside larger words
+          // (e.g., "and" in "stand", "standard", "England", or "errand" won't match)
+          // We ALWAYS use whole-word matching for single-instance rules, regardless of the wholeWord flag
+          // This prevents issues where rules were created before validation was added
+          pattern = `\\b${pattern}\\b`;
         }
+        
+        // Log for debugging
+        console.log('[REPLACEMENT] Single-instance rule pattern:', {
+          originalPattern: rule.pattern,
+          finalPattern: pattern,
+          isRegex: rule.isRegex,
+          ruleId: rule.id
+        });
 
         // For single-instance with occurrence tracking, replace only the Nth occurrence
         // that doesn't overlap with previously replaced regions
@@ -137,6 +152,7 @@ export const replacementTransformer: Transformer = {
           const currentText = result;
           
           // Find all matches in current text that don't overlap with replaced regions
+          // Note: pattern already has \b word boundaries for single-instance rules
           const regex = new RegExp(pattern, 'g');
           const matches: Array<{ match: string; index: number }> = [];
           let match;
@@ -145,8 +161,38 @@ export const replacementTransformer: Transformer = {
             const matchStart = match.index;
             const matchEnd = matchStart + match[0]!.length;
             
-            // Skip matches that are in replaced regions
-            if (!isInReplacedRegion(matchStart, matchEnd)) {
+            // CRITICAL: Double-check that this is actually a whole word match
+            // This prevents matching "and" inside "England" even if the pattern was created incorrectly
+            // Also check that we're not matching across HTML tag boundaries
+            const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+            const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+            const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+            
+            // Check if match is within HTML tags (not in actual text content)
+            // If charBefore is '>' or charAfter is '<', we're at a tag boundary, which is OK
+            // But if charBefore is '<' or charAfter is '>', we're inside a tag, which is NOT OK
+            const isInHTMLTag = 
+              (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+              (matchEnd < currentText.length && currentText[matchEnd] === '>');
+            
+            const isActuallyWholeWord = 
+              !isInHTMLTag &&
+              (matchStart === 0 || !isWordChar(charBefore)) &&
+              (matchEnd === currentText.length || !isWordChar(charAfter));
+            
+            if (!isActuallyWholeWord) {
+              console.warn('[REPLACEMENT] Skipping non-whole-word match:', {
+                match: match[0],
+                index: matchStart,
+                charBefore,
+                charAfter,
+                isInHTMLTag,
+                context: currentText.substring(Math.max(0, matchStart - 10), Math.min(currentText.length, matchEnd + 10))
+              });
+            }
+            
+            // Only include matches that are actually whole words and not inside HTML tags
+            if (isActuallyWholeWord && !isInReplacedRegion(matchStart, matchEnd)) {
               matches.push({
                 match: match[0]!,
                 index: matchStart
@@ -186,8 +232,25 @@ export const replacementTransformer: Transformer = {
             const matchStart = match.index;
             const matchEnd = matchStart + match[0]!.length;
             
-            // Skip matches that are in replaced regions
-            if (!isInReplacedRegion(matchStart, matchEnd)) {
+            // Double-check: verify this is actually a whole word match
+            // (safety check in case pattern was created incorrectly)
+            // Also check that we're not matching across HTML tag boundaries
+            const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+            const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+            const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+            
+            // Check if match is within HTML tags (not in actual text content)
+            const isInHTMLTag = 
+              (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+              (matchEnd < currentText.length && currentText[matchEnd] === '>');
+            
+            const isActuallyWholeWord = 
+              !isInHTMLTag &&
+              (matchStart === 0 || !isWordChar(charBefore)) &&
+              (matchEnd === currentText.length || !isWordChar(charAfter));
+            
+            // Only process matches that are actually whole words and not in replaced regions
+            if (isActuallyWholeWord && !isInReplacedRegion(matchStart, matchEnd)) {
               // Update existing regions' positions BEFORE making the replacement
               updateRegionsAfterReplacement(matchStart, matchEnd, rule.replacement.length);
               
@@ -219,16 +282,35 @@ export const replacementTransformer: Transformer = {
     for (const rule of otherRules) {
       try {
         let pattern: string;
+        // Check if pattern is a simple word (only letters, no special characters)
+        // If so, we should enforce whole-word matching to prevent matching inside words
+        const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+        const shouldEnforceWholeWord = rule.wholeWord || isSimpleWord;
+        
         if (rule.isRegex) {
           pattern = rule.pattern;
+          // For regex patterns, if wholeWord is enabled, wrap with word boundaries
+          // But be careful - only do this if the pattern doesn't already have boundaries
+          if (shouldEnforceWholeWord && !rule.pattern.includes('\\b')) {
+            pattern = `\\b${pattern}\\b`;
+          }
         } else {
           // Escape special regex characters for simple string matching
           pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           
-          // Add word boundaries if wholeWord is enabled
-          if (rule.wholeWord) {
+          // Add word boundaries if wholeWord is enabled OR if it's a simple word
+          if (shouldEnforceWholeWord) {
             pattern = `\\b${pattern}\\b`;
           }
+        }
+        
+        // Log for debugging
+        if (isSimpleWord && !rule.wholeWord) {
+          console.log('[REPLACEMENT] Auto-enforcing whole-word for simple word pattern:', {
+            pattern: rule.pattern,
+            finalPattern: pattern,
+            ruleId: rule.id
+          });
         }
         
         try {
@@ -242,6 +324,31 @@ export const replacementTransformer: Transformer = {
           while ((match = regex.exec(currentText)) !== null) {
             const matchStart = match.index;
             const matchEnd = matchStart + match[0]!.length;
+            
+            // For whole-word rules, double-check that this is actually a whole word
+            // and not inside HTML tags
+            // Also check if this is a simple word pattern (auto-enforced whole-word)
+            const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+            const shouldCheckWholeWord = rule.wholeWord || isSimpleWord;
+            
+            if (shouldCheckWholeWord) {
+              const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+              const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+              const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+              
+              const isInHTMLTag = 
+                (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+                (matchEnd < currentText.length && currentText[matchEnd] === '>');
+              
+              const isActuallyWholeWord = 
+                !isInHTMLTag &&
+                (matchStart === 0 || !isWordChar(charBefore)) &&
+                (matchEnd === currentText.length || !isWordChar(charAfter));
+              
+              if (!isActuallyWholeWord) {
+                continue; // Skip this match
+              }
+            }
             
             // Skip matches that are in replaced regions
             if (!isInReplacedRegion(matchStart, matchEnd)) {
@@ -317,6 +424,10 @@ export interface CreateReplacementRuleOptions {
  * Creates a new replacement rule with default values
  */
 export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
+  // For single-instance replacements, default to whole-word matching
+  // This ensures only standalone words are replaced, not substrings
+  const defaultWholeWord = options.singleInstance ? true : false;
+  
   const rule: ReplacementRule = {
     id: uniqueId(),
     pattern: options.pattern,
@@ -325,7 +436,7 @@ export function createReplacementRule(options: CreateReplacementRuleOptions): Re
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
     singleInstance: options.singleInstance ?? false,
-    wholeWord: options.wholeWord ?? false,
+    wholeWord: options.wholeWord ?? defaultWholeWord,
   };
   
   // Add single-instance specific fields if provided

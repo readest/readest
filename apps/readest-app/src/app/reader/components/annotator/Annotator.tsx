@@ -540,7 +540,70 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     scope: 'once' | 'book' | 'library';
   };
 
-  // Helper to count which occurrence of a pattern was selected
+  // Helper to check if selected text is a whole word (has word boundaries on both sides)
+  const isWholeWord = (range: Range, selectedText: string): boolean => {
+    try {
+      if (!selectedText || selectedText.trim().length === 0) return false;
+      
+      // Get the text node containing the selection start
+      const startContainer = range.startContainer;
+      if (startContainer.nodeType !== Node.TEXT_NODE) {
+        console.warn('[isWholeWord] Start container is not a text node');
+        return false;
+      }
+      
+      const textNode = startContainer as Text;
+      const fullText = textNode.textContent || '';
+      const startOffset = range.startOffset;
+      const endOffset = range.endOffset;
+      
+      // Verify the selection matches what we expect
+      const selectedInText = fullText.substring(startOffset, endOffset);
+      if (selectedInText !== selectedText) {
+        console.warn('[isWholeWord] Selection mismatch:', { selectedInText, selectedText });
+        return false;
+      }
+      
+      // Check character immediately before the selection
+      const charBefore = startOffset > 0 ? fullText[startOffset - 1] : '';
+      // Check character immediately after the selection  
+      const charAfter = endOffset < fullText.length ? fullText[endOffset] : '';
+      
+      // Word characters are: letters, digits, and underscore [a-zA-Z0-9_]
+      // A whole word means:
+      // - The character before (if exists) must NOT be a word character
+      // - The character after (if exists) must NOT be a word character
+      const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+      
+      // Check boundaries
+      const hasBoundaryBefore = startOffset === 0 || !isWordChar(charBefore);
+      const hasBoundaryAfter = endOffset === fullText.length || !isWordChar(charAfter);
+      
+      // Also verify the selection itself contains word characters
+      const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
+      
+      const isValid = hasBoundaryBefore && hasBoundaryAfter && hasWordCharInSelection;
+      
+      if (!isValid) {
+        console.log('[isWholeWord] Not a whole word:', {
+          selectedText,
+          charBefore,
+          charAfter,
+          hasBoundaryBefore,
+          hasBoundaryAfter,
+          hasWordCharInSelection,
+          context: fullText.substring(Math.max(0, startOffset - 5), Math.min(fullText.length, endOffset + 5))
+        });
+      }
+      
+      return isValid;
+    } catch (e) {
+      console.warn('Failed to check whole word:', e);
+      return false;
+    }
+  };
+
+  // Helper to count which occurrence of a pattern was selected (using whole-word matching)
   const getOccurrenceIndex = (range: Range, pattern: string): number => {
     try {
       const doc = range.startContainer.ownerDocument;
@@ -551,9 +614,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       beforeRange.setStart(doc.body, 0);
       beforeRange.setEnd(range.startContainer, range.startOffset);
       
-      // Get text before selection and count occurrences
+      // Get text before selection and count occurrences using whole-word matching
       const textBefore = beforeRange.toString();
-      const regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      // Escape pattern and add word boundaries for whole-word matching
+      const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const wholeWordPattern = `\\b${escapedPattern}\\b`;
+      const regex = new RegExp(wholeWordPattern, 'g');
       const matches = textBefore.match(regex);
       
       return matches ? matches.length : 0;
@@ -581,7 +647,28 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         // For single-instance: direct DOM modification + persistent rule
         const range = selection.range;
         if (range) {
+          // Validate that the selection is a whole word
+          // Single-instance replacements only work on whole words to prevent
+          // replacing substrings inside larger words (e.g., "and" in "England")
+          const isValidWholeWord = isWholeWord(range, selection.text);
+          console.log('[Replacement] Whole word validation:', {
+            selectedText: selection.text,
+            isValidWholeWord,
+            rangeStart: range.startOffset,
+            rangeEnd: range.endOffset,
+          });
+          
+          if (!isValidWholeWord) {
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              message: `Cannot replace "${selection.text}" - please select a complete word. Partial word selections (like "and" in "England" or "errand") are not supported.`,
+              timeout: 5000,
+            });
+            return;
+          }
+          
           // Get which occurrence this is BEFORE modifying the DOM
+          // Use whole-word matching to count occurrences correctly
           const occurrenceIndex = getOccurrenceIndex(range, selection.text);
           const sectionHref = progress?.sectionHref;
           
