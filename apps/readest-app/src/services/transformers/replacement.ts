@@ -126,16 +126,35 @@ export const replacementTransformer: Transformer = {
     for (const rule of otherRules) {
       try {
         let pattern: string;
+        // Check if pattern is a simple word (only letters, no special characters)
+        // If so, we should enforce whole-word matching to prevent matching inside words
+        const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+        const shouldEnforceWholeWord = rule.wholeWord || isSimpleWord;
+        
         if (rule.isRegex) {
           pattern = rule.pattern;
+          // For regex patterns, if wholeWord is enabled, wrap with word boundaries
+          // But be careful - only do this if the pattern doesn't already have boundaries
+          if (shouldEnforceWholeWord && !rule.pattern.includes('\\b')) {
+            pattern = `\\b${pattern}\\b`;
+          }
         } else {
           // Escape special regex characters for simple string matching
           pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           
-          // Add word boundaries if wholeWord is enabled
-          if (rule.wholeWord) {
+          // Add word boundaries if wholeWord is enabled OR if it's a simple word
+          if (shouldEnforceWholeWord) {
             pattern = `\\b${pattern}\\b`;
           }
+        }
+        
+        // Log for debugging
+        if (isSimpleWord && !rule.wholeWord) {
+          console.log('[REPLACEMENT] Auto-enforcing whole-word for simple word pattern:', {
+            pattern: rule.pattern,
+            finalPattern: pattern,
+            ruleId: rule.id
+          });
         }
         
         try {
@@ -149,6 +168,31 @@ export const replacementTransformer: Transformer = {
           while ((match = regex.exec(currentText)) !== null) {
             const matchStart = match.index;
             const matchEnd = matchStart + match[0]!.length;
+            
+            // For whole-word rules, double-check that this is actually a whole word
+            // and not inside HTML tags
+            // Also check if this is a simple word pattern (auto-enforced whole-word)
+            const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+            const shouldCheckWholeWord = rule.wholeWord || isSimpleWord;
+            
+            if (shouldCheckWholeWord) {
+              const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+              const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+              const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+              
+              const isInHTMLTag = 
+                (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+                (matchEnd < currentText.length && currentText[matchEnd] === '>');
+              
+              const isActuallyWholeWord = 
+                !isInHTMLTag &&
+                (matchStart === 0 || !isWordChar(charBefore)) &&
+                (matchEnd === currentText.length || !isWordChar(charAfter));
+              
+              if (!isActuallyWholeWord) {
+                continue; // Skip this match
+              }
+            }
             
             // Skip matches that are in replaced regions
             if (!isInReplacedRegion(matchStart, matchEnd)) {
@@ -224,6 +268,10 @@ export interface CreateReplacementRuleOptions {
  * Creates a new replacement rule with default values
  */
 export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
+  // For single-instance replacements, default to whole-word matching
+  // This ensures only standalone words are replaced, not substrings
+  const defaultWholeWord = options.singleInstance ? true : false;
+  
   const rule: ReplacementRule = {
     id: uniqueId(),
     pattern: options.pattern,
@@ -232,7 +280,7 @@ export function createReplacementRule(options: CreateReplacementRuleOptions): Re
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
     singleInstance: options.singleInstance ?? false,
-    wholeWord: options.wholeWord ?? false,
+    wholeWord: options.wholeWord ?? defaultWholeWord,
   };
   
   // Add single-instance specific fields if provided
