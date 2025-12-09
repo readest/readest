@@ -72,6 +72,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
+  const [showFooterOnNavigationPanel, setShowFooterOnNavigationPanel] = useState(viewSettings.showFooterOnNavigationPanel)
   const resetToDefaults = useResetViewSettings();
 
   const handleReset = () => {
@@ -105,6 +106,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
       showMarginsOnScroll: setShowMarginsOnScroll,
+      showFooterOnNavigationPanel: setShowFooterOnNavigationPanel
     });
   };
 
@@ -371,6 +373,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenOrientation]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showFooterOnNavigationPanel', showFooterOnNavigationPanel, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFooterOnNavigationPanel]);
 
   const langCode = getBookLangCode(bookData?.bookDoc?.metadata?.language);
   const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
@@ -702,6 +709,15 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 className='toggle'
                 checked={showBarsOnScroll}
                 onChange={() => setShowBarsOnScroll(!showBarsOnScroll)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Footer On Navigation Panel')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showFooterOnNavigationPanel}
+                onChange={() => setShowFooterOnNavigationPanel(!showFooterOnNavigationPanel)}
               />
             </div>
           </div>

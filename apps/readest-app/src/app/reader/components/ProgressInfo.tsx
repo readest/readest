@@ -16,6 +16,7 @@ interface PageInfoProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  fullHeight?: boolean; 
 }
 
 const ProgressInfoView: React.FC<PageInfoProps> = ({
@@ -26,6 +27,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  fullHeight = false,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -112,7 +114,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         aria-hidden='true'
         className={clsx(
           'flex items-center justify-between',
-          isVertical ? 'h-full' : 'h-[52px] w-full',
+          isVertical ? 'h-full' : (fullHeight ? 'h-full w-full' : 'h-[52px] w-full'),
         )}
       >
         {viewSettings.showRemainingTime ? (

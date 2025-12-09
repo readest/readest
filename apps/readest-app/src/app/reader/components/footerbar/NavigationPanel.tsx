@@ -8,6 +8,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ViewSettings } from '@/types/book';
 import { NavigationHandlers } from './types';
+import ProgressInfoView from '../ProgressInfo'
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
 
@@ -33,12 +34,27 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   sliderHeight,
 }) => {
   const _ = useTranslation();
-  const { getView } = useReaderStore();
+  const { getProgress, getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
   );
+
+  const progress = getProgress(bookKey);
+  const { section, pageinfo, timeinfo } = progress || {};
+  const gridInsets = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  };
+  const contentInsets = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  };
 
   useEffect(() => {
     if (progressValid) {
@@ -61,6 +77,9 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
       : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
   );
+
+  if (!viewSettings)
+    viewSettings = getViewSettings(bookKey) ?? undefined;
 
   return (
     <div className={classes} style={{ bottom: mobileBottomOffset }}>
@@ -139,6 +158,18 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           label={getNavigationLabel(viewSettings?.rtl, _('Next Section'), _('Previous Section'))}
         />
       </div>
+      {viewSettings && viewSettings.showFooterOnNavigationPanel && (
+        <ProgressInfoView
+          bookKey={bookKey}
+          section={section}
+          pageinfo={pageinfo}
+          timeinfo={timeinfo}
+          horizontalGap={viewSettings.gapPercent}
+          contentInsets={contentInsets}
+          gridInsets={gridInsets}
+          fullHeight={true}
+        />
+      )}
     </div>
   );
 };

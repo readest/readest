@@ -226,6 +226,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showProgressInfo: true,
   showMarginsOnScroll: false,
   progressStyle: 'fraction',
+  showFooterOnNavigationPanel: false,
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
