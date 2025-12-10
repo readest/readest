@@ -56,10 +56,9 @@ export const ReplacementRulesWindow: React.FC = () => {
     };
   }, []);
 
-  // const globalRules = settings?.globalViewSettings?.replacementRules || [];
   const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
   const inMemoryRules = viewSettings?.replacementRules || [];
-  const persistedConfig = sideBarBookKey ? useBookDataStore.getState().getConfig(sideBarBookKey) : null;
+  const persistedConfig = sideBarBookKey ? getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
   // Single rules = in-memory rules that are not persisted in the book config
   const singleRules = inMemoryRules.filter((r: ReplacementRule) => !persistedBookRules.find((p: ReplacementRule) => p.id === r.id));
@@ -121,8 +120,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       console.error('Failed to save replacement rule', err);
@@ -182,8 +184,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       console.error('Failed to delete replacement rule', err);
@@ -206,7 +211,7 @@ export const ReplacementRulesWindow: React.FC = () => {
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
           <div>
-            <h3 className='text-sm font-semibold'>{_('Single Rules')}</h3>
+            <h3 className='text-sm font-semibold'>{_('Single Instance Rules')}</h3>
             {singleRules.length === 0 ? (
               <p className='text-sm text-base-content/70 mt-2'>{_('No single replacement rules')}</p>
             ) : (
