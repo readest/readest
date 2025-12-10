@@ -783,5 +783,7 @@
   "Successfully imported {{count}} book(s)_one": "Pomyślnie zaimportowano 1 książkę",
   "Successfully imported {{count}} book(s)_few": "Pomyślnie zaimportowano {{count}} książki",
   "Successfully imported {{count}} book(s)_many": "Pomyślnie zaimportowano {{count}} książek",
-  "Successfully imported {{count}} book(s)_other": "Pomyślnie zaimportowano {{count}} książek"
+  "Successfully imported {{count}} book(s)_other": "Pomyślnie zaimportowano {{count}} książek",
+  "Count": "Liczba",
+  "Start Page": "Strona startowa"
 }

@@ -27,6 +27,7 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     url: 'https://standardebooks.org/feeds/opds',
     description: 'Free and liberated ebooks, carefully produced for the true book lover',
     icon: '📚',
+    disabled: isWebAppPlatform(),
   },
   {
     id: 'manybooks',

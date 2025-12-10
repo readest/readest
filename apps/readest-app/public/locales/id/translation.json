@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "Penggunaan Penyimpanan Cloud",
   "Rename Group": "Ganti Nama Grup",
   "From Directory": "Dari Direktori",
-  "Successfully imported {{count}} book(s)_other": "Berhasil mengimpor {{count}} buku"
+  "Successfully imported {{count}} book(s)_other": "Berhasil mengimpor {{count}} buku",
+  "Count": "Jumlah",
+  "Start Page": "Halaman Awal"
 }

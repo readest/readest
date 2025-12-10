@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "雲端儲存使用情況",
   "Rename Group": "重新命名",
   "From Directory": "從目錄導入",
-  "Successfully imported {{count}} book(s)_other": "成功導入 {{count}} 本書"
+  "Successfully imported {{count}} book(s)_other": "成功導入 {{count}} 本書",
+  "Count": "數量",
+  "Start Page": "起始頁"
 }

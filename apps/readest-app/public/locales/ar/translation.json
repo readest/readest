@@ -803,5 +803,7 @@
   "Successfully imported {{count}} book(s)_two": "تم استيراد كتابين",
   "Successfully imported {{count}} book(s)_few": "تم استيراد {{count}} كتب",
   "Successfully imported {{count}} book(s)_many": "تم استيراد {{count}} كتابًا",
-  "Successfully imported {{count}} book(s)_other": "تم استيراد {{count}} كتاب"
+  "Successfully imported {{count}} book(s)_other": "تم استيراد {{count}} كتاب",
+  "Count": "العدد",
+  "Start Page": "الصفحة الأولى"
 }

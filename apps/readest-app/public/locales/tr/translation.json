@@ -763,5 +763,7 @@
   "Rename Group": "Grubu Yeniden Adlandır",
   "From Directory": "Dizinden",
   "Successfully imported {{count}} book(s)_one": "Başarıyla 1 kitap içe aktarıldı",
-  "Successfully imported {{count}} book(s)_other": "Başarıyla {{count}} kitap içe aktarıldı"
+  "Successfully imported {{count}} book(s)_other": "Başarıyla {{count}} kitap içe aktarıldı",
+  "Count": "Sayım",
+  "Start Page": "Başlangıç Sayfası"
 }
