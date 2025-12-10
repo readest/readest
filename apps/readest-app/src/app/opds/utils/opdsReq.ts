@@ -210,6 +210,10 @@ export const probeAuth = async (
       } else if (wwwAuthenticate.toLowerCase().startsWith('basic')) {
         return createBasicAuth(finalUsername, finalPassword);
       }
+    } else {
+      // Fallback to Basic auth if no WWW-Authenticate header
+      // some older Calibre-Web versions behave this way, see issue #2656
+      return createBasicAuth(finalUsername, finalPassword);
     }
   }
 
