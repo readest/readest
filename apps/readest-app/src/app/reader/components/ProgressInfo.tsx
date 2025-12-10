@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Insets } from '@/types/misc';
 import { PageInfo, TimeInfo } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
+import { saveViewSettings } from '@/helpers/settings';
 
 interface PageInfoProps {
   bookKey: string;
@@ -28,7 +29,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   gridInsets,
 }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
@@ -70,15 +71,24 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           })
       : '';
 
+  const [footerTransparent, setFooterTransparent] = useState(viewSettings.footerTransparent)
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'footerTransparent', footerTransparent)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [footerTransparent])
+
   return (
+    //eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       className={clsx(
         'progressinfo absolute flex items-center justify-between font-sans',
-        'pointer-events-none bottom-0',
+        'pointer-events-auto bottom-0',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
+        footerTransparent ? 'opacity-0' : 'opacity-100',
       )}
+      onClick={() => setFooterTransparent(!footerTransparent)}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {

@@ -216,18 +216,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   return (
     <>
-      {/* Hover trigger area */}
-      <div
-        role='none'
-        className={clsx(
-          'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
-          needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
-        )}
-        onClick={() => setHoveredBookKey(bookKey)}
-        onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
-        onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
-      />
-
       {/* Main footer container */}
       <div
         role='group'
