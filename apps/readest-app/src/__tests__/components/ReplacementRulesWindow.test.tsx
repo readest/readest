@@ -89,7 +89,8 @@ describe('ReplacementRulesWindow', () => {
       settings: {
         globalViewSettings: {
           replacementRules: [
-            { id: 'g1', pattern: 'foo', replacement: 'bar', enabled: true, isRegex: false, order: 1 },
+            { id: 'g1', pattern: 'foo', replacement: 'bar', enabled: true, isRegex: false, caseSensitive: true, order: 1 },
+            { id: 'b1', pattern: 'hello', replacement: 'world', enabled: true, isRegex: false, caseSensitive: true, order: 2 },
           ],
           kosync: { enabled: false },
         },
@@ -100,9 +101,7 @@ describe('ReplacementRulesWindow', () => {
       viewStates: {
         book1: {
           viewSettings: {
-            replacementRules: [
-              { id: 'b1', pattern: 'hello', replacement: 'world', enabled: false, isRegex: false, order: 2 },
-            ],
+            replacementRules: [],
           },
         },
       } as unknown as Parameters<typeof useReaderStore.setState>[0],
@@ -120,12 +119,11 @@ describe('ReplacementRulesWindow', () => {
     // Assert
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();
-    // Book rule
-    expect(screen.getByText('hello')).toBeTruthy();
-    expect(screen.getByText('world')).toBeTruthy();
-    // Global rule
+    // Global rules
     expect(screen.getByText('foo')).toBeTruthy();
     expect(screen.getByText('bar')).toBeTruthy();
+    expect(screen.getByText('hello')).toBeTruthy();
+    expect(screen.getByText('world')).toBeTruthy();
   });
 
   it('renders single-instance rules separately from book/global rules', async () => {
@@ -143,6 +141,7 @@ describe('ReplacementRulesWindow', () => {
       replacement: 'single-hit',
       enabled: true,
       isRegex: false,
+      caseSensitive: true,
       order: 1,
       singleInstance: true,
     } as any;
@@ -153,6 +152,7 @@ describe('ReplacementRulesWindow', () => {
       replacement: 'book-hit',
       enabled: true,
       isRegex: false,
+      caseSensitive: true,
       order: 2,
     } as any;
 
@@ -195,7 +195,7 @@ describe('ReplacementRulesWindow', () => {
     expect(dialog).toBeTruthy();
 
     // Single-instance section
-    expect(screen.getByText('Single Rules')).toBeTruthy();
+    expect(screen.getByText('Single Instance Rules')).toBeTruthy();
     expect(screen.getByText('only-once')).toBeTruthy();
     expect(screen.getByText('single-hit')).toBeTruthy();
 
