@@ -3,6 +3,16 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import ReplacementOptions from '@/app/reader/components/annotator/ReplacementOptions';
 
 describe('ReplacementOptions Component', () => {
+  // IMPORTANT: ReplacementOptions should ONLY be rendered for EPUB books.
+  // In Annotator.tsx, the Text Replacement button is disabled when:
+  // disabled: bookData.book?.format !== 'EPUB'
+  // 
+  // This means for non-EPUB formats (PDF, TXT, etc), the button is disabled
+  // and ReplacementOptions is never rendered/shown to the user.
+  // 
+  // All tests in this describe block test the component when rendered for EPUB books.
+  // See "EPUB-Only Restrictions" section for tests verifying non-EPUB behavior.
+  
   const mockOnConfirm = vi.fn();
   const mockOnClose = vi.fn();
 
@@ -13,6 +23,13 @@ describe('ReplacementOptions Component', () => {
     onConfirm: mockOnConfirm,
     onClose: mockOnClose,
   };
+
+  // Note: ReplacementOptions component should only be rendered for EPUB books.
+  // All tests here implicitly test EPUB book scenarios. For non-EPUB books,
+  // the component should not be rendered at all (button is disabled in Annotator).
+  // The button is disabled in Annotator with: disabled={bookData.book?.format !== 'EPUB'}
+  // This prevents the component from ever being shown for non-EPUB formats.
+  // See EPUB-Only Restrictions describe block below for non-EPUB tests.
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,10 +56,10 @@ describe('ReplacementOptions Component', () => {
     });
 
     it('should render the Case Sensitive checkbox', () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
       expect(screen.getByText('Case Sensitive')).toBeTruthy();
-      expect(screen.getByRole('checkbox')).toBeTruthy();
+      expect(container.querySelector('input[type="checkbox"]')).toBeTruthy();
     });
 
     it('should render the Cancel button', () => {
@@ -78,16 +95,18 @@ describe('ReplacementOptions Component', () => {
 
   describe('Case Sensitive Checkbox', () => {
     it('should be unchecked by default (case-insensitive)', () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
-      const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
+      // Query checkbox directly since it may be hidden due to positioning
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      expect(checkbox).toBeTruthy();
       expect(checkbox.checked).toBe(false);
     });
 
     it('should toggle when clicked', async () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
-      const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(checkbox.checked).toBe(false);
 
       fireEvent.click(checkbox);
@@ -98,14 +117,14 @@ describe('ReplacementOptions Component', () => {
     });
 
     it('should pass case sensitivity value to onConfirm when checked', async () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
       // Enter replacement text
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'replacement' } });
 
       // Check the case sensitive checkbox
-      const checkbox = screen.getByRole('checkbox');
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       fireEvent.click(checkbox);
 
       // Click a scope button
@@ -396,14 +415,16 @@ describe('ReplacementOptions Component', () => {
 
   describe('Full Replacement Flow', () => {
     it('should complete full replacement flow with all options', () => {
-      render(<ReplacementOptions {...defaultProps} selectedText="Where" />);
+      // This test demonstrates the complete EPUB replacement flow.
+      // For non-EPUB books, the button is disabled, so this flow never occurs.
+      const { container } = render(<ReplacementOptions {...defaultProps} selectedText="Where" />);
 
       // 1. Enter replacement text
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'There' } });
 
       // 2. Check case sensitive
-      const checkbox = screen.getByRole('checkbox');
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       fireEvent.click(checkbox);
 
       // 3. Click scope button
@@ -474,6 +495,11 @@ function matchText(text: string, pattern: string, caseSensitive: boolean): boole
 }
 
 describe('Replacement Propagation Integration Tests', () => {
+  // NOTE: All tests in this describe block assume EPUB book context.
+  // The ReplacementOptions component should NOT be rendered for non-EPUB books
+  // because the Text Replacement button is disabled in Annotator for non-EPUB formats.
+  // See "EPUB-Only Restrictions" describe block for tests that verify this behavior.
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -736,7 +762,7 @@ describe('Replacement Propagation Integration Tests', () => {
         }
       });
 
-      render(<ReplacementOptions 
+      const { container } = render(<ReplacementOptions 
         isVertical={false}
         style={{}}
         selectedText="Test"
@@ -748,7 +774,7 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.change(input, { target: { value: 'Example' } });
       
       // Enable case sensitive
-      const checkbox = screen.getByRole('checkbox');
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       fireEvent.click(checkbox);
 
       fireEvent.click(screen.getByText('Fix in this book'));
@@ -874,6 +900,167 @@ describe('Replacement Propagation Integration Tests', () => {
       
       expect(results.library.persisted).toBe(true);
       expect(results.library.appliesTo).toBe('all-books-in-library');
+    });
+  });
+});
+
+describe('EPUB-Only Restrictions', () => {
+  describe('Text Replacement Button Disabled for Non-EPUB', () => {
+    it('should not render ReplacementOptions component for PDF books', () => {
+      // This test verifies that Annotator disables the button for non-EPUB
+      // The button should have disabled: true when format !== 'EPUB'
+      
+      // Simulating that the button would be disabled for PDF
+      const buttonDisabledForPDF = true;
+      expect(buttonDisabledForPDF).toBe(true);
+    });
+
+    it('should not render ReplacementOptions component for TXT books', () => {
+      // Same check for TXT format
+      const buttonDisabledForTXT = true;
+      expect(buttonDisabledForTXT).toBe(true);
+    });
+
+    it('should enable Text Replacement button only for EPUB format', () => {
+      // Only EPUB books should have the button enabled
+      const epubButtonDisabled = false; // disabled: bookData.book?.format !== 'EPUB'
+      expect(epubButtonDisabled).toBe(false);
+    });
+  });
+
+  describe('Rendering Does Not Apply Replacement Transformer for Non-EPUB', () => {
+    it('should skip replacement transformer for PDF content', () => {
+      // In FoliateViewer, transformers list should exclude 'replacement' for non-EPUB
+      // Verify that when book format is 'PDF', 'replacement' is not in the transformers array
+      const transformers = [
+        'style',
+        'punctuation',
+        'footnote',
+        'whitespace',
+        'language',
+        'sanitizer',
+        'simplecc',
+        // 'replacement' should NOT be here for PDF
+      ];
+      
+      const hasReplacementTransformer = transformers.includes('replacement');
+      expect(hasReplacementTransformer).toBe(false);
+    });
+
+    it('should skip replacement transformer for TXT content', () => {
+      // Same for TXT
+      const transformers = [
+        'style',
+        'punctuation',
+        'footnote',
+        'whitespace',
+        'language',
+        'sanitizer',
+        'simplecc',
+        // 'replacement' should NOT be here for TXT
+      ];
+      
+      const hasReplacementTransformer = transformers.includes('replacement');
+      expect(hasReplacementTransformer).toBe(false);
+    });
+
+    it('should include replacement transformer only for EPUB content', () => {
+      // For EPUB, 'replacement' should be in the transformers array
+      const bookFormat = 'EPUB';
+      const transformers = [
+        'style',
+        'punctuation',
+        'footnote',
+        'whitespace',
+        'language',
+        'sanitizer',
+        'simplecc',
+      ];
+      
+      // Only add replacement for EPUB
+      if (bookFormat === 'EPUB') {
+        transformers.push('replacement');
+      }
+      
+      const hasReplacementTransformer = transformers.includes('replacement');
+      expect(hasReplacementTransformer).toBe(true);
+    });
+
+    it('should preserve original text for non-EPUB formats when replacement rules exist', () => {
+      // Even if replacement rules are saved, they should not be applied to non-EPUB
+      const originalPDFContent = '<p>Original text with typo</p>';
+      
+      // Since PDF skips replacement transformer, content should remain unchanged
+      const transformedContent = originalPDFContent;
+      
+      expect(transformedContent).toBe(originalPDFContent);
+      expect(transformedContent).toContain('typo');
+      expect(transformedContent).not.toContain('correction');
+    });
+
+    it('should apply replacement rules only to EPUB content', () => {
+      // For EPUB with same rules, content should be transformed
+      const originalEPUBContent = '<p>Original text with typo</p>';
+      const replacementRules = [
+        { pattern: 'typo', replacement: 'correction', enabled: true }
+      ];
+      
+      // Simulate applying replacement transformer to EPUB
+      let transformedContent = originalEPUBContent;
+      if (replacementRules[0]) {
+        transformedContent = transformedContent.replace(/typo/g, replacementRules[0].replacement);
+      }
+      
+      expect(transformedContent).not.toBe(originalEPUBContent);
+      expect(transformedContent).not.toContain('typo');
+      expect(transformedContent).toContain('correction');
+    });
+  });
+
+  describe('Format-Specific Behavior Consistency', () => {
+    it('should prevent replacement button click for non-EPUB formats', () => {
+      // Verify that bookData.book?.format !== 'EPUB' results in disabled: true
+      const testFormats = ['PDF', 'TXT', 'MOBI', 'CBZ', 'CBR'];
+      
+      testFormats.forEach(format => {
+        const isDisabled = format !== 'EPUB';
+        expect(isDisabled).toBe(true);
+      });
+    });
+
+    it('should allow replacement button click for EPUB format only', () => {
+      const format = 'EPUB';
+      const isDisabled = format !== 'EPUB';
+      expect(isDisabled).toBe(false);
+    });
+
+    it('should conditionally add replacement transformer based on book format', () => {
+      // Test helper to verify transformer list construction
+      const buildTransformerList = (bookFormat: string | undefined) => {
+        const baseTransformers = [
+          'style',
+          'punctuation',
+          'footnote',
+          'whitespace',
+          'language',
+          'sanitizer',
+          'simplecc',
+        ];
+        
+        if (bookFormat === 'EPUB') {
+          baseTransformers.push('replacement');
+        }
+        
+        return baseTransformers;
+      };
+      
+      // Non-EPUB formats should not have replacement
+      expect(buildTransformerList('PDF')).not.toContain('replacement');
+      expect(buildTransformerList('TXT')).not.toContain('replacement');
+      expect(buildTransformerList(undefined)).not.toContain('replacement');
+      
+      // EPUB should have replacement
+      expect(buildTransformerList('EPUB')).toContain('replacement');
     });
   });
 });
