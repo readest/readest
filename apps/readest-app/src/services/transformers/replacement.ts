@@ -1,4 +1,4 @@
-// copilot generated
+// used copilot for assistance
 import type { Transformer } from './types';
 import { ReplacementRule, ViewSettings } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
@@ -240,89 +240,51 @@ export const replacementTransformer: Transformer = {
   },
 };
 
-// ============================================================================
-// Replacement Rules Management Functions
-// ============================================================================
 
-/**
- * Scope for applying replacement rules
- */
+// Rule management 
 export type ReplacementRuleScope = 'single' | 'book' | 'global';
 
-/**
- * Options for creating a replacement rule
- */
 export interface CreateReplacementRuleOptions {
   pattern: string;
   replacement: string;
   isRegex?: boolean;
   enabled?: boolean;
   order?: number;
-  singleInstance?: boolean; // If true, only replace the specific occurrence
-  sectionHref?: string; // Section where the single-instance replacement applies
-  occurrenceIndex?: number; // Which occurrence in the section (0-based)
-  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
+  singleInstance?: boolean;
+  sectionHref?: string;
+  occurrenceIndex?: number;
+  wholeWord?: boolean;
+  global?: boolean;
 }
 
-/**
- * Creates a new replacement rule with default values
- */
-export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
-  // For single-instance replacements, default to whole-word matching
-  // This ensures only standalone words are replaced, not substrings
-  const defaultWholeWord = options.singleInstance ? true : false;
-  
-  const rule: ReplacementRule = {
+export function createReplacementRule(opts: CreateReplacementRuleOptions): ReplacementRule {
+  return {
     id: uniqueId(),
-    pattern: options.pattern,
-    replacement: options.replacement,
-    isRegex: options.isRegex ?? false,
-    enabled: options.enabled ?? true,
-    order: options.order ?? 1000, // Default to high order (applied last)
-    singleInstance: options.singleInstance ?? false,
-    wholeWord: options.wholeWord ?? defaultWholeWord,
+    pattern: opts.pattern,
+    replacement: opts.replacement,
+    isRegex: opts.isRegex ?? false,
+    enabled: opts.enabled ?? true,
+    order: opts.order ?? 1000,
+    singleInstance: opts.singleInstance ?? false,
+    wholeWord: opts.wholeWord ?? true,
+    sectionHref: opts.sectionHref,
+    occurrenceIndex: opts.occurrenceIndex,
+    global: opts.global ?? false,
   };
-  
-  // Add single-instance specific fields if provided
-  if (options.sectionHref) {
-    rule.sectionHref = options.sectionHref;
-  }
-  if (typeof options.occurrenceIndex === 'number') {
-    rule.occurrenceIndex = options.occurrenceIndex;
-  }
-  
-  return rule;
 }
 
-/**
- * Merges global and book-specific replacement rules.
- * Book rules take precedence over global rules.
- * Rules are sorted by order (lower numbers first).
- */
 export function mergeReplacementRules(
   globalRules: ReplacementRule[] | undefined,
-  bookRules: ReplacementRule[] | undefined,
+  bookRules: ReplacementRule[] | undefined
 ): ReplacementRule[] {
-  const global = globalRules || [];
-  const book = bookRules || [];
+  const map = new Map<string, ReplacementRule>();
 
-  // Combine rules, with book rules taking precedence (by ID matching)
-  const ruleMap = new Map<string, ReplacementRule>();
+  for (const g of globalRules ?? []) map.set(g.id, g);
+  for (const b of bookRules ?? []) map.set(b.id, b);
 
-  // Add global rules first
-  for (const rule of global) {
-    ruleMap.set(rule.id, rule);
-  }
-
-  // Override with book rules (same ID means book rule wins)
-  for (const rule of book) {
-    ruleMap.set(rule.id, rule);
-  }
-
-  // Convert to array and sort by order
-  const merged = Array.from(ruleMap.values());
-  return merged.sort((a, b) => (a.order || 0) - (b.order || 0));
+  return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
+
 
 /**
  * Gets all active replacement rules for a book (merged global + book rules)
