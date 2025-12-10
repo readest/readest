@@ -276,6 +276,7 @@ export interface CreateReplacementRuleOptions {
   replacement: string;
   isRegex?: boolean;
   enabled?: boolean;
+  caseSensitive?: boolean;
   order?: number;
   singleInstance?: boolean;
   sectionHref?: string;
@@ -291,6 +292,7 @@ export function createReplacementRule(opts: CreateReplacementRuleOptions): Repla
     replacement: opts.replacement,
     isRegex: opts.isRegex ?? false,
     enabled: opts.enabled ?? true,
+    caseSensitive: opts.caseSensitive ?? true,
     order: opts.order ?? 1000,
     singleInstance: opts.singleInstance ?? false,
     wholeWord: opts.wholeWord ?? true,

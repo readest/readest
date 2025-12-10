@@ -28,7 +28,7 @@ const ReplacementOptions: React.FC<ReplacementOptionsProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   
   const [replacementText, setReplacementText] = useState('');
-  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [caseSensitive, setCaseSensitive] = useState(true);
   const [selectedScope, setSelectedScope] = useState<'once' | 'book' | 'library' | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [adjustedStyle, setAdjustedStyle] = useState<React.CSSProperties | null>(null);
