@@ -77,24 +77,24 @@ describe('ReplacementOptions Component', () => {
   });
 
   describe('Case Sensitive Checkbox', () => {
-    it('should be unchecked by default (case-insensitive)', () => {
+    it('should be checked by default (case-sensitive)', () => {
       render(<ReplacementOptions {...defaultProps} />);
 
       const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-      expect(checkbox.checked).toBe(false);
+      expect(checkbox.checked).toBe(true);
     });
 
     it('should toggle when clicked', async () => {
       render(<ReplacementOptions {...defaultProps} />);
 
       const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-      expect(checkbox.checked).toBe(false);
-
-      fireEvent.click(checkbox);
       expect(checkbox.checked).toBe(true);
 
       fireEvent.click(checkbox);
       expect(checkbox.checked).toBe(false);
+
+      fireEvent.click(checkbox);
+      expect(checkbox.checked).toBe(true);
     });
 
     it('should pass case sensitivity value to onConfirm when checked', async () => {
@@ -104,9 +104,7 @@ describe('ReplacementOptions Component', () => {
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'replacement' } });
 
-      // Check the case sensitive checkbox
-      const checkbox = screen.getByRole('checkbox');
-      fireEvent.click(checkbox);
+      // Checkbox is checked by default (case sensitive = true)
 
       // Click a scope button
       const fixOnceButton = screen.getByText('Fix this once');
@@ -134,7 +132,9 @@ describe('ReplacementOptions Component', () => {
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'replacement' } });
 
-      // Don't check the checkbox (leave unchecked)
+      // Uncheck the checkbox (default is true, so we click to toggle to false)
+      const checkbox = screen.getByRole('checkbox');
+      fireEvent.click(checkbox);
 
       // Click a scope button
       const fixOnceButton = screen.getByText('Fix this once');
@@ -402,9 +402,7 @@ describe('ReplacementOptions Component', () => {
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'There' } });
 
-      // 2. Check case sensitive
-      const checkbox = screen.getByRole('checkbox');
-      fireEvent.click(checkbox);
+      // 2. Checkbox is checked by default (case sensitive = true), don't click it
 
       // 3. Click scope button
       fireEvent.click(screen.getByText('Fix in this book'));
@@ -501,7 +499,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
       expect(mockOnConfirm).toHaveBeenCalledWith({
         replacementText: 'correction',
-        caseSensitive: false,
+        caseSensitive: true,
         scope: 'once',
       });
     });
@@ -556,7 +554,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
       expect(mockOnConfirm).toHaveBeenCalledWith({
         replacementText: 'correction',
-        caseSensitive: false,
+        caseSensitive: true,
         scope: 'book',
       });
     });
@@ -661,7 +659,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
       expect(mockOnConfirm).toHaveBeenCalledWith({
         replacementText: 'fixed',
-        caseSensitive: false,
+        caseSensitive: true,
         scope: 'library',
       });
     });
@@ -747,9 +745,7 @@ describe('Replacement Propagation Integration Tests', () => {
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'Example' } });
       
-      // Enable case sensitive
-      const checkbox = screen.getByRole('checkbox');
-      fireEvent.click(checkbox);
+      // Checkbox is checked by default (case-sensitive = true), leave it checked
 
       fireEvent.click(screen.getByText('Fix in this book'));
       fireEvent.click(screen.getByText('Confirm'));
@@ -786,7 +782,9 @@ describe('Replacement Propagation Integration Tests', () => {
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'Example' } });
       
-      // Leave unchecked (case-insensitive)
+      // Uncheck the checkbox (default is true, click to toggle to false for case-insensitive)
+      const checkbox = screen.getByRole('checkbox');
+      fireEvent.click(checkbox);
 
       fireEvent.click(screen.getByText('Fix in this book'));
       fireEvent.click(screen.getByText('Confirm'));
