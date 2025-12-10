@@ -30,6 +30,7 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { settings } = useSettingsStore();
   const { getViewSettings } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
+  const { getConfig } = useBookDataStore();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -57,23 +58,28 @@ export const ReplacementRulesWindow: React.FC = () => {
     };
   }, []);
 
-  // const globalRules = settings?.globalViewSettings?.replacementRules || [];
   const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
   const inMemoryRules = viewSettings?.replacementRules || [];
-  const persistedConfig = sideBarBookKey ? useBookDataStore.getState().getConfig(sideBarBookKey) : null;
+  const persistedConfig = sideBarBookKey ? getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
-  // Single rules = in-memory rules that are not persisted in the book config
-  const singleRules = inMemoryRules.filter((r: any) => !persistedBookRules.find((p: any) => p.id === r.id));
-  // Book rules = persisted book rules + global rules (merged for display)
+
+  // Prefer persisted rules; fall back to in-memory so we show unsaved edits in tests/dev
+  const bookRuleSource = persistedBookRules.length ? persistedBookRules : inMemoryRules;
+
+  const singleRules = bookRuleSource.filter((r: ReplacementRule) => !!r.singleInstance);
+  const bookScopedRules = bookRuleSource.filter((r: ReplacementRule) => !r.singleInstance);
+
+  // Book rules = book-scoped rules + global rules (merged for display)
   // Remove duplicates: if a pattern exists in both book and global rules, keep the book rule
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
-  const mergedRules = persistedBookRules.concat(
-    globalRules.filter((gr: any) => !persistedBookRules.find((br: any) => br.pattern === gr.pattern))
+  const mergedRules = bookScopedRules.concat(
+    globalRules.filter((gr: any) => !bookScopedRules.find((br: any) => br.pattern === gr.pattern))
   );
   
   // Create a map to track the scope of each rule for editing/deleting
-  const getRuleScope = (rule: any): 'book' | 'global' => {
-    return persistedBookRules.find((br: any) => br.id === rule.id) ? 'book' : 'global';
+  const getRuleScope = (rule: any): 'single' | 'book' | 'global' => {
+    if (rule.singleInstance) return 'single';
+    return bookScopedRules.find((br: any) => br.id === rule.id) ? 'book' : 'global';
   };
   
   const bookRules = mergedRules;
@@ -122,8 +128,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -184,8 +193,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -209,7 +221,7 @@ export const ReplacementRulesWindow: React.FC = () => {
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
           <div>
-            <h3 className='text-sm font-semibold'>{_('Single Rules')}</h3>
+            <h3 className='text-sm font-semibold'>{_('Single Instance Rules')}</h3>
             {singleRules.length === 0 ? (
               <p className='text-sm text-base-content/70 mt-2'>{_('No single replacement rules')}</p>
             ) : (

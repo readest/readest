@@ -471,8 +471,12 @@ export async function removeReplacementRule(
 ): Promise<void> {
   switch (scope) {
     case 'single':
+      // Single-instance rules are persisted in book config
+      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, true);
+      break;
     case 'book':
-      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, scope === 'book');
+      // Book-wide rules are persisted in book config
+      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, true);
       break;
     case 'global':
       await removeReplacementRuleFromGlobal(envConfig, ruleId);
@@ -557,8 +561,12 @@ export async function updateReplacementRule(
 ): Promise<void> {
   switch (scope) {
     case 'single':
+      // Single-instance rules are persisted in book config
+      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, true);
+      break;
     case 'book':
-      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, scope === 'book');
+      // Book-wide rules are persisted in book config
+      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, true);
       break;
     case 'global':
       await updateReplacementRuleInGlobal(envConfig, ruleId, updates);
