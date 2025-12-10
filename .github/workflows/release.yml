@@ -96,9 +96,9 @@ jobs:
           version=${{ needs.get-release.outputs.release_version }}
           plugin_zip="Readest-${version}-1.koplugin.zip"
 
-          cd apps/readest.koplugin
-          zip -r ../../${plugin_zip} .
-          cd ../..
+          cd apps
+          zip -r ../${plugin_zip} readest.koplugin
+          cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
