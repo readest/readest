@@ -540,6 +540,95 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     scope: 'once' | 'book' | 'library';
   };
 
+  // Helper to check if selected text is a whole word (has word boundaries on both sides)
+  const isWholeWord = (range: Range, selectedText: string): boolean => {
+    try {
+      if (!selectedText || selectedText.trim().length === 0) return false;
+      
+      // Get the text node containing the selection start
+      const startContainer = range.startContainer;
+      if (startContainer.nodeType !== Node.TEXT_NODE) {
+        console.warn('[isWholeWord] Start container is not a text node');
+        return false;
+      }
+      
+      const textNode = startContainer as Text;
+      const fullText = textNode.textContent || '';
+      const startOffset = range.startOffset;
+      const endOffset = range.endOffset;
+      
+      // Verify the selection matches what we expect
+      const selectedInText = fullText.substring(startOffset, endOffset);
+      if (selectedInText !== selectedText) {
+        console.warn('[isWholeWord] Selection mismatch:', { selectedInText, selectedText });
+        return false;
+      }
+      
+      // Check character immediately before the selection
+      const charBefore = startOffset > 0 ? fullText[startOffset - 1] : '';
+      // Check character immediately after the selection  
+      const charAfter = endOffset < fullText.length ? fullText[endOffset] : '';
+      
+      // Word characters are: letters, digits, and underscore [a-zA-Z0-9_]
+      // A whole word means:
+      // - The character before (if exists) must NOT be a word character
+      // - The character after (if exists) must NOT be a word character
+      const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+      
+      // Check boundaries
+      const hasBoundaryBefore = startOffset === 0 || !isWordChar(charBefore);
+      const hasBoundaryAfter = endOffset === fullText.length || !isWordChar(charAfter);
+      
+      // Also verify the selection itself contains word characters
+      const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
+      
+      const isValid = hasBoundaryBefore && hasBoundaryAfter && hasWordCharInSelection;
+      
+      if (!isValid) {
+        console.log('[isWholeWord] Not a whole word:', {
+          selectedText,
+          charBefore,
+          charAfter,
+          hasBoundaryBefore,
+          hasBoundaryAfter,
+          hasWordCharInSelection,
+          context: fullText.substring(Math.max(0, startOffset - 5), Math.min(fullText.length, endOffset + 5))
+        });
+      }
+      
+      return isValid;
+    } catch (e) {
+      console.warn('Failed to check whole word:', e);
+      return false;
+    }
+  };
+
+  // Helper to count which occurrence of a pattern was selected (using whole-word matching)
+  const getOccurrenceIndex = (range: Range, pattern: string): number => {
+    try {
+      const doc = range.startContainer.ownerDocument;
+      if (!doc || !doc.body) return 0;
+      
+      // Create a range from start of body to start of selection
+      const beforeRange = doc.createRange();
+      beforeRange.setStart(doc.body, 0);
+      beforeRange.setEnd(range.startContainer, range.startOffset);
+      
+      // Get text before selection and count occurrences using whole-word matching
+      const textBefore = beforeRange.toString();
+      // Escape pattern and add word boundaries for whole-word matching
+      const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const wholeWordPattern = `\\b${escapedPattern}\\b`;
+      const regex = new RegExp(wholeWordPattern, 'g');
+      const matches = textBefore.match(regex);
+      
+      return matches ? matches.length : 0;
+    } catch (e) {
+      console.warn('Failed to get occurrence index:', e);
+      return 0;
+    }
+  };
+
   const handleReplacementConfirm = async (config: ReplacementConfig) => {
     console.log('handleReplacementConfirm CALLED!', config);
     if (!selection || !selection.text) return;
@@ -553,37 +642,101 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       scope,
     });
 
-    // Note: Currently the backend only supports case-sensitive replacements
-    // The caseSensitive parameter is passed but not yet used in the transformer
-    // TODO: Implement case-insensitive matching by adding 'i' flag support to transformer
     try {
-      // Map UI scope to backend scope
-      const backendScope = scope === 'once' ? 'single' : scope === 'book' ? 'book' : 'global';
-      // Create the replacement rule
-      await addReplacementRule(
-        envConfig,
-        bookKey,
-        {
-          pattern: selection.text,
-          replacement: replacementText,
-          isRegex: false, // Use simple string matching
-          enabled: true,
-        },
-        backendScope as 'single' | 'book' | 'global',
-      );
+      if (scope === 'once') {
+        // For single-instance: direct DOM modification + persistent rule
+        const range = selection.range;
+        if (range) {
+          // Validate that the selection is a whole word
+          // Single-instance replacements only work on whole words to prevent
+          // replacing substrings inside larger words (e.g., "and" in "England")
+          const isValidWholeWord = isWholeWord(range, selection.text);
+          console.log('[Replacement] Whole word validation:', {
+            selectedText: selection.text,
+            isValidWholeWord,
+            rangeStart: range.startOffset,
+            rangeEnd: range.endOffset,
+          });
+          
+          if (!isValidWholeWord) {
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              message: `Cannot replace "${selection.text}" - please select a complete word. Partial word selections (like "and" in "England" or "errand") are not supported.`,
+              timeout: 5000,
+            });
+            return;
+          }
+          
+          // Get which occurrence this is BEFORE modifying the DOM
+          // Use whole-word matching to count occurrences correctly
+          const occurrenceIndex = getOccurrenceIndex(range, selection.text);
+          const sectionHref = progress?.sectionHref;
+          
+          // Directly modify DOM for immediate effect
+          range.deleteContents();
+          const textNode = document.createTextNode(replacementText);
+          range.insertNode(textNode);
+          
+          // Create rule with occurrence tracking for persistence
+          await addReplacementRule(
+            envConfig,
+            bookKey,
+            {
+              pattern: selection.text,
+              replacement: replacementText,
+              isRegex: false,
+              enabled: true,
+              singleInstance: true,
+              sectionHref,
+              occurrenceIndex,
+            },
+            'single',
+          );
 
-      eventDispatcher.dispatch('toast', {
-        type: 'success',
-        message: `Rule added! Reloading book to apply changes...`,
-        timeout: 3000,
-      });
+          eventDispatcher.dispatch('toast', {
+            type: 'success',
+            message: 'Replacement applied! Will persist on refresh.',
+            timeout: 3000,
+          });
 
-      setShowReplacementOptions(false);
-      handleDismissPopupAndSelection();
+          setShowReplacementOptions(false);
+          handleDismissPopupAndSelection();
+        }
+      } else {
+        // For book-wide and global: use the transformer approach
+        const backendScope = scope === 'book' ? 'book' : 'global';
+        
+        await addReplacementRule(
+          envConfig,
+          bookKey,
+          {
+            pattern: selection.text,
+            replacement: replacementText,
+            isRegex: false,
+            enabled: true,
+            singleInstance: false,
+          },
+          backendScope as 'book' | 'global',
+        );
 
-      // Fully reload the book view to apply the replacement
-      const { recreateViewer } = useReaderStore.getState();
-      await recreateViewer(envConfig, bookKey);
+        const scopeLabels = {
+          book: 'this book',
+          library: 'your library',
+        };
+
+        eventDispatcher.dispatch('toast', {
+          type: 'success',
+          message: `Replacement applied to ${scopeLabels[scope]}! Reloading...`,
+          timeout: 3000,
+        });
+
+        setShowReplacementOptions(false);
+        handleDismissPopupAndSelection();
+
+        // Reload the book view to apply the replacement
+        const { recreateViewer } = useReaderStore.getState();
+        await recreateViewer(envConfig, bookKey);
+      }
     } catch (error) {
       console.error('Failed to apply replacement:', error);
       eventDispatcher.dispatch('toast', {

@@ -50,74 +50,349 @@ export const replacementTransformer: Transformer = {
       return ctx.content;
     }
 
-    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
+    // Separate single-instance rules from other rules
+    const singleInstanceRules = enabledRules.filter(r => r.singleInstance);
+    const otherRules = enabledRules.filter(r => !r.singleInstance);
 
-    // Parse HTML to work with text nodes only (preserve HTML structure)
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(ctx.content, 'text/html');
+    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', {
+      singleInstance: singleInstanceRules.length,
+      other: otherRules.length,
+      patterns: enabledRules.map(r => r.pattern)
+    });
 
-    // Create tree walker to iterate through text nodes
-    const walker = doc.createTreeWalker(
-      doc.body || doc.documentElement,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: (node) => {
-          const parent = node.parentElement;
-          // Skip script and style tags
-          if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-            return NodeFilter.FILTER_REJECT;
+    // Use direct string replacement to preserve XHTML structure
+    let result = ctx.content;
+    
+    // Track replaced regions in CURRENT text coordinates to prevent re-matching
+    // This prevents replacement text from being matched by subsequent rules
+    const replacedRegions: Array<{ start: number; end: number }> = [];
+    
+    // Helper function to check if a position is within a replaced region
+    const isInReplacedRegion = (start: number, end: number): boolean => {
+      return replacedRegions.some(region => 
+        start < region.end && end > region.start
+      );
+    };
+    
+    // Helper function to update region positions after a replacement
+    // This shifts regions that come after the replacement point
+    const updateRegionsAfterReplacement = (
+      replaceStart: number,
+      replaceEnd: number,
+      replacementLength: number
+    ) => {
+      const lengthDiff = replacementLength - (replaceEnd - replaceStart);
+      for (const region of replacedRegions) {
+        // If region is completely after the replacement, shift it
+        if (region.start >= replaceEnd) {
+          region.start += lengthDiff;
+          region.end += lengthDiff;
+        }
+        // If region overlaps with or is within the replacement area, 
+        // it will be covered by the new region we're about to add
+        // so we don't need to update it
+      }
+    };
+
+    // First, process single-instance rules with special handling
+    for (const rule of singleInstanceRules) {
+      try {
+        // Check section match
+        if (rule.sectionHref) {
+          // Extract just the file path without fragment
+          const ruleSectionBase = rule.sectionHref.split('#')[0] || rule.sectionHref;
+          const ctxSectionBase = ctx.sectionHref?.split('#')[0] || ctx.sectionHref;
+          
+          const sectionMatch = ctxSectionBase && (
+            ctxSectionBase === ruleSectionBase ||
+            ctxSectionBase.includes(ruleSectionBase) ||
+            ruleSectionBase.includes(ctxSectionBase) ||
+            ctxSectionBase.endsWith(ruleSectionBase) ||
+            ruleSectionBase.endsWith(ctxSectionBase)
+          );
+          
+          if (!sectionMatch) {
+            continue; // Skip - wrong section
           }
-          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        },
-      },
-    );
+        }
 
-    const textNodes: Text[] = [];
-    let currentNode: Node | null;
-    while ((currentNode = walker.nextNode())) {
-      textNodes.push(currentNode as Text);
+        let pattern: string;
+        if (rule.isRegex) {
+          pattern = rule.pattern;
+          // For single-instance rules, ALWAYS enforce whole-word matching even for regex
+          // This prevents matching substrings inside larger words
+          if (!rule.pattern.includes('\\b')) {
+            pattern = `\\b${pattern}\\b`;
+          }
+        } else {
+          // Escape special regex characters for simple string matching
+          pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          
+          // For single-instance replacements, ALWAYS enforce whole-word matching
+          // This ensures only standalone words are replaced, not substrings inside larger words
+          // (e.g., "and" in "stand", "standard", "England", or "errand" won't match)
+          // We ALWAYS use whole-word matching for single-instance rules, regardless of the wholeWord flag
+          // This prevents issues where rules were created before validation was added
+          pattern = `\\b${pattern}\\b`;
+        }
+        
+        // Log for debugging
+        console.log('[REPLACEMENT] Single-instance rule pattern:', {
+          originalPattern: rule.pattern,
+          finalPattern: pattern,
+          isRegex: rule.isRegex,
+          ruleId: rule.id
+        });
+
+        // For single-instance with occurrence tracking, replace only the Nth occurrence
+        // that doesn't overlap with previously replaced regions
+        if (typeof rule.occurrenceIndex === 'number') {
+          const targetIndex = rule.occurrenceIndex;
+          let currentIndex = 0;
+          const currentText = result;
+          
+          // Find all matches in current text that don't overlap with replaced regions
+          // Note: pattern already has \b word boundaries for single-instance rules
+          const regex = new RegExp(pattern, 'g');
+          const matches: Array<{ match: string; index: number }> = [];
+          let match;
+          
+          while ((match = regex.exec(currentText)) !== null) {
+            const matchStart = match.index;
+            const matchEnd = matchStart + match[0]!.length;
+            
+            // CRITICAL: Double-check that this is actually a whole word match
+            // This prevents matching "and" inside "England" even if the pattern was created incorrectly
+            // Also check that we're not matching across HTML tag boundaries
+            const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+            const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+            const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+            
+            // Check if match is within HTML tags (not in actual text content)
+            // If charBefore is '>' or charAfter is '<', we're at a tag boundary, which is OK
+            // But if charBefore is '<' or charAfter is '>', we're inside a tag, which is NOT OK
+            const isInHTMLTag = 
+              (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+              (matchEnd < currentText.length && currentText[matchEnd] === '>');
+            
+            const isActuallyWholeWord = 
+              !isInHTMLTag &&
+              (matchStart === 0 || !isWordChar(charBefore)) &&
+              (matchEnd === currentText.length || !isWordChar(charAfter));
+            
+            if (!isActuallyWholeWord) {
+              console.warn('[REPLACEMENT] Skipping non-whole-word match:', {
+                match: match[0],
+                index: matchStart,
+                charBefore,
+                charAfter,
+                isInHTMLTag,
+                context: currentText.substring(Math.max(0, matchStart - 10), Math.min(currentText.length, matchEnd + 10))
+              });
+            }
+            
+            // Only include matches that are actually whole words and not inside HTML tags
+            if (isActuallyWholeWord && !isInReplacedRegion(matchStart, matchEnd)) {
+              matches.push({
+                match: match[0]!,
+                index: matchStart
+              });
+            }
+          }
+          
+          // Apply replacement for the target occurrence
+          if (matches[targetIndex]) {
+            const { match, index } = matches[targetIndex]!;
+            const matchEnd = index + match.length;
+            
+            // Update existing regions' positions BEFORE making the replacement
+            updateRegionsAfterReplacement(index, matchEnd, rule.replacement.length);
+            
+            // Apply the replacement
+            const before = result.substring(0, index);
+            const after = result.substring(matchEnd);
+            result = before + rule.replacement + after;
+            
+            // Track the ENTIRE replacement region (including replacement text)
+            // This prevents the replacement text from being matched again
+            const replacementStart = index;
+            const replacementEnd = index + rule.replacement.length;
+            replacedRegions.push({
+              start: replacementStart,
+              end: replacementEnd
+            });
+          }
+        } else {
+          // Single-instance without occurrence index - replace first non-overlapping match
+          const regex = new RegExp(pattern, 'g');
+          const currentText = result;
+          let match;
+          
+          while ((match = regex.exec(currentText)) !== null) {
+            const matchStart = match.index;
+            const matchEnd = matchStart + match[0]!.length;
+            
+            // Double-check: verify this is actually a whole word match
+            // (safety check in case pattern was created incorrectly)
+            // Also check that we're not matching across HTML tag boundaries
+            const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+            const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+            const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+            
+            // Check if match is within HTML tags (not in actual text content)
+            const isInHTMLTag = 
+              (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+              (matchEnd < currentText.length && currentText[matchEnd] === '>');
+            
+            const isActuallyWholeWord = 
+              !isInHTMLTag &&
+              (matchStart === 0 || !isWordChar(charBefore)) &&
+              (matchEnd === currentText.length || !isWordChar(charAfter));
+            
+            // Only process matches that are actually whole words and not in replaced regions
+            if (isActuallyWholeWord && !isInReplacedRegion(matchStart, matchEnd)) {
+              // Update existing regions' positions BEFORE making the replacement
+              updateRegionsAfterReplacement(matchStart, matchEnd, rule.replacement.length);
+              
+              // Apply replacement
+              const before = result.substring(0, matchStart);
+              const after = result.substring(matchEnd);
+              result = before + rule.replacement + after;
+              
+              // Track the ENTIRE replacement region (including replacement text)
+              const replacementStart = matchStart;
+              const replacementEnd = matchStart + rule.replacement.length;
+              replacedRegions.push({
+                start: replacementStart,
+                end: replacementEnd
+              });
+              
+              break; // Only replace first match for single-instance
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`Error applying replacement rule "${rule.id}":`, error);
+        continue;
+      }
     }
 
-    // Apply each rule to each text node
-    for (const textNode of textNodes) {
-      if (!textNode.textContent) continue;
-
-      let transformedText = textNode.textContent;
-
-      for (const rule of enabledRules) {
-        try {
-          if (rule.isRegex) {
-            // Regex replacement
-            try {
-              const regex = new RegExp(rule.pattern, 'g');
-              transformedText = transformedText.replace(regex, rule.replacement);
-            } catch (regexError) {
-              // Invalid regex - skip this rule and log warning
-              console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
-              continue;
-            }
-          } else {
-            // Simple string replacement
-            // Escape special regex characters for simple string matching
-            const escapedPattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(escapedPattern, 'g');
-            transformedText = transformedText.replace(regex, rule.replacement);
+    // Now process other rules (book and global) with standard behavior
+    // But still respect replaced regions to prevent re-matching
+    for (const rule of otherRules) {
+      try {
+        let pattern: string;
+        // Check if pattern is a simple word (only letters, no special characters)
+        // If so, we should enforce whole-word matching to prevent matching inside words
+        const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+        const shouldEnforceWholeWord = rule.wholeWord || isSimpleWord;
+        
+        if (rule.isRegex) {
+          pattern = rule.pattern;
+          // For regex patterns, if wholeWord is enabled, wrap with word boundaries
+          // But be careful - only do this if the pattern doesn't already have boundaries
+          if (shouldEnforceWholeWord && !rule.pattern.includes('\\b')) {
+            pattern = `\\b${pattern}\\b`;
           }
-        } catch (error) {
-          // Catch any other errors and continue with next rule
-          console.warn(`Error applying replacement rule "${rule.id}":`, error);
+        } else {
+          // Escape special regex characters for simple string matching
+          pattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          
+          // Add word boundaries if wholeWord is enabled OR if it's a simple word
+          if (shouldEnforceWholeWord) {
+            pattern = `\\b${pattern}\\b`;
+          }
+        }
+        
+        // Log for debugging
+        if (isSimpleWord && !rule.wholeWord) {
+          console.log('[REPLACEMENT] Auto-enforcing whole-word for simple word pattern:', {
+            pattern: rule.pattern,
+            finalPattern: pattern,
+            ruleId: rule.id
+          });
+        }
+        
+        try {
+          const regex = new RegExp(pattern, 'g');
+          // Collect all matches first, then apply replacements from right to left
+          // to preserve positions and track replaced regions
+          const matches: Array<{ match: string; index: number }> = [];
+          let match;
+          const currentText = result;
+          
+          while ((match = regex.exec(currentText)) !== null) {
+            const matchStart = match.index;
+            const matchEnd = matchStart + match[0]!.length;
+            
+            // For whole-word rules, double-check that this is actually a whole word
+            // and not inside HTML tags
+            // Also check if this is a simple word pattern (auto-enforced whole-word)
+            const isSimpleWord = !rule.isRegex && /^[a-zA-Z]+$/.test(rule.pattern);
+            const shouldCheckWholeWord = rule.wholeWord || isSimpleWord;
+            
+            if (shouldCheckWholeWord) {
+              const charBefore = matchStart > 0 ? currentText[matchStart - 1] : '';
+              const charAfter = matchEnd < currentText.length ? currentText[matchEnd] : '';
+              const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
+              
+              const isInHTMLTag = 
+                (matchStart > 0 && currentText[matchStart - 1] === '<') ||
+                (matchEnd < currentText.length && currentText[matchEnd] === '>');
+              
+              const isActuallyWholeWord = 
+                !isInHTMLTag &&
+                (matchStart === 0 || !isWordChar(charBefore)) &&
+                (matchEnd === currentText.length || !isWordChar(charAfter));
+              
+              if (!isActuallyWholeWord) {
+                continue; // Skip this match
+              }
+            }
+            
+            // Skip matches that are in replaced regions
+            if (!isInReplacedRegion(matchStart, matchEnd)) {
+              matches.push({
+                match: match[0]!,
+                index: matchStart
+              });
+            }
+          }
+          
+          // Apply replacements from right to left to preserve positions
+          for (let i = matches.length - 1; i >= 0; i--) {
+            const { match, index } = matches[i]!;
+            const matchEnd = index + match.length;
+            
+            // Update existing regions' positions BEFORE making the replacement
+            updateRegionsAfterReplacement(index, matchEnd, rule.replacement.length);
+            
+            // Apply the replacement
+            const before = result.substring(0, index);
+            const after = result.substring(matchEnd);
+            result = before + rule.replacement + after;
+            
+            // Track the ENTIRE replacement region (including replacement text)
+            const replacementStart = index;
+            const replacementEnd = index + rule.replacement.length;
+            replacedRegions.push({
+              start: replacementStart,
+              end: replacementEnd
+            });
+          }
+        } catch (regexError) {
+          console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
           continue;
         }
+      } catch (error) {
+        console.warn(`Error applying replacement rule "${rule.id}":`, error);
+        continue;
       }
-
-      textNode.textContent = transformedText;
     }
 
     console.log('[REPLACEMENT] Transformation complete');
 
-    // Serialize back to HTML string
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(doc);
+    return result;
   },
 };
 
@@ -139,20 +414,40 @@ export interface CreateReplacementRuleOptions {
   isRegex?: boolean;
   enabled?: boolean;
   order?: number;
+  singleInstance?: boolean; // If true, only replace the specific occurrence
+  sectionHref?: string; // Section where the single-instance replacement applies
+  occurrenceIndex?: number; // Which occurrence in the section (0-based)
+  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
 }
 
 /**
  * Creates a new replacement rule with default values
  */
 export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
-  return {
+  // For single-instance replacements, default to whole-word matching
+  // This ensures only standalone words are replaced, not substrings
+  const defaultWholeWord = options.singleInstance ? true : false;
+  
+  const rule: ReplacementRule = {
     id: uniqueId(),
     pattern: options.pattern,
     replacement: options.replacement,
     isRegex: options.isRegex ?? false,
     enabled: options.enabled ?? true,
     order: options.order ?? 1000, // Default to high order (applied last)
+    singleInstance: options.singleInstance ?? false,
+    wholeWord: options.wholeWord ?? defaultWholeWord,
   };
+  
+  // Add single-instance specific fields if provided
+  if (options.sectionHref) {
+    rule.sectionHref = options.sectionHref;
+  }
+  if (typeof options.occurrenceIndex === 'number') {
+    rule.occurrenceIndex = options.occurrenceIndex;
+  }
+  
+  return rule;
 }
 
 /**
@@ -212,8 +507,8 @@ export async function addReplacementRule(
 
   switch (scope) {
     case 'single':
-      // Apply only to current book view (temporary, not persisted)
-      await addReplacementRuleToBook(envConfig, bookKey, rule, false);
+      // Single-instance replacement: persisted in book config for refresh persistence
+      await addReplacementRuleToBook(envConfig, bookKey, rule, true);
       break;
     case 'book':
       // Apply to entire book (persisted in book config)
@@ -249,19 +544,26 @@ async function addReplacementRuleToBook(
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
   
-  // Check if rule with same pattern already exists
-  const existingRule = existingRules.find(
-    (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex,
-  );
-
-  if (existingRule) {
-    // Update existing rule instead of creating duplicate
-    existingRule.replacement = rule.replacement;
-    existingRule.enabled = rule.enabled;
-    existingRule.order = rule.order;
-  } else {
-    // Add new rule
+  if (rule.singleInstance) {
+    // Single-instance rules: ALWAYS create new rule (each has unique ID)
+    // Don't try to merge - after DOM modifications, occurrence indices shift
+    // and we can't reliably detect duplicates
     existingRules.push(rule);
+  } else {
+    // Non-single-instance: check if same pattern exists to avoid duplicates
+    const existingRule = existingRules.find(
+      (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex && !r.singleInstance,
+    );
+
+    if (existingRule) {
+      // Update existing rule
+      existingRule.replacement = rule.replacement;
+      existingRule.enabled = rule.enabled;
+      existingRule.order = rule.order;
+    } else {
+      // Add new rule
+      existingRules.push(rule);
+    }
   }
 
   // Update viewSettings
