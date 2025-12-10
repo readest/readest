@@ -210,7 +210,7 @@ export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
 
-// generated with copilot
+// copilot assisted
 export interface ReplacementRule {
   id: string;
   pattern: string;
