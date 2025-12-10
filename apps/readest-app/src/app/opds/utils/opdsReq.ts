@@ -1,6 +1,7 @@
 import { md5 } from 'js-md5';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 
 /**
  * Extract username and password from URL credentials
@@ -184,6 +185,7 @@ export const probeAuth = async (
 
   const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
   const headers: Record<string, string> = {
+    'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml',
   };
 
@@ -241,6 +243,7 @@ export const fetchWithAuth = async (
 
   const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
   const headers: Record<string, string> = {
+    'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml',
     ...(options.headers as Record<string, string>),
   };

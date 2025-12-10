@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "སྤྲིན་གནས་སྣོད་གསོག་ལུས་སྐོར།",
   "Rename Group": "ཚོགས་མིང་བསྒྱུར་བ།",
   "From Directory": "སྐོར་འདེམས་པ་ནས།",
-  "Successfully imported {{count}} book(s)_other": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་ {{count}} དེབ་འདེམས་སོང་"
+  "Successfully imported {{count}} book(s)_other": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་ {{count}} དེབ་འདེམས་སོང་",
+  "Count": "ཨང་",
+  "Start Page": "ཤོག་ངོས་དང་པོ"
 }

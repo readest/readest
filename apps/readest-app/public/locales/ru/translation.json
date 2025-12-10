@@ -783,5 +783,7 @@
   "Successfully imported {{count}} book(s)_one": "Успешно импортирован 1 книга",
   "Successfully imported {{count}} book(s)_few": "Успешно импортировано {{count}} книги",
   "Successfully imported {{count}} book(s)_many": "Успешно импортировано {{count}} книг",
-  "Successfully imported {{count}} book(s)_other": "Успешно импортировано {{count}} книг"
+  "Successfully imported {{count}} book(s)_other": "Успешно импортировано {{count}} книг",
+  "Count": "Количество",
+  "Start Page": "Начальная страница"
 }

@@ -763,5 +763,7 @@
   "Rename Group": "කණ්ඩායම නැවත නම් කරන්න",
   "From Directory": "ෆෝල්ඩරයෙන්",
   "Successfully imported {{count}} book(s)_one": "සාර්ථකව ආයාත කළ 1 පොත",
-  "Successfully imported {{count}} book(s)_other": "සාර්ථකව ආයාත කළ {{count}} පොත්"
+  "Successfully imported {{count}} book(s)_other": "සාර්ථකව ආයාත කළ {{count}} පොත්",
+  "Count": "ගණන",
+  "Start Page": "ආරම්භක පිටුව"
 }

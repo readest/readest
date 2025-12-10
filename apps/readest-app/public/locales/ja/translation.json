@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "クラウドストレージ使用量",
   "Rename Group": "グループ名を変更",
   "From Directory": "ディレクトリから",
-  "Successfully imported {{count}} book(s)_other": "成功裏に{{count}}冊の本をインポートしました"
+  "Successfully imported {{count}} book(s)_other": "成功裏に{{count}}冊の本をインポートしました",
+  "Count": "件数",
+  "Start Page": "開始ページ"
 }

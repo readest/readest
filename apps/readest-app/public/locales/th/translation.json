@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "การใช้งานพื้นที่เก็บข้อมูลคลาวด์",
   "Rename Group": "เปลี่ยนชื่อกลุ่ม",
   "From Directory": "จากไดเรกทอรี",
-  "Successfully imported {{count}} book(s)_other": "นำเข้า {{count}} หนังสือเรียบร้อยแล้ว"
+  "Successfully imported {{count}} book(s)_other": "นำเข้า {{count}} หนังสือเรียบร้อยแล้ว",
+  "Count": "นับ",
+  "Start Page": "หน้าเริ่มต้น"
 }

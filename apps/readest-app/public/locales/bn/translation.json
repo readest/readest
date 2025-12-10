@@ -763,5 +763,7 @@
   "Rename Group": "গ্রুপের নাম পরিবর্তন করুন",
   "From Directory": "ডিরেক্টরি থেকে",
   "Successfully imported {{count}} book(s)_one": "সফলভাবে ১টি বই আমদানি করা হয়েছে",
-  "Successfully imported {{count}} book(s)_other": "সফলভাবে {{count}}টি বই আমদানি করা হয়েছে"
+  "Successfully imported {{count}} book(s)_other": "সফলভাবে {{count}}টি বই আমদানি করা হয়েছে",
+  "Count": "গণনা",
+  "Start Page": "শুরু পৃষ্ঠা"
 }
