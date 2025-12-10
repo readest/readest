@@ -22,6 +22,13 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     icon: '🏛️',
   },
   {
+    id: 'standardebooks',
+    name: 'Standard Ebooks',
+    url: 'https://standardebooks.org/feeds/opds',
+    description: 'Free and liberated ebooks, carefully produced for the true book lover',
+    icon: '📚',
+  },
+  {
     id: 'manybooks',
     name: 'ManyBooks',
     url: 'https://manybooks.net/opds/index.php',
@@ -29,19 +36,11 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     icon: '📖',
   },
   {
-    id: 'standardebooks',
-    name: 'Standard Ebooks',
-    url: 'https://standardebooks.org/feeds/opds',
-    description: 'Carefully formatted and lovingly produced free ebooks',
-    icon: '📚',
-    disabled: true,
-  },
-  {
     id: 'unglue.it',
     name: 'Unglue.it',
     url: 'https://unglue.it/api/opds/',
     description: 'Free ebooks from authors who have "unglued" their books',
-    icon: '📚',
+    icon: '🔓',
   },
 ];
 
