@@ -104,7 +104,7 @@ describe('ReplacementOptions Component', () => {
     it('should toggle when clicked', async () => {
       const { container } = render(<ReplacementOptions {...defaultProps} />);
 
-      const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(checkbox.checked).toBe(true);
 
       fireEvent.click(checkbox);
@@ -115,7 +115,7 @@ describe('ReplacementOptions Component', () => {
     });
 
     it('should pass case sensitivity value to onConfirm when checked', async () => {
-      const { container } = render(<ReplacementOptions {...defaultProps} />);
+      render(<ReplacementOptions {...defaultProps} />);
 
       // Enter replacement text
       const input = screen.getByPlaceholderText('Enter replacement text...');
@@ -415,7 +415,7 @@ describe('ReplacementOptions Component', () => {
     it('should complete full replacement flow with all options', () => {
       // This test demonstrates the complete EPUB replacement flow.
       // For non-EPUB books, the button is disabled, so this flow never occurs.
-      const { container } = render(<ReplacementOptions {...defaultProps} selectedText="Where" />);
+      render(<ReplacementOptions {...defaultProps} selectedText="Where" />);
 
       // 1. Enter replacement text
       const input = screen.getByPlaceholderText('Enter replacement text...');
@@ -758,7 +758,7 @@ describe('Replacement Propagation Integration Tests', () => {
         }
       });
 
-      const { container } = render(<ReplacementOptions 
+      render(<ReplacementOptions 
         isVertical={false}
         style={{}}
         selectedText="Test"
