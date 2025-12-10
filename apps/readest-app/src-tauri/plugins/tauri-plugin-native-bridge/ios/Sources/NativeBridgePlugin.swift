@@ -706,6 +706,10 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  @objc public func iap_is_available(_ invoke: Invoke) {
+    invoke.resolve(["available": true])
+  }
+
   @objc public func iap_initialize(_ invoke: Invoke) {
     StoreKitManager.shared.initialize()
     invoke.resolve(["success": true])

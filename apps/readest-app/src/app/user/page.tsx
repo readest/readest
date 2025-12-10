@@ -73,7 +73,7 @@ const ProfilePage = () => {
   const { handleLogout, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
     useUserActions();
 
-  const { availablePlans } = useAvailablePlans({
+  const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
     onError: useCallback(
       (message: string) => {
@@ -284,12 +284,17 @@ const ProfilePage = () => {
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
-                        onSubscribe={appService.hasIAP ? handleIAPSubscribe : handleStripeSubscribe}
+                        onSubscribe={
+                          appService.hasIAP && iapAvailable
+                            ? handleIAPSubscribe
+                            : handleStripeSubscribe
+                        }
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
+                        iapAvailable={iapAvailable}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}
                         onUpdateEmail={handleUpdateEmail}
