@@ -20,6 +20,12 @@ class ESBuildAndJSDOMCompatibleTextEncoder extends TextEncoder {
 
 global.TextEncoder = ESBuildAndJSDOMCompatibleTextEncoder;
 
+// Make ReplacementOptions visible during tests by running rAF immediately
+global.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+  cb(0); 
+  return 0;
+};
+
 // matchMedia mock
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = (query: string) => ({
