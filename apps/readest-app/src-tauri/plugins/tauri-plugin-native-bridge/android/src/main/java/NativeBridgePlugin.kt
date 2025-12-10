@@ -512,6 +512,14 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     @Command
+    fun iap_is_available(invoke: Invoke) {
+        val isAvailable = billingManager.isBillingAvailable()
+        val result = JSObject()
+        result.put("available", isAvailable)
+        invoke.resolve(result)
+    }
+
+    @Command
     fun iap_initialize(invoke: Invoke) {
         billingManager.initialize { success ->
             val result = JSObject()

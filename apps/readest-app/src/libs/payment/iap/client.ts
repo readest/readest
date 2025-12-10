@@ -17,6 +17,11 @@ export const getPurchaseVerifyParams = (purchase: IAPPurchase) => {
   });
 };
 
+export const isIAPAvailable = async () => {
+  const available = await IAPService.isAvailable();
+  return available;
+};
+
 export const purchaseIAPProduct = async (productId: string) => {
   const iapService = new IAPService();
   const purchase = await iapService.purchaseProduct(productId);
