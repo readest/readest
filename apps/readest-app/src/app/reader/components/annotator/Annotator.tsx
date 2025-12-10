@@ -576,8 +576,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
       
       // Check boundaries
-      const hasBoundaryBefore = startOffset === 0 || !isWordChar(charBefore);
-      const hasBoundaryAfter = endOffset === fullText.length || !isWordChar(charAfter);
+      const hasBoundaryBefore = startOffset === 0 || !isWordChar(charBefore || '');
+      const hasBoundaryAfter = endOffset === fullText.length || !isWordChar(charAfter || '');
       
       // Also verify the selection itself contains word characters
       const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
@@ -686,6 +686,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               replacement: replacementText,
               isRegex: false,
               enabled: true,
+              caseSensitive,
               singleInstance: true,
               sectionHref,
               occurrenceIndex,
@@ -705,7 +706,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       } else {
         // For book-wide and global: use the transformer approach
         const backendScope = scope === 'book' ? 'book' : 'global';
-        
+        const range = selection.range;
+        const isValidWholeWord = range ? isWholeWord(range, selection.text) : false;
+        if (!isValidWholeWord) {
+          eventDispatcher.dispatch('toast', {
+            type: 'warning',
+            message: `Cannot replace "${selection.text}" - please select a complete word. Partial word selections (like "and" in "England" or "errand") are not supported.`,
+            timeout: 5000,
+          });
+          return;
+        }
         await addReplacementRule(
           envConfig,
           bookKey,
@@ -714,7 +724,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             replacement: replacementText,
             isRegex: false,
             enabled: true,
+            caseSensitive,
             singleInstance: false,
+              wholeWord: true,
           },
           backendScope as 'book' | 'global',
         );

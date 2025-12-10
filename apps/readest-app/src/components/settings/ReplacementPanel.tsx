@@ -95,7 +95,8 @@ const ReplacementPanel: React.FC = () => {
                 <div key={r.id} className='p-2 flex w-full items-start justify-between'>
                   <div className='min-w-0'>
                     <div className='font-medium text-sm truncate'>{r.pattern}</div>
-                    <div className='text-xs text-base-content/70 break-all'>{r.replacement}</div>
+                    <div className='text-xs text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
+                    <div className='text-xs text-base-content/60 mt-1'>{_('Case sensitive:')}&nbsp;<span className='font-medium'>{r.caseSensitive !== false ? _('Yes') : _('No')}</span></div>
                   </div>
                   <div className='flex items-center gap-2 ml-4'>
                     <button
@@ -120,8 +121,11 @@ const ReplacementPanel: React.FC = () => {
                             timeout: 3000,
                           });
                           if (sideBarBookKey) {
-                            const { recreateViewer } = useReaderStore.getState();
-                            await recreateViewer(environmentConfig, sideBarBookKey);
+                            const { clearViewState, initViewState } = useReaderStore.getState();
+                            const id = sideBarBookKey.split('-')[0]!;
+                            // Hard reload: clear and reinit viewer to load from original source
+                            clearViewState(sideBarBookKey);
+                            await initViewState(environmentConfig, id, sideBarBookKey, true, true);
                           }
                         } catch (err) {
                           // eslint-disable-next-line no-console

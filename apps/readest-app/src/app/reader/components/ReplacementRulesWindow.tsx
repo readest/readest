@@ -30,6 +30,7 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { settings } = useSettingsStore();
   const { getViewSettings } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
+  const { getConfig } = useBookDataStore();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -57,23 +58,45 @@ export const ReplacementRulesWindow: React.FC = () => {
     };
   }, []);
 
-  // const globalRules = settings?.globalViewSettings?.replacementRules || [];
   const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
   const inMemoryRules = viewSettings?.replacementRules || [];
-  const persistedConfig = sideBarBookKey ? useBookDataStore.getState().getConfig(sideBarBookKey) : null;
+  const persistedConfig = sideBarBookKey ? getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
-  // Single rules = in-memory rules that are not persisted in the book config
-  const singleRules = inMemoryRules.filter((r: any) => !persistedBookRules.find((p: any) => p.id === r.id));
-  // Book rules = persisted book rules + global rules (merged for display)
-  // Remove duplicates: if a pattern exists in both book and global rules, keep the book rule
+
+  // Prefer persisted rules; fall back to in-memory so we show unsaved edits in tests/dev
+  const bookRuleSource = persistedBookRules.length ? persistedBookRules : inMemoryRules;
+
+  const singleRules = bookRuleSource.filter((r: ReplacementRule) => !!r.singleInstance);
+  const bookScopedRules = bookRuleSource.filter((r: ReplacementRule) => !r.singleInstance);
+
+  // Book rules = book-scoped rules + global rules (merged for display)
+  // Merge logic:
+  // 1. Include all book-scoped rules (including disabled overrides of global rules)
+  // 2. Include global rules that aren't overridden at book level
+  // 3. Filter out orphaned overrides (disabled global rules that no longer exist globally)
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
-  const mergedRules = persistedBookRules.concat(
-    globalRules.filter((gr: any) => !persistedBookRules.find((br: any) => br.pattern === gr.pattern))
+  
+  // Create a map of global rule IDs to identify overridden rules
+  const globalRuleIds = new Set(globalRules.map((gr: any) => gr.id));
+  
+  // Filter out book rules that are disabled overrides of non-existent global rules
+  const validBookRules = bookScopedRules.filter((br: any) => {
+    // If it's enabled, it's a real book rule
+    if (br.enabled !== false) return true;
+    // If it's disabled and the global rule still exists, keep it (it's an override)
+    // If the global rule doesn't exist, filter it out (orphaned override)
+    return globalRuleIds.has(br.id);
+  });
+  
+  const mergedRules = validBookRules.concat(
+    globalRules.filter((gr: any) => !validBookRules.find((br: any) => br.id === gr.id))
   );
   
   // Create a map to track the scope of each rule for editing/deleting
-  const getRuleScope = (rule: any): 'book' | 'global' => {
-    return persistedBookRules.find((br: any) => br.id === rule.id) ? 'book' : 'global';
+  const getRuleScope = (rule: any): 'single' | 'book' | 'global' => {
+    if (rule.singleInstance) return 'single';
+    // If the rule is in validBookRules and originates from global, it's an override
+    return globalRuleIds.has(rule.id) ? 'global' : 'book';
   };
   
   const bookRules = mergedRules;
@@ -122,8 +145,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -140,7 +166,7 @@ export const ReplacementRulesWindow: React.FC = () => {
     console.log('Deleting rule', ruleId, 'scope', scope);
     const disableGlobalRuleForBook = async (rule: ReplacementRule) => {
       const { getViewSettings, setViewSettings } = useReaderStore.getState();
-      const { getConfig, saveConfig } = useBookDataStore.getState();
+      const { getConfig, saveConfig, setConfig } = useBookDataStore.getState();
       const { settings } = useSettingsStore.getState();
 
       if (!sideBarBookKey) return;
@@ -160,6 +186,8 @@ export const ReplacementRulesWindow: React.FC = () => {
       if (config) {
         const updatedConfig = { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() };
         await saveConfig(environmentConfig, sideBarBookKey, updatedConfig, settings);
+        // Update the in-memory config to ensure UI reflects the changes immediately
+        setConfig(sideBarBookKey, updatedConfig);
       }
     };
 
@@ -169,6 +197,20 @@ export const ReplacementRulesWindow: React.FC = () => {
         // Disable the global rule only for this book by overriding it locally
         const globalRule = (settings?.globalViewSettings?.replacementRules || []).find((r) => r.id === ruleId);
         if (globalRule) {
+          // Check if the rule is already disabled for this book
+          const existingRules = viewSettings?.replacementRules || [];
+          const existingOverride = existingRules.find((r) => r.id === ruleId && r.enabled === false);
+          
+          if (existingOverride) {
+            // Rule is already disabled, show informational message
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              message: _('This global rule is already disabled for this book. To permanently delete it, go to Settings in the Library page.'),
+              timeout: 4000,
+            });
+            return;
+          }
+          
           await disableGlobalRuleForBook(globalRule);
         }
       } else {
@@ -184,8 +226,11 @@ export const ReplacementRulesWindow: React.FC = () => {
         timeout: 3000,
       });
       if (sideBarBookKey) {
-        const { recreateViewer } = useReaderStore.getState();
-        await recreateViewer(environmentConfig, sideBarBookKey);
+        const { clearViewState, initViewState } = useReaderStore.getState();
+        const id = sideBarBookKey.split('-')[0]!;
+        // Hard reload: clear and reinit viewer to load from original source
+        clearViewState(sideBarBookKey);
+        await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -209,7 +254,7 @@ export const ReplacementRulesWindow: React.FC = () => {
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
           <div>
-            <h3 className='text-sm font-semibold'>{_('Single Rules')}</h3>
+            <h3 className='text-sm font-semibold'>{_('Single Instance Rules')}</h3>
             {singleRules.length === 0 ? (
               <p className='text-sm text-base-content/70 mt-2'>{_('No single replacement rules')}</p>
             ) : (
@@ -246,6 +291,7 @@ export const ReplacementRulesWindow: React.FC = () => {
                         <div className='flex flex-col'>
                           <div className='font-medium text-base leading-tight'>{r.pattern}</div>
                           <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
+                          <div className='text-xs text-base-content/60 mt-1'>{_('Scope:')}&nbsp;<span className='font-medium'>Single Instance</span>&nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;<span className='font-medium'>{r.caseSensitive !== false ? _('Yes') : _('No')}</span></div>
                         </div>
                         <div className='flex items-center gap-2'>
                           <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'single')} aria-label={_('Edit')}>
@@ -296,16 +342,17 @@ export const ReplacementRulesWindow: React.FC = () => {
                             <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
                             <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
                           </div>
+                      </div>
+                    ) : (
+                      <div className='flex items-center justify-between'>
+                        <div className='flex flex-col'>
+                          <div className='font-medium text-base leading-tight'>{r.pattern}</div>
+                          <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
+                          <div className='text-xs text-base-content/60 mt-1'>{_('Scope:')}&nbsp;<span className='font-medium'>{getRuleScope(r) === 'book' ? _('Book') : _('Global')}</span>{getRuleScope(r) === 'global' && (r.enabled ? <span className='ml-2 text-success'>✓ {_('Enabled')}</span> : <span className='ml-2 text-error'>✗ {_('Disabled')}</span>)}&nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;<span className='font-medium'>{r.caseSensitive !== false ? _('Yes') : _('No')}</span></div>
                         </div>
-                      ) : (
-                        <div className='flex items-center justify-between'>
-                          <div className='flex flex-col'>
-                            <div className='font-medium text-base leading-tight'>{r.pattern}</div>
-                            <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, ruleScope)} aria-label={_('Edit')}>
-                              <RiEditLine />
+                        <div className='flex items-center gap-2'>
+                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, getRuleScope(r))} aria-label={_('Edit')}>
+                            <RiEditLine />
                             </button>
                             <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, ruleScope)} aria-label={_('Delete')}>
                               <RiDeleteBin7Line />
