@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { ReplacementRule } from '@/types/book';
 
 // ------------------------------
 // NEXT.JS ROUTER MOCK 
@@ -76,7 +77,7 @@ describe('ReplacementRulesWindow', () => {
     });
     useReaderStore.setState({ viewStates: {} as unknown as Parameters<typeof useReaderStore.setState>[0] });
     useSidebarStore.setState({ sideBarBookKey: null });
-    useBookDataStore.setState({ booksData: {} } as any);
+    useBookDataStore.setState({ booksData: {} } as unknown as Parameters<typeof useBookDataStore.setState>[0] );
   });
 
   afterEach(() => {
@@ -132,10 +133,10 @@ describe('ReplacementRulesWindow', () => {
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as any,
+      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
     });
 
-    const singleRule = {
+    const singleRule: ReplacementRule = {
       id: 's1',
       pattern: 'only-once',
       replacement: 'single-hit',
@@ -144,9 +145,9 @@ describe('ReplacementRulesWindow', () => {
       caseSensitive: true,
       order: 1,
       singleInstance: true,
-    } as any;
+    };
 
-    const bookRule = {
+    const bookRule: ReplacementRule = {
       id: 'b1',
       pattern: 'book-wide',
       replacement: 'book-hit',
@@ -154,7 +155,7 @@ describe('ReplacementRulesWindow', () => {
       isRegex: false,
       caseSensitive: true,
       order: 2,
-    } as any;
+    };
 
     useReaderStore.setState({
       viewStates: {
@@ -163,7 +164,7 @@ describe('ReplacementRulesWindow', () => {
             replacementRules: [singleRule, bookRule],
           },
         },
-      } as any,
+      } as unknown as Parameters<typeof useReaderStore.setState>[0],
     });
 
     useBookDataStore.setState({
@@ -181,7 +182,7 @@ describe('ReplacementRulesWindow', () => {
           isFixedLayout: false,
         },
       },
-    } as any);
+    } as unknown as Parameters<typeof useBookDataStore.setState>[0] );
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 

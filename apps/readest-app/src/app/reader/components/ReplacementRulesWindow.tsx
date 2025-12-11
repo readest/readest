@@ -32,11 +32,12 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { sideBarBookKey } = useSidebarStore();
 
   // Initialize from window flag in case the open request fired before mount
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const [isOpen, setIsOpen] = useState(() => 
-    typeof window !== 'undefined' ? !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ : false
-  );
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - custom window property
+    return !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__;
+  });
 
   useEffect(() => {
     const handleCustomEvent = (event: Event) => {
