@@ -153,6 +153,7 @@ const FoliateViewer: React.FC<{
                 'simplecc',
                 'replacement',
               ],
+              sectionHref: detail.name, // Pass section href for single-instance replacements
             };
             return Promise.resolve(transformContent(ctx));
           }

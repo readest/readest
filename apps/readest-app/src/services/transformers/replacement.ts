@@ -1,4 +1,4 @@
-// copilot generated
+// used copilot for assistance
 import type { Transformer } from './types';
 import { ReplacementRule, ViewSettings } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
@@ -8,182 +8,312 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { uniqueId } from '@/utils/misc';
 
-/**
- * Replacement transformer that applies user-defined text replacement rules.
- * Supports both simple string replacements and regex patterns.
- * Rules are applied in order (by order field), with per-book rules taking precedence over global rules.
- */
+
+// Whole-word enforcement for ALL rules (literal OR regex)
+// Case-sensitive, with Unicode-aware boundaries for non-ASCII patterns
+interface NormalizedPattern {
+  source: string;
+  flags: string;
+}
+
+function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
+  const hasUnicode = /[^\x00-\x7F]/.test(pattern);
+  const unicodeBoundary = {
+    start: '(?<![\\p{L}\\p{N}_])',
+    end: '(?![\\p{L}\\p{N}_])',
+  };
+
+  let flags = '';
+  if (hasUnicode) flags += 'u';
+  flags += 'g';
+  if (!caseSensitive) flags += 'i';
+
+  if (isRegex) {
+    // Do NOT escape regex patterns; just add boundaries if missing
+    if (pattern.includes('\\b')) {
+      return { source: pattern, flags };
+    }
+    const source = hasUnicode
+      ? `${unicodeBoundary.start}${pattern}${unicodeBoundary.end}`
+      : `\\b${pattern}\\b`;
+    return { source, flags };
+  }
+
+  // Escape literals, then add whole-word boundaries
+  const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+  const source = hasUnicode
+    ? `${unicodeBoundary.start}${escaped}${unicodeBoundary.end}`
+    : `\\b${escaped}\\b`;
+  return { source, flags };
+}
+
+// HTML attribute / tag safety
+// Prevent replacement inside <tag attr="..."> and inside the tag name
+function isInsideHTMLTag(text: string, start: number, end: number): boolean {
+  const before = text[start - 1] ?? '';
+  const after = text[end] ?? '';
+  if (before === '<') return true;
+  if (after === '>') return true;
+  return false;
+}
+
+// Checks if a position is inside <script>...</script> or <style>...</style>
+function isInsideScriptOrStyle(text: string, index: number): boolean {
+  const lower = text.toLowerCase();
+  const lastScriptOpen = lower.lastIndexOf('<script', index);
+  const lastScriptClose = lower.lastIndexOf('</script', index);
+  if (lastScriptOpen !== -1 && lastScriptOpen > lastScriptClose) return true;
+
+  const lastStyleOpen = lower.lastIndexOf('<style', index);
+  const lastStyleClose = lower.lastIndexOf('</style', index);
+  if (lastStyleOpen !== -1 && lastStyleOpen > lastStyleClose) return true;
+
+  return false;
+}
+
+
+// Replacement region tracking: prevents re-matching replacement output
+interface Region { start: number; end: number; }
+
+function isInReplacedRegion(start: number, end: number, regions: Region[]): boolean {
+  return regions.some(r => start < r.end && end > r.start);
+}
+
+function shiftRegionsAfterReplacement(
+  regions: Region[],
+  replaceStart: number,
+  replaceEnd: number,
+  replacementLength: number
+) {
+  const diff = replacementLength - (replaceEnd - replaceStart);
+
+  for (const r of regions) {
+    if (r.start >= replaceEnd) {
+      r.start += diff;
+      r.end += diff;
+    }
+  }
+}
+
+
+// Multi-replacement (all occurrences except inside HTML tags/attributes)
+function applyMultiReplacement(
+  text: string,
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
+  replacedRegions: Region[]
+): string {
+  let regex: RegExp;
+  try {
+    regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
+  } catch (e) {
+    // Invalid regex; skip this rule
+    return text;
+  }
+
+  const matches: { index: number; length: number }[] = [];
+
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+
+    // For literal (non-regex) rules, ensure the matched string exactly equals the pattern.
+    // If caseSensitive is false, compare in lowercase. If true or unspecified, compare literally.
+    if (!rule.isRegex) {
+      const match = m[0];
+      const pattern = rule.pattern;
+
+      const isCaseSensitive = rule.caseSensitive !== false;
+
+      const isMatch = isCaseSensitive
+        ? match === pattern
+        : match.toLowerCase() === pattern.toLowerCase();
+
+      if (!isMatch) continue;
+    }
+
+
+    if (isInsideHTMLTag(text, start, end)) continue;
+    if (isInsideScriptOrStyle(text, start)) continue;
+    if (isInReplacedRegion(start, end, replacedRegions)) continue;
+
+    matches.push({ index: start, length: m[0].length });
+  }
+
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const match = matches[i];
+    if (!match) continue;
+    const { index, length } = match;
+    const end = index + length;
+
+    shiftRegionsAfterReplacement(replacedRegions, index, end, rule.replacement.length);
+
+    text = text.slice(0, index) + rule.replacement + text.slice(end);
+
+    replacedRegions.push({ start: index, end: index + rule.replacement.length });
+  }
+
+  return text;
+}
+
+
+// Single-instance replacement (Nth occurrence only)
+function applySingleInstance(
+  text: string,
+  pattern: NormalizedPattern,
+  replacement: string,
+  occurrenceIndex: number | undefined,
+  replacedRegions: Region[],
+  isRegex: boolean,
+  rawPattern: string
+): string {
+  let regex: RegExp;
+  try {
+    regex = new RegExp(pattern.source, pattern.flags || 'g');
+  } catch (e) {
+    return text;
+  }
+
+  const matches: { start: number; end: number }[] = [];
+
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    
+    // Case sensitive by default for single-instance replacements
+    if (!isRegex && m[0] !== rawPattern) continue;
+    if (isInsideHTMLTag(text, start, end)) continue;
+    if (isInsideScriptOrStyle(text, start)) continue;
+    if (isInReplacedRegion(start, end, replacedRegions)) continue;
+
+    matches.push({ start, end });
+  }
+
+  const targetIndex = occurrenceIndex ?? 0;
+  const target = matches[targetIndex];
+  if (!target) return text;
+
+  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, replacement.length);
+
+  text = text.slice(0, target.start) + replacement + text.slice(target.end);
+
+  replacedRegions.push({ start: target.start, end: target.start + replacement.length });
+
+  return text;
+}
+
+
+// Transformer
 export const replacementTransformer: Transformer = {
   name: 'replacement',
 
   transform: async (ctx) => {
-    // Get merged rules (global + book rules)
-    const globalRules = useSettingsStore.getState().settings?.globalViewSettings?.replacementRules;
-    const bookRules = ctx.viewSettings.replacementRules;
-    const replacementRules = mergeReplacementRules(globalRules, bookRules);
-        
-    
-    // Log when transformer is called
-    console.log('[REPLACEMENT] Transformer called!', {
-      bookKey: ctx.bookKey,
-      hasGlobalRules: !!globalRules,
-      globalRuleCount: globalRules?.length || 0,
-      hasBookRules: !!bookRules,
-      bookRuleCount: bookRules?.length || 0,
-      hasMergedRules: !!replacementRules,
-      mergedRuleCount: replacementRules.length
-    });
-    
-    // If no rules defined, return content unchanged
-    if (!replacementRules || replacementRules.length === 0) {
-      console.log('[REPLACEMENT] No rules defined, returning unchanged');
-      return ctx.content;
-    }
+    const globalRaw = useSettingsStore.getState().settings?.globalViewSettings?.replacementRules;
+    const bookRaw = ctx.viewSettings.replacementRules;
 
-    // Filter enabled rules and sort by order
-    const enabledRules = replacementRules
-      .filter((rule) => rule.enabled)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const merged = mergeReplacementRules(globalRaw, bookRaw);
+    if (!merged || merged.length === 0) return ctx.content;
 
-    if (enabledRules.length === 0) {
-      console.log('[REPLACEMENT] No enabled rules, returning unchanged');
-      return ctx.content;
-    }
+    const processed = merged
+      .filter(r => r.enabled && r.pattern.trim().length > 0)
+      .map(r => ({
+        ...r,
+        normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false)
+      }));
 
-    console.log('[REPLACEMENT] Applying', enabledRules.length, 'rules:', enabledRules.map(r => r.pattern));
+    if (processed.length === 0) return ctx.content;
 
-    // Parse HTML to work with text nodes only (preserve HTML structure)
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(ctx.content, 'text/html');
+    const singleRules = processed.filter(r => r.singleInstance);
+    const bookRules = processed.filter(r => !r.singleInstance && !r.global);
+    const globalRules = processed.filter(r => !r.singleInstance && r.global);
 
-    // Create tree walker to iterate through text nodes
-    const walker = doc.createTreeWalker(
-      doc.body || doc.documentElement,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: (node) => {
-          const parent = node.parentElement;
-          // Skip script and style tags
-          if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        },
-      },
-    );
+    const ordered = [
+      ...singleRules,
+      ...bookRules,
+      ...globalRules,
+    ];
 
-    const textNodes: Text[] = [];
-    let currentNode: Node | null;
-    while ((currentNode = walker.nextNode())) {
-      textNodes.push(currentNode as Text);
-    }
+    let text = ctx.content;
+    const replacedRegions: Region[] = [];
 
-    // Apply each rule to each text node
-    for (const textNode of textNodes) {
-      if (!textNode.textContent) continue;
-
-      let transformedText = textNode.textContent;
-
-      for (const rule of enabledRules) {
-        try {
-          if (rule.isRegex) {
-            // Regex replacement
-            try {
-              const regex = new RegExp(rule.pattern, 'g');
-              transformedText = transformedText.replace(regex, rule.replacement);
-            } catch (regexError) {
-              // Invalid regex - skip this rule and log warning
-              console.warn(`Invalid regex pattern in replacement rule "${rule.id}": ${rule.pattern}`, regexError);
-              continue;
-            }
-          } else {
-            // Simple string replacement
-            // Escape special regex characters for simple string matching
-            const escapedPattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(escapedPattern, 'g');
-            transformedText = transformedText.replace(regex, rule.replacement);
-          }
-        } catch (_error) {
-          // Catch any other errors and continue with next rule
-          console.warn(`Error applying replacement rule "${rule.id}":`, _error);
-          continue;
-        }
+    for (const rule of ordered) {
+      if (rule.singleInstance && rule.sectionHref) {
+        const ruleBase = rule.sectionHref.split('#')[0];
+        const ctxBase = ctx.sectionHref?.split('#')[0];
+        if (ctxBase !== ruleBase) continue;
       }
 
-      textNode.textContent = transformedText;
+      if (rule.singleInstance) {
+        text = applySingleInstance(
+          text,
+          rule.normalizedPattern,
+          rule.replacement,
+          rule.occurrenceIndex,
+          replacedRegions,
+          rule.isRegex,
+          rule.pattern
+        );
+      } else {
+        text = applyMultiReplacement(
+          text,
+          rule,
+          replacedRegions
+        );
+      }
     }
 
-    console.log('[REPLACEMENT] Transformation complete');
-
-    // Serialize back to HTML string
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(doc);
-  },
+    return text;
+  }
 };
 
-// ============================================================================
-// Replacement Rules Management Functions
-// ============================================================================
 
-/**
- * Scope for applying replacement rules
- */
+// Rule management 
 export type ReplacementRuleScope = 'single' | 'book' | 'global';
 
-/**
- * Options for creating a replacement rule
- */
 export interface CreateReplacementRuleOptions {
   pattern: string;
   replacement: string;
   isRegex?: boolean;
   enabled?: boolean;
+  caseSensitive?: boolean;
   order?: number;
+  singleInstance?: boolean;
+  sectionHref?: string;
+  occurrenceIndex?: number;
+  wholeWord?: boolean;
+  global?: boolean;
 }
 
-/**
- * Creates a new replacement rule with default values
- */
-export function createReplacementRule(options: CreateReplacementRuleOptions): ReplacementRule {
+export function createReplacementRule(opts: CreateReplacementRuleOptions): ReplacementRule {
   return {
     id: uniqueId(),
-    pattern: options.pattern,
-    replacement: options.replacement,
-    isRegex: options.isRegex ?? false,
-    enabled: options.enabled ?? true,
-    order: options.order ?? 1000, // Default to high order (applied last)
+    pattern: opts.pattern,
+    replacement: opts.replacement,
+    isRegex: opts.isRegex ?? false,
+    enabled: opts.enabled ?? true,
+    caseSensitive: opts.caseSensitive ?? true,
+    order: opts.order ?? 1000,
+    singleInstance: opts.singleInstance ?? false,
+    wholeWord: opts.wholeWord ?? true,
+    sectionHref: opts.sectionHref,
+    occurrenceIndex: opts.occurrenceIndex,
+    global: opts.global ?? false,
   };
 }
 
-/**
- * Merges global and book-specific replacement rules.
- * Book rules take precedence over global rules.
- * Rules are sorted by order (lower numbers first).
- */
 export function mergeReplacementRules(
   globalRules: ReplacementRule[] | undefined,
-  bookRules: ReplacementRule[] | undefined,
+  bookRules: ReplacementRule[] | undefined
 ): ReplacementRule[] {
-  const global = globalRules || [];
-  const book = bookRules || [];
+  const map = new Map<string, ReplacementRule>();
 
-  // Combine rules, with book rules taking precedence (by ID matching)
-  const ruleMap = new Map<string, ReplacementRule>();
+  for (const g of globalRules ?? []) map.set(g.id, g);
+  for (const b of bookRules ?? []) map.set(b.id, b);
 
-  // Add global rules first
-  for (const rule of global) {
-    ruleMap.set(rule.id, rule);
-  }
-
-  // Override with book rules (same ID means book rule wins)
-  for (const rule of book) {
-    ruleMap.set(rule.id, rule);
-  }
-
-  // Convert to array and sort by order
-  const merged = Array.from(ruleMap.values());
-  return merged.sort((a, b) => (a.order || 0) - (b.order || 0));
+  return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
+
 
 /**
  * Gets all active replacement rules for a book (merged global + book rules)
@@ -212,8 +342,8 @@ export async function addReplacementRule(
 
   switch (scope) {
     case 'single':
-      // Apply only to current book view (temporary, not persisted)
-      await addReplacementRuleToBook(envConfig, bookKey, rule, false);
+      // Single-instance replacement: persisted in book config for refresh persistence
+      await addReplacementRuleToBook(envConfig, bookKey, rule, true);
       break;
     case 'book':
       // Apply to entire book (persisted in book config)
@@ -249,19 +379,26 @@ async function addReplacementRuleToBook(
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
   
-  // Check if rule with same pattern already exists
-  const existingRule = existingRules.find(
-    (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex,
-  );
-
-  if (existingRule) {
-    // Update existing rule instead of creating duplicate
-    existingRule.replacement = rule.replacement;
-    existingRule.enabled = rule.enabled;
-    existingRule.order = rule.order;
-  } else {
-    // Add new rule
+  if (rule.singleInstance) {
+    // Single-instance rules: ALWAYS create new rule (each has unique ID)
+    // Don't try to merge - after DOM modifications, occurrence indices shift
+    // and we can't reliably detect duplicates
     existingRules.push(rule);
+  } else {
+    // Non-single-instance: check if same pattern exists to avoid duplicates
+    const existingRule = existingRules.find(
+      (r) => r.pattern === rule.pattern && r.isRegex === rule.isRegex && !r.singleInstance,
+    );
+
+    if (existingRule) {
+      // Update existing rule
+      existingRule.replacement = rule.replacement;
+      existingRule.enabled = rule.enabled;
+      existingRule.order = rule.order;
+    } else {
+      // Add new rule
+      existingRules.push(rule);
+    }
   }
 
   // Update viewSettings
@@ -336,8 +473,12 @@ export async function removeReplacementRule(
 ): Promise<void> {
   switch (scope) {
     case 'single':
+      // Single-instance rules are persisted in book config
+      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, true);
+      break;
     case 'book':
-      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, scope === 'book');
+      // Book-wide rules are persisted in book config
+      await removeReplacementRuleFromBook(envConfig, bookKey, ruleId, true);
       break;
     case 'global':
       await removeReplacementRuleFromGlobal(envConfig, ruleId);
@@ -422,8 +563,12 @@ export async function updateReplacementRule(
 ): Promise<void> {
   switch (scope) {
     case 'single':
+      // Single-instance rules are persisted in book config
+      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, true);
+      break;
     case 'book':
-      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, scope === 'book');
+      // Book-wide rules are persisted in book config
+      await updateReplacementRuleInBook(envConfig, bookKey, ruleId, updates, true);
       break;
     case 'global':
       await updateReplacementRuleInGlobal(envConfig, ruleId, updates);
