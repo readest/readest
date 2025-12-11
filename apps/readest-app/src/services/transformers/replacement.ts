@@ -105,7 +105,7 @@ function applyMultiReplacement(
   let regex: RegExp;
   try {
     regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
-  } catch (e) {
+  } catch (_e) {
     // Invalid regex; skip this rule
     return text;
   }
@@ -170,7 +170,7 @@ function applySingleInstance(
   let regex: RegExp;
   try {
     regex = new RegExp(pattern.source, pattern.flags || 'g');
-  } catch (e) {
+  } catch (_e) {
     return text;
   }
 

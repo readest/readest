@@ -19,7 +19,13 @@ vi.mock('@/store/settingsStore', () => {
     saveSettings: vi.fn(),
   };
 
-  const fn: any = vi.fn(() => mockState);
+  const fn = vi.fn(() => mockState) as unknown as {
+    (): typeof mockState;
+    getState: () => typeof mockState;
+    setState: (partial: Partial<typeof mockState>) => void;
+    subscribe: (listener: () => void) => () => void;
+    destroy: () => void;
+  };
   fn.getState = () => mockState;
   fn.setState = vi.fn();
   fn.subscribe = vi.fn();
@@ -34,7 +40,13 @@ vi.mock('@/store/readerStore', () => {
     setViewSettings: vi.fn(),
   };
 
-  const fn: any = vi.fn(() => mockState);
+  const fn = vi.fn(() => mockState) as unknown as {
+    (): typeof mockState;
+    getState: () => typeof mockState;
+    setState: (partial: Partial<typeof mockState>) => void;
+    subscribe: (listener: () => void) => () => void;
+    destroy: () => void;
+  };
   fn.getState = () => mockState;
   fn.setState = vi.fn();
   fn.subscribe = vi.fn();
@@ -49,7 +61,13 @@ vi.mock('@/store/bookDataStore', () => {
     saveConfig: vi.fn(),
   };
 
-  const fn: any = vi.fn(() => mockState);
+  const fn = vi.fn(() => mockState) as unknown as {
+    (): typeof mockState;
+    getState: () => typeof mockState;
+    setState: (partial: Partial<typeof mockState>) => void;
+    subscribe: (listener: () => void) => () => void;
+    destroy: () => void;
+  };
   fn.getState = () => mockState;
   fn.setState = vi.fn();
   fn.subscribe = vi.fn();
