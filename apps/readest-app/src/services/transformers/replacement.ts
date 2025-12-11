@@ -43,12 +43,45 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
     return { source, flags };
   }
 
-  // Escape literals, then add whole-word boundaries
+  // Escape literals
   const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-  // For ASCII, use \b. For Unicode, we'll check boundaries manually
-  const source = hasUnicode
-    ? escaped // Don't add boundaries for Unicode - will check manually
-    : `\\b${escaped}\\b`;
+  
+  // Check if pattern has punctuation at start or end
+  const startsWithPunctuation = /^[^\w\s]/.test(pattern);
+  const endsWithPunctuation = /[^\w\s]$/.test(pattern);
+  const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
+  
+  // For ASCII patterns with boundary punctuation, add boundaries only around the word part
+  // For patterns without boundary punctuation, add boundaries around the whole pattern
+  // For Unicode patterns, we'll check boundaries manually
+  let source: string;
+  if (hasUnicode) {
+    // Don't add boundaries for Unicode - will check manually
+    source = escaped;
+  } else if (hasBoundaryPunctuation) {
+    // For patterns like "scholar;" or "'tis", find the word part and add boundaries only around it
+    const wordMatch = pattern.match(/[\w]+/);
+    if (!wordMatch || !wordMatch[0]) {
+      // No word characters found, just use escaped pattern without boundaries
+      source = escaped;
+    } else {
+      const wordPart = wordMatch[0];
+      const wordStart = pattern.indexOf(wordPart);
+      const wordEnd = wordStart + wordPart.length;
+      
+      // Escape the word part separately
+      const wordEscaped = wordPart.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+      
+      // Build the pattern: [before punctuation][word boundary][word][word boundary][after punctuation]
+      const beforeWord = escaped.substring(0, wordStart);
+      const afterWord = escaped.substring(wordEnd);
+      source = `${beforeWord}\\b${wordEscaped}\\b${afterWord}`;
+    }
+  } else {
+    // No boundary punctuation - add boundaries around the whole pattern
+    source = `\\b${escaped}\\b`;
+  }
+  
   return { source, flags };
 }
 
