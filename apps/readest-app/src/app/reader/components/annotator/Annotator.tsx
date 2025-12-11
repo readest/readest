@@ -541,65 +541,112 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   // Helper to check if selected text is a whole word (has word boundaries on both sides)
+  // Updated to be more lenient: allows phrases and lines, only prevents partial word matches
   const isWholeWord = (range: Range, selectedText: string): boolean => {
     try {
       if (!selectedText || selectedText.trim().length === 0) return false;
       
-      // Get the text node containing the selection start
-      const startContainer = range.startContainer;
-      if (startContainer.nodeType !== Node.TEXT_NODE) {
-        console.warn('[isWholeWord] Start container is not a text node');
+      // Verify the selection contains word characters
+      const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
+      if (!hasWordCharInSelection) {
         return false;
       }
       
-      const textNode = startContainer as Text;
-      const fullText = textNode.textContent || '';
-      const startOffset = range.startOffset;
-      const endOffset = range.endOffset;
+      // If the selection contains spaces, punctuation, or multiple words, it's a phrase
+      // Phrases (including lines with quotes) are always allowed for single-instance replacements
+      const hasSpaces = /\s/.test(selectedText);
+      const hasPunctuation = /[^\w\s]/.test(selectedText);
+      const isPhrase = hasSpaces || hasPunctuation;
       
-      // Verify the selection matches what we expect
-      const selectedInText = fullText.substring(startOffset, endOffset);
-      if (selectedInText !== selectedText) {
-        console.warn('[isWholeWord] Selection mismatch:', { selectedInText, selectedText });
-        return false;
+      console.log('[isWholeWord] Phrase check:', {
+        selectedText,
+        hasSpaces,
+        hasPunctuation,
+        isPhrase,
+      });
+      
+      if (isPhrase) {
+        // For phrases, we allow them - they're clearly not partial word matches
+        // The only thing we want to prevent is selecting "and" inside "England"
+        console.log('[isWholeWord] Allowing phrase selection');
+        return true;
       }
       
-      // Check character immediately before the selection
-      const charBefore = startOffset > 0 ? fullText[startOffset - 1] : '';
-      // Check character immediately after the selection  
-      const charAfter = endOffset < fullText.length ? fullText[endOffset] : '';
+      // For single words, check boundaries to prevent partial word matches
+      // Get characters immediately before and after the selection
+      let charBefore = '';
+      let charAfter = '';
+      
+      try {
+        // Get character before
+        const startNode = range.startContainer;
+        if (startNode.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
+          const textNode = startNode as Text;
+          charBefore = textNode.textContent?.charAt(range.startOffset - 1) || '';
+        } else if (startNode.nodeType === Node.TEXT_NODE && range.startOffset === 0) {
+          // Check previous sibling text node
+          let prevSibling = startNode.previousSibling;
+          while (prevSibling && prevSibling.nodeType !== Node.TEXT_NODE) {
+            prevSibling = prevSibling.previousSibling;
+          }
+          if (prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
+            const prevText = (prevSibling as Text).textContent || '';
+            charBefore = prevText.charAt(prevText.length - 1);
+          }
+        }
+        
+        // Get character after
+        const endNode = range.endContainer;
+        if (endNode.nodeType === Node.TEXT_NODE) {
+          const textNode = endNode as Text;
+          const textContent = textNode.textContent || '';
+          if (range.endOffset < textContent.length) {
+            charAfter = textContent.charAt(range.endOffset);
+          } else {
+            // Check next sibling text node
+            let nextSibling = textNode.nextSibling;
+            while (nextSibling && nextSibling.nodeType !== Node.TEXT_NODE) {
+              nextSibling = nextSibling.nextSibling;
+            }
+            if (nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+              const nextText = (nextSibling as Text).textContent || '';
+              charAfter = nextText.charAt(0);
+            }
+          }
+        }
+      } catch (e) {
+        // If we can't determine boundaries for a single word, be lenient
+        // This handles edge cases with complex HTML
+        console.warn('[isWholeWord] Error checking boundaries:', e);
+        return true; // Allow if we can't verify (better to allow than reject valid selections)
+      }
       
       // Word characters are: letters, digits, and underscore [a-zA-Z0-9_]
-      // A whole word means:
-      // - The character before (if exists) must NOT be a word character
-      // - The character after (if exists) must NOT be a word character
       const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
       
-      // Check boundaries
-      const hasBoundaryBefore = startOffset === 0 || !isWordChar(charBefore || '');
-      const hasBoundaryAfter = endOffset === fullText.length || !isWordChar(charAfter || '');
+      // Check boundaries for single words
+      // Empty means we're at start/end of text (valid boundary)
+      const hasBoundaryBefore = !charBefore || !isWordChar(charBefore);
+      const hasBoundaryAfter = !charAfter || !isWordChar(charAfter);
       
-      // Also verify the selection itself contains word characters
-      const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
-      
-      const isValid = hasBoundaryBefore && hasBoundaryAfter && hasWordCharInSelection;
+      const isValid = hasBoundaryBefore && hasBoundaryAfter;
       
       if (!isValid) {
         console.log('[isWholeWord] Not a whole word:', {
           selectedText,
-          charBefore,
-          charAfter,
+          charBefore: charBefore || '(start)',
+          charAfter: charAfter || '(end)',
           hasBoundaryBefore,
           hasBoundaryAfter,
-          hasWordCharInSelection,
-          context: fullText.substring(Math.max(0, startOffset - 5), Math.min(fullText.length, endOffset + 5))
         });
       }
       
       return isValid;
     } catch (e) {
       console.warn('Failed to check whole word:', e);
-      return false;
+      // On error, be lenient - allow selections with word characters
+      // This prevents false rejections for complex selections (quotes, multi-node, etc.)
+      return /[a-zA-Z0-9_]/.test(selectedText);
     }
   };
 
