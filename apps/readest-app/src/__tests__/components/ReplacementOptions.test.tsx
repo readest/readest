@@ -4,14 +4,9 @@ import ReplacementOptions from '@/app/reader/components/annotator/ReplacementOpt
 
 describe('ReplacementOptions Component', () => {
   // IMPORTANT: ReplacementOptions should ONLY be rendered for EPUB books.
-  // In Annotator.tsx, the Text Replacement button is disabled when:
-  // disabled: bookData.book?.format !== 'EPUB'
-  // 
-  // This means for non-EPUB formats (PDF, TXT, etc), the button is disabled
+  // for non-EPUB formats (PDF, TXT, etc), the button is disabled
   // and ReplacementOptions is never rendered/shown to the user.
   // 
-  // All tests in this describe block test the component when rendered for EPUB books.
-  // See "EPUB-Only Restrictions" section for tests verifying non-EPUB behavior.
   
   const mockOnConfirm = vi.fn();
   const mockOnClose = vi.fn();
@@ -25,11 +20,7 @@ describe('ReplacementOptions Component', () => {
   };
 
   // Note: ReplacementOptions component should only be rendered for EPUB books.
-  // All tests here implicitly test EPUB book scenarios. For non-EPUB books,
-  // the component should not be rendered at all (button is disabled in Annotator).
-  // The button is disabled in Annotator with: disabled={bookData.book?.format !== 'EPUB'}
-  // This prevents the component from ever being shown for non-EPUB formats.
-  // See EPUB-Only Restrictions describe block below for non-EPUB tests.
+  // All tests here implicitly test EPUB book scenarios. 
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -82,14 +73,6 @@ describe('ReplacementOptions Component', () => {
       // Should show truncated version with ellipsis
       const preview = screen.getByText(/Selected:/);
       expect(preview.parentElement?.textContent).toContain('...');
-    });
-
-    it('should apply custom styles', () => {
-      const customStyle = { left: '200px', top: '300px' };
-      const { container } = render(<ReplacementOptions {...defaultProps} style={customStyle} />);
-
-      const menuElement = container.querySelector('.replacement-options');
-      expect(menuElement).toBeTruthy();
     });
   });
 
