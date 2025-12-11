@@ -31,19 +31,18 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { getViewSettings } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
 
-  const [isOpen, setIsOpen] = useState(false);
+  // Initialize from window flag in case the open request fired before mount
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const [isOpen, setIsOpen] = useState(() => 
+    typeof window !== 'undefined' ? !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ : false
+  );
 
   useEffect(() => {
     const handleCustomEvent = (event: Event) => {
       const ev = event as CustomEvent;
       setIsOpen(!!ev.detail?.visible);
     };
-
-    // Initialize from window flag in case the open request fired before mount
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const initial = typeof window !== 'undefined' ? !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ : false;
-    setIsOpen(initial);
 
     // Listen on window for visibility events
     if (typeof window !== 'undefined') {
@@ -63,17 +62,17 @@ export const ReplacementRulesWindow: React.FC = () => {
   const persistedConfig = sideBarBookKey ? useBookDataStore.getState().getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
   // Single rules = in-memory rules that are not persisted in the book config
-  const singleRules = inMemoryRules.filter((r: any) => !persistedBookRules.find((p: any) => p.id === r.id));
+  const singleRules = inMemoryRules.filter((r: ReplacementRule) => !persistedBookRules.find((p: ReplacementRule) => p.id === r.id));
   // Book rules = persisted book rules + global rules (merged for display)
   // Remove duplicates: if a pattern exists in both book and global rules, keep the book rule
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
   const mergedRules = persistedBookRules.concat(
-    globalRules.filter((gr: any) => !persistedBookRules.find((br: any) => br.pattern === gr.pattern))
+    globalRules.filter((gr: ReplacementRule) => !persistedBookRules.find((br: ReplacementRule) => br.pattern === gr.pattern))
   );
   
   // Create a map to track the scope of each rule for editing/deleting
-  const getRuleScope = (rule: any): 'book' | 'global' => {
-    return persistedBookRules.find((br: any) => br.id === rule.id) ? 'book' : 'global';
+  const getRuleScope = (rule: ReplacementRule): 'book' | 'global' => {
+    return persistedBookRules.find((br: ReplacementRule) => br.id === rule.id) ? 'book' : 'global';
   };
   
   const bookRules = mergedRules;
@@ -86,7 +85,7 @@ export const ReplacementRulesWindow: React.FC = () => {
     enabled: boolean;
   }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
 
-  const startEdit = (r: any, scope: 'single' | 'book' | 'global') => {
+  const startEdit = (r: ReplacementRule, scope: 'single' | 'book' | 'global') => {
     setEditing({ id: r.id, scope, pattern: r.pattern, replacement: r.replacement, enabled: !!r.enabled });
   };
 
@@ -126,7 +125,6 @@ export const ReplacementRulesWindow: React.FC = () => {
         await recreateViewer(environmentConfig, sideBarBookKey);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Failed to save replacement rule', err);
       eventDispatcher.dispatch('toast', {
         type: 'error',
@@ -188,7 +186,6 @@ export const ReplacementRulesWindow: React.FC = () => {
         await recreateViewer(environmentConfig, sideBarBookKey);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Failed to delete replacement rule', err);
       eventDispatcher.dispatch('toast', {
         type: 'error',

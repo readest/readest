@@ -103,9 +103,9 @@ export const replacementTransformer: Transformer = {
             const regex = new RegExp(escapedPattern, 'g');
             transformedText = transformedText.replace(regex, rule.replacement);
           }
-        } catch (error) {
+        } catch (_error) {
           // Catch any other errors and continue with next rule
-          console.warn(`Error applying replacement rule "${rule.id}":`, error);
+          console.warn(`Error applying replacement rule "${rule.id}":`, _error);
           continue;
         }
       }

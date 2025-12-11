@@ -31,5 +31,5 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  }) as any;
+  }) as MediaQueryList;
 }
