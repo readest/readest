@@ -928,7 +928,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     onClick: handleSpeakText,
     disabled: bookData.book?.format === 'PDF',
   },
-  { tooltipText: 'Text Replacement', Icon: MdBuildCircle, onClick: handleShowReplacementOptions },
+  {
+    tooltipText: 'Text Replacement',
+    Icon: MdBuildCircle,
+    onClick: handleShowReplacementOptions,
+    disabled: bookData.book?.format !== 'EPUB',
+  },
   ];
 
   return (
