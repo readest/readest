@@ -539,7 +539,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
     it('should propagate replacement to current view only (not persisted)', () => {
       // Simulate that the replacement is applied but won't survive reload
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         // For 'once' scope, the change is applied immediately to the DOM
         // but not saved to any persistent storage
         expect(config.scope).toBe('once');
@@ -594,7 +594,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
     it('should propagate replacement to all sections and persist to book config', () => {
       // Simulate that the replacement is saved to book config and applies everywhere
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         expect(config.scope).toBe('book');
         
         // Mock applying to multiple sections
@@ -668,8 +668,8 @@ describe('Replacement Propagation Integration Tests', () => {
       fireEvent.click(screen.getByText('Confirm'));
 
       expect(savedRules).toHaveLength(1);
-      expect(savedRules[0].scope).toBe('book');
-      expect(savedRules[0].replacement).toBe('modified');
+      expect(savedRules[0]?.scope).toBe('book');
+      expect(savedRules[0]?.replacement).toBe('modified');
     });
   });
 
@@ -699,7 +699,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
     it('should propagate replacement to all books in library', () => {
       // Simulate that the replacement applies to every book
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         expect(config.scope).toBe('library');
         
         // Mock applying to all books
@@ -754,7 +754,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
   describe('Case Sensitivity Propagation', () => {
     it('should respect case-sensitive flag when propagating', () => {
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         // Simulate applying with case sensitivity
         const testContent = '<p>Test test TEST TeSt</p>';
         
@@ -796,7 +796,7 @@ describe('Replacement Propagation Integration Tests', () => {
     });
 
     it('should replace all case variants when case-insensitive', () => {
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         const testContent = '<p>Test test TEST TeSt</p>';
         
         if (config.caseSensitive) {
@@ -839,7 +839,7 @@ describe('Replacement Propagation Integration Tests', () => {
     it('should show different persistence for once vs book vs library scopes', () => {
       const results: { once: { scope: string; persisted: boolean; appliesTo: string } | null; book: { scope: string; persisted: boolean; appliesTo: string } | null; library: { scope: string; persisted: boolean; appliesTo: string } | null } = { once: null, book: null, library: null };
       
-      const mockOnConfirm = vi.fn((config) => {
+      const mockOnConfirm = vi.fn((config: { scope: 'once' | 'book' | 'library'; replacementText: string; caseSensitive: boolean }) => {
         const result = {
           scope: config.scope,
           persisted: config.scope !== 'once',
@@ -899,14 +899,14 @@ describe('Replacement Propagation Integration Tests', () => {
       unmount();
 
       // Verify different propagation behavior
-      expect(results.once.persisted).toBe(false);
-      expect(results.once.appliesTo).toBe('current-view');
+      expect(results.once?.persisted).toBe(false);
+      expect(results.once?.appliesTo).toBe('current-view');
       
-      expect(results.book.persisted).toBe(true);
-      expect(results.book.appliesTo).toBe('all-sections-in-book');
+      expect(results.book?.persisted).toBe(true);
+      expect(results.book?.appliesTo).toBe('all-sections-in-book');
       
-      expect(results.library.persisted).toBe(true);
-      expect(results.library.appliesTo).toBe('all-books-in-library');
+      expect(results.library?.persisted).toBe(true);
+      expect(results.library?.appliesTo).toBe('all-books-in-library');
     });
   });
 });
