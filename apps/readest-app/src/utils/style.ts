@@ -334,6 +334,10 @@ const getLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
+  body {
+    line-height: unset;
+  }
+
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
