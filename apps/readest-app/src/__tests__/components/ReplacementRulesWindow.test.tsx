@@ -71,9 +71,9 @@ describe('ReplacementRulesWindow', () => {
             kosync: {
                 enabled: false,
             },
-        } as any,
+        } as unknown as Parameters<typeof useSettingsStore.setState>[0],
     });
-    useReaderStore.setState({ viewStates: {} as any });
+    useReaderStore.setState({ viewStates: {} as unknown as Parameters<typeof useReaderStore.setState>[0] });
     useSidebarStore.setState({ sideBarBookKey: null });
   });
 
@@ -91,7 +91,7 @@ describe('ReplacementRulesWindow', () => {
           ],
           kosync: { enabled: false },
         },
-      } as any,
+      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
     });
 
     useReaderStore.setState({
@@ -103,7 +103,7 @@ describe('ReplacementRulesWindow', () => {
             ],
           },
         },
-      } as any,
+      } as unknown as Parameters<typeof useReaderStore.setState>[0],
     });
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
@@ -132,12 +132,12 @@ describe('ReplacementRulesWindow', () => {
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as any,
+      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
     });
     useReaderStore.setState({
       viewStates: {
         book1: { viewSettings: { replacementRules: [] } },
-      } as any,
+      } as unknown as Parameters<typeof useReaderStore.setState>[0],
     });
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 

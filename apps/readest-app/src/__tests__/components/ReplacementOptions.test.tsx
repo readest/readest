@@ -636,7 +636,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
     it('should persist rule and apply on book reload', () => {
       // Simulate that after reload, the rule is still there
-      const savedRules: any[] = [];
+      const savedRules: Array<{ pattern: string; replacement: string; scope: string }> = [];
       
       const mockOnConfirm = vi.fn((config) => {
         // Save the rule (this would happen in the backend)
@@ -743,7 +743,7 @@ describe('Replacement Propagation Integration Tests', () => {
       expect(transformed.book1).toContain('correction');
       expect(transformed.book2).toContain('correction');
       expect(transformed.book3).toContain('correction');
-      expect(Object.values(transformed).every((s: any) => !s.includes('typo'))).toBe(true);
+      expect(Object.values(transformed).every((s: unknown) => typeof s === 'string' && !s.includes('typo'))).toBe(true);
     });
   });
 
@@ -830,7 +830,7 @@ describe('Replacement Propagation Integration Tests', () => {
 
   describe('Propagation Scope Comparison', () => {
     it('should show different persistence for once vs book vs library scopes', () => {
-      const results: any = { once: null, book: null, library: null };
+      const results: { once: { scope: string; persisted: boolean; appliesTo: string } | null; book: { scope: string; persisted: boolean; appliesTo: string } | null; library: { scope: string; persisted: boolean; appliesTo: string } | null } = { once: null, book: null, library: null };
       
       const mockOnConfirm = vi.fn((config) => {
         const result = {
