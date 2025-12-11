@@ -32,24 +32,6 @@ edition = "2021"
 rust-version = "1.77.2"
 
 [patch.crates-io]
-# Patch tauri dependencies to use local versions to avoid version conflicts
 tauri = { path = "packages/tauri/crates/tauri" }
 tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
 tauri-build = { path = "packages/tauri/crates/tauri-build" }
-# Also patch tauri-plugin dependencies to ensure they use the patched tauri
-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-os = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-http = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-shell = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-process = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-oauth = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-haptics = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-persisted-scope = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-cli = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
-tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
