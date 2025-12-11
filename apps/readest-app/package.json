@@ -117,7 +117,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.2",
     "@tailwindcss/typography": "^0.5.16",
-    "@tauri-apps/cli": "2.9.5",
+    "@tauri-apps/cli": "2.9.6",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.3.0",
     "@types/cors": "^2.8.17",
