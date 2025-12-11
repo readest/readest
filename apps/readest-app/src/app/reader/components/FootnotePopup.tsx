@@ -107,9 +107,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const { renderer } = view as FoliateView;
         const viewSettings = getViewSettings(bookKey)!;
         if (viewSettings.vertical) {
-          setResponsiveWidth(getResponsivePopupSize(renderer.viewSize, true));
+          setResponsiveWidth(clipPopupWith(getResponsivePopupSize(renderer.viewSize, true)));
         } else {
-          setResponsiveWidth(clipPopupWith(popupWidth));
+          setResponsiveHeight(clipPopupHeight(getResponsivePopupSize(renderer.viewSize, false)));
         }
         setShowPopup(true);
       });
@@ -133,9 +133,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   useEffect(() => {
     if (viewSettings.vertical) {
       setResponsiveWidth(clipPopupWith(popupHeight));
-      setResponsiveHeight(Math.max(popupWidth, window.innerHeight / 4));
+      setResponsiveHeight(clipPopupHeight(Math.max(popupWidth, window.innerHeight / 4)));
     } else {
-      setResponsiveWidth(Math.max(popupWidth, window.innerWidth / 4));
+      setResponsiveWidth(clipPopupWith(Math.max(popupWidth, window.innerWidth / 4)));
       setResponsiveHeight(clipPopupHeight(popupHeight));
     }
   }, [viewSettings]);
