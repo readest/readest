@@ -74,6 +74,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn iap_is_available(&self) -> crate::Result<IAPIsAvailableResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn iap_initialize(
         &self,
         _payload: IAPInitializeRequest,

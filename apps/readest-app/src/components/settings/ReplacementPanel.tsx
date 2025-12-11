@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import environmentConfig from '@/services/environment';
 import { updateReplacementRule, removeReplacementRule } from '@/services/transformers/replacement';
 import { eventDispatcher } from '@/utils/event';
+import { ReplacementRule } from '@/types/book';
 
 const ReplacementPanel: React.FC = () => {
   const _ = useTranslation();
@@ -29,7 +30,7 @@ const ReplacementPanel: React.FC = () => {
               {_('No global replacement rules')}
             </div>
           ) : (
-            rules.map((r: any) =>
+            rules.map((r: ReplacementRule) =>
               editingRuleId === r.id ? (
                 <div key={r.id} className='p-2 flex w-full flex-col gap-2'>
                   <div className='flex items-center gap-2'>
@@ -71,7 +72,6 @@ const ReplacementPanel: React.FC = () => {
                             await recreateViewer(environmentConfig, sideBarBookKey);
                           }
                         } catch (err) {
-                          // eslint-disable-next-line no-console
                           console.error('Failed to save replacement rule', err);
                           eventDispatcher.dispatch('toast', {
                             type: 'error',
@@ -128,7 +128,6 @@ const ReplacementPanel: React.FC = () => {
                             await initViewState(environmentConfig, id, sideBarBookKey, true, true);
                           }
                         } catch (err) {
-                          // eslint-disable-next-line no-console
                           console.error('Failed to delete replacement rule', err);
                           eventDispatcher.dispatch('toast', {
                             type: 'error',

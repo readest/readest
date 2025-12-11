@@ -8,6 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.ConnectionResult
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -16,12 +18,27 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
     private val productsCache = mutableMapOf<String, ProductDetails>()
     private var purchaseCallback: ((PurchaseData?) -> Unit)? = null
     private val scope = CoroutineScope(Dispatchers.Main)
+    private val isGooglePlayAvailable: Boolean by lazy {
+        val availability = GoogleApiAvailability.getInstance()
+        val resultCode = availability.isGooglePlayServicesAvailable(activity)
+        resultCode == ConnectionResult.SUCCESS
+    }
     
     companion object {
         private const val TAG = "BillingManager"
     }
 
+    fun isBillingAvailable(): Boolean {
+        return isGooglePlayAvailable
+    }
+
     fun initialize(callback: (Boolean) -> Unit) {
+        if (!isGooglePlayAvailable) {
+            Log.d(TAG, "Google Play Services not available, skipping billing setup")
+            callback(false)
+            return
+        }
+
         billingClient = BillingClient.newBuilder(activity)
             .setListener(this)
             .enablePendingPurchases()

@@ -47,7 +47,7 @@ const ReplacementOptions: React.FC<ReplacementOptionsProps> = ({
           const viewportWidth = window.innerWidth;
           const padding = 10;
           
-          let newStyle = { ...style };
+          const newStyle = { ...style };
           
           // Check if popup extends beyond bottom of viewport
           if (rect.bottom > viewportHeight - padding) {

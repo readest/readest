@@ -763,5 +763,7 @@
   "Rename Group": "تغییر نام گروه",
   "From Directory": "از مسیر",
   "Successfully imported {{count}} book(s)_one": "با موفقیت 1 کتاب وارد شد",
-  "Successfully imported {{count}} book(s)_other": "با موفقیت {{count}} کتاب وارد شد"
+  "Successfully imported {{count}} book(s)_other": "با موفقیت {{count}} کتاب وارد شد",
+  "Count": "تعداد",
+  "Start Page": "صفحه شروع"
 }

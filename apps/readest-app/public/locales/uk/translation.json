@@ -783,5 +783,7 @@
   "Successfully imported {{count}} book(s)_one": "Успішно імпортовано 1 книгу",
   "Successfully imported {{count}} book(s)_few": "Успішно імпортовано {{count}} книги",
   "Successfully imported {{count}} book(s)_many": "Успішно імпортовано {{count}} книг",
-  "Successfully imported {{count}} book(s)_other": "Успішно імпортовано {{count}} книг"
+  "Successfully imported {{count}} book(s)_other": "Успішно імпортовано {{count}} книг",
+  "Count": "Кількість",
+  "Start Page": "Початкова сторінка"
 }

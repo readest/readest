@@ -11,7 +11,7 @@ class ResizeObserverMock {
   unobserve() {}
   disconnect() {}
 }
-(global as any).ResizeObserver = ResizeObserverMock;
+(global as unknown as { ResizeObserver: typeof ResizeObserverMock }).ResizeObserver = ResizeObserverMock;
 
 // ---- Settings store mock ----
 vi.mock('@/store/settingsStore', () => {
@@ -29,11 +29,17 @@ vi.mock('@/store/settingsStore', () => {
   };
 
   // create zustand-like function
-  const useSettingsStoreMock: any = () => mockSettingsState;
+  const useSettingsStoreMock = (() => mockSettingsState) as unknown as {
+    (): typeof mockSettingsState;
+    getState: () => typeof mockSettingsState;
+    setState: (partial: Partial<typeof mockSettingsState>) => void;
+    subscribe: (listener: () => void) => () => void;
+    destroy: () => void;
+  };
 
   // attach zustand API
   useSettingsStoreMock.getState = () => mockSettingsState;
-  useSettingsStoreMock.setState = (partial: any) => Object.assign(mockSettingsState, partial);
+  useSettingsStoreMock.setState = (partial: Partial<typeof mockSettingsState>) => Object.assign(mockSettingsState, partial);
   useSettingsStoreMock.subscribe = () => () => {};
   useSettingsStoreMock.destroy = () => {};
 

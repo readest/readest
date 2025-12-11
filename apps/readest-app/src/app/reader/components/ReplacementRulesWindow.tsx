@@ -32,19 +32,19 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { sideBarBookKey } = useSidebarStore();
   const { getConfig } = useBookDataStore();
 
-  const [isOpen, setIsOpen] = useState(false);
+  // Initialize from window flag in case the open request fired before mount
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - custom window property
+    return !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__;
+  });
 
   useEffect(() => {
     const handleCustomEvent = (event: Event) => {
       const ev = event as CustomEvent;
       setIsOpen(!!ev.detail?.visible);
     };
-
-    // Initialize from window flag in case the open request fired before mount
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const initial = typeof window !== 'undefined' ? !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ : false;
-    setIsOpen(initial);
 
     // Listen on window for visibility events
     if (typeof window !== 'undefined') {
@@ -77,10 +77,10 @@ export const ReplacementRulesWindow: React.FC = () => {
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
   
   // Create a map of global rule IDs to identify overridden rules
-  const globalRuleIds = new Set(globalRules.map((gr: any) => gr.id));
+  const globalRuleIds = new Set(globalRules.map((gr: ReplacementRule) => gr.id));
   
   // Filter out book rules that are disabled overrides of non-existent global rules
-  const validBookRules = bookScopedRules.filter((br: any) => {
+  const validBookRules = bookScopedRules.filter((br: ReplacementRule) => {
     // If it's enabled, it's a real book rule
     if (br.enabled !== false) return true;
     // If it's disabled and the global rule still exists, keep it (it's an override)
@@ -89,11 +89,11 @@ export const ReplacementRulesWindow: React.FC = () => {
   });
   
   const mergedRules = validBookRules.concat(
-    globalRules.filter((gr: any) => !validBookRules.find((br: any) => br.id === gr.id))
+    globalRules.filter((gr: ReplacementRule) => !validBookRules.find((br: ReplacementRule) => br.id === gr.id))
   );
   
   // Create a map to track the scope of each rule for editing/deleting
-  const getRuleScope = (rule: any): 'single' | 'book' | 'global' => {
+  const getRuleScope = (rule: ReplacementRule): 'single' | 'book' | 'global' => {
     if (rule.singleInstance) return 'single';
     // If the rule is in validBookRules and originates from global, it's an override
     return globalRuleIds.has(rule.id) ? 'global' : 'book';
@@ -109,7 +109,7 @@ export const ReplacementRulesWindow: React.FC = () => {
     enabled: boolean;
   }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
 
-  const startEdit = (r: any, scope: 'single' | 'book' | 'global') => {
+  const startEdit = (r: ReplacementRule, scope: 'single' | 'book' | 'global') => {
     setEditing({ id: r.id, scope, pattern: r.pattern, replacement: r.replacement, enabled: !!r.enabled });
   };
 
@@ -152,7 +152,6 @@ export const ReplacementRulesWindow: React.FC = () => {
         await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Failed to save replacement rule', err);
       eventDispatcher.dispatch('toast', {
         type: 'error',
@@ -233,7 +232,6 @@ export const ReplacementRulesWindow: React.FC = () => {
         await initViewState(environmentConfig, id, sideBarBookKey, true, true);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Failed to delete replacement rule', err);
       eventDispatcher.dispatch('toast', {
         type: 'error',

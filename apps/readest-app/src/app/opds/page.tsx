@@ -21,6 +21,7 @@ import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
 import { isSearchLink, MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
 import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
+import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
@@ -362,7 +363,7 @@ export default function BrowserPage() {
             const useProxy = needsProxy(url);
             let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
             const headers: Record<string, string> = {
-              'User-Agent': 'Readest/1.0 (OPDS Browser)',
+              'User-Agent': READEST_OPDS_USER_AGENT,
             };
             if (username || password) {
               const authHeader = await probeAuth(url, username, password, useProxy);

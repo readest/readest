@@ -108,10 +108,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const viewSettings = getViewSettings(bookKey)!;
         if (viewSettings.vertical) {
           setResponsiveWidth(getResponsivePopupSize(renderer.viewSize, true));
-          setResponsiveHeight(clipPopupHeight(popupHeight));
         } else {
           setResponsiveWidth(clipPopupWith(popupWidth));
-          setResponsiveHeight(getResponsivePopupSize(renderer.viewSize, false));
         }
         setShowPopup(true);
       });

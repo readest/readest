@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { ReplacementRule } from '@/types/book';
 
 // ------------------------------
 // NEXT.JS ROUTER MOCK 
@@ -66,17 +67,17 @@ function renderWithProviders(ui: React.ReactNode) {
 describe('ReplacementRulesWindow', () => {
   beforeEach(() => {
     // Reset stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
         settings: {
             globalViewSettings: { replacementRules: [] },
             kosync: {
                 enabled: false,
             },
-        } as any,
+        },
     });
-    useReaderStore.setState({ viewStates: {} as any });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({ viewStates: {} });
     useSidebarStore.setState({ sideBarBookKey: null });
-    useBookDataStore.setState({ booksData: {} } as any);
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({ booksData: {} });
   });
 
   afterEach(() => {
@@ -85,7 +86,7 @@ describe('ReplacementRulesWindow', () => {
 
   it('renders book and global replacement rules from stores', async () => {
     // Arrange: populate stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: {
           replacementRules: [
@@ -94,17 +95,17 @@ describe('ReplacementRulesWindow', () => {
           ],
           kosync: { enabled: false },
         },
-      } as any,
+      },
     });
 
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: {
           viewSettings: {
             replacementRules: [],
           },
         },
-      } as any,
+      },
     });
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
@@ -128,14 +129,14 @@ describe('ReplacementRulesWindow', () => {
 
   it('renders single-instance rules separately from book/global rules', async () => {
     // Arrange: populate stores with a single rule persisted in book config
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as any,
+      },
     });
 
-    const singleRule = {
+    const singleRule: ReplacementRule = {
       id: 's1',
       pattern: 'only-once',
       replacement: 'single-hit',
@@ -144,9 +145,9 @@ describe('ReplacementRulesWindow', () => {
       caseSensitive: true,
       order: 1,
       singleInstance: true,
-    } as any;
+    };
 
-    const bookRule = {
+    const bookRule: ReplacementRule = {
       id: 'b1',
       pattern: 'book-wide',
       replacement: 'book-hit',
@@ -154,19 +155,19 @@ describe('ReplacementRulesWindow', () => {
       isRegex: false,
       caseSensitive: true,
       order: 2,
-    } as any;
+    };
 
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: {
           viewSettings: {
             replacementRules: [singleRule, bookRule],
           },
         },
-      } as any,
+      },
     });
 
-    useBookDataStore.setState({
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
       booksData: {
         book1: {
           id: 'book1',
@@ -181,7 +182,7 @@ describe('ReplacementRulesWindow', () => {
           isFixedLayout: false,
         },
       },
-    } as any);
+    });
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 
@@ -206,16 +207,16 @@ describe('ReplacementRulesWindow', () => {
 
   it('opens when BookMenu item is clicked (integration)', async () => {
     // Arrange stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as any,
+      },
     });
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: { viewSettings: { replacementRules: [] } },
-      } as any,
+      },
     });
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 

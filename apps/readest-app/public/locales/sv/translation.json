@@ -763,5 +763,7 @@
   "Rename Group": "Byt namn på grupp",
   "From Directory": "Från katalog",
   "Successfully imported {{count}} book(s)_one": "Importerat 1 bok",
-  "Successfully imported {{count}} book(s)_other": "Importerat {{count}} böcker"
+  "Successfully imported {{count}} book(s)_other": "Importerat {{count}} böcker",
+  "Count": "Antal",
+  "Start Page": "Start sida"
 }

@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "云存储使用情况",
   "Rename Group": "重命名分组",
   "From Directory": "从文件夹导入",
-  "Successfully imported {{count}} book(s)_other": "成功导入 {{count}} 本书"
+  "Successfully imported {{count}} book(s)_other": "成功导入 {{count}} 本书",
+  "Count": "数量",
+  "Start Page": "起始页"
 }
