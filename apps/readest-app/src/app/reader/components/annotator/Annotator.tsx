@@ -729,6 +729,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           const sectionHref = progress?.sectionHref;
           
           // Directly modify DOM for immediate effect
+          // Note: createTextNode automatically escapes HTML entities, so angle brackets will be preserved
           range.deleteContents();
           const textNode = document.createTextNode(replacementText);
           range.insertNode(textNode);
