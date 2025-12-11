@@ -35,3 +35,6 @@ rust-version = "1.77.2"
 tauri = { path = "packages/tauri/crates/tauri" }
 tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
 tauri-build = { path = "packages/tauri/crates/tauri-build" }
+# Force all tauri-utils dependencies to use the local version to avoid duplicate symbols
+[patch."https://github.com/rust-lang/crates.io-index"]
+tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
