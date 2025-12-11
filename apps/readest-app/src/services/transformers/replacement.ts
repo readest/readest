@@ -16,12 +16,14 @@ interface NormalizedPattern {
   flags: string;
 }
 
+// Check if a character is a Unicode word character (letter, number, or underscore)
+function isUnicodeWordChar(char: string): boolean {
+  if (!char) return false;
+  return /[\p{L}\p{N}_]/u.test(char);
+}
+
 function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
   const hasUnicode = /[^\x00-\x7F]/.test(pattern);
-  const unicodeBoundary = {
-    start: '(?<![\\p{L}\\p{N}_])',
-    end: '(?![\\p{L}\\p{N}_])',
-  };
 
   let flags = '';
   if (hasUnicode) flags += 'u';
@@ -33,16 +35,19 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
     if (pattern.includes('\\b')) {
       return { source: pattern, flags };
     }
+    // For regex patterns, use \b for ASCII (works well)
+    // For Unicode, we'll rely on manual boundary checking in the matching functions
     const source = hasUnicode
-      ? `${unicodeBoundary.start}${pattern}${unicodeBoundary.end}`
+      ? pattern // Don't add boundaries for Unicode regex - will check manually
       : `\\b${pattern}\\b`;
     return { source, flags };
   }
 
   // Escape literals, then add whole-word boundaries
   const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+  // For ASCII, use \b. For Unicode, we'll check boundaries manually
   const source = hasUnicode
-    ? `${unicodeBoundary.start}${escaped}${unicodeBoundary.end}`
+    ? escaped // Don't add boundaries for Unicode - will check manually
     : `\\b${escaped}\\b`;
   return { source, flags };
 }
@@ -137,6 +142,16 @@ function applyMultiReplacement(
     if (isInsideScriptOrStyle(text, start)) continue;
     if (isInReplacedRegion(start, end, replacedRegions)) continue;
 
+    // Manual whole-word boundary check for Unicode patterns
+    const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
+    if (hasUnicode) {
+      const charBefore = text[start - 1] ?? '';
+      const charAfter = text[end] ?? '';
+      if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+        continue; // Not a whole word
+      }
+    }
+
     matches.push({ index: start, length: m[0].length });
   }
 
@@ -186,6 +201,16 @@ function applySingleInstance(
     if (isInsideHTMLTag(text, start, end)) continue;
     if (isInsideScriptOrStyle(text, start)) continue;
     if (isInReplacedRegion(start, end, replacedRegions)) continue;
+
+    // Manual whole-word boundary check for Unicode patterns
+    const hasUnicode = /[^\x00-\x7F]/.test(rawPattern);
+    if (hasUnicode) {
+      const charBefore = text[start - 1] ?? '';
+      const charAfter = text[end] ?? '';
+      if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+        continue; // Not a whole word
+      }
+    }
 
     matches.push({ start, end });
   }
