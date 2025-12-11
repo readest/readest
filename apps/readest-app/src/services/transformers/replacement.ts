@@ -22,6 +22,16 @@ function isUnicodeWordChar(char: string): boolean {
   return /[\p{L}\p{N}_]/u.test(char);
 }
 
+// Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+function escapeHtmlEntities(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
   const hasUnicode = /[^\x00-\x7F]/.test(pattern);
 
@@ -43,12 +53,45 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
     return { source, flags };
   }
 
-  // Escape literals, then add whole-word boundaries
+  // Escape literals
   const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-  // For ASCII, use \b. For Unicode, we'll check boundaries manually
-  const source = hasUnicode
-    ? escaped // Don't add boundaries for Unicode - will check manually
-    : `\\b${escaped}\\b`;
+  
+  // Check if pattern has punctuation at start or end
+  const startsWithPunctuation = /^[^\w\s]/.test(pattern);
+  const endsWithPunctuation = /[^\w\s]$/.test(pattern);
+  const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
+  
+  // For ASCII patterns with boundary punctuation, add boundaries only around the word part
+  // For patterns without boundary punctuation, add boundaries around the whole pattern
+  // For Unicode patterns, we'll check boundaries manually
+  let source: string;
+  if (hasUnicode) {
+    // Don't add boundaries for Unicode - will check manually
+    source = escaped;
+  } else if (hasBoundaryPunctuation) {
+    // For patterns like "scholar;" or "'tis", find the word part and add boundaries only around it
+    const wordMatch = pattern.match(/[\w]+/);
+    if (!wordMatch || !wordMatch[0]) {
+      // No word characters found, just use escaped pattern without boundaries
+      source = escaped;
+    } else {
+      const wordPart = wordMatch[0];
+      const wordStart = pattern.indexOf(wordPart);
+      const wordEnd = wordStart + wordPart.length;
+      
+      // Escape the word part separately
+      const wordEscaped = wordPart.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+      
+      // Build the pattern: [before punctuation][word boundary][word][word boundary][after punctuation]
+      const beforeWord = escaped.substring(0, wordStart);
+      const afterWord = escaped.substring(wordEnd);
+      source = `${beforeWord}\\b${wordEscaped}\\b${afterWord}`;
+    }
+  } else {
+    // No boundary punctuation - add boundaries around the whole pattern
+    source = `\\b${escaped}\\b`;
+  }
+  
   return { source, flags };
 }
 
@@ -161,9 +204,11 @@ function applyMultiReplacement(
     const { index, length } = match;
     const end = index + length;
 
-    shiftRegionsAfterReplacement(replacedRegions, index, end, rule.replacement.length);
+    // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+    const escapedReplacement = escapeHtmlEntities(rule.replacement);
+    shiftRegionsAfterReplacement(replacedRegions, index, end, escapedReplacement.length);
 
-    text = text.slice(0, index) + rule.replacement + text.slice(end);
+    text = text.slice(0, index) + escapedReplacement + text.slice(end);
 
     replacedRegions.push({ start: index, end: index + rule.replacement.length });
   }
@@ -219,9 +264,11 @@ function applySingleInstance(
   const target = matches[targetIndex];
   if (!target) return text;
 
-  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, replacement.length);
+  // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+  const escapedReplacement = escapeHtmlEntities(replacement);
+  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, escapedReplacement.length);
 
-  text = text.slice(0, target.start) + replacement + text.slice(target.end);
+  text = text.slice(0, target.start) + escapedReplacement + text.slice(target.end);
 
   replacedRegions.push({ start: target.start, end: target.start + replacement.length });
 
