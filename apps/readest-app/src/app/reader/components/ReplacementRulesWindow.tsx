@@ -85,6 +85,9 @@ export const ReplacementRulesWindow: React.FC = () => {
     enabled: boolean;
   }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
 
+  // Track when a delete/edit operation is in progress to prevent rapid successive operations
+  const [isReloading, setIsReloading] = useState(false);
+
   const startEdit = (r: ReplacementRule, scope: 'single' | 'book' | 'global') => {
     setEditing({ id: r.id, scope, pattern: r.pattern, replacement: r.replacement, enabled: !!r.enabled });
   };
@@ -93,6 +96,17 @@ export const ReplacementRulesWindow: React.FC = () => {
 
   const saveEdit = async () => {
     if (!editing.id || !editing.scope) return;
+    
+    // Prevent rapid successive operations
+    if (isReloading) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _("Please wait for the current operation to complete."),
+        timeout: 3000,
+      });
+      return;
+    }
+    setIsReloading(true);
     try {
       const bookKey = sideBarBookKey || '';
       if (editing.scope === 'global') {
@@ -134,11 +148,24 @@ export const ReplacementRulesWindow: React.FC = () => {
         message: _('Failed to update replacement rule'),
         timeout: 3000,
       });
+    } finally {
+      setIsReloading(false);
     }
   };
 
   const deleteRule = async (ruleId: string, scope: 'single' | 'book' | 'global') => {
     console.log('Deleting rule', ruleId, 'scope', scope);
+    
+    // Prevent rapid successive deletions
+    if (isReloading) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _("Please wait for the book to finish reloading."),
+        timeout: 3000,
+      });
+      return;
+    }
+    setIsReloading(true);
     const disableGlobalRuleForBook = async (rule: ReplacementRule) => {
       const { getViewSettings, setViewSettings } = useReaderStore.getState();
       const { getConfig, saveConfig, setConfig } = useBookDataStore.getState();
@@ -214,6 +241,8 @@ export const ReplacementRulesWindow: React.FC = () => {
         message: _('Failed to delete replacement rule'),
         timeout: 3000,
       });
+    } finally {
+      setIsReloading(false);
     }
   };
 
