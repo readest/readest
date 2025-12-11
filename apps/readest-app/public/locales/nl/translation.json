@@ -763,5 +763,7 @@
   "Rename Group": "Groep hernoemen",
   "From Directory": "Vanuit map",
   "Successfully imported {{count}} book(s)_one": "Succesvol 1 boek geïmporteerd",
-  "Successfully imported {{count}} book(s)_other": "Succesvol {{count}} boeken geïmporteerd"
+  "Successfully imported {{count}} book(s)_other": "Succesvol {{count}} boeken geïmporteerd",
+  "Count": "Aantal",
+  "Start Page": "Startpagina"
 }

@@ -98,12 +98,12 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
                 : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
-              width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
+              width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
               height: `calc(100% - ${((contentInsets.top + contentInsets.bottom) / 2) * 3}px)`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
+              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
               paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
             }
       }

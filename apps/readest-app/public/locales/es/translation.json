@@ -773,5 +773,7 @@
   "From Directory": "Desde el directorio",
   "Successfully imported {{count}} book(s)_one": "Se importó correctamente 1 libro",
   "Successfully imported {{count}} book(s)_many": "Se importaron correctamente {{count}} libros",
-  "Successfully imported {{count}} book(s)_other": "Se importaron correctamente {{count}} libros"
+  "Successfully imported {{count}} book(s)_other": "Se importaron correctamente {{count}} libros",
+  "Count": "Cuenta",
+  "Start Page": "Página de inicio"
 }

@@ -763,5 +763,7 @@
   "Rename Group": "Gruppe umbenennen",
   "From Directory": "Aus Verzeichnis",
   "Successfully imported {{count}} book(s)_one": "Erfolgreich 1 Buch importiert",
-  "Successfully imported {{count}} book(s)_other": "Erfolgreich {{count}} Bücher importiert"
+  "Successfully imported {{count}} book(s)_other": "Erfolgreich {{count}} Bücher importiert",
+  "Count": "Anzahl",
+  "Start Page": "Startseite"
 }

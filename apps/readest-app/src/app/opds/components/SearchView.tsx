@@ -17,7 +17,13 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     search.params?.forEach((param) => {
-      initial[param.name] = param.value || '';
+      if (param.name === 'count') {
+        initial[param.name] = '20';
+      } else if (param.name === 'startPage') {
+        initial[param.name] = '1';
+      } else {
+        initial[param.name] = param.value || '';
+      }
     });
     return initial;
   });
@@ -56,6 +62,8 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
       publisher: _('Publisher'),
       language: _('Language'),
       subject: _('Subject'),
+      count: _('Count'),
+      startPage: _('Start Page'),
     };
     return labels[name] || name;
   };

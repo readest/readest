@@ -261,10 +261,7 @@ const getLayoutStyles = (
   a::before {
     content: '';
     position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
+    inset: -10px;
   }
   p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
@@ -326,10 +323,6 @@ const getLayoutStyles = (
 
   pre {
     white-space: pre-wrap !important;
-  }
-
-  body:not([dir="rtl"]) {
-    overflow-x: clip;
   }
 
   .epubtype-footnote,
@@ -604,6 +597,18 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
         /(text-indent\s*:\s*0(?:\.0+)?(?:px|em|rem|%)?)(\s*;|\s*$)/g,
         '$1 !important$2',
       );
+      return selector + block;
+    }
+    return match;
+  });
+
+  // clip nowrapped elements
+  css = css.replace(ruleRegex, (match, selector, block) => {
+    const hasWhiteSpaceNowrap = /white-space\s*:\s*nowrap\s*[;$]/.test(block);
+    if (hasWhiteSpaceNowrap) {
+      if (!/overflow\s*:/.test(block)) {
+        block = block.replace(/}$/, ' overflow: clip !important; }');
+      }
       return selector + block;
     }
     return match;

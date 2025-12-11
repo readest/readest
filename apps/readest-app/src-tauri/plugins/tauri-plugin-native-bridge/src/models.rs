@@ -115,6 +115,12 @@ pub struct Purchase {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct IAPIsAvailableResponse {
+    pub available: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IAPInitializeRequest {
     pub public_key: Option<String>,
 }

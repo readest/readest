@@ -753,5 +753,7 @@
   "Cloud Storage Usage": "Sử dụng lưu trữ đám mây",
   "Rename Group": "Đổi tên nhóm",
   "From Directory": "Từ thư mục",
-  "Successfully imported {{count}} book(s)_other": "Đã nhập thành công {{count}} sách"
+  "Successfully imported {{count}} book(s)_other": "Đã nhập thành công {{count}} sách",
+  "Count": "Số lượng",
+  "Start Page": "Trang bắt đầu"
 }

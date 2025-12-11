@@ -95,10 +95,12 @@ jobs:
         run: |
           version=${{ needs.get-release.outputs.release_version }}
           plugin_zip="Readest-${version}-1.koplugin.zip"
+          meta_file="apps/readest.koplugin/_meta.lua"
+          perl -i -pe "s/^}/    version = \"${version}\",\n}/" "${meta_file}"
 
-          cd apps/readest.koplugin
-          zip -r ../../${plugin_zip} .
-          cd ../..
+          cd apps
+          zip -r ../${plugin_zip} readest.koplugin
+          cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber

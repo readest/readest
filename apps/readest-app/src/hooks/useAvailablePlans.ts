@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAndTransformIAPPlans } from '@/libs/payment/iap/client';
+import { fetchAndTransformIAPPlans, isIAPAvailable } from '@/libs/payment/iap/client';
 import { fetchStripePlans } from '@/libs/payment/stripe/client';
 import { AvailablePlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -20,6 +20,7 @@ interface UseAvailablePlansParams {
 
 export const useAvailablePlans = ({ hasIAP, onError }: UseAvailablePlansParams) => {
   const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
+  const [iapAvailable, setIapAvailable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -29,9 +30,10 @@ export const useAvailablePlans = ({ hasIAP, onError }: UseAvailablePlansParams) 
       setError(null);
 
       try {
-        if (hasIAP) {
+        if (hasIAP && (await isIAPAvailable())) {
           const plans = await fetchAndTransformIAPPlans(IAP_PRODUCT_IDS);
           setAvailablePlans(plans);
+          setIapAvailable(true);
         } else {
           const plans = await fetchStripePlans();
           setAvailablePlans(plans);
@@ -52,5 +54,5 @@ export const useAvailablePlans = ({ hasIAP, onError }: UseAvailablePlansParams) 
     fetchPlans();
   }, [hasIAP, onError]);
 
-  return { availablePlans, loading, error };
+  return { availablePlans, iapAvailable, loading, error };
 };

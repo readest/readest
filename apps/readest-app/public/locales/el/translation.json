@@ -763,5 +763,7 @@
   "Rename Group": "Μετονομασία ομάδας",
   "From Directory": "Από κατάλογο",
   "Successfully imported {{count}} book(s)_one": "Επιτυχής εισαγωγή 1 βιβλίου",
-  "Successfully imported {{count}} book(s)_other": "Επιτυχής εισαγωγή {{count}} βιβλίων"
+  "Successfully imported {{count}} book(s)_other": "Επιτυχής εισαγωγή {{count}} βιβλίων",
+  "Count": "Πλήθος",
+  "Start Page": "Αρχική Σελίδα"
 }

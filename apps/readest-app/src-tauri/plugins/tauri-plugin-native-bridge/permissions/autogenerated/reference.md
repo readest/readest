@@ -14,6 +14,7 @@ Default permissions for the plugin
 - `allow-get-sys-fonts-list`
 - `allow-intercept-keys`
 - `allow-lock-screen-orientation`
+- `allow-iap-is-available`
 - `allow-iap-initialize`
 - `allow-iap-fetch-products`
 - `allow-iap-purchase-product`
@@ -402,6 +403,32 @@ Enables the iap_initialize command without any pre-configured scope.
 <td>
 
 Denies the iap_initialize command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-iap-is-available`
+
+</td>
+<td>
+
+Enables the iap_is_available command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-iap-is-available`
+
+</td>
+<td>
+
+Denies the iap_is_available command without any pre-configured scope.
 
 </td>
 </tr>
