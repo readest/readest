@@ -18,7 +18,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'GET') {
-      const { fileKey } = req.query;
+      let { fileKey } = req.query;
+      // Also parse fileKey directly from raw URL to handle special characters like & in filenames.
+      // because frameworks may incorrectly split parameters when the fileKey value contains
+      // encoded & (%26), treating it as a parameter separator.
+      if (req.url?.includes('fileKey=') && req.url?.includes('&')) {
+        const fileKeyFromUrl = req.url
+          .substring(req.url.indexOf('fileKey=') + 8)
+          .replace(/\+/g, '%20')
+          .replace(/&/g, '%26')
+          .replace(/=$/, '');
+        fileKey = decodeURIComponent(fileKeyFromUrl);
+      }
       if (!fileKey || typeof fileKey !== 'string') {
         return res.status(400).json({ error: 'Missing or invalid fileKey' });
       }
