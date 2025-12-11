@@ -37,7 +37,7 @@
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
     "release-google-play": "dotenv -e .env.google-play.local -- bash scripts/release-google-play.sh",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
-    "preview": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare preview --ip 0.0.0.0",
+    "preview": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare preview --ip 0.0.0.0 --port 3001",
     "deploy": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare deploy",
     "upload": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",

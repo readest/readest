@@ -83,7 +83,39 @@ const withPWA = pwaDisabled
         disableDevLogs: true,
         runtimeCaching: [
           {
-            urlPattern: /^https?.*/,
+            urlPattern: ({ url, request }) => {
+              const clientRoutes = ['/library', '/reader'];
+              const isClientRoute = clientRoutes.some((route) => url.pathname.startsWith(route));
+              return isClientRoute && request.mode === 'navigate';
+            },
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'pages-cache',
+              expiration: {
+                maxAgeSeconds: 365 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              plugins: [
+                {
+                  cacheKeyWillBeUsed: async ({ request }) => {
+                    const url = new URL(request.url);
+                    const basePath = url.pathname.split('/')[1];
+                    const cacheKey = `${url.origin}/${basePath}`;
+                    return cacheKey;
+                  },
+                },
+              ],
+            },
+          },
+          {
+            urlPattern: ({ url }) => {
+              if (url.pathname.startsWith('/api/')) {
+                return false;
+              }
+              return /^https?.*/.test(url.href);
+            },
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'offlineCache',
