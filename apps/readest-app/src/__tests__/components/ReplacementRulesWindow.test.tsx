@@ -67,17 +67,17 @@ function renderWithProviders(ui: React.ReactNode) {
 describe('ReplacementRulesWindow', () => {
   beforeEach(() => {
     // Reset stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
         settings: {
             globalViewSettings: { replacementRules: [] },
             kosync: {
                 enabled: false,
             },
-        } as unknown as Parameters<typeof useSettingsStore.setState>[0],
+        },
     });
-    useReaderStore.setState({ viewStates: {} as unknown as Parameters<typeof useReaderStore.setState>[0] });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({ viewStates: {} });
     useSidebarStore.setState({ sideBarBookKey: null });
-    useBookDataStore.setState({ booksData: {} } as unknown as Parameters<typeof useBookDataStore.setState>[0] );
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({ booksData: {} });
   });
 
   afterEach(() => {
@@ -86,7 +86,7 @@ describe('ReplacementRulesWindow', () => {
 
   it('renders book and global replacement rules from stores', async () => {
     // Arrange: populate stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: {
           replacementRules: [
@@ -95,17 +95,17 @@ describe('ReplacementRulesWindow', () => {
           ],
           kosync: { enabled: false },
         },
-      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
+      },
     });
 
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: {
           viewSettings: {
             replacementRules: [],
           },
         },
-      } as unknown as Parameters<typeof useReaderStore.setState>[0],
+      },
     });
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
@@ -129,11 +129,11 @@ describe('ReplacementRulesWindow', () => {
 
   it('renders single-instance rules separately from book/global rules', async () => {
     // Arrange: populate stores with a single rule persisted in book config
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
+      },
     });
 
     const singleRule: ReplacementRule = {
@@ -157,17 +157,17 @@ describe('ReplacementRulesWindow', () => {
       order: 2,
     };
 
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: {
           viewSettings: {
             replacementRules: [singleRule, bookRule],
           },
         },
-      } as unknown as Parameters<typeof useReaderStore.setState>[0],
+      },
     });
 
-    useBookDataStore.setState({
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
       booksData: {
         book1: {
           id: 'book1',
@@ -182,7 +182,7 @@ describe('ReplacementRulesWindow', () => {
           isFixedLayout: false,
         },
       },
-    } as unknown as Parameters<typeof useBookDataStore.setState>[0] );
+    });
 
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 
@@ -207,16 +207,16 @@ describe('ReplacementRulesWindow', () => {
 
   it('opens when BookMenu item is clicked (integration)', async () => {
     // Arrange stores
-    useSettingsStore.setState({
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
         globalViewSettings: { replacementRules: [] },
         kosync: { enabled: false },
-      } as unknown as Parameters<typeof useSettingsStore.setState>[0],
+      },
     });
-    useReaderStore.setState({
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
       viewStates: {
         book1: { viewSettings: { replacementRules: [] } },
-      } as unknown as Parameters<typeof useReaderStore.setState>[0],
+      },
     });
     useSidebarStore.setState({ sideBarBookKey: 'book1' });
 
