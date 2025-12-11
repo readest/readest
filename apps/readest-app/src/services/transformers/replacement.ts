@@ -22,6 +22,16 @@ function isUnicodeWordChar(char: string): boolean {
   return /[\p{L}\p{N}_]/u.test(char);
 }
 
+// Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+function escapeHtmlEntities(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
   const hasUnicode = /[^\x00-\x7F]/.test(pattern);
 
@@ -194,9 +204,11 @@ function applyMultiReplacement(
     const { index, length } = match;
     const end = index + length;
 
-    shiftRegionsAfterReplacement(replacedRegions, index, end, rule.replacement.length);
+    // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+    const escapedReplacement = escapeHtmlEntities(rule.replacement);
+    shiftRegionsAfterReplacement(replacedRegions, index, end, escapedReplacement.length);
 
-    text = text.slice(0, index) + rule.replacement + text.slice(end);
+    text = text.slice(0, index) + escapedReplacement + text.slice(end);
 
     replacedRegions.push({ start: index, end: index + rule.replacement.length });
   }
@@ -252,9 +264,11 @@ function applySingleInstance(
   const target = matches[targetIndex];
   if (!target) return text;
 
-  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, replacement.length);
+  // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
+  const escapedReplacement = escapeHtmlEntities(replacement);
+  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, escapedReplacement.length);
 
-  text = text.slice(0, target.start) + replacement + text.slice(target.end);
+  text = text.slice(0, target.start) + escapedReplacement + text.slice(target.end);
 
   replacedRegions.push({ start: target.start, end: target.start + replacement.length });
 
