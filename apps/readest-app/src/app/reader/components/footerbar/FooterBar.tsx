@@ -214,8 +214,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
       : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
 
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
+
   return (
     <>
+      {/* Hover trigger area */}
+      <div
+        role='none'
+        className={clsx(
+          'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
+          needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
+          isMobile ? 'pointer-events-none' : '',
+        )}
+        onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
+        onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
+      />
+
       {/* Main footer container */}
       <div
         role='group'

@@ -187,7 +187,7 @@ export interface ViewConfig {
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
-  footerTransparent: boolean;
+  progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
 }
 
 export interface TTSConfig {

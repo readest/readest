@@ -71,24 +71,59 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           })
       : '';
 
-  const [footerTransparent, setFooterTransparent] = useState(viewSettings.footerTransparent)
+  const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
+
+  const cycleProgressInfoModes = () => {
+    const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
+    const hasProgressInfo = viewSettings.showProgressInfo;
+    const modeSequence: (typeof progressInfoMode)[] = ['all', 'remaining', 'progress', 'none'];
+    const currentIndex = modeSequence.indexOf(progressInfoMode);
+    for (let i = 1; i <= modeSequence.length; i++) {
+      const nextIndex = (currentIndex + i) % modeSequence.length;
+      const nextMode = modeSequence[nextIndex]!;
+
+      const currentRenders = {
+        remaining:
+          progressInfoMode === 'all' || progressInfoMode === 'remaining' ? hasRemainingInfo : false,
+        progress:
+          progressInfoMode === 'all' || progressInfoMode === 'progress' ? hasProgressInfo : false,
+      };
+
+      const nextRenders = {
+        remaining: nextMode === 'all' || nextMode === 'remaining' ? hasRemainingInfo : false,
+        progress: nextMode === 'all' || nextMode === 'progress' ? hasProgressInfo : false,
+      };
+
+      const isDifferent =
+        currentRenders.remaining !== nextRenders.remaining ||
+        currentRenders.progress !== nextRenders.progress;
+
+      if (isDifferent) {
+        setProgressInfoMode(nextMode);
+        return;
+      }
+    }
+
+    const nextIndex = (currentIndex + 1) % modeSequence.length;
+    setProgressInfoMode(modeSequence[nextIndex]!);
+  };
+
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'footerTransparent', footerTransparent)
+    saveViewSettings(envConfig, bookKey, 'progressInfoMode', progressInfoMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [footerTransparent])
+  }, [progressInfoMode]);
 
   return (
-    //eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
+      role='presentation'
       className={clsx(
         'progressinfo absolute flex items-center justify-between font-sans',
         'pointer-events-auto bottom-0',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
-        footerTransparent ? 'opacity-0' : 'opacity-100',
       )}
-      onClick={() => setFooterTransparent(!footerTransparent)}
+      onClick={() => cycleProgressInfoModes()}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {
@@ -125,15 +160,24 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           isVertical ? 'h-full' : 'h-[52px] w-full',
         )}
       >
-        {viewSettings.showRemainingTime ? (
-          <span className='text-start'>{timeLeft}</span>
-        ) : viewSettings.showRemainingPages ? (
-          <span className='text-start'>{pageLeft}</span>
-        ) : null}
-        {viewSettings.showProgressInfo && (
-          <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
-            {progressInfo}
-          </span>
+        {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
+          <>
+            {viewSettings.showRemainingTime ? (
+              <span className='text-start'>{timeLeft}</span>
+            ) : viewSettings.showRemainingPages ? (
+              <span className='text-start'>{pageLeft}</span>
+            ) : null}
+          </>
+        )}
+
+        {(progressInfoMode === 'all' || progressInfoMode === 'progress') && (
+          <>
+            {viewSettings.showProgressInfo && (
+              <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
+                {progressInfo}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>
