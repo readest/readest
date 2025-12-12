@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Insets } from '@/types/misc';
 import { PageInfo, TimeInfo } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
+import { saveViewSettings } from '@/helpers/settings';
 
 interface PageInfoProps {
   bookKey: string;
@@ -28,7 +29,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   gridInsets,
 }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
@@ -70,15 +71,59 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           })
       : '';
 
+  const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
+
+  const cycleProgressInfoModes = () => {
+    const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
+    const hasProgressInfo = viewSettings.showProgressInfo;
+    const modeSequence: (typeof progressInfoMode)[] = ['all', 'remaining', 'progress', 'none'];
+    const currentIndex = modeSequence.indexOf(progressInfoMode);
+    for (let i = 1; i <= modeSequence.length; i++) {
+      const nextIndex = (currentIndex + i) % modeSequence.length;
+      const nextMode = modeSequence[nextIndex]!;
+
+      const currentRenders = {
+        remaining:
+          progressInfoMode === 'all' || progressInfoMode === 'remaining' ? hasRemainingInfo : false,
+        progress:
+          progressInfoMode === 'all' || progressInfoMode === 'progress' ? hasProgressInfo : false,
+      };
+
+      const nextRenders = {
+        remaining: nextMode === 'all' || nextMode === 'remaining' ? hasRemainingInfo : false,
+        progress: nextMode === 'all' || nextMode === 'progress' ? hasProgressInfo : false,
+      };
+
+      const isDifferent =
+        currentRenders.remaining !== nextRenders.remaining ||
+        currentRenders.progress !== nextRenders.progress;
+
+      if (isDifferent) {
+        setProgressInfoMode(nextMode);
+        return;
+      }
+    }
+
+    const nextIndex = (currentIndex + 1) % modeSequence.length;
+    setProgressInfoMode(modeSequence[nextIndex]!);
+  };
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'progressInfoMode', progressInfoMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressInfoMode]);
+
   return (
     <div
+      role='presentation'
       className={clsx(
         'progressinfo absolute flex items-center justify-between font-sans',
-        'pointer-events-none bottom-0',
+        'pointer-events-auto bottom-0',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
       )}
+      onClick={() => cycleProgressInfoModes()}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {
@@ -115,15 +160,24 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           isVertical ? 'h-full' : 'h-[52px] w-full',
         )}
       >
-        {viewSettings.showRemainingTime ? (
-          <span className='text-start'>{timeLeft}</span>
-        ) : viewSettings.showRemainingPages ? (
-          <span className='text-start'>{pageLeft}</span>
-        ) : null}
-        {viewSettings.showProgressInfo && (
-          <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
-            {progressInfo}
-          </span>
+        {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
+          <>
+            {viewSettings.showRemainingTime ? (
+              <span className='text-start'>{timeLeft}</span>
+            ) : viewSettings.showRemainingPages ? (
+              <span className='text-start'>{pageLeft}</span>
+            ) : null}
+          </>
+        )}
+
+        {(progressInfoMode === 'all' || progressInfoMode === 'progress') && (
+          <>
+            {viewSettings.showProgressInfo && (
+              <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
+                {progressInfo}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>
