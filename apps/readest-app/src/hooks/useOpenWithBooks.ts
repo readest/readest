@@ -14,6 +14,10 @@ interface SingleInstancePayload {
   cwd: string;
 }
 
+interface OpenFilesPayload {
+  files: string[];
+}
+
 interface SharedIntentPayload {
   urls: string[];
 }
@@ -80,11 +84,23 @@ export function useOpenWithBooks() {
     // For Windows/Linux deep link and macOS open-file event
     const unlistenDeeplink = getCurrentWindow().listen<SingleInstancePayload>(
       'single-instance',
-      ({ event, payload }) => {
-        console.log('Received deep link:', event, payload);
+      ({ payload }) => {
+        console.log('Received deep link:', payload);
         const { args } = payload;
         if (args?.[1]) {
           handleOpenWithFileUrl([args[1]]);
+        }
+      },
+    );
+
+    // macOS in-app open-files event
+    const unlistenOpenFiles = getCurrentWindow().listen<OpenFilesPayload>(
+      'open-files',
+      ({ payload }) => {
+        console.log('Received open files:', payload);
+        const { files } = payload;
+        if (files && files.length > 0) {
+          handleOpenWithFileUrl(files);
         }
       },
     );
@@ -106,6 +122,7 @@ export function useOpenWithBooks() {
     const unlistenOpenUrl = listenOpenWithFiles();
     return () => {
       unlistenDeeplink.then((f) => f());
+      unlistenOpenFiles.then((f) => f());
       unlistenOpenUrl.then((f) => f());
       unlistenSharedIntent?.then((f) => f.unregister());
     };
