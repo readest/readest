@@ -36,7 +36,11 @@ export function useOpenWithBooks() {
     const filePaths = [];
     for (let url of urls) {
       if (url.startsWith('file://')) {
-        url = decodeURI(url.replace('file://', ''));
+        if (appService?.isIOSApp) {
+          url = decodeURI(url);
+        } else {
+          url = decodeURI(url.replace('file://', ''));
+        }
       }
       if (!/^(https?:|data:|blob:)/i.test(url)) {
         filePaths.push(url);
@@ -73,20 +77,27 @@ export function useOpenWithBooks() {
     if (listenedOpenWithBooks.current) return;
     listenedOpenWithBooks.current = true;
 
-    const unlistenDeeplink = getCurrentWindow().listen('single-instance', ({ event, payload }) => {
-      console.log('Received deep link:', event, payload);
-      const { args } = payload as SingleInstancePayload;
-      if (args?.[1]) {
-        handleOpenWithFileUrl([args[1]]);
-      }
-    });
+    // For Windows/Linux deep link and macOS open-file event
+    const unlistenDeeplink = getCurrentWindow().listen<SingleInstancePayload>(
+      'single-instance',
+      ({ event, payload }) => {
+        console.log('Received deep link:', event, payload);
+        const { args } = payload;
+        if (args?.[1]) {
+          handleOpenWithFileUrl([args[1]]);
+        }
+      },
+    );
 
+    // For Android "Share to Readest" intent
     let unlistenSharedIntent: Promise<PluginListener> | null = null;
     // FIXME: register/unregister plugin listeniner on iOS might cause app freeze for unknown reason
     // so we only register it on Android for now to support "Shared to Readest" feature
     if (appService?.isAndroidApp) {
       unlistenSharedIntent = initializeListeners();
     }
+
+    // iOS Open with URL event
     const listenOpenWithFiles = async () => {
       return await onOpenUrl((urls) => {
         handleOpenWithFileUrl(urls);
