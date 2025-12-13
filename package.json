@@ -23,6 +23,7 @@
       "glob": ">=11.1.0",
       "jws": ">=4.0.1",
       "vite": ">=7.0.8",
+      "body-parser": ">=2.2.1",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10"
     }
