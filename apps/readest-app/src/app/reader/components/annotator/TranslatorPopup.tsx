@@ -211,14 +211,12 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                   })}
             </div>
           )}
-          <div className='ml-auto'>
-            <Select
-              className='bg-gray-600 text-white/75'
-              value={provider}
-              onChange={handleProviderChange}
-              options={providers.map(({ name: value, label }) => ({ value, label }))}
-            />
-          </div>
+          <Select
+            className='bg-gray-600 text-white/75'
+            value={provider}
+            onChange={handleProviderChange}
+            options={providers.map(({ name: value, label }) => ({ value, label }))}
+          />
         </div>
       </Popup>
     </div>
