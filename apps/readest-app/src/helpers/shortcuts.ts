@@ -1,6 +1,6 @@
 const DEFAULT_SHORTCUTS = {
   onSwitchSideBar: ['ctrl+Tab', 'opt+Tab', 'alt+Tab'],
-  onToggleSideBar: ['s', 'F9'],
+  onToggleSideBar: ['s'],
   onToggleNotebook: ['n'],
   onShowSearchBar: ['ctrl+f', 'cmd+f'],
   onToggleScrollMode: ['shift+j'],
