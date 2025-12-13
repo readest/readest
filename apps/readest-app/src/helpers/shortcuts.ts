@@ -17,7 +17,7 @@ const DEFAULT_SHORTCUTS = {
   onWikipediaSelection: ['ctrl+w', 'cmd+w'],
   onReadAloudSelection: ['ctrl+r', 'cmd+r'],
   onOpenFontLayoutSettings: ['shift+f', 'ctrl+,', 'cmd+,'],
-  onOpenBooks: ['ctrl+o', 'cmd+o'],
+  onOpenBooks: ['ctrl+o'],
   onReloadPage: ['shift+r'],
   onToggleFullscreen: ['F11'],
   onCloseWindow: ['ctrl+w', 'cmd+w'],

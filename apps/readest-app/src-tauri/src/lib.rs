@@ -136,7 +136,7 @@ fn get_executable_dir() -> String {
 
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
-struct Payload {
+struct SingleInstancePayload {
     args: Vec<String>,
     cwd: String,
 }
@@ -179,7 +179,7 @@ pub fn run() {
         if !files.is_empty() {
             allow_file_in_scopes(app, files.clone());
         }
-        app.emit("single-instance", Payload { args: argv, cwd })
+        app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
             .unwrap();
     }));
 
