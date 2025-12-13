@@ -7,6 +7,7 @@ import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import Reader from './components/Reader';
+import ReplacementMenu from '@/components/ReplacementMenu';
 
 // This is only used for the Tauri app in the app router
 export default function Page() {
@@ -28,5 +29,10 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService?.hasUpdater, settings.autoCheckUpdates]);
 
-  return <Reader />;
+  return (
+  <>
+    <Reader />
+    <ReplacementMenu />
+  </>
+  );
 }

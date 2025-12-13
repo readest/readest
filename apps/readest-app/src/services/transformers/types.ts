@@ -10,6 +10,7 @@ export type TransformContext = {
   content: string;
   transformers: string[];
   reversePunctuationTransform?: boolean;
+  sectionHref?: string; // Section href for single-instance replacement tracking
 };
 
 export type Transformer = {
