@@ -105,6 +105,7 @@
     "react-i18next": "^15.2.0",
     "react-icons": "^5.4.0",
     "react-responsive": "^10.0.0",
+    "react-virtuoso": "^4.17.0",
     "react-window": "^1.8.11",
     "semver": "^7.7.1",
     "stripe": "^18.2.1",

@@ -54,7 +54,7 @@ importers:
         version: 3.735.0
       '@ducanh2912/next-pwa':
         specifier: ^10.2.9
-        version: 10.2.9(@types/babel__core@7.20.5)(next@16.0.10(@babel/core@7.28.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(webpack@5.97.1)
+        version: 10.2.9(@types/babel__core@7.20.5)(next@16.0.10(@babel/core@7.26.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(webpack@5.97.1)
       '@fabianlars/tauri-plugin-oauth':
         specifier: '2'
         version: 2.0.0
@@ -180,7 +180,7 @@ importers:
         version: 15.0.12
       next:
         specifier: 16.0.10
-        version: 16.0.10(@babel/core@7.28.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 16.0.10(@babel/core@7.26.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       overlayscrollbars:
         specifier: ^2.11.4
         version: 2.11.4
@@ -208,6 +208,9 @@ importers:
       react-responsive:
         specifier: ^10.0.0
         version: 10.0.0(react@19.2.0)
+      react-virtuoso:
+        specifier: ^4.17.0
+        version: 4.17.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-window:
         specifier: ^1.8.11
         version: 1.8.11(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -219,7 +222,7 @@ importers:
         version: 18.2.1(@types/node@22.15.31)
       styled-jsx:
         specifier: ^5.1.7
-        version: 5.1.7(@babel/core@7.28.0)(react@19.2.0)
+        version: 5.1.7(@babel/core@7.26.7)(react@19.2.0)
       tinycolor2:
         specifier: ^1.6.0
         version: 1.6.0
@@ -6023,6 +6026,12 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
+  react-virtuoso@4.17.0:
+    resolution: {integrity: sha512-od3pi2v13v31uzn5zPXC2u3ouISFCVhjFVFch2VvS2Cx7pWA2F1aJa3XhNTN2F07M3lhfnMnsmGeH+7wZICr7w==}
+    peerDependencies:
+      react: '>=16 || >=17 || >= 18 || >= 19'
+      react-dom: '>=16 || >=17 || >= 18 || >=19'
+
   react-window@1.8.11:
     resolution: {integrity: sha512-+SRbUVT2scadgFSWx+R1P754xHPEqvcfSfVX10QYg6POOz+WNgkN48pS+BtZNIMGiL1HYrSEiCkwsMS15QogEQ==}
     engines: {node: '>8.0.0'}
@@ -9905,10 +9914,10 @@ snapshots:
       picomatch: 4.0.3
       which: 4.0.0
 
-  '@ducanh2912/next-pwa@10.2.9(@types/babel__core@7.20.5)(next@16.0.10(@babel/core@7.28.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(webpack@5.97.1)':
+  '@ducanh2912/next-pwa@10.2.9(@types/babel__core@7.20.5)(next@16.0.10(@babel/core@7.26.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(webpack@5.97.1)':
     dependencies:
       fast-glob: 3.3.2
-      next: 16.0.10(@babel/core@7.28.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      next: 16.0.10(@babel/core@7.26.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       semver: 7.6.3
       webpack: 5.97.1
       workbox-build: 7.1.1(@types/babel__core@7.20.5)
@@ -14374,7 +14383,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@16.0.10(@babel/core@7.28.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  next@16.0.10(@babel/core@7.26.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
       '@next/env': 16.0.10
       '@swc/helpers': 0.5.15
@@ -14382,7 +14391,7 @@ snapshots:
       postcss: 8.4.31
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
-      styled-jsx: 5.1.6(@babel/core@7.28.0)(react@19.2.0)
+      styled-jsx: 5.1.6(@babel/core@7.26.7)(react@19.2.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.0.10
       '@next/swc-darwin-x64': 16.0.10
@@ -14834,6 +14843,11 @@ snapshots:
       prop-types: 15.8.1
       react: 19.2.0
       shallow-equal: 3.1.0
+
+  react-virtuoso@4.17.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
 
   react-window@1.8.11(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
@@ -15466,19 +15480,19 @@ snapshots:
 
   strnum@1.0.5: {}
 
-  styled-jsx@5.1.6(@babel/core@7.28.0)(react@19.2.0):
+  styled-jsx@5.1.6(@babel/core@7.26.7)(react@19.2.0):
     dependencies:
       client-only: 0.0.1
       react: 19.2.0
     optionalDependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.26.7
 
-  styled-jsx@5.1.7(@babel/core@7.28.0)(react@19.2.0):
+  styled-jsx@5.1.7(@babel/core@7.26.7)(react@19.2.0):
     dependencies:
       client-only: 0.0.1
       react: 19.2.0
     optionalDependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.26.7
 
   subarg@1.0.0:
     dependencies:

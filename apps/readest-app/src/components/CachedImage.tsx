@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 interface CachedImageProps {
   src: string | null;
@@ -15,7 +15,10 @@ interface CachedImageProps {
   fallback?: React.ReactNode;
 }
 
-export function CachedImage({
+const imageUrlCache = new Map<string, string>();
+const loadingPromises = new Map<string, Promise<string>>();
+
+const CachedImageComponent = ({
   src,
   alt,
   fill,
@@ -25,14 +28,25 @@ export function CachedImage({
   height,
   onGenerateCachedImageUrl,
   fallback,
-}: CachedImageProps) {
-  const [cachedUrl, setCachedUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+}: CachedImageProps) => {
+  const [cachedUrl, setCachedUrl] = useState<string | null>(() => {
+    return src ? imageUrlCache.get(src) || null : null;
+  });
+  const [loading, setLoading] = useState(() => !src || !imageUrlCache.has(src));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!src) {
       setTimeout(() => {
+        setLoading(false);
+      }, 0);
+      return;
+    }
+
+    const cached = imageUrlCache.get(src);
+    if (cached) {
+      setTimeout(() => {
+        setCachedUrl(cached);
         setLoading(false);
       }, 0);
       return;
@@ -45,9 +59,20 @@ export function CachedImage({
         setLoading(true);
         setError(null);
 
-        const url = await onGenerateCachedImageUrl(src);
+        let loadPromise = loadingPromises.get(src);
+
+        if (!loadPromise) {
+          loadPromise = onGenerateCachedImageUrl(src);
+          loadingPromises.set(src, loadPromise);
+          loadPromise.finally(() => {
+            loadingPromises.delete(src);
+          });
+        }
+
+        const url = await loadPromise;
 
         if (!cancelled) {
+          imageUrlCache.set(src, url);
           setCachedUrl(url);
           setLoading(false);
         }
@@ -78,7 +103,6 @@ export function CachedImage({
     if (fallback) {
       return <>{fallback}</>;
     }
-
     return (
       <div className={`flex h-full w-full items-center justify-center ${className || ''}`}>
         <div className='text-base-content/30'>
@@ -109,4 +133,23 @@ export function CachedImage({
       sizes={sizes}
     />
   );
-}
+};
+
+const arePropsEqual = (prevProps: CachedImageProps, nextProps: CachedImageProps) => {
+  return (
+    prevProps.src === nextProps.src &&
+    prevProps.alt === nextProps.alt &&
+    prevProps.fill === nextProps.fill &&
+    prevProps.className === nextProps.className &&
+    prevProps.sizes === nextProps.sizes &&
+    prevProps.width === nextProps.width &&
+    prevProps.height === nextProps.height
+  );
+};
+
+export const CachedImage = memo(CachedImageComponent, arePropsEqual);
+
+export const clearImageCache = () => {
+  imageUrlCache.clear();
+  loadingPromises.clear();
+};
