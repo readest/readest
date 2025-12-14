@@ -61,8 +61,9 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         <div
           className={clsx(
             'selection-buttons flex h-full w-full items-center justify-between p-2',
-            isVertical ? 'flex-col' : 'flex-row',
+            isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
           )}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {buttons.map((button, index) => (
             <PopupButton
