@@ -45,9 +45,6 @@ const Popup = ({
     availableHeight = window.innerHeight - trianglePosition.point.y - popupPadding;
   }
   maxHeight = Math.min(maxHeight || availableHeight, availableHeight);
-  if (minHeight) {
-    minHeight = Math.min(minHeight, availableHeight);
-  }
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -79,11 +76,11 @@ const Popup = ({
       ...position,
       point: {
         ...position.point,
-        y: trianglePosition.point.y - containerHeight,
+        y: Math.max(popupPadding, trianglePosition.point.y - containerHeight),
       },
     };
     setAdjustedPosition(newPosition);
-  }, [position, trianglePosition, childrenHeight]);
+  }, [position, trianglePosition, popupPadding, childrenHeight]);
 
   return (
     <div>
@@ -91,7 +88,7 @@ const Popup = ({
         id='popup-container'
         ref={containerRef}
         className={clsx(
-          'bg-base-300 absolute rounded-lg font-sans',
+          'bg-base-300 absolute z-50 rounded-lg font-sans',
           trianglePosition?.dir !== 'up' && 'shadow-xl',
           className,
         )}

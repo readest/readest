@@ -51,6 +51,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
       <Popup
         width={isVertical ? popupHeight : popupWidth}
         height={isVertical ? popupWidth : popupHeight}
+        minHeight={isVertical ? popupWidth : popupHeight}
         position={position}
         trianglePosition={trianglePosition}
         className='selection-popup bg-gray-600 text-white'
@@ -59,12 +60,9 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
       >
         <div
           className={clsx(
-            'selection-buttons flex items-center justify-between p-2',
+            'selection-buttons flex h-full w-full items-center justify-between p-2',
             isVertical ? 'flex-col' : 'flex-row',
           )}
-          style={{
-            height: isVertical ? popupWidth : popupHeight,
-          }}
         >
           {buttons.map((button, index) => (
             <PopupButton
