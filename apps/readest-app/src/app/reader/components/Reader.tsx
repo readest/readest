@@ -33,8 +33,8 @@ Z-Index Layering Guide:
 ---------------------------------
 99 – Window Border (Linux only)
      • Ensures the border stays on top of all UI elements.
-50 – Loading Progress / Toast Notifications / Dialogs
-     • Includes Settings, About, Updater, and KOSync dialogs.
+50 – Loading Progress / Toast Notifications / Dialogs / Popups
+     • Includes Settings, About, Updater, KOSync dialogs and Annotation popups.
 45 – Sidebar / Notebook (Unpinned)
      • Floats above the content but below global dialogs.
 40 – TTS Bar
