@@ -10,7 +10,6 @@ import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useDeviceControlStore } from '@/store/deviceStore';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -21,7 +20,6 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
-  const { setScreenBrightness } = useDeviceControlStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
   const iconSize = useDefaultIconSize();
@@ -54,25 +52,13 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       appService.loadSettings().then((settings) => {
         const globalViewSettings = settings.globalViewSettings;
         applyUILanguage(globalViewSettings.uiLanguage);
-        const brightness = settings.screenBrightness;
-        const autoBrightness = settings.autoScreenBrightness;
-        if (appService.hasScreenBrightness && !autoBrightness && brightness >= 0) {
-          setScreenBrightness(brightness / 100);
-        }
         applyBackgroundTexture(envConfig, globalViewSettings);
         if (globalViewSettings.isEink) {
           applyEinkMode(true);
         }
       });
     }
-  }, [
-    envConfig,
-    appService,
-    applyUILanguage,
-    setScreenBrightness,
-    applyBackgroundTexture,
-    applyEinkMode,
-  ]);
+  }, [envConfig, appService, applyUILanguage, applyBackgroundTexture, applyEinkMode]);
 
   // Make sure appService is available in all children components
   if (!appService) return;

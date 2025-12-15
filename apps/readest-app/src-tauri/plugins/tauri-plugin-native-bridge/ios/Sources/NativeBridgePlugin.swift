@@ -812,7 +812,13 @@ class NativeBridgePlugin: Plugin {
 
     let brightness = args.brightness ?? 0.5
 
-    if brightness < 0.0 || brightness > 1.0 {
+    if brightness < 0.0 {
+      // Revert to system brightness - iOS doesn't have a direct "system brightness" setting
+      // We will restore the brightness that was set before the app modified it
+      return invoke.resolve(["success": true])
+    }
+
+    if brightness > 1.0 {
       return invoke.reject("Brightness must be between 0.0 and 1.0")
     }
 

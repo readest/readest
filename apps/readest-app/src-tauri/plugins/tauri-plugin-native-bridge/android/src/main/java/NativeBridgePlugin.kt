@@ -495,13 +495,19 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         val args = invoke.parseArgs(SetScreenBrightnessRequestArgs::class.java)
         val ret = JSObject()
         try {
-            val brightness = (args.brightness ?: 0.5).toFloat()
-            if (brightness < 0.0 || brightness > 1.0) {
-                invoke.reject("Brightness must be between 0.0 and 1.0")
-                return
-            }
+            val brightness = args.brightness?.toFloat()
             val layoutParams = activity.window.attributes
-            layoutParams.screenBrightness = brightness
+
+            if (brightness == null || brightness < 0.0) {
+                layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            } else {
+                if (brightness > 1.0) {
+                    invoke.reject("Brightness must be between 0.0 and 1.0, or null to use system brightness")
+                    return
+                }
+                layoutParams.screenBrightness = brightness
+            }
+
             activity.window.attributes = layoutParams
             ret.put("success", true)
         } catch (e: Exception) {

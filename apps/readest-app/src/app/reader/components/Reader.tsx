@@ -52,9 +52,10 @@ Z-Index Layering Guide:
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
   const { appService } = useEnv();
-  const { hoveredBookKey, getView } = useReaderStore();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
+  const { hoveredBookKey, getView } = useReaderStore();
+  const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
   const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
@@ -73,6 +74,27 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     }
     initDayjs(getLocale());
   }, []);
+
+  useEffect(() => {
+    const brightness = settings.screenBrightness;
+    const autoBrightness = settings.autoScreenBrightness;
+    if (appService?.hasScreenBrightness && !autoBrightness && brightness >= 0) {
+      setScreenBrightness(brightness / 100);
+    }
+    let previousBrightness = -1;
+    if (appService?.isIOSApp) {
+      getScreenBrightness().then((b) => {
+        previousBrightness = b;
+      });
+    }
+
+    return () => {
+      if (appService?.hasScreenBrightness && !autoBrightness) {
+        setScreenBrightness(previousBrightness);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService]);
 
   const handleKeyDown = (event: CustomEvent) => {
     const view = getView(sideBarBookKey!);
