@@ -182,71 +182,19 @@ export const ReplacementRulesWindow: React.FC = () => {
       return;
     }
     setIsReloading(true);
-    const disableGlobalRuleForBook = async (rule: ReplacementRule) => {
-      const { getViewSettings, setViewSettings } = useReaderStore.getState();
-      const { getConfig, saveConfig, setConfig } = useBookDataStore.getState();
-      const { settings } = useSettingsStore.getState();
-
-      if (!sideBarBookKey) return;
-
-      const viewSettings = getViewSettings(sideBarBookKey);
-      if (!viewSettings) return;
-
-      const existingRules = viewSettings.replacementRules || [];
-      const updatedRules = existingRules.some((r) => r.id === rule.id)
-        ? existingRules.map((r) => (r.id === rule.id ? { ...r, enabled: false } : r))
-        : [...existingRules, { ...rule, enabled: false }];
-
-      const updatedViewSettings = { ...viewSettings, replacementRules: updatedRules };
-      setViewSettings(sideBarBookKey, updatedViewSettings);
-
-      const config = getConfig(sideBarBookKey);
-      if (config) {
-        const updatedConfig = {
-          ...config,
-          viewSettings: updatedViewSettings,
-          updatedAt: Date.now(),
-        };
-        await saveConfig(environmentConfig, sideBarBookKey, updatedConfig, settings);
-        // Update the in-memory config to ensure UI reflects the changes immediately
-        setConfig(sideBarBookKey, updatedConfig);
-      }
-    };
 
     try {
       const bookKey = sideBarBookKey || '';
-      if (scope === 'global' && sideBarBookKey) {
-        // Disable the global rule only for this book by overriding it locally
-        const globalRule = (settings?.globalViewSettings?.replacementRules || []).find(
-          (r) => r.id === ruleId,
-        );
-        if (globalRule) {
-          // Check if the rule is already disabled for this book
-          const existingRules = viewSettings?.replacementRules || [];
-          const existingOverride = existingRules.find(
-            (r) => r.id === ruleId && r.enabled === false,
-          );
-
-          if (existingOverride) {
-            // Rule is already disabled, show informational message
-            eventDispatcher.dispatch('toast', {
-              type: 'warning',
-              message: _(
-                'This global rule is already disabled for this book. To permanently delete it, go to Settings in the Library page.',
-              ),
-              timeout: 4000,
-            });
-            return;
-          }
-
-          await disableGlobalRuleForBook(globalRule);
-        }
+      
+      if (scope === 'global') {
+        // delete global rule for all books
+        await removeReplacementRule(environmentConfig, '', ruleId, 'global');
       } else {
         await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
       }
       const successMessage =
         scope === 'global'
-          ? _('Global replacement rule disabled for this book. Reloading book to apply changes...')
+          ? _('Global replacement rule deleted for all books in the library. Reloading book to apply changes...')
           : _('Replacement rule deleted. Reloading book to apply changes...');
 
       eventDispatcher.dispatch('toast', {
@@ -431,12 +379,7 @@ export const ReplacementRulesWindow: React.FC = () => {
                               <span className='font-medium'>
                                 {getRuleScope(r) === 'book' ? _('Book') : _('Global')}
                               </span>
-                              {getRuleScope(r) === 'global' &&
-                                (r.enabled ? (
-                                  <span className='text-success ml-2'>✓ {_('Enabled')}</span>
-                                ) : (
-                                  <span className='text-error ml-2'>✗ {_('Disabled')}</span>
-                                ))}
+                              
                               &nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;
                               <span className='font-medium'>
                                 {r.caseSensitive !== false ? _('Yes') : _('No')}
