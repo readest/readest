@@ -81,6 +81,7 @@ interface BookshelfItemProps {
   transferProgress: number | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
+  handleGroupBooks: () => void;
   handleBookDownload: (book: Book) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
@@ -97,6 +98,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   transferProgress,
   setLoading,
   toggleSelection,
+  handleGroupBooks,
   handleBookUpload,
   handleBookDownload,
   handleSetSelectMode,
@@ -188,6 +190,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection(book.hash);
       },
     });
+    const groupBooksMenuItem = await MenuItem.new({
+      text: _('Group Books'),
+      action: async () => {
+        if (!isSelectMode) handleSetSelectMode(true);
+        if (!itemSelected) {
+          toggleSelection(book.hash);
+        }
+        handleGroupBooks();
+      },
+    });
     const showBookInFinderMenuItem = await MenuItem.new({
       text: _(fileRevealLabel),
       action: async () => {
@@ -221,6 +233,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     });
     const menu = await Menu.new();
     menu.append(selectBookMenuItem);
+    menu.append(groupBooksMenuItem);
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
     if (book.uploadedAt && !book.downloadedAt) {
@@ -242,6 +255,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection(group.id);
       },
     });
+    const groupBooksMenuItem = await MenuItem.new({
+      text: _('Group Books'),
+      action: async () => {
+        if (!isSelectMode) handleSetSelectMode(true);
+        if (!itemSelected) {
+          toggleSelection(group.id);
+        }
+        handleGroupBooks();
+      },
+    });
     const deleteGroupMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
@@ -250,6 +273,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     });
     const menu = await Menu.new();
     menu.append(selectGroupMenuItem);
+    menu.append(groupBooksMenuItem);
     menu.append(deleteGroupMenuItem);
     menu.popup();
   };

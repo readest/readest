@@ -304,6 +304,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             }
             setLoading={setLoading}
             toggleSelection={toggleSelection}
+            handleGroupBooks={groupSelectedBooks}
             handleBookUpload={handleBookUpload}
             handleBookDownload={handleBookDownload}
             handleBookDelete={handleBookDelete}
