@@ -1,15 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { getWordCount, isWordLimitExceeded } from '../../utils/wordLimit';
 
-// Word count utility function (same logic as in Annotator.tsx)
-const getWordCount = (text: string): number => {
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
-};
-
-const MAX_REPLACEMENT_WORDS = 30;
-
-const isWordLimitExceeded = (text: string): boolean => {
-  return getWordCount(text) > MAX_REPLACEMENT_WORDS;
-};
 
 describe('Word Limit Feature', () => {
   describe('getWordCount', () => {
