@@ -240,8 +240,7 @@ export const replacementTransformer: Transformer = {
   },
 };
 
-
-// Rule management 
+// Rule management
 export type ReplacementRuleScope = 'single' | 'book' | 'global';
 
 export interface CreateReplacementRuleOptions {
@@ -277,7 +276,7 @@ export function createReplacementRule(opts: CreateReplacementRuleOptions): Repla
 
 export function mergeReplacementRules(
   globalRules: ReplacementRule[] | undefined,
-  bookRules: ReplacementRule[] | undefined
+  bookRules: ReplacementRule[] | undefined,
 ): ReplacementRule[] {
   const map = new Map<string, ReplacementRule>();
 
@@ -286,7 +285,6 @@ export function mergeReplacementRules(
 
   return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
-
 
 /**
  * Gets all active replacement rules for a book (merged global + book rules)
@@ -351,7 +349,7 @@ async function addReplacementRuleToBook(
 
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
-  
+
   if (rule.singleInstance) {
     // Single-instance rules: ALWAYS create new rule (each has unique ID)
     // Don't try to merge - after DOM modifications, occurrence indices shift
@@ -569,9 +567,7 @@ async function updateReplacementRuleInBook(
   }
 
   const existingRules = viewSettings.replacementRules || [];
-  const updatedRules = existingRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = existingRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedViewSettings: ViewSettings = {
     ...viewSettings,
@@ -604,9 +600,7 @@ async function updateReplacementRuleInGlobal(
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
 
   const globalRules = settings.globalViewSettings.replacementRules || [];
-  const updatedRules = globalRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = globalRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedSettings: SystemSettings = {
     ...settings,
