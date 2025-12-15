@@ -8,7 +8,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { uniqueId } from '@/utils/misc';
 
-
 // Whole-word enforcement for ALL rules (literal OR regex)
 // Case-sensitive, with Unicode-aware boundaries for non-ASCII patterns
 interface NormalizedPattern {
@@ -22,17 +21,11 @@ function isUnicodeWordChar(char: string): boolean {
   return /[\p{L}\p{N}_]/u.test(char);
 }
 
-// Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
-function escapeHtmlEntities(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
+function normalizePattern(
+  pattern: string,
+  isRegex: boolean,
+  caseSensitive = true,
+): NormalizedPattern {
   const hasUnicode = /[^\x00-\x7F]/.test(pattern);
 
   let flags = '';
@@ -55,12 +48,12 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
 
   // Escape literals
   const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-  
+
   // Check if pattern has punctuation at start or end
   const startsWithPunctuation = /^[^\w\s]/.test(pattern);
   const endsWithPunctuation = /[^\w\s]$/.test(pattern);
   const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
-  
+
   // For ASCII patterns with boundary punctuation, add boundaries only around the word part
   // For patterns without boundary punctuation, add boundaries around the whole pattern
   // For Unicode patterns, we'll check boundaries manually
@@ -78,10 +71,10 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
       const wordPart = wordMatch[0];
       const wordStart = pattern.indexOf(wordPart);
       const wordEnd = wordStart + wordPart.length;
-      
+
       // Escape the word part separately
       const wordEscaped = wordPart.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-      
+
       // Build the pattern: [before punctuation][word boundary][word][word boundary][after punctuation]
       const beforeWord = escaped.substring(0, wordStart);
       const afterWord = escaped.substring(wordEnd);
@@ -91,192 +84,131 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
     // No boundary punctuation - add boundaries around the whole pattern
     source = `\\b${escaped}\\b`;
   }
-  
+
   return { source, flags };
 }
 
-// HTML attribute / tag safety
-// Prevent replacement inside <tag attr="..."> and inside the tag name
-function isInsideHTMLTag(text: string, start: number, end: number): boolean {
-  const before = text[start - 1] ?? '';
-  const after = text[end] ?? '';
-  if (before === '<') return true;
-  if (after === '>') return true;
-  return false;
-}
-
-// Checks if a position is inside <script>...</script> or <style>...</style>
-function isInsideScriptOrStyle(text: string, index: number): boolean {
-  const lower = text.toLowerCase();
-  const lastScriptOpen = lower.lastIndexOf('<script', index);
-  const lastScriptClose = lower.lastIndexOf('</script', index);
-  if (lastScriptOpen !== -1 && lastScriptOpen > lastScriptClose) return true;
-
-  const lastStyleOpen = lower.lastIndexOf('<style', index);
-  const lastStyleClose = lower.lastIndexOf('</style', index);
-  if (lastStyleOpen !== -1 && lastStyleOpen > lastStyleClose) return true;
-
-  return false;
-}
-
-
-// Replacement region tracking: prevents re-matching replacement output
-interface Region { start: number; end: number; }
-
-function isInReplacedRegion(start: number, end: number, regions: Region[]): boolean {
-  return regions.some(r => start < r.end && end > r.start);
-}
-
-function shiftRegionsAfterReplacement(
-  regions: Region[],
-  replaceStart: number,
-  replaceEnd: number,
-  replacementLength: number
-) {
-  const diff = replacementLength - (replaceEnd - replaceStart);
-
-  for (const r of regions) {
-    if (r.start >= replaceEnd) {
-      r.start += diff;
-      r.end += diff;
-    }
-  }
-}
-
-
-// Multi-replacement (all occurrences except inside HTML tags/attributes)
-function applyMultiReplacement(
-  text: string,
+// Apply multi-replacement to text nodes
+function applyRuleToTextNodesMulti(
+  textNodes: Text[],
   rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
-  replacedRegions: Region[]
-): string {
+): void {
   let regex: RegExp;
   try {
     regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
   } catch (_e) {
-    // Invalid regex; skip this rule
-    return text;
+    return; // Invalid regex
   }
 
-  const matches: { index: number; length: number }[] = [];
+  for (const textNode of textNodes) {
+    if (!textNode.textContent) continue;
 
-  let m;
-  while ((m = regex.exec(text)) !== null) {
-    const start = m.index;
-    const end = start + m[0].length;
+    let text = textNode.textContent;
+    const matches: { index: number; length: number }[] = [];
 
-    // For literal (non-regex) rules, ensure the matched string exactly equals the pattern.
-    // If caseSensitive is false, compare in lowercase. If true or unspecified, compare literally.
-    if (!rule.isRegex) {
-      const match = m[0];
-      const pattern = rule.pattern;
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      const start = m.index;
 
-      const isCaseSensitive = rule.caseSensitive !== false;
-
-      const isMatch = isCaseSensitive
-        ? match === pattern
-        : match.toLowerCase() === pattern.toLowerCase();
-
-      if (!isMatch) continue;
-    }
-
-
-    if (isInsideHTMLTag(text, start, end)) continue;
-    if (isInsideScriptOrStyle(text, start)) continue;
-    if (isInReplacedRegion(start, end, replacedRegions)) continue;
-
-    // Manual whole-word boundary check for Unicode patterns
-    const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
-    if (hasUnicode) {
-      const charBefore = text[start - 1] ?? '';
-      const charAfter = text[end] ?? '';
-      if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
-        continue; // Not a whole word
+      // For literal (non-regex) rules, ensure exact match
+      if (!rule.isRegex) {
+        const match = m[0];
+        const pattern = rule.pattern;
+        const isCaseSensitive = rule.caseSensitive !== false;
+        const isMatch = isCaseSensitive
+          ? match === pattern
+          : match.toLowerCase() === pattern.toLowerCase();
+        if (!isMatch) continue;
       }
+
+      // Manual whole-word boundary check for Unicode patterns
+      const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
+      if (hasUnicode) {
+        const charBefore = text[start - 1] ?? '';
+        const charAfter = text[start + m[0].length] ?? '';
+        if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+          continue;
+        }
+      }
+
+      matches.push({ index: start, length: m[0].length });
     }
 
-    matches.push({ index: start, length: m[0].length });
+    // Apply replacements in reverse order to maintain indices
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const match = matches[i];
+      if (!match) continue;
+      const { index, length } = match;
+      const end = index + length;
+
+      text = text.slice(0, index) + rule.replacement + text.slice(end);
+    }
+
+    // Update the text node with replaced content
+    if (matches.length > 0) {
+      textNode.textContent = text;
+    }
   }
-
-  for (let i = matches.length - 1; i >= 0; i--) {
-    const match = matches[i];
-    if (!match) continue;
-    const { index, length } = match;
-    const end = index + length;
-
-    // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
-    const escapedReplacement = escapeHtmlEntities(rule.replacement);
-    shiftRegionsAfterReplacement(replacedRegions, index, end, escapedReplacement.length);
-
-    text = text.slice(0, index) + escapedReplacement + text.slice(end);
-
-    replacedRegions.push({ start: index, end: index + rule.replacement.length });
-  }
-
-  return text;
 }
 
-
-// Single-instance replacement (Nth occurrence only)
-function applySingleInstance(
-  text: string,
-  pattern: NormalizedPattern,
-  replacement: string,
-  occurrenceIndex: number | undefined,
-  replacedRegions: Region[],
-  isRegex: boolean,
-  rawPattern: string
-): string {
+// Apply single-instance replacement to text nodes
+function applyRuleToTextNodesSingle(
+  textNodes: Text[],
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
+): void {
   let regex: RegExp;
   try {
-    regex = new RegExp(pattern.source, pattern.flags || 'g');
+    regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
   } catch (_e) {
-    return text;
+    return;
   }
 
-  const matches: { start: number; end: number }[] = [];
+  // Collect all matches across all text nodes
+  const allMatches: { nodeIndex: number; matchIndex: number; length: number }[] = [];
 
-  let m;
-  while ((m = regex.exec(text)) !== null) {
-    const start = m.index;
-    const end = start + m[0].length;
-    
-    // Case sensitive by default for single-instance replacements
-    if (!isRegex && m[0] !== rawPattern) continue;
-    if (isInsideHTMLTag(text, start, end)) continue;
-    if (isInsideScriptOrStyle(text, start)) continue;
-    if (isInReplacedRegion(start, end, replacedRegions)) continue;
+  for (let nodeIdx = 0; nodeIdx < textNodes.length; nodeIdx++) {
+    const textNode = textNodes[nodeIdx];
+    if (!textNode || !textNode.textContent) continue;
 
-    // Manual whole-word boundary check for Unicode patterns
-    const hasUnicode = /[^\x00-\x7F]/.test(rawPattern);
-    if (hasUnicode) {
-      const charBefore = text[start - 1] ?? '';
-      const charAfter = text[end] ?? '';
-      if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
-        continue; // Not a whole word
+    const text = textNode.textContent;
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      const start = m.index;
+
+      // Case sensitive check for single-instance
+      if (!rule.isRegex && m[0] !== rule.pattern) continue;
+
+      // Unicode whole-word check
+      const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
+      if (hasUnicode) {
+        const charBefore = text[start - 1] ?? '';
+        const charAfter = text[start + m[0].length] ?? '';
+        if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+          continue;
+        }
       }
-    }
 
-    matches.push({ start, end });
+      allMatches.push({ nodeIndex: nodeIdx, matchIndex: start, length: m[0].length });
+    }
   }
 
-  const targetIndex = occurrenceIndex ?? 0;
-  const target = matches[targetIndex];
-  if (!target) return text;
+  // Apply replacement to the target occurrence
+  const targetIndex = rule.occurrenceIndex ?? 0;
+  const target = allMatches[targetIndex];
+  if (!target) return;
 
-  // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
-  const escapedReplacement = escapeHtmlEntities(replacement);
-  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, escapedReplacement.length);
+  const textNode = textNodes[target.nodeIndex];
+  if (!textNode || !textNode.textContent) return;
 
-  text = text.slice(0, target.start) + escapedReplacement + text.slice(target.end);
-
-  replacedRegions.push({ start: target.start, end: target.start + replacement.length });
-
-  return text;
+  const text = textNode.textContent;
+  const newText =
+    text.slice(0, target.matchIndex) +
+    rule.replacement +
+    text.slice(target.matchIndex + target.length);
+  textNode.textContent = newText;
 }
 
-
-// Transformer
+// DOM-Based Transformer function
 export const replacementTransformer: Transformer = {
   name: 'replacement',
 
@@ -288,28 +220,52 @@ export const replacementTransformer: Transformer = {
     if (!merged || merged.length === 0) return ctx.content;
 
     const processed = merged
-      .filter(r => r.enabled && r.pattern.trim().length > 0)
-      .map(r => ({
+      .filter((r) => r.enabled && r.pattern.trim().length > 0)
+      .map((r) => ({
         ...r,
-        normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false)
+        normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false),
       }));
 
     if (processed.length === 0) return ctx.content;
 
-    const singleRules = processed.filter(r => r.singleInstance);
-    const bookRules = processed.filter(r => !r.singleInstance && !r.global);
-    const globalRules = processed.filter(r => !r.singleInstance && r.global);
+    // Parse HTML into DOM
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(ctx.content, 'text/html');
 
-    const ordered = [
-      ...singleRules,
-      ...bookRules,
-      ...globalRules,
-    ];
+    // Get all text nodes using TreeWalker
+    const walker = document.createTreeWalker(
+      doc.body || doc.documentElement,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          const parent = node.parentElement;
+          // Skip script and style tags
+          if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          // Only accept nodes with actual text content
+          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        },
+      },
+    );
 
-    let text = ctx.content;
-    const replacedRegions: Region[] = [];
+    // Collect all text nodes
+    const textNodes: Text[] = [];
+    let currentNode: Node | null;
+    while ((currentNode = walker.nextNode())) {
+      textNodes.push(currentNode as Text);
+    }
 
+    // Separate rules by type
+    const singleRules = processed.filter((r) => r.singleInstance);
+    const bookRules = processed.filter((r) => !r.singleInstance && !r.global);
+    const globalRules = processed.filter((r) => !r.singleInstance && r.global);
+
+    const ordered = [...singleRules, ...bookRules, ...globalRules];
+
+    // Apply replacements to text nodes
     for (const rule of ordered) {
+      // Check section match for single-instance rules
       if (rule.singleInstance && rule.sectionHref) {
         const ruleBase = rule.sectionHref.split('#')[0];
         const ctxBase = ctx.sectionHref?.split('#')[0];
@@ -317,30 +273,19 @@ export const replacementTransformer: Transformer = {
       }
 
       if (rule.singleInstance) {
-        text = applySingleInstance(
-          text,
-          rule.normalizedPattern,
-          rule.replacement,
-          rule.occurrenceIndex,
-          replacedRegions,
-          rule.isRegex,
-          rule.pattern
-        );
+        applyRuleToTextNodesSingle(textNodes, rule);
       } else {
-        text = applyMultiReplacement(
-          text,
-          rule,
-          replacedRegions
-        );
+        applyRuleToTextNodesMulti(textNodes, rule);
       }
     }
 
-    return text;
-  }
+    // Serialize back to HTML
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(doc);
+  },
 };
 
-
-// Rule management 
+// Rule management
 export type ReplacementRuleScope = 'single' | 'book' | 'global';
 
 export interface CreateReplacementRuleOptions {
@@ -376,7 +321,7 @@ export function createReplacementRule(opts: CreateReplacementRuleOptions): Repla
 
 export function mergeReplacementRules(
   globalRules: ReplacementRule[] | undefined,
-  bookRules: ReplacementRule[] | undefined
+  bookRules: ReplacementRule[] | undefined,
 ): ReplacementRule[] {
   const map = new Map<string, ReplacementRule>();
 
@@ -385,7 +330,6 @@ export function mergeReplacementRules(
 
   return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
-
 
 /**
  * Gets all active replacement rules for a book (merged global + book rules)
@@ -450,7 +394,7 @@ async function addReplacementRuleToBook(
 
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
-  
+
   if (rule.singleInstance) {
     // Single-instance rules: ALWAYS create new rule (each has unique ID)
     // Don't try to merge - after DOM modifications, occurrence indices shift
@@ -668,9 +612,7 @@ async function updateReplacementRuleInBook(
   }
 
   const existingRules = viewSettings.replacementRules || [];
-  const updatedRules = existingRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = existingRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedViewSettings: ViewSettings = {
     ...viewSettings,
@@ -703,9 +645,7 @@ async function updateReplacementRuleInGlobal(
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
 
   const globalRules = settings.globalViewSettings.replacementRules || [];
-  const updatedRules = globalRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = globalRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedSettings: SystemSettings = {
     ...settings,
