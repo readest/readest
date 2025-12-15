@@ -38,6 +38,8 @@ import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ReplacementOptions from './ReplacementOptions';
 
+import { isWordLimitExceeded } from '@/utils/wordLimit';
+
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -527,12 +529,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
   };
 
-  const MAX_REPLACEMENT_WORDS = 30;
-
-  const getWordCount = (text: string): number => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
-  };
-
   // Import type for ReplacementConfig
   type ReplacementConfig = {
     replacementText: string;
@@ -545,25 +541,25 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const isWholeWord = (range: Range, selectedText: string): boolean => {
     try {
       if (!selectedText || selectedText.trim().length === 0) return false;
-      
+
       // Verify the selection contains word characters
       const hasWordCharInSelection = /[a-zA-Z0-9_]/.test(selectedText);
       if (!hasWordCharInSelection) {
         return false;
       }
-      
+
       // If the selection contains spaces, punctuation, or multiple words, it's a phrase
       // Phrases (including lines with quotes) are always allowed for single-instance replacements
       const hasSpaces = /\s/.test(selectedText);
       const hasPunctuation = /[^\w\s]/.test(selectedText);
       const isPhrase = hasSpaces || hasPunctuation;
-      
+
       // Also allow selections that start or end with punctuation (e.g., "'tis", "off;", "look,")
       // These are valid selections where the user intentionally includes punctuation
       const startsWithPunctuation = /^[^\w\s]/.test(selectedText);
       const endsWithPunctuation = /[^\w\s]$/.test(selectedText);
       const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
-      
+
       console.log('[isWholeWord] Phrase check:', {
         selectedText,
         hasSpaces,
@@ -573,19 +569,19 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         endsWithPunctuation,
         hasBoundaryPunctuation,
       });
-      
+
       if (isPhrase || hasBoundaryPunctuation) {
         // For phrases or selections with boundary punctuation, we allow them
         // The only thing we want to prevent is selecting "and" inside "England"
         console.log('[isWholeWord] Allowing phrase or boundary-punctuation selection');
         return true;
       }
-      
+
       // For single words, check boundaries to prevent partial word matches
       // Get characters immediately before and after the selection
       let charBefore = '';
       let charAfter = '';
-      
+
       try {
         // Get character before
         const startNode = range.startContainer;
@@ -603,7 +599,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             charBefore = prevText.charAt(prevText.length - 1);
           }
         }
-        
+
         // Get character after
         const endNode = range.endContainer;
         if (endNode.nodeType === Node.TEXT_NODE) {
@@ -629,17 +625,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         console.warn('[isWholeWord] Error checking boundaries:', e);
         return true; // Allow if we can't verify (better to allow than reject valid selections)
       }
-      
+
       // Word characters are: letters, digits, and underscore [a-zA-Z0-9_]
       const isWordChar = (char: string) => /[a-zA-Z0-9_]/.test(char);
-      
+
       // Check boundaries for single words
       // Empty means we're at start/end of text (valid boundary)
       const hasBoundaryBefore = !charBefore || !isWordChar(charBefore);
       const hasBoundaryAfter = !charAfter || !isWordChar(charAfter);
-      
+
       const isValid = hasBoundaryBefore && hasBoundaryAfter;
-      
+
       if (!isValid) {
         console.log('[isWholeWord] Not a whole word:', {
           selectedText,
@@ -649,7 +645,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           hasBoundaryAfter,
         });
       }
-      
+
       return isValid;
     } catch (e) {
       console.warn('Failed to check whole word:', e);
@@ -664,12 +660,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     try {
       const doc = range.startContainer.ownerDocument;
       if (!doc || !doc.body) return 0;
-      
+
       // Create a range from start of body to start of selection
       const beforeRange = doc.createRange();
       beforeRange.setStart(doc.body, 0);
       beforeRange.setEnd(range.startContainer, range.startOffset);
-      
+
       // Get text before selection and count occurrences using whole-word matching
       const textBefore = beforeRange.toString();
       // Escape pattern and add word boundaries for whole-word matching
@@ -677,7 +673,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const wholeWordPattern = `\\b${escapedPattern}\\b`;
       const regex = new RegExp(wholeWordPattern, 'g');
       const matches = textBefore.match(regex);
-      
+
       return matches ? matches.length : 0;
     } catch (e) {
       console.warn('Failed to get occurrence index:', e);
@@ -688,9 +684,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleReplacementConfirm = async (config: ReplacementConfig) => {
     console.log('handleReplacementConfirm CALLED!', config);
     if (!selection || !selection.text) return;
-    
+
     const { replacementText, caseSensitive, scope } = config;
-    
+
     console.log('Replacement confirmed:', {
       originalText: selection.text,
       replacementText,
@@ -713,7 +709,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             rangeStart: range.startOffset,
             rangeEnd: range.endOffset,
           });
-          
+
           if (!isValidWholeWord) {
             eventDispatcher.dispatch('toast', {
               type: 'warning',
@@ -722,18 +718,18 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             });
             return;
           }
-          
+
           // Get which occurrence this is BEFORE modifying the DOM
           // Use whole-word matching to count occurrences correctly
           const occurrenceIndex = getOccurrenceIndex(range, selection.text);
           const sectionHref = progress?.sectionHref;
-          
+
           // Directly modify DOM for immediate effect
           // Note: createTextNode automatically escapes HTML entities, so angle brackets will be preserved
           range.deleteContents();
           const textNode = document.createTextNode(replacementText);
           range.insertNode(textNode);
-          
+
           // Create rule with occurrence tracking for persistence
           await addReplacementRule(
             envConfig,
@@ -783,7 +779,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             enabled: true,
             caseSensitive,
             singleInstance: false,
-              wholeWord: true,
+            wholeWord: true,
           },
           backendScope as 'book' | 'global',
         );
@@ -816,15 +812,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-
-
   const handleShowReplacementOptions = () => {
     if (!selection || !selection.text) {
       return;
     }
 
-    const wordCount = getWordCount(selection.text);
-    if (wordCount > MAX_REPLACEMENT_WORDS) {
+    if (isWordLimitExceeded(selection.text)) {
       eventDispatcher.dispatch('toast', {
         type: 'warning',
         message: 'Word limit exceeded. Please select 30 words or fewer.',
@@ -957,40 +950,40 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const selectionAnnotated = selection?.annotated;
   const buttons = [
-  { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
-  {
-    tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
-    Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
-    onClick: handleHighlight,
-    disabled: bookData.book?.format === 'PDF',
-  },
-  {
-    tooltipText: _('Annotate'),
-    Icon: BsPencilSquare,
-    onClick: handleAnnotate,
-    disabled: bookData.book?.format === 'PDF',
-  },
-  {
-    tooltipText: _('Search'),
-    Icon: FiSearch,
-    onClick: handleSearch,
-    disabled: bookData.book?.format === 'PDF',
-  },
-  { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
-  { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
-  { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
-  {
-    tooltipText: _('Speak'),
-    Icon: FaHeadphones,
-    onClick: handleSpeakText,
-    disabled: bookData.book?.format === 'PDF',
-  },
-  {
-    tooltipText: 'Text Replacement',
-    Icon: MdBuildCircle,
-    onClick: handleShowReplacementOptions,
-    disabled: bookData.book?.format !== 'EPUB',
-  },
+    { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
+    {
+      tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
+      Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
+      onClick: handleHighlight,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    {
+      tooltipText: _('Annotate'),
+      Icon: BsPencilSquare,
+      onClick: handleAnnotate,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    {
+      tooltipText: _('Search'),
+      Icon: FiSearch,
+      onClick: handleSearch,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
+    { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
+    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
+    {
+      tooltipText: _('Speak'),
+      Icon: FaHeadphones,
+      onClick: handleSpeakText,
+      disabled: bookData.book?.format === 'PDF',
+    },
+    {
+      tooltipText: 'Text Replacement',
+      Icon: MdBuildCircle,
+      onClick: handleShowReplacementOptions,
+      disabled: bookData.book?.format !== 'EPUB',
+    },
   ];
 
   return (
@@ -1044,21 +1037,21 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         />
       )}
       {showReplacementOptions && trianglePosition && annotPopupPosition && (
-      <ReplacementOptions
-        isVertical={viewSettings.vertical}
-        style={{
-          height: 'auto',
-          left: `${annotPopupPosition.point.x}px`,
-          top: `${
-            annotPopupPosition.point.y +
-            (annotPopupHeight + 16) * (trianglePosition.dir === 'up' ? -1 : 1)
-          }px`,
-        }}
-        selectedText={selection?.text || ''}
-        onConfirm={handleReplacementConfirm}
-        onClose={() => setShowReplacementOptions(false)}
-      />
-    )}
+        <ReplacementOptions
+          isVertical={viewSettings.vertical}
+          style={{
+            height: 'auto',
+            left: `${annotPopupPosition.point.x}px`,
+            top: `${
+              annotPopupPosition.point.y +
+              (annotPopupHeight + 16) * (trianglePosition.dir === 'up' ? -1 : 1)
+            }px`,
+          }}
+          selectedText={selection?.text || ''}
+          onConfirm={handleReplacementConfirm}
+          onClose={() => setShowReplacementOptions(false)}
+        />
+      )}
     </div>
   );
 };
