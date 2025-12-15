@@ -275,8 +275,124 @@ function applySingleInstance(
   return text;
 }
 
+// Apply multi-replacement to text nodes
+function applyRuleToTextNodesMulti(
+  textNodes: Text[],
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern }
+): void {
+  let regex: RegExp;
+  try {
+    regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
+  } catch (_e) {
+    return; // Invalid regex
+  }
 
-// Transformer
+  for (const textNode of textNodes) {
+    if (!textNode.textContent) continue;
+
+    let text = textNode.textContent;
+    const matches: { index: number; length: number }[] = [];
+
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      const start = m.index;
+
+      // For literal (non-regex) rules, ensure exact match
+      if (!rule.isRegex) {
+        const match = m[0];
+        const pattern = rule.pattern;
+        const isCaseSensitive = rule.caseSensitive !== false;
+        const isMatch = isCaseSensitive
+          ? match === pattern
+          : match.toLowerCase() === pattern.toLowerCase();
+        if (!isMatch) continue;
+      }
+
+      // Manual whole-word boundary check for Unicode patterns
+      const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
+      if (hasUnicode) {
+        const charBefore = text[start - 1] ?? '';
+        const charAfter = text[start + m[0].length] ?? '';
+        if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+          continue;
+        }
+      }
+
+      matches.push({ index: start, length: m[0].length });
+    }
+
+    // Apply replacements in reverse order to maintain indices
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const match = matches[i];
+      if (!match) continue;
+      const { index, length } = match;
+      const end = index + length;
+      
+      text = text.slice(0, index) + rule.replacement + text.slice(end);
+    }
+
+    // Update the text node with replaced content
+    if (matches.length > 0) {
+      textNode.textContent = text;
+    }
+  }
+}
+
+// Apply single-instance replacement to text nodes
+function applyRuleToTextNodesSingle(
+  textNodes: Text[],
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern }
+): void {
+  let regex: RegExp;
+  try {
+    regex = new RegExp(rule.normalizedPattern.source, rule.normalizedPattern.flags || 'g');
+  } catch (_e) {
+    return;
+  }
+
+  // Collect all matches across all text nodes
+  const allMatches: { nodeIndex: number; matchIndex: number; length: number }[] = [];
+
+  for (let nodeIdx = 0; nodeIdx < textNodes.length; nodeIdx++) {
+    const textNode = textNodes[nodeIdx];
+    if (!textNode || !textNode.textContent) continue;
+
+    const text = textNode.textContent;
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      const start = m.index;
+
+      // Case sensitive check for single-instance
+      if (!rule.isRegex && m[0] !== rule.pattern) continue;
+
+      // Unicode whole-word check
+      const hasUnicode = /[^\x00-\x7F]/.test(rule.pattern);
+      if (hasUnicode) {
+        const charBefore = text[start - 1] ?? '';
+        const charAfter = text[start + m[0].length] ?? '';
+        if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+          continue;
+        }
+      }
+
+      allMatches.push({ nodeIndex: nodeIdx, matchIndex: start, length: m[0].length });
+    }
+  }
+
+  // Apply replacement to the target occurrence
+  const targetIndex = rule.occurrenceIndex ?? 0;
+  const target = allMatches[targetIndex];
+  if (!target) return;
+
+  const textNode = textNodes[target.nodeIndex];
+  if (!textNode || !textNode.textContent) return;
+
+  const text = textNode.textContent;
+  const newText = text.slice(0, target.matchIndex) + rule.replacement + text.slice(target.matchIndex + target.length);
+  textNode.textContent = newText;
+}
+
+// DOM-Based Transformer function
 export const replacementTransformer: Transformer = {
   name: 'replacement',
 
@@ -296,6 +412,35 @@ export const replacementTransformer: Transformer = {
 
     if (processed.length === 0) return ctx.content;
 
+    // Parse HTML into DOM
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(ctx.content, 'text/html');
+
+    // Get all text nodes using TreeWalker
+    const walker = document.createTreeWalker(
+      doc.body || doc.documentElement,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          const parent = node.parentElement;
+          // Skip script and style tags
+          if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          // Only accept nodes with actual text content
+          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        },
+      },
+    );
+
+    // Collect all text nodes
+    const textNodes: Text[] = [];
+    let currentNode: Node | null;
+    while ((currentNode = walker.nextNode())) {
+      textNodes.push(currentNode as Text);
+    }
+
+    // Separate rules by type
     const singleRules = processed.filter(r => r.singleInstance);
     const bookRules = processed.filter(r => !r.singleInstance && !r.global);
     const globalRules = processed.filter(r => !r.singleInstance && r.global);
@@ -306,10 +451,9 @@ export const replacementTransformer: Transformer = {
       ...globalRules,
     ];
 
-    let text = ctx.content;
-    const replacedRegions: Region[] = [];
-
+    // Apply replacements to text nodes
     for (const rule of ordered) {
+      // Check section match for single-instance rules
       if (rule.singleInstance && rule.sectionHref) {
         const ruleBase = rule.sectionHref.split('#')[0];
         const ctxBase = ctx.sectionHref?.split('#')[0];
@@ -317,25 +461,15 @@ export const replacementTransformer: Transformer = {
       }
 
       if (rule.singleInstance) {
-        text = applySingleInstance(
-          text,
-          rule.normalizedPattern,
-          rule.replacement,
-          rule.occurrenceIndex,
-          replacedRegions,
-          rule.isRegex,
-          rule.pattern
-        );
+        applyRuleToTextNodesSingle(textNodes, rule);
       } else {
-        text = applyMultiReplacement(
-          text,
-          rule,
-          replacedRegions
-        );
+        applyRuleToTextNodesMulti(textNodes, rule);
       }
     }
 
-    return text;
+    // Serialize back to HTML
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(doc);
   }
 };
 
