@@ -8,7 +8,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { uniqueId } from '@/utils/misc';
 
-
 // Whole-word enforcement for ALL rules (literal OR regex)
 // Case-sensitive, with Unicode-aware boundaries for non-ASCII patterns
 interface NormalizedPattern {
@@ -32,7 +31,11 @@ function escapeHtmlEntities(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = true): NormalizedPattern {
+function normalizePattern(
+  pattern: string,
+  isRegex: boolean,
+  caseSensitive = true,
+): NormalizedPattern {
   const hasUnicode = /[^\x00-\x7F]/.test(pattern);
 
   let flags = '';
@@ -55,12 +58,12 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
 
   // Escape literals
   const escaped = pattern.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-  
+
   // Check if pattern has punctuation at start or end
   const startsWithPunctuation = /^[^\w\s]/.test(pattern);
   const endsWithPunctuation = /[^\w\s]$/.test(pattern);
   const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
-  
+
   // For ASCII patterns with boundary punctuation, add boundaries only around the word part
   // For patterns without boundary punctuation, add boundaries around the whole pattern
   // For Unicode patterns, we'll check boundaries manually
@@ -78,10 +81,10 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
       const wordPart = wordMatch[0];
       const wordStart = pattern.indexOf(wordPart);
       const wordEnd = wordStart + wordPart.length;
-      
+
       // Escape the word part separately
       const wordEscaped = wordPart.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-      
+
       // Build the pattern: [before punctuation][word boundary][word][word boundary][after punctuation]
       const beforeWord = escaped.substring(0, wordStart);
       const afterWord = escaped.substring(wordEnd);
@@ -91,7 +94,7 @@ function normalizePattern(pattern: string, isRegex: boolean, caseSensitive = tru
     // No boundary punctuation - add boundaries around the whole pattern
     source = `\\b${escaped}\\b`;
   }
-  
+
   return { source, flags };
 }
 
@@ -119,19 +122,21 @@ function isInsideScriptOrStyle(text: string, index: number): boolean {
   return false;
 }
 
-
 // Replacement region tracking: prevents re-matching replacement output
-interface Region { start: number; end: number; }
+interface Region {
+  start: number;
+  end: number;
+}
 
 function isInReplacedRegion(start: number, end: number, regions: Region[]): boolean {
-  return regions.some(r => start < r.end && end > r.start);
+  return regions.some((r) => start < r.end && end > r.start);
 }
 
 function shiftRegionsAfterReplacement(
   regions: Region[],
   replaceStart: number,
   replaceEnd: number,
-  replacementLength: number
+  replacementLength: number,
 ) {
   const diff = replacementLength - (replaceEnd - replaceStart);
 
@@ -143,12 +148,11 @@ function shiftRegionsAfterReplacement(
   }
 }
 
-
 // Multi-replacement (all occurrences except inside HTML tags/attributes)
 function applyMultiReplacement(
   text: string,
   rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
-  replacedRegions: Region[]
+  replacedRegions: Region[],
 ): string {
   let regex: RegExp;
   try {
@@ -179,7 +183,6 @@ function applyMultiReplacement(
 
       if (!isMatch) continue;
     }
-
 
     if (isInsideHTMLTag(text, start, end)) continue;
     if (isInsideScriptOrStyle(text, start)) continue;
@@ -216,7 +219,6 @@ function applyMultiReplacement(
   return text;
 }
 
-
 // Single-instance replacement (Nth occurrence only)
 function applySingleInstance(
   text: string,
@@ -225,7 +227,7 @@ function applySingleInstance(
   occurrenceIndex: number | undefined,
   replacedRegions: Region[],
   isRegex: boolean,
-  rawPattern: string
+  rawPattern: string,
 ): string {
   let regex: RegExp;
   try {
@@ -240,7 +242,7 @@ function applySingleInstance(
   while ((m = regex.exec(text)) !== null) {
     const start = m.index;
     const end = start + m[0].length;
-    
+
     // Case sensitive by default for single-instance replacements
     if (!isRegex && m[0] !== rawPattern) continue;
     if (isInsideHTMLTag(text, start, end)) continue;
@@ -266,7 +268,12 @@ function applySingleInstance(
 
   // Escape HTML entities in replacement text to prevent angle brackets from being interpreted as HTML tags
   const escapedReplacement = escapeHtmlEntities(replacement);
-  shiftRegionsAfterReplacement(replacedRegions, target.start, target.end, escapedReplacement.length);
+  shiftRegionsAfterReplacement(
+    replacedRegions,
+    target.start,
+    target.end,
+    escapedReplacement.length,
+  );
 
   text = text.slice(0, target.start) + escapedReplacement + text.slice(target.end);
 
@@ -278,7 +285,7 @@ function applySingleInstance(
 // Apply multi-replacement to text nodes
 function applyRuleToTextNodesMulti(
   textNodes: Text[],
-  rule: ReplacementRule & { normalizedPattern: NormalizedPattern }
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
 ): void {
   let regex: RegExp;
   try {
@@ -327,7 +334,7 @@ function applyRuleToTextNodesMulti(
       if (!match) continue;
       const { index, length } = match;
       const end = index + length;
-      
+
       text = text.slice(0, index) + rule.replacement + text.slice(end);
     }
 
@@ -341,7 +348,7 @@ function applyRuleToTextNodesMulti(
 // Apply single-instance replacement to text nodes
 function applyRuleToTextNodesSingle(
   textNodes: Text[],
-  rule: ReplacementRule & { normalizedPattern: NormalizedPattern }
+  rule: ReplacementRule & { normalizedPattern: NormalizedPattern },
 ): void {
   let regex: RegExp;
   try {
@@ -388,7 +395,10 @@ function applyRuleToTextNodesSingle(
   if (!textNode || !textNode.textContent) return;
 
   const text = textNode.textContent;
-  const newText = text.slice(0, target.matchIndex) + rule.replacement + text.slice(target.matchIndex + target.length);
+  const newText =
+    text.slice(0, target.matchIndex) +
+    rule.replacement +
+    text.slice(target.matchIndex + target.length);
   textNode.textContent = newText;
 }
 
@@ -404,10 +414,10 @@ export const replacementTransformer: Transformer = {
     if (!merged || merged.length === 0) return ctx.content;
 
     const processed = merged
-      .filter(r => r.enabled && r.pattern.trim().length > 0)
-      .map(r => ({
+      .filter((r) => r.enabled && r.pattern.trim().length > 0)
+      .map((r) => ({
         ...r,
-        normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false)
+        normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false),
       }));
 
     if (processed.length === 0) return ctx.content;
@@ -441,15 +451,11 @@ export const replacementTransformer: Transformer = {
     }
 
     // Separate rules by type
-    const singleRules = processed.filter(r => r.singleInstance);
-    const bookRules = processed.filter(r => !r.singleInstance && !r.global);
-    const globalRules = processed.filter(r => !r.singleInstance && r.global);
+    const singleRules = processed.filter((r) => r.singleInstance);
+    const bookRules = processed.filter((r) => !r.singleInstance && !r.global);
+    const globalRules = processed.filter((r) => !r.singleInstance && r.global);
 
-    const ordered = [
-      ...singleRules,
-      ...bookRules,
-      ...globalRules,
-    ];
+    const ordered = [...singleRules, ...bookRules, ...globalRules];
 
     // Apply replacements to text nodes
     for (const rule of ordered) {
@@ -470,11 +476,10 @@ export const replacementTransformer: Transformer = {
     // Serialize back to HTML
     const serializer = new XMLSerializer();
     return serializer.serializeToString(doc);
-  }
+  },
 };
 
-
-// Rule management 
+// Rule management
 export type ReplacementRuleScope = 'single' | 'book' | 'global';
 
 export interface CreateReplacementRuleOptions {
@@ -510,7 +515,7 @@ export function createReplacementRule(opts: CreateReplacementRuleOptions): Repla
 
 export function mergeReplacementRules(
   globalRules: ReplacementRule[] | undefined,
-  bookRules: ReplacementRule[] | undefined
+  bookRules: ReplacementRule[] | undefined,
 ): ReplacementRule[] {
   const map = new Map<string, ReplacementRule>();
 
@@ -519,7 +524,6 @@ export function mergeReplacementRules(
 
   return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
-
 
 /**
  * Gets all active replacement rules for a book (merged global + book rules)
@@ -584,7 +588,7 @@ async function addReplacementRuleToBook(
 
   // Get existing book rules
   const existingRules = viewSettings.replacementRules || [];
-  
+
   if (rule.singleInstance) {
     // Single-instance rules: ALWAYS create new rule (each has unique ID)
     // Don't try to merge - after DOM modifications, occurrence indices shift
@@ -802,9 +806,7 @@ async function updateReplacementRuleInBook(
   }
 
   const existingRules = viewSettings.replacementRules || [];
-  const updatedRules = existingRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = existingRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedViewSettings: ViewSettings = {
     ...viewSettings,
@@ -837,9 +839,7 @@ async function updateReplacementRuleInGlobal(
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
 
   const globalRules = settings.globalViewSettings.replacementRules || [];
-  const updatedRules = globalRules.map((r) =>
-    r.id === ruleId ? { ...r, ...updates } : r,
-  );
+  const updatedRules = globalRules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r));
 
   const updatedSettings: SystemSettings = {
     ...settings,
