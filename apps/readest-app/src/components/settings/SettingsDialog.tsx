@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
-import { RiFontSize, RiToolsLine } from 'react-icons/ri';
+import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
@@ -80,11 +80,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tab: 'Custom',
       icon: IoAccessibilityOutline,
       label: _('Custom'),
-    },
-    {
-      tab: 'Replacement',
-      icon: RiToolsLine,
-      label: _('Text Replacements'),
     },
   ] as TabConfig[];
 
