@@ -185,7 +185,7 @@ export const ReplacementRulesWindow: React.FC = () => {
 
     try {
       const bookKey = sideBarBookKey || '';
-      
+
       if (scope === 'global') {
         // delete global rule for all books
         await removeReplacementRule(environmentConfig, '', ruleId, 'global');
@@ -194,7 +194,9 @@ export const ReplacementRulesWindow: React.FC = () => {
       }
       const successMessage =
         scope === 'global'
-          ? _('Global replacement rule deleted for all books in the library. Reloading book to apply changes...')
+          ? _(
+              'Global replacement rule deleted for all books in the library. Reloading book to apply changes...',
+            )
           : _('Replacement rule deleted. Reloading book to apply changes...');
 
       eventDispatcher.dispatch('toast', {
@@ -379,7 +381,6 @@ export const ReplacementRulesWindow: React.FC = () => {
                               <span className='font-medium'>
                                 {getRuleScope(r) === 'book' ? _('Book') : _('Global')}
                               </span>
-                              
                               &nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;
                               <span className='font-medium'>
                                 {r.caseSensitive !== false ? _('Yes') : _('No')}
