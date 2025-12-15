@@ -21,7 +21,6 @@ import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
-import ReplacementPanel from './ReplacementPanel';
 
 export type SettingsPanelType =
   | 'Font'
@@ -298,7 +297,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
           />
         )}
-        {activePanel === 'Replacement' && <ReplacementPanel />}
       </div>
     </Dialog>
   );
