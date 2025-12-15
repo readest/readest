@@ -396,26 +396,23 @@ export abstract class BaseAppService implements AppService {
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
         await this.fs.createDir(getDir(book), 'Books');
       }
-      if (
-        saveBook &&
-        !transient &&
-        (!(await this.fs.exists(getLocalBookFilename(book), 'Books')) || overwrite)
-      ) {
+      const bookFilename = getLocalBookFilename(book);
+      if (saveBook && !transient && (!(await this.fs.exists(bookFilename, 'Books')) || overwrite)) {
         if (/\.txt$/i.test(filename)) {
-          await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+          await this.fs.writeFile(bookFilename, 'Books', fileobj);
         } else if (typeof file === 'string' && isContentURI(file)) {
-          await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+          await this.fs.copyFile(file, bookFilename, 'Books');
         } else if (typeof file === 'string' && !isValidURL(file)) {
           try {
             // try to copy the file directly first in case of large files to avoid memory issues
             // on desktop when reading recursively from selected directory the direct copy will fail
             // due to permission issues, then fallback to read and write files
-            await this.fs.copyFile(file, getLocalBookFilename(book), 'Books');
+            await this.fs.copyFile(file, bookFilename, 'Books');
           } catch {
-            await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+            await this.fs.writeFile(bookFilename, 'Books', await fileobj.arrayBuffer());
           }
         } else {
-          await this.fs.writeFile(getLocalBookFilename(book), 'Books', fileobj);
+          await this.fs.writeFile(bookFilename, 'Books', fileobj);
         }
       }
       if (saveCover && (!(await this.fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
