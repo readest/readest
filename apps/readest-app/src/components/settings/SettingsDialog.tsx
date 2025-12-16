@@ -98,7 +98,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Color: null,
     Control: null,
     Language: null,
-    Custom: null
+    Custom: null,
   });
 
   const registerResetFunction = (panel: SettingsPanelType, resetFn: () => void) => {
