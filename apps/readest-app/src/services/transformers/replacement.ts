@@ -1,4 +1,3 @@
-// used copilot for assistance
 import type { Transformer } from './types';
 import { ReplacementRule, ViewSettings } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
