@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getWordCount, isWordLimitExceeded } from '../../utils/wordLimit';
 
-
 describe('Word Limit Feature', () => {
   describe('getWordCount', () => {
     it('should count single word correctly', () => {
@@ -163,12 +162,12 @@ describe('Case Sensitivity Matching', () => {
   describe('Real-world examples', () => {
     it('should handle "the" in different cases', () => {
       const pattern = 'the';
-      
+
       // Case-insensitive (default behavior)
       expect(matchText('The', pattern, false)).toBe(true);
       expect(matchText('the', pattern, false)).toBe(true);
       expect(matchText('THE', pattern, false)).toBe(true);
-      
+
       // Case-sensitive
       expect(matchText('The', pattern, true)).toBe(false);
       expect(matchText('the', pattern, true)).toBe(true);
@@ -177,7 +176,7 @@ describe('Case Sensitivity Matching', () => {
 
     it('should handle proper nouns correctly when case-sensitive', () => {
       const pattern = 'John';
-      
+
       // Case-sensitive - only exact match
       expect(matchText('John', pattern, true)).toBe(true);
       expect(matchText('john', pattern, true)).toBe(false);
@@ -185,4 +184,3 @@ describe('Case Sensitivity Matching', () => {
     });
   });
 });
-

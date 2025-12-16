@@ -3,7 +3,10 @@ import { render, screen, fireEvent, cleanup, within } from '@testing-library/rea
 import React from 'react';
 import { vi } from 'vitest';
 
-import { ReplacementRulesWindow, setReplacementRulesWindowVisible } from '@/app/reader/components/ReplacementRulesWindow';
+import {
+  ReplacementRulesWindow,
+  setReplacementRulesWindowVisible,
+} from '@/app/reader/components/ReplacementRulesWindow';
 import BookMenu from '@/app/reader/components/sidebar/BookMenu';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -12,7 +15,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { ReplacementRule } from '@/types/book';
 
 // ------------------------------
-// NEXT.JS ROUTER MOCK 
+// NEXT.JS ROUTER MOCK
 // ------------------------------
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -27,7 +30,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // ------------------------------
-// TRANSLATION MOCK 
+// TRANSLATION MOCK
 // ------------------------------
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
@@ -39,7 +42,7 @@ vi.mock('@/services/translators/cache', () => ({
 }));
 
 // ------------------------------
-// ENV PROVIDER WRAPPER 
+// ENV PROVIDER WRAPPER
 // ------------------------------
 // mock environment module so EnvProvider uses fake values
 vi.mock('@/services/environment', async (importOriginal) => {
@@ -49,7 +52,13 @@ vi.mock('@/services/environment', async (importOriginal) => {
     ...(typeof actual === 'object' && actual !== null ? actual : {}), // keep all real exports (e.g., isTauriAppPlatform)
 
     default: {
-      ...(typeof actual === 'object' && actual !== null && 'default' in actual && typeof actual.default === 'object' && actual.default !== null ? actual.default : {}), // keep all real default fields
+      ...(typeof actual === 'object' &&
+      actual !== null &&
+      'default' in actual &&
+      typeof actual.default === 'object' &&
+      actual.default !== null
+        ? actual.default
+        : {}), // keep all real default fields
       API_BASE: 'http://localhost',
       ENABLE_TRANSLATOR: false,
       getAppService: vi.fn().mockResolvedValue(null),
@@ -63,17 +72,16 @@ function renderWithProviders(ui: React.ReactNode) {
   return render(<EnvProvider>{ui}</EnvProvider>);
 }
 
-
 describe('ReplacementRulesWindow', () => {
   beforeEach(() => {
     // Reset stores
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
-        settings: {
-            globalViewSettings: { replacementRules: [] },
-            kosync: {
-                enabled: false,
-            },
+      settings: {
+        globalViewSettings: { replacementRules: [] },
+        kosync: {
+          enabled: false,
         },
+      },
     });
     (useReaderStore.setState as unknown as (state: unknown) => void)({ viewStates: {} });
     useSidebarStore.setState({ sideBarBookKey: null });
@@ -90,8 +98,24 @@ describe('ReplacementRulesWindow', () => {
       settings: {
         globalViewSettings: {
           replacementRules: [
-            { id: 'g1', pattern: 'foo', replacement: 'bar', enabled: true, isRegex: false, caseSensitive: true, order: 1 },
-            { id: 'b1', pattern: 'hello', replacement: 'world', enabled: true, isRegex: false, caseSensitive: true, order: 2 },
+            {
+              id: 'g1',
+              pattern: 'foo',
+              replacement: 'bar',
+              enabled: true,
+              isRegex: false,
+              caseSensitive: true,
+              order: 1,
+            },
+            {
+              id: 'b1',
+              pattern: 'hello',
+              replacement: 'world',
+              enabled: true,
+              isRegex: false,
+              caseSensitive: true,
+              order: 2,
+            },
           ],
           kosync: { enabled: false },
         },
@@ -225,7 +249,7 @@ describe('ReplacementRulesWindow', () => {
       <div>
         <BookMenu />
         <ReplacementRulesWindow />
-      </div>
+      </div>,
     );
 
     // wait a tick so effects attach
@@ -238,8 +262,6 @@ describe('ReplacementRulesWindow', () => {
     // The dialog should open
     const dialog = await screen.findByRole('dialog');
 
-    expect(
-    within(dialog).getByText('Replacement Rules')
-    ).toBeTruthy();
+    expect(within(dialog).getByText('Replacement Rules')).toBeTruthy();
   });
 });

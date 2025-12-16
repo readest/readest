@@ -6,8 +6,8 @@ describe('ReplacementOptions Component', () => {
   // IMPORTANT: ReplacementOptions should ONLY be rendered for EPUB books.
   // for non-EPUB formats (PDF, TXT, etc), the button is disabled
   // and ReplacementOptions is never rendered/shown to the user.
-  // 
-  
+  //
+
   const mockOnConfirm = vi.fn();
   const mockOnClose = vi.fn();
 
@@ -20,7 +20,7 @@ describe('ReplacementOptions Component', () => {
   };
 
   // Note: ReplacementOptions component should only be rendered for EPUB books.
-  // All tests here implicitly test EPUB book scenarios. 
+  // All tests here implicitly test EPUB book scenarios.
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -206,7 +206,7 @@ describe('ReplacementOptions Component', () => {
       expect(mockOnConfirm).toHaveBeenCalledWith(
         expect.objectContaining({
           replacementText: 'trimmed',
-        })
+        }),
       );
     });
   });
@@ -264,9 +264,7 @@ describe('ReplacementOptions Component', () => {
       }
       fireEvent.click(confirmButtons[0]);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(
-        expect.objectContaining({ scope: 'once' })
-      );
+      expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({ scope: 'once' }));
     });
 
     it('should call onConfirm with correct scope for "book"', () => {
@@ -282,9 +280,7 @@ describe('ReplacementOptions Component', () => {
       }
       fireEvent.click(confirmButtons[0]);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(
-        expect.objectContaining({ scope: 'book' })
-      );
+      expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({ scope: 'book' }));
     });
 
     it('should call onConfirm with correct scope for "library"', () => {
@@ -300,15 +296,13 @@ describe('ReplacementOptions Component', () => {
       }
       fireEvent.click(confirmButtons[0]);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(
-        expect.objectContaining({ scope: 'library' })
-      );
+      expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({ scope: 'library' }));
     });
   });
 
   describe('Confirmation Dialog', () => {
     it('should display original text in confirmation', () => {
-      render(<ReplacementOptions {...defaultProps} selectedText="original" />);
+      render(<ReplacementOptions {...defaultProps} selectedText='original' />);
 
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'replacement' } });
@@ -373,9 +367,9 @@ describe('ReplacementOptions Component', () => {
     it('should call onClose when clicking outside the menu', () => {
       render(
         <div>
-          <div data-testid="outside">Outside element</div>
+          <div data-testid='outside'>Outside element</div>
           <ReplacementOptions {...defaultProps} />
-        </div>
+        </div>,
       );
 
       const outsideElement = screen.getByTestId('outside');
@@ -394,4 +388,3 @@ describe('ReplacementOptions Component', () => {
     });
   });
 });
-
