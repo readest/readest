@@ -28,9 +28,5 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService?.hasUpdater, settings.autoCheckUpdates]);
 
-  return (
-    <>
-      <Reader />
-    </>
-  );
+  return <Reader />;
 }
