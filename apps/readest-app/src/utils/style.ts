@@ -591,7 +591,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
   document.head.appendChild(styleElement);
 };
 
-export const transformStylesheet = (vw: number, vh: number, css: string) => {
+export const transformStylesheet = (css: string, vw: number, vh: number, vertical: boolean) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
   const ruleRegex = /([^{]+)({[^}]+})/g;
@@ -624,16 +624,19 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
 
   // Process duokan-bleed
   css = css.replace(ruleRegex, (_, selector, block) => {
-    const directions = ['top', 'bottom', 'left', 'right'];
+    if (vertical) return selector + block;
+
+    const directions: string[] = [];
     let hasBleed = false;
-    for (const dir of directions) {
+    for (const dir of ['top', 'bottom', 'left', 'right']) {
       const bleedRegex = new RegExp(`duokan-bleed\\s*:\\s*[^;]*${dir}[^;]*;`);
       const marginRegex = new RegExp(`margin-${dir}\\s*:`);
       if (bleedRegex.test(block) && !marginRegex.test(block)) {
         hasBleed = true;
+        directions.push(dir);
         block = block.replace(
           /}$/,
-          ` margin-${dir}: calc(-1 * var(--margin-${dir})) !important; }`,
+          ` margin-${dir}: calc(-1 * var(--page-margin-${dir})) !important; }`,
         );
       }
     }
@@ -646,6 +649,26 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
       }
       if (!/display\s*:/.test(block)) {
         block = block.replace(/}$/, ' display: flow-root !important; }');
+      }
+      if (!/width\s*:/.test(block) && directions.includes('left') && directions.includes('right')) {
+        block = block
+          .replace(
+            /}$/,
+            ' width: calc(var(--_max-width) + var(--page-margin-left) + var(--page-margin-right)) !important; }',
+          )
+          .replace(/}$/, ' max-width: 100vw !important; }');
+      }
+      if (
+        !/height\s*:/.test(block) &&
+        directions.includes('top') &&
+        directions.includes('bottom')
+      ) {
+        block = block
+          .replace(
+            /}$/,
+            ' height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important; }',
+          )
+          .replace(/}$/, ' max-height: 100vh !important; }');
       }
     }
     return selector + block;
@@ -694,6 +717,24 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
 
 export const applyImageStyle = (document: Document) => {
   document.querySelectorAll('img').forEach((img) => {
+    const widthAttr = img.getAttribute('width');
+    if (widthAttr && (widthAttr.endsWith('%') || widthAttr.endsWith('vw'))) {
+      const percentage = parseFloat(widthAttr);
+      if (!isNaN(percentage)) {
+        img.style.width = `${(percentage / 100) * window.innerWidth}px`;
+        img.removeAttribute('width');
+      }
+    }
+
+    const heightAttr = img.getAttribute('height');
+    if (heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))) {
+      const percentage = parseFloat(heightAttr);
+      if (!isNaN(percentage)) {
+        img.style.height = `${(percentage / 100) * window.innerHeight}px`;
+        img.removeAttribute('height');
+      }
+    }
+
     const parent = img.parentNode;
     if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
     const hasTextSiblings = Array.from(parent.childNodes).some(

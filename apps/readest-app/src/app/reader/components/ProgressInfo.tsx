@@ -147,8 +147,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
               height: `calc(100% - ${((contentInsets.top + contentInsets.bottom) / 2) * 3}px)`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right}px)`,
+              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
               paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
             }
       }
