@@ -126,12 +126,10 @@ const FoliateViewer: React.FC<{
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
       const { detail } = event as CustomEvent;
-  
       detail.data = Promise.resolve(detail.data)
         .then((data) => {
           const viewSettings = getViewSettings(bookKey);
           const bookData = getBookData(bookKey);
-  
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(width, height, data);
           if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {

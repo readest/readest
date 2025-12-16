@@ -560,20 +560,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const endsWithPunctuation = /[^\w\s]$/.test(selectedText);
       const hasBoundaryPunctuation = startsWithPunctuation || endsWithPunctuation;
 
-      console.log('[isWholeWord] Phrase check:', {
-        selectedText,
-        hasSpaces,
-        hasPunctuation,
-        isPhrase,
-        startsWithPunctuation,
-        endsWithPunctuation,
-        hasBoundaryPunctuation,
-      });
-
       if (isPhrase || hasBoundaryPunctuation) {
         // For phrases or selections with boundary punctuation, we allow them
         // The only thing we want to prevent is selecting "and" inside "England"
-        console.log('[isWholeWord] Allowing phrase or boundary-punctuation selection');
         return true;
       }
 
@@ -682,7 +671,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const handleReplacementConfirm = async (config: ReplacementConfig) => {
-    console.log('handleReplacementConfirm CALLED!', config);
     if (!selection || !selection.text) return;
 
     const { replacementText, caseSensitive, scope } = config;
@@ -703,12 +691,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           // Single-instance replacements only work on whole words to prevent
           // replacing substrings inside larger words (e.g., "and" in "England")
           const isValidWholeWord = isWholeWord(range, selection.text);
-          console.log('[Replacement] Whole word validation:', {
-            selectedText: selection.text,
-            isValidWholeWord,
-            rangeStart: range.startOffset,
-            rangeEnd: range.endOffset,
-          });
 
           if (!isValidWholeWord) {
             eventDispatcher.dispatch('toast', {
@@ -891,7 +873,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       if (!booknoteGroups[href]) {
         booknoteGroups[href] = { id, href, label, booknotes: [] };
       }
-      booknoteGroups[href]!.booknotes.push(booknote); //booknoteGroups[href] is initialized in above case if originally undefined
+      booknoteGroups[href].booknotes.push(booknote);
     }
 
     Object.values(booknoteGroups).forEach((group) => {
