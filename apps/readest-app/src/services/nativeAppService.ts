@@ -347,6 +347,11 @@ export const nativeFileSystem: FileSystem = {
       return false;
     }
   },
+  async stats(path: string, base: BaseDir) {
+    const { fp, baseDir } = this.resolvePath(path, base);
+
+    return await stat(fp, baseDir ? { baseDir } : undefined);
+  },
 };
 
 const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as DistChannel;

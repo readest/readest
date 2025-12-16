@@ -218,6 +218,43 @@ const indexedDBFileSystem: FileSystem = {
       request.onerror = () => reject(request.error);
     });
   },
+  async stats(path: string, base: BaseDir) {
+    const { fp } = this.resolvePath(path, base);
+    const db = await openIndexedDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(fp);
+
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          const content = result.content;
+          const size =
+            content instanceof Blob
+              ? content.size
+              : typeof content === 'string'
+                ? content.length
+                : content instanceof ArrayBuffer
+                  ? content.byteLength
+                  : 0;
+          resolve({
+            isFile: true,
+            isDirectory: false,
+            size,
+            mtime: null,
+            atime: null,
+            birthtime: null,
+          });
+        } else {
+          reject(new Error(`File not found: ${fp}`));
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+  },
 };
 
 export class WebAppService extends BaseAppService {
