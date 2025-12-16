@@ -222,7 +222,7 @@ export interface ReplacementRule {
   occurrenceIndex?: number; // Which occurrence in the section (0-based)
   wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
   caseSensitive?: boolean; // Case-sensitive matching (default true)
-  global?: boolean;  // Marks global-scope rules explicitly
+  global?: boolean; // Marks global-scope rules explicitly
 }
 
 export interface ReplacementRulesConfig {

@@ -76,19 +76,14 @@ vi.mock('@/store/bookDataStore', () => {
   return { useBookDataStore: fn };
 });
 
-
-
-
-
-
 import { replacementTransformer } from '@/services/transformers/replacement';
 import { TransformContext } from '@/services/transformers/types';
 import { ViewSettings, ReplacementRule } from '@/types/book';
 import {
-    createReplacementRule,
-    mergeReplacementRules,
-    validateReplacementRulePattern,
-  } from '@/services/transformers/replacement';
+  createReplacementRule,
+  mergeReplacementRules,
+  validateReplacementRulePattern,
+} from '@/services/transformers/replacement';
 
 describe('replacementTransformer', () => {
   // let consoleLogSpy: ReturnType<typeof vi.spyOn>;
@@ -125,7 +120,7 @@ describe('replacementTransformer', () => {
     test('should return content unchanged when no rules', async () => {
       const ctx = createMockContext(undefined, '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Hello world');
       // expect(consoleLogSpy).toHaveBeenCalledWith(
       //   '[REPLACEMENT] Transformer called!',
@@ -145,7 +140,7 @@ describe('replacementTransformer', () => {
     test('should return content unchanged when rules array is empty', async () => {
       const ctx = createMockContext([], '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Hello world');
       // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No rules defined, returning unchanged');
     });
@@ -163,7 +158,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Hi world');
       expect(result).not.toContain('Hello');
       // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Applying', 1, 'rules:', ['Hello']);
@@ -191,7 +186,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>The cat sat</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('A dog sat');
     });
 
@@ -208,7 +203,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>the cat and the dog</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('THE cat and THE dog');
     });
   });
@@ -249,7 +244,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>The cat sat on the category</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('dog');
       expect(result).toContain('category'); // Should not replace "cat" in "category"
     });
@@ -268,7 +263,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>The cat and the dog</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Note: Our implementation uses 'g' flag, so it will match "the" but not "The"
       // This is expected behavior - regex is case-sensitive by default
       expect(result).toContain('THE');
@@ -292,7 +287,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world hello there</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // "hello" (lowercase) should match, "Hello" should not
       expect(result).toContain('Hello world hi there');
       expect(result).not.toContain('hi world hi there');
@@ -313,7 +308,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>hello world and hello again</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only second "hello" should be replaced
       expect(result).toContain('hello world and hi again');
       const helloCount = (result.match(/hello/g) || []).length;
@@ -338,7 +333,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world hello there Hello</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only lowercase "hello" should match
       expect(result).toContain('Hello world hi there Hello');
       const helloCount = (result.match(/[Hh]ello/g) || []).length;
@@ -361,7 +356,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>world and world and World</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Both lowercase "world" should match, "World" should not
       expect(result).toContain('universe and universe and World');
       const worldCount = (result.match(/[Ww]orld/g) || []).length;
@@ -386,10 +381,10 @@ describe('replacementTransformer', () => {
           order: 1,
         },
       ];
-      
+
       const ctx = createMockContext(globalRules, '<p>book and Book and BOOK</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only lowercase "book" should match
       expect(result).toContain('tome and Book and BOOK');
       const bookCount = (result.match(/[Bb]ook|BOOK/g) || []).length;
@@ -411,10 +406,10 @@ describe('replacementTransformer', () => {
           order: 1,
         },
       ];
-      
+
       const ctx = createMockContext(globalRules, '<p>test and test and Test and TEST</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only lowercase "test" should match
       expect(result).toContain('exam and exam and Test and TEST');
       const testCount = (result.match(/[Tt]est|TEST/g) || []).length;
@@ -441,7 +436,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world hello there</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only exact case match should be replaced
       expect(result).toContain('Hello world hi there');
     });
@@ -462,7 +457,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world hello there</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // First match should be replaced, case sensitve is set to true by default for single instance
       expect(result).toContain('Hello world hi there');
       const hiCount = (result.match(/hi/g) || []).length;
@@ -486,7 +481,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>test Test TEST</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only lowercase "test" should be replaced
       expect(result).toContain('exam Test TEST');
     });
@@ -506,7 +501,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>test Test TEST</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // All variants should be replaced
       expect(result).toContain('exam exam exam');
     });
@@ -526,7 +521,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>hello Hello HELLO</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // All should be replaced
       expect(result).toContain('hi hi hi');
       const hiCount = (result.match(/hi/g) || []).length;
@@ -549,10 +544,10 @@ describe('replacementTransformer', () => {
           order: 1,
         },
       ];
-      
+
       const ctx = createMockContext(globalRules, '<p>world World WORLD</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Only lowercase "world" replaced
       expect(result).toContain('universe World WORLD');
     });
@@ -571,10 +566,10 @@ describe('replacementTransformer', () => {
           order: 1,
         },
       ];
-      
+
       const ctx = createMockContext(globalRules, '<p>world World WORLD</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // All should be replaced
       expect(result).toContain('universe universe universe');
       const universeCount = (result.match(/universe/g) || []).length;
@@ -682,7 +677,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>The cat sat</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // First "The" -> "A" (order 1), then "cat" -> "dog" (order 2)
       expect(result).toContain('A dog sat');
     });
@@ -708,7 +703,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>a b c</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Both should be applied (whole-word matching)
       expect(result).toContain('A B c');
     });
@@ -728,7 +723,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Hello');
       expect(result).not.toContain('Hi');
       // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No enabled rules, returning unchanged');
@@ -755,7 +750,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Hello'); // Not replaced (disabled)
       expect(result).toContain('universe'); // Replaced (enabled)
     });
@@ -775,7 +770,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Test content</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Test content'); // Content unchanged
       // expect(consoleWarnSpy).toHaveBeenCalledWith(
       //   expect.stringContaining('Invalid regex pattern'),
@@ -804,7 +799,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Test content</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('PASSED'); // Second rule should still work
     });
   });
@@ -823,7 +818,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>Some text here</p><span>More text</span>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('<p>');
       expect(result).toContain('</p>');
       expect(result).toContain('<span>');
@@ -847,7 +842,7 @@ describe('replacementTransformer', () => {
         '<p>Some text</p><script>var text = "test";</script><style>.text { color: red; }</style>',
       );
       const result = await replacementTransformer.transform(ctx);
-      
+
       // Text in <p> should be replaced
       expect(result).toContain('Some TEXT');
       // Text in <script> and <style> should remain unchanged
@@ -871,7 +866,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>café</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('cafe');
       expect(result).not.toContain('café');
     });
@@ -890,7 +885,7 @@ describe('replacementTransformer', () => {
 
       const ctx = createMockContext(rules, '<p>a.b and aXb</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('A.B'); // Exact match replaced
       expect(result).toContain('aXb'); // Not replaced (not exact match)
     });
@@ -902,9 +897,9 @@ describe('replacementTransformer', () => {
           pattern: 'a.b',
           replacement: 'A.B',
           enabled: true,
-          isRegex: false,           // literal match
-          singleInstance: true,     // only first occurrence
-          occurrenceIndex: 0,       // replace only the first one
+          isRegex: false, // literal match
+          singleInstance: true, // only first occurrence
+          occurrenceIndex: 0, // replace only the first one
           order: 1,
         },
       ];
@@ -915,7 +910,7 @@ describe('replacementTransformer', () => {
       const result = await replacementTransformer.transform(ctx);
 
       // Only the first literal "a.b" should be replaced → "A.B"
-      expect(result).toContain('A.B and a.b');   // second "a.b" remains
+      expect(result).toContain('A.B and a.b'); // second "a.b" remains
 
       // aXb must NOT be replaced (the "." does NOT match X)
       expect(result).toContain('aXb');
@@ -940,9 +935,9 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>test</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       // empty pattern produces no changes
-      expect(result).toBe(ctx.content); 
+      expect(result).toBe(ctx.content);
     });
 
     test('should handle empty replacement', async () => {
@@ -958,7 +953,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>test content</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).not.toContain('test');
       expect(result).toContain(' content');
     });
@@ -977,7 +972,7 @@ describe('replacementTransformer', () => {
       ];
       const ctx = createMockContext(rules, '<p>test</p>');
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('TEST');
     });
 
@@ -997,7 +992,7 @@ describe('replacementTransformer', () => {
         '<div><p>Some text</p><span>More text <strong>here</strong></span></div>',
       );
       const result = await replacementTransformer.transform(ctx);
-      
+
       expect(result).toContain('Some TEXT');
       expect(result).toContain('More TEXT');
       expect(result).toContain('<strong>');
@@ -1018,9 +1013,9 @@ describe('replacementTransformer', () => {
         },
       ];
       const ctx = createMockContext(rules, '<p>test</p>');
-      
+
       await replacementTransformer.transform(ctx);
-      
+
       // expect(consoleLogSpy).toHaveBeenCalledWith(
       //   '[REPLACEMENT] Transformer called!',
       //   expect.objectContaining({
@@ -1047,14 +1042,14 @@ describe('replacementTransformer', () => {
     //     },
     //   ];
     //   const ctx = createMockContext(rules, '<p>test</p>');
-      
+
     //   await replacementTransformer.transform(ctx);
-      
+
     //   expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Applying', 1, 'rules:', ['test']);
     //   expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Transformation complete');
     // });
-  })
-  
+  });
+
   describe('replacement rule management functions', () => {
     describe('createReplacementRule', () => {
       test('should create a rule with default values', () => {
@@ -1062,7 +1057,7 @@ describe('replacementTransformer', () => {
           pattern: 'test',
           replacement: 'TEST',
         });
-  
+
         expect(rule).toMatchObject({
           pattern: 'test',
           replacement: 'TEST',
@@ -1073,7 +1068,7 @@ describe('replacementTransformer', () => {
         expect(rule.id).toBeDefined();
         expect(typeof rule.id).toBe('string');
       });
-  
+
       test('should create a rule with custom values', () => {
         const rule = createReplacementRule({
           pattern: '\\d+',
@@ -1082,7 +1077,7 @@ describe('replacementTransformer', () => {
           enabled: false,
           order: 1,
         });
-  
+
         expect(rule).toMatchObject({
           pattern: '\\d+',
           replacement: 'NUMBER',
@@ -1092,7 +1087,7 @@ describe('replacementTransformer', () => {
         });
       });
     });
-  
+
     describe('mergeReplacementRules', () => {
       test('should merge global and book rules', () => {
         const globalRules: ReplacementRule[] = [
@@ -1105,7 +1100,7 @@ describe('replacementTransformer', () => {
             order: 1,
           },
         ];
-  
+
         const bookRules: ReplacementRule[] = [
           {
             id: 'book-1',
@@ -1116,14 +1111,14 @@ describe('replacementTransformer', () => {
             order: 2,
           },
         ];
-  
+
         const merged = mergeReplacementRules(globalRules, bookRules);
-  
+
         expect(merged).toHaveLength(2);
         expect(merged[0]!.id).toBe('global-1');
         expect(merged[1]!.id).toBe('book-1');
       });
-  
+
       test('should prioritize book rules over global rules with same ID', () => {
         const globalRules: ReplacementRule[] = [
           {
@@ -1135,7 +1130,7 @@ describe('replacementTransformer', () => {
             order: 1,
           },
         ];
-  
+
         const bookRules: ReplacementRule[] = [
           {
             id: 'rule-1',
@@ -1146,13 +1141,13 @@ describe('replacementTransformer', () => {
             order: 1,
           },
         ];
-  
+
         const merged = mergeReplacementRules(globalRules, bookRules);
-  
+
         expect(merged).toHaveLength(1);
         expect(merged[0]!.replacement).toBe('>THE<'); // Book rule wins
       });
-  
+
       test('should sort rules by order', () => {
         const globalRules: ReplacementRule[] = [
           {
@@ -1172,7 +1167,7 @@ describe('replacementTransformer', () => {
             order: 1,
           },
         ];
-  
+
         const bookRules: ReplacementRule[] = [
           {
             id: 'rule-2',
@@ -1183,37 +1178,37 @@ describe('replacementTransformer', () => {
             order: 2,
           },
         ];
-  
+
         const merged = mergeReplacementRules(globalRules, bookRules);
-  
+
         expect(merged[0]!.pattern).toBe('a');
         expect(merged[1]!.pattern).toBe('b');
         expect(merged[2]!.pattern).toBe('c');
       });
-  
+
       test('should handle undefined rules', () => {
         const merged = mergeReplacementRules(undefined, undefined);
         expect(merged).toEqual([]);
       });
     });
-  
+
     describe('validateReplacementRulePattern', () => {
       test('should validate simple string pattern', () => {
         const result = validateReplacementRulePattern('test', false);
         expect(result.valid).toBe(true);
       });
-  
+
       test('should reject empty pattern', () => {
         const result = validateReplacementRulePattern('', false);
         expect(result.valid).toBe(false);
         expect(result.error).toContain('empty');
       });
-  
+
       test('should validate valid regex pattern', () => {
         const result = validateReplacementRulePattern('\\d+', true);
         expect(result.valid).toBe(true);
       });
-  
+
       test('should reject invalid regex pattern', () => {
         const result = validateReplacementRulePattern('[invalid', true);
         expect(result.valid).toBe(false);
