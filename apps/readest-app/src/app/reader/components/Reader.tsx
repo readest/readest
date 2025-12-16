@@ -33,8 +33,8 @@ Z-Index Layering Guide:
 ---------------------------------
 99 – Window Border (Linux only)
      • Ensures the border stays on top of all UI elements.
-50 – Loading Progress / Toast Notifications / Dialogs
-     • Includes Settings, About, Updater, and KOSync dialogs.
+50 – Loading Progress / Toast Notifications / Dialogs / Popups
+     • Includes Settings, About, Updater, KOSync dialogs and Annotation popups.
 45 – Sidebar / Notebook (Unpinned)
      • Floats above the content but below global dialogs.
 40 – TTS Bar
@@ -52,9 +52,10 @@ Z-Index Layering Guide:
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
   const { appService } = useEnv();
-  const { hoveredBookKey, getView } = useReaderStore();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
+  const { hoveredBookKey, getView } = useReaderStore();
+  const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
   const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
@@ -73,6 +74,27 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     }
     initDayjs(getLocale());
   }, []);
+
+  useEffect(() => {
+    const brightness = settings.screenBrightness;
+    const autoBrightness = settings.autoScreenBrightness;
+    if (appService?.hasScreenBrightness && !autoBrightness && brightness >= 0) {
+      setScreenBrightness(brightness / 100);
+    }
+    let previousBrightness = -1;
+    if (appService?.isIOSApp) {
+      getScreenBrightness().then((b) => {
+        previousBrightness = b;
+      });
+    }
+
+    return () => {
+      if (appService?.hasScreenBrightness && !autoBrightness) {
+        setScreenBrightness(previousBrightness);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService]);
 
   const handleKeyDown = (event: CustomEvent) => {
     const view = getView(sideBarBookKey!);

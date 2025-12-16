@@ -93,7 +93,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { clearBookData } = useBookDataStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
-  const [showCatalogManager, setShowCatalogManager] = useState(false);
+  const [showCatalogManager, setShowCatalogManager] = useState(
+    searchParams?.get('opds') === 'true',
+  );
   const [loading, setLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -270,6 +272,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     return false;
   };
 
+  const handleShowOPDSDialog = () => {
+    setShowCatalogManager(true);
+  };
+
+  const handleDismissOPDSDialog = () => {
+    setShowCatalogManager(false);
+    const params = new URLSearchParams(searchParams?.toString());
+    params.delete('opds');
+    navigateToLibrary(router, `${params.toString()}`);
+  };
+
   useEffect(() => {
     if (pendingNavigationBookIds) {
       const bookIds = pendingNavigationBookIds;
@@ -323,7 +336,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
 
     const handleOpenWithBooks = async (appService: AppService, library: Book[]) => {
-      const openWithFiles = (await parseOpenWithFiles()) || [];
+      const openWithFiles = (await parseOpenWithFiles(appService)) || [];
 
       if (openWithFiles.length > 0) {
         return await processOpenWithFiles(appService, openWithFiles, library);
@@ -716,7 +729,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
-          onOpenCatalogManager={() => setShowCatalogManager(true)}
+          onOpenCatalogManager={handleShowOPDSDialog}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
@@ -847,7 +860,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <UpdaterWindow />
       <MigrateDataWindow />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
-      {showCatalogManager && <CatalogDialog onClose={() => setShowCatalogManager(false)} />}
+      {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
       <Toast />
     </div>
   );

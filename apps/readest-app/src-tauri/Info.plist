@@ -19,6 +19,8 @@
         <string>EPUB Document</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>org.idpf.epub-container</string>
@@ -30,6 +32,8 @@
         <string>PDF Document</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>com.adobe.pdf</string>
@@ -41,6 +45,8 @@
         <string>FB2 Document</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>com.readest.fb2</string>
@@ -52,6 +58,8 @@
         <string>CBZ Archive</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>com.readest.cbz</string>
@@ -63,6 +71,8 @@
         <string>MOBI Document</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>org.mobipocket.mobi</string>
@@ -74,6 +84,8 @@
         <string>AZW Document</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>com.amazon.azw</string>
@@ -86,10 +98,159 @@
         <string>Text File</string>
         <key>LSHandlerRank</key>
         <string>Alternate</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
         <key>LSItemContentTypes</key>
         <array>
           <string>public.plain-text</string>
         </array>
+      </dict>
+    </array>
+
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>org.idpf.epub-container</string>
+        <key>UTTypeDescription</key>
+        <string>EPUB Document</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.data</string>
+          <string>public.composite-content</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>epub</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/epub+zip</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.adobe.pdf</string>
+        <key>UTTypeDescription</key>
+        <string>PDF Document</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.data</string>
+          <string>public.composite-content</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>pdf</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/pdf</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.readest.fb2</string>
+        <key>UTTypeDescription</key>
+        <string>FB2 Document</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.xml</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>fb2</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/xml</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.readest.cbz</string>
+        <key>UTTypeDescription</key>
+        <string>CBZ Archive</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.archive</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>cbz</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/x-cbz</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>org.mobipocket.mobi</string>
+        <key>UTTypeDescription</key>
+        <string>MOBI Document</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.data</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>mobi</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/x-mobipocket-ebook</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.amazon.azw</string>
+        <key>UTTypeDescription</key>
+        <string>AZW Document</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.data</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>azw</string>
+            <string>azw3</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/vnd.amazon.ebook</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>public.plain-text</string>
+        <key>UTTypeDescription</key>
+        <string>Text File</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.data</string>
+          <string>public.content</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>txt</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>text/plain</string>
+        </dict>
       </dict>
     </array>
 

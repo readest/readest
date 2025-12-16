@@ -1,8 +1,15 @@
 import { md5 } from 'js-md5';
-import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import {
+  getAPIBaseUrl,
+  getNodeAPIBaseUrl,
+  isTauriAppPlatform,
+  isWebAppPlatform,
+} from '@/services/environment';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 
+const OPDS_PROXY_URL = `${getAPIBaseUrl()}/opds/proxy`;
+const NODE_OPDS_PROXY_URL = `${getNodeAPIBaseUrl()}/opds/proxy`;
 /**
  * Extract username and password from URL credentials
  */
@@ -34,6 +41,19 @@ export const needsProxy = (url: string): boolean => {
   return isWebAppPlatform() && url.startsWith('http');
 };
 
+const PROXY_OVERRIDES: Record<string, string> = {
+  standardebooks: NODE_OPDS_PROXY_URL,
+};
+
+const getProxyBaseUrl = (url: string): string => {
+  for (const [domain, proxyUrl] of Object.entries(PROXY_OVERRIDES)) {
+    if (url.includes(domain)) {
+      return proxyUrl;
+    }
+  }
+  return OPDS_PROXY_URL;
+};
+
 /**
  * Generate proxied URL for OPDS requests
  */
@@ -46,7 +66,8 @@ export const getProxiedURL = (url: string, auth: string = '', stream = false): s
     if (auth) {
       params.append('auth', auth);
     }
-    const proxyUrl = `/api/opds/proxy?${params.toString()}`;
+    const baseUrl = getProxyBaseUrl(url);
+    const proxyUrl = `${baseUrl}?${params.toString()}`;
     return proxyUrl;
   }
   return url;

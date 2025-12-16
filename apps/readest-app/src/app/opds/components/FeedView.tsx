@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { IoChevronBack, IoChevronForward, IoFilter } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSFeed, OPDSLink } from '@/types/opds';
@@ -18,9 +19,9 @@ interface FeedViewProps {
   isOPDSCatalog: (type?: string) => boolean;
 }
 
-const gridClassName = 'grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+const gridClassName = 'grid grid-cols-3 gap-4 px-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
 const navigationClassName =
-  'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 max-[450px]:grid-cols-1';
+  'grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 max-[450px]:grid-cols-1';
 
 export function FeedView({
   feed,
@@ -51,21 +52,34 @@ export function FeedView({
     onNavigate(url);
   };
 
+  const itemContent = useCallback(
+    (index: number) => (
+      <PublicationCard
+        publication={feed.publications![index]!}
+        baseURL={baseURL}
+        onClick={() => onPublicationSelect(-1, index)}
+        resolveURL={resolveURL}
+        onGenerateCachedImageUrl={onGenerateCachedImageUrl}
+      />
+    ),
+    [feed.publications, baseURL, onPublicationSelect, resolveURL, onGenerateCachedImageUrl],
+  );
+
   return (
-    <div className='container mx-auto max-w-7xl px-4 py-6'>
+    <div className='flex h-full flex-col'>
       {/* Header */}
-      <div className='opds-header mb-6'>
+      <div className='opds-header flex-shrink-0 px-4 py-6'>
         {feed.metadata?.title && <h1 className='mb-2 text-xl font-bold'>{feed.metadata.title}</h1>}
         {feed.metadata?.subtitle && (
           <p className='text-base-content/70 text-sm'>{feed.metadata.subtitle}</p>
         )}
       </div>
 
-      <div className='flex gap-6'>
+      <div className='flex min-h-0 flex-1 gap-6'>
         {/* Facets Sidebar */}
         {hasFacets && (
-          <aside className='hidden w-64 flex-shrink-0 lg:block'>
-            <div className='sticky top-6'>
+          <aside className='hidden w-64 flex-shrink-0 overflow-y-auto lg:block'>
+            <div className='px-4'>
               <div className='mb-4 flex items-center gap-2'>
                 <IoFilter className='h-5 w-5' />
                 <h2 className='text-lg font-semibold'>Filters</h2>
@@ -113,10 +127,10 @@ export function FeedView({
         )}
 
         {/* Main Content */}
-        <div className='min-w-0 flex-1'>
+        <div className='flex min-w-0 flex-1 flex-col'>
           {/* Navigation Items */}
           {feed.navigation && feed.navigation.length > 0 && (
-            <section className='opds-navigation mb-8'>
+            <section className='opds-navigation flex-shrink-0 pb-6'>
               <div className={navigationClassName}>
                 {feed.navigation.map((item, index: number) => (
                   <NavigationCard
@@ -131,29 +145,23 @@ export function FeedView({
             </section>
           )}
 
-          {/* Publications */}
+          {/* Publications Grid - Takes remaining space */}
           {feed.publications && feed.publications.length > 0 && (
-            <section className='opds-publications mb-8'>
-              <div className={gridClassName}>
-                {feed.publications.map((pub, index: number) => (
-                  <PublicationCard
-                    key={index}
-                    publication={pub}
-                    baseURL={baseURL}
-                    onClick={() => onPublicationSelect(-1, index)}
-                    resolveURL={resolveURL}
-                    onGenerateCachedImageUrl={onGenerateCachedImageUrl}
-                  />
-                ))}
-              </div>
+            <section className='opds-publications min-h-0 flex-1'>
+              <VirtuosoGrid
+                style={{ height: '100%' }}
+                totalCount={feed.publications.length}
+                listClassName={gridClassName}
+                itemContent={itemContent}
+              />
             </section>
           )}
 
           {/* Groups */}
           {feed.groups?.map((group, groupIndex: number) => (
-            <section key={groupIndex} className='mb-12'>
+            <section key={groupIndex} className='mb-12 flex-shrink-0'>
               {group.metadata && (
-                <div className='mb-4 flex items-center justify-between'>
+                <div className='mb-4 flex items-center justify-between px-4'>
                   <h2 className='text-2xl font-bold'>{group.metadata.title}</h2>
                   {group.links && group.links.length > 0 && (
                     <button
@@ -203,7 +211,7 @@ export function FeedView({
 
           {/* Pagination */}
           {pagination.some((links) => links && links.length > 0) && (
-            <nav className='mt-8 flex justify-center gap-2'>
+            <nav className='flex flex-shrink-0 justify-center gap-2 py-4'>
               <button
                 onClick={() => handlePaginationClick(pagination[0])}
                 disabled={!pagination[0]}

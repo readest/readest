@@ -78,9 +78,9 @@ describe('ReplacementOptions Component', () => {
 
   describe('Case Sensitive Checkbox', () => {
     it('should be checked by default (case-sensitive)', () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
-      const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(checkbox.checked).toBe(true);
     });
 
@@ -126,14 +126,14 @@ describe('ReplacementOptions Component', () => {
     });
 
     it('should pass case sensitivity value to onConfirm when unchecked', async () => {
-      render(<ReplacementOptions {...defaultProps} />);
+      const { container } = render(<ReplacementOptions {...defaultProps} />);
 
       // Enter replacement text
       const input = screen.getByPlaceholderText('Enter replacement text...');
       fireEvent.change(input, { target: { value: 'replacement' } });
 
       // Uncheck the checkbox (default is true, so we click to toggle to false)
-      const checkbox = screen.getByRole('checkbox');
+      const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
       fireEvent.click(checkbox);
 
       // Click a scope button

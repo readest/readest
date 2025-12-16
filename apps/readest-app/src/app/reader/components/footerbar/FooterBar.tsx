@@ -204,7 +204,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     'sm:h-[52px] sm:justify-center',
     'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
     'transition-[opacity,transform] duration-300',
-    appService?.isAndroidApp && window.innerWidth < 640 ? 'fixed' : 'absolute',
+    window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
@@ -214,6 +214,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
       : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
 
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
+
   return (
     <>
       {/* Hover trigger area */}
@@ -222,10 +224,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
+          isMobile ? 'pointer-events-none' : '',
         )}
-        onClick={() => setHoveredBookKey(bookKey)}
-        onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
-        onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
+        onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
       />
 
       {/* Main footer container */}

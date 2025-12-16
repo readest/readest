@@ -303,8 +303,12 @@ const getLayoutStyles = (
   p {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${vertical ? `margin-top: unset ${overrideLayout ? '!important' : ''};` : ''}
+    ${vertical ? `margin-bottom: unset ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-left: unset ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-right: unset ${overrideLayout ? '!important' : ''};` : ''}
   }
   div {
     ${vertical && overrideLayout ? `margin-left: ${paragraphMargin}em !important;` : ''}
@@ -334,6 +338,10 @@ const getLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
+  body {
+    line-height: unset;
+  }
+
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}

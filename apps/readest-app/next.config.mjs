@@ -64,39 +64,93 @@ const nextConfig = {
   },
 };
 
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: isDev || appPlatform !== 'web',
-  cacheStartUrl: false,
-  dynamicStartUrl: false,
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  swcMinify: true,
-  fallbacks: {
-    document: '/offline',
-  },
-  workboxOptions: {
-    disableDevLogs: true,
-    manifestTransforms: [
-      (manifestEntries) => {
-        const manifest = manifestEntries.filter((entry) => {
-          const url = entry.url;
-          return (
-            !url.includes('dynamic-css-manifest.json') &&
-            !url.includes('middleware-manifest.json') &&
-            !url.includes('react-loadable-manifest.json') &&
-            !url.includes('build-manifest.json') &&
-            !url.includes('_buildManifest.js') &&
-            !url.includes('_ssgManifest.js') &&
-            !url.includes('_headers')
-          );
-        });
-        return { manifest };
+const pwaDisabled = isDev || appPlatform !== 'web';
+
+const withPWA = pwaDisabled
+  ? (config) => config
+  : withPWAInit({
+      dest: 'public',
+      cacheStartUrl: false,
+      dynamicStartUrl: false,
+      cacheOnFrontEndNav: true,
+      aggressiveFrontEndNavCaching: true,
+      reloadOnOnline: true,
+      swcMinify: true,
+      fallbacks: {
+        document: '/offline',
       },
-    ],
-  },
-});
+      workboxOptions: {
+        disableDevLogs: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url, request }) => {
+              const clientRoutes = ['/library', '/reader'];
+              const isClientRoute = clientRoutes.some((route) => url.pathname.startsWith(route));
+              return isClientRoute && request.mode === 'navigate';
+            },
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'pages-cache',
+              expiration: {
+                maxAgeSeconds: 365 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              plugins: [
+                {
+                  cacheKeyWillBeUsed: async ({ request }) => {
+                    const url = new URL(request.url);
+                    const basePath = url.pathname.split('/')[1];
+                    const cacheKey = `${url.origin}/${basePath}`;
+                    return cacheKey;
+                  },
+                },
+              ],
+            },
+          },
+          {
+            urlPattern: ({ url }) => {
+              if (url.pathname.startsWith('/api/')) {
+                return false;
+              }
+              return /^https?.*/.test(url.href);
+            },
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'offlineCache',
+              expiration: {
+                maxEntries: 512,
+                maxAgeSeconds: 365 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        manifestTransforms: [
+          (manifestEntries) => {
+            const manifest = manifestEntries.filter((entry) => {
+              const url = entry.url;
+              return (
+                !url.includes('dynamic-css-manifest.json') &&
+                !url.includes('middleware-manifest.json') &&
+                !url.includes('react-loadable-manifest.json') &&
+                !url.includes('build-manifest.json') &&
+                !url.includes('_buildManifest.js') &&
+                !url.includes('_ssgManifest.js') &&
+                !url.includes('_headers')
+              );
+            });
+            return { manifest };
+          },
+        ],
+      },
+    });
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
