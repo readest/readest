@@ -12,16 +12,12 @@ import { eventDispatcher } from '@/utils/event';
 import { RiEditLine, RiDeleteBin7Line } from 'react-icons/ri';
 
 export const setReplacementRulesWindowVisible = (visible: boolean) => {
-  // Persist desired visibility on window so components that mount later can read it
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  window.__REPLACEMENT_RULES_WINDOW_VISIBLE__ = visible;
-  const event = new CustomEvent('setReplacementRulesVisibility', {
-    detail: { visible },
-  });
-  // Dispatch on window so listeners attached to window/document will receive it
-  if (typeof window !== 'undefined' && window.dispatchEvent) {
-    window.dispatchEvent(event);
+  const dialog = document.getElementById('replacement_rules_window');
+  if (dialog) {
+    const event = new CustomEvent('setReplacementRulesVisibility', {
+      detail: { visible },
+    });
+    dialog.dispatchEvent(event);
   }
 };
 
@@ -32,29 +28,18 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { sideBarBookKey } = useSidebarStore();
   const { getConfig } = useBookDataStore();
 
-  // Initialize from window flag in case the open request fired before mount
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - custom window property
-    return !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__;
-  });
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const handleCustomEvent = (event: Event) => {
-      const ev = event as CustomEvent;
-      setIsOpen(!!ev.detail?.visible);
+    const handleCustomEvent = (event: CustomEvent) => {
+      setIsOpen(!!event.detail?.visible);
     };
 
-    // Listen on window for visibility events
-    if (typeof window !== 'undefined') {
-      window.addEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
-    }
+    const el = document.getElementById('replacement_rules_window');
+    el?.addEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
-      }
+      el?.removeEventListener('setReplacementRulesVisibility', handleCustomEvent as EventListener);
     };
   }, []);
 
@@ -75,10 +60,10 @@ export const ReplacementRulesWindow: React.FC = () => {
   // 2. Include global rules that aren't overridden at book level
   // 3. Filter out orphaned overrides (disabled global rules that no longer exist globally)
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
-  
+
   // Create a map of global rule IDs to identify overridden rules
   const globalRuleIds = new Set(globalRules.map((gr: ReplacementRule) => gr.id));
-  
+
   // Filter out book rules that are disabled overrides of non-existent global rules
   const validBookRules = bookScopedRules.filter((br: ReplacementRule) => {
     // If it's enabled, it's a real book rule
@@ -87,18 +72,20 @@ export const ReplacementRulesWindow: React.FC = () => {
     // If the global rule doesn't exist, filter it out (orphaned override)
     return globalRuleIds.has(br.id);
   });
-  
+
   const mergedRules = validBookRules.concat(
-    globalRules.filter((gr: ReplacementRule) => !validBookRules.find((br: ReplacementRule) => br.id === gr.id))
+    globalRules.filter(
+      (gr: ReplacementRule) => !validBookRules.find((br: ReplacementRule) => br.id === gr.id),
+    ),
   );
-  
+
   // Create a map to track the scope of each rule for editing/deleting
   const getRuleScope = (rule: ReplacementRule): 'single' | 'book' | 'global' => {
     if (rule.singleInstance) return 'single';
     // If the rule is in validBookRules and originates from global, it's an override
     return globalRuleIds.has(rule.id) ? 'global' : 'book';
   };
-  
+
   const bookRules = mergedRules;
 
   const [editing, setEditing] = useState<{
@@ -113,19 +100,26 @@ export const ReplacementRulesWindow: React.FC = () => {
   const [isReloading, setIsReloading] = useState(false);
 
   const startEdit = (r: ReplacementRule, scope: 'single' | 'book' | 'global') => {
-    setEditing({ id: r.id, scope, pattern: r.pattern, replacement: r.replacement, enabled: !!r.enabled });
+    setEditing({
+      id: r.id,
+      scope,
+      pattern: r.pattern,
+      replacement: r.replacement,
+      enabled: !!r.enabled,
+    });
   };
 
-  const cancelEdit = () => setEditing({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
+  const cancelEdit = () =>
+    setEditing({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
 
   const saveEdit = async () => {
     if (!editing.id || !editing.scope) return;
-    
+
     // Prevent rapid successive operations
     if (isReloading) {
       eventDispatcher.dispatch('toast', {
         type: 'warning',
-        message: _("Please wait for the current operation to complete."),
+        message: _('Please wait for the current operation to complete.'),
         timeout: 3000,
       });
       return;
@@ -134,23 +128,41 @@ export const ReplacementRulesWindow: React.FC = () => {
     try {
       const bookKey = sideBarBookKey || '';
       if (editing.scope === 'global') {
-        await updateReplacementRule(environmentConfig, bookKey, editing.id, {
-          pattern: editing.pattern,
-          replacement: editing.replacement,
-          enabled: editing.enabled,
-        }, 'global');
+        await updateReplacementRule(
+          environmentConfig,
+          bookKey,
+          editing.id,
+          {
+            pattern: editing.pattern,
+            replacement: editing.replacement,
+            enabled: editing.enabled,
+          },
+          'global',
+        );
       } else if (editing.scope === 'book' && sideBarBookKey) {
-        await updateReplacementRule(environmentConfig, sideBarBookKey, editing.id, {
-          pattern: editing.pattern,
-          replacement: editing.replacement,
-          enabled: editing.enabled,
-        }, 'book');
+        await updateReplacementRule(
+          environmentConfig,
+          sideBarBookKey,
+          editing.id,
+          {
+            pattern: editing.pattern,
+            replacement: editing.replacement,
+            enabled: editing.enabled,
+          },
+          'book',
+        );
       } else if (editing.scope === 'single' && sideBarBookKey) {
-        await updateReplacementRule(environmentConfig, sideBarBookKey, editing.id, {
-          pattern: editing.pattern,
-          replacement: editing.replacement,
-          enabled: editing.enabled,
-        }, 'single');
+        await updateReplacementRule(
+          environmentConfig,
+          sideBarBookKey,
+          editing.id,
+          {
+            pattern: editing.pattern,
+            replacement: editing.replacement,
+            enabled: editing.enabled,
+          },
+          'single',
+        );
       }
       cancelEdit();
       eventDispatcher.dispatch('toast', {
@@ -179,72 +191,33 @@ export const ReplacementRulesWindow: React.FC = () => {
 
   const deleteRule = async (ruleId: string, scope: 'single' | 'book' | 'global') => {
     console.log('Deleting rule', ruleId, 'scope', scope);
-    
+
     // Prevent rapid successive deletions
     if (isReloading) {
       eventDispatcher.dispatch('toast', {
         type: 'warning',
-        message: _("Please wait for the book to finish reloading."),
+        message: _('Please wait for the book to finish reloading.'),
         timeout: 3000,
       });
       return;
     }
     setIsReloading(true);
-    const disableGlobalRuleForBook = async (rule: ReplacementRule) => {
-      const { getViewSettings, setViewSettings } = useReaderStore.getState();
-      const { getConfig, saveConfig, setConfig } = useBookDataStore.getState();
-      const { settings } = useSettingsStore.getState();
-
-      if (!sideBarBookKey) return;
-
-      const viewSettings = getViewSettings(sideBarBookKey);
-      if (!viewSettings) return;
-
-      const existingRules = viewSettings.replacementRules || [];
-      const updatedRules = existingRules.some((r) => r.id === rule.id)
-        ? existingRules.map((r) => (r.id === rule.id ? { ...r, enabled: false } : r))
-        : [...existingRules, { ...rule, enabled: false }];
-
-      const updatedViewSettings = { ...viewSettings, replacementRules: updatedRules };
-      setViewSettings(sideBarBookKey, updatedViewSettings);
-
-      const config = getConfig(sideBarBookKey);
-      if (config) {
-        const updatedConfig = { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() };
-        await saveConfig(environmentConfig, sideBarBookKey, updatedConfig, settings);
-        // Update the in-memory config to ensure UI reflects the changes immediately
-        setConfig(sideBarBookKey, updatedConfig);
-      }
-    };
 
     try {
       const bookKey = sideBarBookKey || '';
-      if (scope === 'global' && sideBarBookKey) {
-        // Disable the global rule only for this book by overriding it locally
-        const globalRule = (settings?.globalViewSettings?.replacementRules || []).find((r) => r.id === ruleId);
-        if (globalRule) {
-          // Check if the rule is already disabled for this book
-          const existingRules = viewSettings?.replacementRules || [];
-          const existingOverride = existingRules.find((r) => r.id === ruleId && r.enabled === false);
-          
-          if (existingOverride) {
-            // Rule is already disabled, show informational message
-            eventDispatcher.dispatch('toast', {
-              type: 'warning',
-              message: _('This global rule is already disabled for this book. To permanently delete it, go to Settings in the Library page.'),
-              timeout: 4000,
-            });
-            return;
-          }
-          
-          await disableGlobalRuleForBook(globalRule);
-        }
+
+      if (scope === 'global') {
+        // delete global rule for all books
+        await removeReplacementRule(environmentConfig, '', ruleId, 'global');
       } else {
         await removeReplacementRule(environmentConfig, bookKey, ruleId, scope);
       }
-      const successMessage = scope === 'global'
-        ? _('Global replacement rule disabled for this book. Reloading book to apply changes...')
-        : _('Replacement rule deleted. Reloading book to apply changes...');
+      const successMessage =
+        scope === 'global'
+          ? _(
+              'Global replacement rule deleted for all books in the library. Reloading book to apply changes...',
+            )
+          : _('Replacement rule deleted. Reloading book to apply changes...');
 
       eventDispatcher.dispatch('toast', {
         type: 'success',
@@ -283,7 +256,9 @@ export const ReplacementRulesWindow: React.FC = () => {
           <div>
             <h3 className='text-sm font-semibold'>{_('Single Instance Rules')}</h3>
             {singleRules.length === 0 ? (
-              <p className='text-sm text-base-content/70 mt-2'>{_('No single replacement rules')}</p>
+              <p className='text-base-content/70 mt-2 text-sm'>
+                {_('No single replacement rules')}
+              </p>
             ) : (
               <ul className='mt-2 space-y-2'>
                 {singleRules.map((r) => (
@@ -291,40 +266,69 @@ export const ReplacementRulesWindow: React.FC = () => {
                     {editing.id === r.id && editing.scope === 'single' ? (
                       <div className='flex flex-col gap-2'>
                         <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                          <label className='text-base-content/70 whitespace-nowrap text-xs'>
+                            {_('Selected phrase:')}
+                          </label>
                           <input
-                            className='input input-sm text-sm flex-1 opacity-60'
+                            className='input input-sm flex-1 text-sm opacity-60'
                             value={editing.pattern}
                             disabled
                           />
                         </div>
 
                         <div className='flex items-center gap-2'>
-                          <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                          <label className='text-base-content/70 whitespace-nowrap text-xs'>
+                            {_('Replace with:')}
+                          </label>
                           <input
                             className='input input-sm flex-1'
                             value={editing.replacement}
-                            onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                            onChange={(e) =>
+                              setEditing({ ...editing, replacement: e.target.value })
+                            }
                           />
                         </div>
 
                         <div className='flex gap-2'>
-                          <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
-                          <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
+                          <button className='btn btn-sm btn-primary' onClick={saveEdit}>
+                            {_('Save')}
+                          </button>
+                          <button className='btn btn-sm' onClick={cancelEdit}>
+                            {_('Cancel')}
+                          </button>
                         </div>
                       </div>
                     ) : (
                       <div className='flex items-center justify-between'>
                         <div className='flex flex-col'>
-                          <div className='font-medium text-base leading-tight'>{r.pattern}</div>
-                          <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
-                          <div className='text-xs text-base-content/60 mt-1'>{_('Scope:')}&nbsp;<span className='font-medium'>Single Instance</span>&nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;<span className='font-medium'>{r.caseSensitive !== false ? _('Yes') : _('No')}</span></div>
+                          <div className='text-base font-medium leading-tight'>{r.pattern}</div>
+                          <div className='text-base-content/70 mt-1 break-all text-sm'>
+                            <span className='text-base-content/80 mr-2 text-xs font-medium'>
+                              {_('Replace with:')}
+                            </span>
+                            {r.replacement}
+                          </div>
+                          <div className='text-base-content/60 mt-1 text-xs'>
+                            {_('Scope:')}&nbsp;<span className='font-medium'>Single Instance</span>
+                            &nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;
+                            <span className='font-medium'>
+                              {r.caseSensitive !== false ? _('Yes') : _('No')}
+                            </span>
+                          </div>
                         </div>
                         <div className='flex items-center gap-2'>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, 'single')} aria-label={_('Edit')}>
+                          <button
+                            className='btn btn-ghost btn-xs p-1'
+                            onClick={() => startEdit(r, 'single')}
+                            aria-label={_('Edit')}
+                          >
                             <RiEditLine />
                           </button>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, 'single')} aria-label={_('Delete')}>
+                          <button
+                            className='btn btn-ghost btn-xs p-1'
+                            onClick={() => deleteRule(r.id, 'single')}
+                            aria-label={_('Delete')}
+                          >
                             <RiDeleteBin7Line />
                           </button>
                         </div>
@@ -335,9 +339,11 @@ export const ReplacementRulesWindow: React.FC = () => {
               </ul>
             )}
 
-            <h3 className='text-sm font-semibold mt-4'>{_('Book Specific Rules')}</h3>
-                {bookRules.length === 0 ? (
-              <p className='text-sm text-base-content/70 mt-2'>{_('No book-level replacement rules')}</p>
+            <h3 className='mt-4 text-sm font-semibold'>{_('Book Specific Rules')}</h3>
+            {bookRules.length === 0 ? (
+              <p className='text-base-content/70 mt-2 text-sm'>
+                {_('No book-level replacement rules')}
+              </p>
             ) : (
               <ul className='mt-2 space-y-2'>
                 {bookRules.map((r) => {
@@ -348,40 +354,72 @@ export const ReplacementRulesWindow: React.FC = () => {
                       {isEditing ? (
                         <div className='flex flex-col gap-2'>
                           <div className='flex items-center gap-2'>
-                            <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Selected phrase:')}</label>
+                            <label className='text-base-content/70 whitespace-nowrap text-xs'>
+                              {_('Selected phrase:')}
+                            </label>
                             <input
-                              className='input input-sm text-sm flex-1 opacity-60'
+                              className='input input-sm flex-1 text-sm opacity-60'
                               value={editing.pattern}
                               disabled
                             />
                           </div>
 
                           <div className='flex items-center gap-2'>
-                            <label className='text-xs text-base-content/70 whitespace-nowrap'>{_('Replace with:')}</label>
+                            <label className='text-base-content/70 whitespace-nowrap text-xs'>
+                              {_('Replace with:')}
+                            </label>
                             <input
                               className='input input-sm flex-1'
                               value={editing.replacement}
-                              onChange={(e) => setEditing({ ...editing, replacement: e.target.value })}
+                              onChange={(e) =>
+                                setEditing({ ...editing, replacement: e.target.value })
+                              }
                             />
                           </div>
 
                           <div className='flex gap-2'>
-                            <button className='btn btn-sm btn-primary' onClick={saveEdit}>{_('Save')}</button>
-                            <button className='btn btn-sm' onClick={cancelEdit}>{_('Cancel')}</button>
-                          </div>
-                      </div>
-                    ) : (
-                      <div className='flex items-center justify-between'>
-                        <div className='flex flex-col'>
-                          <div className='font-medium text-base leading-tight'>{r.pattern}</div>
-                          <div className='text-sm text-base-content/70 break-all mt-1'><span className='font-medium text-xs text-base-content/80 mr-2'>{_('Replace with:')}</span>{r.replacement}</div>
-                          <div className='text-xs text-base-content/60 mt-1'>{_('Scope:')}&nbsp;<span className='font-medium'>{getRuleScope(r) === 'book' ? _('Book') : _('Global')}</span>{getRuleScope(r) === 'global' && (r.enabled ? <span className='ml-2 text-success'>✓ {_('Enabled')}</span> : <span className='ml-2 text-error'>✗ {_('Disabled')}</span>)}&nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;<span className='font-medium'>{r.caseSensitive !== false ? _('Yes') : _('No')}</span></div>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                          <button className='btn btn-ghost btn-xs p-1' onClick={() => startEdit(r, getRuleScope(r))} aria-label={_('Edit')}>
-                            <RiEditLine />
+                            <button className='btn btn-sm btn-primary' onClick={saveEdit}>
+                              {_('Save')}
                             </button>
-                            <button className='btn btn-ghost btn-xs p-1' onClick={() => deleteRule(r.id, ruleScope)} aria-label={_('Delete')}>
+                            <button className='btn btn-sm' onClick={cancelEdit}>
+                              {_('Cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className='flex items-center justify-between'>
+                          <div className='flex flex-col'>
+                            <div className='text-base font-medium leading-tight'>{r.pattern}</div>
+                            <div className='text-base-content/70 mt-1 break-all text-sm'>
+                              <span className='text-base-content/80 mr-2 text-xs font-medium'>
+                                {_('Replace with:')}
+                              </span>
+                              {r.replacement}
+                            </div>
+                            <div className='text-base-content/60 mt-1 text-xs'>
+                              {_('Scope:')}&nbsp;
+                              <span className='font-medium'>
+                                {getRuleScope(r) === 'book' ? _('Book') : _('Global')}
+                              </span>
+                              &nbsp;|&nbsp;{_('Case sensitive:')}&nbsp;
+                              <span className='font-medium'>
+                                {r.caseSensitive !== false ? _('Yes') : _('No')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <button
+                              className='btn btn-ghost btn-xs p-1'
+                              onClick={() => startEdit(r, getRuleScope(r))}
+                              aria-label={_('Edit')}
+                            >
+                              <RiEditLine />
+                            </button>
+                            <button
+                              className='btn btn-ghost btn-xs p-1'
+                              onClick={() => deleteRule(r.id, ruleScope)}
+                              aria-label={_('Delete')}
+                            >
                               <RiDeleteBin7Line />
                             </button>
                           </div>
