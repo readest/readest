@@ -32,7 +32,7 @@ if (typeof window !== 'undefined' && !window.localStorage) {
       delete storage[key];
     },
     clear: () => {
-      Object.keys(storage).forEach(key => delete storage[key]);
+      Object.keys(storage).forEach((key) => delete storage[key]);
     },
     get length() {
       return Object.keys(storage).length;
@@ -54,7 +54,7 @@ if (typeof window !== 'undefined' && !window.localStorage) {
       delete storage[key];
     },
     clear: () => {
-      Object.keys(storage).forEach(key => delete storage[key]);
+      Object.keys(storage).forEach((key) => delete storage[key]);
     },
     get length() {
       return Object.keys(storage).length;
@@ -68,14 +68,15 @@ if (typeof window !== 'undefined' && !window.localStorage) {
 
 // matchMedia mock
 if (typeof window !== 'undefined' && !window.matchMedia) {
-  window.matchMedia = (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-  }) as MediaQueryList;
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
 }
