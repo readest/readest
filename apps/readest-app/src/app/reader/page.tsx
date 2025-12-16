@@ -7,7 +7,6 @@ import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import Reader from './components/Reader';
-import ReplacementMenu from '@/components/ReplacementMenu';
 
 // This is only used for the Tauri app in the app router
 export default function Page() {
@@ -30,9 +29,8 @@ export default function Page() {
   }, [appService?.hasUpdater, settings.autoCheckUpdates]);
 
   return (
-  <>
-    <Reader />
-    <ReplacementMenu />
-  </>
+    <>
+      <Reader />
+    </>
   );
 }
