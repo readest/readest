@@ -16,6 +16,7 @@ import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { Overlay } from '@/components/Overlay';
+import { saveSysSettings } from '@/helpers/settings';
 import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
@@ -88,7 +89,9 @@ const Notebook: React.FC = ({}) => {
 
   const handleTogglePin = () => {
     toggleNotebookPin();
-    settings.globalReadSettings.isNotebookPinned = !isNotebookPinned;
+    const globalReadSettings = settings.globalReadSettings;
+    const newGlobalReadSettings = { ...globalReadSettings, isNotebookPinned: !isNotebookPinned };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
   const handleClickOverlay = () => {
