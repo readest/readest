@@ -86,15 +86,6 @@ import {
 } from '@/services/transformers/replacement';
 
 describe('replacementTransformer', () => {
-  // let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-  // let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-
-  // beforeEach(() => {
-  //   // Spy on console methods to verify logging
-  //   // consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  //   consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  // });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -120,21 +111,7 @@ describe('replacementTransformer', () => {
     test('should return content unchanged when no rules', async () => {
       const ctx = createMockContext(undefined, '<p>Hello world</p>');
       const result = await replacementTransformer.transform(ctx);
-
       expect(result).toContain('Hello world');
-      // expect(consoleLogSpy).toHaveBeenCalledWith(
-      //   '[REPLACEMENT] Transformer called!',
-      //   expect.objectContaining({
-      //     bookKey: 'test-book',
-      //     hasGlobalRules: false,
-      //     globalRuleCount: 0,
-      //     hasBookRules: false,
-      //     bookRuleCount: 0,
-      //     hasMergedRules: true,
-      //     mergedRuleCount: 0,
-      //   }),
-      // );
-      // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No rules defined, returning unchanged');
     });
 
     test('should return content unchanged when rules array is empty', async () => {
@@ -142,7 +119,6 @@ describe('replacementTransformer', () => {
       const result = await replacementTransformer.transform(ctx);
 
       expect(result).toContain('Hello world');
-      // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No rules defined, returning unchanged');
     });
 
     test('should apply simple string replacement', async () => {
@@ -161,8 +137,6 @@ describe('replacementTransformer', () => {
 
       expect(result).toContain('Hi world');
       expect(result).not.toContain('Hello');
-      // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Applying', 1, 'rules:', ['Hello']);
-      // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Transformation complete');
     });
 
     test('should apply multiple simple replacements', async () => {
@@ -726,7 +700,6 @@ describe('replacementTransformer', () => {
 
       expect(result).toContain('Hello');
       expect(result).not.toContain('Hi');
-      // expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] No enabled rules, returning unchanged');
     });
 
     test('should only apply enabled rules', async () => {
@@ -772,10 +745,6 @@ describe('replacementTransformer', () => {
       const result = await replacementTransformer.transform(ctx);
 
       expect(result).toContain('Test content'); // Content unchanged
-      // expect(consoleWarnSpy).toHaveBeenCalledWith(
-      //   expect.stringContaining('Invalid regex pattern'),
-      //   expect.anything(),
-      // );
     });
 
     test('should continue processing other rules after invalid regex', async () => {
@@ -1015,39 +984,7 @@ describe('replacementTransformer', () => {
       const ctx = createMockContext(rules, '<p>test</p>');
 
       await replacementTransformer.transform(ctx);
-
-      // expect(consoleLogSpy).toHaveBeenCalledWith(
-      //   '[REPLACEMENT] Transformer called!',
-      //   expect.objectContaining({
-      //     bookKey: 'test-book',
-      //     hasGlobalRules: false,
-      //     globalRuleCount: 0,
-      //     hasBookRules: true,
-      //     bookRuleCount: 1,
-      //     hasMergedRules: true,
-      //     mergedRuleCount: 1,
-      //   }),
-      // );
     });
-
-    // test('should log when applying rules', async () => {
-    //   const rules: ReplacementRule[] = [
-    //     {
-    //       id: '1',
-    //       pattern: 'test',
-    //       replacement: 'TEST',
-    //       enabled: true,
-    //       isRegex: false,
-    //       order: 1,
-    //     },
-    //   ];
-    //   const ctx = createMockContext(rules, '<p>test</p>');
-
-    //   await replacementTransformer.transform(ctx);
-
-    //   expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Applying', 1, 'rules:', ['test']);
-    //   expect(consoleLogSpy).toHaveBeenCalledWith('[REPLACEMENT] Transformation complete');
-    // });
   });
 
   describe('replacement rule management functions', () => {
