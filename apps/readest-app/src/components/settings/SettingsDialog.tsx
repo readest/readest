@@ -22,14 +22,7 @@ import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 
-export type SettingsPanelType =
-  | 'Font'
-  | 'Layout'
-  | 'Color'
-  | 'Control'
-  | 'Language'
-  | 'Custom'
-  | 'Replacement';
+export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -106,7 +99,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Control: null,
     Language: null,
     Custom: null,
-    Replacement: null,
   });
 
   const registerResetFunction = (panel: SettingsPanelType, resetFn: () => void) => {

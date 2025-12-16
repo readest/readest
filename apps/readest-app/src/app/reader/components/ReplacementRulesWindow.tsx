@@ -26,14 +26,9 @@ export const ReplacementRulesWindow: React.FC = () => {
   const { settings } = useSettingsStore();
   const { getViewSettings } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
+  const { getConfig } = useBookDataStore();
 
-  // Initialize from window flag in case the open request fired before mount
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - custom window property
-    return !!window.__REPLACEMENT_RULES_WINDOW_VISIBLE__;
-  });
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
@@ -52,18 +47,43 @@ export const ReplacementRulesWindow: React.FC = () => {
   const inMemoryRules = viewSettings?.replacementRules || [];
   const persistedConfig = sideBarBookKey ? getConfig(sideBarBookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.replacementRules || [];
-  // Single rules = in-memory rules that are not persisted in the book config
-  const singleRules = inMemoryRules.filter((r: ReplacementRule) => !persistedBookRules.find((p: ReplacementRule) => p.id === r.id));
-  // Book rules = persisted book rules + global rules (merged for display)
-  // Remove duplicates: if a pattern exists in both book and global rules, keep the book rule
+
+  // Prefer persisted rules; fall back to in-memory so we show unsaved edits in tests/dev
+  const bookRuleSource = persistedBookRules.length ? persistedBookRules : inMemoryRules;
+
+  const singleRules = bookRuleSource.filter((r: ReplacementRule) => !!r.singleInstance);
+  const bookScopedRules = bookRuleSource.filter((r: ReplacementRule) => !r.singleInstance);
+
+  // Book rules = book-scoped rules + global rules (merged for display)
+  // Merge logic:
+  // 1. Include all book-scoped rules (including disabled overrides of global rules)
+  // 2. Include global rules that aren't overridden at book level
+  // 3. Filter out orphaned overrides (disabled global rules that no longer exist globally)
   const globalRules = settings?.globalViewSettings?.replacementRules || [];
-  const mergedRules = persistedBookRules.concat(
-    globalRules.filter((gr: ReplacementRule) => !persistedBookRules.find((br: ReplacementRule) => br.pattern === gr.pattern))
+
+  // Create a map of global rule IDs to identify overridden rules
+  const globalRuleIds = new Set(globalRules.map((gr: ReplacementRule) => gr.id));
+
+  // Filter out book rules that are disabled overrides of non-existent global rules
+  const validBookRules = bookScopedRules.filter((br: ReplacementRule) => {
+    // If it's enabled, it's a real book rule
+    if (br.enabled !== false) return true;
+    // If it's disabled and the global rule still exists, keep it (it's an override)
+    // If the global rule doesn't exist, filter it out (orphaned override)
+    return globalRuleIds.has(br.id);
+  });
+
+  const mergedRules = validBookRules.concat(
+    globalRules.filter(
+      (gr: ReplacementRule) => !validBookRules.find((br: ReplacementRule) => br.id === gr.id),
+    ),
   );
 
   // Create a map to track the scope of each rule for editing/deleting
-  const getRuleScope = (rule: ReplacementRule): 'book' | 'global' => {
-    return persistedBookRules.find((br: ReplacementRule) => br.id === rule.id) ? 'book' : 'global';
+  const getRuleScope = (rule: ReplacementRule): 'single' | 'book' | 'global' => {
+    if (rule.singleInstance) return 'single';
+    // If the rule is in validBookRules and originates from global, it's an override
+    return globalRuleIds.has(rule.id) ? 'global' : 'book';
   };
 
   const bookRules = mergedRules;
