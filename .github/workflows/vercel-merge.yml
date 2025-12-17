@@ -2,7 +2,7 @@ name: Deploy to vercel on merge
 on:
   push:
     branches:
-      - main
+      - main_none
 permissions:
   contents: read
 jobs:
