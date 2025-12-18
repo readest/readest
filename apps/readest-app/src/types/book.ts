@@ -210,6 +210,26 @@ export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
 
+
+export interface ReplacementRule {
+  id: string;
+  pattern: string;
+  replacement: string;
+  enabled: boolean;
+  isRegex: boolean;
+  order: number; // Lower numbers apply first
+  singleInstance?: boolean; // If true, only replace the specific occurrence
+  sectionHref?: string; // Section where the single-instance replacement applies
+  occurrenceIndex?: number; // Which occurrence in the section (0-based)
+  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
+  caseSensitive?: boolean; // Case-sensitive matching (default true)
+  global?: boolean; // Marks global-scope rules explicitly
+}
+
+export interface ReplacementRulesConfig {
+  replacementRules?: ReplacementRule[];
+}
+
 export interface ViewSettings
   extends BookLayout,
     BookStyle,
@@ -218,7 +238,8 @@ export interface ViewSettings
     ViewConfig,
     TTSConfig,
     TranslatorConfig,
-    ScreenConfig {}
+    ScreenConfig,
+    ReplacementRulesConfig {}
 
 export interface BookProgress {
   location: string;
