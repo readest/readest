@@ -141,7 +141,7 @@ jobs:
             release: macos
             arch: aarch64
             rust_target: x86_64-apple-darwin,aarch64-apple-darwin
-            args: '--target universal-apple-darwin'
+            args: '--target universal-apple-darwin --no-sign'
           - os: windows-latest
             release: windows
             arch: x86_64
@@ -242,7 +242,10 @@ jobs:
           git checkout .
 
           pushd src-tauri/gen/android
-          
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
 
           popd
           version=${{ needs.get-release.outputs.release_version }}
@@ -259,6 +262,8 @@ jobs:
           echo "Uploading $arm64_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
           echo "Uploading signatures to GitHub release"
+          pnpm tauri signer sign $universial_apk
+          pnpm tauri signer sign $arm64_apk
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
 
