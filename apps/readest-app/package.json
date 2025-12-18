@@ -94,8 +94,11 @@
     "iso-639-3": "^3.0.1",
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
+    "lunr": "^2.3.9",
     "marked": "^15.0.12",
     "next": "16.0.10",
+    "ollama": "^0.6.3",
+    "openai": "^6.14.0",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
     "posthog-js": "^1.246.0",
@@ -112,7 +115,7 @@
     "styled-jsx": "^5.1.7",
     "tinycolor2": "^1.6.0",
     "uuid": "^11.1.0",
-    "zod": "^4.0.8",
+    "zod": "^3.25.76",
     "zustand": "5.0.6"
   },
   "devDependencies": {
@@ -123,6 +126,7 @@
     "@testing-library/react": "^16.3.0",
     "@types/cors": "^2.8.17",
     "@types/cssbeautify": "^0.3.5",
+    "@types/lunr": "^2.3.7",
     "@types/node": "^22.15.31",
     "@types/react": "18.3.12",
     "@types/react-color": "^3.0.13",
