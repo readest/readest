@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
-import { PiDotsThreeVerticalBold } from 'react-icons/pi';
+import { PiDotsThreeVerticalBold, PiRobot } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
@@ -21,8 +21,16 @@ import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
+import AIPanel from './AIPanel';
 
-export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType =
+  | 'Font'
+  | 'Layout'
+  | 'Color'
+  | 'Control'
+  | 'Language'
+  | 'AI'
+  | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -70,6 +78,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Language'),
     },
     {
+      tab: 'AI',
+      icon: PiRobot,
+      label: _('AI Assistant'),
+    },
+    {
       tab: 'Custom',
       icon: IoAccessibilityOutline,
       label: _('Custom'),
@@ -98,6 +111,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Color: null,
     Control: null,
     Language: null,
+    AI: null,
     Custom: null,
   });
 
@@ -278,6 +292,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Language', fn)}
           />
         )}
+        {activePanel === 'AI' && <AIPanel onClose={handleClose} />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}
