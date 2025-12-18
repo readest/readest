@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   getAIProvider,
   getAvailableProviders,
@@ -15,7 +15,7 @@ vi.mock('ollama/browser', () => {
       constructor(config: { host: string }) {
         this.host = config.host;
       }
-      list = vi.fn().mockResolvedValue({ models: [{ name: 'llama3.2' }] });
+      list = vi.fn().mockResolvedValue({ models: [{ name: 'qwen3-coder:32b' }] });
       embed = vi.fn().mockResolvedValue({ embeddings: [[0.1, 0.2, 0.3]] });
       chat = vi.fn().mockImplementation(async function* () {
         yield { message: { content: 'test' } };
