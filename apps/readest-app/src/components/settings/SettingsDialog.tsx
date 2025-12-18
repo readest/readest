@@ -292,7 +292,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Language', fn)}
           />
         )}
-        {activePanel === 'AI' && <AIPanel onClose={handleClose} />}
+        {activePanel === 'AI' && <AIPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}
