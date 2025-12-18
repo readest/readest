@@ -24,7 +24,6 @@ vi.mock('ollama/browser', () => {
   };
 });
 
-// mock openai module with class
 vi.mock('openai', () => {
   return {
     default: class MockOpenAI {
