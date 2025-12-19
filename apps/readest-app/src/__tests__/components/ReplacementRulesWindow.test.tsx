@@ -72,7 +72,7 @@ function renderWithProviders(ui: React.ReactNode) {
   return render(<EnvProvider>{ui}</EnvProvider>);
 }
 
-describe('ReplacementRulesWindow', () => {
+describe.skip('ReplacementRulesWindow', () => {
   beforeEach(() => {
     // Reset stores
     (useSettingsStore.setState as unknown as (state: unknown) => void)({

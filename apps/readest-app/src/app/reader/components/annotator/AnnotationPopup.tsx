@@ -15,6 +15,7 @@ interface AnnotationPopupProps {
     Icon: React.ElementType;
     onClick: () => void;
     disabled?: boolean;
+    visible?: boolean;
   }>;
   position: Position;
   trianglePosition: Position;
@@ -65,16 +66,19 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
           )}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {buttons.map((button, index) => (
-            <PopupButton
-              key={index}
-              showTooltip={!highlightOptionsVisible}
-              tooltipText={button.tooltipText}
-              Icon={button.Icon}
-              onClick={button.onClick}
-              disabled={button.disabled}
-            />
-          ))}
+          {buttons.map((button, index) => {
+            if (button.visible === false) return null;
+            return (
+              <PopupButton
+                key={index}
+                showTooltip={!highlightOptionsVisible}
+                tooltipText={button.tooltipText}
+                Icon={button.Icon}
+                onClick={button.onClick}
+                disabled={button.disabled}
+              />
+            );
+          })}
         </div>
       </Popup>
       {highlightOptionsVisible && (
