@@ -695,9 +695,7 @@
   "Validating...": "驗證中...",
   "View All": "檢視全部",
   "Forward": "前往",
-  "OPDS Catalog": "OPDS 目錄",
   "Home": "首頁",
-  "Library": "圖書館",
   "{{count}} items_other": "{{count}} 項",
   "Download completed": "下載完成",
   "Download failed": "下載失敗",
@@ -755,5 +753,7 @@
   "From Directory": "從目錄導入",
   "Successfully imported {{count}} book(s)_other": "成功導入 {{count}} 本書",
   "Count": "數量",
-  "Start Page": "起始頁"
+  "Start Page": "起始頁",
+  "Search in OPDS Catalog...": "在 OPDS 目錄中搜尋...",
+  "Please log in to use advanced TTS features.": "請登入以使用進階 TTS 功能"
 }

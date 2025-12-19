@@ -699,9 +699,7 @@
   "Validating...": "در حال بررسی...",
   "View All": "مشاهده همه",
   "Forward": "بعدی",
-  "OPDS Catalog": "فهرست OPDS",
   "Home": "خانه",
-  "Library": "کتابخانه",
   "{{count}} items_one": "{{count}} مورد",
   "{{count}} items_other": "{{count}} مورد",
   "Download completed": "دانلود کامل شد",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "با موفقیت 1 کتاب وارد شد",
   "Successfully imported {{count}} book(s)_other": "با موفقیت {{count}} کتاب وارد شد",
   "Count": "تعداد",
-  "Start Page": "صفحه شروع"
+  "Start Page": "صفحه شروع",
+  "Search in OPDS Catalog...": "جستجو در فهرست OPDS...",
+  "Please log in to use advanced TTS features.": "لطفاً برای استفاده از ویژگی‌های پیشرفته TTS وارد شوید."
 }

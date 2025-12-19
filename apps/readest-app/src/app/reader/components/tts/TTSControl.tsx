@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -36,6 +37,7 @@ interface TTSControlProps {
 const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { user } = useAuth();
   const { safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
@@ -173,6 +175,14 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     if (!bookData || !bookData.book) return;
     const { title, author, coverImageUrl } = bookData.book;
 
+    const handleNeedAuth = () => {
+      eventDispatcher.dispatch('toast', {
+        message: _('Please log in to use advanced TTS features.'),
+        type: 'error',
+        timeout: 5000,
+      });
+    };
+
     const handleSpeakMark = (e: Event) => {
       const progress = getProgress(bookKey);
       const { sectionLabel } = progress || {};
@@ -243,9 +253,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       }
     };
 
+    ttsController.addEventListener('tts-need-auth', handleNeedAuth);
     ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
     ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
     return () => {
+      ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
       ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
     };
@@ -326,7 +338,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       setTtsClientsInitialized(false);
 
       setShowIndicator(true);
-      const ttsController = new TTSController(appService, view);
+      const ttsController = new TTSController(appService, view, !!user?.id);
       await ttsController.init();
       await ttsController.initViewTTS(viewSettings.ttsHighlightOptions);
       const ssml = view.tts?.from(ttsFromRange);

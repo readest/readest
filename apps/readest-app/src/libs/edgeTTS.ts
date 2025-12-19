@@ -1,13 +1,18 @@
 import { md5 } from 'js-md5';
+import WebSocket from 'isomorphic-ws';
 import { createHash } from 'crypto';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
+import { fetchWithAuth } from '@/utils/fetch';
+import { getNodeAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const CHROMIUM_FULL_VERSION = '130.0.2849.68';
+const CHROMIUM_FULL_VERSION = '143.0.3650.75';
+const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0];
+
 const EDGE_TTS_VOICES = {
   'af-ZA': ['af-ZA-AdriNeural', 'af-ZA-WillemNeural'],
   'am-ET': ['am-ET-AmehaNeural', 'am-ET-MekdesNeural'],
@@ -214,6 +219,17 @@ const generateSecMsGec = () => {
   return createHash('sha256').update(strToHash, 'ascii').digest('hex').toUpperCase();
 };
 
+const generateMuid = () => {
+  // Generate 16 random bytes (32 hex characters)
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+
+  return Array.from(array)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+};
+
 const genVoiceList = (voices: Record<string, string[]>) => {
   return Object.entries(voices).flatMap(([lang, voices]) => {
     return voices.map((id) => {
@@ -236,6 +252,8 @@ const hashPayload = (payload: EdgeTTSPayload): string => {
   return md5(base);
 };
 
+export type EDGE_TTS_PROTOCOL = 'wss' | 'https';
+
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
   private static audioCache = new LRUCache<string, Blob>(200);
@@ -244,8 +262,36 @@ export class EdgeSpeechTTS {
       URL.revokeObjectURL(url);
     }
   });
+  private protocol: EDGE_TTS_PROTOCOL = 'wss';
 
-  constructor() {}
+  constructor(protocol?: EDGE_TTS_PROTOCOL) {
+    if (protocol) {
+      this.protocol = protocol;
+    }
+  }
+
+  async #fetchEdgeSpeechHttp({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
+    const url = getNodeAPIBaseUrl() + '/tts/edge';
+
+    const response = await fetchWithAuth(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: text,
+        voice,
+        rate,
+        lang,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Edge TTS HTTP request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response;
+  }
 
   async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
     const connectId = randomMd5();
@@ -257,6 +303,19 @@ export class EdgeSpeechTTS {
     });
     const url = `${EDGE_SPEECH_URL}?${params.toString()}`;
     const date = new Date().toString();
+    const baseHeaders = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' +
+        ` (KHTML, like Gecko) Chrome/${CHROMIUM_MAJOR_VERSION}.0.0.0 Safari/537.36` +
+        ` Edg/${CHROMIUM_MAJOR_VERSION}.0.0.0`,
+      'Accept-Encoding': 'gzip, deflate, br, zstd',
+      'Accept-Language': 'en-US,en;q=0.9',
+      Pragma: 'no-cache',
+      'Cache-Control': 'no-cache',
+      Origin: 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+      'Sec-WebSocket-Version': '13',
+      Cookie: `muid=${generateMuid()};`,
+    };
     const configHeaders = {
       'Content-Type': 'application/json; charset=utf-8',
       Path: 'speech.config',
@@ -314,56 +373,105 @@ export class EdgeSpeechTTS {
     const content = genSendContent(contentHeaders, ssml);
     const config = genSendContent(configHeaders, configContent);
 
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(url);
-      ws.binaryType = 'arraybuffer';
-
-      let audioData = new ArrayBuffer(0);
-
-      ws.addEventListener('open', () => {
-        ws.send(config);
-        ws.send(content);
-      });
-
-      ws.addEventListener('message', (event: MessageEvent) => {
-        if (typeof event.data === 'string') {
-          const { headers } = getHeadersAndData(event.data);
-          if (headers['Path'] === 'turn.end') {
-            ws.close();
-            if (!audioData.byteLength) {
-              return reject(new Error('No audio data received.'));
+    if (isTauriAppPlatform()) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const TauriWebSocket = (await import('@tauri-apps/plugin-websocket')).default;
+          const ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
+          let audioData = new ArrayBuffer(0);
+          const messageUnlisten = await ws.addListener((msg) => {
+            if (msg.type === 'Text') {
+              const { headers } = getHeadersAndData(msg.data as string);
+              if (headers['Path'] === 'turn.end') {
+                ws.disconnect();
+                messageUnlisten();
+                if (!audioData.byteLength) {
+                  return reject(new Error('No audio data received.'));
+                }
+                const res = new Response(audioData);
+                resolve(res);
+              }
+            } else if (msg.type === 'Binary') {
+              let buffer: ArrayBufferLike;
+              if (msg.data instanceof Uint8Array) {
+                buffer = msg.data.buffer;
+              } else {
+                buffer = new Uint8Array(msg.data).buffer;
+              }
+              const dataView = new DataView(buffer);
+              const headerLength = dataView.getInt16(0);
+              if (buffer.byteLength > headerLength + 2) {
+                const newBody = buffer.slice(2 + headerLength);
+                const merged = new Uint8Array(audioData.byteLength + newBody.byteLength);
+                merged.set(new Uint8Array(audioData), 0);
+                merged.set(new Uint8Array(newBody), audioData.byteLength);
+                audioData = merged.buffer;
+              }
             }
-            const res = new Response(audioData);
-            resolve(res);
-          }
-        } else if (event.data instanceof ArrayBuffer) {
-          const dataView = new DataView(event.data);
-          const headerLength = dataView.getInt16(0);
-          if (event.data.byteLength > headerLength + 2) {
-            const newBody = event.data.slice(2 + headerLength);
-            const merged = new Uint8Array(audioData.byteLength + newBody.byteLength);
-            merged.set(new Uint8Array(audioData), 0);
-            merged.set(new Uint8Array(newBody), audioData.byteLength);
-            audioData = merged.buffer;
-          }
+          });
+          await ws.send(config);
+          await ws.send(content);
+        } catch (error) {
+          reject(new Error(`WebSocket error occurred: ${error}`));
         }
       });
+    } else {
+      return new Promise((resolve, reject) => {
+        const ws = new WebSocket(url, {
+          headers: baseHeaders,
+        });
+        ws.binaryType = 'arraybuffer';
 
-      ws.addEventListener('close', () => {
-        if (!audioData.byteLength) {
-          reject(new Error('No audio data received.'));
-        }
-      });
+        let audioData = new ArrayBuffer(0);
 
-      ws.addEventListener('error', () => {
-        ws.close();
-        reject(new Error('WebSocket error occurred.'));
+        ws.addEventListener('open', () => {
+          ws.send(config);
+          ws.send(content);
+        });
+
+        ws.addEventListener('message', (event: WebSocket.MessageEvent) => {
+          if (typeof event.data === 'string') {
+            const { headers } = getHeadersAndData(event.data);
+            if (headers['Path'] === 'turn.end') {
+              ws.close();
+              if (!audioData.byteLength) {
+                return reject(new Error('No audio data received.'));
+              }
+              const res = new Response(audioData);
+              resolve(res);
+            }
+          } else if (event.data instanceof ArrayBuffer) {
+            const dataView = new DataView(event.data);
+            const headerLength = dataView.getInt16(0);
+            if (event.data.byteLength > headerLength + 2) {
+              const newBody = event.data.slice(2 + headerLength);
+              const merged = new Uint8Array(audioData.byteLength + newBody.byteLength);
+              merged.set(new Uint8Array(audioData), 0);
+              merged.set(new Uint8Array(newBody), audioData.byteLength);
+              audioData = merged.buffer;
+            }
+          }
+        });
+
+        ws.addEventListener('close', () => {
+          if (!audioData.byteLength) {
+            reject(new Error('No audio data received.'));
+          }
+        });
+
+        ws.addEventListener('error', () => {
+          reject(new Error('WebSocket error occurred.'));
+        });
       });
-    });
+    }
   }
 
   async create(payload: EdgeTTSPayload): Promise<Response> {
-    return this.#fetchEdgeSpeechWs(payload);
+    if (this.protocol === 'https') {
+      return this.#fetchEdgeSpeechHttp(payload);
+    } else {
+      return this.#fetchEdgeSpeechWs(payload);
+    }
   }
 
   async createAudioUrl(payload: EdgeTTSPayload): Promise<string> {

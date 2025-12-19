@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.9.95",
+  "version": "0.9.96",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.tauri -- next dev",
@@ -74,6 +74,7 @@
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "~2.3.3",
     "@tauri-apps/plugin-updater": "^2.9.0",
+    "@tauri-apps/plugin-websocket": "~2.4.1",
     "@zip.js/zip.js": "^2.7.53",
     "abortcontroller-polyfill": "^1.7.8",
     "app-store-server-api": "^0.17.1",
@@ -92,6 +93,7 @@
     "i18next-http-backend": "^3.0.1",
     "iso-639-2": "^3.0.2",
     "iso-639-3": "^3.0.1",
+    "isomorphic-ws": "^5.0.0",
     "js-md5": "^0.8.3",
     "jwt-decode": "^4.0.0",
     "lunr": "^2.3.9",
@@ -115,6 +117,7 @@
     "styled-jsx": "^5.1.7",
     "tinycolor2": "^1.6.0",
     "uuid": "^11.1.0",
+    "ws": "^8.18.3",
     "zod": "^4.0.8",
     "zustand": "5.0.6"
   },
@@ -135,6 +138,7 @@
     "@types/semver": "^7.7.0",
     "@types/tinycolor2": "^1.4.6",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "@vitejs/plugin-react": "^5.1.1",

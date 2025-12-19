@@ -699,9 +699,7 @@
   "Validating...": "Verifierar...",
   "View All": "Visa alla",
   "Forward": "Framåt",
-  "OPDS Catalog": "OPDS-katalog",
   "Home": "Start",
-  "Library": "Bibliotek",
   "{{count}} items_one": "{{count}} objekt",
   "{{count}} items_other": "{{count}} objekt",
   "Download completed": "Nedladdning klar",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "Importerat 1 bok",
   "Successfully imported {{count}} book(s)_other": "Importerat {{count}} böcker",
   "Count": "Antal",
-  "Start Page": "Start sida"
+  "Start Page": "Start sida",
+  "Search in OPDS Catalog...": "Sök i OPDS-katalog...",
+  "Please log in to use advanced TTS features.": "Logga in för att använda avancerade TTS-funktioner."
 }
