@@ -59,6 +59,25 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.96" date="2025-12-19">
+      <description>
+        <ul>
+          <li>TTS: Resolved an issue where Edge TTS was blocked in certain regions</li>
+          <li>OPDS: Improved compatibility with older versions of Calibre Web</li>
+          <li>OPDS: Added an instant search bar for faster browsing in OPDS catalogs</li>
+          <li>OPDS: Added a curated book catalog from Standard Ebooks</li>
+          <li>Bookshelf: Added a “Group Books” action to the context menu</li>
+          <li>Comics: Fixed layout issues to improve comic book reading</li>
+          <li>Layout: Footnote popups now adapt correctly to different screen sizes</li>
+          <li>Layout: Fixed an issue where the maximum inline width was not applied to EPUBs</li>
+          <li>Sync: Improved file downloading by correctly handling special characters in filenames</li>
+          <li>UI: Added an option to temporarily dismiss the reading progress bar</li>
+          <li>Settings: Screen brightness adjustments now apply only to the reader view</li>
+          <li>iOS: You can now open files directly in Readest from the Files app</li>
+          <li>macOS: Added a global menu option to open files with Readest</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.95" date="2025-12-08">
       <description>
         <ul>
@@ -187,20 +206,6 @@
           <li>Sync: Readest sync in KOReader can now be triggered using gesture controls</li>
           <li>Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book</li>
           <li>Sync: Improved upload performance with concurrent upload support</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.85" date="2025-10-14">
-      <description>
-        <ul>
-          <li>TTS: Improved media session control compatibility across more Android systems</li>
-          <li>TTS: Made the TTS icon less distracting during read-aloud mode</li>
-          <li>Settings: Added an option to adjust screen brightness while reading</li>
-          <li>Settings: Added support for custom background images</li>
-          <li>PDF: Fixed an issue where scrolling and panning didn’t work correctly when zoomed in</li>
-          <li>Android: Added adaptive launcher icon for better system integration</li>
-          <li>Reader: Added keyboard shortcuts for toggling bookmarks</li>
-          <li>Reader: Annotations are now rendered instantly when opening files</li>
         </ul>
       </description>
     </release>
