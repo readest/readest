@@ -66,7 +66,7 @@ const AIPanel: React.FC = () => {
       if (models.length > 0 && !models.includes(ollamaModel)) {
         setOllamaModel(models[0]!);
       }
-    } catch (err) {
+    } catch (_err) {
       setOllamaModels([]);
     } finally {
       setFetchingModels(false);

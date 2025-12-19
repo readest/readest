@@ -75,7 +75,7 @@ describe('AI Provider Factory', () => {
     });
 
     it('throws for unknown provider', () => {
-      const settings = { ...baseSettings, provider: 'unknown' as any };
+      const settings = { ...baseSettings, provider: 'unknown' } as unknown as AISettings;
       expect(() => getAIProvider(settings)).toThrow('Unknown provider');
     });
 
