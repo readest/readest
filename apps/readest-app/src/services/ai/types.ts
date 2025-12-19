@@ -1,6 +1,3 @@
-// src/services/ai/types.ts
-// core types for AI reading companion
-
 export type AIProviderName = 'ollama' | 'openrouter';
 
 export interface ChatMessage {
