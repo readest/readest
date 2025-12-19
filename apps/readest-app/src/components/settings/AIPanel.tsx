@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PiCheckCircle, PiWarningCircle, PiArrowsClockwise } from 'react-icons/pi';
 import { Ollama } from 'ollama/browser';
 
@@ -7,18 +7,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
-import { DEFAULT_AI_SETTINGS, OPENROUTER_MODELS } from '@/services/ai/constants';
+import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
-import { saveSysSettings } from '@/helpers/settings';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 
 const AIPanel: React.FC = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { settings, setSettings } = useSettingsStore();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
 
-  const aiSettings = settings.aiSettings || DEFAULT_AI_SETTINGS;
+  const aiSettings: AISettings = settings?.aiSettings ?? DEFAULT_AI_SETTINGS;
 
   const [enabled, setEnabled] = useState(aiSettings.enabled);
   const [provider, setProvider] = useState<AIProviderName>(aiSettings.provider);
@@ -26,35 +25,48 @@ const AIPanel: React.FC = () => {
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaModel);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
-  const [openrouterKey, setOpenrouterKey] = useState(aiSettings.openrouterApiKey || '');
+  const [openrouterKey, setOpenrouterKey] = useState(aiSettings.openrouterApiKey ?? '');
   const [openrouterModel, setOpenrouterModel] = useState(
-    aiSettings.openrouterModel || OPENROUTER_MODELS.CLAUDE_SONNET,
+    aiSettings.openrouterModel ?? DEFAULT_AI_SETTINGS.openrouterModel ?? '',
   );
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const saveAiSettings = useCallback(
-    (key: keyof AISettings, value: AISettings[keyof AISettings]) => {
-      const newAiSettings: AISettings = { ...aiSettings, [key]: value };
-      const newSettings = { ...settings, aiSettings: newAiSettings };
+  const isMounted = useRef(false);
+
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
+  const saveAiSetting = useCallback(
+    async (key: keyof AISettings, value: AISettings[keyof AISettings]) => {
+      const currentSettings = settingsRef.current;
+      if (!currentSettings) return;
+      const currentAiSettings: AISettings = currentSettings.aiSettings ?? DEFAULT_AI_SETTINGS;
+      const newAiSettings: AISettings = { ...currentAiSettings, [key]: value };
+      const newSettings = { ...currentSettings, aiSettings: newAiSettings };
+
       setSettings(newSettings);
-      saveSysSettings(envConfig, 'aiSettings', newAiSettings);
+      await saveSettings(envConfig, newSettings);
     },
-    [aiSettings, envConfig, settings, setSettings],
+    [envConfig, setSettings, saveSettings],
   );
 
   const fetchOllamaModels = useCallback(async () => {
     if (!ollamaUrl || !enabled) return;
+
     setFetchingModels(true);
     try {
       const client = new Ollama({ host: ollamaUrl });
       const list = await client.list();
       const models = list.models.map((m) => m.name);
+
       setOllamaModels(models);
       if (models.length > 0 && !models.includes(ollamaModel)) {
         setOllamaModel(models[0]!);
       }
-    } catch {
+    } catch (err) {
       setOllamaModels([]);
     } finally {
       setFetchingModels(false);
@@ -65,42 +77,59 @@ const AIPanel: React.FC = () => {
     if (provider === 'ollama' && enabled) {
       fetchOllamaModels();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, enabled, ollamaUrl]);
 
   useEffect(() => {
+    isMounted.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
     if (enabled !== aiSettings.enabled) {
-      saveAiSettings('enabled', enabled);
+      saveAiSetting('enabled', enabled);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
 
   useEffect(() => {
+    if (!isMounted.current) return;
     if (provider !== aiSettings.provider) {
-      saveAiSettings('provider', provider);
+      saveAiSetting('provider', provider);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
 
   useEffect(() => {
+    if (!isMounted.current) return;
     if (ollamaUrl !== aiSettings.ollamaBaseUrl) {
-      saveAiSettings('ollamaBaseUrl', ollamaUrl);
+      saveAiSetting('ollamaBaseUrl', ollamaUrl);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ollamaUrl]);
 
   useEffect(() => {
-    if (ollamaModel !== aiSettings.ollamaModel && ollamaModels.includes(ollamaModel)) {
-      saveAiSettings('ollamaModel', ollamaModel);
+    if (!isMounted.current) return;
+    if (ollamaModel !== aiSettings.ollamaModel) {
+      saveAiSetting('ollamaModel', ollamaModel);
     }
-  }, [ollamaModel, ollamaModels]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ollamaModel]);
 
   useEffect(() => {
-    if (openrouterKey !== (aiSettings.openrouterApiKey || '')) {
-      saveAiSettings('openrouterApiKey', openrouterKey);
+    if (!isMounted.current) return;
+    if (openrouterKey !== (aiSettings.openrouterApiKey ?? '')) {
+      saveAiSetting('openrouterApiKey', openrouterKey);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openrouterKey]);
 
   useEffect(() => {
+    if (!isMounted.current) return;
     if (openrouterModel !== aiSettings.openrouterModel) {
-      saveAiSettings('openrouterModel', openrouterModel);
+      saveAiSetting('openrouterModel', openrouterModel);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openrouterModel]);
 
   const handleTestConnection = async () => {
@@ -124,7 +153,7 @@ const AIPanel: React.FC = () => {
         setConnectionStatus('error');
         setErrorMessage(
           provider === 'ollama'
-            ? _('Could not connect to Ollama. Is it running?')
+            ? _("Couldn't connect to Ollama. Is it running?")
             : _('Invalid API key or connection failed'),
         );
       }
@@ -265,19 +294,25 @@ const AIPanel: React.FC = () => {
                 />
               </div>
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <span>{_('Model')}</span>
-                <select
-                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                <div className='flex w-full items-center justify-between'>
+                  <span>{_('Model')}</span>
+                  <a
+                    href='https://openrouter.ai/models'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={clsx('link text-xs', !enabled && 'pointer-events-none')}
+                  >
+                    {_('Browse Models')}
+                  </a>
+                </div>
+                <input
+                  type='text'
+                  className='input input-bordered input-sm w-full'
                   value={openrouterModel}
                   onChange={(e) => setOpenrouterModel(e.target.value)}
+                  placeholder='anthropic/claude-sonnet-4.5'
                   disabled={!enabled}
-                >
-                  {Object.entries(OPENROUTER_MODELS).map(([key, value]) => (
-                    <option key={key} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
           </div>
