@@ -55,6 +55,7 @@ import {
   SETTINGS_FILENAME,
   DEFAULT_MOBILE_SYSTEM_SETTINGS,
 } from './constants';
+import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -240,6 +241,10 @@ export abstract class BaseAppService implements AppService {
     settings.globalViewSettings = {
       ...this.getDefaultViewSettings(),
       ...settings.globalViewSettings,
+    };
+    settings.aiSettings = {
+      ...DEFAULT_AI_SETTINGS,
+      ...settings.aiSettings,
     };
 
     settings.localBooksDir = await this.fs.getPrefix('Books');
