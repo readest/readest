@@ -189,7 +189,7 @@ importers:
         version: 0.6.3
       openai:
         specifier: ^6.14.0
-        version: 6.14.0(ws@8.18.2)(zod@3.25.76)
+        version: 6.14.0(ws@8.18.2)(zod@4.0.10)
       overlayscrollbars:
         specifier: ^2.11.4
         version: 2.11.4
@@ -239,8 +239,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.0.8
+        version: 4.0.10
       zustand:
         specifier: 5.0.6
         version: 5.0.6(@types/react@18.3.12)(react@19.2.0)
@@ -7219,9 +7219,6 @@ packages:
 
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
-
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.0.10:
     resolution: {integrity: sha512-3vB+UU3/VmLL2lvwcY/4RV2i9z/YU0DTV/tDuYjrwmx5WeJ7hwy+rGEEx8glHp6Yxw7ibRbKSaIFBgReRPe5KA==}
@@ -14509,10 +14506,10 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
-  openai@6.14.0(ws@8.18.2)(zod@3.25.76):
+  openai@6.14.0(ws@8.18.2)(zod@4.0.10):
     optionalDependencies:
       ws: 8.18.2
-      zod: 3.25.76
+      zod: 4.0.10
 
   opener@1.5.2: {}
 
@@ -16431,8 +16428,6 @@ snapshots:
       zod: 4.0.10
 
   zod@3.22.3: {}
-
-  zod@3.25.76: {}
 
   zod@4.0.10: {}
 
