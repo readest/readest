@@ -1,0 +1,118 @@
+diff --git a/internal/utils/path.js b/internal/utils/path.js
+index 3d19f0f800e55fd684d1d6bc5cb52e3df6199cc0..fb69ff9f44b9437d007d48de57e751586e7bfa9d 100644
+--- a/internal/utils/path.js
++++ b/internal/utils/path.js
+@@ -45,30 +45,30 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
+         }
+         return previousValue + currentValue + (index === params.length ? '' : encoded);
+     }, '');
+-    const pathOnly = path.split(/[?#]/, 1)[0];
+-    const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
+-    let match;
+-    // Find all invalid segments
+-    while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
+-        invalidSegments.push({
+-            start: match.index,
+-            length: match[0].length,
+-            error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
+-        });
+-    }
+-    invalidSegments.sort((a, b) => a.start - b.start);
+-    if (invalidSegments.length > 0) {
+-        let lastEnd = 0;
+-        const underline = invalidSegments.reduce((acc, segment) => {
+-            const spaces = ' '.repeat(segment.start - lastEnd);
+-            const arrows = '^'.repeat(segment.length);
+-            lastEnd = segment.start + segment.length;
+-            return acc + spaces + arrows;
+-        }, '');
+-        throw new error_1.OpenAIError(`Path parameters result in path with invalid segments:\n${invalidSegments
+-            .map((e) => e.error)
+-            .join('\n')}\n${path}\n${underline}`);
+-    }
++    // const pathOnly = path.split(/[?#]/, 1)[0];
++    // const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
++    // let match;
++    // // Find all invalid segments
++    // while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
++    //     invalidSegments.push({
++    //         start: match.index,
++    //         length: match[0].length,
++    //         error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
++    //     });
++    // }
++    // invalidSegments.sort((a, b) => a.start - b.start);
++    // if (invalidSegments.length > 0) {
++    //     let lastEnd = 0;
++    //     const underline = invalidSegments.reduce((acc, segment) => {
++    //         const spaces = ' '.repeat(segment.start - lastEnd);
++    //         const arrows = '^'.repeat(segment.length);
++    //         lastEnd = segment.start + segment.length;
++    //         return acc + spaces + arrows;
++    //     }, '');
++    //     throw new error_1.OpenAIError(`Path parameters result in path with invalid segments:\n${invalidSegments
++    //         .map((e) => e.error)
++    //         .join('\n')}\n${path}\n${underline}`);
++    // }
+     return path;
+ };
+ exports.createPathTagFunction = createPathTagFunction;
+diff --git a/internal/utils/path.mjs b/internal/utils/path.mjs
+index d0f74622344b2ed0a5745ef568c755f07e904eff..3b9b15f49255c8c49dcc72c2640418988f9c3820 100644
+--- a/internal/utils/path.mjs
++++ b/internal/utils/path.mjs
+@@ -41,30 +41,30 @@ export const createPathTagFunction = (pathEncoder = encodeURIPath) => function p
+         }
+         return previousValue + currentValue + (index === params.length ? '' : encoded);
+     }, '');
+-    const pathOnly = path.split(/[?#]/, 1)[0];
+-    const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
+-    let match;
+-    // Find all invalid segments
+-    while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
+-        invalidSegments.push({
+-            start: match.index,
+-            length: match[0].length,
+-            error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
+-        });
+-    }
+-    invalidSegments.sort((a, b) => a.start - b.start);
+-    if (invalidSegments.length > 0) {
+-        let lastEnd = 0;
+-        const underline = invalidSegments.reduce((acc, segment) => {
+-            const spaces = ' '.repeat(segment.start - lastEnd);
+-            const arrows = '^'.repeat(segment.length);
+-            lastEnd = segment.start + segment.length;
+-            return acc + spaces + arrows;
+-        }, '');
+-        throw new OpenAIError(`Path parameters result in path with invalid segments:\n${invalidSegments
+-            .map((e) => e.error)
+-            .join('\n')}\n${path}\n${underline}`);
+-    }
++    // const pathOnly = path.split(/[?#]/, 1)[0];
++    // const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
++    // let match;
++    // // Find all invalid segments
++    // while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
++    //     invalidSegments.push({
++    //         start: match.index,
++    //         length: match[0].length,
++    //         error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
++    //     });
++    // }
++    // invalidSegments.sort((a, b) => a.start - b.start);
++    // if (invalidSegments.length > 0) {
++    //     let lastEnd = 0;
++    //     const underline = invalidSegments.reduce((acc, segment) => {
++    //         const spaces = ' '.repeat(segment.start - lastEnd);
++    //         const arrows = '^'.repeat(segment.length);
++    //         lastEnd = segment.start + segment.length;
++    //         return acc + spaces + arrows;
++    //     }, '');
++    //     throw new OpenAIError(`Path parameters result in path with invalid segments:\n${invalidSegments
++    //         .map((e) => e.error)
++    //         .join('\n')}\n${path}\n${underline}`);
++    // }
+     return path;
+ };
+ /**

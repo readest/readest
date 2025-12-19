@@ -12,6 +12,11 @@ overrides:
   '@babel/runtime': '>=7.26.10'
   '@babel/helpers': '>=7.26.10'
 
+patchedDependencies:
+  openai@6.14.0:
+    hash: c3a7fd2517c49d2fb472b43679692309196158f5d9f14505327b2da6681600a7
+    path: patches/openai@6.14.0.patch
+
 importers:
 
   .:
@@ -195,7 +200,7 @@ importers:
         version: 0.6.3
       openai:
         specifier: ^6.14.0
-        version: 6.14.0(ws@8.18.3)(zod@4.0.10)
+        version: 6.14.0(patch_hash=c3a7fd2517c49d2fb472b43679692309196158f5d9f14505327b2da6681600a7)(ws@8.18.3)(zod@4.0.10)
       overlayscrollbars:
         specifier: ^2.11.4
         version: 2.11.4
@@ -14534,7 +14539,7 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
-  openai@6.14.0(ws@8.18.3)(zod@4.0.10):
+  openai@6.14.0(patch_hash=c3a7fd2517c49d2fb472b43679692309196158f5d9f14505327b2da6681600a7)(ws@8.18.3)(zod@4.0.10):
     optionalDependencies:
       ws: 8.18.3
       zod: 4.0.10
