@@ -202,15 +202,14 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           )}
         </div>
         <div className='absolute bottom-0 flex h-8 w-full items-center justify-between bg-gray-600 px-4'>
-          {provider && !loading && (
-            <div className='line-clamp-1 text-xs opacity-60'>
-              {error
-                ? ''
-                : _('Translated by {{provider}}.', {
-                    provider: providers.find((p) => p.name === provider)?.label,
-                  })}
-            </div>
-          )}
+          <div className='line-clamp-1 text-xs opacity-60'>
+            {provider &&
+              !loading &&
+              !error &&
+              _('Translated by {{provider}}.', {
+                provider: providers.find((p) => p.name === provider)?.label,
+              })}
+          </div>
           <Select
             className='bg-gray-600 text-white/75'
             value={provider}

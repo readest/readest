@@ -965,6 +965,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       Icon: MdBuildCircle,
       onClick: handleShowReplacementOptions,
       disabled: bookData.book?.format !== 'EPUB',
+      visible: false,
     },
   ];
 

@@ -145,7 +145,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ))}
       <hr className='border-base-200 my-1' />
       <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
-      <MenuItem label={_('Replacement Rules')} onClick={showReplacementRulesWindow} />
+      {false && <MenuItem label={_('Replacement Rules')} onClick={showReplacementRulesWindow} />}
       {settings.kosync.enabled && (
         <>
           <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
