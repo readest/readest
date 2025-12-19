@@ -177,7 +177,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
     const handleNeedAuth = () => {
       eventDispatcher.dispatch('toast', {
-        message: _('Please log in to use advanced TTS features.'),
+        message: _('Please log in to use advanced TTS features'),
         type: 'error',
         timeout: 5000,
       });
@@ -339,6 +339,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
       setShowIndicator(true);
       const ttsController = new TTSController(appService, view, !!user?.id);
+      ttsControllerRef.current = ttsController;
+      setTtsController(ttsController);
+
       await ttsController.init();
       await ttsController.initViewTTS(viewSettings.ttsHighlightOptions);
       const ssml = view.tts?.from(ttsFromRange);
@@ -351,8 +354,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         ttsController.setRate(viewSettings.ttsRate);
         ttsController.speak(ssml);
         ttsController.setTargetLang(getTTSTargetLang() || '');
-        ttsControllerRef.current = ttsController;
-        setTtsController(ttsController);
       }
       setTtsClientsInitialized(true);
       setTTSEnabled(bookKey, true);
