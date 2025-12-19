@@ -1,5 +1,23 @@
 {
   "releases": {
+    "0.9.96": {
+      "date": "2025-12-19",
+      "notes": [
+        "TTS: Resolved an issue where Edge TTS was blocked in certain regions",
+        "OPDS: Improved compatibility with older versions of Calibre Web",
+        "OPDS: Added an instant search bar for faster browsing in OPDS catalogs",
+        "OPDS: Added a curated book catalog from Standard Ebooks",
+        "Bookshelf: Added a “Group Books” action to the context menu",
+        "Comics: Fixed layout issues to improve comic book reading",
+        "Layout: Footnote popups now adapt correctly to different screen sizes",
+        "Layout: Fixed an issue where the maximum inline width was not applied to EPUBs",
+        "Sync: Improved file downloading by correctly handling special characters in filenames",
+        "UI: Added an option to temporarily dismiss the reading progress bar",
+        "Settings: Screen brightness adjustments now apply only to the reader view",
+        "iOS: You can now open files directly in Readest from the Files app",
+        "macOS: Added a global menu option to open files with Readest"
+      ]
+    },
     "0.9.95": {
       "date": "2025-12-08",
       "notes": [
