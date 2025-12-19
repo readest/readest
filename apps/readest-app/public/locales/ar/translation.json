@@ -715,9 +715,7 @@
   "Validating...": "جارٍ التحقق...",
   "View All": "عرض الكل",
   "Forward": "إلى الأمام",
-  "OPDS Catalog": "كتالوج OPDS",
   "Home": "الصفحة الرئيسية",
-  "Library": "المكتبة",
   "{{count}} items_zero": "{{count}} عناصر",
   "{{count}} items_one": "{{count}} عنصر",
   "{{count}} items_two": "{{count}} عنصران",
@@ -805,5 +803,7 @@
   "Successfully imported {{count}} book(s)_many": "تم استيراد {{count}} كتابًا",
   "Successfully imported {{count}} book(s)_other": "تم استيراد {{count}} كتاب",
   "Count": "العدد",
-  "Start Page": "الصفحة الأولى"
+  "Start Page": "الصفحة الأولى",
+  "Search in OPDS Catalog...": "البحث في كتالوج OPDS...",
+  "Please log in to use advanced TTS features.": "يرجى تسجيل الدخول لاستخدام ميزات تحويل النص إلى كلام المتقدمة."
 }

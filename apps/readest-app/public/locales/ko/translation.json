@@ -695,9 +695,7 @@
   "Validating...": "검증 중...",
   "View All": "모두 보기",
   "Forward": "다음",
-  "OPDS Catalog": "OPDS 카탈로그",
   "Home": "홈",
-  "Library": "라이브러리",
   "{{count}} items_other": "{{count}}개 항목",
   "Download completed": "다운로드 완료",
   "Download failed": "다운로드 실패",
@@ -755,5 +753,7 @@
   "From Directory": "디렉토리에서",
   "Successfully imported {{count}} book(s)_other": "성공적으로 {{count}} 권의 책이 가져와졌습니다",
   "Count": "개수",
-  "Start Page": "시작 페이지"
+  "Start Page": "시작 페이지",
+  "Search in OPDS Catalog...": "OPDS 카탈로그에서 검색...",
+  "Please log in to use advanced TTS features.": "고급 TTS 기능을 사용하려면 로그인하세요."
 }

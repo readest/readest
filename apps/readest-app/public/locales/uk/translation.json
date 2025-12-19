@@ -707,9 +707,7 @@
   "Validating...": "Перевірка...",
   "View All": "Переглянути все",
   "Forward": "Вперед",
-  "OPDS Catalog": "Каталог OPDS",
   "Home": "Головна",
-  "Library": "Бібліотека",
   "{{count}} items_one": "{{count}} елемент",
   "{{count}} items_few": "{{count}} елементи",
   "{{count}} items_many": "{{count}} елементів",
@@ -785,5 +783,7 @@
   "Successfully imported {{count}} book(s)_many": "Успішно імпортовано {{count}} книг",
   "Successfully imported {{count}} book(s)_other": "Успішно імпортовано {{count}} книг",
   "Count": "Кількість",
-  "Start Page": "Початкова сторінка"
+  "Start Page": "Початкова сторінка",
+  "Search in OPDS Catalog...": "Пошук у каталозі OPDS...",
+  "Please log in to use advanced TTS features.": "Будь ласка, увійдіть, щоб використовувати розширені функції TTS."
 }

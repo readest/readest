@@ -699,9 +699,7 @@
   "Validating...": "තහවුරු කරමින්...",
   "View All": "සියල්ල බලන්න",
   "Forward": "ඉදිරියට",
-  "OPDS Catalog": "OPDS දත්තසමුදා",
   "Home": "මුල් පිටුව",
-  "Library": "පුස්තකාලය",
   "{{count}} items_one": "{{count}} අයිතමය",
   "{{count}} items_other": "{{count}} අයිතම",
   "Download completed": "බාගත කිරීම සම්පූර්ණයි",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "සාර්ථකව ආයාත කළ 1 පොත",
   "Successfully imported {{count}} book(s)_other": "සාර්ථකව ආයාත කළ {{count}} පොත්",
   "Count": "ගණන",
-  "Start Page": "ආරම්භක පිටුව"
+  "Start Page": "ආරම්භක පිටුව",
+  "Search in OPDS Catalog...": "OPDS දත්තසමුදා තුළ සෙවීම...",
+  "Please log in to use advanced TTS features.": "උසස් TTS විශේෂාංග භාවිතා කිරීමට කරුණාකර පිවිසෙන්න."
 }

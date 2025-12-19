@@ -699,9 +699,7 @@
   "Validating...": "Γίνεται έλεγχος...",
   "View All": "Προβολή όλων",
   "Forward": "Μπροστά",
-  "OPDS Catalog": "Κατάλογος OPDS",
   "Home": "Αρχική",
-  "Library": "Βιβλιοθήκη",
   "{{count}} items_one": "{{count}} στοιχείο",
   "{{count}} items_other": "{{count}} στοιχεία",
   "Download completed": "Η λήψη ολοκληρώθηκε",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "Επιτυχής εισαγωγή 1 βιβλίου",
   "Successfully imported {{count}} book(s)_other": "Επιτυχής εισαγωγή {{count}} βιβλίων",
   "Count": "Πλήθος",
-  "Start Page": "Αρχική Σελίδα"
+  "Start Page": "Αρχική Σελίδα",
+  "Search in OPDS Catalog...": "Αναζήτηση στον κατάλογο OPDS...",
+  "Please log in to use advanced TTS features.": "Παρακαλώ συνδεθείτε για να χρησιμοποιήσετε προηγμένες λειτουργίες TTS."
 }

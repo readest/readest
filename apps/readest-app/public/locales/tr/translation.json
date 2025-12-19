@@ -699,9 +699,7 @@
   "Validating...": "Doğrulanıyor...",
   "View All": "Tümünü Görüntüle",
   "Forward": "İleri",
-  "OPDS Catalog": "OPDS Kataloğu",
   "Home": "Ana Sayfa",
-  "Library": "Kütüphane",
   "{{count}} items_one": "{{count}} öğe",
   "{{count}} items_other": "{{count}} öğe",
   "Download completed": "İndirme tamamlandı",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "Başarıyla 1 kitap içe aktarıldı",
   "Successfully imported {{count}} book(s)_other": "Başarıyla {{count}} kitap içe aktarıldı",
   "Count": "Sayım",
-  "Start Page": "Başlangıç Sayfası"
+  "Start Page": "Başlangıç Sayfası",
+  "Search in OPDS Catalog...": "OPDS Kataloğunda ara...",
+  "Please log in to use advanced TTS features.": "Gelişmiş TTS özelliklerini kullanmak için lütfen giriş yapın."
 }

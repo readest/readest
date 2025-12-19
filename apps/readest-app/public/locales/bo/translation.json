@@ -695,9 +695,7 @@
   "Validating...": "བདེན་སྦྱོར་བཞིན་...",
   "View All": "ཡོངས་ལྟ་བ་",
   "Forward": "མདུན་དུ་",
-  "OPDS Catalog": "OPDS དཀར་ཆག",
   "Home": "གཙོ་ངོས་",
-  "Library": "དེབ་མཛོད་",
   "{{count}} items_other": "{{count}} རྣམ་གྲངས་",
   "Download completed": "ཕབ་ལེན་རྫོགས་སོང་།",
   "Download failed": "ཕབ་ལེན་ཕམ་པ་",
@@ -755,5 +753,7 @@
   "From Directory": "སྐོར་འདེམས་པ་ནས།",
   "Successfully imported {{count}} book(s)_other": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་ {{count}} དེབ་འདེམས་སོང་",
   "Count": "ཨང་",
-  "Start Page": "ཤོག་ངོས་དང་པོ"
+  "Start Page": "ཤོག་ངོས་དང་པོ",
+  "Search in OPDS Catalog...": "OPDS དཀར་ཆག་ནང་འཚོལ།...",
+  "Please log in to use advanced TTS features.": "དབང་བསྐྱོད་ཀྱི TTS རྣམ་པ་ཚུགས་སྤྱོད་བྱས་མ་ཐུབ།"
 }

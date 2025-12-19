@@ -695,9 +695,7 @@
   "Validating...": "验证中...",
   "View All": "查看全部",
   "Forward": "前进",
-  "OPDS Catalog": "OPDS 目录",
   "Home": "首页",
-  "Library": "图书馆",
   "{{count}} items_other": "{{count}} 项",
   "Download completed": "下载完成",
   "Download failed": "下载失败",
@@ -755,5 +753,7 @@
   "From Directory": "从文件夹导入",
   "Successfully imported {{count}} book(s)_other": "成功导入 {{count}} 本书",
   "Count": "数量",
-  "Start Page": "起始页"
+  "Start Page": "起始页",
+  "Search in OPDS Catalog...": "在 OPDS 目录中搜索...",
+  "Please log in to use advanced TTS features.": "请登录以使用高级 TTS 功能"
 }

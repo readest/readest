@@ -695,9 +695,7 @@
   "Validating...": "検証中...",
   "View All": "すべて表示",
   "Forward": "進む",
-  "OPDS Catalog": "OPDSカタログ",
   "Home": "ホーム",
-  "Library": "ライブラリ",
   "{{count}} items_other": "{{count}} 件",
   "Download completed": "ダウンロード完了",
   "Download failed": "ダウンロード失敗",
@@ -755,5 +753,7 @@
   "From Directory": "ディレクトリから",
   "Successfully imported {{count}} book(s)_other": "成功裏に{{count}}冊の本をインポートしました",
   "Count": "件数",
-  "Start Page": "開始ページ"
+  "Start Page": "開始ページ",
+  "Search in OPDS Catalog...": "OPDSカタログ内を検索...",
+  "Please log in to use advanced TTS features.": "高度なTTS機能を使用するにはログインしてください。"
 }

@@ -116,6 +116,7 @@
         }
       ]
     },
+    "websocket:default",
     "dialog:default",
     "os:default",
     "core:window:default",
