@@ -1,0 +1,248 @@
+import { aiStore } from './storage/aiStore';
+import { chunkSection, extractTextFromDocument } from './utils/chunker';
+import { getAIProvider } from './providers';
+import { aiLogger } from './logger';
+import type {
+  AISettings,
+  TextChunk,
+  ScoredChunk,
+  IndexingState,
+  EmbeddingProgress,
+  BookIndexMeta,
+} from './types';
+
+interface SectionItem {
+  id: string;
+  size: number;
+  linear: string;
+  createDocument: () => Promise<Document>;
+}
+
+interface TOCItem {
+  id: number;
+  label: string;
+  href?: string;
+}
+
+export interface BookDocType {
+  sections?: SectionItem[];
+  toc?: TOCItem[];
+  metadata?: { title?: string | { [key: string]: string }; author?: string | { name?: string } };
+}
+
+const indexingStates = new Map<string, IndexingState>();
+
+export function getIndexingState(bookHash: string): IndexingState | null {
+  return indexingStates.get(bookHash) || null;
+}
+
+export async function isBookIndexed(bookHash: string): Promise<boolean> {
+  const indexed = await aiStore.isIndexed(bookHash);
+  aiLogger.rag.isIndexed(bookHash, indexed);
+  return indexed;
+}
+
+export async function getBookMeta(bookHash: string): Promise<BookIndexMeta | null> {
+  return aiStore.getMeta(bookHash);
+}
+
+function extractTitle(metadata?: BookDocType['metadata']): string {
+  if (!metadata?.title) return 'Unknown Book';
+  if (typeof metadata.title === 'string') return metadata.title;
+  return (
+    metadata.title['en'] ||
+    metadata.title['default'] ||
+    Object.values(metadata.title)[0] ||
+    'Unknown Book'
+  );
+}
+
+function extractAuthor(metadata?: BookDocType['metadata']): string {
+  if (!metadata?.author) return 'Unknown Author';
+  if (typeof metadata.author === 'string') return metadata.author;
+  return metadata.author.name || 'Unknown Author';
+}
+
+function getChapterTitle(toc: TOCItem[] | undefined, sectionIndex: number): string {
+  if (!toc || toc.length === 0) return `Section ${sectionIndex + 1}`;
+  for (let i = toc.length - 1; i >= 0; i--) {
+    if (toc[i]!.id <= sectionIndex) return toc[i]!.label;
+  }
+  return toc[0]?.label || `Section ${sectionIndex + 1}`;
+}
+
+export async function indexBook(
+  bookDoc: BookDocType,
+  bookHash: string,
+  settings: AISettings,
+  onProgress?: (progress: EmbeddingProgress) => void,
+): Promise<void> {
+  const startTime = Date.now();
+  const title = extractTitle(bookDoc.metadata);
+
+  if (await aiStore.isIndexed(bookHash)) {
+    aiLogger.rag.isIndexed(bookHash, true);
+    return;
+  }
+
+  aiLogger.rag.indexStart(bookHash, title);
+  const provider = getAIProvider(settings);
+  const sections = bookDoc.sections || [];
+  const toc = bookDoc.toc || [];
+
+  aiLogger.chunker.start(bookHash, sections.length);
+  const state: IndexingState = {
+    bookHash,
+    status: 'indexing',
+    progress: 0,
+    chunksProcessed: 0,
+    totalChunks: 0,
+  };
+  indexingStates.set(bookHash, state);
+
+  try {
+    onProgress?.({ current: 0, total: 1, phase: 'chunking' });
+    aiLogger.rag.indexProgress('chunking', 0, sections.length);
+    const allChunks: TextChunk[] = [];
+
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i]!;
+      try {
+        const doc = await section.createDocument();
+        const text = extractTextFromDocument(doc);
+        if (text.length < 100) continue;
+        const sectionChunks = chunkSection(doc, i, getChapterTitle(toc, i), bookHash);
+        aiLogger.chunker.section(i, text.length, sectionChunks.length);
+        allChunks.push(...sectionChunks);
+      } catch (e) {
+        aiLogger.chunker.error(i, (e as Error).message);
+      }
+    }
+
+    aiLogger.chunker.complete(bookHash, allChunks.length);
+    state.totalChunks = allChunks.length;
+
+    if (allChunks.length === 0) {
+      state.status = 'complete';
+      state.progress = 100;
+      aiLogger.rag.indexComplete(bookHash, 0, Date.now() - startTime);
+      return;
+    }
+
+    onProgress?.({ current: 0, total: allChunks.length, phase: 'embedding' });
+    aiLogger.embedding.start(settings.ollamaEmbeddingModel || 'nomic-embed-text', allChunks.length);
+
+    const BATCH_SIZE = 5;
+    let successCount = 0;
+    let dimensions = 0;
+
+    for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
+      const batch = allChunks.slice(i, i + BATCH_SIZE);
+      const embeddings = await Promise.all(
+        batch.map((c) =>
+          provider.embed(c.text).catch((e) => {
+            aiLogger.embedding.error(c.id, (e as Error).message);
+            return null;
+          }),
+        ),
+      );
+      for (let j = 0; j < batch.length; j++) {
+        if (embeddings[j]) {
+          batch[j]!.embedding = embeddings[j]!;
+          successCount++;
+          if (dimensions === 0) dimensions = embeddings[j]!.length;
+        }
+      }
+      state.chunksProcessed = Math.min(i + BATCH_SIZE, allChunks.length);
+      state.progress = Math.round((state.chunksProcessed / allChunks.length) * 100);
+      onProgress?.({ current: state.chunksProcessed, total: allChunks.length, phase: 'embedding' });
+      aiLogger.embedding.batch(state.chunksProcessed, allChunks.length);
+    }
+
+    aiLogger.embedding.complete(successCount, allChunks.length, dimensions);
+
+    onProgress?.({ current: 0, total: 2, phase: 'indexing' });
+    aiLogger.store.saveChunks(bookHash, allChunks.length);
+    await aiStore.saveChunks(allChunks);
+
+    onProgress?.({ current: 1, total: 2, phase: 'indexing' });
+    aiLogger.store.saveBM25(bookHash);
+    await aiStore.saveBM25Index(bookHash, allChunks);
+
+    const meta: BookIndexMeta = {
+      bookHash,
+      bookTitle: title,
+      authorName: extractAuthor(bookDoc.metadata),
+      totalSections: sections.length,
+      totalChunks: allChunks.length,
+      embeddingModel:
+        settings.provider === 'ollama'
+          ? settings.ollamaEmbeddingModel
+          : settings.openrouterEmbeddingModel || 'text-embedding-3-small',
+      lastUpdated: Date.now(),
+    };
+    aiLogger.store.saveMeta(meta);
+    await aiStore.saveMeta(meta);
+
+    onProgress?.({ current: 2, total: 2, phase: 'indexing' });
+    state.status = 'complete';
+    state.progress = 100;
+    aiLogger.rag.indexComplete(bookHash, allChunks.length, Date.now() - startTime);
+  } catch (error) {
+    state.status = 'error';
+    state.error = (error as Error).message;
+    aiLogger.rag.indexError(bookHash, (error as Error).message);
+    throw error;
+  }
+}
+
+export async function hybridSearch(
+  bookHash: string,
+  query: string,
+  settings: AISettings,
+  topK = 10,
+  maxSectionIndex?: number,
+): Promise<ScoredChunk[]> {
+  aiLogger.search.query(query, maxSectionIndex);
+  const provider = getAIProvider(settings);
+  let queryEmbedding: number[] | null = null;
+  try {
+    queryEmbedding = await provider.embed(query);
+  } catch {
+    /* bm25 only */
+  }
+
+  const results = await aiStore.hybridSearch(
+    bookHash,
+    queryEmbedding,
+    query,
+    topK,
+    maxSectionIndex,
+  );
+  aiLogger.search.hybridResults(results.length, [...new Set(results.map((r) => r.searchMethod))]);
+  return results;
+}
+
+export async function getRelevantContext(
+  bookHash: string,
+  query: string,
+  settings: AISettings,
+  maxSectionIndex?: number,
+): Promise<string[]> {
+  const results = await hybridSearch(
+    bookHash,
+    query,
+    settings,
+    settings.maxContextChunks || 5,
+    maxSectionIndex,
+  );
+  const texts = results.map((r) => r.text);
+  aiLogger.chat.context(results.length, texts.join('').length);
+  return texts;
+}
+
+export async function clearBookIndex(bookHash: string): Promise<void> {
+  aiLogger.store.clear(bookHash);
+  await aiStore.clearBook(bookHash);
+  indexingStates.delete(bookHash);
+}
