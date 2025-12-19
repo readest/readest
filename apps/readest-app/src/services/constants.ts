@@ -15,6 +15,7 @@ import { KOSyncSettings, ReadSettings, SystemSettings } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
+import { DEFAULT_AI_SETTINGS } from './ai/constants';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -76,18 +77,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryColumns: 6,
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
-  aiSettings: {
-    enabled: false,
-    provider: 'ollama',
-    ollamaBaseUrl: 'http://127.0.0.1:11434',
-    ollamaModel: 'qwen3-coder:14b',
-    ollamaEmbeddingModel: 'nomic-embed-text',
-    openrouterModel: 'anthropic/claude-sonnet-4.5',
-    openrouterEmbeddingModel: 'openai/text-embedding-3-small',
-    spoilerProtection: true,
-    maxContextChunks: 10,
-    indexingMode: 'on-demand',
-  },
+  aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
