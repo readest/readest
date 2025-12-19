@@ -695,9 +695,7 @@
   "Validating...": "Đang xác thực...",
   "View All": "Xem tất cả",
   "Forward": "Tiếp",
-  "OPDS Catalog": "Danh mục OPDS",
   "Home": "Trang chủ",
-  "Library": "Thư viện",
   "{{count}} items_other": "{{count}} mục",
   "Download completed": "Tải xuống hoàn tất",
   "Download failed": "Tải xuống thất bại",
@@ -755,5 +753,7 @@
   "From Directory": "Từ thư mục",
   "Successfully imported {{count}} book(s)_other": "Đã nhập thành công {{count}} sách",
   "Count": "Số lượng",
-  "Start Page": "Trang bắt đầu"
+  "Start Page": "Trang bắt đầu",
+  "Search in OPDS Catalog...": "Tìm kiếm trong danh mục OPDS...",
+  "Please log in to use advanced TTS features.": "Vui lòng đăng nhập để sử dụng các tính năng TTS nâng cao."
 }

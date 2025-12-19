@@ -699,9 +699,7 @@
   "Validating...": "Valideren...",
   "View All": "Alles bekijken",
   "Forward": "Verder",
-  "OPDS Catalog": "OPDS-catalogus",
   "Home": "Startpagina",
-  "Library": "Bibliotheek",
   "{{count}} items_one": "{{count}} item",
   "{{count}} items_other": "{{count}} items",
   "Download completed": "Download voltooid",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "Succesvol 1 boek geïmporteerd",
   "Successfully imported {{count}} book(s)_other": "Succesvol {{count}} boeken geïmporteerd",
   "Count": "Aantal",
-  "Start Page": "Startpagina"
+  "Start Page": "Startpagina",
+  "Search in OPDS Catalog...": "Zoeken in OPDS-catalogus...",
+  "Please log in to use advanced TTS features.": "Log in om geavanceerde TTS-functies te gebruiken."
 }

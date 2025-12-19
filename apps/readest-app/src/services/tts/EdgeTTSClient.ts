@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
+import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
@@ -18,7 +18,7 @@ export class EdgeTTSClient implements TTSClient {
   #rate = 1.0;
   #pitch = 1.0;
 
-  #edgeTTS: EdgeSpeechTTS;
+  #edgeTTS: EdgeSpeechTTS | null = null;
   #audioElement: HTMLAudioElement | null = null;
   #isPlaying = false;
   #pausedAt = 0;
@@ -27,10 +27,10 @@ export class EdgeTTSClient implements TTSClient {
 
   constructor(controller?: TTSController) {
     this.controller = controller;
-    this.#edgeTTS = new EdgeSpeechTTS();
   }
 
-  async init() {
+  async init(protocol: EDGE_TTS_PROTOCOL = 'wss') {
+    this.#edgeTTS = new EdgeSpeechTTS(protocol);
     this.#voices = EdgeSpeechTTS.voices;
     try {
       await this.#edgeTTS.create({
@@ -42,7 +42,15 @@ export class EdgeTTSClient implements TTSClient {
       });
       this.initialized = true;
     } catch {
-      this.initialized = false;
+      if (protocol === 'wss') {
+        if (this.controller?.isAuthenticated) {
+          await this.init('https');
+        } else {
+          this.controller?.dispatchEvent(new CustomEvent('tts-need-auth'));
+        }
+      } else {
+        this.initialized = false;
+      }
     }
     return this.initialized;
   }
@@ -75,7 +83,7 @@ export class EdgeTTSClient implements TTSClient {
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#currentVoiceId = voiceId;
         await this.#edgeTTS
-          .createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId))
+          ?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId))
           .catch((err) => {
             console.warn('Error preloading mark', i, err);
           });
@@ -88,7 +96,7 @@ export class EdgeTTSClient implements TTSClient {
               if (signal.aborted) break;
               const { language: voiceLang } = mark;
               const voiceId = await this.getVoiceIdFromLang(voiceLang);
-              await this.#edgeTTS.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId));
+              await this.#edgeTTS?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId));
             } catch (err) {
               console.warn('Error preloading mark (bg)', i, err);
             }
@@ -120,7 +128,7 @@ export class EdgeTTSClient implements TTSClient {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#speakingLang = voiceLang;
-        const audioUrl = await this.#edgeTTS.createAudioUrl(
+        const audioUrl = await this.#edgeTTS?.createAudioUrl(
           this.getPayload(voiceLang, mark.text, voiceId),
         );
         if (signal.aborted) {
@@ -160,7 +168,7 @@ export class EdgeTTSClient implements TTSClient {
             resolve({ code: 'error', message: 'Audio playback error' });
           };
           this.#isPlaying = true;
-          audio.src = audioUrl;
+          audio.src = audioUrl || '';
           audio.play().catch((err) => {
             cleanUp();
             console.error('Failed to play audio:', err);

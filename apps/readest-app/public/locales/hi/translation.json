@@ -699,9 +699,7 @@
   "Validating...": "मान्य किया जा रहा है...",
   "View All": "सभी देखें",
   "Forward": "आगे",
-  "OPDS Catalog": "OPDS कैटलॉग",
   "Home": "होम",
-  "Library": "लाइब्रेरी",
   "{{count}} items_one": "{{count}} आइटम",
   "{{count}} items_other": "{{count}} आइटम",
   "Download completed": "डाउनलोड पूरा हुआ",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "सफलतापूर्वक 1 पुस्तक आयात की गई",
   "Successfully imported {{count}} book(s)_other": "सफलतापूर्वक {{count}} पुस्तकों का आयात किया गया",
   "Count": "गणना",
-  "Start Page": "प्रारंभ पृष्ठ"
+  "Start Page": "प्रारंभ पृष्ठ",
+  "Search in OPDS Catalog...": "OPDS कैटलॉग में खोजें...",
+  "Please log in to use advanced TTS features.": "उन्नत TTS सुविधाओं का उपयोग करने के लिए कृपया लॉग इन करें।"
 }

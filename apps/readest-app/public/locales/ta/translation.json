@@ -699,9 +699,7 @@
   "Validating...": "சரிபார்க்கப்படுகிறது...",
   "View All": "அனைத்தையும் பார்க்கவும்",
   "Forward": "முன்னேற்று",
-  "OPDS Catalog": "OPDS பட்டியல்",
   "Home": "முகப்பு",
-  "Library": "நூலகம்",
   "{{count}} items_one": "{{count}} பொருள்",
   "{{count}} items_other": "{{count}} பொருட்கள்",
   "Download completed": "பதிவிறக்கம் முடிந்தது",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "வெற்றிகரமாக 1 புத்தகம் இறக்குமதி செய்யப்பட்டது",
   "Successfully imported {{count}} book(s)_other": "வெற்றிகரமாக {{count}} புத்தகங்கள் இறக்குமதி செய்யப்பட்டது",
   "Count": "எண்ணிக்கை",
-  "Start Page": "தொடக்கப் பக்கம்"
+  "Start Page": "தொடக்கப் பக்கம்",
+  "Search in OPDS Catalog...": "OPDS பட்டியலில் தேடவும்...",
+  "Please log in to use advanced TTS features.": "மேம்பட்ட TTS அம்சங்களை பயன்படுத்த உள்நுழையவும்."
 }

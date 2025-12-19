@@ -695,9 +695,7 @@
   "Validating...": "กำลังตรวจสอบ...",
   "View All": "ดูทั้งหมด",
   "Forward": "ไปข้างหน้า",
-  "OPDS Catalog": "แคตตาล็อก OPDS",
   "Home": "หน้าแรก",
-  "Library": "ห้องสมุด",
   "{{count}} items_other": "{{count}} รายการ",
   "Download completed": "ดาวน์โหลดเสร็จสิ้น",
   "Download failed": "ดาวน์โหลดล้มเหลว",
@@ -755,5 +753,7 @@
   "From Directory": "จากไดเรกทอรี",
   "Successfully imported {{count}} book(s)_other": "นำเข้า {{count}} หนังสือเรียบร้อยแล้ว",
   "Count": "นับ",
-  "Start Page": "หน้าเริ่มต้น"
+  "Start Page": "หน้าเริ่มต้น",
+  "Search in OPDS Catalog...": "ค้นหาในแคตตาล็อก OPDS...",
+  "Please log in to use advanced TTS features.": "กรุณาเข้าสู่ระบบเพื่อใช้ฟีเจอร์ TTS ขั้นสูง"
 }

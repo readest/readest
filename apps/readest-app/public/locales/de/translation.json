@@ -699,9 +699,7 @@
   "Validating...": "Wird überprüft...",
   "View All": "Alle anzeigen",
   "Forward": "Weiter",
-  "OPDS Catalog": "OPDS-Katalog",
   "Home": "Start",
-  "Library": "Bibliothek",
   "{{count}} items_one": "{{count}} Element",
   "{{count}} items_other": "{{count}} Elemente",
   "Download completed": "Download abgeschlossen",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "Erfolgreich 1 Buch importiert",
   "Successfully imported {{count}} book(s)_other": "Erfolgreich {{count}} Bücher importiert",
   "Count": "Anzahl",
-  "Start Page": "Startseite"
+  "Start Page": "Startseite",
+  "Search in OPDS Catalog...": "Im OPDS-Katalog suchen...",
+  "Please log in to use advanced TTS features.": "Bitte melde dich an, um erweiterte TTS-Funktionen zu nutzen."
 }

@@ -699,9 +699,7 @@
   "Validating...": "যাচাই করা হচ্ছে...",
   "View All": "সব দেখুন",
   "Forward": "ফরোয়ার্ড",
-  "OPDS Catalog": "OPDS ক্যাটালগ",
   "Home": "হোম",
-  "Library": "লাইব্রেরি",
   "{{count}} items_one": "{{count}} আইটেম",
   "{{count}} items_other": "{{count}} আইটেম",
   "Download completed": "ডাউনলোড সম্পন্ন হয়েছে",
@@ -765,5 +763,7 @@
   "Successfully imported {{count}} book(s)_one": "সফলভাবে ১টি বই আমদানি করা হয়েছে",
   "Successfully imported {{count}} book(s)_other": "সফলভাবে {{count}}টি বই আমদানি করা হয়েছে",
   "Count": "গণনা",
-  "Start Page": "শুরু পৃষ্ঠা"
+  "Start Page": "শুরু পৃষ্ঠা",
+  "Search in OPDS Catalog...": "OPDS ক্যাটালগে অনুসন্ধান করুন...",
+  "Please log in to use advanced TTS features.": "উন্নত TTS বৈশিষ্ট্যগুলি ব্যবহার করতে লগইন করুন।"
 }

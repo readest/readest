@@ -695,9 +695,7 @@
   "Validating...": "Memvalidasi...",
   "View All": "Lihat Semua",
   "Forward": "Maju",
-  "OPDS Catalog": "Katalog OPDS",
   "Home": "Beranda",
-  "Library": "Perpustakaan",
   "{{count}} items_other": "{{count}} item",
   "Download completed": "Unduhan selesai",
   "Download failed": "Unduhan gagal",
@@ -755,5 +753,7 @@
   "From Directory": "Dari Direktori",
   "Successfully imported {{count}} book(s)_other": "Berhasil mengimpor {{count}} buku",
   "Count": "Jumlah",
-  "Start Page": "Halaman Awal"
+  "Start Page": "Halaman Awal",
+  "Search in OPDS Catalog...": "Cari di Katalog OPDS...",
+  "Please log in to use advanced TTS features.": "Silakan masuk untuk menggunakan fitur TTS lanjutan."
 }

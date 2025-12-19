@@ -707,9 +707,7 @@
   "Validating...": "Weryfikacja...",
   "View All": "Pokaż wszystkie",
   "Forward": "Dalej",
-  "OPDS Catalog": "Katalog OPDS",
   "Home": "Strona główna",
-  "Library": "Biblioteka",
   "{{count}} items_one": "{{count}} element",
   "{{count}} items_few": "{{count}} elementy",
   "{{count}} items_many": "{{count}} elementów",
@@ -785,5 +783,7 @@
   "Successfully imported {{count}} book(s)_many": "Pomyślnie zaimportowano {{count}} książek",
   "Successfully imported {{count}} book(s)_other": "Pomyślnie zaimportowano {{count}} książek",
   "Count": "Liczba",
-  "Start Page": "Strona startowa"
+  "Start Page": "Strona startowa",
+  "Search in OPDS Catalog...": "Szukaj w katalogu OPDS...",
+  "Please log in to use advanced TTS features.": "Zaloguj się, aby korzystać z zaawansowanych funkcji TTS."
 }
