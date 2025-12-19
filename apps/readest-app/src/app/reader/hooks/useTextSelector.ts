@@ -53,7 +53,13 @@ export const useTextSelector = (
       sel.removeAllRanges();
       sel.addRange(range);
     }
-    setSelection({ key: bookKey, text: await getAnnotationText(range), range, index });
+    setSelection({
+      key: bookKey,
+      text: await getAnnotationText(range),
+      cfi: view?.getCFI(index, range),
+      range,
+      index,
+    });
   };
   // FIXME: extremely hacky way to dismiss system selection tools on iOS
   const makeSelectionOnIOS = async (sel: Selection, index: number) => {
@@ -65,7 +71,13 @@ export const useTextSelector = (
       setTimeout(async () => {
         if (!isTextSelected.current) return;
         sel.addRange(range);
-        setSelection({ key: bookKey, text: await getAnnotationText(range), range, index });
+        setSelection({
+          key: bookKey,
+          text: await getAnnotationText(range),
+          cfi: view?.getCFI(index, range),
+          range,
+          index,
+        });
       }, 30);
     }, 30);
   };

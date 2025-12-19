@@ -27,6 +27,7 @@ export interface TextSelection {
   text: string;
   range: Range;
   index: number;
+  cfi?: string;
   href?: string;
   annotated?: boolean;
 }
