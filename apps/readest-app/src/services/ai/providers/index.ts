@@ -1,20 +1,25 @@
-import type { AIProvider, AISettings, AIProviderName } from '../types';
 import { OllamaProvider } from './OllamaProvider';
-import { OpenRouterProvider } from './OpenRouterProvider';
+import { AIGatewayProvider } from './AIGatewayProvider';
+import type { AIProvider, AISettings } from '../types';
+
+export { OllamaProvider, AIGatewayProvider };
 
 export function getAIProvider(settings: AISettings): AIProvider {
   switch (settings.provider) {
     case 'ollama':
       return new OllamaProvider(settings);
-    case 'openrouter':
-      return new OpenRouterProvider(settings);
+    case 'ai-gateway':
+      if (!settings.aiGatewayApiKey) {
+        throw new Error('API key required for AI Gateway');
+      }
+      return new AIGatewayProvider(settings);
     default:
       throw new Error(`Unknown provider: ${settings.provider}`);
   }
 }
 
-export async function getAvailableProviders(settings: AISettings): Promise<AIProviderName[]> {
-  const available: AIProviderName[] = [];
+export async function getAvailableProviders(settings: AISettings): Promise<string[]> {
+  const available: string[] = [];
 
   try {
     const ollama = new OllamaProvider(settings);
@@ -22,14 +27,12 @@ export async function getAvailableProviders(settings: AISettings): Promise<AIPro
       available.push('ollama');
     }
   } catch {
-    // ollama not available
+    // not available
   }
 
-  if (settings.openrouterApiKey) {
-    available.push('openrouter');
+  if (settings.aiGatewayApiKey) {
+    available.push('ai-gateway');
   }
 
   return available;
 }
-
-export { OllamaProvider, OpenRouterProvider };
