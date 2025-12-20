@@ -27,19 +27,31 @@ const nextConfig = {
   assetPrefix: '',
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
-  turbopack: {},
-  transpilePackages: !isDev
-    ? [
-        'i18next-browser-languagedetector',
-        'react-i18next',
-        'i18next',
-        '@ducanh2912/next-pwa',
-        '@tauri-apps',
-        'highlight.js',
-        'foliate-js',
-        'marked',
-      ]
-    : [],
+  turbopack: {
+    resolveAlias: {
+      // polyfill buffer for @supabase/storage-js which requires it in browser
+      buffer: 'buffer',
+    },
+  },
+  transpilePackages: [
+    'ai',
+    'ai-sdk-ollama',
+    '@ai-sdk/react',
+    'use-stick-to-bottom',
+    'streamdown',
+    ...(isDev
+      ? []
+      : [
+          'i18next-browser-languagedetector',
+          'react-i18next',
+          'i18next',
+          '@ducanh2912/next-pwa',
+          '@tauri-apps',
+          'highlight.js',
+          'foliate-js',
+          'marked',
+        ]),
+  ],
   async headers() {
     return [
       {
