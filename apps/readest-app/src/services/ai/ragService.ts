@@ -1,3 +1,4 @@
+import { embed, embedMany } from 'ai';
 import { aiStore } from './storage/aiStore';
 import { chunkSection, extractTextFromDocument } from './utils/chunker';
 import { getAIProvider } from './providers';
@@ -130,36 +131,30 @@ export async function indexBook(
     }
 
     onProgress?.({ current: 0, total: allChunks.length, phase: 'embedding' });
-    aiLogger.embedding.start(settings.ollamaEmbeddingModel || 'nomic-embed-text', allChunks.length);
+    const embeddingModelName =
+      settings.provider === 'ollama'
+        ? settings.ollamaEmbeddingModel
+        : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
+    aiLogger.embedding.start(embeddingModelName, allChunks.length);
 
-    const BATCH_SIZE = 5;
-    let successCount = 0;
-    let dimensions = 0;
+    const texts = allChunks.map((c) => c.text);
+    try {
+      const { embeddings } = await embedMany({
+        model: provider.getEmbeddingModel(),
+        values: texts,
+      });
 
-    for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
-      const batch = allChunks.slice(i, i + BATCH_SIZE);
-      const embeddings = await Promise.all(
-        batch.map((c) =>
-          provider.embed(c.text).catch((e) => {
-            aiLogger.embedding.error(c.id, (e as Error).message);
-            return null;
-          }),
-        ),
-      );
-      for (let j = 0; j < batch.length; j++) {
-        if (embeddings[j]) {
-          batch[j]!.embedding = embeddings[j]!;
-          successCount++;
-          if (dimensions === 0) dimensions = embeddings[j]!.length;
-        }
+      for (let i = 0; i < allChunks.length; i++) {
+        allChunks[i]!.embedding = embeddings[i];
+        state.chunksProcessed = i + 1;
+        state.progress = Math.round(((i + 1) / allChunks.length) * 100);
       }
-      state.chunksProcessed = Math.min(i + BATCH_SIZE, allChunks.length);
-      state.progress = Math.round((state.chunksProcessed / allChunks.length) * 100);
-      onProgress?.({ current: state.chunksProcessed, total: allChunks.length, phase: 'embedding' });
-      aiLogger.embedding.batch(state.chunksProcessed, allChunks.length);
+      onProgress?.({ current: allChunks.length, total: allChunks.length, phase: 'embedding' });
+      aiLogger.embedding.complete(embeddings.length, allChunks.length, embeddings[0]?.length || 0);
+    } catch (e) {
+      aiLogger.embedding.error('batch', (e as Error).message);
+      throw e;
     }
-
-    aiLogger.embedding.complete(successCount, allChunks.length, dimensions);
 
     onProgress?.({ current: 0, total: 2, phase: 'indexing' });
     aiLogger.store.saveChunks(bookHash, allChunks.length);
@@ -175,10 +170,7 @@ export async function indexBook(
       authorName: extractAuthor(bookDoc.metadata),
       totalSections: sections.length,
       totalChunks: allChunks.length,
-      embeddingModel:
-        settings.provider === 'ollama'
-          ? settings.ollamaEmbeddingModel
-          : settings.openrouterEmbeddingModel || 'text-embedding-3-small',
+      embeddingModel: embeddingModelName,
       lastUpdated: Date.now(),
     };
     aiLogger.store.saveMeta(meta);
@@ -206,10 +198,16 @@ export async function hybridSearch(
   aiLogger.search.query(query, maxSectionIndex);
   const provider = getAIProvider(settings);
   let queryEmbedding: number[] | null = null;
+
   try {
-    queryEmbedding = await provider.embed(query);
+    // use AI SDK embed with provider's embedding model
+    const { embedding } = await embed({
+      model: provider.getEmbeddingModel(),
+      value: query,
+    });
+    queryEmbedding = embedding;
   } catch {
-    /* bm25 only */
+    // bm25 only fallback
   }
 
   const results = await aiStore.hybridSearch(
