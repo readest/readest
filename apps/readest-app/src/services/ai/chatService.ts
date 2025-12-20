@@ -1,3 +1,4 @@
+import { streamText } from 'ai';
 import { getAIProvider } from './providers';
 import { hybridSearch, isBookIndexed } from './ragService';
 import { aiLogger } from './logger';
@@ -32,7 +33,7 @@ export async function sendMessage(
   onToken: (token: string) => void,
   onComplete: (sources: ScoredChunk[]) => void,
   onError: (error: Error) => void,
-): Promise<void> {
+): Promise<AbortController> {
   if (session.abortController) session.abortController.abort();
   aiLogger.chat.send(userMessage.length, false);
 
@@ -64,26 +65,33 @@ export async function sendMessage(
   ];
 
   session.messages.push({ role: 'user', content: userMessage });
-  let assistantMessage = '';
+  const abortController = new AbortController();
+  session.abortController = abortController;
 
   try {
-    session.abortController = await provider.chatStream(
+    const result = streamText({
+      model: provider.getModel(),
       messages,
-      (token) => {
-        assistantMessage += token;
-        onToken(token);
-      },
-      () => {
-        session.messages.push({ role: 'assistant', content: assistantMessage });
-        aiLogger.chat.complete(assistantMessage.length);
-        onComplete(chunks);
-      },
-      onError,
-    );
+      abortSignal: abortController.signal,
+    });
+
+    let assistantMessage = '';
+    for await (const chunk of result.textStream) {
+      assistantMessage += chunk;
+      onToken(chunk);
+    }
+
+    session.messages.push({ role: 'assistant', content: assistantMessage });
+    aiLogger.chat.complete(assistantMessage.length);
+    onComplete(chunks);
   } catch (error) {
-    aiLogger.chat.error((error as Error).message);
-    onError(error as Error);
+    if ((error as Error).name !== 'AbortError') {
+      aiLogger.chat.error((error as Error).message);
+      onError(error as Error);
+    }
   }
+
+  return abortController;
 }
 
 export function abortGeneration(session: ChatSession): void {
