@@ -61,13 +61,19 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'relative flex aspect-[28/41] justify-center',
+          'relative flex aspect-[28/41] justify-center rounded',
           coverFit === 'crop' && 'overflow-hidden shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
       >
-        <BookCover mode={mode} book={book} coverFit={coverFit} showSpine={false} />
+        <BookCover
+          mode={mode}
+          book={book}
+          coverFit={coverFit}
+          showSpine={false}
+          imageClassName='rounded shadow-md'
+        />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
