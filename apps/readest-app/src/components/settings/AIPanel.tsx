@@ -1,13 +1,12 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PiCheckCircle, PiWarningCircle, PiArrowsClockwise } from 'react-icons/pi';
-import { Ollama } from 'ollama/browser';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
-import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
+import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -25,9 +24,9 @@ const AIPanel: React.FC = () => {
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaModel);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
-  const [openrouterKey, setOpenrouterKey] = useState(aiSettings.openrouterApiKey ?? '');
-  const [openrouterModel, setOpenrouterModel] = useState(
-    aiSettings.openrouterModel ?? DEFAULT_AI_SETTINGS.openrouterModel ?? '',
+  const [gatewayKey, setGatewayKey] = useState(aiSettings.aiGatewayApiKey ?? '');
+  const [gatewayModel, setGatewayModel] = useState(
+    aiSettings.aiGatewayModel ?? DEFAULT_AI_SETTINGS.aiGatewayModel ?? '',
   );
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -58,9 +57,10 @@ const AIPanel: React.FC = () => {
 
     setFetchingModels(true);
     try {
-      const client = new Ollama({ host: ollamaUrl });
-      const list = await client.list();
-      const models = list.models.map((m) => m.name);
+      const response = await fetch(`${ollamaUrl}/api/tags`);
+      if (!response.ok) throw new Error('Failed to fetch models');
+      const data = await response.json();
+      const models = data.models?.map((m: { name: string }) => m.name) || [];
 
       setOllamaModels(models);
       if (models.length > 0 && !models.includes(ollamaModel)) {
@@ -118,32 +118,33 @@ const AIPanel: React.FC = () => {
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (openrouterKey !== (aiSettings.openrouterApiKey ?? '')) {
-      saveAiSetting('openrouterApiKey', openrouterKey);
+    if (gatewayKey !== (aiSettings.aiGatewayApiKey ?? '')) {
+      saveAiSetting('aiGatewayApiKey', gatewayKey);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openrouterKey]);
+  }, [gatewayKey]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (openrouterModel !== aiSettings.openrouterModel) {
-      saveAiSetting('openrouterModel', openrouterModel);
+    if (gatewayModel !== aiSettings.aiGatewayModel) {
+      saveAiSetting('aiGatewayModel', gatewayModel);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openrouterModel]);
+  }, [gatewayModel]);
 
   const handleTestConnection = async () => {
     if (!enabled) return;
     setConnectionStatus('testing');
     setErrorMessage('');
+
     try {
       const testSettings: AISettings = {
         ...aiSettings,
         provider,
         ollamaBaseUrl: ollamaUrl,
         ollamaModel,
-        openrouterApiKey: openrouterKey,
-        openrouterModel,
+        aiGatewayApiKey: gatewayKey,
+        aiGatewayModel: gatewayModel,
       };
       const aiProvider = getAIProvider(testSettings);
       const isHealthy = await aiProvider.healthCheck();
@@ -163,7 +164,6 @@ const AIPanel: React.FC = () => {
     }
   };
 
-  // greyed out styles when disabled
   const disabledSection = !enabled ? 'opacity-50 pointer-events-none select-none' : '';
 
   return (
@@ -201,13 +201,13 @@ const AIPanel: React.FC = () => {
               />
             </div>
             <div className='config-item'>
-              <span>{_('OpenRouter (Cloud)')}</span>
+              <span>{_('AI Gateway (Cloud)')}</span>
               <input
                 type='radio'
                 name='ai-provider'
                 className='radio'
-                checked={provider === 'openrouter'}
-                onChange={() => setProvider('openrouter')}
+                checked={provider === 'ai-gateway'}
+                onChange={() => setProvider('ai-gateway')}
                 disabled={!enabled}
               />
             </div>
@@ -267,16 +267,16 @@ const AIPanel: React.FC = () => {
         </div>
       )}
 
-      {provider === 'openrouter' && (
+      {provider === 'ai-gateway' && (
         <div className={clsx('w-full', disabledSection)}>
-          <h2 className='mb-2 font-medium'>{_('OpenRouter Configuration')}</h2>
+          <h2 className='mb-2 font-medium'>{_('AI Gateway Configuration')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200 divide-y'>
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
                 <div className='flex w-full items-center justify-between'>
                   <span>{_('API Key')}</span>
                   <a
-                    href='https://openrouter.ai/keys'
+                    href='https://vercel.com/docs/ai/ai-gateway'
                     target='_blank'
                     rel='noopener noreferrer'
                     className={clsx('link text-xs', !enabled && 'pointer-events-none')}
@@ -287,32 +287,25 @@ const AIPanel: React.FC = () => {
                 <input
                   type='password'
                   className='input input-bordered input-sm w-full'
-                  value={openrouterKey}
-                  onChange={(e) => setOpenrouterKey(e.target.value)}
-                  placeholder='sk-or-...'
+                  value={gatewayKey}
+                  onChange={(e) => setGatewayKey(e.target.value)}
+                  placeholder='vck_...'
                   disabled={!enabled}
                 />
               </div>
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <div className='flex w-full items-center justify-between'>
-                  <span>{_('Model')}</span>
-                  <a
-                    href='https://openrouter.ai/models'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className={clsx('link text-xs', !enabled && 'pointer-events-none')}
-                  >
-                    {_('Browse Models')}
-                  </a>
-                </div>
-                <input
-                  type='text'
-                  className='input input-bordered input-sm w-full'
-                  value={openrouterModel}
-                  onChange={(e) => setOpenrouterModel(e.target.value)}
-                  placeholder='anthropic/claude-sonnet-4.5'
+                <span>{_('Model')}</span>
+                <select
+                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  value={gatewayModel}
+                  onChange={(e) => setGatewayModel(e.target.value)}
                   disabled={!enabled}
-                />
+                >
+                  <option value={GATEWAY_MODELS.CLAUDE_SONNET}>GPT-5.2</option>
+                  <option value={GATEWAY_MODELS.GEMINI_3_FLASH}>Gemini 3 Flash</option>
+                  <option value={GATEWAY_MODELS.GPT_5_2_MINI}>GPT-5.2 Mini</option>
+                  <option value={GATEWAY_MODELS.GEMINI_3_FLASH_EXP}>Gemini 3 Flash Exp</option>
+                </select>
               </div>
             </div>
           </div>
