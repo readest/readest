@@ -1,11 +1,12 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdBookmarkBorder as BookmarkIcon } from 'react-icons/md';
-import { IoIosList as TOCIcon } from 'react-icons/io';
-import { PiNotePencil as NoteIcon, PiRobot as AIIcon } from 'react-icons/pi';
+import { MdBookmarkBorder } from 'react-icons/md';
+import { IoIosList } from 'react-icons/io';
+import { PiNotePencil, PiRobot } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TabNavigation: React.FC<{
   activeTab: string;
@@ -16,63 +17,62 @@ const TabNavigation: React.FC<{
 
   const tabs = ['toc', 'annotations', 'bookmarks', 'ai'];
 
+  const getTabLabel = (tab: string) => {
+    switch (tab) {
+      case 'toc': return _('TOC');
+      case 'annotations': return _('Annotate');
+      case 'bookmarks': return _('Bookmark');
+      case 'ai': return _('AI');
+      default: return '';
+    }
+  };
+
   return (
-    <div
-      className={clsx(
-        'bottom-tab border-base-300/50 bg-base-200/20 flex w-full border-t',
-        appService?.hasRoundedWindow && 'rounded-window-bottom-left',
-      )}
-      dir='ltr'
-    >
-      {tabs.map((tab) => (
-        <div
-          key={tab}
-          tabIndex={0}
-          role='button'
-          className={clsx(
-            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
-            activeTab === tab && 'bg-base-300/85',
-          )}
-          onClick={() => onTabChange(tab)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onTabChange(tab);
-            }
-          }}
-          title={
-            tab === 'toc'
-              ? _('TOC')
-              : tab === 'annotations'
-                ? _('Annotate')
-                : tab === 'bookmarks'
-                  ? _('Bookmark')
-                  : _('AI')
-          }
-          aria-label={
-            tab === 'toc'
-              ? _('TOC')
-              : tab === 'annotations'
-                ? _('Annotate')
-                : tab === 'bookmarks'
-                  ? _('Bookmark')
-                  : _('AI')
-          }
-        >
-          <div className='m-0 flex h-6 items-center p-0'>
-            {tab === 'toc' ? (
-              <TOCIcon className='mx-auto' />
-            ) : tab === 'annotations' ? (
-              <NoteIcon className='mx-auto' />
-            ) : tab === 'bookmarks' ? (
-              <BookmarkIcon className='mx-auto' />
-            ) : (
-              <AIIcon className='mx-auto' />
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
+    <TooltipProvider>
+      <div
+        className={clsx(
+          'bottom-tab border-base-300/50 bg-base-200/20 flex w-full border-t',
+          appService?.hasRoundedWindow && 'rounded-window-bottom-left',
+        )}
+        dir='ltr'
+      >
+        {tabs.map((tab) => (
+          <Tooltip key={tab}>
+            <TooltipTrigger asChild>
+              <div
+                tabIndex={0}
+                role='button'
+                className={clsx(
+                  'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
+                  activeTab === tab && 'bg-base-300/85',
+                )}
+                onClick={() => onTabChange(tab)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onTabChange(tab);
+                  }
+                }}
+                aria-label={getTabLabel(tab)}
+              >
+                <div className='m-0 flex h-6 items-center p-0'>
+                  {tab === 'toc' ? (
+                    <IoIosList className='mx-auto' size={20} />
+                  ) : tab === 'annotations' ? (
+                    <PiNotePencil className='mx-auto' size={20} />
+                  ) : tab === 'bookmarks' ? (
+                    <MdBookmarkBorder className='mx-auto' size={20} />
+                  ) : (
+                    <PiRobot className='mx-auto' size={20} />
+                  )}
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side='top'>{getTabLabel(tab)}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 };
 
