@@ -37,7 +37,9 @@ const nextConfig = {
     'ai',
     'ai-sdk-ollama',
     '@ai-sdk/react',
-    'use-stick-to-bottom',
+    '@assistant-ui/react',
+    '@assistant-ui/react-ai-sdk',
+    '@assistant-ui/react-markdown',
     'streamdown',
     ...(isDev
       ? []
