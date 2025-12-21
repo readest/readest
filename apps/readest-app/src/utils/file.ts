@@ -253,7 +253,7 @@ export class RemoteFile extends File implements ClosableFile {
   #order: number[] = [];
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
-  static MAX_CACHE_ITEMS_SIZE: number = 10;
+  static MAX_CACHE_ITEMS_SIZE: number = 256;
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
     const basename = url.split('/').pop() || 'remote-file';
