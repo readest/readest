@@ -16,6 +16,7 @@ interface DropdownProps {
   }>;
   disabled?: boolean;
   onToggle?: (isOpen: boolean) => void;
+  showTooltip?: boolean;
 }
 
 const enhanceMenuItems = (
@@ -61,6 +62,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   children,
   disabled,
   onToggle,
+  showTooltip = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -137,7 +139,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           aria-haspopup='menu'
           aria-expanded={isOpen}
           aria-label={label}
-          title={label}
+          title={showTooltip ? label : undefined}
           className={clsx(
             'dropdown-toggle',
             isFocused && isOpen && 'bg-base-300/50',

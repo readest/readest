@@ -36,9 +36,9 @@ interface ThreadProps {
 
 export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
   return (
-    <ThreadPrimitive.Root className='flex h-full w-full flex-col items-stretch bg-base-100 px-2'>
+    <ThreadPrimitive.Root className='flex h-full w-full flex-col items-stretch bg-base-100 px-3'>
       <ThreadPrimitive.Empty>
-        <div className='flex h-full flex-col items-center justify-center'>
+        <div className='flex h-full flex-col items-center justify-center animate-in fade-in duration-300'>
           <div className='mb-4 rounded-full bg-base-content/10 p-3'>
             <BookOpenIcon className='size-6 text-base-content' />
           </div>
@@ -49,7 +49,7 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
       </ThreadPrimitive.Empty>
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto pt-2'>
+        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto pt-2 scroll-smooth'>
           <ThreadPrimitive.Messages
             components={{
               UserMessage,
@@ -77,11 +77,11 @@ const Composer: FC<ComposerProps> = ({ onClear }) => {
 
   return (
     <ComposerPrimitive.Root
-      className='group/composer mx-auto mb-2 w-full'
+      className='group/composer mx-auto mb-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300'
       data-empty={isEmpty}
       data-running={isRunning}
     >
-      <div className='overflow-hidden rounded-2xl bg-base-200 shadow-sm ring-1 ring-base-content/10 ring-inset transition-shadow focus-within:ring-base-content/20'>
+      <div className='overflow-hidden rounded-2xl bg-base-200 shadow-sm ring-1 ring-base-content/10 ring-inset transition-all duration-200 focus-within:ring-base-content/20'>
         <div className='flex items-end gap-0.5 p-1.5'>
           {onClear && (
             <button
@@ -126,7 +126,7 @@ interface AssistantMessageProps {
 
 const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
   return (
-    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5'>
+    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5 animate-in fade-in slide-in-from-bottom-1 duration-200'>
       <div className='flex flex-col items-start'>
         {sources.length > 0 && <SourcesDisplay sources={sources} />}
 
@@ -187,7 +187,7 @@ const SourcesDisplay: FC<SourcesDisplayProps> = ({ sources }) => {
 
 const UserMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5'>
+    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5 animate-in fade-in slide-in-from-bottom-1 duration-200'>
       <div className='flex flex-col items-end'>
         <div className='relative max-w-[90%] rounded-2xl rounded-br-md border border-base-content/10 bg-base-200 px-3 py-2 text-base-content'>
           <div className='prose prose-xs text-sm text-base-content [&_*]:!text-base-content'>
