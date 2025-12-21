@@ -99,7 +99,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
     <div className={clsx('group-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}>
       <div
         className={clsx(
-          'relative flex overflow-hidden',
+          'relative flex overflow-hidden rounded',
           mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center shadow-md',
           mode === 'list' && 'items-center justify-start gap-4 py-2',
         )}
@@ -139,7 +139,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                   mode === 'list' && 'flex-shrink-0',
                 )}
               >
-                <BookCover book={book} isPreview />
+                <BookCover book={book} isPreview imageClassName='rounded-[2px]' />
               </div>
             ))}
           </div>
