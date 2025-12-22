@@ -53,9 +53,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.735.0",
     "@aws-sdk/s3-request-presigner": "^3.735.0",
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@fabianlars/tauri-plugin-oauth": "2",
     "@opennextjs/cloudflare": "^1.13.1",
+    "@serwist/next": "^9.3.0",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.4.0",
     "@supabase/auth-ui-react": "^0.4.7",
@@ -154,6 +154,7 @@
     "postcss-cli": "^11.0.0",
     "postcss-nested": "^7.0.2",
     "raw-loader": "^4.0.2",
+    "serwist": "^9.3.0",
     "tailwindcss": "^3.4.18",
     "typescript": "^5.7.2",
     "vite-tsconfig-paths": "^5.1.4",
