@@ -26,6 +26,9 @@
       "body-parser": ">=2.2.1",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10"
+    },
+    "patchedDependencies": {
+      "openai@6.14.0": "patches/openai@6.14.0.patch"
     }
   }
 }
