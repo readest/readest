@@ -139,7 +139,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
       style={
         isVertical
           ? {
-              bottom: `${contentInsets.bottom * 1.5}px`,
+              bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
                 : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
