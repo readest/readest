@@ -255,6 +255,9 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
+  figure > div:has(img) {
+    height: auto !important;
+  }
   /* enlarge the clickable area of links */
   a {
     position: relative !important;
