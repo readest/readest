@@ -87,7 +87,7 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
   MOBI: ['application/x-mobipocket-ebook'],
   AZW: ['application/vnd.amazon.ebook'],
   AZW3: ['application/vnd.amazon.mobi8-ebook', 'application/x-mobi8-ebook'],
-  CBZ: ['application/vnd.comicbook+zip', 'application/zip'],
+  CBZ: ['application/vnd.comicbook+zip', 'application/zip', 'application/x-cbz'],
   FB2: ['application/x-fictionbook+xml', 'text/xml', 'application/xml'],
   FBZ: ['application/x-zip-compressed-fb2', 'application/zip'],
 };
@@ -243,7 +243,9 @@ export const getDirection = (doc: Document) => {
   return { vertical, rtl };
 };
 
-export const getFileExtFromMimeType = (mimeType: string): string => {
+export const getFileExtFromMimeType = (mimeType?: string): string => {
+  if (!mimeType) return '';
+
   for (const format in MIMETYPES) {
     const list = MIMETYPES[format as BookFormat];
     if (list.includes(mimeType)) {

@@ -19,7 +19,13 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
-import { isSearchLink, MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
+import {
+  getFileExtFromPath,
+  isSearchLink,
+  MIME,
+  parseMediaType,
+  resolveURL,
+} from './utils/opdsUtils';
 import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { FeedView } from './components/FeedView';
@@ -403,8 +409,9 @@ export default function BrowserPage() {
           }
           return;
         } else {
-          const ext = parsed?.mediaType ? getFileExtFromMimeType(parsed.mediaType) : '';
-          const basename = new URL(url).pathname.replaceAll('/', '_');
+          const pathname = new URL(url).pathname;
+          const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
+          const basename = pathname.replaceAll('/', '_');
           const filename = ext ? `${basename}.${ext}` : basename;
           const dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
           if (dstFilePath) {
