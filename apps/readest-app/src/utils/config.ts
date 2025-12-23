@@ -9,7 +9,7 @@ export const getMaxInlineSize = (viewSettings: ViewSettings) => {
   const isUnfoldedScreen = screenAspectRatio < 1.3 && screenAspectRatio > 0.77 && screenWidth > 600;
 
   return isVertical
-    ? Math.max(screenWidth, screenHeight, 720)
+    ? Math.max(screenWidth, screenHeight, 720, viewSettings.maxInlineSize)
     : isUnfoldedScreen
       ? viewSettings.maxInlineSize * 0.8
       : viewSettings.maxInlineSize;

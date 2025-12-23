@@ -61,7 +61,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         style={
           isVertical
             ? {
-                top: `${contentInsets.top * 1.5}px`,
+                top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
                   : `calc(${Math.max(0, contentInsets.right - 32)}px)`,
