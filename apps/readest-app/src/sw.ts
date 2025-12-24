@@ -1,5 +1,5 @@
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { StaleWhileRevalidate, ExpirationPlugin, Serwist } from 'serwist';
+import { NetworkFirst, ExpirationPlugin, Serwist } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -32,8 +32,9 @@ const serwist = new Serwist({
         const isClientRoute = clientRoutes.some((route) => url.pathname.startsWith(route));
         return isClientRoute && request.mode === 'navigate';
       },
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: 'client-pages',
+        networkTimeoutSeconds: 3,
         matchOptions: {
           ignoreSearch: true,
         },
@@ -60,8 +61,9 @@ const serwist = new Serwist({
         }
         return /^https?.*/.test(url.href);
       },
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: 'offline-cache',
+        networkTimeoutSeconds: 3,
         plugins: [
           new ExpirationPlugin({
             maxEntries: 512,
