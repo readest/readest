@@ -42,7 +42,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
               }
               e.stopPropagation();
             }}
-            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg p-4 shadow-md ${
+            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg px-2 py-4 shadow-md ${
               themeColor === name ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
             }`}
             style={{
@@ -64,7 +64,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
             ) : (
               <MdRadioButtonUnchecked size={iconSize24} />
             )}
-            <span>{_(label)}</span>
+            <span className='max-w-full truncate'>{_(label)}</span>
             {isCustomizale && themeColor === name && (
               <button onClick={() => onEditTheme(name)}>
                 <CgColorPicker size={iconSize16} className='absolute right-2 top-2' />
@@ -73,11 +73,11 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
           </button>
         ))}
         <button
-          className='relative flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed p-4 shadow-md'
+          className='relative flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-2 py-4 shadow-md'
           onClick={onCreateTheme}
         >
           <PiPlus size={iconSize24} />
-          <span>{_('Custom')}</span>
+          <span className='max-w-full truncate'>{_('Custom')}</span>
         </button>
       </div>
     </div>

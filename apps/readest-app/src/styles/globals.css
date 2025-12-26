@@ -251,6 +251,10 @@ foliate-fxl {
   @apply hover:bg-base-100/50;
 }
 
+.config-item > span {
+  @apply line-clamp-2;
+}
+
 .collapse-arrow > .collapse-title:after {
   top: var(--top-override, default-value);
   inset-inline-end: var(--end-override, default-value);
