@@ -261,13 +261,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
       const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
-      const lineHeightValue =
-        parseFloat(lineHeight) || viewSettings.lineHeight * viewSettings.defaultFontSize;
       const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
+      const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
       const strokeWidth = 2;
+      const verticalCompensation = appService?.isMobile ? 0 : -1;
+      const horizontalCompensation = appService?.isMobile ? -1 : 0;
       const padding = viewSettings.vertical
-        ? (lineHeightValue - fontSizeValue - strokeWidth) / 2
-        : strokeWidth;
+        ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
+        : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
       draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor, padding });
     }
   };
