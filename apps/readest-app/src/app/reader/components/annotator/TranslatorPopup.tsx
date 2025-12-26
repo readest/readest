@@ -201,7 +201,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             </div>
           )}
         </div>
-        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between bg-gray-600 px-4'>
+        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between px-4'>
           <div className='line-clamp-1 text-xs opacity-60'>
             {provider &&
               !loading &&
