@@ -30,6 +30,7 @@ export interface TextSelection {
   cfi?: string;
   href?: string;
   annotated?: boolean;
+  rect?: Rect;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
@@ -68,17 +69,21 @@ const getIframeElement = (nodeElement: Range | Element): HTMLIFrameElement | nul
 
 const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => {
   return {
-    x: Math.max(padding, Math.min(point.x, rect.right - padding)),
-    y: Math.max(padding, Math.min(point.y, rect.bottom - padding)),
+    x: Math.max(padding, Math.min(point.x, rect.right - rect.left - padding)),
+    y: Math.max(padding, Math.min(point.y, rect.bottom - rect.top - padding)),
   };
 };
 
 export const getPosition = (
-  target: Range | Element,
+  targetElement: Range | Element | TextSelection,
   rect: Rect,
   paddingPx: number,
   isVertical: boolean = false,
 ) => {
+  const { range: target, rect: targetRect } =
+    targetElement && 'range' in targetElement
+      ? targetElement
+      : { range: targetElement, rect: undefined };
   const frameElement = getIframeElement(target);
   const transform = frameElement ? getComputedStyle(frameElement).transform : '';
   const match = transform.match(/matrix\((.+)\)/);
@@ -103,8 +108,12 @@ export const getPosition = (
       left: rect.left + padding.left,
     };
   });
-  const first = frameRect(frame, rects[0], sx, sy);
-  const last = frameRect(frame, rects.at(-1), sx, sy);
+  const first = targetRect
+    ? frameRect(frame, targetRect, sx, sy)
+    : frameRect(frame, rects[0], sx, sy);
+  const last = targetRect
+    ? frameRect(frame, targetRect, sx, sy)
+    : frameRect(frame, rects.at(-1), sx, sy);
 
   if (isVertical) {
     const leftSpace = first.left - rect.left;
@@ -126,11 +135,19 @@ export const getPosition = (
   }
 
   const start = {
-    point: { x: (first.left + first.right) / 2 - rect.left, y: first.top - rect.top - 12 },
+    point: constrainPointWithinRect(
+      { x: (first.left + first.right) / 2 - rect.left, y: first.top - rect.top - 12 },
+      rect,
+      paddingPx,
+    ),
     dir: 'up',
   } as Position;
   const end = {
-    point: { x: (last.left + last.right) / 2 - rect.left, y: last.bottom - rect.top + 6 },
+    point: constrainPointWithinRect(
+      { x: (last.left + last.right) / 2 - rect.left, y: last.bottom - rect.top + 6 },
+      rect,
+      paddingPx,
+    ),
     dir: 'down',
   } as Position;
   const startInView = pointIsInView(start.point);

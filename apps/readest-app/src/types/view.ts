@@ -3,6 +3,8 @@ import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
 
+export const NOTE_PREFIX = 'foliate-note:';
+
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   close: () => void;
@@ -15,7 +17,10 @@ export interface FoliateView extends HTMLElement {
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
   resolveCFI: (cfi: string) => { index: number; anchor: (doc: Document) => Range };
-  addAnnotation: (note: BookNote, remove?: boolean) => { index: number; label: string };
+  addAnnotation: (
+    note: BookNote & { value?: string },
+    remove?: boolean,
+  ) => { index: number; label: string };
   search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
   clearSearch: () => void;
   select: (target: string | number | { fraction: number }) => void;

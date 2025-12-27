@@ -14,6 +14,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
+import { NOTE_PREFIX } from '@/types/view';
 import { getOSPlatform, uniqueId } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -69,6 +70,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
   const [proofreadPopupPosition, setProofreadPopupPosition] = useState<Position>();
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
+  const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
+  const [annotationNotes, setAnnotationNotes] = useState<BookNote[]>([]);
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
@@ -78,6 +81,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   );
 
   const popupPadding = useResponsiveSize(10);
+  const trianglePadding = popupPadding * 2 + 6;
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const maxHeight = window.innerHeight - 2 * popupPadding;
   const dictPopupWidth = Math.min(480, maxWidth);
@@ -96,7 +100,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
     const rect = gridFrame.getBoundingClientRect();
-    const triangPos = getPosition(selection.range, rect, popupPadding, viewSettings.vertical);
+    const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
     const annotPopupPos = getPopupPosition(
       triangPos,
       rect,
@@ -135,21 +139,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setTranslatorPopupPosition(transPopupPos);
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
-  }, [
-    selection,
-    bookKey,
-    osPlatform,
-    popupPadding,
-    viewSettings.vertical,
-    annotPopupHeight,
-    annotPopupWidth,
-    dictPopupWidth,
-    dictPopupHeight,
-    transPopupWidth,
-    transPopupHeight,
-    proofreadPopupWidth,
-    proofreadPopupHeight,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection, bookKey, viewSettings.vertical]);
 
   useEffect(() => {
     setSelectedStyle(settings.globalReadSettings.highlightStyle);
@@ -275,23 +266,40 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const onShowAnnotation = (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    const { value: cfi, index, range } = detail;
+    const { value, index, range } = detail;
     const { booknotes = [] } = getConfig(bookKey)!;
+    const isNote = value.startsWith(NOTE_PREFIX);
+    const cfi = isNote ? value.replace(NOTE_PREFIX, '') : value;
     const annotations = booknotes.filter(
-      (booknote) => booknote.type === 'annotation' && !booknote.deletedAt,
+      (booknote) => booknote.type === 'annotation' && !booknote.deletedAt && booknote.cfi === cfi,
     );
-    const annotation = annotations.find((annotation) => annotation.cfi === cfi);
+    const annotation = annotations.find(
+      (annotation) => (!isNote && annotation.style) || (isNote && annotation.note),
+    );
     if (!annotation) return;
+
+    const { style, color, text, note } = annotation;
     const selection = {
       key: bookKey,
       annotated: true,
-      text: annotation.text ?? '',
-      cfi: view?.getCFI(index, range),
+      text: text ?? '',
+      note: note ?? '',
+      rect: isNote ? detail.rect : undefined,
+      cfi,
       range,
       index,
     };
-    setSelectedStyle(annotation.style!);
-    setSelectedColor(annotation.color!);
+    if (isNote) {
+      setShowAnnotationNotes(true);
+      setHighlightOptionsVisible(false);
+    } else {
+      setShowAnnotationNotes(false);
+      setAnnotationNotes([]);
+      if (style && color) {
+        setSelectedStyle(style);
+        setSelectedColor(color);
+      }
+    }
     setSelection(selection);
     handleUpToPopup();
   };
@@ -353,7 +361,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
       const rect = gridFrame.getBoundingClientRect();
-      const triangPos = getPosition(selection.range, rect, popupPadding, viewSettings.vertical);
+      const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
       const annotPopupPos = getPopupPosition(
         triangPos,
         rect,
@@ -411,13 +419,35 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         CFI.compare(item.cfi, start) >= 0 &&
         CFI.compare(item.cfi, end) <= 0,
     );
+    const notes = booknotes.filter(
+      (item) =>
+        !item.deletedAt &&
+        item.type === 'annotation' &&
+        item.note &&
+        item.note.trim().length > 0 &&
+        CFI.compare(item.cfi, start) >= 0 &&
+        CFI.compare(item.cfi, end) <= 0,
+    );
     try {
       Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
+      Promise.all(
+        notes.map((note) => view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` })),
+      );
     } catch (e) {
       console.warn(e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
+
+  useEffect(() => {
+    if (!config.booknotes || !selection?.cfi || !showAnnotationNotes) return;
+    const annotations = config.booknotes.filter(
+      (booknote) =>
+        booknote.type === 'annotation' && !booknote.deletedAt && booknote.cfi === selection.cfi,
+    );
+    const notes = annotations.filter((item) => item.note && item.note.trim().length > 0);
+    setAnnotationNotes(notes);
+  }, [selection?.cfi, showAnnotationNotes, config.booknotes]);
 
   const handleShowAnnotPopup = () => {
     if (!appService?.isMobile) {
@@ -500,7 +530,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     };
     const existingIndex = annotations.findIndex(
       (annotation) =>
-        annotation.cfi === cfi && annotation.type === 'annotation' && !annotation.deletedAt,
+        annotation.cfi === cfi &&
+        annotation.type === 'annotation' &&
+        annotation.style &&
+        !annotation.deletedAt,
     );
     const views = getViewsById(bookKey.split('-')[0]!);
     if (existingIndex !== -1) {
@@ -779,9 +812,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       )}
       {showAnnotPopup && trianglePosition && annotPopupPosition && (
         <AnnotationPopup
+          bookKey={bookKey}
           dir={viewSettings.rtl ? 'rtl' : 'ltr'}
           isVertical={viewSettings.vertical}
           buttons={buttons}
+          notes={annotationNotes}
           position={annotPopupPosition}
           trianglePosition={trianglePosition}
           highlightOptionsVisible={highlightOptionsVisible}

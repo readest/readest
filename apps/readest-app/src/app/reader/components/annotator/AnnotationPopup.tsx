@@ -1,13 +1,14 @@
 import clsx from 'clsx';
 import React from 'react';
+import { Position } from '@/utils/sel';
+import { BookNote, HighlightColor, HighlightStyle } from '@/types/book';
 import Popup from '@/components/Popup';
 import PopupButton from './PopupButton';
+import AnnotationNotes from './AnnotationNotes';
 import HighlightOptions from './HighlightOptions';
-import { Position } from '@/utils/sel';
-import { HighlightColor, HighlightStyle } from '@/types/book';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface AnnotationPopupProps {
+  bookKey: string;
   dir: 'ltr' | 'rtl';
   isVertical: boolean;
   buttons: Array<{
@@ -17,6 +18,7 @@ interface AnnotationPopupProps {
     disabled?: boolean;
     visible?: boolean;
   }>;
+  notes: BookNote[];
   position: Position;
   trianglePosition: Position;
   highlightOptionsVisible: boolean;
@@ -28,13 +30,12 @@ interface AnnotationPopupProps {
   onDismiss?: () => void;
 }
 
-const OPTIONS_HEIGHT_PIX = 28;
-const OPTIONS_PADDING_PIX = 16;
-
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
+  bookKey,
   dir,
   isVertical,
   buttons,
+  notes,
   position,
   trianglePosition,
   highlightOptionsVisible,
@@ -45,8 +46,6 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   onHighlight,
   onDismiss,
 }) => {
-  const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
-  const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
   return (
     <div dir={dir}>
       <Popup
@@ -59,57 +58,52 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         triangleClassName='text-gray-600'
         onDismiss={onDismiss}
       >
-        <div
-          className={clsx(
-            'selection-buttons flex h-full w-full items-center justify-between p-2',
-            isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
-          )}
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {buttons.map((button, index) => {
-            if (button.visible === false) return null;
-            return (
-              <PopupButton
-                key={index}
-                showTooltip={!highlightOptionsVisible}
-                tooltipText={button.tooltipText}
-                Icon={button.Icon}
-                onClick={button.onClick}
-                disabled={button.disabled}
+        <div className={clsx('flex h-full gap-4', isVertical ? 'flex-row' : 'flex-col')}>
+          <div
+            className={clsx(
+              'selection-buttons flex h-full w-full items-center justify-between p-2',
+              isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
+            )}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {buttons.map((button, index) => {
+              if (button.visible === false) return null;
+              return (
+                <PopupButton
+                  key={index}
+                  showTooltip={!highlightOptionsVisible}
+                  tooltipText={button.tooltipText}
+                  Icon={button.Icon}
+                  onClick={button.onClick}
+                  disabled={button.disabled}
+                />
+              );
+            })}
+          </div>
+          {notes.length > 0 ? (
+            <AnnotationNotes
+              bookKey={bookKey}
+              isVertical={isVertical}
+              notes={notes}
+              triangleDir={trianglePosition.dir!}
+              popupWidth={isVertical ? popupHeight : popupWidth}
+              popupHeight={isVertical ? popupWidth : popupHeight}
+            />
+          ) : (
+            highlightOptionsVisible && (
+              <HighlightOptions
+                isVertical={isVertical}
+                triangleDir={trianglePosition.dir!}
+                popupWidth={isVertical ? popupHeight : popupWidth}
+                popupHeight={isVertical ? popupWidth : popupHeight}
+                selectedStyle={selectedStyle}
+                selectedColor={selectedColor}
+                onHandleHighlight={onHighlight}
               />
-            );
-          })}
+            )
+          )}
         </div>
       </Popup>
-      {highlightOptionsVisible && (
-        <HighlightOptions
-          isVertical={isVertical}
-          style={{
-            width: `${isVertical ? popupHeight : popupWidth}px`,
-            height: `${isVertical ? popupWidth : popupHeight}px`,
-            ...(isVertical
-              ? {
-                  left: `${
-                    position.point.x +
-                    (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
-                      (trianglePosition.dir === 'left' ? -1 : 1)
-                  }px`,
-                  top: `${position.point.y}px`,
-                }
-              : {
-                  left: `${position.point.x}px`,
-                  top: `${
-                    position.point.y +
-                    (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
-                      (trianglePosition.dir === 'up' ? -1 : 1)
-                  }px`,
-                }),
-          }}
-          selectedStyle={selectedStyle}
-          selectedColor={selectedColor}
-          onHandleHighlight={onHighlight}
-        />
-      )}
     </div>
   );
 };
