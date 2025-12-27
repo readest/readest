@@ -91,13 +91,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
   const { settings, fontPanelView, setFontPanelView } = useSettingsStore();
-  const {
-    fonts: allCustomFonts,
-    getAllFonts,
-    getFontFamilies,
-    removeFont,
-    saveCustomFonts,
-  } = useCustomFontStore();
+  const { fonts: allCustomFonts, getFontFamilies } = useCustomFontStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const view = getView(bookKey);
   const iconSize18 = useResponsiveSize(18);
@@ -164,12 +158,6 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       monospaceFont: setMonospaceFont,
       fontWeight: setFontWeight,
     });
-    getAllFonts().forEach((font) => {
-      if (removeFont(font.id)) {
-        appService!.deleteFont(font);
-      }
-    });
-    saveCustomFonts(envConfig);
   };
 
   const handleManageCustomFonts = () => {

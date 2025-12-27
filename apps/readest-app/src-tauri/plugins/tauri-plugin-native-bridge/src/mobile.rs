@@ -114,6 +114,14 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn iap_is_available(&self) -> crate::Result<IAPIsAvailableResponse> {
+        self.0
+            .run_mobile_plugin("iap_is_available", ())
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn iap_initialize(
         &self,
         payload: IAPInitializeRequest,
@@ -204,6 +212,14 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<OpenExternalUrlResponse> {
         self.0
             .run_mobile_plugin("open_external_url", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
+        self.0
+            .run_mobile_plugin("select_directory", ())
             .map_err(Into::into)
     }
 }

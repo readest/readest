@@ -171,6 +171,9 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 90%, #000);` : ''}
       ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 90%, #000);` : ''}
     }
+    blockquote {
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+    }
     blockquote, table * {
       ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
       ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
@@ -237,12 +240,9 @@ const getLayoutStyles = (
       text-align: unset;
       hyphens: unset;
   }
-  pre {
-      white-space: pre-wrap !important;
-      tab-size: 2;
-  }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
+    ${vertical ? 'font-feature-settings: "vrt2" 1, "vert" 1; text-orientation: upright;' : ''}
     text-align: var(--default-text-align);
     max-height: unset;
   }
@@ -255,6 +255,9 @@ const getLayoutStyles = (
     width: auto;
     background-color: transparent !important;
   }
+  figure > div:has(img) {
+    height: auto !important;
+  }
   /* enlarge the clickable area of links */
   a {
     position: relative !important;
@@ -262,10 +265,7 @@ const getLayoutStyles = (
   a::before {
     content: '';
     position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
+    inset: -10px;
   }
   p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
@@ -307,8 +307,12 @@ const getLayoutStyles = (
   p {
     ${vertical ? `margin-left: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${vertical ? `margin-right: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${vertical ? `margin-top: unset ${overrideLayout ? '!important' : ''};` : ''}
+    ${vertical ? `margin-bottom: unset ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-top: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
     ${!vertical ? `margin-bottom: ${paragraphMargin}em ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-left: unset ${overrideLayout ? '!important' : ''};` : ''}
+    ${!vertical ? `margin-right: unset ${overrideLayout ? '!important' : ''};` : ''}
   }
   div {
     ${vertical && overrideLayout ? `margin-left: ${paragraphMargin}em !important;` : ''}
@@ -329,11 +333,6 @@ const getLayoutStyles = (
     white-space: pre-wrap !important;
   }
 
-  p:not([dir="rtl"]) {
-    max-width: 100%;
-    overflow-x: clip;
-  }
-
   .epubtype-footnote,
   aside[epub|type~="endnote"],
   aside[epub|type~="footnote"],
@@ -343,6 +342,10 @@ const getLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
+  body {
+    line-height: unset;
+  }
+
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
     ${vertical ? 'transform-origin: center;' : ''}
@@ -394,12 +397,21 @@ const getLayoutStyles = (
     width: 0.8em;
     height: 0.8em;
   }
+  div:has(img.singlepage) {
+    position: relative;
+    width: auto;
+    height: auto;
+  }
 
   /* workaround for some badly designed epubs */
   div.left *, p.left * { text-align: left; }
   div.right *, p.right * { text-align: right; }
   div.center *, p.center * { text-align: center; }
   div.justify *, p.justify * { text-align: justify; }
+
+  .br {
+    display: flow-root;
+  }
 
   .h5_mainbody {
     overflow: unset !important;
@@ -587,7 +599,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
   document.head.appendChild(styleElement);
 };
 
-export const transformStylesheet = (vw: number, vh: number, css: string) => {
+export const transformStylesheet = (css: string, vw: number, vh: number, vertical: boolean) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
   const ruleRegex = /([^{]+)({[^}]+})/g;
@@ -606,17 +618,65 @@ export const transformStylesheet = (vw: number, vh: number, css: string) => {
     return match;
   });
 
+  // clip nowrapped elements
+  css = css.replace(ruleRegex, (match, selector, block) => {
+    const hasWhiteSpaceNowrap = /white-space\s*:\s*nowrap\s*[;$]/.test(block);
+    if (hasWhiteSpaceNowrap) {
+      if (!/overflow\s*:/.test(block)) {
+        block = block.replace(/}$/, ' overflow: clip !important; }');
+      }
+      return selector + block;
+    }
+    return match;
+  });
+
   // Process duokan-bleed
   css = css.replace(ruleRegex, (_, selector, block) => {
-    const directions = ['top', 'bottom', 'left', 'right'];
-    for (const dir of directions) {
+    if (vertical) return selector + block;
+
+    const directions: string[] = [];
+    let hasBleed = false;
+    for (const dir of ['top', 'bottom', 'left', 'right']) {
       const bleedRegex = new RegExp(`duokan-bleed\\s*:\\s*[^;]*${dir}[^;]*;`);
       const marginRegex = new RegExp(`margin-${dir}\\s*:`);
       if (bleedRegex.test(block) && !marginRegex.test(block)) {
+        hasBleed = true;
+        directions.push(dir);
         block = block.replace(
           /}$/,
-          ` margin-${dir}: calc(-1 * var(--margin-${dir})) !important; }`,
+          ` margin-${dir}: calc(-1 * var(--page-margin-${dir})) !important; }`,
         );
+      }
+    }
+    if (hasBleed) {
+      if (!/position\s*:/.test(block)) {
+        block = block.replace(/}$/, ' position: relative !important; }');
+      }
+      if (!/overflow\s*:/.test(block)) {
+        block = block.replace(/}$/, ' overflow: hidden !important; }');
+      }
+      if (!/display\s*:/.test(block)) {
+        block = block.replace(/}$/, ' display: flow-root !important; }');
+      }
+      if (!/width\s*:/.test(block) && directions.includes('left') && directions.includes('right')) {
+        block = block
+          .replace(
+            /}$/,
+            ' width: calc(var(--_max-width) + var(--page-margin-left) + var(--page-margin-right)) !important; }',
+          )
+          .replace(/}$/, ' max-width: 100vw !important; }');
+      }
+      if (
+        !/height\s*:/.test(block) &&
+        directions.includes('top') &&
+        directions.includes('bottom')
+      ) {
+        block = block
+          .replace(
+            /}$/,
+            ' height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important; }',
+          )
+          .replace(/}$/, ' max-height: 100vh !important; }');
       }
     }
     return selector + block;
@@ -665,6 +725,24 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
 
 export const applyImageStyle = (document: Document) => {
   document.querySelectorAll('img').forEach((img) => {
+    const widthAttr = img.getAttribute('width');
+    if (widthAttr && (widthAttr.endsWith('%') || widthAttr.endsWith('vw'))) {
+      const percentage = parseFloat(widthAttr);
+      if (!isNaN(percentage)) {
+        img.style.width = `${(percentage / 100) * window.innerWidth}px`;
+        img.removeAttribute('width');
+      }
+    }
+
+    const heightAttr = img.getAttribute('height');
+    if (heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))) {
+      const percentage = parseFloat(heightAttr);
+      if (!isNaN(percentage)) {
+        img.style.height = `${(percentage / 100) * window.innerHeight}px`;
+        img.removeAttribute('height');
+      }
+    }
+
     const parent = img.parentNode;
     if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
     const hasTextSiblings = Array.from(parent.childNodes).some(

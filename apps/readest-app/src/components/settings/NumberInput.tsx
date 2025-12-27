@@ -5,7 +5,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 interface NumberInputProps {
   className?: string;
+  inputClassName?: string;
   label: string;
+  iconSize?: number;
   value: number;
   min: number;
   max: number;
@@ -16,7 +18,9 @@ interface NumberInputProps {
 
 const NumberInput: React.FC<NumberInputProps> = ({
   className,
+  inputClassName,
   label,
+  iconSize,
   value,
   onChange,
   min,
@@ -70,6 +74,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   return (
     <div className={clsx('config-item', className)}>
       <span className='text-base-content line-clamp-2'>{label}</span>
+      {iconSize && <span style={{ minWidth: `${iconSize}px` }} />}
       <div className='text-base-content flex items-center gap-2'>
         <input
           type='text'
@@ -79,14 +84,15 @@ const NumberInput: React.FC<NumberInputProps> = ({
           onChange={handleChange}
           onBlur={handleOnBlur}
           className={clsx(
-            'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent py-1 pe-3 ps-1 text-right !outline-none',
+            'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent pe-3 !outline-none',
+            label && 'py-1 ps-1 text-right',
             disabled && 'input-disabled cursor-not-allowed disabled:bg-transparent',
+            inputClassName,
           )}
           onFocus={(e) => e.target.select()}
         />
         <button
           tabIndex={disabled ? -1 : 0}
-          disabled={value <= min || disabled}
           aria-label={_('Decrease')}
           onClick={decrement}
           className={`btn btn-circle btn-sm ${value <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
@@ -95,7 +101,6 @@ const NumberInput: React.FC<NumberInputProps> = ({
         </button>
         <button
           tabIndex={disabled ? -1 : 0}
-          disabled={value >= max || disabled}
           aria-label={_('Increase')}
           onClick={increment}
           className={`btn btn-circle btn-sm ${value >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}

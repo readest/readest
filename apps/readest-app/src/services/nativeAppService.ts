@@ -34,7 +34,7 @@ import {
   FileItem,
   DistChannel,
 } from '@/types/system';
-import { getOSPlatform, isContentURI, isValidURL } from '@/utils/misc';
+import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import { copyURIToPath } from '@/utils/bridge';
@@ -186,12 +186,15 @@ export const nativeFileSystem: FileSystem = {
     const content = await this.readFile(path, base, 'binary');
     return URL.createObjectURL(new Blob([content]));
   },
+  async getImageURL(path: string) {
+    return this.getURL(path);
+  },
   async openFile(path: string, base: BaseDir, name?: string) {
     const { fp, baseDir } = this.resolvePath(path, base);
     let fname = name || getFilename(fp);
     if (isValidURL(path)) {
       return await new RemoteFile(path, fname).open();
-    } else if (isContentURI(path)) {
+    } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
       fname = await basename(path);
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
@@ -199,6 +202,7 @@ export const nativeFileSystem: FileSystem = {
         return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       } else {
         // Otherwise, for content:// URIs (e.g. from MediaStore, Drive, or third-party apps),
+        // or file:// URIs is security scoped resource in iOS (e.g. from Files app),
         // we cannot access the file directly — so we copy it to a temporary cache location.
         const prefix = await this.getPrefix('Cache');
         const dst = await join(prefix, fname);
@@ -209,23 +213,30 @@ export const nativeFileSystem: FileSystem = {
         }
         return await new NativeFile(dst, fname, baseDir ? baseDir : null).open();
       }
+    } else if (isFileURI(path)) {
+      return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else {
-      const prefix = await this.getPrefix(base);
-      const absolutePath = path.startsWith('/') ? path : prefix ? await join(prefix, path) : null;
-      if (absolutePath && OS_TYPE !== 'android') {
+      if (OS_TYPE === 'android') {
+        // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
+        // see https://issues.chromium.org/issues/40739128
+        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
+      } else {
         // NOTE: RemoteFile currently performs about 2× faster than NativeFile
         // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
         // Once the bug is resolved, we should switch back to using NativeFile.
-        // RemoteFile is not usable on Android due to unknown issues of range fetch with Android WebView.
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
         return await new RemoteFile(this.getURL(absolutePath), fname).open();
-      } else {
-        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       }
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    if (!(await this.exists(getDirPath(dstPath), base))) {
-      await this.createDir(getDirPath(dstPath), base, true);
+    try {
+      if (!(await this.exists(getDirPath(dstPath), base))) {
+        await this.createDir(getDirPath(dstPath), base, true);
+      }
+    } catch (error) {
+      console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
       const prefix = await this.getPrefix(base);
@@ -276,7 +287,7 @@ export const nativeFileSystem: FileSystem = {
   async removeFile(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
-    return remove(fp, baseDir ? { baseDir } : undefined);
+    await remove(fp, baseDir ? { baseDir } : undefined);
   },
   async createDir(path: string, base: BaseDir, recursive = false) {
     const { fp, baseDir } = this.resolvePath(path, base);
@@ -312,10 +323,13 @@ export const nativeFileSystem: FileSystem = {
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;
-          const fileInfo = await stat(filePath, baseDir ? { baseDir } : undefined);
+          const opts = baseDir ? { baseDir } : undefined;
+          const fileSize = await stat(filePath, opts)
+            .then((info) => info.size)
+            .catch(() => 0);
           fileList.push({
             path: relativePath,
-            size: fileInfo.size,
+            size: fileSize,
           });
         }
       }
@@ -332,6 +346,11 @@ export const nativeFileSystem: FileSystem = {
     } catch {
       return false;
     }
+  },
+  async stats(path: string, base: BaseDir) {
+    const { fp, baseDir } = this.resolvePath(path, base);
+
+    return await stat(fp, baseDir ? { baseDir } : undefined);
   },
 };
 
@@ -367,6 +386,7 @@ export class NativeAppService extends BaseAppService {
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
+  override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
 
   private execDir?: string = undefined;
@@ -397,12 +417,12 @@ export class NativeAppService extends BaseAppService {
     await this.runMigrations();
   }
 
-  private CURRENT_MIGRATION_VERSION = 20251029;
-
-  private async runMigrations() {
+  override async runMigrations() {
     try {
       const settings = await this.loadSettings();
       const lastMigrationVersion = settings.migrationVersion || 0;
+
+      await super.runMigrations(lastMigrationVersion);
 
       if (lastMigrationVersion < 20251029) {
         try {

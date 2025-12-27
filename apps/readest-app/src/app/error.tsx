@@ -54,17 +54,27 @@ export default function Error({ error, reset }: ErrorPageProps) {
             )}
           </p>
 
-          <div className='alert alert-error mb-8'>
-            <div className='flex-col items-start text-left'>
+          <div className='alert alert-error mb-8 overflow-hidden'>
+            <div className='w-full min-w-0 flex-col items-start text-left'>
               <h3 className='mb-2 font-bold'>{_('Error Details:')}</h3>
-              <p className='break-words font-mono text-sm'>{error.message}</p>
-              {browserInfo && <p className='mt-2 font-mono text-sm'>Browser: {browserInfo}</p>}
+              <p className='overflow-wrap-anywhere w-full break-words font-mono text-sm'>
+                {error.message}
+              </p>
+              {browserInfo && (
+                <p className='overflow-wrap-anywhere mt-2 w-full break-words font-mono text-sm'>
+                  Browser: {browserInfo}
+                </p>
+              )}
               {error.stack && (
-                <p className='mt-2 whitespace-pre-wrap break-all font-mono text-sm'>
+                <p className='overflow-wrap-anywhere mt-2 w-full whitespace-pre-wrap break-words font-mono text-sm'>
                   {error.stack.split('\n').slice(0, 3).join('\n')}
                 </p>
               )}
-              {error.digest && <p className='mt-2 text-xs opacity-70'>Error ID: {error.digest}</p>}
+              {error.digest && (
+                <p className='overflow-wrap-anywhere mt-2 w-full break-words text-xs opacity-70'>
+                  Error ID: {error.digest}
+                </p>
+              )}
             </div>
           </div>
 

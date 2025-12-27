@@ -74,6 +74,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn iap_is_available(&self) -> crate::Result<IAPIsAvailableResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn iap_initialize(
         &self,
         _payload: IAPInitializeRequest,
@@ -126,6 +130,10 @@ impl<R: Runtime> NativeBridge<R> {
         &self,
         _payload: OpenExternalUrlRequest,
     ) -> crate::Result<OpenExternalUrlResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 

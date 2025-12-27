@@ -42,8 +42,8 @@ export default function UpdateEmailPage() {
         ),
       );
       setEmail('');
-    } catch (err: any) {
-      setError(err.message || _('Failed to update email'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : _('Failed to update email'));
     } finally {
       setLoading(false);
     }

@@ -42,16 +42,17 @@ const TOCView: React.FC<{
   sections?: SectionItem[];
 }> = ({ bookKey, toc, sections }) => {
   const { appService } = useEnv();
-  const { getView, getProgress, getViewState, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const viewSettings = getViewSettings(bookKey)!;
   const progress = getProgress(bookKey);
-  const viewState = getViewState(bookKey);
 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [containerHeight, setContainerHeight] = useState(400);
 
-  const hasToggleExpandRef = useRef(false);
+  const hasInteractedWithTOCRef = useRef(false);
+  const lastInteractionTimeRef = useRef<number>(0);
+  const interactionCooldownMs = 10000;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const listOuterRef = useRef<HTMLDivElement | null>(null);
   const vitualListRef = useRef<VirtualList | null>(null);
@@ -74,6 +75,24 @@ const TOCView: React.FC<{
     },
   });
 
+  const isInCooldown = useCallback(() => {
+    if (!hasInteractedWithTOCRef.current) return false;
+    const now = Date.now();
+    const timeSinceInteraction = now - lastInteractionTimeRef.current;
+    if (timeSinceInteraction >= interactionCooldownMs) {
+      hasInteractedWithTOCRef.current = false;
+      return false;
+    }
+    return true;
+  }, []);
+
+  const handleInteraction = useCallback(() => {
+    setTimeout(() => {
+      hasInteractedWithTOCRef.current = true;
+      lastInteractionTimeRef.current = Date.now();
+    }, 500);
+  }, []);
+
   useEffect(() => {
     const { current: root } = containerRef;
     const { current: virtualOuter } = listOuterRef;
@@ -85,8 +104,14 @@ const TOCView: React.FC<{
           viewport: virtualOuter,
         },
       });
+
+      virtualOuter.addEventListener('scroll', handleInteraction);
+      return () => {
+        virtualOuter.removeEventListener('scroll', handleInteraction);
+      };
     }
-  }, [initialize]);
+    return;
+  }, [initialize, handleInteraction]);
 
   useTextTranslation(
     bookKey,
@@ -118,13 +143,26 @@ const TOCView: React.FC<{
       }
     }
 
+    const staticList = staticListRef.current;
+    let scrollContainer: Element | null = null;
+
+    if (staticList) {
+      scrollContainer = staticList.parentElement;
+      if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', handleInteraction);
+      }
+    }
+
     return () => {
       window.removeEventListener('resize', updateHeight);
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleInteraction);
+      }
     };
-  }, [expandedItems]);
+  }, [expandedItems, handleInteraction]);
 
   const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
   const flatItems = useFlattenedTOC(toc, expandedItems);
@@ -132,19 +170,22 @@ const TOCView: React.FC<{
     return flatItems.findIndex((item) => item.item.href === activeHref);
   }, [flatItems, activeHref]);
 
-  const handleToggleExpand = useCallback((item: TOCItem) => {
-    const itemId = getItemIdentifier(item);
-    hasToggleExpandRef.current = true;
-    setExpandedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  }, []);
+  const handleToggleExpand = useCallback(
+    (item: TOCItem) => {
+      const itemId = getItemIdentifier(item);
+      handleInteraction();
+      setExpandedItems((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemId)) {
+          newSet.delete(itemId);
+        } else {
+          newSet.add(itemId);
+        }
+        return newSet;
+      });
+    },
+    [handleInteraction],
+  );
 
   const handleItemClick = useCallback(
     (item: TOCItem) => {
@@ -207,30 +248,29 @@ const TOCView: React.FC<{
   );
 
   useEffect(() => {
-    if (!progress || viewState?.ttsEnabled) return;
-    if (sideBarBookKey !== bookKey) return;
+    if (!progress) return;
     if (!isSideBarVisible) return;
+    if (sideBarBookKey !== bookKey) return;
+    if (isInCooldown()) return;
 
     const { sectionHref: currentHref } = progress;
     if (currentHref) {
       expandParents(toc, currentHref);
     }
-  }, [toc, progress, viewState, sideBarBookKey, isSideBarVisible, bookKey, expandParents]);
+  }, [toc, progress, sideBarBookKey, isSideBarVisible, bookKey, expandParents, isInCooldown]);
 
   useEffect(() => {
-    if (hasToggleExpandRef.current) {
-      hasToggleExpandRef.current = false;
-      return;
-    }
+    if (isInCooldown()) return;
+
     if (flatItems.length > 0) {
       setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, scrollToActiveItem]);
+  }, [progress, scrollToActiveItem, isInCooldown]);
 
   return sections && sections.length > 256 ? (
     <div
-      className='virtual-list rounded pt-2'
+      className='virtual-list mt-2 rounded'
       data-overlayscrollbars-initialize=''
       ref={containerRef}
     >
@@ -253,7 +293,7 @@ const TOCView: React.FC<{
       </VirtualList>
     </div>
   ) : (
-    <div className='static-list rounded pt-2' ref={staticListRef}>
+    <div className='static-list mt-2 rounded' ref={staticListRef}>
       {flatItems.map((flatItem, index) => (
         <StaticListRow
           key={`static-row-${index}`}

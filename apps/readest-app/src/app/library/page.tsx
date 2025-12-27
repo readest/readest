@@ -15,7 +15,7 @@ import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
-import { getFilename } from '@/utils/path';
+import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
@@ -34,10 +34,13 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
-import { lockScreenOrientation } from '@/utils/bridge';
+import { lockScreenOrientation, selectDirectory } from '@/utils/bridge';
+import { requestStoragePermission } from '@/utils/permission';
+import { SUPPORTED_BOOK_EXTS } from '@/services/constants';
 import {
   tauriHandleClose,
   tauriHandleSetAlwaysOnTop,
@@ -49,6 +52,7 @@ import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
+import { CatalogDialog } from './components/OPDSDialog';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { Toast } from '@/components/Toast';
@@ -86,8 +90,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const _ = useTranslation();
   const { selectFiles } = useFileSelector(appService, _);
   const { safeAreaInsets: insets, isRoundedWindow } = useThemeStore();
+  const { clearBookData } = useBookDataStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
+  const [showCatalogManager, setShowCatalogManager] = useState(
+    searchParams?.get('opds') === 'true',
+  );
   const [loading, setLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -139,7 +147,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       setSettingsDialogOpen(true);
     },
     onOpenBooks: () => {
-      handleImportBooks();
+      handleImportBooksFromFiles();
     },
   });
 
@@ -264,6 +272,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     return false;
   };
 
+  const handleShowOPDSDialog = () => {
+    setShowCatalogManager(true);
+  };
+
+  const handleDismissOPDSDialog = () => {
+    setShowCatalogManager(false);
+    const params = new URLSearchParams(searchParams?.toString());
+    params.delete('opds');
+    navigateToLibrary(router, `${params.toString()}`);
+  };
+
   useEffect(() => {
     if (pendingNavigationBookIds) {
       const bookIds = pendingNavigationBookIds;
@@ -317,7 +336,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
 
     const handleOpenWithBooks = async (appService: AppService, library: Book[]) => {
-      const openWithFiles = (await parseOpenWithFiles()) || [];
+      const openWithFiles = (await parseOpenWithFiles(appService)) || [];
 
       if (openWithFiles.length > 0) {
         return await processOpenWithFiles(appService, openWithFiles, library);
@@ -362,6 +381,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setLoading(true);
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
+    const successfulImports: string[] = [];
     const errorMap: [string, string][] = [
       ['No chapters detected', _('No chapters detected')],
       ['Failed to parse EPUB', _('Failed to parse the EPUB file')],
@@ -376,14 +396,24 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       if (!file) return;
       try {
         const book = await appService?.importBook(file, library);
+        const { path, basePath } = selectedFile;
         if (book && groupId) {
           book.groupId = groupId;
           book.groupName = getGroupName(groupId);
+          await updateBook(envConfig, book);
+        } else if (book && path && basePath) {
+          const rootPath = getDirPath(basePath);
+          const groupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
+          book.groupName = groupName;
+          book.groupId = getGroupId(groupName);
           await updateBook(envConfig, book);
         }
         if (user && book && !book.uploadedAt && settings.autoUpload) {
           console.log('Uploading book:', book.title);
           handleBookUpload(book, false);
+        }
+        if (book) {
+          successfulImports.push(book.title);
         }
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
@@ -413,7 +443,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           _('Failed to import book(s): {{filenames}}', {
             filenames: listFormater(false).format(filenames),
           }) + (errorMessage ? `\n${errorMessage}` : ''),
+        timeout: 5000,
         type: 'error',
+      });
+    } else if (successfulImports.length > 0) {
+      eventDispatcher.dispatch('toast', {
+        message: _('Successfully imported {{count}} book(s)', {
+          count: successfulImports.length,
+        }),
+        timeout: 2000,
+        type: 'success',
       });
     }
 
@@ -529,6 +568,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       try {
         await appService?.deleteBook(book, deleteAction);
         await updateBook(envConfig, book);
+        clearBookData(book.hash);
         if (syncBooks) pushLibrary();
         eventDispatcher.dispatch('toast', {
           type: 'info',
@@ -577,14 +617,48 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     await updateBook(envConfig, book);
   };
 
-  const handleImportBooks = async () => {
+  const handleImportBooksFromFiles = async () => {
     setIsSelectMode(false);
-    console.log('Importing books...');
+    console.log('Importing books from files...');
     selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
       const groupId = searchParams?.get('group') || '';
       importBooks(result.files, groupId);
     });
+  };
+
+  const handleImportBooksFromDirectory = async () => {
+    if (!appService || !isTauriAppPlatform()) return;
+
+    setIsSelectMode(false);
+    console.log('Importing books from directory...');
+    let importDirectory: string | undefined = '';
+    if (appService.isAndroidApp) {
+      if (!(await requestStoragePermission())) return;
+      const response = await selectDirectory();
+      importDirectory = response.path;
+    } else {
+      const selectedDir = await appService.selectDirectory?.('read');
+      importDirectory = selectedDir;
+    }
+    if (!importDirectory) {
+      console.log('No directory selected');
+      return;
+    }
+    const files = await appService.readDirectory(importDirectory, 'None');
+    const supportedFiles = files.filter((file) => {
+      const ext = file.path.split('.').pop()?.toLowerCase() || '';
+      return SUPPORTED_BOOK_EXTS.includes(ext);
+    });
+    const toImportFiles = await Promise.all(
+      supportedFiles.map(async (file) => {
+        return {
+          path: await joinPaths(importDirectory, file.path),
+          basePath: importDirectory,
+        };
+      }),
+    );
+    importBooks(toImportFiles, undefined);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {
@@ -627,7 +701,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
-    return <div className={clsx('h-[100vh]', !appService?.isLinuxApp && 'bg-base-200')} />;
+    return <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
 
   const showBookshelf = libraryLoaded || libraryBooks.length > 0;
@@ -637,7 +711,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ref={pageRef}
       aria-label='Your Library'
       className={clsx(
-        'library-page text-base-content flex h-[100vh] select-none flex-col overflow-hidden',
+        'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
         viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
@@ -651,7 +725,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         <LibraryHeader
           isSelectMode={isSelectMode}
           isSelectAll={isSelectAll}
-          onImportBooks={handleImportBooks}
+          onImportBooksFromFiles={handleImportBooksFromFiles}
+          onImportBooksFromDirectory={
+            appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
+          }
+          onOpenCatalogManager={handleShowOPDSDialog}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
@@ -736,7 +814,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 isSelectMode={isSelectMode}
                 isSelectAll={isSelectAll}
                 isSelectNone={isSelectNone}
-                handleImportBooks={handleImportBooks}
+                handleImportBooks={handleImportBooksFromFiles}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 handleBookDelete={handleBookDelete('both')}
@@ -758,7 +836,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                     'Welcome to your library. You can import your books here and read them anytime.',
                   )}
                 </p>
-                <button className='btn btn-primary rounded-xl' onClick={handleImportBooks}>
+                <button className='btn btn-primary rounded-xl' onClick={handleImportBooksFromFiles}>
                   {_('Import Books')}
                 </button>
               </div>
@@ -782,6 +860,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <UpdaterWindow />
       <MigrateDataWindow />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
+      {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
       <Toast />
     </div>
   );
@@ -789,7 +868,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
 const LibraryPage = () => {
   return (
-    <Suspense fallback={<div className='h-[100vh]' />}>
+    <Suspense fallback={<div className='full-height' />}>
       <LibraryPageWithSearchParams />
     </Suspense>
   );

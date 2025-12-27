@@ -1,4 +1,5 @@
 import { isWebAppPlatform, hasCli } from '@/services/environment';
+import { AppService } from '@/types/system';
 import { getCurrent } from '@tauri-apps/plugin-deep-link';
 
 declare global {
@@ -35,14 +36,18 @@ const parseCLIOpenWithFiles = async () => {
   return files;
 };
 
-const parseIntentOpenWithFiles = async () => {
+const parseIntentOpenWithFiles = async (appService: AppService | null) => {
   const urls = await getCurrent();
   if (urls && urls.length > 0) {
     console.log('Intent Open with URL:', urls);
     return urls
       .map((url) => {
         if (url.startsWith('file://')) {
-          return decodeURI(url.replace('file://', ''));
+          if (appService?.isIOSApp) {
+            return decodeURI(url);
+          } else {
+            return decodeURI(url.replace('file://', ''));
+          }
         } else if (url.startsWith('content://')) {
           return url;
         } else {
@@ -55,7 +60,7 @@ const parseIntentOpenWithFiles = async () => {
   return null;
 };
 
-export const parseOpenWithFiles = async () => {
+export const parseOpenWithFiles = async (appService: AppService | null) => {
   if (isWebAppPlatform()) return [];
 
   let files = parseWindowOpenWithFiles();
@@ -63,7 +68,7 @@ export const parseOpenWithFiles = async () => {
     files = await parseCLIOpenWithFiles();
   }
   if (!files || files.length === 0) {
-    files = await parseIntentOpenWithFiles();
+    files = await parseIntentOpenWithFiles(appService);
   }
   return files;
 };

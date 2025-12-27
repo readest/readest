@@ -35,6 +35,10 @@ interface AndroidPurchase {
 
 export type IAPPurchase = IAPPurchaseBase & (IOSPurchase | AndroidPurchase);
 
+interface IAPIsAvailableResponse {
+  available: boolean;
+}
+
 interface InitializeRequest {
   publicKey?: string;
 }
@@ -64,6 +68,11 @@ interface RestorePurchasesResponse {
 }
 
 export class IAPService {
+  static async isAvailable(): Promise<boolean> {
+    const result = await invoke<IAPIsAvailableResponse>('plugin:native-bridge|iap_is_available');
+    return result.available;
+  }
+
   async initialize(): Promise<boolean> {
     const result = await invoke<InitializeResponse>('plugin:native-bridge|iap_initialize', {
       payload: {} as InitializeRequest,

@@ -2,13 +2,13 @@
 import Stripe from 'stripe';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
-import { supabase } from '@/utils/supabase';
 import { PlanType } from '@/types/quota';
-import Spinner from '@/components/Spinner';
 import { VerifiedIAP } from '@/libs/payment/iap/types';
+import Spinner from '@/components/Spinner';
 
 const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
 const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
@@ -34,6 +34,7 @@ const SuccessPageWithSearchParams = () => {
   const [retryCount, setRetryCount] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { refresh } = useAuth();
   const payment = searchParams?.get('payment');
   const platform = searchParams?.get('platform');
   const sessionId = searchParams?.get('session_id');
@@ -86,9 +87,7 @@ const SuccessPageWithSearchParams = () => {
         currency: session.currency || undefined,
       });
 
-      try {
-        await supabase.auth.refreshSession();
-      } catch {}
+      refresh();
     } catch (error) {
       console.error('Failed to fetch session status:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -138,9 +137,7 @@ const SuccessPageWithSearchParams = () => {
         planType: purchase.planType,
       });
 
-      try {
-        await supabase.auth.refreshSession();
-      } catch {}
+      refresh();
     } catch (error) {
       console.error('Failed to verify IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -198,9 +195,7 @@ const SuccessPageWithSearchParams = () => {
         currency: purchase.currency,
       });
 
-      try {
-        await supabase.auth.refreshSession();
-      } catch {}
+      refresh();
     } catch (error) {
       console.error('Failed to verify Android IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));

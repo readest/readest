@@ -5,7 +5,7 @@
   <h1>Readest</h1>
   <br>
 
-[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
+[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 16](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
 
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
@@ -14,7 +14,7 @@
 [![Discord][badge-discord]][link-discord]
 [![Reddit][badge-reddit]][link-reddit]
 [![AGPL Licence][badge-license]](LICENSE)
-[![Language Coverage][badge-language-coverage]]()
+[![Language Coverage][badge-language-coverage]][link-locales]
 [![Donate][badge-donate]][link-donate]
 [![Latest release][badge-release]][link-gh-releases]
 [![Last commit][badge-last-commit]][link-gh-commits]
@@ -61,6 +61,7 @@
 | **Translate with DeepL and Yandex**     | From a single sentence to the entire book—translate instantly.                                                 | ✅         |
 | **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                                | ✅         |
 | **Library Management**                  | Organize, sort, and manage your entire ebook library.                                                          | ✅         |
+| **OPDS/Calibre Integration**            | Integrate OPDS/Calibre to access online libraries and catalogs.                                                | ✅         |
 | **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                                     | ✅         |
 
 ## Planned Features
@@ -72,7 +73,6 @@
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🛠           |
 | **AI-Powered Summarization**               | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
-| **Support OPDS/Calibre**                   | Integrate OPDS/Calibre to access online libraries and catalogs.                            | 🔄           |
 | **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                        | 🔄           |
 | **Handwriting Annotations**                | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
 | **Advanced Reading Stats**                 | Track reading time, pages read, and more for detailed insights.                            | 🔄           |
@@ -111,6 +111,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 - macOS / iOS / iPadOS : Search and install **Readest** on the [App Store][link-appstore], _also_ available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
 - Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
+- Linux users can also install [Readest on Flathub][link-flathub].
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
 
 ## Requirements
@@ -144,8 +145,8 @@ cd readest
 # might need to rerun this when code is updated
 git submodule update --init --recursive
 pnpm install
-# copy pdfjs-dist to Next.js public directory
-pnpm --filter @readest/readest-app setup-pdfjs
+# copy vendors dist libs to public directory
+pnpm --filter @readest/readest-app setup-vendors
 ```
 
 ### 3. Verify Dependencies Installation
@@ -308,10 +309,11 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-donate]: https://donate.readest.com/badge.svg
 [badge-deepwiki]: https://deepwiki.com/badge.svg
 [badge-reddit]: https://img.shields.io/reddit/subreddit-subscribers/readest?style=flat&logo=reddit&color=F37E41
-[badge-language-coverage]: https://img.shields.io/badge/coverage-52%25%20population%20🌍-green
+[badge-language-coverage]: https://img.shields.io/badge/coverage-53%25%20population%20🌍-green
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
+[link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
 [link-web-readest]: https://web.readest.com
 [link-gh-releases]: https://github.com/readest/readest/releases
 [link-gh-commits]: https://github.com/readest/readest/commits/main
@@ -322,5 +324,6 @@ The following fonts are utilized in this software, either bundled within the app
 [link-koreader]: https://github.com/koreader/koreader
 [link-hellogithub]: https://hellogithub.com/repository/8a5b6ade2aee461a8bd94e59200682a7
 [link-deepwiki]: https://deepwiki.com/readest/readest
+[link-locales]: https://github.com/readest/readest/tree/main/apps/readest-app/public/locales
 [link-kosync-wiki]: https://github.com/readest/readest/wiki/Sync-with-Koreader-devices
 [link-reddit]: https://reddit.com/r/readest/

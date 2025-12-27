@@ -61,16 +61,16 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         style={
           isVertical
             ? {
-                top: `${contentInsets.top * 1.5}px`,
+                top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
                   : `calc(${Math.max(0, contentInsets.right - 32)}px)`,
-                width: showDoubleBorder ? '32px' : `${horizontalGap}%`,
+                width: showDoubleBorder ? '32px' : `${contentInsets.right}px`,
                 height: `calc(100% - ${contentInsets.top + contentInsets.bottom}px)`,
               }
             : {
                 top: `${topInset}px`,
-                paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left}px)`,
+                paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
                 width: '100%',
               }
         }

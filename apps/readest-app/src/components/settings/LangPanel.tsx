@@ -8,12 +8,10 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { getTranslators } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
-import {
-  RELOAD_BEFORE_SAVED_TIMEOUT_MS,
-  TRANSLATED_LANGS,
-  TRANSLATOR_LANGS,
-} from '@/services/constants';
+import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
+import { ConvertChineseVariant } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import { isCJKEnv } from '@/utils/misc';
 import Select from '@/components/Select';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -21,7 +19,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { token } = useAuth();
   const { envConfig } = useEnv();
   const { settings, applyUILanguage } = useSettingsStore();
-  const { getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
+  const { getView, getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
+  const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [uiLanguage, setUILanguage] = useState(viewSettings.uiLanguage);
@@ -30,6 +29,12 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang);
   const [showTranslateSource, setShowTranslateSource] = useState(viewSettings.showTranslateSource);
   const [ttsReadAloudText, setTtsReadAloudText] = useState(viewSettings.ttsReadAloudText);
+  const [replaceQuotationMarks, setReplaceQuotationMarks] = useState(
+    viewSettings.replaceQuotationMarks,
+  );
+  const [convertChineseVariant, setConvertChineseVariant] = useState(
+    viewSettings.convertChineseVariant,
+  );
 
   const resetToDefaults = useResetViewSettings();
 
@@ -41,6 +46,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       translateTargetLang: setTranslateTargetLang,
       showTranslateSource: setShowTranslateSource,
       ttsReadAloudText: setTtsReadAloudText,
+      replaceQuotationMarks: setReplaceQuotationMarks,
     });
   };
 
@@ -143,17 +149,33 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   useEffect(() => {
     if (translationEnabled === viewSettings.translationEnabled) return;
-    saveViewSettings(envConfig, bookKey, 'translationEnabled', translationEnabled, true, false);
-    if (!showTranslateSource && translationEnabled) {
-      setTimeout(() => recreateViewer(envConfig, bookKey), RELOAD_BEFORE_SAVED_TIMEOUT_MS);
-    }
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'translationEnabled',
+      translationEnabled,
+      true,
+      false,
+    ).then(() => {
+      if (!showTranslateSource && translationEnabled) {
+        recreateViewer(envConfig, bookKey);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translationEnabled]);
 
   useEffect(() => {
     if (showTranslateSource === viewSettings.showTranslateSource) return;
-    saveViewSettings(envConfig, bookKey, 'showTranslateSource', showTranslateSource, false, false);
-    setTimeout(() => recreateViewer(envConfig, bookKey), RELOAD_BEFORE_SAVED_TIMEOUT_MS);
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'showTranslateSource',
+      showTranslateSource,
+      false,
+      false,
+    ).then(() => {
+      recreateViewer(envConfig, bookKey);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showTranslateSource]);
 
@@ -162,6 +184,61 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     saveViewSettings(envConfig, bookKey, 'ttsReadAloudText', ttsReadAloudText, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsReadAloudText]);
+
+  useEffect(() => {
+    if (replaceQuotationMarks === viewSettings.replaceQuotationMarks) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'replaceQuotationMarks',
+      replaceQuotationMarks,
+      false,
+      false,
+    ).then(() => {
+      recreateViewer(envConfig, bookKey);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replaceQuotationMarks]);
+
+  const getConvertModeOptions: () => { value: ConvertChineseVariant; label: string }[] = () => {
+    return [
+      { value: 'none', label: _('No Conversion') },
+      { value: 's2t', label: _('Simplified to Traditional') },
+      { value: 't2s', label: _('Traditional to Simplified') },
+      { value: 's2tw', label: _('Simplified to Traditional (Taiwan)') },
+      { value: 's2hk', label: _('Simplified to Traditional (Hong Kong)') },
+      { value: 's2twp', label: _('Simplified to Traditional (Taiwan), with phrases') },
+      { value: 'tw2s', label: _('Traditional (Taiwan) to Simplified') },
+      { value: 'hk2s', label: _('Traditional (Hong Kong) to Simplified') },
+      { value: 'tw2sp', label: _('Traditional (Taiwan) to Simplified, with phrases') },
+    ];
+  };
+
+  const getConvertModeOption = () => {
+    const value = convertChineseVariant;
+    const availableOptions = getConvertModeOptions();
+    return availableOptions.find((o) => o.value === value) || availableOptions[0]!;
+  };
+
+  const handleSelectConvertMode = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value as ConvertChineseVariant;
+    setConvertChineseVariant(option);
+  };
+
+  useEffect(() => {
+    if (convertChineseVariant === viewSettings.convertChineseVariant) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'convertChineseVariant',
+      convertChineseVariant,
+      false,
+      false,
+    ).then(() => {
+      recreateViewer(envConfig, bookKey);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convertChineseVariant]);
 
   return (
     <div className={clsx('my-4 w-full space-y-6')}>
@@ -192,6 +269,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
                 className='toggle'
                 checked={translationEnabled}
                 onChange={() => setTranslationEnabled(!translationEnabled)}
+                disabled={!bookKey}
               />
             </div>
 
@@ -234,6 +312,46 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           </div>
         </div>
       </div>
+
+      {(isCJKEnv() || view?.language.isCJK) && (
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Punctuation')}</h2>
+          <div className='card border-base-200 bg-base-100 border shadow'>
+            <div className='divide-base-200'>
+              <div className='config-item !h-16'>
+                <div className='flex flex-col gap-1'>
+                  <span className=''>{_('Replace Quotation Marks')}</span>
+                  <span className='text-xs'>{_('Enabled only in vertical layout.')}</span>
+                </div>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={replaceQuotationMarks}
+                  onChange={() => setReplaceQuotationMarks(!replaceQuotationMarks)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(isCJKEnv() || view?.language.isCJK) && (
+        <div className='w-full'>
+          <h2 className='mb-2 font-medium'>{_('Convert Simplified and Traditional Chinese')}</h2>
+          <div className='card border-base-200 bg-base-100 border shadow'>
+            <div className='divide-base-200'>
+              <div className='config-item'>
+                <span className=''>{_('Convert Mode')}</span>
+                <Select
+                  value={getConvertModeOption().value}
+                  onChange={handleSelectConvertMode}
+                  options={getConvertModeOptions()}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -204,10 +204,3 @@ async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
       .eq('id', subscriptionData.user_id);
   }
 }
-
-// This is needed to parse the body as a stream for the webhook signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

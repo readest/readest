@@ -155,6 +155,22 @@ export interface BookFont {
   fontWeight: number;
 }
 
+export type ConvertChineseVariant =
+  | 'none'
+  | 's2t'
+  | 't2s'
+  | 's2tw'
+  | 's2hk'
+  | 's2twp'
+  | 'tw2s'
+  | 'hk2s'
+  | 'tw2sp';
+
+export interface BookLanguage {
+  replaceQuotationMarks: boolean;
+  convertChineseVariant: ConvertChineseVariant;
+}
+
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -169,7 +185,9 @@ export interface ViewConfig {
   showRemainingPages: boolean;
   showProgressInfo: boolean;
   showBarsOnScroll: boolean;
+  showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
+  progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
 }
 
 export interface TTSConfig {
@@ -192,14 +210,36 @@ export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
 
+export type ProofreadScope = 'selection' | 'book' | 'library';
+
+export interface ProofreadRule {
+  id: string;
+  scope: ProofreadScope;
+  pattern: string;
+  replacement: string;
+  cfi?: string;
+  sectionHref?: string;
+  enabled: boolean;
+  isRegex: boolean;
+  order: number; // Lower numbers apply first
+  wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
+  caseSensitive?: boolean; // Case-sensitive matching (default true)
+}
+
+export interface ProofreadRulesConfig {
+  proofreadRules?: ProofreadRule[];
+}
+
 export interface ViewSettings
   extends BookLayout,
     BookStyle,
     BookFont,
+    BookLanguage,
     ViewConfig,
     TTSConfig,
     TranslatorConfig,
-    ScreenConfig {}
+    ScreenConfig,
+    ProofreadRulesConfig {}
 
 export interface BookProgress {
   location: string;
@@ -275,5 +315,4 @@ export interface BooksGroup {
 export interface BookContent {
   book: Book;
   file: File;
-  config: BookConfig;
 }

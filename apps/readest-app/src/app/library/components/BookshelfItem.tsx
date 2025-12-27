@@ -20,8 +20,6 @@ import { md5Fingerprint } from '@/utils/md5';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 
-export type BookshelfItem = Book | BooksGroup;
-
 export const generateBookshelfItems = (
   books: Book[],
   parentGroupName: string,
@@ -51,7 +49,7 @@ export const generateBookshelfItems = (
       booksGroup.books.push(book);
       booksGroup.updatedAt = Math.max(booksGroup.updatedAt, book.updatedAt);
     } else {
-      let groupName = fullGroupName;
+      const groupName = fullGroupName;
       acc.push({
         id: groupName === parentGroupName ? BOOK_UNGROUPED_ID : md5Fingerprint(groupName),
         name: groupName === parentGroupName ? BOOK_UNGROUPED_NAME : groupName,
@@ -76,13 +74,14 @@ export const generateBookshelfItems = (
 
 interface BookshelfItemProps {
   mode: LibraryViewModeType;
-  item: BookshelfItem;
+  item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
   isSelectMode: boolean;
   itemSelected: boolean;
   transferProgress: number | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
+  handleGroupBooks: () => void;
   handleBookDownload: (book: Book) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
@@ -99,6 +98,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   transferProgress,
   setLoading,
   toggleSelection,
+  handleGroupBooks,
   handleBookUpload,
   handleBookDownload,
   handleSetSelectMode,
@@ -190,6 +190,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection(book.hash);
       },
     });
+    const groupBooksMenuItem = await MenuItem.new({
+      text: _('Group Books'),
+      action: async () => {
+        if (!isSelectMode) handleSetSelectMode(true);
+        if (!itemSelected) {
+          toggleSelection(book.hash);
+        }
+        handleGroupBooks();
+      },
+    });
     const showBookInFinderMenuItem = await MenuItem.new({
       text: _(fileRevealLabel),
       action: async () => {
@@ -223,6 +233,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     });
     const menu = await Menu.new();
     menu.append(selectBookMenuItem);
+    menu.append(groupBooksMenuItem);
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
     if (book.uploadedAt && !book.downloadedAt) {
@@ -244,6 +255,16 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection(group.id);
       },
     });
+    const groupBooksMenuItem = await MenuItem.new({
+      text: _('Group Books'),
+      action: async () => {
+        if (!isSelectMode) handleSetSelectMode(true);
+        if (!itemSelected) {
+          toggleSelection(group.id);
+        }
+        handleGroupBooks();
+      },
+    });
     const deleteGroupMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
@@ -252,6 +273,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     });
     const menu = await Menu.new();
     menu.append(selectGroupMenuItem);
+    menu.append(groupBooksMenuItem);
     menu.append(deleteGroupMenuItem);
     menu.popup();
   };

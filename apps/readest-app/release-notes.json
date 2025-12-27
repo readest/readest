@@ -1,5 +1,62 @@
 {
   "releases": {
+    "0.9.96": {
+      "date": "2025-12-19",
+      "notes": [
+        "TTS: Resolved an issue where Edge TTS was blocked in certain regions",
+        "OPDS: Improved compatibility with older versions of Calibre Web",
+        "OPDS: Added an instant search bar for faster browsing in OPDS catalogs",
+        "OPDS: Added a curated book catalog from Standard Ebooks",
+        "Bookshelf: Added a “Group Books” action to the context menu",
+        "Comics: Fixed layout issues to improve comic book reading",
+        "Layout: Footnote popups now adapt correctly to different screen sizes",
+        "Layout: Fixed an issue where the maximum inline width was not applied to EPUBs",
+        "Sync: Improved file downloading by correctly handling special characters in filenames",
+        "UI: Added an option to temporarily dismiss the reading progress bar",
+        "Settings: Screen brightness adjustments now apply only to the reader view",
+        "iOS: You can now open files directly in Readest from the Files app",
+        "macOS: Added a global menu option to open files with Readest"
+      ]
+    },
+    "0.9.95": {
+      "date": "2025-12-08",
+      "notes": [
+        "OPDS: You can now search, browse, and download ebooks directly from OPDS catalogs",
+        "OPDS: Improved compatibility with Calibre Web for reliable downloads",
+        "OPDS: Fixed an issue where book covers from self-hosted Calibre OPDS servers did not display correctly",
+        "Cloud Storage: You can view and delete files stored in your cloud storage directly from the app",
+        "Bookshelf: Added support for importing books from a folder recursively",
+        "Bookshelf: You can now rename your bookshelf groups",
+        "EPUB: Added support for SVG covers from Standard Ebooks",
+        "Annotations: Keyboard shortcuts no longer copy selected text into the notebook",
+        "Footnotes: Footnote popups now scale properly on small screens",
+        "Touch/Styli: Removed the context menu for smoother interaction on touch and stylus devices",
+        "Layout: Devices with unfoldable screens now automatically switch to a two-column layout",
+        "PDF: Improved zoomed-in navigation and hand-tool behavior for smoother page navigation",
+        "Android: Fixed highlighting of the current sentence when using native Android text-to-speech",
+        "Android: Back button handling now works correctly on Android 15 and above",
+        "Android: You can now open files shared from other apps"
+      ]
+    },
+    "0.9.94": {
+      "date": "2025-12-02",
+      "notes": [
+        "OPDS: You can now browse and download ebooks directly from OPDS catalogs",
+        "PDF: Added a hand-tool mode that makes navigating PDF pages easier",
+        "Covers: You can now choose a folder to save the latest book cover image",
+        "CJK: Added one-tap conversion between Simplified and Traditional Chinese",
+        "Shortcuts: Use Ctrl + mouse wheel to quickly zoom in or out",
+        "Library: Added a new option to adjust cover sizes in grid view",
+        "Windows: Added Ebook thumbnails with book covers in Windows Explorer",
+        "TTS: Fixed an issue where the page would scroll when showing the annotator",
+        "Annotations: Resolved layout shifts when selecting text in paginated mode on Android",
+        "Files: Improved backup handling to prevent file corruption",
+        "Layout: Fixed text clipping caused by negative indents",
+        "E-ink: Improved sidebar and notebook background colors for e-ink devices",
+        "Android: The Back button now works properly in menus, dialogs, and alerts",
+        "iOS: Fixed occasional failures when opening books on older iOS versions (16.4 and below)"
+      ]
+    },
     "0.9.93": {
       "date": "2025-11-20",
       "notes": [

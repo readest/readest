@@ -1,6 +1,6 @@
 name = "readest-web"
 main = ".open-next/worker.js"
-compatibility_date = "2025-02-04"
+compatibility_date = "2025-11-17"
 compatibility_flags = ["nodejs_compat"]
 
 [observability]

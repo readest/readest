@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -16,6 +16,8 @@ import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { Overlay } from '@/components/Overlay';
+import { saveSysSettings } from '@/helpers/settings';
+import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
@@ -50,6 +52,15 @@ const Notebook: React.FC = ({}) => {
     }
   };
 
+  const handleHideNotebook = useCallback(() => {
+    if (!isNotebookPinned) {
+      setNotebookVisible(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNotebookPinned]);
+
+  useShortcuts({ onEscape: handleHideNotebook }, [handleHideNotebook]);
+
   useEffect(() => {
     if (isNotebookVisible) {
       updateAppTheme('base-200');
@@ -78,7 +89,9 @@ const Notebook: React.FC = ({}) => {
 
   const handleTogglePin = () => {
     toggleNotebookPin();
-    settings.globalReadSettings.isNotebookPinned = !isNotebookPinned;
+    const globalReadSettings = settings.globalReadSettings;
+    const newGlobalReadSettings = { ...globalReadSettings, isNotebookPinned: !isNotebookPinned };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
   const handleClickOverlay = () => {
@@ -201,15 +214,19 @@ const Notebook: React.FC = ({}) => {
   return isNotebookVisible ? (
     <>
       {!isNotebookPinned && (
-        <Overlay className='z-[45] bg-black/20' onDismiss={handleClickOverlay} />
+        <Overlay
+          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/20')}
+          onDismiss={handleClickOverlay}
+        />
       )}
       <div
         className={clsx(
-          'notebook-container bg-base-200 right-0 flex min-w-60 select-none flex-col',
-          'font-sans text-base font-normal sm:text-sm',
-          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
+          'notebook-container right-0 flex min-w-60 select-none flex-col',
+          'full-height font-sans text-base font-normal sm:text-sm',
+          viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
+          !isNotebookPinned && viewSettings?.isEink && 'border-base-content border-s',
         )}
         role='group'
         aria-label={_('Notebook')}

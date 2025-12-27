@@ -129,22 +129,22 @@ export const useBooksSync = () => {
     if (newBooks.length > 0) {
       setIsSyncing(true);
     }
-
-    const batchSize = 10;
-    for (let i = 0; i < newBooks.length; i += batchSize) {
-      const batch = newBooks.slice(i, i + batchSize);
-      await appService?.downloadBookCovers(batch);
-      await Promise.all(batch.map(processNewBook));
-      const progress = Math.min((i + batchSize) / newBooks.length, 1);
-      setLibrary([...updatedLibrary]);
-      setSyncProgress(progress);
-    }
-
-    setLibrary(updatedLibrary);
-    appService?.saveLibraryBooks(updatedLibrary);
-
-    if (newBooks.length > 0) {
-      setIsSyncing(false);
+    try {
+      const batchSize = 10;
+      for (let i = 0; i < newBooks.length; i += batchSize) {
+        const batch = newBooks.slice(i, i + batchSize);
+        await appService?.downloadBookCovers(batch);
+        await Promise.all(batch.map(processNewBook));
+        const progress = Math.min((i + batchSize) / newBooks.length, 1);
+        setLibrary([...updatedLibrary]);
+        setSyncProgress(progress);
+      }
+      setLibrary(updatedLibrary);
+      appService?.saveLibraryBooks(updatedLibrary);
+    } finally {
+      if (newBooks.length > 0) {
+        setIsSyncing(false);
+      }
     }
   };
 

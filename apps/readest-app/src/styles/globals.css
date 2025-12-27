@@ -53,11 +53,29 @@ body {
   }
 }
 
+.full-height {
+  height: -webkit-fill-available;
+}
+
+@supports (height: 100dvh) {
+  .full-height {
+    height: 100dvh;
+  }
+}
+
+:root.edge-to-edge .full-height {
+  height: 100vh !important;
+}
+
 foliate-view {
   display: block;
   width: 100%;
   height: 100%;
   border: none;
+}
+
+foliate-fxl {
+  overflow: scroll;
 }
 
 @keyframes scaleUpAndDown {
@@ -233,6 +251,10 @@ foliate-view {
   @apply hover:bg-base-100/50;
 }
 
+.config-item > span {
+  @apply line-clamp-2;
+}
+
 .collapse-arrow > .collapse-title:after {
   top: var(--top-override, default-value);
   inset-inline-end: var(--end-override, default-value);
@@ -351,6 +373,16 @@ foliate-view {
 
 .drop-zone.drag-over .drop-indicator {
   display: block;
+}
+
+.touch-target {
+  position: relative;
+}
+
+.touch-target::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
 }
 
 .no-context-menu {

@@ -6,21 +6,25 @@ extern crate cocoa;
 #[macro_use]
 extern crate objc;
 
+#[cfg(target_os = "windows")]
+mod windows;
+
 use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
-#[cfg(desktop)]
 use std::path::PathBuf;
-#[cfg(desktop)]
-use tauri::{AppHandle, Listener, Manager, Url};
-#[cfg(desktop)]
+use tauri::{AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
 
+#[cfg(desktop)]
+use tauri::{Listener, Url};
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
+#[cfg(target_os = "android")]
+use tauri_plugin_native_bridge::register_select_directory_callback;
 #[cfg(target_os = "android")]
 use tauri_plugin_native_bridge::{NativeBridgeExt, OpenExternalUrlRequest};
 use tauri_plugin_oauth::start;
@@ -46,7 +50,6 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
-#[cfg(desktop)]
 fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
@@ -133,7 +136,7 @@ fn get_executable_dir() -> String {
 
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
-struct Payload {
+struct SingleInstancePayload {
     args: Vec<String>,
     cwd: String,
 }
@@ -141,6 +144,7 @@ struct Payload {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_websocket::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![
@@ -176,7 +180,7 @@ pub fn run() {
         if !files.is_empty() {
             allow_file_in_scopes(app, files.clone());
         }
-        app.emit("single-instance", Payload { args: argv, cwd })
+        app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
             .unwrap();
     }));
 
@@ -219,6 +223,11 @@ pub fn run() {
             {
                 allow_dir_in_scopes(app.handle(), &PathBuf::from(get_executable_dir()));
             }
+
+            #[cfg(target_os = "android")]
+            register_select_directory_callback(app.handle(), move |app, path| {
+                allow_dir_in_scopes(app, path);
+            });
 
             #[cfg(desktop)]
             {
@@ -268,7 +277,9 @@ pub fn run() {
                 .initialization_script(
                     r#"
                         window.addEventListener('DOMContentLoaded', function() {
+                            document.documentElement.classList.add('edge-to-edge');
                             const isTauriLocal = window.location.protocol === 'tauri:' ||
+                                                window.location.protocol === 'about:' ||
                                                 window.location.hostname === 'tauri.localhost';
                             const needsSafeArea = !isTauriLocal;
                             if (needsSafeArea && !document.getElementById('safe-area-style')) {

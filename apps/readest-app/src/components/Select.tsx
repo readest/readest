@@ -26,7 +26,10 @@ export default function Select({
       value={value}
       onChange={onChange}
       onKeyDown={(e) => e.stopPropagation()}
-      className={clsx('select bg-base-200 h-8 min-h-8 rounded-md border-none text-sm', className)}
+      className={clsx(
+        'select bg-base-200 h-8 min-h-8 max-w-[60%] truncate rounded-md border-none text-sm',
+        className,
+      )}
       disabled={disabled}
       style={{
         textAlignLast: 'end',

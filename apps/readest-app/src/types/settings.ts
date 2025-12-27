@@ -2,6 +2,7 @@ import { CustomTheme } from '@/styles/themes';
 import { CustomFont } from '@/styles/fonts';
 import { CustomTexture } from '@/styles/textures';
 import { HighlightColor, HighlightStyle, ViewSettings } from './book';
+import { OPDSCatalog } from './opds';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -57,13 +58,17 @@ export interface SystemSettings {
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;
   savedBookCoverForLockScreen: string;
+  savedBookCoverForLockScreenPath: string;
   telemetryEnabled: boolean;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
   libraryCoverFit: LibraryCoverFitType;
+  libraryAutoColumns: boolean;
+  libraryColumns: number;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
+  opdsCatalogs: OPDSCatalog[];
 
   kosync: KOSyncSettings;
 

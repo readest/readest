@@ -25,6 +25,7 @@ const HIGHLIGHT_KEY = 'tts-highlight';
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
   view: FoliateView;
+  isAuthenticated: boolean = false;
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
@@ -43,7 +44,7 @@ export class TTSController extends EventTarget {
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
 
-  constructor(appService: AppService | null, view: FoliateView) {
+  constructor(appService: AppService | null, view: FoliateView, isAuthenticated: boolean = false) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this);
@@ -54,6 +55,7 @@ export class TTSController extends EventTarget {
     this.ttsClient = this.ttsWebClient;
     this.appService = appService;
     this.view = view;
+    this.isAuthenticated = isAuthenticated;
   }
 
   async init() {

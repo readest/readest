@@ -1,4 +1,4 @@
-import withPWAInit from '@ducanh2912/next-pwa';
+import withSerwistInit from '@serwist/next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const isDev = process.env['NODE_ENV'] === 'development';
@@ -27,12 +27,12 @@ const nextConfig = {
   assetPrefix: '',
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
+  turbopack: {},
   transpilePackages: !isDev
     ? [
         'i18next-browser-languagedetector',
         'react-i18next',
         'i18next',
-        '@ducanh2912/next-pwa',
         '@tauri-apps',
         'highlight.js',
         'foliate-js',
@@ -63,39 +63,19 @@ const nextConfig = {
   },
 };
 
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: isDev || appPlatform !== 'web',
-  cacheStartUrl: false,
-  dynamicStartUrl: false,
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  swcMinify: true,
-  fallbacks: {
-    document: '/offline',
-  },
-  workboxOptions: {
-    disableDevLogs: true,
-    manifestTransforms: [
-      (manifestEntries) => {
-        const manifest = manifestEntries.filter((entry) => {
-          const url = entry.url;
-          return (
-            !url.includes('dynamic-css-manifest.json') &&
-            !url.includes('middleware-manifest.json') &&
-            !url.includes('react-loadable-manifest.json') &&
-            !url.includes('build-manifest.json') &&
-            !url.includes('_buildManifest.js') &&
-            !url.includes('_ssgManifest.js') &&
-            !url.includes('_headers')
-          );
-        });
-        return { manifest };
-      },
-    ],
-  },
-});
+const pwaDisabled = isDev || appPlatform !== 'web';
+
+const withPWA = pwaDisabled
+  ? (config) => config
+  : withSerwistInit({
+      swSrc: 'src/sw.ts',
+      swDest: 'public/sw.js',
+      cacheOnNavigation: true,
+      reloadOnOnline: true,
+      disable: false,
+      register: true,
+      scope: '/',
+    });
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',

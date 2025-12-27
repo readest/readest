@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { Position } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 
 const Popup = ({
   width,
@@ -14,7 +15,10 @@ const Popup = ({
   className = '',
   triangleClassName = '',
   additionalStyle = {},
+  isOpen = true,
+  onDismiss,
 }: {
+  isOpen?: boolean;
   width: number;
   height?: number;
   minHeight?: number;
@@ -25,10 +29,13 @@ const Popup = ({
   className?: string;
   triangleClassName?: string;
   additionalStyle?: React.CSSProperties;
+  onDismiss?: () => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
   const [childrenHeight, setChildrenHeight] = useState(height || minHeight || 0);
+
+  useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
   const popupPadding = useResponsiveSize(10);
   let availableHeight = window.innerHeight - 2 * popupPadding;
@@ -38,9 +45,6 @@ const Popup = ({
     availableHeight = window.innerHeight - trianglePosition.point.y - popupPadding;
   }
   maxHeight = Math.min(maxHeight || availableHeight, availableHeight);
-  if (minHeight) {
-    minHeight = Math.min(minHeight, availableHeight);
-  }
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -72,11 +76,11 @@ const Popup = ({
       ...position,
       point: {
         ...position.point,
-        y: trianglePosition.point.y - containerHeight,
+        y: Math.max(popupPadding, trianglePosition.point.y - containerHeight),
       },
     };
     setAdjustedPosition(newPosition);
-  }, [position, trianglePosition, childrenHeight]);
+  }, [position, trianglePosition, popupPadding, childrenHeight]);
 
   return (
     <div>
@@ -84,7 +88,7 @@ const Popup = ({
         id='popup-container'
         ref={containerRef}
         className={clsx(
-          'bg-base-300 absolute rounded-lg font-sans',
+          'bg-base-300 absolute z-50 rounded-lg font-sans',
           trianglePosition?.dir !== 'up' && 'shadow-xl',
           className,
         )}

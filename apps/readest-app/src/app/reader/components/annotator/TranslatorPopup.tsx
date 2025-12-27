@@ -25,6 +25,7 @@ interface TranslatorPopupProps {
   trianglePosition: Position;
   popupWidth: number;
   popupHeight: number;
+  onDismiss?: () => void;
 }
 
 interface TranslatorType {
@@ -38,6 +39,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   trianglePosition,
   popupWidth,
   popupHeight,
+  onDismiss,
 }) => {
   const _ = useTranslation();
   const { token } = useAuth();
@@ -141,6 +143,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         position={position}
         className='grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600 text-white'
         triangleClassName='text-gray-600'
+        onDismiss={onDismiss}
       >
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
@@ -198,24 +201,21 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             </div>
           )}
         </div>
-        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between bg-gray-600 px-4'>
-          {provider && !loading && (
-            <div className='line-clamp-1 text-xs opacity-60'>
-              {error
-                ? ''
-                : _('Translated by {{provider}}.', {
-                    provider: providers.find((p) => p.name === provider)?.label,
-                  })}
-            </div>
-          )}
-          <div className='ml-auto'>
-            <Select
-              className='bg-gray-600 text-white/75'
-              value={provider}
-              onChange={handleProviderChange}
-              options={providers.map(({ name: value, label }) => ({ value, label }))}
-            />
+        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between px-4'>
+          <div className='line-clamp-1 text-xs opacity-60'>
+            {provider &&
+              !loading &&
+              !error &&
+              _('Translated by {{provider}}.', {
+                provider: providers.find((p) => p.name === provider)?.label,
+              })}
           </div>
+          <Select
+            className='bg-gray-600 text-white/75'
+            value={provider}
+            onChange={handleProviderChange}
+            options={providers.map(({ name: value, label }) => ({ value, label }))}
+          />
         </div>
       </Popup>
     </div>

@@ -71,6 +71,9 @@ const indexedDBFileSystem: FileSystem = {
       return path;
     }
   },
+  async getImageURL(path: string) {
+    return await this.getBlobURL(path, 'None');
+  },
   async openFile(path: string, base: BaseDir, filename?: string) {
     if (isValidURL(path)) {
       return await new RemoteFile(path, filename).open();
@@ -215,6 +218,43 @@ const indexedDBFileSystem: FileSystem = {
       request.onerror = () => reject(request.error);
     });
   },
+  async stats(path: string, base: BaseDir) {
+    const { fp } = this.resolvePath(path, base);
+    const db = await openIndexedDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(fp);
+
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          const content = result.content;
+          const size =
+            content instanceof Blob
+              ? content.size
+              : typeof content === 'string'
+                ? content.length
+                : content instanceof ArrayBuffer
+                  ? content.byteLength
+                  : 0;
+          resolve({
+            isFile: true,
+            isDirectory: false,
+            size,
+            mtime: null,
+            atime: null,
+            birthtime: null,
+          });
+        } else {
+          reject(new Error(`File not found: ${fp}`));
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+  },
 };
 
 export class WebAppService extends BaseAppService {
@@ -226,6 +266,25 @@ export class WebAppService extends BaseAppService {
   override async init() {
     await this.loadSettings();
     await this.prepareBooksDir();
+    await this.runMigrations();
+  }
+
+  override async runMigrations() {
+    try {
+      const settings = await this.loadSettings();
+      const lastMigrationVersion = settings.migrationVersion || 0;
+
+      await super.runMigrations(lastMigrationVersion);
+
+      if (lastMigrationVersion < this.CURRENT_MIGRATION_VERSION) {
+        await this.saveSettings({
+          ...settings,
+          migrationVersion: this.CURRENT_MIGRATION_VERSION,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to run migrations:', error);
+    }
   }
 
   override resolvePath(fp: string, base: BaseDir): ResolvedPath {

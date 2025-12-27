@@ -40,6 +40,7 @@ const SideBar: React.FC<{
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const searchTermRef = useRef(searchTerm);
   const sidebarHeight = useRef(1.0);
   const isMobile = window.innerWidth < 640;
   const {
@@ -59,7 +60,9 @@ const SideBar: React.FC<{
     const { term } = event.detail;
     setSideBarVisible(true);
     setIsSearchBarVisible(true);
-    setSearchTerm(term);
+    if (term !== undefined && term !== null) {
+      setSearchTerm(term);
+    }
   };
 
   const onNavigateEvent = async () => {
@@ -78,6 +81,10 @@ const SideBar: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSideBarVisible]);
+
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
 
   useEffect(() => {
     eventDispatcher.on('search', onSearchEvent);
@@ -176,16 +183,35 @@ const SideBar: React.FC<{
     });
   };
 
+  const handleShowSearchBar = useCallback(() => {
+    setTimeout(() => {
+      setSideBarVisible(true);
+      setIsSearchBarVisible(true);
+    }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleHideSearchBar = useCallback(() => {
     setIsSearchBarVisible(false);
     setSearchResults(null);
-    setSearchTerm('');
+    setTimeout(() => {
+      setSearchTerm('');
+    }, 100);
     getView(sideBarBookKey)?.clearSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
-  useShortcuts({ onToggleSearchBar: handleToggleSearchBar, onEscape: handleHideSearchBar }, [
-    sideBarBookKey,
+  const handleHideSideBar = useCallback(() => {
+    if (searchTermRef.current) {
+      handleHideSearchBar();
+    } else if (!isSideBarPinned) {
+      setSideBarVisible(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey, isSideBarPinned]);
+
+  useShortcuts({ onShowSearchBar: handleShowSearchBar, onEscape: handleHideSideBar }, [
+    handleHideSideBar,
   ]);
 
   const handleSearchResultClick = (cfi: string) => {
@@ -206,15 +232,19 @@ const SideBar: React.FC<{
   return isSideBarVisible ? (
     <>
       {!isSideBarPinned && (
-        <Overlay className='z-[45] bg-black/50 sm:bg-black/20' onDismiss={handleClickOverlay} />
+        <Overlay
+          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/50 sm:bg-black/20')}
+          onDismiss={handleClickOverlay}
+        />
       )}
       <div
         className={clsx(
-          'sidebar-container bg-base-200 flex min-w-60 select-none flex-col',
-          appService?.isIOSApp ? 'h-[100vh]' : 'h-full',
-          'transition-[padding-top] duration-300',
+          'sidebar-container flex min-w-60 select-none flex-col',
+          'full-height transition-[padding-top] duration-300',
+          viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
+          !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
         )}
         role='group'
         aria-label={_('Sidebar')}

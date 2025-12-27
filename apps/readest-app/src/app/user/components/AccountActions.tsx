@@ -47,22 +47,26 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
 
 interface AccountActionsProps {
   userPlan: UserPlan;
+  iapAvailable: boolean;
   onLogout: () => void;
   onResetPassword: () => void;
   onUpdateEmail: () => void;
   onConfirmDelete: () => void;
   onRestorePurchase?: () => void;
   onManageSubscription?: () => void;
+  onManageStorage?: () => void;
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
   userPlan,
+  iapAvailable,
   onLogout,
   onResetPassword,
   onUpdateEmail,
   onConfirmDelete,
   onRestorePurchase,
   onManageSubscription,
+  onManageStorage,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -87,7 +91,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         }}
       />
       <div className='flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3'>
-        {appService?.hasIAP ? (
+        {appService?.hasIAP && iapAvailable ? (
           <button
             onClick={onRestorePurchase}
             className='w-full rounded-lg bg-blue-100 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-200 md:w-auto'
@@ -103,6 +107,14 @@ const AccountActions: React.FC<AccountActionsProps> = ({
               {_('Manage Subscription')}
             </button>
           )
+        )}
+        {onManageStorage && (
+          <button
+            onClick={onManageStorage}
+            className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
+          >
+            {_('Manage Storage')}
+          </button>
         )}
         <button
           onClick={onResetPassword}

@@ -25,6 +25,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
     <>
       <ColorPanel actionTab={actionTab} bottomOffset={bottomOffset} />
       <NavigationPanel
+        bookKey={bookKey}
         actionTab={actionTab}
         progressFraction={progressFraction}
         progressValid={progressValid}

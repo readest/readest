@@ -5,7 +5,11 @@
     "lib": [
       "dom",
       "dom.iterable",
+      "webworker",
       "esnext"
+    ],
+    "types": [
+      "@serwist/next/typings"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -30,6 +34,9 @@
       "@pdfjs/*": [
         "./public/vendor/pdfjs/*"
       ],
+      "@simplecc/*": [
+        "./public/vendor/simplecc/*"
+      ]
     }
   },
   "include": [

@@ -115,6 +115,12 @@ pub struct Purchase {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct IAPIsAvailableResponse {
+    pub available: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IAPInitializeRequest {
     pub public_key: Option<String>,
 }
@@ -213,5 +219,14 @@ pub struct OpenExternalUrlRequest {
 #[serde(rename_all = "camelCase")]
 pub struct OpenExternalUrlResponse {
     pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SelectDirectoryResponse {
+    pub cancelled: Option<bool>,
+    pub uri: Option<String>,
+    pub path: Option<String>,
     pub error: Option<String>,
 }

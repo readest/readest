@@ -17,7 +17,10 @@ export const languageTransformer: Transformer = {
       const docLang = langMatch?.[1] || xmlLangMatch?.[1];
       if (!isValidLang(docLang) || !isSameLang(docLang, primaryLanguage)) {
         const mainContent = result.replace(/<[^>]+>/g, ' ');
-        const lang = isValidLang(primaryLanguage) ? primaryLanguage : detectLanguage(mainContent);
+        const lang =
+          isValidLang(primaryLanguage) && primaryLanguage !== 'en'
+            ? primaryLanguage
+            : detectLanguage(mainContent);
         const newLangAttr = ` lang="${lang}"`;
         const newXmlLangAttr = ` xml:lang="${lang}"`;
         attrs = langMatch ? attrs.replace(langRegex, newLangAttr) : attrs + newLangAttr;

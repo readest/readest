@@ -4,7 +4,7 @@ export const copyFiles = async (appService: AppService, srcDir: string, dstDir: 
   let filesToCopy: FileItem[] = [];
   try {
     filesToCopy = await appService.readDirectory(srcDir, 'None');
-  } catch (error) {
+  } catch {
     throw new Error(`Dir ${srcDir} failed to read.`);
   }
 

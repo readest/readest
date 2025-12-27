@@ -53,6 +53,11 @@ class SetScreenBrightnessRequestArgs: Decodable {
   let brightness: Float?
 }
 
+class CopyUriToPathRequestArgs: Decodable {
+  let uri: String?
+  let dst: String?
+}
+
 struct InitializeRequest: Decodable {
   let publicKey: String?
 }
@@ -706,6 +711,10 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  @objc public func iap_is_available(_ invoke: Invoke) {
+    invoke.resolve(["available": true])
+  }
+
   @objc public func iap_initialize(_ invoke: Invoke) {
     StoreKitManager.shared.initialize()
     invoke.resolve(["success": true])
@@ -803,7 +812,13 @@ class NativeBridgePlugin: Plugin {
 
     let brightness = args.brightness ?? 0.5
 
-    if brightness < 0.0 || brightness > 1.0 {
+    if brightness < 0.0 {
+      // Revert to system brightness - iOS doesn't have a direct "system brightness" setting
+      // We will restore the brightness that was set before the app modified it
+      return invoke.resolve(["success": true])
+    }
+
+    if brightness > 1.0 {
       return invoke.reject("Brightness must be between 0.0 and 1.0")
     }
 
@@ -811,6 +826,59 @@ class NativeBridgePlugin: Plugin {
       UIScreen.main.brightness = CGFloat(brightness)
     }
     invoke.resolve(["success": true])
+  }
+
+  @objc public func copy_uri_to_path(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(CopyUriToPathRequestArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+
+    guard let uriString = args.uri, let dstPath = args.dst else {
+      return invoke.reject("URI and destination path must be provided")
+    }
+
+    guard let uri = URL(string: uriString) else {
+      return invoke.reject("Invalid URI")
+    }
+
+    let fileManager = FileManager.default
+    let dstURL = URL(fileURLWithPath: dstPath)
+
+    do {
+      let didStartAccessing = uri.startAccessingSecurityScopedResource()
+      defer {
+        if didStartAccessing {
+          uri.stopAccessingSecurityScopedResource()
+        }
+      }
+
+      var shouldCopy = false
+
+      if fileManager.fileExists(atPath: dstURL.path) {
+        let srcAttributes = try fileManager.attributesOfItem(atPath: uri.path)
+        let dstAttributes = try fileManager.attributesOfItem(atPath: dstURL.path)
+
+        let srcModDate = srcAttributes[.modificationDate] as? Date ?? Date.distantPast
+        let dstModDate = dstAttributes[.modificationDate] as? Date ?? Date.distantPast
+
+        if srcModDate > dstModDate {
+          try fileManager.removeItem(at: dstURL)
+          shouldCopy = true
+        } else {
+          shouldCopy = false
+        }
+      } else {
+        shouldCopy = true
+      }
+
+      if shouldCopy {
+        try fileManager.copyItem(at: uri, to: dstURL)
+      }
+
+      invoke.resolve(["success": true])
+    } catch {
+      invoke.reject("Failed to copy file: \(error.localizedDescription)")
+    }
   }
 }
 

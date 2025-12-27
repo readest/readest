@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { MdCheck, MdChevronRight } from 'react-icons/md';
+import { MdCheck, MdChevronRight, MdEdit } from 'react-icons/md';
 import { HiOutlineFolder, HiOutlineFolderAdd, HiOutlineFolderRemove } from 'react-icons/hi';
 import { IoMdArrowBack } from 'react-icons/io';
 
@@ -10,6 +10,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { getBreadcrumbs } from '../utils/libraryUtils';
 
@@ -30,15 +31,25 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { setLibrary, addGroup, getGroups, getGroupsByParent, getParentPath, refreshGroups } =
-    useLibraryStore();
+  const {
+    setLibrary,
+    addGroup,
+    getGroups,
+    getGroupId,
+    getGroupsByParent,
+    getParentPath,
+    refreshGroups,
+  } = useLibraryStore();
 
   const [currentPath, setCurrentPath] = useState<string | undefined>(undefined);
   const [showInput, setShowInput] = useState(false);
   const [editGroupName, setEditGroupName] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<BookGroupType | null>(null);
   const [newGroup, setNewGroup] = useState<BookGroupType | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [originalGroupName, setOriginalGroupName] = useState<string | null>(null);
 
+  const divRef = useKeyDownActions({ onCancel, onConfirm });
   const editorRef = useRef<HTMLInputElement>(null);
   const iconSize = useResponsiveSize(16);
 
@@ -56,6 +67,11 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     selectedBooks
       .map((hash) => libraryBooks.find((book) => book.hash === hash)?.groupId)
       .some((group) => group && group !== BOOK_UNGROUPED_NAME);
+
+  const canRenameGroup = selectedBooks.length === 1 && selectedBooks.every((id) => !isMd5(id));
+  const currentGroupForRename = canRenameGroup
+    ? allGroups.find((group) => group.id === selectedBooks[0])
+    : null;
 
   const generateNextUntitledGroupName = () => {
     const baseName = _('Untitled Group');
@@ -84,6 +100,18 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     const nextName = generateNextUntitledGroupName();
     setEditGroupName(nextName);
     setShowInput(true);
+    setIsRenaming(false);
+    setOriginalGroupName(null);
+    setSelectedGroup(null);
+  };
+
+  const handleRenameGroup = () => {
+    if (!currentGroupForRename) return;
+
+    setEditGroupName(currentGroupForRename.name);
+    setOriginalGroupName(currentGroupForRename.name);
+    setShowInput(true);
+    setIsRenaming(true);
   };
 
   const handleRemoveFromGroup = () => {
@@ -110,17 +138,44 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   const handleConfirmCreateGroup = () => {
     let groupName = editGroupName.trim();
     if (groupName) {
-      if (currentPath && !groupName.startsWith(currentPath + '/')) {
-        groupName = `${currentPath}/${groupName}`;
-      }
+      if (isRenaming && originalGroupName) {
+        // Renaming existing group
+        const oldGroupName = originalGroupName;
 
-      const newGroup = addGroup(groupName);
-      setNewGroup(newGroup);
-      setSelectedGroup(newGroup);
-      setShowInput(false);
-      const parentGroup = getParentPath(groupName);
-      if (parentGroup) {
-        setCurrentPath(parentGroup);
+        // Update the group name for all books in this group and nested groups
+        libraryBooks.forEach((book) => {
+          if (book.groupName === oldGroupName) {
+            book.groupName = groupName;
+            book.groupId = getGroupId(book.groupName);
+            book.updatedAt = Date.now();
+          } else if (book.groupName?.startsWith(oldGroupName + '/')) {
+            book.groupName = book.groupName.replace(oldGroupName, groupName);
+            book.groupId = getGroupId(book.groupName);
+            book.updatedAt = Date.now();
+          }
+        });
+
+        setLibrary([...libraryBooks]);
+        appService?.saveLibraryBooks(libraryBooks);
+
+        refreshGroups();
+        setShowInput(false);
+        setIsRenaming(false);
+        setOriginalGroupName(null);
+      } else {
+        // Creating new group
+        if (currentPath && !groupName.startsWith(currentPath + '/')) {
+          groupName = `${currentPath}/${groupName}`;
+        }
+
+        const newGroup = addGroup(groupName);
+        setNewGroup(newGroup);
+        setSelectedGroup(newGroup);
+        setShowInput(false);
+        const parentGroup = getParentPath(groupName);
+        if (parentGroup) {
+          setCurrentPath(parentGroup);
+        }
       }
     }
   };
@@ -193,6 +248,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   return (
     <div className='fixed inset-0 flex items-center justify-center'>
       <div
+        ref={divRef}
         className={clsx(
           'modal-box bg-base-100 overflow-y-auto rounded-2xl shadow-xl',
           'max-h-[85%] w-[95%] min-w-64 max-w-[440px] p-6 sm:w-[70%]',
@@ -202,25 +258,32 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
 
         {/* Action buttons */}
         <div className={clsx('mt-4 grid grid-cols-1 gap-2 text-base md:grid-cols-2')}>
-          {isSelectedBooksHasGroup && (
-            <button
-              onClick={handleRemoveFromGroup}
-              className='flex items-center space-x-2 p-2 text-blue-500'
-            >
-              <HiOutlineFolderRemove size={iconSize} />
-              <span className='truncate'>{_('Remove From Group')}</span>
-            </button>
-          )}
+          <button
+            onClick={handleRemoveFromGroup}
+            className='flex items-center space-x-2 p-2 text-blue-500 disabled:text-gray-400'
+            disabled={!isSelectedBooksHasGroup}
+          >
+            <HiOutlineFolderRemove size={iconSize} />
+            <span className='truncate'>{_('Remove From Group')}</span>
+          </button>
           <button
             onClick={handleCreateGroup}
-            className='flex items-center space-x-2 p-2 text-blue-500'
+            className='flex items-center space-x-2 p-2 text-blue-500 disabled:text-gray-400'
           >
             <HiOutlineFolderAdd size={iconSize} />
             <span className='truncate'>{_('Create New Group')}</span>
           </button>
+          <button
+            onClick={handleRenameGroup}
+            className='flex items-center space-x-2 p-2 text-blue-500 disabled:text-gray-400'
+            disabled={!canRenameGroup}
+          >
+            <MdEdit size={iconSize} />
+            <span className='truncate'>{_('Rename Group')}</span>
+          </button>
         </div>
 
-        {/* Create group input */}
+        {/* Create/Rename group input */}
         {showInput && (
           <div className='mt-4 space-y-2'>
             <div className='flex items-center gap-2'>
@@ -231,7 +294,11 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
                 onChange={(e) => setEditGroupName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleConfirmCreateGroup();
-                  if (e.key === 'Escape') setShowInput(false);
+                  if (e.key === 'Escape') {
+                    setShowInput(false);
+                    setIsRenaming(false);
+                    setOriginalGroupName(null);
+                  }
                   e.stopPropagation();
                 }}
                 className='input input-ghost w-full border-0 px-2 text-base !outline-none sm:text-sm'

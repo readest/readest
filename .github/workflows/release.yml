@@ -17,7 +17,7 @@ jobs:
       release_version: ${{ steps.get-release-notes.outputs.release_version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: setup node
         uses: actions/setup-node@v6
       - name: get version
@@ -69,7 +69,7 @@ jobs:
               repo: context.repo.repo,
               tag_name: process.env.release_tag,
             })
-            const notes = process.env.release_note.split(/(?:\d\.\s)/).filter(Boolean);
+            const notes = process.env.release_note.split(/\d+\.\s/).filter(Boolean);
             const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
             const body = `## Release Highlight\n${formattedNotes}\n\n${data.body}`;
             github.rest.repos.updateRelease({
@@ -87,7 +87,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: create KOReader plugin zip
         env:
@@ -95,10 +95,12 @@ jobs:
         run: |
           version=${{ needs.get-release.outputs.release_version }}
           plugin_zip="Readest-${version}-1.koplugin.zip"
+          meta_file="apps/readest.koplugin/_meta.lua"
+          perl -i -pe "s/^}/    version = \"${version}\",\n}/" "${meta_file}"
 
-          cd apps/readest.koplugin
-          zip -r ../../${plugin_zip} .
-          cd ../..
+          cd apps
+          zip -r ../${plugin_zip} readest.koplugin
+          cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
@@ -146,7 +148,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: initialize git submodules
         run: git submodule update --init --recursive
@@ -180,8 +182,8 @@ jobs:
       - name: install dependencies
         run: pnpm install
 
-      - name: copy pdfjs-dist to public directory
-        run: pnpm --filter @readest/readest-app setup-pdfjs
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -321,7 +323,7 @@ jobs:
           echo "Building Portable Binaries"
           pushd apps/readest-app/
           echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
-          pnpm tauri build
+          pnpm tauri build ${{ matrix.config.args }}
 
           popd
           echo "Uploading Portable Binaries"

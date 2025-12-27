@@ -2,6 +2,11 @@ import { invoke, Channel } from '@tauri-apps/api/core';
 
 export type UploadMethod = 'POST' | 'PUT';
 
+export const enum UploadFileError {
+  Unauthorized = 'Unauthorized access',
+  DownloadFailed = 'File download failed',
+}
+
 export interface ProgressPayload {
   progress: number;
   total: number;
@@ -40,11 +45,24 @@ export const webUpload = (file: File, uploadUrl: string, onProgress?: ProgressHa
   });
 };
 
-export const webDownload = async (downloadUrl: string, onProgress?: ProgressHandler) => {
-  const response = await fetch(downloadUrl);
-  if (!response.ok) throw new Error('File download failed');
+export const webDownload = async (
+  downloadUrl: string,
+  onProgress?: ProgressHandler,
+  headers?: Record<string, string>,
+) => {
+  const response = await fetch(downloadUrl, {
+    method: 'GET',
+    headers: headers ? headers : undefined,
+  });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(UploadFileError.Unauthorized);
+    }
+    throw new Error(UploadFileError.DownloadFailed);
+  }
 
-  const contentLength = response.headers.get('Content-Length');
+  const contentLength =
+    response.headers.get('Content-Length') || response.headers.get('X-Content-Length');
   if (!contentLength) throw new Error('Cannot track progress: Content-Length missing');
 
   const totalSize = parseInt(contentLength, 10);
@@ -102,8 +120,9 @@ export const tauriDownload = async (
   url: string,
   filePath: string,
   progressHandler?: ProgressHandler,
-  headers?: Map<string, string>,
+  headers?: Record<string, string>,
   body?: string,
+  singleThreaded?: boolean,
 ): Promise<void> => {
   const ids = new Uint32Array(1);
   window.crypto.getRandomValues(ids);
@@ -121,5 +140,6 @@ export const tauriDownload = async (
     headers: headers ?? {},
     onProgress,
     body,
+    singleThreaded,
   });
 };

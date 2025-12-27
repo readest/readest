@@ -1,5 +1,6 @@
 import {
   BookFont,
+  BookLanguage,
   BookLayout,
   BookSearchConfig,
   BookStyle,
@@ -71,12 +72,18 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   librarySortBy: 'updated',
   librarySortAscending: false,
   libraryCoverFit: 'crop',
+  libraryAutoColumns: true,
+  libraryColumns: 6,
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
+};
+
+export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
+  libraryColumns: 3,
 };
 
 export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
@@ -152,6 +159,11 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   allowScript: false,
 };
 
+export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
+  replaceQuotationMarks: true,
+  convertChineseVariant: 'none',
+};
+
 export const DEFAULT_BOOK_STYLE: BookStyle = {
   zoomLevel: 100,
   paragraphMargin: 0.6,
@@ -212,7 +224,9 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  showMarginsOnScroll: false,
   progressStyle: 'fraction',
+  progressInfoMode: 'all',
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
@@ -602,12 +616,12 @@ export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
 
 export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`;
 
+export const READEST_OPDS_USER_AGENT = 'Readest/1.0 (OPDS Browser)';
+
 export const SYNC_PROGRESS_INTERVAL_SEC = 3;
 export const SYNC_NOTES_INTERVAL_SEC = 5;
 export const SYNC_BOOKS_INTERVAL_SEC = 5;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
-
-export const RELOAD_BEFORE_SAVED_TIMEOUT_MS = 300;
 
 export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
@@ -706,6 +720,7 @@ export const TRANSLATED_LANGS = {
   id: 'Indonesia',
   vi: 'Tiếng Việt',
   th: 'ภาษาไทย',
+  ms: 'Melayu',
   bo: 'བོད་སྐད་',
   bn: 'বাংলা',
   ta: 'தமிழ்',

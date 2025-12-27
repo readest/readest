@@ -4,13 +4,72 @@ import { eventDispatcher } from '@/utils/event';
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 
+let keyboardState = {
+  key: '',
+  code: '',
+  ctrlKey: false,
+  shiftKey: false,
+  altKey: false,
+  metaKey: false,
+};
+
+const getKeyStatus = (event?: MouseEvent | WheelEvent | TouchEvent) => {
+  if (event && 'ctrlKey' in event) {
+    return {
+      key: keyboardState.key,
+      code: keyboardState.code,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    };
+  }
+  return {
+    ...keyboardState,
+  };
+};
+
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
+  keyboardState = {
+    key: event.key,
+    code: event.code,
+    ctrlKey: event.ctrlKey,
+    shiftKey: event.shiftKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey,
+  };
+
   if (['Backspace'].includes(event.key)) {
     event.preventDefault();
   }
   window.postMessage(
     {
       type: 'iframe-keydown',
+      bookKey,
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    },
+    '*',
+  );
+};
+
+export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
+  keyboardState = {
+    key: '',
+    code: '',
+    ctrlKey: event.ctrlKey,
+    shiftKey: event.shiftKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey,
+  };
+
+  window.postMessage(
+    {
+      type: 'iframe-keyup',
       bookKey,
       key: event.key,
       code: event.code,
@@ -39,6 +98,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -60,6 +120,7 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -80,6 +141,7 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      ...getKeyStatus(event),
     },
     '*',
   );
@@ -104,6 +166,7 @@ export const handleClick = (
         clientY: event.clientY,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
+        ...getKeyStatus(event),
       },
       '*',
     );
@@ -113,27 +176,22 @@ export const handleClick = (
   lastClickTime = now;
 
   const postSingleClick = () => {
-    let element: HTMLElement | null = event.target as HTMLElement;
-    while (element) {
-      if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
-        return;
-      }
-      if (
-        element.classList.contains('js_readerFooterNote') ||
-        element.classList.contains('zhangyue-footnote')
-      ) {
-        eventDispatcher.dispatch('footnote-popup', {
-          bookKey,
-          element,
-          footnote:
-            element.getAttribute('data-wr-footernote') ||
-            element.getAttribute('zy-footnote') ||
-            element.getAttribute('alt') ||
-            '',
-        });
-        return;
-      }
-      element = element.parentElement;
+    const element = event.target as HTMLElement | null;
+    if (element?.closest('sup, a, audio, video')) {
+      return;
+    }
+    const footnote = element?.closest('.js_readerFooterNote, .zhangyue-footnote');
+    if (footnote) {
+      eventDispatcher.dispatch('footnote-popup', {
+        bookKey,
+        element: footnote,
+        footnote:
+          footnote.getAttribute('data-wr-footernote') ||
+          footnote.getAttribute('zy-footnote') ||
+          footnote.getAttribute('alt') ||
+          '',
+      });
+      return;
     }
 
     // if long hold is detected, we don't want to send single click event
@@ -151,6 +209,7 @@ export const handleClick = (
         clientY: event.clientY,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
+        ...getKeyStatus(event),
       },
       '*',
     );
@@ -183,6 +242,7 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
       bookKey,
       timeStamp: Date.now(),
       targetTouches: touches,
+      ...getKeyStatus(event),
     },
     '*',
   );

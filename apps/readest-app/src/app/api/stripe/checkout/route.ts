@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       ui_mode: embedded ? 'embedded' : 'hosted',
       customer: customerId,
       mode: planType === 'subscription' ? 'subscription' : 'payment',
+      allow_promotion_codes: true,
       line_items: [
         {
           price: priceId,

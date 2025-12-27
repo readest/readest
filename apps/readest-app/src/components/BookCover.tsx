@@ -13,6 +13,7 @@ interface BookCoverProps {
   imageClassName?: string;
   showSpine?: boolean;
   isPreview?: boolean;
+  onImageError?: () => void;
 }
 
 const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
@@ -24,6 +25,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     className,
     imageClassName,
     isPreview,
+    onImageError,
   }) => {
     const coverRef = useRef<HTMLDivElement>(null);
     const [imageLoaded, setImageLoaded] = useState(false);
@@ -54,6 +56,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       setImageLoaded(false);
       setImageError(true);
       toggleImageVisibility(false);
+      onImageError?.();
     };
 
     useEffect(() => {
@@ -80,13 +83,13 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
             />
           </>
         ) : (
-          <div
-            className={clsx(
-              'flex h-full w-full justify-center',
-              mode === 'grid' ? 'items-end' : 'items-center',
-            )}
-          >
-            <div className='relative inline-block'>
+          <div className={clsx('flex h-full w-full justify-start')}>
+            <div
+              className={clsx(
+                'flex h-full max-h-full items-end',
+                mode === 'grid' ? 'items-end' : 'items-center',
+              )}
+            >
               <Image
                 src={book.metadata?.coverImageUrl || book.coverImageUrl!}
                 alt={book.title}
@@ -109,9 +112,10 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
 
         <div
           className={clsx(
-            'fallback-cover invisible absolute inset-0 rounded-none p-2',
+            'fallback-cover invisible absolute inset-0 p-2',
             'text-neutral-content text-center font-serif font-medium',
             isPreview ? 'bg-base-200/50' : 'bg-base-100',
+            imageClassName,
           )}
         >
           <div className='flex h-1/2 items-center justify-center'>
