@@ -304,6 +304,7 @@ const SideBar: React.FC<{
           <SidebarHeader
             isPinned={isSideBarPinned}
             isSearchBarVisible={isSearchBarVisible}
+            isPDF={book.format === 'PDF'}
             onGoToLibrary={onGoToLibrary}
             onClose={() => setSideBarVisible(false)}
             onTogglePin={handleSideBarTogglePin}
