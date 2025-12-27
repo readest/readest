@@ -17,6 +17,7 @@ import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
+import { NOTE_PREFIX } from '@/types/view';
 import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import NotebookHeader from './Header';
@@ -118,6 +119,7 @@ const Notebook: React.FC = ({}) => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
+    view?.addAnnotation({ ...annotation, value: `${NOTE_PREFIX}${annotation.cfi}` });
     annotations.push(annotation);
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
     if (updatedConfig) {
@@ -128,6 +130,7 @@ const Notebook: React.FC = ({}) => {
 
   const handleEditNote = (note: BookNote, isDelete: boolean) => {
     if (!sideBarBookKey) return;
+    const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((item) => item.id === note.id);
@@ -138,6 +141,7 @@ const Notebook: React.FC = ({}) => {
       note.updatedAt = Date.now();
     }
     annotations[existingIndex] = note;
+    view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);

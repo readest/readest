@@ -12,15 +12,22 @@ const colors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
 
 interface HighlightOptionsProps {
   isVertical: boolean;
-  style: React.CSSProperties;
+  popupWidth: number;
+  popupHeight: number;
+  triangleDir: 'up' | 'down' | 'left' | 'right';
   selectedStyle: HighlightStyle;
   selectedColor: HighlightColor;
   onHandleHighlight: (update: boolean) => void;
 }
 
+const OPTIONS_HEIGHT_PIX = 28;
+const OPTIONS_PADDING_PIX = 16;
+
 const HighlightOptions: React.FC<HighlightOptionsProps> = ({
-  style,
   isVertical,
+  popupWidth,
+  popupHeight,
+  triangleDir,
   selectedStyle: _selectedStyle,
   selectedColor: _selectedColor,
   onHandleHighlight,
@@ -34,6 +41,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const size16 = useResponsiveSize(16);
   const size18 = useResponsiveSize(18);
   const size28 = useResponsiveSize(28);
+  const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
+  const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
 
   const handleSelectStyle = (style: HighlightStyle) => {
     const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
@@ -58,7 +67,23 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         'highlight-options absolute flex items-center justify-between',
         isVertical ? 'flex-col' : 'flex-row',
       )}
-      style={style}
+      style={{
+        width: `${popupWidth}px`,
+        height: `${popupHeight}px`,
+        ...(isVertical
+          ? {
+              left: `${
+                (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
+                (triangleDir === 'left' ? -1 : 1)
+              }px`,
+            }
+          : {
+              top: `${
+                (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
+                (triangleDir === 'up' ? -1 : 1)
+              }px`,
+            }),
+      }}
     >
       <div
         className={clsx('flex gap-2', isVertical ? 'flex-col' : 'flex-row')}

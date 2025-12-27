@@ -386,7 +386,7 @@ const getLayoutStyles = (
   }
   img.has-text-siblings {
     height: 1em;
-    vertical-align: middle;
+    vertical-align: baseline;
   }
   :is(div) > img.has-text-siblings[style*="object-fit"] {
     display: block;
