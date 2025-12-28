@@ -39,16 +39,20 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight();
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { bookKeys, hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { bookKeys, hoveredBookKey, getView, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible } = useSidebarStore();
-  const iconSize16 = useResponsiveSize(16);
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const view = getView(bookKey);
+  const iconSize16 = useResponsiveSize(16);
+  const headerRef = useRef<HTMLDivElement>(null);
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
+
+  const docs = view?.renderer.getContents() ?? [];
+  const pointerInDoc = docs.some(({ doc }) => doc.body.style.cursor === 'pointer');
 
   const handleToggleDropdown = (isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
@@ -90,7 +94,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     >
       <div
         role='none'
-        className={clsx('absolute top-0 z-10 h-11 w-full')}
+        className={clsx('absolute top-0 z-10 h-11 w-full', pointerInDoc && 'pointer-events-none')}
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
