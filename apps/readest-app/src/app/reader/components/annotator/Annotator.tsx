@@ -245,7 +245,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const customColors = settings.globalReadSettings.customHighlightColors;
     const hexColor =
       color && customColors ? customColors[color] : color ? HIGHLIGHT_COLOR_HEX[color] : color;
-    if (style === 'highlight') {
+    if (annotation.note) {
+      const { defaultView } = doc;
+      const node = range.startContainer;
+      const el = node.nodeType === 1 ? node : node.parentElement;
+      const { writingMode } = defaultView.getComputedStyle(el);
+      draw(Overlayer.bubble, { writingMode });
+    } else if (style === 'highlight') {
       draw(Overlayer.highlight, { color: hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;

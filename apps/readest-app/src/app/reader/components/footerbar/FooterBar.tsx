@@ -41,6 +41,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const actionTab = hoveredBookKey === bookKey ? userSelectedTab : '';
   const isVisible = hoveredBookKey === bookKey;
 
+  const docs = view?.renderer.getContents() ?? [];
+  const pointerInDoc = docs.some(({ doc }) => doc.body.style.cursor === 'pointer');
+
   const progressInfo = useMemo(
     () => (bookFormat === 'PDF' ? section : pageinfo),
     [bookFormat, section, pageinfo],
@@ -224,7 +227,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
-          isMobile ? 'pointer-events-none' : '',
+          isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
