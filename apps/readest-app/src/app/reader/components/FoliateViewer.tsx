@@ -132,7 +132,8 @@ const FoliateViewer: React.FC<{
           const bookData = getBookData(bookKey);
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(data, width, height, viewSettings.vertical);
-          if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
+          const isHtml = detail.type === 'application/xhtml+xml' || detail.type === 'text/html';
+          if (viewSettings && bookData && isHtml) {
             const ctx: TransformContext = {
               bookKey,
               viewSettings,

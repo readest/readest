@@ -1,3 +1,4 @@
+import { LocaleWithTextInfo } from '@/types/misc';
 import { franc } from 'franc-min';
 import { iso6392 } from 'iso-639-2';
 import { iso6393To1 } from 'iso-639-3';
@@ -114,5 +115,19 @@ export const detectLanguage = (content: string): string => {
   } catch {
     console.warn('Language detection failed, defaulting to en.');
     return 'en';
+  }
+};
+
+export const getLanguageInfo = (lang: string) => {
+  if (!lang) return {};
+  try {
+    const canonical = Intl.getCanonicalLocales(lang)[0]!;
+    const locale = new Intl.Locale(canonical) as LocaleWithTextInfo;
+    const isCJK = ['zh', 'ja', 'kr'].includes(locale.language);
+    const direction = (locale.getTextInfo?.() ?? locale.textInfo)?.direction;
+    return { canonical, locale, isCJK, direction };
+  } catch (e) {
+    console.warn(e);
+    return {};
   }
 };
