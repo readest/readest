@@ -27,7 +27,7 @@ interface AnnotationPopupProps {
   popupWidth: number;
   popupHeight: number;
   onHighlight: (update?: boolean) => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
 }
 
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
@@ -88,6 +88,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               triangleDir={trianglePosition.dir!}
               popupWidth={isVertical ? popupHeight : popupWidth}
               popupHeight={isVertical ? popupWidth : popupHeight}
+              onDismiss={onDismiss}
             />
           ) : (
             highlightOptionsVisible && (

@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 import { BookNote } from '@/types/book';
+import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -13,6 +14,7 @@ interface AnnotationNotesProps {
   triangleDir: 'up' | 'down' | 'left' | 'right';
   popupWidth: number;
   popupHeight: number;
+  onDismiss: () => void;
 }
 
 const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
@@ -22,7 +24,9 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
   triangleDir,
   popupWidth,
   popupHeight,
+  onDismiss,
 }) => {
+  const { appService } = useEnv();
   const { getConfig, setConfig } = useBookDataStore();
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
@@ -31,6 +35,10 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
 
   const handleShowAnnotation = (note: BookNote) => {
     if (!note.id) return;
+
+    if (appService?.isMobile) {
+      onDismiss();
+    }
 
     setHoveredBookKey('');
     setSideBarVisible(true);
