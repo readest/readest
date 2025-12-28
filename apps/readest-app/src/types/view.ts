@@ -2,6 +2,7 @@ import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
+import { LocaleWithTextInfo } from './misc';
 
 export const NOTE_PREFIX = 'foliate-note:';
 
@@ -33,8 +34,10 @@ export interface FoliateView extends HTMLElement {
   book: BookDoc;
   tts: TTS | null;
   language: {
-    locale?: string;
+    locale?: LocaleWithTextInfo;
     isCJK?: boolean;
+    canonical?: string;
+    direction?: string;
   };
   history: {
     canGoBack: boolean;
