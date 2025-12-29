@@ -73,7 +73,7 @@
     "iOS": {
       "developmentTeam": "J5W48D69VR",
       "infoPlist": "./Info-ios.plist",
-      "minimumSystemVersion": "14.0"
+      "minimumSystemVersion": "15.0"
     },
     "fileAssociations": [
       {
