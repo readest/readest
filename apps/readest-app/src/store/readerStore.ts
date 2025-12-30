@@ -297,7 +297,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const progress: [number, number] = [pagePressInfo.current + 1, pagePressInfo.total];
 
       const timeDeltaMs = Date.now() - viewState.viewTimeStamp;
-      var totalReadTimeMs = bookData.book.totalReadTime || 0;
+      let totalReadTimeMs = bookData.book.totalReadTime || 0;
       if (timeDeltaMs > 0 && timeDeltaMs < 900000) {
         //cap valid time delta to 15 minuts
         totalReadTimeMs += timeDeltaMs;
