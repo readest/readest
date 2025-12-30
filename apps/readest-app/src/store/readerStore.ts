@@ -290,10 +290,18 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const id = key.split('-')[0]!;
       const bookData = useBookDataStore.getState().booksData[id];
       const viewState = state.viewStates[key];
-      if (!viewState || !bookData) return state;
+      if (!viewState || !viewState.viewTimeStamp) return state;
+      if (!bookData || !bookData.book) return state;
 
       const pagePressInfo = bookData.isFixedLayout ? section : pageinfo;
       const progress: [number, number] = [pagePressInfo.current + 1, pagePressInfo.total];
+
+      const timeDeltaMs = Date.now() - viewState.viewTimeStamp;
+      var totalReadTimeMs = bookData.book.totalReadTime || 0;
+      if (timeDeltaMs > 0 && timeDeltaMs < 900000) {
+        //cap valid time delta to 15 minuts
+        totalReadTimeMs += timeDeltaMs;
+      }
 
       // Update library book progress
       const { library, setLibrary } = useLibraryStore.getState();
@@ -305,6 +313,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ...existingBook,
           progress,
           updatedAt: Date.now(),
+          totalReadTime: totalReadTimeMs,
         };
         setLibrary(updatedLibrary);
       }
@@ -342,6 +351,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               timeinfo,
               range,
             },
+            viewTimeStamp: Date.now(),
           },
         },
       };
