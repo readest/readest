@@ -617,6 +617,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     await updateBook(envConfig, book);
   };
 
+  const handleBookReadTimeReset = async (book: Book) => {
+    console.log('handleBookReadTimeReset called for book:', book.title, book.hash);
+    book.totalReadTime = 0;
+    book.updatedAt = Date.now();
+    await updateBook(envConfig, book);
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      timeout: 2000,
+      message: _('Read time reset for: {{title}}', {
+        title: book.title,
+      }),
+    });
+  };
+
   const handleImportBooksFromFiles = async () => {
     setIsSelectMode(false);
     console.log('Importing books from files...');
@@ -854,6 +868,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDeleteCloudBackup={handleBookDelete('cloud')}
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookMetadataUpdate={handleUpdateMetadata}
+          handleBookReadTimeReset={handleBookReadTimeReset}
         />
       )}
       <AboutWindow />
