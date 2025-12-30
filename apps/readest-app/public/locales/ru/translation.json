@@ -804,5 +804,21 @@
   "Selected Text Rules": "Правила для выделенного текста",
   "No selected text replacement rules": "Нет правил замены для выделенного текста",
   "Book Specific Rules": "Правила для конкретной книги",
-  "No book-level replacement rules": "Нет правил замены на уровне книги"
+  "No book-level replacement rules": "Нет правил замены на уровне книги",
+  "Disable Quick Action": "Отключить быстрые действия",
+  "Enable Quick Action on Selection": "Включить быстрые действия при выборе",
+  "None": "Нет",
+  "Annotation Tools": "Инструменты для аннотаций",
+  "Enable Quick Actions": "Включить быстрые действия",
+  "Quick Action": "Быстрое действие",
+  "Copy to Notebook": "Скопировать в блокнот",
+  "Copy text after selection": "Копировать текст после выделения",
+  "Highlight text after selection": "Выделить текст после выделения",
+  "Annotate text after selection": "Аннотировать текст после выделения",
+  "Search text after selection": "Искать текст после выделения",
+  "Look up text in dictionary after selection": "Искать текст в словаре после выделения",
+  "Look up text in Wikipedia after selection": "Искать текст в Википедии после выделения",
+  "Translate text after selection": "Перевести текст после выделения",
+  "Read text aloud after selection": "Прочитать текст вслух после выделения",
+  "Proofread text after selection": "Корректировать текст после выделения"
 }

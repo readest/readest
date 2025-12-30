@@ -155,7 +155,7 @@ export class TTSController extends EventTarget {
     return ssml;
   }
 
-  async #speak(ssml: string | undefined | Promise<string>) {
+  async #speak(ssml: string | undefined | Promise<string>, oneTime = false) {
     await this.stop();
     this.#currentSpeakAbortController = new AbortController();
     const { signal } = this.#currentSpeakAbortController;
@@ -173,7 +173,7 @@ export class TTSController extends EventTarget {
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
-          if (this.#nossmlCnt < 10 && this.state === 'playing') {
+          if (this.#nossmlCnt < 10 && this.state === 'playing' && !oneTime) {
             resolve();
             await this.view.next();
             await this.forward();
@@ -185,7 +185,7 @@ export class TTSController extends EventTarget {
         }
 
         const { plainText, marks } = parseSSMLMarks(ssml);
-        if (!plainText || marks.length === 0) {
+        if ((!plainText || marks.length === 0) && !oneTime) {
           resolve();
           return await this.forward();
         } else {
@@ -202,7 +202,7 @@ export class TTSController extends EventTarget {
           lastCode = code;
         }
 
-        if (lastCode === 'end' && this.state === 'playing') {
+        if (lastCode === 'end' && this.state === 'playing' && !oneTime) {
           resolve();
           await this.forward();
         }
@@ -224,9 +224,9 @@ export class TTSController extends EventTarget {
     await this.#currentSpeakPromise.catch((e) => this.error(e));
   }
 
-  async speak(ssml: string | Promise<string>) {
+  async speak(ssml: string | Promise<string>, oneTime = false) {
     await this.initViewTTS();
-    this.#speak(ssml).catch((e) => this.error(e));
+    this.#speak(ssml, oneTime).catch((e) => this.error(e));
     this.preloadNextSSML();
     this.dispatchSpeakMark();
   }

@@ -804,5 +804,21 @@
   "Selected Text Rules": "Правила для виділеного тексту",
   "No selected text replacement rules": "Немає правил заміни для виділеного тексту",
   "Book Specific Rules": "Правила для конкретної книги",
-  "No book-level replacement rules": "Немає правил заміни на рівні книги"
+  "No book-level replacement rules": "Немає правил заміни на рівні книги",
+  "Disable Quick Action": "Вимкнути швидку дію",
+  "Enable Quick Action on Selection": "Увімкнути швидку дію при виборі",
+  "None": "Жоден",
+  "Annotation Tools": "Інструменти анотацій",
+  "Enable Quick Actions": "Увімкнути швидкі дії",
+  "Quick Action": "Швидка дія",
+  "Copy to Notebook": "Скопіювати до блокнота",
+  "Copy text after selection": "Скопіювати текст після виділення",
+  "Highlight text after selection": "Виділити текст після виділення",
+  "Annotate text after selection": "Додати анотацію до тексту після виділення",
+  "Search text after selection": "Шукати текст після виділення",
+  "Look up text in dictionary after selection": "Шукати текст у словнику після виділення",
+  "Look up text in Wikipedia after selection": "Шукати текст у Вікіпедії після виділення",
+  "Translate text after selection": "Перекласти текст після виділення",
+  "Read text aloud after selection": "Прочитати текст вголос після виділення",
+  "Proofread text after selection": "Вичитати текст після виділення"
 }

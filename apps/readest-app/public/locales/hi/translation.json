@@ -784,5 +784,21 @@
   "Selected Text Rules": "चयनित पाठ के नियम",
   "No selected text replacement rules": "चयनित पाठ के लिए कोई प्रतिस्थापन नियम नहीं हैं",
   "Book Specific Rules": "पुस्तक-विशिष्ट नियम",
-  "No book-level replacement rules": "पुस्तक स्तर पर कोई प्रतिस्थापन नियम नहीं हैं"
+  "No book-level replacement rules": "पुस्तक स्तर पर कोई प्रतिस्थापन नियम नहीं हैं",
+  "Disable Quick Action": "त्वरित क्रिया अक्षम करें",
+  "Enable Quick Action on Selection": "चयन पर त्वरित क्रिया सक्षम करें",
+  "None": "कोई नहीं",
+  "Annotation Tools": "टिप्पणी उपकरण",
+  "Enable Quick Actions": "त्वरित क्रियाएँ सक्षम करें",
+  "Quick Action": "त्वरित क्रिया",
+  "Copy to Notebook": "नोटबुक में कॉपी करें",
+  "Copy text after selection": "पाठ कॉपी करें चयन के बाद",
+  "Highlight text after selection": "चयन के बाद पाठ हाइलाइट करें",
+  "Annotate text after selection": "चयन के बाद पाठ पर टिप्पणी करें",
+  "Search text after selection": "चयन के बाद पाठ खोजें",
+  "Look up text in dictionary after selection": "चयन के बाद शब्दकोश में पाठ देखें",
+  "Look up text in Wikipedia after selection": "चयन के बाद विकिपीडिया में पाठ देखें",
+  "Translate text after selection": "चयन के बाद पाठ का अनुवाद करें",
+  "Read text aloud after selection": "चयन के बाद पाठ को जोर से पढ़ें",
+  "Proofread text after selection": "चयन के बाद पाठ को प्रूफरीड करें"
 }

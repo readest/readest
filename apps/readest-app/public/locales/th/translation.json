@@ -774,5 +774,21 @@
   "Selected Text Rules": "กฎสำหรับข้อความที่เลือก",
   "No selected text replacement rules": "ไม่มีกฎการแทนที่สำหรับข้อความที่เลือก",
   "Book Specific Rules": "กฎเฉพาะของหนังสือ",
-  "No book-level replacement rules": "ไม่มีกฎการแทนที่ระดับหนังสือ"
+  "No book-level replacement rules": "ไม่มีกฎการแทนที่ระดับหนังสือ",
+  "Disable Quick Action": "ปิดใช้งานการดำเนินการด่วน",
+  "Enable Quick Action on Selection": "เปิดใช้งานการดำเนินการด่วนเมื่อเลือก",
+  "None": "ไม่มี",
+  "Annotation Tools": "เครื่องมือหมายเหตุ",
+  "Enable Quick Actions": "เปิดใช้งานการดำเนินการด่วน",
+  "Quick Action": "การดำเนินการด่วน",
+  "Copy to Notebook": "คัดลอกไปยังสมุดบันทึก",
+  "Copy text after selection": "คัดลอกข้อความหลังการเลือก",
+  "Highlight text after selection": "ไฮไลต์ข้อความหลังการเลือก",
+  "Annotate text after selection": "เพิ่มหมายเหตุข้อความหลังการเลือก",
+  "Search text after selection": "ค้นหาข้อความหลังการเลือก",
+  "Look up text in dictionary after selection": "ค้นหาข้อความในพจนานุกรมหลังการเลือก",
+  "Look up text in Wikipedia after selection": "ค้นหาข้อความในวิกิพีเดียหลังการเลือก",
+  "Translate text after selection": "แปลข้อความหลังการเลือก",
+  "Read text aloud after selection": "อ่านข้อความออกเสียงหลังการเลือก",
+  "Proofread text after selection": "ตรวจทานข้อความหลังการเลือก"
 }

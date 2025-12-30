@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { AnnotationToolType } from './annotator';
 
 export type BookFormat = 'EPUB' | 'PDF' | 'MOBI' | 'AZW' | 'AZW3' | 'CBZ' | 'FB2' | 'FBZ';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
@@ -206,6 +207,12 @@ export interface TranslatorConfig {
   ttsReadAloudText: string;
 }
 
+export interface AnnotatorConfig {
+  enableAnnotationQuickActions: boolean;
+  annotationQuickAction: AnnotationToolType | null;
+  copyToNotebook: boolean;
+}
+
 export interface ScreenConfig {
   screenOrientation: 'auto' | 'portrait' | 'landscape';
 }
@@ -239,7 +246,8 @@ export interface ViewSettings
     TTSConfig,
     TranslatorConfig,
     ScreenConfig,
-    ProofreadRulesConfig {}
+    ProofreadRulesConfig,
+    AnnotatorConfig {}
 
 export interface BookProgress {
   location: string;

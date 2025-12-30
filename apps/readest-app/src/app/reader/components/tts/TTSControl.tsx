@@ -286,7 +286,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   }, [getTTSTargetLang]);
 
   const handleTTSSpeak = async (event: CustomEvent) => {
-    const { bookKey: ttsBookKey, range } = event.detail;
+    const { bookKey: ttsBookKey, range, oneTime = false } = event.detail;
     if (bookKey !== ttsBookKey) return;
 
     const view = getView(bookKey);
@@ -337,7 +337,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       await initMediaSession();
       setTtsClientsInitialized(false);
 
-      setShowIndicator(true);
+      if (!oneTime) {
+        setShowIndicator(true);
+      }
       const ttsController = new TTSController(appService, view, !!user?.id);
       ttsControllerRef.current = ttsController;
       setTtsController(ttsController);
@@ -352,7 +354,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
-        ttsController.speak(ssml);
+        ttsController.speak(ssml, oneTime);
         ttsController.setTargetLang(getTTSTargetLang() || '');
       }
       setTtsClientsInitialized(true);

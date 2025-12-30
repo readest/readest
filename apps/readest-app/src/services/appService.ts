@@ -54,6 +54,7 @@ import {
   DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS,
   SETTINGS_FILENAME,
   DEFAULT_MOBILE_SYSTEM_SETTINGS,
+  DEFAULT_ANNOTATOR_CONFIG,
 } from './constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
@@ -199,6 +200,7 @@ export abstract class BaseAppService implements AppService {
       ...DEFAULT_VIEW_CONFIG,
       ...DEFAULT_TTS_CONFIG,
       ...DEFAULT_SCREEN_CONFIG,
+      ...DEFAULT_ANNOTATOR_CONFIG,
       ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
     };
   }

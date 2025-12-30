@@ -774,5 +774,21 @@
   "Selected Text Rules": "選択テキストのルール",
   "No selected text replacement rules": "選択されたテキストの置換ルールはありません",
   "Book Specific Rules": "書籍別ルール",
-  "No book-level replacement rules": "書籍レベルの置換ルールはありません"
+  "No book-level replacement rules": "書籍レベルの置換ルールはありません",
+  "Disable Quick Action": "クイックアクションを無効にする",
+  "Enable Quick Action on Selection": "選択時にクイックアクションを有効にする",
+  "None": "なし",
+  "Annotation Tools": "注釈ツール",
+  "Enable Quick Actions": "クイックアクションを有効にする",
+  "Quick Action": "クイックアクション",
+  "Copy to Notebook": "ノートにコピー",
+  "Copy text after selection": "選択後のテキストをコピー",
+  "Highlight text after selection": "選択後のテキストをハイライト",
+  "Annotate text after selection": "選択後のテキストに注釈を付ける",
+  "Search text after selection": "選択後のテキストを検索",
+  "Look up text in dictionary after selection": "選択後のテキストを辞書で調べる",
+  "Look up text in Wikipedia after selection": "選択後のテキストをWikipediaで調べる",
+  "Translate text after selection": "選択後のテキストを翻訳する",
+  "Read text aloud after selection": "選択後のテキストを音読する",
+  "Proofread text after selection": "選択後のテキストを校正する"
 }

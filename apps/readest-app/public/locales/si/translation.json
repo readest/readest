@@ -784,5 +784,21 @@
   "Selected Text Rules": "තේරූ පෙළ සඳහා නියමයන්",
   "No selected text replacement rules": "තේරූ පෙළ සඳහා ප්‍රතිස්ථාපන නියමයන් නොමැත",
   "Book Specific Rules": "පොතට විශේෂිත නියමයන්",
-  "No book-level replacement rules": "පොත් මට්ටමේ ප්‍රතිස්ථාපන නියමයන් නොමැත"
+  "No book-level replacement rules": "පොත් මට්ටමේ ප්‍රතිස්ථාපන නියමයන් නොමැත",
+  "Disable Quick Action": "තට්ටු ක්‍රියාව අක්‍රිය කරන්න",
+  "Enable Quick Action on Selection": "තෝරා ගැනීමේදී තට්ටු ක්‍රියාව සක්‍රීය කරන්න",
+  "None": "කිසිවක් නැත",
+  "Annotation Tools": "සටහන් මෙවලම්",
+  "Enable Quick Actions": "තට්ටු ක්‍රියාවන් සක්‍රීය කරන්න",
+  "Quick Action": "තට්ටු ක්‍රියාව",
+  "Copy to Notebook": "සටහන් පොතට පිටපත් කරන්න",
+  "Copy text after selection": "තේරීමෙන් පසු පෙළ පිටපත් කරන්න",
+  "Highlight text after selection": "තේරීමෙන් පසු පෙළ හයිලයිට් කරන්න",
+  "Annotate text after selection": "තේරීමෙන් පසු පෙළ සටහන් කරන්න",
+  "Search text after selection": "තේරීමෙන් පසු පෙළ සෙවීම",
+  "Look up text in dictionary after selection": "තේරීමෙන් පසු ශබ්දකෝෂයේ පෙළ සෙවීම",
+  "Look up text in Wikipedia after selection": "තේරීමෙන් පසු විකිපීඩියාවේ පෙළ සෙවීම",
+  "Translate text after selection": "තේරීමෙන් පසු පෙළ පරිවර්තනය කරන්න",
+  "Read text aloud after selection": "තේරීමෙන් පසු පෙළ උච්චාරණය කරන්න",
+  "Proofread text after selection": "තේරීමෙන් පසු පෙළ සංශෝධනය කරන්න"
 }

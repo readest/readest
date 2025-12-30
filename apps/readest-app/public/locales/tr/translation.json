@@ -784,5 +784,21 @@
   "Selected Text Rules": "Seçili Metin Kuralları",
   "No selected text replacement rules": "Seçili metin için değiştirme kuralı yok",
   "Book Specific Rules": "Kitaba Özel Kurallar",
-  "No book-level replacement rules": "Kitap düzeyinde değiştirme kuralı yok"
+  "No book-level replacement rules": "Kitap düzeyinde değiştirme kuralı yok",
+  "Disable Quick Action": "Hızlı işlemi devre dışı bırak",
+  "Enable Quick Action on Selection": "Seçimde hızlı işlemi etkinleştir",
+  "None": "Hiçbiri",
+  "Annotation Tools": "Not araçları",
+  "Enable Quick Actions": "Hızlı işlemleri etkinleştir",
+  "Quick Action": "Hızlı işlem",
+  "Copy to Notebook": "Deftere kopyala",
+  "Copy text after selection": "Seçimden sonra metni kopyala",
+  "Highlight text after selection": "Seçimden sonra metni vurgula",
+  "Annotate text after selection": "Seçimden sonra metni not al",
+  "Search text after selection": "Seçimden sonra metni ara",
+  "Look up text in dictionary after selection": "Seçimden sonra metni sözlükte ara",
+  "Look up text in Wikipedia after selection": "Seçimden sonra metni Vikipedya'da ara",
+  "Translate text after selection": "Seçimden sonra metni çevir",
+  "Read text aloud after selection": "Seçimden sonra metni sesli oku",
+  "Proofread text after selection": "Seçimden sonra metni düzelt"
 }

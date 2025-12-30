@@ -774,5 +774,21 @@
   "Selected Text Rules": "已選取文字規則",
   "No selected text replacement rules": "沒有已選取文字的取代規則",
   "Book Specific Rules": "書籍層級規則",
-  "No book-level replacement rules": "沒有書籍層級的取代規則"
+  "No book-level replacement rules": "沒有書籍層級的取代規則",
+  "Disable Quick Action": "停用快速操作",
+  "Enable Quick Action on Selection": "選取時啟用快速操作",
+  "None": "無",
+  "Annotation Tools": "註解工具",
+  "Enable Quick Actions": "啟用快速操作",
+  "Quick Action": "快速操作",
+  "Copy to Notebook": "複製到筆記本",
+  "Copy text after selection": "複製選取後的文字",
+  "Highlight text after selection": "劃線選取後的文字",
+  "Annotate text after selection": "註解選取後的文字",
+  "Search text after selection": "搜尋選取後的文字",
+  "Look up text in dictionary after selection": "在字典中查找選取後的文字",
+  "Look up text in Wikipedia after selection": "在維基百科中查找選取後的文字",
+  "Translate text after selection": "翻譯選取後的文字",
+  "Read text aloud after selection": "朗讀選取後的文字",
+  "Proofread text after selection": "校對選取後的文字"
 }

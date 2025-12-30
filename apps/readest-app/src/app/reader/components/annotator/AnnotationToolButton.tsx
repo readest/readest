@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 
-interface PopupButtonProps {
+interface AnnotationToolButtonProps {
   showTooltip: boolean;
   tooltipText: string;
   disabled?: boolean;
@@ -9,7 +9,7 @@ interface PopupButtonProps {
   onClick: () => void;
 }
 
-const PopupButton: React.FC<PopupButtonProps> = ({
+const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
   showTooltip,
   tooltipText,
   disabled,
@@ -40,4 +40,4 @@ const PopupButton: React.FC<PopupButtonProps> = ({
   );
 };
 
-export default PopupButton;
+export default AnnotationToolButton;

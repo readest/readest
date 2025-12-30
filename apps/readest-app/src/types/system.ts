@@ -34,6 +34,16 @@ export type FileInfo = {
   birthtime: Date | null;
 };
 
+export type NativeTouchEventType = {
+  type: 'touchstart' | 'touchcancel' | 'touchend';
+  pointerId: number;
+  x: number;
+  y: number;
+  pressure: number;
+  pointerCount: number;
+  timestamp: number;
+};
+
 export interface FileSystem {
   resolvePath(path: string, base: BaseDir): ResolvedPath;
   getURL(path: string): string;

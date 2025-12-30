@@ -774,5 +774,21 @@
   "Selected Text Rules": "选中文本规则",
   "No selected text replacement rules": "暂无选中文本的替换规则",
   "Book Specific Rules": "书籍范围规则",
-  "No book-level replacement rules": "暂无书籍级别的替换规则"
+  "No book-level replacement rules": "暂无书籍级别的替换规则",
+  "Disable Quick Action": "禁用快速操作",
+  "Enable Quick Action on Selection": "在选择时启用快速操作",
+  "None": "无",
+  "Annotation Tools": "注释工具",
+  "Enable Quick Actions": "启用快捷操作",
+  "Quick Action": "快捷操作",
+  "Copy to Notebook": "复制到笔记本",
+  "Copy text after selection": "复制选中文本",
+  "Highlight text after selection": "划线选中文本",
+  "Annotate text after selection": "注释选中文本",
+  "Search text after selection": "搜索选中文本",
+  "Look up text in dictionary after selection": "在字典中查找选中文本",
+  "Look up text in Wikipedia after selection": "在维基百科中查找选中文本",
+  "Translate text after selection": "翻译选中文本",
+  "Read text aloud after selection": "朗读选中文本",
+  "Proofread text after selection": "校对选中文本"
 }

@@ -824,5 +824,21 @@
   "Selected Text Rules": "قواعد النص المحدد",
   "No selected text replacement rules": "لا توجد قواعد استبدال نص محدد",
   "Book Specific Rules": "قواعد خاصة بالكتاب",
-  "No book-level replacement rules": "لا توجد قواعد استبدال على مستوى الكتاب"
+  "No book-level replacement rules": "لا توجد قواعد استبدال على مستوى الكتاب",
+  "Disable Quick Action": "تعطيل الإجراء السريع",
+  "Enable Quick Action on Selection": "تمكين الإجراء السريع عند التحديد",
+  "None": "لا شيء",
+  "Annotation Tools": "أدوات التعليق",
+  "Enable Quick Actions": "تمكين الإجراءات السريعة",
+  "Quick Action": "الإجراء السريع",
+  "Copy to Notebook": "نسخ إلى الدفتر",
+  "Copy text after selection": "نسخ النص بعد التحديد",
+  "Highlight text after selection": "تمييز النص بعد التحديد",
+  "Annotate text after selection": "تعليق على النص بعد التحديد",
+  "Search text after selection": "البحث في النص بعد التحديد",
+  "Look up text in dictionary after selection": "البحث عن النص في القاموس بعد التحديد",
+  "Look up text in Wikipedia after selection": "البحث عن النص في ويكيبيديا بعد التحديد",
+  "Translate text after selection": "ترجمة النص بعد التحديد",
+  "Read text aloud after selection": "قراءة النص بصوت عالٍ بعد التحديد",
+  "Proofread text after selection": "تدقيق النص بعد التحديد"
 }
