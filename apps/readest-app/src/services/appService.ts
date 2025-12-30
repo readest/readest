@@ -382,6 +382,7 @@ export abstract class BaseAppService implements AppService {
         deletedAt: transient ? Date.now() : null,
         downloadedAt: Date.now(),
         updatedAt: Date.now(),
+        totalReadTime: existingBook ? existingBook.totalReadTime : 0,
       };
       // update book metadata when reimporting the same book
       if (existingBook) {
@@ -391,6 +392,7 @@ export abstract class BaseAppService implements AppService {
         existingBook.author = existingBook.author ?? book.author;
         existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
         existingBook.downloadedAt = Date.now();
+        existingBook.totalReadTime = existingBook.totalReadTime ?? 0;
       }
 
       if (!(await this.fs.exists(getDir(book), 'Books'))) {
