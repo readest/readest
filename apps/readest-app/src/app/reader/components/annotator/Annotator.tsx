@@ -379,8 +379,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         handleDismissPopupAndSelection();
         break;
       case 'highlight':
-        handleHighlight();
-        handleDismissPopupAndSelection();
+        // Delay to ensure highlight is applied after selection is set
+        // so that onShowAnnotation won't be triggered immediately
+        setTimeout(() => {
+          handleHighlight();
+          handleDismissPopupAndSelection();
+        }, 0);
         break;
       case 'dictionary':
         handleDictionary();
