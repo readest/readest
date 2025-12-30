@@ -804,5 +804,21 @@
   "Selected Text Rules": "Reguły dla zaznaczonego tekstu",
   "No selected text replacement rules": "Brak reguł zastępowania dla zaznaczonego tekstu",
   "Book Specific Rules": "Reguły specyficzne dla książki",
-  "No book-level replacement rules": "Brak reguł zastępowania na poziomie książki"
+  "No book-level replacement rules": "Brak reguł zastępowania na poziomie książki",
+  "Disable Quick Action": "Wyłącz szybką akcję",
+  "Enable Quick Action on Selection": "Włącz szybką akcję przy zaznaczeniu",
+  "None": "Brak",
+  "Annotation Tools": "Narzędzia do adnotacji",
+  "Enable Quick Actions": "Włącz szybkie akcje",
+  "Quick Action": "Szybka akcja",
+  "Copy to Notebook": "Kopiuj do notatnika",
+  "Copy text after selection": "Kopiuj zaznaczony tekst",
+  "Highlight text after selection": "Podświetl zaznaczony tekst",
+  "Annotate text after selection": "Dodaj adnotację do zaznaczonego tekstu",
+  "Search text after selection": "Wyszukaj zaznaczony tekst",
+  "Look up text in dictionary after selection": "Sprawdź zaznaczony tekst w słowniku",
+  "Look up text in Wikipedia after selection": "Sprawdź zaznaczony tekst w Wikipedii",
+  "Translate text after selection": "Przetłumacz zaznaczony tekst",
+  "Read text aloud after selection": "Odczytaj zaznaczony tekst na głos",
+  "Proofread text after selection": "Sprawdź zaznaczony tekst"
 }

@@ -784,5 +784,21 @@
   "Selected Text Rules": "தேர்ந்தெடுக்கப்பட்ட உரைக்கான விதிகள்",
   "No selected text replacement rules": "தேர்ந்தெடுக்கப்பட்ட உரைக்கான மாற்று விதிகள் இல்லை",
   "Book Specific Rules": "புத்தகத்திற்கு குறிப்பிட்ட விதிகள்",
-  "No book-level replacement rules": "புத்தக மட்டத்தில் மாற்று விதிகள் இல்லை"
+  "No book-level replacement rules": "புத்தக மட்டத்தில் மாற்று விதிகள் இல்லை",
+  "Disable Quick Action": "விரைவு செயலை முடக்கு",
+  "Enable Quick Action on Selection": "தேர்வில் விரைவு செயலை இயக்கு",
+  "None": "எதுவும் இல்லை",
+  "Annotation Tools": "கருத்துரை கருவிகள்",
+  "Enable Quick Actions": "விரைவு செயல்களை இயக்கு",
+  "Quick Action": "விரைவு செயல்",
+  "Copy to Notebook": "குறிப்பேட்டியில் நகலெடு",
+  "Copy text after selection": "உரையை தேர்வுக்குப் பிறகு நகலெடு",
+  "Highlight text after selection": "உரையை தேர்வுக்குப் பிறகு முத்திரை இடு",
+  "Annotate text after selection": "உரையை தேர்வுக்குப் பிறகு கருத்துரை இடு",
+  "Search text after selection": "உரையை தேர்வுக்குப் பிறகு தேடு",
+  "Look up text in dictionary after selection": "தேர்வுக்குப் பிறகு அகராதியில் உரையைத் தேடு",
+  "Look up text in Wikipedia after selection": "தேர்வுக்குப் பிறகு விக்கிப்பீடியாவில் உரையைத் தேடு",
+  "Translate text after selection": "தேர்வுக்குப் பிறகு உரையை மொழிபெயர்",
+  "Read text aloud after selection": "தேர்வுக்குப் பிறகு உரையை ஓதுக",
+  "Proofread text after selection": "தேர்வுக்குப் பிறகு உரையை திருத்துக"
 }

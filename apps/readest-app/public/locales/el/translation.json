@@ -784,5 +784,21 @@
   "Selected Text Rules": "Κανόνες επιλεγμένου κειμένου",
   "No selected text replacement rules": "Δεν υπάρχουν κανόνες αντικατάστασης για το επιλεγμένο κείμενο",
   "Book Specific Rules": "Κανόνες για συγκεκριμένο βιβλίο",
-  "No book-level replacement rules": "Δεν υπάρχουν κανόνες αντικατάστασης σε επίπεδο βιβλίου"
+  "No book-level replacement rules": "Δεν υπάρχουν κανόνες αντικατάστασης σε επίπεδο βιβλίου",
+  "Disable Quick Action": "Απενεργοποίηση γρήγορης ενέργειας",
+  "Enable Quick Action on Selection": "Ενεργοποίηση γρήγορης ενέργειας κατά την επιλογή",
+  "None": "Καμία",
+  "Annotation Tools": "Εργαλεία σχολιασμού",
+  "Enable Quick Actions": "Ενεργοποίηση γρήγορων ενεργειών",
+  "Quick Action": "Γρήγορη ενέργεια",
+  "Copy to Notebook": "Αντιγραφή στο σημειωματάριο",
+  "Copy text after selection": "Αντιγραφή κειμένου μετά την επιλογή",
+  "Highlight text after selection": "Επισήμανση κειμένου μετά την επιλογή",
+  "Annotate text after selection": "Σχολιασμός κειμένου μετά την επιλογή",
+  "Search text after selection": "Αναζήτηση κειμένου μετά την επιλογή",
+  "Look up text in dictionary after selection": "Αναζήτηση κειμένου στο λεξικό μετά την επιλογή",
+  "Look up text in Wikipedia after selection": "Αναζήτηση κειμένου στη Wikipedia μετά την επιλογή",
+  "Translate text after selection": "Μετάφραση κειμένου μετά την επιλογή",
+  "Read text aloud after selection": "Ανάγνωση κειμένου μετά την επιλογή",
+  "Proofread text after selection": "Διόρθωση κειμένου μετά την επιλογή"
 }

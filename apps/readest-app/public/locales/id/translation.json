@@ -774,5 +774,21 @@
   "Selected Text Rules": "Aturan teks terpilih",
   "No selected text replacement rules": "Tidak ada aturan penggantian untuk teks terpilih",
   "Book Specific Rules": "Aturan khusus buku",
-  "No book-level replacement rules": "Tidak ada aturan penggantian tingkat buku"
+  "No book-level replacement rules": "Tidak ada aturan penggantian tingkat buku",
+  "Disable Quick Action": "Nonaktifkan Aksi Cepat",
+  "Enable Quick Action on Selection": "Aktifkan Aksi Cepat saat memilih",
+  "None": "Tidak ada",
+  "Annotation Tools": "Alat Anotasi",
+  "Enable Quick Actions": "Aktifkan Aksi Cepat",
+  "Quick Action": "Aksi Cepat",
+  "Copy to Notebook": "Salin ke Buku Catatan",
+  "Copy text after selection": "Salin teks setelah pemilihan",
+  "Highlight text after selection": "Sorot teks setelah pemilihan",
+  "Annotate text after selection": "Anotasi teks setelah pemilihan",
+  "Search text after selection": "Cari teks setelah pemilihan",
+  "Look up text in dictionary after selection": "Cari teks di kamus setelah pemilihan",
+  "Look up text in Wikipedia after selection": "Cari teks di Wikipedia setelah pemilihan",
+  "Translate text after selection": "Terjemahkan teks setelah pemilihan",
+  "Read text aloud after selection": "Bacakan teks setelah pemilihan",
+  "Proofread text after selection": "Periksa teks setelah pemilihan"
 }

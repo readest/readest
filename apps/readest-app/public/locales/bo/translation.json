@@ -774,5 +774,21 @@
   "Selected Text Rules": "བདམས་པའི་ཡིག་ཆ་བརྗེ་སྒྱུར་སྲིད་སྒྲིག",
   "No selected text replacement rules": "བདམས་པའི་ཡིག་ཆ་བརྗེ་སྒྱུར་སྲིད་སྒྲིག་མེད་པ",
   "Book Specific Rules": "དེབ་སྒོས་ཀྱི་བརྗེ་སྒྱུར་སྲིད་སྒྲིག",
-  "No book-level replacement rules": "དེབ་རིམ་གྱི་བརྗེ་སྒྱུར་སྲིད་སྒྲིག་མེད་པ"
+  "No book-level replacement rules": "དེབ་རིམ་གྱི་བརྗེ་སྒྱུར་སྲིད་སྒྲིག་མེད་པ",
+  "Disable Quick Action": "མགྱོགས་མྱུར་བྱ་བ་སྤང་",
+  "Enable Quick Action on Selection": "འདེམས་པའི་སྐབས་མགྱོགས་མྱུར་བྱ་བ་སྤྱོད་",
+  "None": "མེད་",
+  "Annotation Tools": "མཆན་འགྲེལ་ལག་ཆ་",
+  "Enable Quick Actions": "མགྱོགས་མྱུར་བྱ་བ་སྤྱོད་",
+  "Quick Action": "མགྱོགས་མྱུར་བྱ་བ་",
+  "Copy to Notebook": "ཟིན་དེབ་ནང་འདྲ་བཤུས་",
+  "Copy text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་འདྲ་བཤུས་",
+  "Highlight text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་མངོན་གསལ་བྱེད་",
+  "Annotate text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་མཆན་འགྲེལ་བྱེད་",
+  "Search text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་འཚོལ་ཞིབ་བྱེད་",
+  "Look up text in dictionary after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་ཚིག་མཛོད་ནང་འཚོལ་",
+  "Look up text in Wikipedia after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་ཝེ་ཀི་པི་ཌི་ཡི་ནང་འཚོལ་",
+  "Translate text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་སྐད་བསྒྱུར་བྱེད་",
+  "Read text aloud after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་སྐད་ཀྱིས་ཀློག་",
+  "Proofread text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་ཞིབ་བཤེར་བྱེད་"
 }

@@ -784,5 +784,21 @@
   "Selected Text Rules": "নির্বাচিত টেক্সট নিয়ম",
   "No selected text replacement rules": "কোনও নির্বাচিত টেক্সট বিকল্প নিয়ম নেই",
   "Book Specific Rules": "বই নির্দিষ্ট নিয়ম",
-  "No book-level replacement rules": "কোনও বই-স্তরের বিকল্প নিয়ম নেই"
+  "No book-level replacement rules": "কোনও বই-স্তরের বিকল্প নিয়ম নেই",
+  "Disable Quick Action": "দ্রুত ক্রিয়া নিষ্ক্রিয় করুন",
+  "Enable Quick Action on Selection": "নির্বাচনের উপর দ্রুত ক্রিয়া সক্ষম করুন",
+  "None": "কোনোটিই নয়",
+  "Annotation Tools": "অ্যনোটেশন সরঞ্জামসমূহ",
+  "Enable Quick Actions": "দ্রুত ক্রিয়া সক্ষম করুন",
+  "Quick Action": "দ্রুত ক্রিয়া",
+  "Copy to Notebook": "নোটবুকে কপি করুন",
+  "Copy text after selection": "নির্বাচনের পরে টেক্সট কপি করুন",
+  "Highlight text after selection": "নির্বাচনের পরে টেক্সট হাইলাইট করুন",
+  "Annotate text after selection": "নির্বাচনের পরে টেক্সট মন্তব্য করুন",
+  "Search text after selection": "নির্বাচনের পরে টেক্সট অনুসন্ধান করুন",
+  "Look up text in dictionary after selection": "নির্বাচনের পরে টেক্সট অভিধানে দেখুন",
+  "Look up text in Wikipedia after selection": "নির্বাচনের পরে টেক্সট উইকিপিডিয়ায় দেখুন",
+  "Translate text after selection": "নির্বাচনের পরে টেক্সট অনুবাদ করুন",
+  "Read text aloud after selection": "নির্বাচনের পরে টেক্সট উচ্চারণ করুন",
+  "Proofread text after selection": "নির্বাচনের পরে টেক্সট প্রুফরিড করুন"
 }

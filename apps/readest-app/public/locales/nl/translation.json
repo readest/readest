@@ -784,5 +784,21 @@
   "Selected Text Rules": "Regels voor geselecteerde tekst",
   "No selected text replacement rules": "Geen vervangingsregels voor geselecteerde tekst",
   "Book Specific Rules": "Boekspecifieke regels",
-  "No book-level replacement rules": "Geen vervangingsregels op boekniveau"
+  "No book-level replacement rules": "Geen vervangingsregels op boekniveau",
+  "Disable Quick Action": "Snelle actie uitschakelen",
+  "Enable Quick Action on Selection": "Snelle actie bij selectie inschakelen",
+  "None": "Geen",
+  "Annotation Tools": "Annotatiehulpmiddelen",
+  "Enable Quick Actions": "Snelle acties inschakelen",
+  "Quick Action": "Snelle actie",
+  "Copy to Notebook": "Kopiëren naar notitieboek",
+  "Copy text after selection": "Kopieer tekst na selectie",
+  "Highlight text after selection": "Markeer tekst na selectie",
+  "Annotate text after selection": "Annoteren tekst na selectie",
+  "Search text after selection": "Zoek tekst na selectie",
+  "Look up text in dictionary after selection": "Zoek tekst op in woordenboek na selectie",
+  "Look up text in Wikipedia after selection": "Zoek tekst op in Wikipedia na selectie",
+  "Translate text after selection": "Vertaal tekst na selectie",
+  "Read text aloud after selection": "Lees tekst hardop na selectie",
+  "Proofread text after selection": "Corrigeer tekst na selectie"
 }

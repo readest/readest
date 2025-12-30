@@ -784,5 +784,21 @@
   "Selected Text Rules": "قوانین متن انتخاب‌شده",
   "No selected text replacement rules": "هیچ قانون جایگزینی برای متن انتخاب‌شده وجود ندارد",
   "Book Specific Rules": "قوانین مخصوص کتاب",
-  "No book-level replacement rules": "هیچ قانون جایگزینی در سطح کتاب وجود ندارد"
+  "No book-level replacement rules": "هیچ قانون جایگزینی در سطح کتاب وجود ندارد",
+  "Disable Quick Action": "غیرفعال‌سازی اقدام سریع",
+  "Enable Quick Action on Selection": "فعال‌سازی اقدام سریع هنگام انتخاب",
+  "None": "هیچ‌کدام",
+  "Annotation Tools": "ابزارهای یادداشت‌گذاری",
+  "Enable Quick Actions": "فعال‌سازی اقدامات سریع",
+  "Quick Action": "اقدام سریع",
+  "Copy to Notebook": "کپی به دفترچه",
+  "Copy text after selection": "کپی متن پس از انتخاب",
+  "Highlight text after selection": "برجسته‌سازی متن پس از انتخاب",
+  "Annotate text after selection": "یادداشت‌گذاری متن پس از انتخاب",
+  "Search text after selection": "جستجوی متن پس از انتخاب",
+  "Look up text in dictionary after selection": "جستجوی متن در فرهنگ لغت پس از انتخاب",
+  "Look up text in Wikipedia after selection": "جستجوی متن در ویکی‌پدیا پس از انتخاب",
+  "Translate text after selection": "ترجمه متن پس از انتخاب",
+  "Read text aloud after selection": "خواندن متن با صدای بلند پس از انتخاب",
+  "Proofread text after selection": "بازبینی متن پس از انتخاب"
 }

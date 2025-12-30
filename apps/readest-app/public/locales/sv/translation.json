@@ -784,5 +784,21 @@
   "Selected Text Rules": "Regler för markerad text",
   "No selected text replacement rules": "Inga ersättningsregler för markerad text",
   "Book Specific Rules": "Bokspecifika regler",
-  "No book-level replacement rules": "Inga ersättningsregler på boknivå"
+  "No book-level replacement rules": "Inga ersättningsregler på boknivå",
+  "Disable Quick Action": "Inaktivera snabbåtgärd",
+  "Enable Quick Action on Selection": "Aktivera snabbåtgärd vid val",
+  "None": "Ingen",
+  "Annotation Tools": "Anteckningsverktyg",
+  "Enable Quick Actions": "Aktivera snabba åtgärder",
+  "Quick Action": "Snabbåtgärd",
+  "Copy to Notebook": "Kopiera till anteckningsbok",
+  "Copy text after selection": "Kopiera text efter markering",
+  "Highlight text after selection": "Markera text efter markering",
+  "Annotate text after selection": "Anteckna text efter markering",
+  "Search text after selection": "Sök text efter markering",
+  "Look up text in dictionary after selection": "Slå upp text i ordbok efter markering",
+  "Look up text in Wikipedia after selection": "Slå upp text i Wikipedia efter markering",
+  "Translate text after selection": "Översätt text efter markering",
+  "Read text aloud after selection": "Läs upp text efter markering",
+  "Proofread text after selection": "Korrekturläs text efter markering"
 }

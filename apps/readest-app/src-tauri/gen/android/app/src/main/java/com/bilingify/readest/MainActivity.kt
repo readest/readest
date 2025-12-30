@@ -3,6 +3,7 @@ package com.bilingify.readest
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.webkit.WebView
 import android.net.Uri
 import android.util.Log
@@ -45,6 +46,48 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun interceptBackKey(enabled: Boolean) {
         Log.d("MainActivity", "Intercept back key: $enabled")
         interceptBackKeyEnabled = enabled
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val action = when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> "touchstart"
+            MotionEvent.ACTION_UP -> "touchend"
+            MotionEvent.ACTION_CANCEL -> "touchcancel"
+            MotionEvent.ACTION_POINTER_DOWN -> "touchstart"
+            MotionEvent.ACTION_POINTER_UP -> "touchend"
+            else -> null
+        }
+
+        action?.let { eventType ->
+            val pointerIndex = event.actionIndex
+            val pointerId = event.getPointerId(pointerIndex)
+            val x = event.getX(pointerIndex)
+            val y = event.getY(pointerIndex)
+            val pressure = event.getPressure(pointerIndex)
+
+            wv.evaluateJavascript(
+                """
+                try {
+                    if (window.onNativeTouch) {
+                        window.onNativeTouch({
+                            type: "$eventType",
+                            pointerId: $pointerId,
+                            x: $x,
+                            y: $y,
+                            pressure: $pressure,
+                            pointerCount: ${event.pointerCount},
+                            timestamp: ${event.eventTime}
+                        });
+                    }
+                } catch (err) {
+                    console.error('Native touch error:', err);
+                }
+                """.trimIndent(),
+                null
+            )
+        }
+
+        return super.dispatchTouchEvent(event)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

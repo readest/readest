@@ -8,11 +8,18 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import WindowButtons from '@/components/WindowButtons';
+import { getHighlightColorHex } from '../utils/annotatorUtil';
+import { annotationToolQuickActions } from './annotator/AnnotationTools';
+import { AnnotationToolType } from '@/types/annotator';
+import { saveViewSettings } from '@/helpers/settings';
+import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
+import WindowButtons from '@/components/WindowButtons';
+import QuickActionMenu from './annotator/QuickActionMenu';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
@@ -38,12 +45,15 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onCloseBook,
 }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
+  const { settings } = useSettingsStore();
   const { isTrafficLightVisible } = useTrafficLight();
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
-  const { bookKeys, hoveredBookKey, getView, setHoveredBookKey } = useReaderStore();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { bookKeys, hoveredBookKey } = useReaderStore();
+  const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible } = useSidebarStore();
+  const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
+  const viewSettings = getViewSettings(bookKey);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const view = getView(bookKey);
@@ -54,9 +64,25 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc.body.style.cursor === 'pointer');
 
+  const enableAnnotationQuickActions = viewSettings?.enableAnnotationQuickActions;
+  const annotationQuickActionButton =
+    annotationToolQuickActions.find(
+      (button) => button.type === viewSettings?.annotationQuickAction,
+    ) || annotationToolQuickActions[0]!;
+  const annotationQuickAction = viewSettings?.annotationQuickAction;
+  const AnnotationToolQuickActionIcon = annotationQuickActionButton.Icon;
+  const highlightStyle = settings.globalReadSettings.highlightStyle;
+  const highlightColor = settings.globalReadSettings.highlightStyles[highlightStyle];
+  const highlightHexColor = getHighlightColorHex(settings, highlightColor);
+
   const handleToggleDropdown = (isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
     if (!isOpen) setHoveredBookKey('');
+  };
+
+  const handleAnnotationQuickActionSelect = (action: AnnotationToolType | null) => {
+    if (viewSettings?.annotationQuickAction === action) action = null;
+    saveViewSettings(envConfig, bookKey, 'annotationQuickAction', action, false, true);
   };
 
   useEffect(() => {
@@ -141,6 +167,40 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
           <BookmarkToggler bookKey={bookKey} />
           <TranslationToggler bookKey={bookKey} />
+          {enableAnnotationQuickActions && (
+            <Dropdown
+              label={
+                annotationQuickAction
+                  ? _('Disable Quick Action')
+                  : _('Enable Quick Action on Selection')
+              }
+              className='exclude-title-bar-mousedown dropdown-bottom'
+              buttonClassName={clsx(
+                'btn btn-ghost h-8 min-h-8 w-8 p-0',
+                viewSettings?.annotationQuickAction && 'bg-base-300/50',
+              )}
+              toggleButton={
+                annotationQuickAction === 'highlight' || annotationQuickAction === null ? (
+                  <HighlighterIcon
+                    size={iconSize16}
+                    tipColor={annotationQuickAction === null ? '#8F8F8F' : highlightHexColor}
+                    tipStyle={{
+                      opacity: annotationQuickAction === null ? 0.3 : 0.5,
+                      mixBlendMode: isDarkMode ? 'screen' : 'multiply',
+                    }}
+                  />
+                ) : (
+                  <AnnotationToolQuickActionIcon size={iconSize16} />
+                )
+              }
+              onToggle={handleToggleDropdown}
+            >
+              <QuickActionMenu
+                selectedAction={viewSettings.annotationQuickAction}
+                onActionSelect={handleAnnotationQuickActionSelect}
+              />
+            </Dropdown>
+          )}
         </div>
 
         <div

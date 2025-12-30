@@ -81,7 +81,7 @@ export const useTextSelector = (
       }, 30);
     }, 30);
   };
-  const handleSelectionchange = (doc: Document, index: number) => {
+  const handleSelectionchange = (doc: Document) => {
     // Available on iOS, Android and Desktop, fired when the selection is changed
     // Ideally the popup only shows when the selection is done,
     const sel = doc.getSelection() as Selection;
@@ -98,12 +98,6 @@ export const useTextSelector = (
       return;
     }
 
-    // On Android no proper events are fired to notify selection done,
-    // we make the popup show when the selection is changed
-    // note that selection may be initiated by a tts speak
-    if (isTouchStarted.current && osPlatform === 'android') {
-      makeSelection(sel, index, false);
-    }
     isUpToPopup.current = true;
   };
   const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
@@ -127,14 +121,18 @@ export const useTextSelector = (
   const handlePointerdown = (e: PointerEvent) => {
     lastPointerType.current = e.pointerType;
   };
-  const handlePointerup = (doc: Document, index: number, ev: PointerEvent) => {
+  const handlePointerup = (doc: Document, index: number, ev?: PointerEvent) => {
     // Available on iOS and Desktop, fired at touchend or mouseup
-    // Note that on Android, pointerup event is fired after an additional touch event
+    // Note that on Android, we mock pointer events with native touch events
     const sel = doc.getSelection() as Selection;
-    if (isValidSelection(sel) && isPointerInsideSelection(sel, ev)) {
-      if (osPlatform === 'ios' || appService?.isIOSApp) {
+    if (isValidSelection(sel)) {
+      const isPointerInside = ev && isPointerInsideSelection(sel, ev);
+      const isIOS = osPlatform === 'ios' || appService?.isIOSApp;
+      const isAndroid = appService?.isAndroidApp;
+
+      if (isPointerInside && isIOS) {
         makeSelectionOnIOS(sel, index);
-      } else {
+      } else if (isPointerInside || isAndroid) {
         makeSelection(sel, index, true);
       }
     }
@@ -228,6 +226,7 @@ export const useTextSelector = (
   }, []);
 
   return {
+    isTextSelected,
     handleScroll,
     handleTouchStart,
     handleTouchEnd,

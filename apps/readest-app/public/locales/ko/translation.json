@@ -774,5 +774,21 @@
   "Selected Text Rules": "선택한 텍스트 규칙",
   "No selected text replacement rules": "선택한 텍스트에 대한 대체 규칙이 없습니다",
   "Book Specific Rules": "책별 규칙",
-  "No book-level replacement rules": "책 수준의 대체 규칙이 없습니다"
+  "No book-level replacement rules": "책 수준의 대체 규칙이 없습니다",
+  "Disable Quick Action": "빠른 작업 비활성화",
+  "Enable Quick Action on Selection": "선택 시 빠른 작업 활성화",
+  "None": "없음",
+  "Annotation Tools": "주석 도구",
+  "Enable Quick Actions": "빠른 작업 활성화",
+  "Quick Action": "빠른 작업",
+  "Copy to Notebook": "노트에 복사",
+  "Copy text after selection": "선택 후 텍스트 복사",
+  "Highlight text after selection": "선택 후 텍스트 강조",
+  "Annotate text after selection": "선택 후 텍스트 주석 달기",
+  "Search text after selection": "선택 후 텍스트 검색",
+  "Look up text in dictionary after selection": "선택 후 텍스트를 사전에서 찾기",
+  "Look up text in Wikipedia after selection": "선택 후 텍스트를 위키피디아에서 찾기",
+  "Translate text after selection": "선택 후 텍스트 번역",
+  "Read text aloud after selection": "선택 후 텍스트 음성 읽기",
+  "Proofread text after selection": "선택 후 텍스트 교정"
 }

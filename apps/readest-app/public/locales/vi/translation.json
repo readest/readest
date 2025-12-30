@@ -774,5 +774,21 @@
   "Selected Text Rules": "Quy tắc cho văn bản đã chọn",
   "No selected text replacement rules": "Không có quy tắc thay thế cho văn bản đã chọn",
   "Book Specific Rules": "Quy tắc dành riêng cho sách",
-  "No book-level replacement rules": "Không có quy tắc thay thế ở cấp sách"
+  "No book-level replacement rules": "Không có quy tắc thay thế ở cấp sách",
+  "Disable Quick Action": "Vô hiệu hóa Hành động Nhanh",
+  "Enable Quick Action on Selection": "Bật Hành động Nhanh khi chọn",
+  "None": "Không có",
+  "Annotation Tools": "Công cụ chú thích",
+  "Enable Quick Actions": "Bật Hành động Nhanh",
+  "Quick Action": "Hành động Nhanh",
+  "Copy to Notebook": "Sao chép vào Sổ tay",
+  "Copy text after selection": "Sao chép văn bản sau khi chọn",
+  "Highlight text after selection": "Đánh dấu văn bản sau khi chọn",
+  "Annotate text after selection": "Chú thích văn bản sau khi chọn",
+  "Search text after selection": "Tìm kiếm văn bản sau khi chọn",
+  "Look up text in dictionary after selection": "Tra cứu văn bản trong từ điển sau khi chọn",
+  "Look up text in Wikipedia after selection": "Tra cứu văn bản trong Wikipedia sau khi chọn",
+  "Translate text after selection": "Dịch văn bản sau khi chọn",
+  "Read text aloud after selection": "Đọc to văn bản sau khi chọn",
+  "Proofread text after selection": "Hiệu đính văn bản sau khi chọn"
 }

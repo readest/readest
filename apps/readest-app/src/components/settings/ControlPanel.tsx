@@ -11,7 +11,9 @@ import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import NumberInput from './NumberInput';
+import Select from '../Select';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -32,6 +34,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
+  const [enableAnnotationQuickActions, setEnableAnnotationQuickActions] = useState(
+    viewSettings.enableAnnotationQuickActions,
+  );
+  const [annotationQuickAction, setAnnotationQuickAction] = useState(
+    viewSettings.annotationQuickAction,
+  );
+  const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [animated, setAnimated] = useState(viewSettings.animated);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
@@ -50,6 +59,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       animated: setAnimated,
       isEink: setIsEink,
       allowScript: setAllowScript,
+      fullscreenClickArea: setFullscreenClickArea,
+      disableDoubleClick: setIsDisableDoubleClick,
+      enableAnnotationQuickActions: setEnableAnnotationQuickActions,
+      copyToNotebook: setCopyToNotebook,
     });
   };
 
@@ -147,6 +160,42 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowScript]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'enableAnnotationQuickActions',
+      enableAnnotationQuickActions,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableAnnotationQuickActions]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [copyToNotebook]);
+
+  const getQuickActionOptions = () => {
+    return [
+      {
+        value: '',
+        label: _('None'),
+      },
+      ...annotationToolQuickActions.map((button) => ({
+        value: button.type,
+        label: button.label,
+      })),
+    ];
+  };
+
+  const handleSelectAnnotationQuickAction = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const action = event.target.value as typeof annotationQuickAction;
+    setAnnotationQuickAction(action);
+    saveViewSettings(envConfig, bookKey, 'annotationQuickAction', action, false, true);
+  };
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -246,6 +295,41 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 />
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full'>
+        <h2 className='mb-2 font-medium'>{_('Annotation Tools')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Enable Quick Actions')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={enableAnnotationQuickActions}
+                onChange={() => setEnableAnnotationQuickActions(!enableAnnotationQuickActions)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Quick Action')}</span>
+              <Select
+                value={annotationQuickAction || ''}
+                onChange={handleSelectAnnotationQuickAction}
+                options={getQuickActionOptions()}
+                disabled={!enableAnnotationQuickActions}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Copy to Notebook')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={copyToNotebook}
+                onChange={() => setCopyToNotebook(!copyToNotebook)}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import React from 'react';
 import { Position } from '@/utils/sel';
 import { BookNote, HighlightColor, HighlightStyle } from '@/types/book';
 import Popup from '@/components/Popup';
-import PopupButton from './PopupButton';
+import AnnotationToolButton from './AnnotationToolButton';
 import AnnotationNotes from './AnnotationNotes';
 import HighlightOptions from './HighlightOptions';
 
@@ -69,7 +69,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
             {buttons.map((button, index) => {
               if (button.visible === false) return null;
               return (
-                <PopupButton
+                <AnnotationToolButton
                   key={index}
                   showTooltip={!highlightOptionsVisible}
                   tooltipText={button.tooltipText}
