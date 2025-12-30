@@ -14,6 +14,7 @@ import {
   formatAuthors,
   formatDate,
   formatBytes,
+  formatTime,
   formatLanguage,
   formatPublisher,
   formatTitle,
@@ -169,6 +170,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               __html: metadata.description || _('No description available'),
             }}
           ></p>
+        </div>
+        <div>
+          <span className='font-bold'>{_('Read Time')}</span>
+          <p className='text-neutral-content prose prose-sm max-w-full text-sm'>
+            {formatTime(book.totalReadTime) || _('Never')}
+          </p>
         </div>
       </div>
     </div>
