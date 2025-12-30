@@ -41,6 +41,7 @@ interface ViewState {
     view settings for primary view are saved to book config which is persisted to config file
     omitting settings that are not changed from global settings */
   viewSettings: ViewSettings | null;
+  viewTimeStamp: number | null;
 }
 
 interface ReaderStore {
@@ -140,6 +141,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           syncing: false,
           gridInsets: null,
           viewSettings: null,
+          viewTimeStamp: Date.now(),
         },
       },
     }));
@@ -211,6 +213,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             syncing: false,
             gridInsets: null,
             viewSettings: { ...globalViewSettings, ...configViewSettings },
+            viewTimeStamp: null,
           },
         },
       }));
@@ -234,6 +237,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             syncing: false,
             gridInsets: null,
             viewSettings: null,
+            viewTimeStamp: null,
           },
         },
       }));
