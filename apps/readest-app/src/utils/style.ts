@@ -155,7 +155,7 @@ const getColorStyles = (
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
     /* horizontal rule #1649 */
-    *:has(> hr[class]):not(body) {
+    *:has(> hr.background-img):not(body) {
       background-color: ${bg};
     }
     hr {
@@ -757,6 +757,12 @@ export const applyImageStyle = (document: Document) => {
     );
     if (hasTextSiblings && isInline) {
       img.classList.add('has-text-siblings');
+    }
+  });
+  document.querySelectorAll('hr').forEach((hr) => {
+    const computedStyle = window.getComputedStyle(hr);
+    if (computedStyle.backgroundImage && computedStyle.backgroundImage !== 'none') {
+      hr.classList.add('background-img');
     }
   });
 };
