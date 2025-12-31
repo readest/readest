@@ -15,7 +15,7 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
   applyStyles = true,
 ) => {
   const { settings, isSettingsGlobal, setSettings, saveSettings } = useSettingsStore.getState();
-  const { getView, getViewSettings, setViewSettings } = useReaderStore.getState();
+  const { viewStates, getView, getViewSettings, setViewSettings } = useReaderStore.getState();
   const { getConfig, saveConfig } = useBookDataStore.getState();
   const viewSettings = getViewSettings(bookKey);
   if (bookKey && viewSettings && viewSettings[key] !== value) {
@@ -28,15 +28,39 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
 
   if (isSettingsGlobal && !skipGlobal) {
     settings.globalViewSettings[key] = value;
-    setSettings(settings);
+    setSettings(settings); // Keep this to update the store's state
     await saveSettings(envConfig, settings);
-  }
 
-  if (bookKey && viewSettings) {
-    setViewSettings(bookKey, viewSettings);
-    const config = getConfig(bookKey);
-    if (config) {
-      await saveConfig(envConfig, bookKey, config, settings);
+    // Propagate to all open views
+    for (const k of Object.keys(viewStates)) {
+      const vs = viewStates[k];
+      if (vs && vs.viewSettings && vs.viewSettings[key] !== value) {
+        const updatedVS = { ...vs.viewSettings, [key]: value };
+        setViewSettings(k, updatedVS);
+        if (applyStyles && vs.view) {
+          vs.view.renderer.setStyles?.(getStyles(updatedVS));
+        }
+      }
+    }
+  } else if (bookKey) {
+    const viewSettings = getViewSettings(bookKey);
+    if (viewSettings && viewSettings[key] !== value) {
+      const updatedVS = { ...viewSettings, [key]: value };
+      setViewSettings(bookKey, updatedVS);
+      if (applyStyles) {
+        const view = getView(bookKey);
+        view?.renderer.setStyles?.(getStyles(updatedVS));
+      }
+
+      // Automatically save to book config if primary
+      const viewState = viewStates[bookKey];
+      if (viewState?.isPrimary) {
+        const config = getConfig(bookKey);
+        if (config) {
+          config.viewSettings = updatedVS;
+          await saveConfig(envConfig, bookKey, config, settings);
+        }
+      }
     }
   }
 };
