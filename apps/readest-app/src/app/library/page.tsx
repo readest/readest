@@ -10,11 +10,12 @@ import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
-import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
+import { transferManager } from '@/services/transferManager';
 import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -55,6 +56,7 @@ import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
+import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { Toast } from '@/components/Toast';
 import { getBreadcrumbs } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
@@ -120,6 +122,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useUICSS();
 
   useOpenWithBooks();
+  useTransferQueue(libraryLoaded);
 
   const { pullLibrary, pushLibrary } = useBooksSync();
   const { isDragging } = useDragDropImport();
@@ -409,8 +412,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           await updateBook(envConfig, book);
         }
         if (user && book && !book.uploadedAt && settings.autoUpload) {
-          console.log('Uploading book:', book.title);
-          handleBookUpload(book, false);
+          console.log('Queueing upload for book:', book.title);
+          transferManager.queueUpload(book);
         }
         if (book) {
           successfulImports.push(book.title);
@@ -471,83 +474,65 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }, 500);
 
   const handleBookUpload = useCallback(
-    async (book: Book, syncBooks = true) => {
-      try {
-        await appService?.uploadBook(book, (progress) => {
-          updateBookTransferProgress(book.hash, progress);
-        });
-        setBooksTransferProgress((prev) => {
-          const updated = { ...prev };
-          delete updated[book.hash];
-          return updated;
-        });
-        await updateBook(envConfig, book);
-        if (syncBooks) pushLibrary();
+    async (book: Book, _syncBooks = true) => {
+      // Use transfer queue for uploads - priority 1 for manual uploads (higher priority)
+      const transferId = transferManager.queueUpload(book, 1);
+      if (transferId) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: _('Book uploaded: {{title}}', {
+          message: _('Upload queued: {{title}}', {
             title: book.title,
           }),
         });
         return true;
-      } catch (err) {
-        setBooksTransferProgress((prev) => {
-          const updated = { ...prev };
-          delete updated[book.hash];
-          return updated;
-        });
-        if (err instanceof Error) {
-          if (err.message.includes('Not authenticated') && settings.keepLogin) {
-            settings.keepLogin = false;
-            setSettings(settings);
-            navigateToLogin(router);
-            return false;
-          } else if (err.message.includes('Insufficient storage quota')) {
-            eventDispatcher.dispatch('toast', {
-              type: 'error',
-              message: _('Insufficient storage quota'),
-            });
-            return false;
-          }
-        }
-        eventDispatcher.dispatch('toast', {
-          type: 'error',
-          message: _('Failed to upload book: {{title}}', {
-            title: book.title,
-          }),
-        });
-        return false;
       }
+      return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appService],
+    [],
   );
 
   const handleBookDownload = useCallback(
-    async (book: Book, redownload = false) => {
-      try {
-        await appService?.downloadBook(book, false, redownload, (progress) => {
-          updateBookTransferProgress(book.hash, progress);
-        });
-        await updateBook(envConfig, book);
+    async (book: Book, redownload = false, queued = false) => {
+      if (redownload || !queued) {
+        try {
+          await appService?.downloadBook(book, false, redownload, (progress) => {
+            updateBookTransferProgress(book.hash, progress);
+          });
+          await updateBook(envConfig, book);
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            timeout: 2000,
+            message: _('Book downloaded: {{title}}', {
+              title: book.title,
+            }),
+          });
+          return true;
+        } catch {
+          eventDispatcher.dispatch('toast', {
+            message: _('Failed to download book: {{title}}', {
+              title: book.title,
+            }),
+            type: 'error',
+          });
+          return false;
+        }
+      }
+
+      // Use transfer queue for normal downloads - priority 1 for manual downloads
+      const transferId = transferManager.queueDownload(book, 1);
+      if (transferId) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: _('Book downloaded: {{title}}', {
+          message: _('Download queued: {{title}}', {
             title: book.title,
           }),
         });
         return true;
-      } catch {
-        eventDispatcher.dispatch('toast', {
-          message: _('Failed to download book: {{title}}', {
-            title: book.title,
-          }),
-          type: 'error',
-        });
-        return false;
       }
+      return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],
