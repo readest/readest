@@ -62,7 +62,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
 
   const docs = view?.renderer.getContents() ?? [];
-  const pointerInDoc = docs.some(({ doc }) => doc.body.style.cursor === 'pointer');
+  const pointerInDoc = docs.some(({ doc }) => doc.body?.style.cursor === 'pointer');
 
   const enableAnnotationQuickActions = viewSettings?.enableAnnotationQuickActions;
   const annotationQuickActionButton =
