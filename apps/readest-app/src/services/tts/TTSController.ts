@@ -124,7 +124,7 @@ export class TTSController extends EventTarget {
     for await (const _ of iter);
   }
 
-  async preloadNextSSML(count: number = 2) {
+  async preloadNextSSML(count: number = 4) {
     const tts = this.view.tts;
     if (!tts) return;
     let preloaded = 0;
