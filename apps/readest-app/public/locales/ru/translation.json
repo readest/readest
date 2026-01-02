@@ -821,7 +821,6 @@
   "Translate text after selection": "Перевести текст после выделения",
   "Read text aloud after selection": "Прочитать текст вслух после выделения",
   "Proofread text after selection": "Корректировать текст после выделения",
-  "File Transfers": "Передача файлов",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} активных, {{pendingCount}} ожидающих",
   "{{failedCount}} failed": "{{failedCount}} неудачных",
   "Waiting...": "Ожидание...",
@@ -844,5 +843,6 @@
   "Download queued: {{title}}": "Скачивание в очереди: {{title}}",
   "Book not found in library": "Книга не найдена в библиотеке",
   "Unknown error": "Неизвестная ошибка",
-  "Please log in to continue": "Войдите, чтобы продолжить"
+  "Please log in to continue": "Войдите, чтобы продолжить",
+  "Cloud File Transfers": "Передача файлов в облако"
 }

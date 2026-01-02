@@ -801,7 +801,6 @@
   "Translate text after selection": "নির্বাচনের পরে টেক্সট অনুবাদ করুন",
   "Read text aloud after selection": "নির্বাচনের পরে টেক্সট উচ্চারণ করুন",
   "Proofread text after selection": "নির্বাচনের পরে টেক্সট প্রুফরিড করুন",
-  "File Transfers": "ফাইল স্থানান্তর",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} সক্রিয়, {{pendingCount}} অপেক্ষমাণ",
   "{{failedCount}} failed": "{{failedCount}} ব্যর্থ",
   "Waiting...": "অপেক্ষা করছে...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "ডাউনলোড সারিতে: {{title}}",
   "Book not found in library": "লাইব্রেরিতে বই পাওয়া যায়নি",
   "Unknown error": "অজানা ত্রুটি",
-  "Please log in to continue": "চালিয়ে যেতে লগইন করুন"
+  "Please log in to continue": "চালিয়ে যেতে লগইন করুন",
+  "Cloud File Transfers": "ক্লাউড ফাইল স্থানান্তরসমূহ"
 }

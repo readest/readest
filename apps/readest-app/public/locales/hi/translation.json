@@ -801,7 +801,6 @@
   "Translate text after selection": "चयन के बाद पाठ का अनुवाद करें",
   "Read text aloud after selection": "चयन के बाद पाठ को जोर से पढ़ें",
   "Proofread text after selection": "चयन के बाद पाठ को प्रूफरीड करें",
-  "File Transfers": "फ़ाइल स्थानांतरण",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} सक्रिय, {{pendingCount}} लंबित",
   "{{failedCount}} failed": "{{failedCount}} विफल",
   "Waiting...": "प्रतीक्षा कर रहे हैं...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "डाउनलोड कतार में: {{title}}",
   "Book not found in library": "पुस्तकालय में पुस्तक नहीं मिली",
   "Unknown error": "अज्ञात त्रुटि",
-  "Please log in to continue": "जारी रखने के लिए लॉगिन करें"
+  "Please log in to continue": "जारी रखने के लिए लॉगिन करें",
+  "Cloud File Transfers": "क्लाउड फ़ाइल स्थानांतरण"
 }

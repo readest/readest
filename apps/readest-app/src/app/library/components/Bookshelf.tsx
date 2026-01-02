@@ -32,7 +32,10 @@ interface BookshelfProps {
   isSelectAll: boolean;
   isSelectNone: boolean;
   handleImportBooks: () => void;
-  handleBookDownload: (book: Book) => Promise<boolean>;
+  handleBookDownload: (
+    book: Book,
+    options?: { redownload?: boolean; queued?: boolean },
+  ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;

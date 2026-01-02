@@ -791,7 +791,6 @@
   "Translate text after selection": "แปลข้อความหลังการเลือก",
   "Read text aloud after selection": "อ่านข้อความออกเสียงหลังการเลือก",
   "Proofread text after selection": "ตรวจทานข้อความหลังการเลือก",
-  "File Transfers": "การถ่ายโอนไฟล์",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} กำลังดำเนินการ, {{pendingCount}} รอดำเนินการ",
   "{{failedCount}} failed": "{{failedCount}} ล้มเหลว",
   "Waiting...": "กำลังรอ...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "ดาวน์โหลดอยู่ในคิว: {{title}}",
   "Book not found in library": "ไม่พบหนังสือในห้องสมุด",
   "Unknown error": "ข้อผิดพลาดที่ไม่รู้จัก",
-  "Please log in to continue": "กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ"
+  "Please log in to continue": "กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ",
+  "Cloud File Transfers": "การถ่ายโอนไฟล์คลาวด์"
 }

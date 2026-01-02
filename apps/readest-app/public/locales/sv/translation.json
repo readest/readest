@@ -801,7 +801,6 @@
   "Translate text after selection": "Översätt text efter markering",
   "Read text aloud after selection": "Läs upp text efter markering",
   "Proofread text after selection": "Korrekturläs text efter markering",
-  "File Transfers": "Filöverföringar",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} aktiva, {{pendingCount}} väntande",
   "{{failedCount}} failed": "{{failedCount}} misslyckades",
   "Waiting...": "Väntar...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "Nedladdning köad: {{title}}",
   "Book not found in library": "Boken hittades inte i biblioteket",
   "Unknown error": "Okänt fel",
-  "Please log in to continue": "Logga in för att fortsätta"
+  "Please log in to continue": "Logga in för att fortsätta",
+  "Cloud File Transfers": "Molnfilöverföringar"
 }

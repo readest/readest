@@ -236,6 +236,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           if (book) {
             bookIds.push(book.hash);
           }
+          if (user && book && !temp && !book.uploadedAt && settings.autoUpload) {
+            setTimeout(() => {
+              console.log('Queueing upload for book:', book.title);
+              transferManager.queueUpload(book);
+              // wait for the initialization of the transfer manager and opening of the book
+            }, 3000);
+          }
         } catch (error) {
           console.log('Failed to import book:', file, error);
         }
@@ -494,7 +501,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   );
 
   const handleBookDownload = useCallback(
-    async (book: Book, redownload = false, queued = false) => {
+    async (book: Book, downloadOptions: { redownload?: boolean; queued?: boolean } = {}) => {
+      const { redownload = false, queued = false } = downloadOptions;
       if (redownload || !queued) {
         try {
           await appService?.downloadBook(book, false, redownload, (progress) => {

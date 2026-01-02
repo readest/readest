@@ -791,7 +791,6 @@
   "Translate text after selection": "Dịch văn bản sau khi chọn",
   "Read text aloud after selection": "Đọc to văn bản sau khi chọn",
   "Proofread text after selection": "Hiệu đính văn bản sau khi chọn",
-  "File Transfers": "Truyền tập tin",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} đang hoạt động, {{pendingCount}} đang chờ",
   "{{failedCount}} failed": "{{failedCount}} thất bại",
   "Waiting...": "Đang chờ...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "Tải xuống trong hàng đợi: {{title}}",
   "Book not found in library": "Không tìm thấy sách trong thư viện",
   "Unknown error": "Lỗi không xác định",
-  "Please log in to continue": "Vui lòng đăng nhập để tiếp tục"
+  "Please log in to continue": "Vui lòng đăng nhập để tiếp tục",
+  "Cloud File Transfers": "Truyền tệp đám mây"
 }

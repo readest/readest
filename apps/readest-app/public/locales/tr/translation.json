@@ -801,7 +801,6 @@
   "Translate text after selection": "Seçimden sonra metni çevir",
   "Read text aloud after selection": "Seçimden sonra metni sesli oku",
   "Proofread text after selection": "Seçimden sonra metni düzelt",
-  "File Transfers": "Dosya Transferleri",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} aktif, {{pendingCount}} beklemede",
   "{{failedCount}} failed": "{{failedCount}} başarısız",
   "Waiting...": "Bekleniyor...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "İndirme sıraya alındı: {{title}}",
   "Book not found in library": "Kitap kütüphanede bulunamadı",
   "Unknown error": "Bilinmeyen hata",
-  "Please log in to continue": "Devam etmek için giriş yapın"
+  "Please log in to continue": "Devam etmek için giriş yapın",
+  "Cloud File Transfers": "Bulut Dosya Transferleri"
 }

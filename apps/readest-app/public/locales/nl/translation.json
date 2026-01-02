@@ -801,7 +801,6 @@
   "Translate text after selection": "Vertaal tekst na selectie",
   "Read text aloud after selection": "Lees tekst hardop na selectie",
   "Proofread text after selection": "Corrigeer tekst na selectie",
-  "File Transfers": "Bestandsoverdrachten",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} actief, {{pendingCount}} wachtend",
   "{{failedCount}} failed": "{{failedCount}} mislukt",
   "Waiting...": "Wachten...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "Download in wachtrij: {{title}}",
   "Book not found in library": "Boek niet gevonden in bibliotheek",
   "Unknown error": "Onbekende fout",
-  "Please log in to continue": "Log in om door te gaan"
+  "Please log in to continue": "Log in om door te gaan",
+  "Cloud File Transfers": "Cloud Bestandoverdrachten"
 }

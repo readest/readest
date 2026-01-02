@@ -801,7 +801,6 @@
   "Translate text after selection": "ترجمه متن پس از انتخاب",
   "Read text aloud after selection": "خواندن متن با صدای بلند پس از انتخاب",
   "Proofread text after selection": "بازبینی متن پس از انتخاب",
-  "File Transfers": "انتقال فایل‌ها",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} فعال، {{pendingCount}} در انتظار",
   "{{failedCount}} failed": "{{failedCount}} ناموفق",
   "Waiting...": "در انتظار...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "دانلود در صف: {{title}}",
   "Book not found in library": "کتاب در کتابخانه یافت نشد",
   "Unknown error": "خطای ناشناخته",
-  "Please log in to continue": "لطفاً برای ادامه وارد شوید"
+  "Please log in to continue": "لطفاً برای ادامه وارد شوید",
+  "Cloud File Transfers": "انتقال فایل‌های ابری"
 }
