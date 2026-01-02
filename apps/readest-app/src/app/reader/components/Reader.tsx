@@ -57,7 +57,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { settings } = useSettingsStore();
   const { libraryLoaded } = useLibrary();
   const { sideBarBookKey } = useSidebarStore();
-  const { hoveredBookKey, getView } = useReaderStore();
+  const { hoveredBookKey } = useReaderStore();
   const { showSystemUI, dismissSystemUI } = useThemeStore();
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
@@ -100,14 +100,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, [appService]);
 
   const handleKeyDown = (event: CustomEvent) => {
-    const view = getView(sideBarBookKey!);
     if (event.detail.keyName === 'Back') {
       if (getIsSideBarVisible()) {
         setSideBarVisible(false);
       } else if (getIsNotebookVisible()) {
         setNotebookVisible(false);
-      } else if (view?.history.canGoBack) {
-        view.history.back();
       } else {
         eventDispatcher.dispatch('close-reader');
         router.back();
