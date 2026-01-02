@@ -811,7 +811,6 @@
   "Translate text after selection": "Traduzir texto após a seleção",
   "Read text aloud after selection": "Ler texto em voz alta após a seleção",
   "Proofread text after selection": "Revisar texto após a seleção",
-  "File Transfers": "Transferências de Arquivos",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} ativos, {{pendingCount}} pendentes",
   "{{failedCount}} failed": "{{failedCount}} falharam",
   "Waiting...": "Aguardando...",
@@ -834,5 +833,6 @@
   "Download queued: {{title}}": "Download na fila: {{title}}",
   "Book not found in library": "Livro não encontrado na biblioteca",
   "Unknown error": "Erro desconhecido",
-  "Please log in to continue": "Faça login para continuar"
+  "Please log in to continue": "Faça login para continuar",
+  "Cloud File Transfers": "Transferências de Arquivos"
 }

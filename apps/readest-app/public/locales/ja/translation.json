@@ -791,7 +791,6 @@
   "Translate text after selection": "選択後のテキストを翻訳する",
   "Read text aloud after selection": "選択後のテキストを音読する",
   "Proofread text after selection": "選択後のテキストを校正する",
-  "File Transfers": "ファイル転送",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} 進行中、{{pendingCount}} 待機中",
   "{{failedCount}} failed": "{{failedCount}} 失敗",
   "Waiting...": "待機中...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "ダウンロードをキューに追加: {{title}}",
   "Book not found in library": "ライブラリに本が見つかりません",
   "Unknown error": "不明なエラー",
-  "Please log in to continue": "続行するにはログインしてください"
+  "Please log in to continue": "続行するにはログインしてください",
+  "Cloud File Transfers": "クラウドファイル転送"
 }

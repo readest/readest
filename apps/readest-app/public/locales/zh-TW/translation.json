@@ -791,7 +791,6 @@
   "Translate text after selection": "翻譯選取後的文字",
   "Read text aloud after selection": "朗讀選取後的文字",
   "Proofread text after selection": "校對選取後的文字",
-  "File Transfers": "檔案傳輸",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} 進行中，{{pendingCount}} 等待中",
   "{{failedCount}} failed": "{{failedCount}} 失敗",
   "Waiting...": "等待中...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "下載已排隊：{{title}}",
   "Book not found in library": "在書庫中找不到書籍",
   "Unknown error": "未知錯誤",
-  "Please log in to continue": "請登入以繼續"
+  "Please log in to continue": "請登入以繼續",
+  "Cloud File Transfers": "雲端檔案傳輸"
 }

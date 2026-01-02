@@ -801,7 +801,6 @@
   "Translate text after selection": "Μετάφραση κειμένου μετά την επιλογή",
   "Read text aloud after selection": "Ανάγνωση κειμένου μετά την επιλογή",
   "Proofread text after selection": "Διόρθωση κειμένου μετά την επιλογή",
-  "File Transfers": "Μεταφορές αρχείων",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} ενεργές, {{pendingCount}} σε αναμονή",
   "{{failedCount}} failed": "{{failedCount}} απέτυχαν",
   "Waiting...": "Αναμονή...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "Λήψη στην ουρά: {{title}}",
   "Book not found in library": "Το βιβλίο δεν βρέθηκε στη βιβλιοθήκη",
   "Unknown error": "Άγνωστο σφάλμα",
-  "Please log in to continue": "Παρακαλώ συνδεθείτε για να συνεχίσετε"
+  "Please log in to continue": "Παρακαλώ συνδεθείτε για να συνεχίσετε",
+  "Cloud File Transfers": "Μεταφορές αρχείων στο cloud"
 }

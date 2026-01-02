@@ -801,7 +801,6 @@
   "Translate text after selection": "තේරීමෙන් පසු පෙළ පරිවර්තනය කරන්න",
   "Read text aloud after selection": "තේරීමෙන් පසු පෙළ උච්චාරණය කරන්න",
   "Proofread text after selection": "තේරීමෙන් පසු පෙළ සංශෝධනය කරන්න",
-  "File Transfers": "ගොනු හුවමාරු",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} සක්‍රීය, {{pendingCount}} බලාපොරොත්තුවේ",
   "{{failedCount}} failed": "{{failedCount}} අසාර්ථක",
   "Waiting...": "බලාපොරොත්තුවේ...",
@@ -824,5 +823,6 @@
   "Download queued: {{title}}": "බාගත කිරීම පෝලිමේ: {{title}}",
   "Book not found in library": "පුස්තකාලයේ පොත හමු නොවීය",
   "Unknown error": "නොදන්නා දෝෂයක්",
-  "Please log in to continue": "ඉදිරියට යාමට පිවිසෙන්න"
+  "Please log in to continue": "ඉදිරියට යාමට පිවිසෙන්න",
+  "Cloud File Transfers": "කලාප ගොනු හුවමාරු"
 }

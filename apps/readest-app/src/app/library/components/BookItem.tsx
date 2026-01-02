@@ -26,7 +26,7 @@ interface BookItemProps {
   bookSelected: boolean;
   transferProgress: number | null;
   handleBookUpload: (book: Book) => void;
-  handleBookDownload: (book: Book) => void;
+  handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
 }
 
@@ -160,7 +160,7 @@ const BookItem: React.FC<BookItemProps> = ({
                     if (!book.uploadedAt) {
                       handleBookUpload(book);
                     } else if (!book.downloadedAt) {
-                      handleBookDownload(book);
+                      handleBookDownload(book, { queued: true });
                     }
                   }}
                 >

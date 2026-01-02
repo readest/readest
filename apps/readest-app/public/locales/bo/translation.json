@@ -791,7 +791,6 @@
   "Translate text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་སྐད་བསྒྱུར་བྱེད་",
   "Read text aloud after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་སྐད་ཀྱིས་ཀློག་",
   "Proofread text after selection": "ཡིག་ཆ་འདེམས་པའི་ཐབས་ཀྱིས་ཞིབ་བཤེར་བྱེད་",
-  "File Transfers": "ཡིག་ཆ་སྐྱེལ་འདྲེན་",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} བྱེད་བཞིན་པ་, {{pendingCount}} སྒུག་བཞིན་པ་",
   "{{failedCount}} failed": "{{failedCount}} ཕམ་པ་",
   "Waiting...": "སྒུག་བཞིན་པ་...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "ལེན་པའི་སྒྲིག་གཅོད་ནང་བཅུག་: {{title}}",
   "Book not found in library": "དཔེ་མཛོད་ནང་དཔེ་ཆ་རྙེད་མ་སོང་",
   "Unknown error": "མ་ཤེས་པའི་ནོར་འཁྲུལ་",
-  "Please log in to continue": "མུ་མཐུད་པར་ནང་འཛུལ་བྱོས་"
+  "Please log in to continue": "མུ་མཐུད་པར་ནང་འཛུལ་བྱོས་",
+  "Cloud File Transfers": "སྤྲིན་གནས་ཡིག་ཆ་སྐྱེལ་འདྲེན།"
 }

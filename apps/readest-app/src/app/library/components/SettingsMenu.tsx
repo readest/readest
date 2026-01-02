@@ -269,21 +269,23 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         toggled={isAutoUpload}
         onClick={toggleAutoUploadBooks}
       />
-      <MenuItem
-        label={_('File Transfers')}
-        Icon={MdCloudSync}
-        description={
-          hasActiveTransfers
-            ? _('{{activeCount}} active, {{pendingCount}} pending', {
-                activeCount: stats.active,
-                pendingCount: stats.pending,
-              })
-            : stats.failed > 0
-              ? _('{{failedCount}} failed', { failedCount: stats.failed })
-              : ''
-        }
-        onClick={openTransferQueue}
-      />
+      {user && (
+        <MenuItem
+          label={_('Cloud File Transfers')}
+          Icon={MdCloudSync}
+          description={
+            hasActiveTransfers
+              ? _('{{activeCount}} active, {{pendingCount}} pending', {
+                  activeCount: stats.active,
+                  pendingCount: stats.pending,
+                })
+              : stats.failed > 0
+                ? _('{{failedCount}} failed', { failedCount: stats.failed })
+                : ''
+          }
+          onClick={openTransferQueue}
+        />
+      )}
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}

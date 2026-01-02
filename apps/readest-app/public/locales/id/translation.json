@@ -791,7 +791,6 @@
   "Translate text after selection": "Terjemahkan teks setelah pemilihan",
   "Read text aloud after selection": "Bacakan teks setelah pemilihan",
   "Proofread text after selection": "Periksa teks setelah pemilihan",
-  "File Transfers": "Transfer File",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} aktif, {{pendingCount}} menunggu",
   "{{failedCount}} failed": "{{failedCount}} gagal",
   "Waiting...": "Menunggu...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "Unduhan dalam antrian: {{title}}",
   "Book not found in library": "Buku tidak ditemukan di perpustakaan",
   "Unknown error": "Kesalahan tidak diketahui",
-  "Please log in to continue": "Silakan masuk untuk melanjutkan"
+  "Please log in to continue": "Silakan masuk untuk melanjutkan",
+  "Cloud File Transfers": "Transfer File Cloud"
 }

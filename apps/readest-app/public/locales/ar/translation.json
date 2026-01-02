@@ -841,7 +841,6 @@
   "Translate text after selection": "ترجمة النص بعد التحديد",
   "Read text aloud after selection": "قراءة النص بصوت عالٍ بعد التحديد",
   "Proofread text after selection": "تدقيق النص بعد التحديد",
-  "File Transfers": "نقل الملفات",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} نشط، {{pendingCount}} قيد الانتظار",
   "{{failedCount}} failed": "{{failedCount}} فشل",
   "Waiting...": "جارٍ الانتظار...",
@@ -864,5 +863,6 @@
   "Download queued: {{title}}": "التنزيل في قائمة الانتظار: {{title}}",
   "Book not found in library": "الكتاب غير موجود في المكتبة",
   "Unknown error": "خطأ غير معروف",
-  "Please log in to continue": "يرجى تسجيل الدخول للمتابعة"
+  "Please log in to continue": "يرجى تسجيل الدخول للمتابعة",
+  "Cloud File Transfers": "نقل الملفات السحابية"
 }

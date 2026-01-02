@@ -82,7 +82,10 @@ interface BookshelfItemProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
   handleGroupBooks: () => void;
-  handleBookDownload: (book: Book) => Promise<boolean>;
+  handleBookDownload: (
+    book: Book,
+    options?: { redownload?: boolean; queued?: boolean },
+  ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
@@ -131,7 +134,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       let available = false;
       const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
-        available = await handleBookDownload(book);
+        available = await handleBookDownload(book, { queued: false });
         await updateBook(envConfig, book);
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
@@ -216,7 +219,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const downloadBookMenuItem = await MenuItem.new({
       text: _('Download Book'),
       action: async () => {
-        handleBookDownload(book);
+        handleBookDownload(book, { queued: true });
       },
     });
     const uploadBookMenuItem = await MenuItem.new({

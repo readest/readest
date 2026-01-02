@@ -791,7 +791,6 @@
   "Translate text after selection": "翻译选中文本",
   "Read text aloud after selection": "朗读选中文本",
   "Proofread text after selection": "校对选中文本",
-  "File Transfers": "文件传输",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} 进行中，{{pendingCount}} 等待中",
   "{{failedCount}} failed": "{{failedCount}} 失败",
   "Waiting...": "等待中...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "下载已排队：{{title}}",
   "Book not found in library": "在书库中找不到书籍",
   "Unknown error": "未知错误",
-  "Please log in to continue": "请登录以继续"
+  "Please log in to continue": "请登录以继续",
+  "Cloud File Transfers": "云文件传输"
 }

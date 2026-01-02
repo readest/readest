@@ -791,7 +791,6 @@
   "Translate text after selection": "선택 후 텍스트 번역",
   "Read text aloud after selection": "선택 후 텍스트 음성 읽기",
   "Proofread text after selection": "선택 후 텍스트 교정",
-  "File Transfers": "파일 전송",
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} 진행 중, {{pendingCount}} 대기 중",
   "{{failedCount}} failed": "{{failedCount}} 실패",
   "Waiting...": "대기 중...",
@@ -814,5 +813,6 @@
   "Download queued: {{title}}": "다운로드 대기열에 추가됨: {{title}}",
   "Book not found in library": "라이브러리에서 책을 찾을 수 없음",
   "Unknown error": "알 수 없는 오류",
-  "Please log in to continue": "계속하려면 로그인하세요"
+  "Please log in to continue": "계속하려면 로그인하세요",
+  "Cloud File Transfers": "클라우드 파일 전송"
 }
