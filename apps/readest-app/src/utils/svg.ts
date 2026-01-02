@@ -43,17 +43,16 @@ export async function svg2png(svgBlob: Blob, quality: number = 0.9): Promise<Blo
   const svgUrl = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
 
   const img = new Image();
-  img.decoding = 'sync';
   img.crossOrigin = 'anonymous';
-  img.src = svgUrl;
 
-  await img.decode().catch(
-    () =>
-      new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      }),
-  );
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('Failed to load SVG'));
+    img.src = svgUrl;
+  });
+
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await new Promise((resolve) => requestAnimationFrame(resolve));
 
   const canvas = document.createElement('canvas');
   const { width, height } = await getSvgSize(svgBlob);
@@ -62,6 +61,8 @@ export async function svg2png(svgBlob: Blob, quality: number = 0.9): Promise<Blo
 
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(img, 0, 0);
+
+  URL.revokeObjectURL(svgUrl);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob!), 'image/png', quality);
