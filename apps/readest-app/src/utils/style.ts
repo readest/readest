@@ -144,7 +144,7 @@ const getColorStyles = (
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
     }
     a:any-link {
-      ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
+      ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
