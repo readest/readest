@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "Resultat för '{{term}}'",
   "Close Search": "Stäng sökning",
   "Previous Result": "Föregående resultat",
-  "Next Result": "Nästa resultat"
+  "Next Result": "Nästa resultat",
+  "Bookmarks": "Bokmärken",
+  "Annotations": "Anteckningar",
+  "Show Results": "Visa resultat"
 }

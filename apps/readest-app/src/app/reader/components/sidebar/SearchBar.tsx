@@ -32,7 +32,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const { getBookData } = useBookDataStore();
   const { getConfig, saveConfig } = useBookDataStore();
   const { getView, getProgress } = useReaderStore();
-  const { searchTerm, setSearchTerm, setSearchResults } = useSidebarStore();
+  const { getSearchNavState, setSearchTerm, setSearchResults } = useSidebarStore();
+  const searchNavState = getSearchNavState(bookKey);
+  const { searchTerm } = searchNavState;
   const queuedSearchTerm = useRef('');
   const inputRef = useRef<HTMLInputElement>(null);
   const inputFocusedRef = useRef(false);
@@ -50,7 +52,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   useEffect(() => {
     handleSearchTermChange(searchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey]);
+  }, [bookKey, searchTerm]);
 
   useEffect(() => {
     if (isVisible && inputRef.current) {
@@ -86,7 +88,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchTerm(value);
+    setSearchTerm(bookKey, value);
     handleSearchTermChange(value);
     queuedSearchTerm.current = value;
   };
@@ -125,7 +127,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         for await (const result of generator) {
           if (typeof result === 'string') {
             if (result === 'done') {
-              setSearchResults([...results]);
+              setSearchResults(bookKey, [...results]);
               console.log('search done');
             }
           } else {
@@ -142,7 +144,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               }
             } else {
               results.push(result);
-              setSearchResults([...results]);
+              setSearchResults(bookKey, [...results]);
             }
           }
 
@@ -157,9 +159,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   );
 
   const resetSearch = useCallback(() => {
-    setSearchResults([]);
+    setSearchResults(bookKey, []);
     view?.clearSearch();
-  }, [view, setSearchResults]);
+  }, [bookKey, view, setSearchResults]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSearchTermChange = useCallback(

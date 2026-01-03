@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "Ergebnisse für '{{term}}'",
   "Close Search": "Suche schließen",
   "Previous Result": "Vorheriges Ergebnis",
-  "Next Result": "Nächstes Ergebnis"
+  "Next Result": "Nächstes Ergebnis",
+  "Bookmarks": "Lesezeichen",
+  "Annotations": "Anmerkungen",
+  "Show Results": "Ergebnisse anzeigen"
 }

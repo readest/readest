@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "نتایج برای «{{term}}»",
   "Close Search": "بستن جستجو",
   "Previous Result": "نتیجه قبلی",
-  "Next Result": "نتیجه بعدی"
+  "Next Result": "نتیجه بعدی",
+  "Bookmarks": "نشانک‌ها",
+  "Annotations": "یادداشت‌ها",
+  "Show Results": "نمایش نتایج"
 }

@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "Hasil untuk '{{term}}'",
   "Close Search": "Tutup carian",
   "Previous Result": "Hasil sebelumnya",
-  "Next Result": "Hasil seterusnya"
+  "Next Result": "Hasil seterusnya",
+  "Bookmarks": "Penanda buku",
+  "Annotations": "Anotasi",
+  "Show Results": "Tunjukkan Hasil"
 }

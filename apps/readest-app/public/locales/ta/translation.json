@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "'{{term}}' க்கான முடிவுகள்",
   "Close Search": "தேடலை மூடு",
   "Previous Result": "முந்தைய முடிவு",
-  "Next Result": "அடுத்த முடிவு"
+  "Next Result": "அடுத்த முடிவு",
+  "Bookmarks": "புக்மார்க்குகள்",
+  "Annotations": "சிறுகுறிப்புகள்",
+  "Show Results": "முடிவுகளைக் காட்டு"
 }

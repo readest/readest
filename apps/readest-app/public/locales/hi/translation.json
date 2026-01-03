@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "'{{term}}' के परिणाम",
   "Close Search": "खोज बंद करें",
   "Previous Result": "पिछला परिणाम",
-  "Next Result": "अगला परिणाम"
+  "Next Result": "अगला परिणाम",
+  "Bookmarks": "बुकमार्क",
+  "Annotations": "टिप्पणियाँ",
+  "Show Results": "परिणाम दिखाएं"
 }

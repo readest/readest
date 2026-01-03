@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "'{{term}}' 검색 결과",
   "Close Search": "검색 닫기",
   "Previous Result": "이전 결과",
-  "Next Result": "다음 결과"
+  "Next Result": "다음 결과",
+  "Bookmarks": "북마크",
+  "Annotations": "주석",
+  "Show Results": "결과 표시"
 }

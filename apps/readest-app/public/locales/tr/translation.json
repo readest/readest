@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "'{{term}}' için sonuçlar",
   "Close Search": "Aramayı kapat",
   "Previous Result": "Önceki sonuç",
-  "Next Result": "Sonraki sonuç"
+  "Next Result": "Sonraki sonuç",
+  "Bookmarks": "Yer İşaretleri",
+  "Annotations": "Açıklamalar",
+  "Show Results": "Sonuçları Göster"
 }

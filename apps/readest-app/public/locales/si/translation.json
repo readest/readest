@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "'{{term}}' සඳහා ප්‍රතිඵල",
   "Close Search": "සෙවුම වසන්න",
   "Previous Result": "පෙර ප්‍රතිඵලය",
-  "Next Result": "ඊළඟ ප්‍රතිඵලය"
+  "Next Result": "ඊළඟ ප්‍රතිඵලය",
+  "Bookmarks": "පොත් සලකුණු",
+  "Annotations": "අනුසටහන්",
+  "Show Results": "ප්‍රතිඵල පෙන්වන්න"
 }

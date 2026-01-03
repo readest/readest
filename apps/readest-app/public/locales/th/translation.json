@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "ผลลัพธ์สำหรับ '{{term}}'",
   "Close Search": "ปิดการค้นหา",
   "Previous Result": "ผลลัพธ์ก่อนหน้า",
-  "Next Result": "ผลลัพธ์ถัดไป"
+  "Next Result": "ผลลัพธ์ถัดไป",
+  "Bookmarks": "บุ๊กมาร์ก",
+  "Annotations": "คำอธิบายประกอบ",
+  "Show Results": "แสดงผลลัพธ์"
 }

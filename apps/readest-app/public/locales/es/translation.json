@@ -839,5 +839,8 @@
   "Search results for '{{term}}'": "Resultados para '{{term}}'",
   "Close Search": "Cerrar búsqueda",
   "Previous Result": "Resultado anterior",
-  "Next Result": "Resultado siguiente"
+  "Next Result": "Resultado siguiente",
+  "Bookmarks": "Marcadores",
+  "Annotations": "Anotaciones",
+  "Show Results": "Mostrar resultados"
 }
