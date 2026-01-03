@@ -414,7 +414,7 @@ export default function BrowserPage() {
           }
           return;
         } else {
-          const pathname = new URL(url).pathname;
+          const pathname = decodeURIComponent(new URL(url).pathname);
           const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
           const basename = pathname.replaceAll('/', '_');
           const filename = ext ? `${basename}.${ext}` : basename;
@@ -426,6 +426,7 @@ export default function BrowserPage() {
             let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
             const headers: Record<string, string> = {
               'User-Agent': READEST_OPDS_USER_AGENT,
+              Accept: '*/*',
             };
             if (username || password) {
               const authHeader = await probeAuth(url, username, password, useProxy);
