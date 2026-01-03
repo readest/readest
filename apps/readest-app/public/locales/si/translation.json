@@ -824,5 +824,10 @@
   "Book not found in library": "පුස්තකාලයේ පොත හමු නොවීය",
   "Unknown error": "නොදන්නා දෝෂයක්",
   "Please log in to continue": "ඉදිරියට යාමට පිවිසෙන්න",
-  "Cloud File Transfers": "කලාප ගොනු හුවමාරු"
+  "Cloud File Transfers": "කලාප ගොනු හුවමාරු",
+  "Show Search Results": "සෙවුම් ප්‍රතිඵල පෙන්වන්න",
+  "Search results for '{{term}}'": "'{{term}}' සඳහා ප්‍රතිඵල",
+  "Close Search": "සෙවුම වසන්න",
+  "Previous Result": "පෙර ප්‍රතිඵලය",
+  "Next Result": "ඊළඟ ප්‍රතිඵලය"
 }

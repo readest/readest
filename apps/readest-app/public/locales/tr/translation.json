@@ -824,5 +824,10 @@
   "Book not found in library": "Kitap kütüphanede bulunamadı",
   "Unknown error": "Bilinmeyen hata",
   "Please log in to continue": "Devam etmek için giriş yapın",
-  "Cloud File Transfers": "Bulut Dosya Transferleri"
+  "Cloud File Transfers": "Bulut Dosya Transferleri",
+  "Show Search Results": "Arama sonuçlarını göster",
+  "Search results for '{{term}}'": "'{{term}}' için sonuçlar",
+  "Close Search": "Aramayı kapat",
+  "Previous Result": "Önceki sonuç",
+  "Next Result": "Sonraki sonuç"
 }

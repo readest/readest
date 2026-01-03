@@ -824,5 +824,10 @@
   "Book not found in library": "کتاب در کتابخانه یافت نشد",
   "Unknown error": "خطای ناشناخته",
   "Please log in to continue": "لطفاً برای ادامه وارد شوید",
-  "Cloud File Transfers": "انتقال فایل‌های ابری"
+  "Cloud File Transfers": "انتقال فایل‌های ابری",
+  "Show Search Results": "نمایش نتایج جستجو",
+  "Search results for '{{term}}'": "نتایج برای «{{term}}»",
+  "Close Search": "بستن جستجو",
+  "Previous Result": "نتیجه قبلی",
+  "Next Result": "نتیجه بعدی"
 }

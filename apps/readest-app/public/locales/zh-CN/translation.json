@@ -814,5 +814,10 @@
   "Book not found in library": "在书库中找不到书籍",
   "Unknown error": "未知错误",
   "Please log in to continue": "请登录以继续",
-  "Cloud File Transfers": "云文件传输"
+  "Cloud File Transfers": "云文件传输",
+  "Show Search Results": "显示搜索结果",
+  "Search results for '{{term}}'": "包含"{{term}}"的结果",
+  "Close Search": "关闭搜索",
+  "Previous Result": "上一个结果",
+  "Next Result": "下一个结果"
 }

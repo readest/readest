@@ -814,5 +814,10 @@
   "Book not found in library": "Không tìm thấy sách trong thư viện",
   "Unknown error": "Lỗi không xác định",
   "Please log in to continue": "Vui lòng đăng nhập để tiếp tục",
-  "Cloud File Transfers": "Truyền tệp đám mây"
+  "Cloud File Transfers": "Truyền tệp đám mây",
+  "Show Search Results": "Hiển thị kết quả tìm kiếm",
+  "Search results for '{{term}}'": "Kết quả cho '{{term}}'",
+  "Close Search": "Đóng tìm kiếm",
+  "Previous Result": "Kết quả trước",
+  "Next Result": "Kết quả tiếp theo"
 }

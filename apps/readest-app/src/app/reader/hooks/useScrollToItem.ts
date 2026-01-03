@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { BookProgress } from '@/types/book';
-import * as CFI from 'foliate-js/epubcfi.js';
+import { isCfiInLocation } from '@/utils/cfi';
 
 const useScrollToItem = (cfi: string, progress: BookProgress | null) => {
   const viewRef = useRef<HTMLLIElement | null>(null);
 
-  const isCurrent = useMemo(() => {
-    if (!progress) return false;
-
-    const { location } = progress;
-    const start = CFI.collapse(location);
-    const end = CFI.collapse(location, true);
-    return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
-  }, [cfi, progress]);
+  const isCurrent = useMemo(() => isCfiInLocation(cfi, progress?.location), [cfi, progress]);
 
   useEffect(() => {
     if (!viewRef.current || !isCurrent) return;

@@ -814,5 +814,10 @@
   "Book not found in library": "ไม่พบหนังสือในห้องสมุด",
   "Unknown error": "ข้อผิดพลาดที่ไม่รู้จัก",
   "Please log in to continue": "กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ",
-  "Cloud File Transfers": "การถ่ายโอนไฟล์คลาวด์"
+  "Cloud File Transfers": "การถ่ายโอนไฟล์คลาวด์",
+  "Show Search Results": "แสดงผลการค้นหา",
+  "Search results for '{{term}}'": "ผลลัพธ์สำหรับ '{{term}}'",
+  "Close Search": "ปิดการค้นหา",
+  "Previous Result": "ผลลัพธ์ก่อนหน้า",
+  "Next Result": "ผลลัพธ์ถัดไป"
 }

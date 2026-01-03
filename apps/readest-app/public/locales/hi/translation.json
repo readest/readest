@@ -824,5 +824,10 @@
   "Book not found in library": "पुस्तकालय में पुस्तक नहीं मिली",
   "Unknown error": "अज्ञात त्रुटि",
   "Please log in to continue": "जारी रखने के लिए लॉगिन करें",
-  "Cloud File Transfers": "क्लाउड फ़ाइल स्थानांतरण"
+  "Cloud File Transfers": "क्लाउड फ़ाइल स्थानांतरण",
+  "Show Search Results": "खोज परिणाम दिखाएं",
+  "Search results for '{{term}}'": "'{{term}}' के परिणाम",
+  "Close Search": "खोज बंद करें",
+  "Previous Result": "पिछला परिणाम",
+  "Next Result": "अगला परिणाम"
 }

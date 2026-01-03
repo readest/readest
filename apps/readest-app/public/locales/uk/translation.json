@@ -844,5 +844,10 @@
   "Book not found in library": "Книгу не знайдено в бібліотеці",
   "Unknown error": "Невідома помилка",
   "Please log in to continue": "Увійдіть, щоб продовжити",
-  "Cloud File Transfers": "Передача файлів у хмару"
+  "Cloud File Transfers": "Передача файлів у хмару",
+  "Show Search Results": "Показати результати",
+  "Search results for '{{term}}'": "Результати для «{{term}}»",
+  "Close Search": "Закрити пошук",
+  "Previous Result": "Попередній результат",
+  "Next Result": "Наступний результат"
 }
