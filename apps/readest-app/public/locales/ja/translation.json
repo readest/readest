@@ -814,5 +814,10 @@
   "Book not found in library": "ライブラリに本が見つかりません",
   "Unknown error": "不明なエラー",
   "Please log in to continue": "続行するにはログインしてください",
-  "Cloud File Transfers": "クラウドファイル転送"
+  "Cloud File Transfers": "クラウドファイル転送",
+  "Show Search Results": "検索結果を表示",
+  "Search results for '{{term}}'": "「{{term}}」を含む結果",
+  "Close Search": "検索を閉じる",
+  "Previous Result": "前の結果",
+  "Next Result": "次の結果"
 }

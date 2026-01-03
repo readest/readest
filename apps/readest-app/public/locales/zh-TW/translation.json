@@ -814,5 +814,10 @@
   "Book not found in library": "在書庫中找不到書籍",
   "Unknown error": "未知錯誤",
   "Please log in to continue": "請登入以繼續",
-  "Cloud File Transfers": "雲端檔案傳輸"
+  "Cloud File Transfers": "雲端檔案傳輸",
+  "Show Search Results": "顯示搜尋結果",
+  "Search results for '{{term}}'": "包含「{{term}}」的結果",
+  "Close Search": "關閉搜尋",
+  "Previous Result": "上一個結果",
+  "Next Result": "下一個結果"
 }

@@ -11,6 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getViewInsets } from '@/utils/insets';
 import SettingsDialog from '@/components/settings/SettingsDialog';
+import SearchResultsNav from './sidebar/SearchResultsNav';
 import FoliateViewer from './FoliateViewer';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
@@ -198,6 +199,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               />
             )}
             <Annotator bookKey={bookKey} />
+            <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
             <FooterBar
               bookKey={bookKey}

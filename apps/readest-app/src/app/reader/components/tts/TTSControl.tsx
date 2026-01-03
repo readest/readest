@@ -14,11 +14,11 @@ import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
-import { CFI } from '@/libs/document';
 import { Insets } from '@/types/misc';
 import { Overlay } from '@/components/Overlay';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
+import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import Popup from '@/components/Popup';
 import TTSPanel from './TTSPanel';
@@ -306,9 +306,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     if (!ttsFromRange && viewSettings.ttsLocation) {
       const { location } = progress;
       const ttsCfi = viewSettings.ttsLocation;
-      const start = CFI.collapse(location);
-      const end = CFI.collapse(location, true);
-      if (CFI.compare(start, ttsCfi) * CFI.compare(end, ttsCfi) <= 0) {
+      if (isCfiInLocation(ttsCfi, location)) {
         const { index, anchor } = view.resolveCFI(ttsCfi);
         const { doc } = view.renderer.getContents().find((x) => x.index === index) || {};
         if (doc) {

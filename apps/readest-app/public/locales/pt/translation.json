@@ -834,5 +834,10 @@
   "Book not found in library": "Livro não encontrado na biblioteca",
   "Unknown error": "Erro desconhecido",
   "Please log in to continue": "Faça login para continuar",
-  "Cloud File Transfers": "Transferências de Arquivos"
+  "Cloud File Transfers": "Transferências de Arquivos",
+  "Show Search Results": "Mostrar resultados",
+  "Search results for '{{term}}'": "Resultados para '{{term}}'",
+  "Close Search": "Fechar pesquisa",
+  "Previous Result": "Resultado anterior",
+  "Next Result": "Próximo resultado"
 }

@@ -824,5 +824,10 @@
   "Book not found in library": "Boek niet gevonden in bibliotheek",
   "Unknown error": "Onbekende fout",
   "Please log in to continue": "Log in om door te gaan",
-  "Cloud File Transfers": "Cloud Bestandoverdrachten"
+  "Cloud File Transfers": "Cloud Bestandoverdrachten",
+  "Show Search Results": "Zoekresultaten tonen",
+  "Search results for '{{term}}'": "Resultaten voor '{{term}}'",
+  "Close Search": "Zoekopdracht sluiten",
+  "Previous Result": "Vorig resultaat",
+  "Next Result": "Volgend resultaat"
 }

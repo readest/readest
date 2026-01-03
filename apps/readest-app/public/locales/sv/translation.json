@@ -824,5 +824,10 @@
   "Book not found in library": "Boken hittades inte i biblioteket",
   "Unknown error": "Okänt fel",
   "Please log in to continue": "Logga in för att fortsätta",
-  "Cloud File Transfers": "Molnfilöverföringar"
+  "Cloud File Transfers": "Molnfilöverföringar",
+  "Show Search Results": "Visa sökresultat",
+  "Search results for '{{term}}'": "Resultat för '{{term}}'",
+  "Close Search": "Stäng sökning",
+  "Previous Result": "Föregående resultat",
+  "Next Result": "Nästa resultat"
 }

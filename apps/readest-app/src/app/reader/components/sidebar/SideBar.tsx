@@ -7,7 +7,6 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
@@ -34,12 +33,11 @@ const SideBar: React.FC<{
   const { appService } = useEnv();
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { sideBarBookKey } = useSidebarStore();
+  const { sideBarBookKey, searchTerm, searchResults, setSearchTerm, clearSearch } =
+    useSidebarStore();
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
-  const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const searchTermRef = useRef(searchTerm);
   const sidebarHeight = useRef(1.0);
   const isMobile = window.innerWidth < 640;
@@ -193,13 +191,12 @@ const SideBar: React.FC<{
 
   const handleHideSearchBar = useCallback(() => {
     setIsSearchBarVisible(false);
-    setSearchResults(null);
     setTimeout(() => {
-      setSearchTerm('');
+      clearSearch();
     }, 100);
     getView(sideBarBookKey)?.clearSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideBarBookKey]);
+  }, [sideBarBookKey, clearSearch]);
 
   const handleHideSideBar = useCallback(() => {
     if (searchTermRef.current) {
@@ -317,8 +314,6 @@ const SideBar: React.FC<{
             <SearchBar
               isVisible={isSearchBarVisible}
               bookKey={sideBarBookKey!}
-              searchTerm={searchTerm}
-              onSearchResultChange={setSearchResults}
               onHideSearchBar={handleHideSearchBar}
             />
           </div>

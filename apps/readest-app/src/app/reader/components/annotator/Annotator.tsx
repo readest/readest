@@ -24,6 +24,7 @@ import { findTocItemBS } from '@/utils/toc';
 import { throttle } from '@/utils/throttle';
 import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
+import { isCfiInLocation } from '@/utils/cfi';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationPopup from './AnnotationPopup';
@@ -386,6 +387,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           handleDismissPopupAndSelection();
         }, 0);
         break;
+      case 'search':
+        handleSearch();
+        break;
       case 'dictionary':
         handleDictionary();
         break;
@@ -460,16 +464,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     if (!progress) return;
     const { location } = progress;
-    const start = CFI.collapse(location);
-    const end = CFI.collapse(location, true);
     const { booknotes = [] } = config;
     const annotations = booknotes.filter(
       (item) =>
         !item.deletedAt &&
         item.type === 'annotation' &&
         item.style &&
-        CFI.compare(item.cfi, start) >= 0 &&
-        CFI.compare(item.cfi, end) <= 0,
+        isCfiInLocation(item.cfi, location),
     );
     const notes = booknotes.filter(
       (item) =>
@@ -477,8 +478,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         item.type === 'annotation' &&
         item.note &&
         item.note.trim().length > 0 &&
-        CFI.compare(item.cfi, start) >= 0 &&
-        CFI.compare(item.cfi, end) <= 0,
+        isCfiInLocation(item.cfi, location),
     );
     try {
       Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));

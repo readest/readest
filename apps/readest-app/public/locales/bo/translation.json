@@ -814,5 +814,10 @@
   "Book not found in library": "དཔེ་མཛོད་ནང་དཔེ་ཆ་རྙེད་མ་སོང་",
   "Unknown error": "མ་ཤེས་པའི་ནོར་འཁྲུལ་",
   "Please log in to continue": "མུ་མཐུད་པར་ནང་འཛུལ་བྱོས་",
-  "Cloud File Transfers": "སྤྲིན་གནས་ཡིག་ཆ་སྐྱེལ་འདྲེན།"
+  "Cloud File Transfers": "སྤྲིན་གནས་ཡིག་ཆ་སྐྱེལ་འདྲེན།",
+  "Show Search Results": "འཚོལ་བཤེར་འབྲས་བུ་སྟོན།",
+  "Search results for '{{term}}'": "'{{term}}'ཡི་འབྲས་བུ།",
+  "Close Search": "འཚོལ་བཤེར་སྒོ་རྒྱག",
+  "Previous Result": "སྔོན་མའི་འབྲས་བུ།",
+  "Next Result": "རྗེས་མའི་འབྲས་བུ།"
 }

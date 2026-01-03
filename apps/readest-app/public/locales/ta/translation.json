@@ -824,5 +824,10 @@
   "Book not found in library": "நூலகத்தில் புத்தகம் கிடைக்கவில்லை",
   "Unknown error": "தெரியாத பிழை",
   "Please log in to continue": "தொடர உள்நுழையவும்",
-  "Cloud File Transfers": "மேகக் கோப்பு பரிமாற்றங்கள்"
+  "Cloud File Transfers": "மேகக் கோப்பு பரிமாற்றங்கள்",
+  "Show Search Results": "தேடல் முடிவுகளைக் காட்டு",
+  "Search results for '{{term}}'": "'{{term}}' க்கான முடிவுகள்",
+  "Close Search": "தேடலை மூடு",
+  "Previous Result": "முந்தைய முடிவு",
+  "Next Result": "அடுத்த முடிவு"
 }

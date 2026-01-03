@@ -824,5 +824,10 @@
   "Book not found in library": "Το βιβλίο δεν βρέθηκε στη βιβλιοθήκη",
   "Unknown error": "Άγνωστο σφάλμα",
   "Please log in to continue": "Παρακαλώ συνδεθείτε για να συνεχίσετε",
-  "Cloud File Transfers": "Μεταφορές αρχείων στο cloud"
+  "Cloud File Transfers": "Μεταφορές αρχείων στο cloud",
+  "Show Search Results": "Εμφάνιση αποτελεσμάτων",
+  "Search results for '{{term}}'": "Αποτελέσματα για '{{term}}'",
+  "Close Search": "Κλείσιμο αναζήτησης",
+  "Previous Result": "Προηγούμενο αποτέλεσμα",
+  "Next Result": "Επόμενο αποτέλεσμα"
 }

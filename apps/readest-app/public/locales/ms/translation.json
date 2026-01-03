@@ -814,5 +814,10 @@
   "Book not found in library": "Buku tidak dijumpai dalam perpustakaan",
   "Unknown error": "Ralat tidak diketahui",
   "Please log in to continue": "Sila log masuk untuk meneruskan",
-  "Cloud File Transfers": "Pemindahan Fail Awan"
+  "Cloud File Transfers": "Pemindahan Fail Awan",
+  "Show Search Results": "Tunjukkan hasil carian",
+  "Search results for '{{term}}'": "Hasil untuk '{{term}}'",
+  "Close Search": "Tutup carian",
+  "Previous Result": "Hasil sebelumnya",
+  "Next Result": "Hasil seterusnya"
 }
