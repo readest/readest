@@ -56,7 +56,7 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   getPayload = (lang: string, text: string, voiceId: string) => {
-    return { lang, text, voice: voiceId, rate: this.#rate, pitch: this.#pitch } as EdgeTTSPayload;
+    return { lang, text, voice: voiceId, rate: 1.0, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
   getVoiceIdFromLang = async (lang: string) => {
@@ -169,6 +169,7 @@ export class EdgeTTSClient implements TTSClient {
           };
           this.#isPlaying = true;
           audio.src = audioUrl || '';
+          audio.playbackRate = this.#rate;
           audio.play().catch((err) => {
             cleanUp();
             console.error('Failed to play audio:', err);
