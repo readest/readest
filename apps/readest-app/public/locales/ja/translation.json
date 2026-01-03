@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "「{{term}}」を含む結果",
   "Close Search": "検索を閉じる",
   "Previous Result": "前の結果",
-  "Next Result": "次の結果"
+  "Next Result": "次の結果",
+  "Bookmarks": "ブックマーク",
+  "Annotations": "注釈",
+  "Show Results": "結果を表示"
 }

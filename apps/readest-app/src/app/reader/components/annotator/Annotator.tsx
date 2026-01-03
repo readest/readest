@@ -629,7 +629,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (convertChineseVariant && convertChineseVariant !== 'none') {
       term = runSimpleCC(term, convertChineseVariant, true);
     }
-    eventDispatcher.dispatch('search', { term });
+    eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
   const handleDictionary = () => {

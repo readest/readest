@@ -20,9 +20,10 @@ import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 interface BooknoteItemProps {
   bookKey: string;
   item: BookNote;
+  onClick?: () => void;
 }
 
-const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
+const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
@@ -43,6 +44,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
     event.preventDefault();
     eventDispatcher.dispatch('navigate', { bookKey, cfi });
 
+    onClick?.();
     getView(bookKey)?.goTo(cfi);
     if (note) {
       setNotebookVisible(true);

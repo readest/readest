@@ -42,7 +42,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const isVisible = hoveredBookKey === bookKey;
 
   const docs = view?.renderer.getContents() ?? [];
-  const pointerInDoc = docs.some(({ doc }) => doc.body.style.cursor === 'pointer');
+  const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
 
   const progressInfo = useMemo(
     () => (bookFormat === 'PDF' ? section : pageinfo),

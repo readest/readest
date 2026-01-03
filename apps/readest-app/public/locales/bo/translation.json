@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "'{{term}}'ཡི་འབྲས་བུ།",
   "Close Search": "འཚོལ་བཤེར་སྒོ་རྒྱག",
   "Previous Result": "སྔོན་མའི་འབྲས་བུ།",
-  "Next Result": "རྗེས་མའི་འབྲས་བུ།"
+  "Next Result": "རྗེས་མའི་འབྲས་བུ།",
+  "Bookmarks": "དཔེ་རྟགས།",
+  "Annotations": "མཆན།",
+  "Show Results": "འབྲས་བུ་སྟོན།"
 }

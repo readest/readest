@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "Kết quả cho '{{term}}'",
   "Close Search": "Đóng tìm kiếm",
   "Previous Result": "Kết quả trước",
-  "Next Result": "Kết quả tiếp theo"
+  "Next Result": "Kết quả tiếp theo",
+  "Bookmarks": "Dấu trang",
+  "Annotations": "Chú thích",
+  "Show Results": "Hiển thị kết quả"
 }

@@ -1,15 +1,10 @@
-import clsx from 'clsx';
 import React from 'react';
-import { IoIosList, IoMdCloseCircle } from 'react-icons/io';
-import { HiArrowLongLeft, HiArrowLongRight } from 'react-icons/hi2';
 
 import { Insets } from '@/types/misc';
 import { BookSearchMatch, BookSearchResult } from '@/types/book';
-import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSearchNav } from '../../hooks/useSearchNav';
-import { useReaderStore } from '@/store/readerStore';
+import ContentNavBar from './ContentNavBar';
 
 interface SearchResultsNavProps {
   bookKey: string;
@@ -28,87 +23,29 @@ const SearchResultsNav: React.FC<SearchResultsNavProps> = ({ bookKey, gridInsets
     handlePreviousResult,
     handleNextResult,
   } = useSearchNav(bookKey);
-  const { appService } = useEnv();
   const _ = useTranslation();
-  const { getViewSettings } = useReaderStore();
-  const viewSettings = getViewSettings(bookKey);
-  const iconSize16 = useResponsiveSize(16);
-  const iconSize18 = useResponsiveSize(18);
-  const iconSize20 = useResponsiveSize(20);
 
   if (!showSearchNav) {
     return null;
   }
 
-  const showSection = appService?.isMobile || !viewSettings?.showHeader;
-
   return (
-    <div
-      className='search-results-nav pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-between px-4 py-1'
-      style={{
-        top: gridInsets.top,
-        right: gridInsets.right,
-        bottom: gridInsets.bottom / 4,
-        left: gridInsets.left,
-      }}
-    >
-      {/* Top bar: Search info */}
-      <div className='bg-base-200/95 pointer-events-auto flex items-center justify-between rounded-xl px-4 py-1 shadow-lg backdrop-blur-sm sm:gap-6'>
-        <button
-          title={_('Show Search Results')}
-          onClick={handleShowResults}
-          className='btn btn-ghost h-8 min-h-8 w-8 p-0 hover:bg-transparent'
-        >
-          <IoIosList size={iconSize20} className='text-base-content' />
-        </button>
-
-        <div className='flex flex-1 flex-col items-center px-2'>
-          <span className='line-clamp-1 text-sm font-medium'>
-            {_("Search results for '{{term}}'", { term: searchTerm })}
-          </span>
-          {currentSection && showSection && (
-            <span className='text-base-content/70 line-clamp-1 text-xs'>{currentSection}</span>
-          )}
-        </div>
-
-        <button
-          title={_('Close Search')}
-          onClick={handleCloseSearch}
-          className='btn btn-ghost h-8 min-h-8 w-8 p-0 hover:bg-transparent'
-        >
-          <IoMdCloseCircle size={iconSize16} />
-        </button>
-      </div>
-
-      {/* Bottom bar: Navigation buttons */}
-      <div className='bg-base-200/95 pointer-events-auto flex items-center justify-between gap-6 rounded-xl px-4 py-0 shadow-lg backdrop-blur-sm'>
-        <button
-          title={_('Previous Result')}
-          onClick={handlePreviousResult}
-          disabled={!hasPreviousPage}
-          className={clsx(
-            'btn btn-ghost flex h-auto min-h-0 flex-1 flex-col items-center gap-0 p-1 hover:bg-transparent',
-            !hasPreviousPage && 'opacity-40',
-          )}
-        >
-          <HiArrowLongLeft size={iconSize18} className='text-base-content' />
-          <span className='text-sm font-medium'>{_('Previous')}</span>
-        </button>
-
-        <button
-          title={_('Next Result')}
-          onClick={handleNextResult}
-          disabled={!hasNextPage}
-          className={clsx(
-            'btn btn-ghost flex h-auto min-h-0 flex-1 flex-col items-center gap-0 p-1 hover:bg-transparent',
-            !hasNextPage && 'opacity-40',
-          )}
-        >
-          <HiArrowLongRight size={iconSize18} className='text-base-content' />
-          <span className='text-sm font-medium'>{_('Next')}</span>
-        </button>
-      </div>
-    </div>
+    <ContentNavBar
+      bookKey={bookKey}
+      gridInsets={gridInsets}
+      title={_("Search results for '{{term}}'", { term: searchTerm })}
+      section={currentSection}
+      hasPrevious={hasPreviousPage}
+      hasNext={hasNextPage}
+      previousTitle={_('Previous Result')}
+      nextTitle={_('Next Result')}
+      showResultsTitle={_('Show Search Results')}
+      closeTitle={_('Close Search')}
+      onShowResults={handleShowResults}
+      onClose={handleCloseSearch}
+      onPrevious={handlePreviousResult}
+      onNext={handleNextResult}
+    />
   );
 };
 

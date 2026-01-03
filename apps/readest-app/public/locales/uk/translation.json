@@ -849,5 +849,8 @@
   "Search results for '{{term}}'": "Результати для «{{term}}»",
   "Close Search": "Закрити пошук",
   "Previous Result": "Попередній результат",
-  "Next Result": "Наступний результат"
+  "Next Result": "Наступний результат",
+  "Bookmarks": "Закладки",
+  "Annotations": "Анотації",
+  "Show Results": "Показати результати"
 }

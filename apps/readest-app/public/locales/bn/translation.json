@@ -829,5 +829,8 @@
   "Search results for '{{term}}'": "'{{term}}' এর ফলাফল",
   "Close Search": "অনুসন্ধান বন্ধ করুন",
   "Previous Result": "আগের ফলাফল",
-  "Next Result": "পরবর্তী ফলাফল"
+  "Next Result": "পরবর্তী ফলাফল",
+  "Bookmarks": "বুকমার্ক",
+  "Annotations": "টীকা",
+  "Show Results": "ফলাফল দেখুন"
 }

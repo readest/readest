@@ -157,7 +157,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const showSearchBar = () => {
     setTimeout(() => {
-      eventDispatcher.dispatch('search', { term: null });
+      eventDispatcher.dispatch('search-term', { term: null, bookKey: sideBarBookKey });
     }, 100);
   };
 

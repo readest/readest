@@ -819,5 +819,8 @@
   "Search results for '{{term}}'": "包含「{{term}}」的結果",
   "Close Search": "關閉搜尋",
   "Previous Result": "上一個結果",
-  "Next Result": "下一個結果"
+  "Next Result": "下一個結果",
+  "Bookmarks": "書籤",
+  "Annotations": "註解",
+  "Show Results": "顯示結果"
 }

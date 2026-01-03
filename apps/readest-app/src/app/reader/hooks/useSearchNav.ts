@@ -7,14 +7,14 @@ import { flattenSearchResults } from '../components/sidebar/SearchResultsNav';
 export function useSearchNav(bookKey: string) {
   const { getView, getProgress } = useReaderStore();
   const {
-    sideBarBookKey,
     setSideBarVisible,
-    searchTerm,
-    searchResults,
-    searchResultIndex,
+    getSearchNavState,
     setSearchResultIndex,
     clearSearch,
   } = useSidebarStore();
+
+  const searchNavState = getSearchNavState(bookKey);
+  const { searchTerm, searchResults, searchResultIndex } = searchNavState;
 
   const progress = getProgress(bookKey);
 
@@ -53,25 +53,25 @@ export function useSearchNav(bookKey: string) {
       }
     }
     if (firstIndex !== -1) {
-      setTimeout(() => setSearchResultIndex(firstIndex), 0);
+      setTimeout(() => setSearchResultIndex(bookKey, firstIndex), 0);
     }
 
     return { firstIndex, lastIndex };
-  }, [flattenedResults, currentLocation, setSearchResultIndex]);
+  }, [flattenedResults, currentLocation, bookKey, setSearchResultIndex]);
 
   // Navigate to a specific search result
   const navigateToResult = useCallback(
     (index: number) => {
-      if (!sideBarBookKey || !flattenedResults.length) return;
+      if (!flattenedResults.length) return;
       if (index < 0 || index >= flattenedResults.length) return;
 
       const result = flattenedResults[index];
       if (result) {
-        setSearchResultIndex(index);
-        getView(sideBarBookKey)?.goTo(result.cfi);
+        setSearchResultIndex(bookKey, index);
+        getView(bookKey)?.goTo(result.cfi);
       }
     },
-    [sideBarBookKey, flattenedResults, setSearchResultIndex, getView],
+    [bookKey, flattenedResults, setSearchResultIndex, getView],
   );
 
   const handleShowResults = useCallback(() => {
@@ -79,11 +79,9 @@ export function useSearchNav(bookKey: string) {
   }, [setSideBarVisible]);
 
   const handleCloseSearch = useCallback(() => {
-    clearSearch();
-    if (sideBarBookKey) {
-      getView(sideBarBookKey)?.clearSearch();
-    }
-  }, [clearSearch, sideBarBookKey, getView]);
+    clearSearch(bookKey);
+    getView(bookKey)?.clearSearch();
+  }, [clearSearch, bookKey, getView]);
 
   // Navigate to the previous page with results (last result before current page)
   const handlePreviousResult = useCallback(() => {

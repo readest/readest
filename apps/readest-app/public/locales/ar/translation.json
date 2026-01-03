@@ -869,5 +869,8 @@
   "Search results for '{{term}}'": "نتائج البحث عن «{{term}}»",
   "Close Search": "إغلاق البحث",
   "Previous Result": "النتيجة السابقة",
-  "Next Result": "النتيجة التالية"
+  "Next Result": "النتيجة التالية",
+  "Bookmarks": "الإشارات المرجعية",
+  "Annotations": "التعليقات التوضيحية",
+  "Show Results": "عرض النتائج"
 }

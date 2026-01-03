@@ -816,8 +816,11 @@
   "Please log in to continue": "请登录以继续",
   "Cloud File Transfers": "云文件传输",
   "Show Search Results": "显示搜索结果",
-  "Search results for '{{term}}'": "包含"{{term}}"的结果",
+  "Search results for '{{term}}'": "包含\"{{term}}\"的结果",
   "Close Search": "关闭搜索",
   "Previous Result": "上一个结果",
-  "Next Result": "下一个结果"
+  "Next Result": "下一个结果",
+  "Bookmarks": "书签",
+  "Annotations": "注释",
+  "Show Results": "显示结果"
 }

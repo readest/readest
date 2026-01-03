@@ -33,8 +33,10 @@ const SideBar: React.FC<{
   const { appService } = useEnv();
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { sideBarBookKey, searchTerm, searchResults, setSearchTerm, clearSearch } =
+  const { sideBarBookKey, setSideBarBookKey, getSearchNavState, setSearchTerm, clearSearch } =
     useSidebarStore();
+  const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
+  const { searchTerm = '', searchResults = null } = searchNavState || {};
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
@@ -55,11 +57,12 @@ const SideBar: React.FC<{
   );
 
   const onSearchEvent = async (event: CustomEvent) => {
-    const { term } = event.detail;
+    const { term, bookKey } = event.detail;
     setSideBarVisible(true);
+    setSideBarBookKey(bookKey);
     setIsSearchBarVisible(true);
     if (term !== undefined && term !== null) {
-      setSearchTerm(term);
+      setSearchTerm(bookKey, term);
     }
   };
 
@@ -85,10 +88,10 @@ const SideBar: React.FC<{
   }, [searchTerm]);
 
   useEffect(() => {
-    eventDispatcher.on('search', onSearchEvent);
+    eventDispatcher.on('search-term', onSearchEvent);
     eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
-      eventDispatcher.off('search', onSearchEvent);
+      eventDispatcher.off('search-term', onSearchEvent);
       eventDispatcher.off('navigate', onNavigateEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +195,7 @@ const SideBar: React.FC<{
   const handleHideSearchBar = useCallback(() => {
     setIsSearchBarVisible(false);
     setTimeout(() => {
-      clearSearch();
+      if (sideBarBookKey) clearSearch(sideBarBookKey);
     }, 100);
     getView(sideBarBookKey)?.clearSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
