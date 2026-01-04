@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { BookNote, BookNoteType, BookSearchMatch, BookSearchResult } from '@/types/book';
 
+type SearchStatus = 'searching' | 'completed' | 'terminated';
+
 // Per-book search navigation state
 interface SearchNavState {
   searchTerm: string;
@@ -24,6 +26,7 @@ interface SidebarState {
   // Per-book navigation states
   searchNavStates: Record<string, SearchNavState>;
   booknotesNavStates: Record<string, BooknotesNavState>;
+  searchStatuses: Record<string, SearchStatus>;
   getIsSideBarVisible: () => boolean;
   getSideBarWidth: () => string;
   setSideBarBookKey: (key: string) => void;
@@ -35,6 +38,8 @@ interface SidebarState {
   // Search actions (per bookKey)
   getSearchNavState: (bookKey: string) => SearchNavState;
   setSearchTerm: (bookKey: string, term: string) => void;
+  setSearchStatus: (bookKey: string, status: SearchStatus) => void;
+  getSearchStatus: (bookKey: string) => SearchStatus | null;
   setSearchResults: (
     bookKey: string,
     results: BookSearchResult[] | BookSearchMatch[] | null,
@@ -71,6 +76,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   // Per-book navigation states
   searchNavStates: {},
   booknotesNavStates: {},
+  searchStatuses: {},
   getIsSideBarVisible: () => get().isSideBarVisible,
   getSideBarWidth: () => get().sideBarWidth,
   setSideBarBookKey: (key: string) => set({ sideBarBookKey: key }),
@@ -80,6 +86,9 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   setSideBarVisible: (visible: boolean) => set({ isSideBarVisible: visible }),
   setSideBarPin: (pinned: boolean) => set({ isSideBarPinned: pinned }),
   // Search actions
+  getSearchStatus: (bookKey: string) => {
+    return get().searchStatuses[bookKey] || null;
+  },
   getSearchNavState: (bookKey: string) => {
     return get().searchNavStates[bookKey] || defaultSearchNavState;
   },
@@ -128,6 +137,17 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
       searchNavStates: {
         ...state.searchNavStates,
         [bookKey]: { ...defaultSearchNavState },
+      },
+      searchStatuses: {
+        ...state.searchStatuses,
+        [bookKey]: 'terminated',
+      },
+    })),
+  setSearchStatus: (bookKey: string, status: SearchStatus) =>
+    set((state) => ({
+      searchStatuses: {
+        ...state.searchStatuses,
+        [bookKey]: status,
       },
     })),
   // Booknotes navigation actions
