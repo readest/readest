@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -27,7 +27,6 @@ export const useTextSelector = (
   const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
   const lastPointerType = useRef<string>('mouse');
-  const [textSelected, setTextSelected] = useState(false);
 
   const isValidSelection = (sel: Selection) => {
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
@@ -47,7 +46,7 @@ export const useTextSelector = (
   };
   const makeSelection = async (sel: Selection, index: number, rebuildRange = false) => {
     isTextSelected.current = true;
-    setTextSelected(true);
+    isUpToPopup.current = true;
     const range = sel.getRangeAt(0);
     if (rebuildRange) {
       sel.removeAllRanges();
@@ -64,7 +63,7 @@ export const useTextSelector = (
   // FIXME: extremely hacky way to dismiss system selection tools on iOS
   const makeSelectionOnIOS = async (sel: Selection, index: number) => {
     isTextSelected.current = true;
-    setTextSelected(true);
+    isUpToPopup.current = true;
     const range = sel.getRangeAt(0);
     setTimeout(() => {
       sel.removeAllRanges();
@@ -80,25 +79,6 @@ export const useTextSelector = (
         });
       }, 30);
     }, 30);
-  };
-  const handleSelectionchange = (doc: Document) => {
-    // Available on iOS, Android and Desktop, fired when the selection is changed
-    // Ideally the popup only shows when the selection is done,
-    const sel = doc.getSelection() as Selection;
-    if (osPlatform === 'ios' || appService?.isIOSApp) return;
-    if (!isValidSelection(sel)) {
-      if (!isUpToPopup.current) {
-        handleDismissPopup();
-        isTextSelected.current = false;
-        setTextSelected(false);
-      }
-      if (isPopuped.current) {
-        isUpToPopup.current = false;
-      }
-      return;
-    }
-
-    isUpToPopup.current = true;
   };
   const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
     if (selection.rangeCount === 0) return false;
@@ -143,18 +123,38 @@ export const useTextSelector = (
   const handleTouchEnd = () => {
     isTouchStarted.current = false;
   };
+  const handleSelectionchange = (doc: Document) => {
+    // Available on iOS, Android and Desktop, fired when the selection is changed
+    if (osPlatform !== 'android' || !appService?.isAndroidApp) return;
+
+    const sel = doc.getSelection() as Selection;
+    if (isValidSelection(sel)) {
+      isTextSelected.current = true;
+      isUpToPopup.current = true;
+      if (!selectionPosition.current) {
+        selectionPosition.current = view?.renderer?.start || null;
+      }
+    } else {
+      if (!isUpToPopup.current) {
+        handleDismissPopup();
+        isTextSelected.current = false;
+      }
+      if (isPopuped.current) {
+        isUpToPopup.current = false;
+      }
+      selectionPosition.current = null;
+    }
+  };
   const handleScroll = () => {
     // Prevent the container from scrolling when text is selected in paginated mode
     // FIXME: this is a workaround for issue #873
     // TODO: support text selection across pages
+    if (osPlatform !== 'android' || !appService?.isAndroidApp) return;
+
     const viewSettings = getViewSettings(bookKey);
-    if (
-      appService?.isAndroidApp &&
-      isTextSelected.current &&
-      !viewSettings?.scrolled &&
-      view?.renderer?.containerPosition &&
-      selectionPosition.current
-    ) {
+    if (viewSettings?.scrolled) return;
+
+    if (isTextSelected.current && view?.renderer?.containerPosition && selectionPosition.current) {
       console.warn('Keep container position', selectionPosition.current);
       view.renderer.containerPosition = selectionPosition.current;
     }
@@ -190,15 +190,6 @@ export const useTextSelector = (
   };
 
   useEffect(() => {
-    if (isTextSelected.current && !selectionPosition.current) {
-      selectionPosition.current = view?.renderer?.start || null;
-    } else if (!isTextSelected.current) {
-      selectionPosition.current = null;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [textSelected]);
-
-  useEffect(() => {
     const handleSingleClick = (): boolean => {
       if (isUpToPopup.current) {
         isUpToPopup.current = false;
@@ -207,7 +198,6 @@ export const useTextSelector = (
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
-        setTextSelected(false);
         view?.deselect();
         return true;
       }

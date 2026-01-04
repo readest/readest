@@ -38,8 +38,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const { getBookData } = useBookDataStore();
   const { getConfig, setConfig, saveConfig } = useBookDataStore();
   const { getView, getProgress } = useReaderStore();
-  const { getSearchNavState, setSearchTerm, setSearchResults, setSearchProgress } =
-    useSidebarStore();
+  const { setSearchTerm, setSearchResults, setSearchProgress } = useSidebarStore();
+  const { getSearchNavState, getSearchStatus, setSearchStatus } = useSidebarStore();
   const searchNavState = getSearchNavState(bookKey);
 
   const { searchTerm } = searchNavState;
@@ -65,14 +65,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
   const addToHistory = useCallback(
     (term: string) => {
-      setSearchHistory((prev) => {
-        const filtered = prev.filter((t) => t !== term);
-        const updated = [term, ...filtered].slice(0, MAX_SEARCH_HISTORY);
-        localStorage.setItem(historyStorageKey, JSON.stringify(updated));
-        return updated;
-      });
+      const filtered = searchHistory.filter((t) => t !== term);
+      const updated = [term, ...filtered].slice(0, MAX_SEARCH_HISTORY);
+      localStorage.setItem(historyStorageKey, JSON.stringify(updated));
+      setSearchHistory(updated);
     },
-    [historyStorageKey],
+    [historyStorageKey, searchHistory],
   );
 
   const handleHistoryClick = (term: string) => {
@@ -176,13 +174,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       inputRef.current.onfocus = () => {
         inputFocusedRef.current = true;
       };
-      inputRef.current.focus();
+      if (!appService?.isMobile) {
+        inputRef.current.focus();
+      }
     }
     if (isVisible && searchTerm) {
       handleSearchTermChange(searchTerm);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVisible]);
+  }, [appService, isVisible]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -236,6 +236,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
       // Reset progress at start of search
       setSearchProgress(bookKey, 0);
+      setSearchStatus(bookKey, 'searching');
 
       const { section } = progress;
       const index = searchConfig.scope === 'section' ? section.current : undefined;
@@ -253,8 +254,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
       const processResults = async () => {
         for await (const result of generator) {
+          if (getSearchStatus(bookKey) === 'terminated') {
+            console.log('search terminated');
+            return;
+          }
           if (typeof result === 'string') {
             if (result === 'done') {
+              setSearchStatus(bookKey, 'completed');
               setSearchResults(bookKey, [...results]);
               setSearchProgress(bookKey, 1);
               if (results.length > 0) {
