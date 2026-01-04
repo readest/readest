@@ -822,5 +822,7 @@
   "Next Result": "ผลลัพธ์ถัดไป",
   "Bookmarks": "บุ๊กมาร์ก",
   "Annotations": "คำอธิบายประกอบ",
-  "Show Results": "แสดงผลลัพธ์"
+  "Show Results": "แสดงผลลัพธ์",
+  "Clear search": "ล้างการค้นหา",
+  "Clear search history": "ล้างประวัติการค้นหา"
 }

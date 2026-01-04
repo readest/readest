@@ -6,15 +6,11 @@ import { flattenSearchResults } from '../components/sidebar/SearchResultsNav';
 
 export function useSearchNav(bookKey: string) {
   const { getView, getProgress } = useReaderStore();
-  const {
-    setSideBarVisible,
-    getSearchNavState,
-    setSearchResultIndex,
-    clearSearch,
-  } = useSidebarStore();
+  const { setSideBarVisible, getSearchNavState, setSearchResultIndex, clearSearch } =
+    useSidebarStore();
 
   const searchNavState = getSearchNavState(bookKey);
-  const { searchTerm, searchResults, searchResultIndex } = searchNavState;
+  const { searchTerm, searchResults, searchResultIndex, searchProgress } = searchNavState;
 
   const progress = getProgress(bookKey);
 
@@ -119,6 +115,7 @@ export function useSearchNav(bookKey: string) {
 
   return {
     searchTerm,
+    searchProgress,
     currentSection,
     searchResultIndex,
     totalResults,

@@ -135,6 +135,10 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.copyFile(srcPath, dstPath, base);
   }
 
+  async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
+    return await this.fs.readFile(path, base, mode);
+  }
+
   async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File) {
     return await this.fs.writeFile(path, base, content);
   }

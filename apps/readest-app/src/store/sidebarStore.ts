@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import { BookNote, BookNoteType, BookSearchResult } from '@/types/book';
+import { BookNote, BookNoteType, BookSearchMatch, BookSearchResult } from '@/types/book';
 
 // Per-book search navigation state
 interface SearchNavState {
   searchTerm: string;
-  searchResults: BookSearchResult[] | null;
+  searchResults: BookSearchResult[] | BookSearchMatch[] | null;
   searchResultIndex: number;
+  searchProgress: number; // 0 to 1, where 1 means search complete
 }
 
 // Per-book booknotes navigation state
@@ -34,8 +35,12 @@ interface SidebarState {
   // Search actions (per bookKey)
   getSearchNavState: (bookKey: string) => SearchNavState;
   setSearchTerm: (bookKey: string, term: string) => void;
-  setSearchResults: (bookKey: string, results: BookSearchResult[] | null) => void;
+  setSearchResults: (
+    bookKey: string,
+    results: BookSearchResult[] | BookSearchMatch[] | null,
+  ) => void;
   setSearchResultIndex: (bookKey: string, index: number) => void;
+  setSearchProgress: (bookKey: string, progress: number) => void;
   clearSearch: (bookKey: string) => void;
   // Booknotes navigation actions (per bookKey)
   getBooknotesNavState: (bookKey: string) => BooknotesNavState;
@@ -49,6 +54,7 @@ const defaultSearchNavState: SearchNavState = {
   searchTerm: '',
   searchResults: null,
   searchResultIndex: 0,
+  searchProgress: 1,
 };
 
 const defaultBooknotesNavState: BooknotesNavState = {
@@ -87,7 +93,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
         },
       },
     })),
-  setSearchResults: (bookKey: string, results: BookSearchResult[] | null) =>
+  setSearchResults: (bookKey: string, results: BookSearchResult[] | BookSearchMatch[] | null) =>
     set((state) => ({
       searchNavStates: {
         ...state.searchNavStates,
@@ -104,6 +110,16 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
         [bookKey]: {
           ...(state.searchNavStates[bookKey] || defaultSearchNavState),
           searchResultIndex: index,
+        },
+      },
+    })),
+  setSearchProgress: (bookKey: string, progress: number) =>
+    set((state) => ({
+      searchNavStates: {
+        ...state.searchNavStates,
+        [bookKey]: {
+          ...(state.searchNavStates[bookKey] || defaultSearchNavState),
+          searchProgress: progress,
         },
       },
     })),
