@@ -14,6 +14,7 @@ interface SearchResultsNavProps {
 const SearchResultsNav: React.FC<SearchResultsNavProps> = ({ bookKey, gridInsets }) => {
   const {
     searchTerm,
+    searchProgress,
     currentSection,
     showSearchNav,
     hasPreviousPage,
@@ -35,6 +36,7 @@ const SearchResultsNav: React.FC<SearchResultsNavProps> = ({ bookKey, gridInsets
       gridInsets={gridInsets}
       title={_("Search results for '{{term}}'", { term: searchTerm })}
       section={currentSection}
+      progress={searchProgress}
       hasPrevious={hasPreviousPage}
       hasNext={hasNextPage}
       previousTitle={_('Previous Result')}

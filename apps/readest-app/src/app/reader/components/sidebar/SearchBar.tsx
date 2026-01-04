@@ -4,13 +4,14 @@ import { FaSearch, FaChevronDown } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { MdDeleteOutline } from 'react-icons/md';
 
+import { md5 } from 'js-md5';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BookSearchConfig, BookSearchResult } from '@/types/book';
+import { BookSearchConfig, BookSearchMatch, BookSearchResult } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { debounce } from '@/utils/debounce';
 import { isCJKStr } from '@/utils/lang';
@@ -21,6 +22,7 @@ import SearchOptions from './SearchOptions';
 const MINIMUM_SEARCH_TERM_LENGTH_DEFAULT = 2;
 const MINIMUM_SEARCH_TERM_LENGTH_CJK = 1;
 const SEARCH_HISTORY_KEY = 'search-history';
+const SEARCH_CACHE_DIR = 'search';
 const MAX_SEARCH_HISTORY = 10;
 
 interface SearchBarProps {
@@ -31,12 +33,13 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchBar }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
-  const { getConfig, saveConfig } = useBookDataStore();
+  const { getConfig, setConfig, saveConfig } = useBookDataStore();
   const { getView, getProgress } = useReaderStore();
-  const { getSearchNavState, setSearchTerm, setSearchResults } = useSidebarStore();
+  const { getSearchNavState, setSearchTerm, setSearchResults, setSearchProgress } =
+    useSidebarStore();
   const searchNavState = getSearchNavState(bookKey);
 
   const { searchTerm } = searchNavState;
@@ -83,17 +86,79 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     inputRef.current?.focus();
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     setSearchHistory([]);
     localStorage.removeItem(historyStorageKey);
+    await clearSearchCache();
   };
+
+  const getSearchCacheKey = useCallback((term: string, config: BookSearchConfig) => {
+    const configStr = JSON.stringify({
+      scope: config.scope,
+      matchCase: config.matchCase,
+      matchWholeWords: config.matchWholeWords,
+      matchDiacritics: config.matchDiacritics,
+    });
+    return md5(`${term}-${configStr}`);
+  }, []);
+
+  const getSearchCache = useCallback(
+    async (
+      term: string,
+      config: BookSearchConfig,
+    ): Promise<BookSearchResult[] | BookSearchMatch[] | null> => {
+      const cacheKey = getSearchCacheKey(term, config);
+      const cachePath = `${SEARCH_CACHE_DIR}/${bookHash}/${cacheKey}.json`;
+      try {
+        if (await appService?.exists(cachePath, 'Cache')) {
+          const content = await appService?.readFile(cachePath, 'Cache', 'text');
+          if (content) return JSON.parse(content as string);
+        }
+      } catch (error) {
+        console.error('Failed to read search cache:', error);
+      }
+      return null;
+    },
+    [bookHash, appService, getSearchCacheKey],
+  );
+
+  const saveSearchCache = useCallback(
+    async (
+      term: string,
+      config: BookSearchConfig,
+      results: BookSearchResult[] | BookSearchMatch[],
+    ) => {
+      const cacheKey = getSearchCacheKey(term, config);
+      const cacheDir = `${SEARCH_CACHE_DIR}/${bookHash}`;
+      const cachePath = `${cacheDir}/${cacheKey}.json`;
+      try {
+        if (!(await appService?.exists(cacheDir, 'Cache'))) {
+          await appService?.createDir(cacheDir, 'Cache', true);
+        }
+        await appService?.writeFile(cachePath, 'Cache', JSON.stringify(results));
+      } catch (error) {
+        console.error('Failed to save search cache:', error);
+      }
+    },
+    [bookHash, appService, getSearchCacheKey],
+  );
+
+  const clearSearchCache = useCallback(async () => {
+    const cacheDir = `${SEARCH_CACHE_DIR}/${bookHash}`;
+    try {
+      if (await appService?.exists(cacheDir, 'Cache')) {
+        await appService?.deleteDir(cacheDir, 'Cache', true);
+      }
+    } catch (error) {
+      console.error('Failed to clear search cache:', error);
+    }
+  }, [bookHash, appService]);
 
   const view = getView(bookKey)!;
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const progress = getProgress(bookKey)!;
   const primaryLang = bookData.book?.primaryLanguage || 'en';
-  const searchConfig = config.searchConfig! as BookSearchConfig;
 
   const iconSize12 = useResponsiveSize(12);
   const iconSize16 = useResponsiveSize(16);
@@ -142,7 +207,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   };
 
   const handleSearchConfigChange = (searchConfig: BookSearchConfig) => {
-    config.searchConfig = searchConfig;
+    setConfig(bookKey, { searchConfig: { ...searchConfig } });
     saveConfig(envConfig, bookKey, config, settings);
     handleSearchTermChange(searchTerm);
   };
@@ -158,6 +223,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const handleSearch = useCallback(
     async (term: string) => {
       console.log('searching for:', term);
+
+      const searchConfig = config.searchConfig as BookSearchConfig;
+      const cachedResults = await getSearchCache(term, searchConfig);
+      if (cachedResults) {
+        setSearchResults(bookKey, cachedResults);
+        setSearchProgress(bookKey, 1);
+        if (cachedResults.length > 0) {
+          addToHistory(term);
+        }
+      }
+
+      // Reset progress at start of search
+      setSearchProgress(bookKey, 0);
+
       const { section } = progress;
       const index = searchConfig.scope === 'section' ? section.current : undefined;
       const generator = await view.search({
@@ -167,6 +246,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         acceptNode: createRejectFilter({
           tags: primaryLang.startsWith('ja') ? ['rt'] : [],
         }),
+        results: cachedResults,
       });
       const results: BookSearchResult[] = [];
       let lastProgressLogTime = 0;
@@ -176,13 +256,16 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           if (typeof result === 'string') {
             if (result === 'done') {
               setSearchResults(bookKey, [...results]);
+              setSearchProgress(bookKey, 1);
               if (results.length > 0) {
                 addToHistory(term);
+                await saveSearchCache(term, searchConfig, results);
               }
               console.log('search done');
             }
           } else {
             if (result.progress) {
+              setSearchProgress(bookKey, result.progress);
               const now = Date.now();
               if (now - lastProgressLogTime >= 1000) {
                 console.log('search progress:', result.progress);
@@ -206,7 +289,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       processResults();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [progress, searchConfig, setSearchResults, addToHistory],
+    [
+      progress,
+      config.searchConfig,
+      setSearchResults,
+      setSearchProgress,
+      addToHistory,
+      getSearchCache,
+      saveSearchCache,
+    ],
   );
 
   const resetSearch = useCallback(() => {
@@ -266,7 +357,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             toggleButton={<FaChevronDown size={iconSize12} className='text-base-content/50' />}
           >
             <SearchOptions
-              searchConfig={searchConfig}
+              searchConfig={config.searchConfig as BookSearchConfig}
               onSearchConfigChanged={handleSearchConfigChange}
             />
           </Dropdown>
@@ -287,9 +378,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               <button
                 key={index}
                 onClick={() => handleHistoryClick(term)}
-                className='hover:bg-base-content/20 text-base-content/70 bg-base-100 flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+                className='hover:bg-base-content/20 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
               >
-                {term}
+                <p className='truncate'>{term}</p>
               </button>
             ))}
           </div>
@@ -303,8 +394,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               'text-base-content/50 hover:text-base-content/80 bg-base-200 flex-shrink-0 items-center',
               'flex h-6 min-h-6 w-8 min-w-8 items-center justify-center p-0',
             )}
-            title={_('Clear history')}
-            aria-label={_('Clear history')}
+            title={_('Clear search history')}
+            aria-label={_('Clear search history')}
           >
             <MdDeleteOutline size={iconSize16} />
           </button>

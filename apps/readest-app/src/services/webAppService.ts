@@ -168,11 +168,30 @@ const indexedDBFileSystem: FileSystem = {
       transaction.onerror = () => reject(transaction.error);
     });
   },
-  async createDir() {
-    // Directories are virtual in IndexedDB; no-op
+  async createDir(path: string, base: BaseDir) {
+    return await this.writeFile(path, base, '');
   },
-  async removeDir() {
-    // Directories are virtual in IndexedDB; no-op
+  async removeDir(path: string, base: BaseDir) {
+    const { fp } = this.resolvePath(path, base);
+    const db = await openIndexedDB();
+
+    return new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction('files', 'readwrite');
+      const store = transaction.objectStore('files');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const files = request.result as { path: string }[];
+        files.forEach((file) => {
+          if (file.path.startsWith(fp)) {
+            store.delete(file.path);
+          }
+        });
+      };
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
   },
   async readDir(path: string, base: BaseDir) {
     const { fp } = this.resolvePath(path, base);

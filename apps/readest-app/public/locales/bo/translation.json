@@ -822,5 +822,7 @@
   "Next Result": "རྗེས་མའི་འབྲས་བུ།",
   "Bookmarks": "དཔེ་རྟགས།",
   "Annotations": "མཆན།",
-  "Show Results": "འབྲས་བུ་སྟོན།"
+  "Show Results": "འབྲས་བུ་སྟོན།",
+  "Clear search": "འཚོལ་བཤེར་གཙང་སེལ།",
+  "Clear search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་གཙང་སེལ།"
 }
