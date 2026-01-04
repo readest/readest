@@ -177,10 +177,13 @@ export const handleClick = (
 
   const postSingleClick = () => {
     const element = event.target as HTMLElement | null;
-    if (element?.closest('sup, a, audio, video')) {
+    if (
+      element?.closest('sup, a, audio, video') &&
+      !element?.closest('a.duokan-footnote:not([href])')
+    ) {
       return;
     }
-    const footnote = element?.closest('.js_readerFooterNote, .zhangyue-footnote');
+    const footnote = element?.closest('.js_readerFooterNote, .zhangyue-footnote, .duokan-footnote');
     if (footnote) {
       eventDispatcher.dispatch('footnote-popup', {
         bookKey,
@@ -189,6 +192,7 @@ export const handleClick = (
           footnote.getAttribute('data-wr-footernote') ||
           footnote.getAttribute('zy-footnote') ||
           footnote.getAttribute('alt') ||
+          element?.getAttribute('alt') ||
           '',
       });
       return;
