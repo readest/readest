@@ -1,24 +1,19 @@
 import { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
-import { getLocale, getOSPlatform } from '@/utils/misc';
+import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
-import { getTextFromRange, TextSelection } from '@/utils/sel';
-import { transformContent } from '@/services/transformService';
-import { TransformContext } from '@/services/transformers/types';
+import { isPointerInsideSelection, TextSelection } from '@/utils/sel';
 
 export const useTextSelector = (
   bookKey: string,
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>,
+  getAnnotationText: (range: Range) => Promise<string>,
   handleDismissPopup: () => void,
 ) => {
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
-  const bookData = getBookData(bookKey)!;
-  const primaryLang = bookData.book?.primaryLanguage || 'en';
   const osPlatform = getOSPlatform();
 
   const isPopuped = useRef(false);
@@ -32,18 +27,6 @@ export const useTextSelector = (
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
   };
 
-  const transformCtx: TransformContext = {
-    bookKey,
-    viewSettings: getViewSettings(bookKey)!,
-    userLocale: getLocale(),
-    content: '',
-    transformers: ['punctuation'],
-    reversePunctuationTransform: true,
-  };
-  const getAnnotationText = async (range: Range) => {
-    transformCtx['content'] = getTextFromRange(range, primaryLang.startsWith('ja') ? ['rt'] : []);
-    return await transformContent(transformCtx);
-  };
   const makeSelection = async (sel: Selection, index: number, rebuildRange = false) => {
     isTextSelected.current = true;
     isUpToPopup.current = true;
@@ -80,24 +63,7 @@ export const useTextSelector = (
       }, 30);
     }, 30);
   };
-  const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
-    if (selection.rangeCount === 0) return false;
-    const range = selection.getRangeAt(0);
-    const rects = range.getClientRects();
-    const padding = 80;
-    for (let i = 0; i < rects.length; i++) {
-      const rect = rects[i]!;
-      if (
-        ev.clientX >= rect.left - padding &&
-        ev.clientX <= rect.right + padding &&
-        ev.clientY >= rect.top - padding &&
-        ev.clientY <= rect.bottom + padding
-      ) {
-        return true;
-      }
-    }
-    return false;
-  };
+
   const handlePointerdown = (e: PointerEvent) => {
     lastPointerType.current = e.pointerType;
   };
@@ -129,19 +95,10 @@ export const useTextSelector = (
 
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
-      isTextSelected.current = true;
-      isUpToPopup.current = true;
       if (!selectionPosition.current) {
         selectionPosition.current = view?.renderer?.start || null;
       }
     } else {
-      if (!isUpToPopup.current) {
-        handleDismissPopup();
-        isTextSelected.current = false;
-      }
-      if (isPopuped.current) {
-        isUpToPopup.current = false;
-      }
       selectionPosition.current = null;
     }
   };
@@ -161,15 +118,12 @@ export const useTextSelector = (
   };
 
   const handleShowPopup = (showPopup: boolean) => {
-    setTimeout(
-      () => {
-        if (showPopup && !isPopuped.current) {
-          isUpToPopup.current = false;
-        }
-        isPopuped.current = showPopup;
-      },
-      ['android', 'ios'].includes(osPlatform) || appService?.isIOSApp ? 0 : 500,
-    );
+    setTimeout(() => {
+      if (showPopup && !isPopuped.current) {
+        isUpToPopup.current = false;
+      }
+      isPopuped.current = showPopup;
+    }, 500);
   };
 
   const handleUpToPopup = () => {

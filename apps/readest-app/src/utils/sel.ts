@@ -74,6 +74,25 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   };
 };
 
+export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
+  if (selection.rangeCount === 0) return false;
+  const range = selection.getRangeAt(0);
+  const rects = range.getClientRects();
+  const padding = 80;
+  for (let i = 0; i < rects.length; i++) {
+    const rect = rects[i]!;
+    if (
+      ev.clientX >= rect.left - padding &&
+      ev.clientX <= rect.right + padding &&
+      ev.clientY >= rect.top - padding &&
+      ev.clientY <= rect.bottom + padding
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const getPosition = (
   targetElement: Range | Element | TextSelection,
   rect: Rect,
