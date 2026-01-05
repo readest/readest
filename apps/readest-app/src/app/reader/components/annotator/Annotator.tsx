@@ -7,7 +7,7 @@ import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
-import { getOSPlatform, uniqueId } from '@/utils/misc';
+import { getLocale, getOSPlatform, uniqueId } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -18,13 +18,16 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
-import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
+import { Position, TextSelection } from '@/utils/sel';
+import { getPopupPosition, getPosition, getTextFromRange } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
 import { throttle } from '@/utils/throttle';
 import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
 import { isCfiInLocation } from '@/utils/cfi';
+import { TransformContext } from '@/services/transformers/types';
+import { transformContent } from '@/services/transformService';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationPopup from './AnnotationPopup';
@@ -51,6 +54,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const bookData = getBookData(bookKey)!;
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
+  const primaryLang = bookData.book?.primaryLanguage || 'en';
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -159,6 +163,20 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     [],
   );
 
+  const transformCtx: TransformContext = {
+    bookKey,
+    viewSettings: getViewSettings(bookKey)!,
+    userLocale: getLocale(),
+    content: '',
+    transformers: ['punctuation'],
+    reversePunctuationTransform: true,
+  };
+
+  const getAnnotationText = async (range: Range) => {
+    transformCtx['content'] = getTextFromRange(range, primaryLang.startsWith('ja') ? ['rt'] : []);
+    return await transformContent(transformCtx);
+  };
+
   const {
     isTextSelected,
     handleScroll,
@@ -170,7 +188,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
-  } = useTextSelector(bookKey, setSelection, handleDismissPopup);
+  } = useTextSelector(bookKey, setSelection, getAnnotationText, handleDismissPopup);
 
   const handleDismissPopupAndSelection = () => {
     handleDismissPopup();
