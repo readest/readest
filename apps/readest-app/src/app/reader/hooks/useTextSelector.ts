@@ -4,6 +4,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { isPointerInsideSelection, TextSelection } from '@/utils/sel';
+import { useInstantAnnotation } from './useInstantAnnotation';
 
 export const useTextSelector = (
   bookKey: string,
@@ -22,6 +23,16 @@ export const useTextSelector = (
   const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
   const lastPointerType = useRef<string>('mouse');
+  const isInstantAnnotating = useRef(false);
+  const isInstantAnnotated = useRef(false);
+
+  const {
+    isInstantAnnotationEnabled,
+    handleInstantAnnotationPointerDown,
+    handleInstantAnnotationPointerMove,
+    handleInstantAnnotationPointerCancel,
+    handleInstantAnnotationPointerUp,
+  } = useInstantAnnotation({ bookKey, getAnnotationText, setSelection });
 
   const isValidSelection = (sel: Selection) => {
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
@@ -64,10 +75,65 @@ export const useTextSelector = (
     }, 30);
   };
 
-  const handlePointerdown = (e: PointerEvent) => {
-    lastPointerType.current = e.pointerType;
+  const startInstantAnnotating = (ev: PointerEvent) => {
+    isInstantAnnotating.current = true;
+    isInstantAnnotated.current = false;
+    if (view) view.renderer.scrollLocked = true;
+    (ev.target as HTMLElement).style.userSelect = 'none';
   };
-  const handlePointerup = (doc: Document, index: number, ev?: PointerEvent) => {
+
+  const stopInstantAnnotating = (ev: PointerEvent) => {
+    isInstantAnnotating.current = false;
+    isInstantAnnotated.current = false;
+    if (view) view.renderer.scrollLocked = false;
+    (ev.target as HTMLElement).style.userSelect = '';
+  };
+
+  const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
+    lastPointerType.current = ev.pointerType;
+
+    if (isInstantAnnotationEnabled()) {
+      const handled = handleInstantAnnotationPointerDown(doc, index, ev);
+      if (handled) {
+        ev.preventDefault();
+        startInstantAnnotating(ev);
+      }
+    }
+  };
+
+  const handlePointerMove = (doc: Document, index: number, ev: PointerEvent) => {
+    if (isInstantAnnotating.current) {
+      ev.preventDefault();
+      isInstantAnnotated.current = handleInstantAnnotationPointerMove(doc, index, ev);
+    }
+  };
+
+  const handlePointerCancel = (_doc: Document, _index: number, ev: PointerEvent) => {
+    if (isInstantAnnotating.current) {
+      stopInstantAnnotating(ev);
+      handleInstantAnnotationPointerCancel();
+    }
+  };
+
+  const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
+    if (isInstantAnnotating.current && ev) {
+      stopInstantAnnotating(ev);
+      const handled = await handleInstantAnnotationPointerUp(doc, index, ev);
+      if (handled) {
+        return;
+      } else {
+        // If instant annotation was not created, we let the event propagate
+        // as an iframe click event which relies on a mousedown event
+        (ev.target as Element)?.dispatchEvent(
+          new MouseEvent('mousedown', {
+            ...ev,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+      }
+    }
+
     // Available on iOS and Desktop, fired at touchend or mouseup
     // Note that on Android, we mock pointer events with native touch events
     const sel = doc.getSelection() as Selection;
@@ -85,6 +151,11 @@ export const useTextSelector = (
   };
   const handleTouchStart = () => {
     isTouchStarted.current = true;
+  };
+  const handleTouchMove = (ev: TouchEvent) => {
+    if (isInstantAnnotating.current && isInstantAnnotated.current) {
+      ev.preventDefault();
+    }
   };
   const handleTouchEnd = () => {
     isTouchStarted.current = false;
@@ -173,9 +244,12 @@ export const useTextSelector = (
     isTextSelected,
     handleScroll,
     handleTouchStart,
+    handleTouchMove,
     handleTouchEnd,
-    handlePointerdown,
-    handlePointerup,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerCancel,
+    handlePointerUp,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,

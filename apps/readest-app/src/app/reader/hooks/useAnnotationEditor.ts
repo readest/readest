@@ -67,6 +67,7 @@ export const useAnnotationEditor = ({
       const contents = view.renderer.getContents();
       if (!contents || contents.length === 0) return;
 
+      // the point is from viewport, need to adjust to each content's coordinate
       const findPositionAtPoint = (doc: Document, x: number, y: number) => {
         const frameElement = doc.defaultView?.frameElement;
         const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
@@ -102,22 +103,11 @@ export const useAnnotationEditor = ({
           targetDoc = doc;
           targetIndex = index ?? 0;
           break;
-        } else if (sp && !startPos) {
-          startPos = sp;
-          targetDoc = doc;
-          targetIndex = index ?? 0;
-        } else if (ep && !endPos) {
-          endPos = ep;
-          if (!targetDoc) {
-            targetDoc = doc;
-            targetIndex = index ?? 0;
-          }
         }
       }
 
       if (!startPos || !endPos || !targetDoc) return;
 
-      // Create a new range from the positions
       const newRange = targetDoc.createRange();
       try {
         const positionComparison = startPos.node.compareDocumentPosition(endPos.node);

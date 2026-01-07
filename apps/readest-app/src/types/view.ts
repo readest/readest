@@ -48,6 +48,7 @@ export interface FoliateView extends HTMLElement {
   };
   renderer: {
     scrolled?: boolean;
+    scrollLocked: boolean;
     size: number; // current page height
     viewSize: number; // whole document view height
     start: number;
