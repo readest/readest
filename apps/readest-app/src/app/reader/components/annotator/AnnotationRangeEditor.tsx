@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { BookNote } from '@/types/book';
+import { BookNote, HighlightColor } from '@/types/book';
 import { Point, TextSelection } from '@/utils/sel';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
@@ -105,6 +105,7 @@ interface AnnotationRangeEditorProps {
   bookKey: string;
   annotation: BookNote;
   selection: TextSelection;
+  handleColor: HighlightColor;
   getAnnotationText: (range: Range) => Promise<string>;
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>;
   onStartEdit: () => void;
@@ -114,6 +115,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   bookKey,
   annotation,
   selection,
+  handleColor,
   getAnnotationText,
   setSelection,
   onStartEdit,
@@ -123,7 +125,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     useAnnotationEditor({ bookKey, annotation, getAnnotationText, setSelection });
 
   const initializedRef = useRef(false);
-  const handleColor = getHighlightColorHex(settings, annotation.color) ?? '#FFFF00';
+  const handleColorHex = getHighlightColorHex(settings, handleColor) ?? '#FFFF00';
   const draggingRef = useRef<'start' | 'end' | null>(null);
   const startRef = useRef<Point>({ x: 0, y: 0 });
   const endRef = useRef<Point>({ x: 0, y: 0 });
@@ -198,7 +200,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       <Handle
         position={currentStart}
         type='start'
-        color={handleColor}
+        color={handleColorHex}
         onDragStart={handleStartDragStart}
         onDrag={handleStartDrag}
         onDragEnd={handleDragEnd}
@@ -206,7 +208,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       <Handle
         position={currentEnd}
         type='end'
-        color={handleColor}
+        color={handleColorHex}
         onDragStart={handleEndDragStart}
         onDrag={handleEndDrag}
         onDragEnd={handleDragEnd}
