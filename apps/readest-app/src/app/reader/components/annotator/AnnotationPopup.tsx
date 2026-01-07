@@ -54,7 +54,10 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
         minHeight={isVertical ? popupWidth : popupHeight}
         position={position}
         trianglePosition={trianglePosition}
-        className='selection-popup bg-gray-600 text-white'
+        className={clsx(
+          'selection-popup bg-gray-600 text-white',
+          notes.length > 0 && 'bg-transparent',
+        )}
         triangleClassName='text-gray-600'
         onDismiss={onDismiss}
       >
@@ -63,6 +66,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
             className={clsx(
               'selection-buttons flex h-full w-full items-center justify-between p-2',
               isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
+              notes.length > 0 && 'hidden',
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
@@ -85,6 +89,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               bookKey={bookKey}
               isVertical={isVertical}
               notes={notes}
+              toolsVisible={false}
               triangleDir={trianglePosition.dir!}
               popupWidth={isVertical ? popupHeight : popupWidth}
               popupHeight={isVertical ? popupWidth : popupHeight}

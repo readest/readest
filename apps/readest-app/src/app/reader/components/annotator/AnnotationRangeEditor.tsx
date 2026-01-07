@@ -4,11 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BookNote, HighlightColor } from '@/types/book';
 import { Point, TextSelection } from '@/utils/sel';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
 
 interface HandleProps {
   position: Point;
+  isVertical: boolean;
   type: 'start' | 'end';
   color: string;
   onDragStart: () => void;
@@ -18,6 +20,7 @@ interface HandleProps {
 
 const Handle: React.FC<HandleProps> = ({
   position,
+  isVertical,
   type,
   color,
   onDragStart,
@@ -25,6 +28,9 @@ const Handle: React.FC<HandleProps> = ({
   onDragEnd,
 }) => {
   const isDragging = useRef(false);
+  const size = useResponsiveSize(24);
+  const circleRadius = useResponsiveSize(8);
+  const stemHeight = useResponsiveSize(12);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -59,16 +65,22 @@ const Handle: React.FC<HandleProps> = ({
     [onDragEnd],
   );
 
-  const size = 24;
-  const circleRadius = 8;
-  const stemHeight = 8;
-
   return (
     <div
       className='pointer-events-auto absolute z-50 cursor-grab touch-none active:cursor-grabbing'
       style={{
-        left: position.x - size / 2,
-        top: type === 'start' ? position.y - size : position.y - size / 2,
+        left: isVertical
+          ? type === 'start'
+            ? position.x - size / 2 + stemHeight / 4
+            : position.x - size / 2
+          : position.x - size / 2,
+        top: isVertical
+          ? type === 'start'
+            ? position.y - size + stemHeight / 2
+            : position.y - size / 2 - stemHeight / 2
+          : type === 'start'
+            ? position.y - size
+            : position.y - size / 2 - stemHeight / 8,
         width: size,
         height: size + stemHeight,
       }}
@@ -82,7 +94,15 @@ const Handle: React.FC<HandleProps> = ({
         height={size + stemHeight}
         viewBox={`0 0 ${size} ${size + stemHeight}`}
         className={clsx(type === 'start' && 'rotate-180')}
-        style={{ transform: type === 'start' ? 'rotate(180deg)' : undefined }}
+        style={{
+          transform: isVertical
+            ? type === 'start'
+              ? 'rotate(270deg)'
+              : 'rotate(90deg)'
+            : type === 'start'
+              ? 'rotate(180deg)'
+              : undefined,
+        }}
       >
         {/* Stem/line */}
         <line
@@ -103,6 +123,7 @@ const Handle: React.FC<HandleProps> = ({
 
 interface AnnotationRangeEditorProps {
   bookKey: string;
+  isVertical: boolean;
   annotation: BookNote;
   selection: TextSelection;
   handleColor: HighlightColor;
@@ -113,6 +134,7 @@ interface AnnotationRangeEditorProps {
 
 const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   bookKey,
+  isVertical,
   annotation,
   selection,
   handleColor,
@@ -137,7 +159,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     initializedRef.current = true;
 
     const range = selection.range;
-    const positions = getHandlePositionsFromRange(range);
+    const positions = getHandlePositionsFromRange(range, isVertical);
     if (positions) {
       setTimeout(() => {
         setCurrentStart(positions.start);
@@ -146,7 +168,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       startRef.current = positions.start;
       endRef.current = positions.end;
     }
-  }, [annotation, selection, getHandlePositionsFromRange]);
+  }, [annotation, selection, isVertical, getHandlePositionsFromRange]);
 
   useEffect(() => {
     if (!handlePositions || draggingRef.current) return;
@@ -172,24 +194,24 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     (point: Point) => {
       setCurrentStart(point);
       startRef.current = point;
-      handleAnnotationRangeChange(point, endRef.current, true);
+      handleAnnotationRangeChange(point, endRef.current, isVertical, true);
     },
-    [handleAnnotationRangeChange],
+    [isVertical, handleAnnotationRangeChange],
   );
 
   const handleEndDrag = useCallback(
     (point: Point) => {
       setCurrentEnd(point);
       endRef.current = point;
-      handleAnnotationRangeChange(startRef.current, point, true);
+      handleAnnotationRangeChange(startRef.current, point, isVertical, true);
     },
-    [handleAnnotationRangeChange],
+    [isVertical, handleAnnotationRangeChange],
   );
 
   const handleDragEnd = useCallback(() => {
     draggingRef.current = null;
-    handleAnnotationRangeChange(startRef.current, endRef.current, false);
-  }, [handleAnnotationRangeChange]);
+    handleAnnotationRangeChange(startRef.current, endRef.current, isVertical, false);
+  }, [isVertical, handleAnnotationRangeChange]);
 
   if (currentStart.x === 0 && currentStart.y === 0) {
     return null;
@@ -199,6 +221,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     <div className='pointer-events-none fixed inset-0 z-40'>
       <Handle
         position={currentStart}
+        isVertical={isVertical}
         type='start'
         color={handleColorHex}
         onDragStart={handleStartDragStart}
@@ -207,6 +230,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       />
       <Handle
         position={currentEnd}
+        isVertical={isVertical}
         type='end'
         color={handleColorHex}
         onDragStart={handleEndDragStart}

@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dayjs from 'dayjs';
 import React, { useMemo } from 'react';
 import { BookNote } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -11,6 +12,7 @@ interface AnnotationNotesProps {
   bookKey: string;
   isVertical: boolean;
   notes: BookNote[];
+  toolsVisible: boolean;
   triangleDir: 'up' | 'down' | 'left' | 'right';
   popupWidth: number;
   popupHeight: number;
@@ -21,6 +23,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
   bookKey,
   isVertical,
   notes,
+  toolsVisible,
   triangleDir,
   popupWidth,
   popupHeight,
@@ -31,7 +34,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
   const config = getConfig(bookKey);
-  const maxSize = useResponsiveSize(150);
+  const maxSize = useResponsiveSize(250);
 
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -59,15 +62,15 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
       style={{
         ...(isVertical
           ? {
-              right: `${triangleDir === 'left' ? `${popupWidth + 16}px` : undefined}`,
-              left: `${triangleDir === 'right' ? `${popupWidth + 16}px` : undefined}`,
+              right: triangleDir === 'left' ? `${toolsVisible ? popupWidth + 16 : 0}px` : undefined,
+              left: triangleDir === 'right' ? `${toolsVisible ? popupWidth + 16 : 0}px` : undefined,
               height: `${popupHeight}px`,
               maxWidth: `${maxSize}px`,
               overflowX: 'auto',
             }
           : {
-              top: triangleDir === 'up' ? undefined : `${popupHeight + 16}px`,
-              bottom: triangleDir === 'up' ? `${popupHeight + 16}px` : undefined,
+              top: triangleDir === 'down' ? `${toolsVisible ? popupHeight + 16 : 0}px` : undefined,
+              bottom: triangleDir === 'up' ? `${toolsVisible ? popupHeight + 16 : 0}px` : undefined,
               width: `${popupWidth}px`,
               maxHeight: `${maxSize}px`,
               overflowY: 'auto',
@@ -76,7 +79,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
       }}
     >
       <div
-        className={clsx('flex gap-4', isVertical ? 'h-full flex-row' : 'flex-col')}
+        className={clsx('flex gap-4', isVertical ? 'h-full flex-row' : 'w-full flex-col')}
         style={
           isVertical
             ? {
@@ -122,7 +125,12 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
                     : {}
                 }
               >
-                {note.note}
+                <div className={clsx('flex flex-col justify-between gap-2')}>
+                  {note.note}
+                  <span className='text-sm text-white/50 sm:text-xs'>
+                    {dayjs(note.createdAt).fromNow()}
+                  </span>
+                </div>
               </div>
             )}
           </div>

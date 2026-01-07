@@ -34,7 +34,7 @@ export const useAnnotationEditor = ({
   const [handlePositions, setHandlePositions] = useState<HandlePositions | null>(null);
 
   const getHandlePositionsFromRange = useCallback(
-    (range: Range): HandlePositions | null => {
+    (range: Range, isVertical: boolean): HandlePositions | null => {
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return null;
 
@@ -48,11 +48,11 @@ export const useAnnotationEditor = ({
 
       return {
         start: {
-          x: frameRect.left + firstRect.left,
+          x: frameRect.left + (isVertical ? firstRect.right : firstRect.left),
           y: frameRect.top + firstRect.top,
         },
         end: {
-          x: frameRect.left + lastRect.right,
+          x: frameRect.left + (isVertical ? lastRect.left : lastRect.right),
           y: frameRect.top + lastRect.bottom,
         },
       };
@@ -61,7 +61,7 @@ export const useAnnotationEditor = ({
   );
 
   const handleAnnotationRangeChange = useCallback(
-    async (startPoint: Point, endPoint: Point, isDragging: boolean) => {
+    async (startPoint: Point, endPoint: Point, isVertical: boolean, isDragging: boolean) => {
       if (!editingAnnotationRef.current || !view) return;
 
       const contents = view.renderer.getContents();
@@ -132,7 +132,7 @@ export const useAnnotationEditor = ({
         return;
       }
 
-      const newPositions = getHandlePositionsFromRange(newRange);
+      const newPositions = getHandlePositionsFromRange(newRange, isVertical);
       if (newPositions) {
         setHandlePositions(newPositions);
       }
