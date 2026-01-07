@@ -252,7 +252,7 @@ function ReadestSync:doLogin(email, password, menu)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _("Login failed: ") .. (response.message or "Unknown error"),
+            text = _("Login failed: ") .. (response.msg or "Unknown error"),
             timeout = 3,
         })
     end
