@@ -939,6 +939,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       {editingAnnotation && editingAnnotation.color && selection && (
         <AnnotationRangeEditor
           bookKey={bookKey}
+          isVertical={viewSettings.vertical}
           annotation={editingAnnotation}
           selection={selection}
           handleColor={selectedColor}
