@@ -55,6 +55,7 @@ import {
   SETTINGS_FILENAME,
   DEFAULT_MOBILE_SYSTEM_SETTINGS,
   DEFAULT_ANNOTATOR_CONFIG,
+  DEFAULT_EINK_VIEW_SETTINGS,
 } from './constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
@@ -88,6 +89,7 @@ export abstract class BaseAppService implements AppService {
   isMobileApp = false;
   isPortableApp = false;
   isDesktopApp = false;
+  isEink = false;
   hasTrafficLight = false;
   hasWindow = false;
   hasWindowBar = false;
@@ -200,6 +202,7 @@ export abstract class BaseAppService implements AppService {
       ...DEFAULT_BOOK_FONT,
       ...DEFAULT_BOOK_LANGUAGE,
       ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+      ...(this.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
       ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
       ...DEFAULT_VIEW_CONFIG,
       ...DEFAULT_TTS_CONFIG,

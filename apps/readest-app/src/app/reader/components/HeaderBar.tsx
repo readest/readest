@@ -185,7 +185,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                     size={iconSize16}
                     tipColor={annotationQuickAction === null ? '#8F8F8F' : highlightHexColor}
                     tipStyle={{
-                      opacity: annotationQuickAction === null ? 0.3 : 0.5,
+                      opacity: annotationQuickAction === null ? 0.5 : 0.8,
                       mixBlendMode: isDarkMode ? 'screen' : 'multiply',
                     }}
                   />

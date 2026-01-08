@@ -313,7 +313,7 @@ const Notebook: React.FC = ({}) => {
                       handleEditNote(item, true);
                     }
                   }}
-                  className='collapse-arrow border-base-300 bg-base-100 collapse border'
+                  className='booknote-item collapse-arrow border-base-300 bg-base-100 collapse border'
                 >
                   <div
                     className={clsx(

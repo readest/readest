@@ -85,6 +85,7 @@ export interface AppService {
   isLinuxApp: boolean;
   isPortableApp: boolean;
   isDesktopApp: boolean;
+  isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
   distChannel: DistChannel;

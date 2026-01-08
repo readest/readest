@@ -98,7 +98,9 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
             role='none'
             key={note.id || index}
             onClick={() => handleShowAnnotation?.(note)}
-            className={clsx('cursor-pointer rounded-lg bg-gray-600 shadow-lg transition-colors')}
+            className={clsx(
+              'popup-container cursor-pointer rounded-lg bg-gray-600 shadow-lg transition-colors',
+            )}
             style={
               isVertical
                 ? {
@@ -113,7 +115,8 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
               <div
                 dir='auto'
                 className={clsx(
-                  'm-4 hyphens-auto text-justify font-sans text-sm text-white',
+                  'm-4 hyphens-auto text-justify font-sans text-sm',
+                  'not-eink:text-white eink:text-base-content',
                   isVertical && 'writing-vertical-rl',
                 )}
                 style={
@@ -127,7 +130,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
               >
                 <div className={clsx('flex flex-col justify-between gap-2')}>
                   {note.note}
-                  <span className='text-sm text-white/50 sm:text-xs'>
+                  <span className='not-eink:text-white/50 eink:text-base-content/50 text-sm sm:text-xs'>
                     {dayjs(note.createdAt).fromNow()}
                   </span>
                 </div>

@@ -4,6 +4,49 @@ import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 
+const getTriangleStyles = (
+  trianglePosition: Position | undefined,
+  size: number,
+  offset: number,
+): React.CSSProperties => {
+  if (!trianglePosition) {
+    return { left: '-999px', top: '-999px' };
+  }
+
+  const { dir, point } = trianglePosition;
+
+  let topOffset = 0;
+  let leftOffset = 0;
+  switch (dir) {
+    case 'up':
+      topOffset = offset;
+      break;
+    case 'down':
+      topOffset = -offset;
+      break;
+    case 'left':
+      leftOffset = offset;
+      break;
+    case 'right':
+      leftOffset = -offset;
+      break;
+  }
+
+  return {
+    left: `${point.x + leftOffset}px`,
+    top: `${point.y + topOffset}px`,
+    borderLeft:
+      dir === 'right' ? 'none' : dir === 'left' ? `${size}px solid` : `${size}px solid transparent`,
+    borderRight:
+      dir === 'left' ? 'none' : dir === 'right' ? `${size}px solid` : `${size}px solid transparent`,
+    borderTop:
+      dir === 'down' ? 'none' : dir === 'up' ? `${size}px solid` : `${size}px solid transparent`,
+    borderBottom:
+      dir === 'up' ? 'none' : dir === 'down' ? `${size}px solid` : `${size}px solid transparent`,
+    transform: dir === 'left' || dir === 'right' ? 'translateY(-50%)' : 'translateX(-50%)',
+  };
+};
+
 const Popup = ({
   width,
   height,
@@ -82,14 +125,22 @@ const Popup = ({
     setAdjustedPosition(newPosition);
   }, [position, trianglePosition, popupPadding, childrenHeight]);
 
+  const outerTriangleStyles = getTriangleStyles(trianglePosition, 7, 0);
+  const innerTriangleStyles = getTriangleStyles(trianglePosition, 7, -1);
+
   return (
     <div>
+      <div
+        className={clsx('popup-triangle-outer text-base-300 absolute z-50', triangleClassName)}
+        style={outerTriangleStyles}
+      />
       <div
         id='popup-container'
         ref={containerRef}
         className={clsx(
-          'bg-base-300 absolute z-50 rounded-lg font-sans',
-          trianglePosition?.dir !== 'up' && 'shadow-xl',
+          'popup-container bg-base-300 absolute z-50 rounded-lg font-sans',
+          'eink:border eink:border-base-content',
+          trianglePosition?.dir !== 'up' && 'not-eink:shadow-xl',
           className,
         )}
         style={{
@@ -105,49 +156,8 @@ const Popup = ({
         {children}
       </div>
       <div
-        className={`triangle text-base-300 absolute z-50 ${triangleClassName}`}
-        style={{
-          left:
-            trianglePosition?.dir === 'left'
-              ? `${trianglePosition.point.x}px`
-              : trianglePosition?.dir === 'right'
-                ? `${trianglePosition.point.x}px`
-                : `${trianglePosition ? trianglePosition.point.x : -999}px`,
-          top:
-            trianglePosition?.dir === 'up'
-              ? `${trianglePosition.point.y}px`
-              : trianglePosition?.dir === 'down'
-                ? `${trianglePosition.point.y}px`
-                : `${trianglePosition ? trianglePosition.point.y : -999}px`,
-          borderLeft:
-            trianglePosition?.dir === 'right'
-              ? 'none'
-              : trianglePosition?.dir === 'left'
-                ? `7px solid`
-                : '7px solid transparent',
-          borderRight:
-            trianglePosition?.dir === 'left'
-              ? 'none'
-              : trianglePosition?.dir === 'right'
-                ? `7px solid`
-                : '7px solid transparent',
-          borderTop:
-            trianglePosition?.dir === 'down'
-              ? 'none'
-              : trianglePosition?.dir === 'up'
-                ? `7px solid`
-                : '7px solid transparent',
-          borderBottom:
-            trianglePosition?.dir === 'up'
-              ? 'none'
-              : trianglePosition?.dir === 'down'
-                ? `7px solid`
-                : '7px solid transparent',
-          transform:
-            trianglePosition?.dir === 'left' || trianglePosition?.dir === 'right'
-              ? 'translateY(-50%)'
-              : 'translateX(-50%)',
-        }}
+        className={clsx('popup-triangle-inner text-base-300 absolute z-50', triangleClassName)}
+        style={innerTriangleStyles}
       />
     </div>
   );

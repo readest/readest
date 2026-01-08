@@ -211,6 +211,12 @@ export const DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS: Partial<ViewSettings> = {
   overrideColor: false,
 };
 
+export const DEFAULT_EINK_VIEW_SETTINGS: Partial<ViewSettings> = {
+  isEink: true,
+  animated: false,
+  volumeKeysToFlip: true,
+};
+
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
   uiLanguage: '',
