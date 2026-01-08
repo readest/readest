@@ -133,7 +133,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) =
       role='button'
       ref={viewRef}
       className={clsx(
-        'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
+        'booknote-item border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
         isCurrent
           ? 'bg-base-300/85 hover:bg-base-300 focus:bg-base-300'
           : 'hover:bg-base-300/55 focus:bg-base-300/55 bg-base-100',
@@ -177,7 +177,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) =
           <div className={clsx('content font-size-sm line-clamp-3', item.note && 'mt-2')}>
             <span
               className={clsx(
-                'inline leading-normal',
+                'booknote-text inline leading-normal',
                 item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',

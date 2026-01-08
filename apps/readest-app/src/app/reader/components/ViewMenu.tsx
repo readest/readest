@@ -147,7 +147,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     <Menu
       className={clsx(
         'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1 border',
-        'bgcolor-base-200 border-base-200 shadow-2xl',
+        'bgcolor-base-200 shadow-2xl',
       )}
       style={{
         maxWidth: `${window.innerWidth - 40}px`,

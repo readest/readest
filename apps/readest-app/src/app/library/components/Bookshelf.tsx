@@ -337,7 +337,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             <button
               aria-label={_('Import Books')}
               className={clsx(
-                'border-1 bg-base-100 hover:bg-base-300/50',
+                'bookitem-main bg-base-100 hover:bg-base-300/50',
                 'flex items-center justify-center',
                 'aspect-[28/41] w-full',
               )}
@@ -390,7 +390,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       )}
       {showDeleteAlert && (
         <div
-          className={clsx('fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
+          className={clsx('delete-alert fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
           style={{
             paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
           }}

@@ -8,6 +8,7 @@ import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types
 import { NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
 import { getLocale, getOSPlatform, uniqueId } from '@/utils/misc';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -42,6 +43,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
+  const { isDarkMode } = useThemeStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
@@ -293,10 +295,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const onDrawAnnotation = (event: Event) => {
     const viewSettings = getViewSettings(bookKey)!;
+    const isEink = viewSettings.isEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
     const hexColor = getHighlightColorHex(settings, color);
+    const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
+    const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     if (annotation.note) {
       const { defaultView } = doc;
       const node = range.startContainer;
@@ -304,7 +309,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { writingMode } = defaultView.getComputedStyle(el);
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
-      draw(Overlayer.highlight, { color: hexColor });
+      draw(Overlayer.highlight, { color: isEink ? einkBgColor : hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;
@@ -318,7 +323,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const padding = viewSettings.vertical
         ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-      draw(Overlayer[style as keyof typeof Overlayer], { writingMode, color: hexColor, padding });
+      draw(Overlayer[style as keyof typeof Overlayer], {
+        writingMode,
+        color: isEink ? einkFgColor : hexColor,
+        padding,
+      });
     }
   };
 

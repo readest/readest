@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { BookNote, HighlightColor } from '@/types/book';
 import { Point, TextSelection } from '@/utils/sel';
+import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
@@ -143,6 +144,9 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   onStartEdit,
 }) => {
   const { settings } = useSettingsStore();
+  const { isDarkMode } = useThemeStore();
+  const isEink = settings.globalViewSettings.isEink;
+  const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const { handlePositions, getHandlePositionsFromRange, handleAnnotationRangeChange } =
     useAnnotationEditor({ bookKey, annotation, getAnnotationText, setSelection });
 
@@ -223,7 +227,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
         position={currentStart}
         isVertical={isVertical}
         type='start'
-        color={handleColorHex}
+        color={isEink ? einkFgColor : handleColorHex}
         onDragStart={handleStartDragStart}
         onDrag={handleStartDrag}
         onDragEnd={handleDragEnd}
@@ -232,7 +236,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
         position={currentEnd}
         isVertical={isVertical}
         type='end'
-        color={handleColorHex}
+        color={isEink ? einkFgColor : handleColorHex}
         onDragStart={handleEndDragStart}
         onDrag={handleEndDrag}
         onDragEnd={handleDragEnd}

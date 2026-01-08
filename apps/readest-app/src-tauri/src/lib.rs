@@ -9,6 +9,9 @@ extern crate objc;
 #[cfg(target_os = "windows")]
 mod windows;
 
+#[cfg(target_os = "android")]
+mod android;
+
 use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -270,34 +273,54 @@ pub fn run() {
                 eprintln!("Failed to initialize tauri_plugin_log: {e}");
             };
 
+            // Check for e-ink device on Android before building the window
+            #[cfg(target_os = "android")]
+            let is_eink = android::is_eink_device();
+            #[cfg(not(target_os = "android"))]
+            let is_eink = false;
+
+            let eink_script = if is_eink {
+                "window.__READEST_IS_EINK = true;"
+            } else {
+                ""
+            };
+
+            let init_script = format!(
+                r#"
+                    {eink_script}
+                    window.addEventListener('DOMContentLoaded', function() {{
+                        document.documentElement.classList.add('edge-to-edge');
+                        const isTauriLocal = window.location.protocol === 'tauri:' ||
+                                            window.location.protocol === 'about:' ||
+                                            window.location.hostname === 'tauri.localhost';
+                        const needsSafeArea = !isTauriLocal;
+                        if (needsSafeArea && !document.getElementById('safe-area-style')) {{
+                            const style = document.createElement('style');
+                            style.id = 'safe-area-style';
+                            style.textContent = `
+                                body {{
+                                    padding-top: env(safe-area-inset-top) !important;
+                                    padding-bottom: env(safe-area-inset-bottom) !important;
+                                    padding-left: env(safe-area-inset-left) !important;
+                                    padding-right: env(safe-area-inset-right) !important;
+                                }}
+                            `;
+                            document.head.appendChild(style);
+                        }}
+                    }});
+                "#,
+                eink_script = eink_script
+            );
+
             let app_handle = app.handle().clone();
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .background_throttling(BackgroundThrottlingPolicy::Disabled)
-                .background_color(tauri::window::Color(50, 49, 48, 255))
-                .initialization_script(
-                    r#"
-                        window.addEventListener('DOMContentLoaded', function() {
-                            document.documentElement.classList.add('edge-to-edge');
-                            const isTauriLocal = window.location.protocol === 'tauri:' ||
-                                                window.location.protocol === 'about:' ||
-                                                window.location.hostname === 'tauri.localhost';
-                            const needsSafeArea = !isTauriLocal;
-                            if (needsSafeArea && !document.getElementById('safe-area-style')) {
-                                const style = document.createElement('style');
-                                style.id = 'safe-area-style';
-                                style.textContent = `
-                                    body {
-                                        padding-top: env(safe-area-inset-top) !important;
-                                        padding-bottom: env(safe-area-inset-bottom) !important;
-                                        padding-left: env(safe-area-inset-left) !important;
-                                        padding-right: env(safe-area-inset-right) !important;
-                                    }
-                                `;
-                                document.head.appendChild(style);
-                            }
-                        });
-                    "#,
-                )
+                .background_color(if is_eink {
+                    tauri::window::Color(255, 255, 255, 255)
+                } else {
+                    tauri::window::Color(50, 49, 48, 255)
+                })
+                .initialization_script(&init_script)
                 .on_navigation(move |url| {
                     if url.scheme() == "alipays" || url.scheme() == "alipay" {
                         let url_str = url.as_str().to_string();

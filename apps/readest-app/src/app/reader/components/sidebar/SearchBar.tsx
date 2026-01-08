@@ -37,9 +37,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { getConfig, setConfig, saveConfig } = useBookDataStore();
-  const { getView, getProgress } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const { setSearchTerm, setSearchResults, setSearchProgress } = useSidebarStore();
   const { getSearchNavState, getSearchStatus, setSearchStatus } = useSidebarStore();
+  const viewSettings = getViewSettings(bookKey);
   const searchNavState = getSearchNavState(bookKey);
 
   const { searchTerm } = searchNavState;
@@ -327,7 +328,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   return (
     <div className='relative flex flex-col gap-3 p-2'>
       <div className='bg-base-100 flex h-8 items-center rounded-lg'>
-        <div className='pl-3'>
+        <div className='absolute ps-3'>
           <FaSearch size={iconSize16} className='text-base-content/50' />
         </div>
 
@@ -338,31 +339,40 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           spellCheck={false}
           onChange={handleInputChange}
           placeholder={_('Search...')}
-          className='w-full bg-transparent p-2 pr-0 font-sans text-sm font-light focus:outline-none'
+          className='search-input w-full bg-transparent p-2 pr-0 ps-10 font-sans text-sm font-light focus:outline-none'
         />
 
         {searchTerm && (
           <button
             onClick={handleClearInput}
-            className='flex h-8 w-8 items-center justify-center bg-transparent pe-2'
+            className='absolute end-8 flex h-8 w-8 items-center justify-center bg-transparent'
             aria-label={_('Clear search')}
           >
             <IoMdCloseCircle size={iconSize16} className='text-base-content/75' />
           </button>
         )}
 
-        <div className='bg-base-300 flex h-8 w-8 items-center rounded-r-lg'>
+        <div
+          className={clsx(
+            'absolute end-2 flex h-8 w-8 items-center rounded-r-lg',
+            viewSettings?.isEink ? 'bg-transparent' : 'bg-base-300',
+          )}
+        >
           <Dropdown
             label={_('Search Options')}
             className={clsx(
               window.innerWidth < 640 && 'dropdown-end',
               'dropdown-bottom flex justify-center',
             )}
-            menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg'
+            menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3.5'}
+            buttonClassName={clsx(
+              'btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg',
+              viewSettings?.isEink ? '!bg-transparent hover:!bg-transparent' : '',
+            )}
             toggleButton={<FaChevronDown size={iconSize12} className='text-base-content/50' />}
           >
             <SearchOptions
+              isEink={!!viewSettings?.isEink}
               searchConfig={config.searchConfig as BookSearchConfig}
               onSearchConfigChanged={handleSearchConfigChange}
             />
@@ -373,7 +383,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       {searchHistory.length > 0 && !searchTerm && (
         <div className='relative flex'>
           <div
-            className='from-base-200 pointer-events-none absolute left-0 top-0 h-full w-3 bg-gradient-to-r to-transparent'
+            className={clsx(
+              'from-base-200 pointer-events-none absolute left-0 top-0 h-full w-3 bg-gradient-to-r to-transparent',
+              viewSettings?.isEink ? 'hidden' : '',
+            )}
             aria-hidden='true'
           />
           <div
@@ -384,20 +397,23 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               <button
                 key={index}
                 onClick={() => handleHistoryClick(term)}
-                className='hover:bg-base-content/20 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+                className='hover:bg-base-200/20 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
               >
                 <p className='truncate'>{term}</p>
               </button>
             ))}
           </div>
           <div
-            className='from-base-200 pointer-events-none absolute right-6 top-0 h-full w-6 bg-gradient-to-l to-transparent'
+            className={clsx(
+              'from-base-200 pointer-events-none absolute right-6 top-0 h-full w-6 bg-gradient-to-l to-transparent',
+              viewSettings?.isEink ? 'hidden' : '',
+            )}
             aria-hidden='true'
           />
           <button
             onClick={handleClearHistory}
             className={clsx(
-              'text-base-content/50 hover:text-base-content/80 bg-base-200 flex-shrink-0 items-center',
+              'text-base-content/50 hover:text-base-content/80 flex-shrink-0 items-center',
               'flex h-6 min-h-6 w-8 min-w-8 items-center justify-center p-0',
             )}
             title={_('Clear search history')}

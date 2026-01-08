@@ -8,12 +8,19 @@ import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import { Insets } from '@/types/misc';
 
+declare global {
+  interface Window {
+    __READEST_IS_EINK?: boolean;
+  }
+}
+
 interface ThemeState {
   themeMode: ThemeMode;
   themeColor: string;
   systemIsDarkMode: boolean;
   themeCode: ThemeCode;
   isDarkMode: boolean;
+  isEinkMode: boolean;
   systemUIVisible: boolean;
   statusBarHeight: number;
   systemUIAlwaysHidden: boolean;
@@ -26,6 +33,7 @@ interface ThemeState {
   getIsDarkMode: () => boolean;
   setThemeMode: (mode: ThemeMode) => void;
   setThemeColor: (color: string) => void;
+  setIsEinkMode: (isEink: boolean) => void;
   updateAppTheme: (color: keyof Palette) => void;
   saveCustomTheme: (
     envConfig: EnvConfigType,
@@ -46,7 +54,8 @@ const getInitialThemeMode = (): ThemeMode => {
 
 const getInitialThemeColor = (): string => {
   if (typeof window !== 'undefined' && localStorage) {
-    return localStorage.getItem('themeColor') || 'default';
+    const defaultColor = window.__READEST_IS_EINK ? 'contrast' : 'default';
+    return localStorage.getItem('themeColor') || defaultColor;
   }
   return 'default';
 };
@@ -65,6 +74,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     themeColor: initialThemeColor,
     systemIsDarkMode,
     isDarkMode,
+    isEinkMode: false,
     themeCode,
     systemUIVisible: false,
     statusBarHeight: 24,
@@ -76,6 +86,9 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     setStatusBarHeight: (height: number) => set({ statusBarHeight: height }),
     setSystemUIAlwaysHidden: (hidden: boolean) => set({ systemUIAlwaysHidden: hidden }),
     getIsDarkMode: () => get().isDarkMode,
+    setIsEinkMode: (isEink: boolean) => {
+      set({ isEinkMode: isEink });
+    },
     setThemeMode: (mode) => {
       if (typeof window !== 'undefined' && localStorage) {
         localStorage.setItem('themeMode', mode);
