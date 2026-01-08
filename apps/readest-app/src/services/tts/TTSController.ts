@@ -111,8 +111,8 @@ export class TTSController extends EventTarget {
     await this.view.initTTS(
       granularity,
       createRejectFilter({
-        tags: ['rt', 'sup'],
-        contents: [{ tag: 'a', content: /^\d+$/ }],
+        tags: ['rt'],
+        contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/}],
       }),
       this.#getHighlighter(),
     );
