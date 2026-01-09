@@ -74,6 +74,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
 
   const cycleProgressInfoModes = () => {
+    if (!viewSettings.tapToToggleFooter) return;
+
     const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
     const hasProgressInfo = viewSettings.showProgressInfo;
     const modeSequence: (typeof progressInfoMode)[] = ['all', 'remaining', 'progress', 'none'];
