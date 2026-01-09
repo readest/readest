@@ -70,6 +70,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
+  const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
   const resetToDefaults = useResetViewSettings();
@@ -104,6 +105,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
+      tapToToggleFooter: setTapToToggleFooter,
       showMarginsOnScroll: setShowMarginsOnScroll,
     });
   };
@@ -337,6 +339,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressStyle]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'tapToToggleFooter', tapToToggleFooter, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tapToToggleFooter]);
 
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
@@ -693,6 +700,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                   { value: 'percentage', label: _('Percentage') },
                 ]}
                 disabled={!showProgressInfo}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Tap to Toggle Footer')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={tapToToggleFooter}
+                disabled={!showFooter}
+                onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
               />
             </div>
             <div className='config-item'>
