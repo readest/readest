@@ -136,11 +136,11 @@ export const useBooksSync = () => {
         await appService?.downloadBookCovers(batch);
         await Promise.all(batch.map(processNewBook));
         const progress = Math.min((i + batchSize) / newBooks.length, 1);
-        setLibrary([...updatedLibrary]);
         setSyncProgress(progress);
+        setLibrary([...updatedLibrary]);
+        appService?.saveLibraryBooks(updatedLibrary);
       }
       setLibrary(updatedLibrary);
-      appService?.saveLibraryBooks(updatedLibrary);
     } finally {
       if (newBooks.length > 0) {
         setIsSyncing(false);
