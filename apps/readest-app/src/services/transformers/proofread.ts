@@ -11,6 +11,29 @@ interface NormalizedPattern {
 const isUnicodeWordChar = (char: string): boolean => /[\p{L}\p{N}_]/u.test(char || '');
 const hasUnicodeChars = (text: string): boolean => /[^\x00-\x7F]/.test(text);
 
+// Scripts that don't use spaces between words (no word boundaries)
+// CJK: Chinese, Japanese, Korean
+// Thai, Lao, Khmer, Myanmar, Tibetan
+const NO_WORD_BOUNDARY_RANGES = [
+  '\u4E00-\u9FFF', // CJK Unified Ideographs
+  '\u3400-\u4DBF', // CJK Unified Ideographs Extension A
+  '\u3000-\u303F', // CJK Symbols and Punctuation
+  '\uFF00-\uFFEF', // Halfwidth and Fullwidth Forms
+  '\u3040-\u309F', // Hiragana
+  '\u30A0-\u30FF', // Katakana
+  '\uAC00-\uD7AF', // Korean Hangul Syllables
+  '\u0E00-\u0E7F', // Thai
+  '\u0E80-\u0EFF', // Lao
+  '\u1780-\u17FF', // Khmer
+  '\u1000-\u109F', // Myanmar
+  '\u0F00-\u0FFF', // Tibetan
+].join('');
+
+const isNoWordBoundaryChar = (char: string): boolean =>
+  new RegExp(`[${NO_WORD_BOUNDARY_RANGES}]`).test(char || '');
+const isPureNoWordBoundaryScript = (text: string): boolean =>
+  new RegExp(`^[${NO_WORD_BOUNDARY_RANGES}]+$`).test(text);
+
 function normalizePattern(
   pattern: string,
   isRegex: boolean,
@@ -61,11 +84,15 @@ function isValidMatch(text: string, match: RegExpExecArray, rule: ProofreadRule)
     if (!isExactMatch) return false;
   }
 
-  if (hasUnicodeChars(rule.pattern)) {
+  // Skip word boundary check for scripts without word boundaries (CJK, Thai, Lao, Khmer, Myanmar, Tibetan)
+  if (hasUnicodeChars(rule.pattern) && !isPureNoWordBoundaryScript(rule.pattern)) {
     const charBefore = text[match.index - 1] ?? '';
     const charAfter = text[match.index + match[0].length] ?? '';
-    if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
-      return false;
+    // Only check word boundaries if adjacent chars are from scripts that use word boundaries
+    if (!isNoWordBoundaryChar(charBefore) && !isNoWordBoundaryChar(charAfter)) {
+      if (isUnicodeWordChar(charBefore) || isUnicodeWordChar(charAfter)) {
+        return false;
+      }
     }
   }
 
