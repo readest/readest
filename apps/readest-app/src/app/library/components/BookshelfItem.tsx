@@ -115,9 +115,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { updateBook } = useLibraryStore();
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
-    if (await makeBookAvailable(book)) {
-      handleShowDetailsBook(book);
-    }
+    handleShowDetailsBook(book);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
