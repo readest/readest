@@ -24,7 +24,7 @@ import MenuItem from '../MenuItem';
 
 interface BookDetailViewProps {
   book: Book;
-  metadata: BookMetadata;
+  metadata: BookMetadata | null;
   fileSize: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -64,8 +64,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           </div>
           <div className='flex flex-wrap items-center gap-x-4'>
             {onEdit && (
-              <button onClick={onEdit} title={_('Edit Metadata')}>
-                <MdOutlineEdit className='fill-base-content hover:fill-blue-500' />
+              <button
+                onClick={onEdit}
+                className={!metadata ? 'btn-disabled opacity-50' : ''}
+                title={_('Edit Metadata')}
+              >
+                <MdOutlineEdit className='hover:fill-blue-500' />
               </button>
             )}
             {onDelete && (
@@ -123,13 +127,13 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Publisher')}</span>
             <p className='text-neutral-content text-sm'>
-              {formatPublisher(metadata.publisher || '') || _('Unknown')}
+              {formatPublisher(metadata?.publisher || '') || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Published')}</span>
             <p className='text-neutral-content text-sm'>
-              {formatDate(metadata.published, true) || _('Unknown')}
+              {formatDate(metadata?.published, true) || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>
@@ -143,13 +147,13 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Language')}</span>
             <p className='text-neutral-content text-sm'>
-              {formatLanguage(metadata.language) || _('Unknown')}
+              {formatLanguage(metadata?.language) || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>
             <span className='font-bold'>{_('Subjects')}</span>
             <p className='text-neutral-content line-clamp-3 text-sm'>
-              {formatAuthors(metadata.subject || '') || _('Unknown')}
+              {formatAuthors(metadata?.subject || '') || _('Unknown')}
             </p>
           </div>
           <div className='overflow-hidden'>
@@ -164,9 +168,9 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         <div>
           <span className='font-bold'>{_('Description')}</span>
           <p
-            className='text-neutral-content prose prose-sm max-w-full text-sm'
+            className='text-neutral-content prose prose-sm max-w-full whitespace-pre-line text-sm'
             dangerouslySetInnerHTML={{
-              __html: metadata.description || _('No description available'),
+              __html: metadata?.description || _('No description available'),
             }}
           ></p>
         </div>
