@@ -165,6 +165,11 @@ const getColorStyles = (
     p img, span img, sup img {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
+    table {
+      max-width: calc(var(--available-width));
+      overflow: auto;
+      table-layout: fixed;
+    }
     /* code */
     body.theme-dark code {
       ${isDarkMode ? `color: ${fg}cc;` : ''}
@@ -325,9 +330,6 @@ const getLayoutStyles = (
     ${vertical && overrideLayout ? `margin-right: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
-  }
-  h1, h2, h3, h4, h5, h6 {
-    text-align: initial;
   }
 
   :lang(zh), :lang(ja), :lang(ko) {
@@ -795,7 +797,7 @@ export const applyTableStyle = (document: Document) => {
           const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
 
           if (widthUnit === 'px' || !widthUnit) {
-            rowWidth += widthValue + 6;
+            rowWidth += widthValue;
           } else if (widthUnit === '%') {
             rowWidth += (window.innerWidth * widthValue) / 100;
           }
