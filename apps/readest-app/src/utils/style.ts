@@ -247,7 +247,6 @@ const getLayoutStyles = (
   }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
-    ${writingMode.includes('vertical') ? 'font-feature-settings: "vrt2" 1, "vert" 1; text-orientation: upright;' : ''}
     text-align: var(--default-text-align);
     max-height: unset;
     -webkit-touch-callout: none;

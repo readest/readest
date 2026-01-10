@@ -29,6 +29,7 @@ import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
+import SettingsDialog from '@/components/settings/SettingsDialog';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
@@ -41,6 +42,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { getConfig, getBookData, saveConfig } = useBookDataStore();
   const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
+  const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -212,6 +214,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     <div className='reader-content full-height flex'>
       <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
       <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
+      {isSettingsDialogOpen && <SettingsDialog bookKey={settingsDialogBookKey} />}
       <Notebook />
       {showDetailsBook && (
         <BookDetailModal

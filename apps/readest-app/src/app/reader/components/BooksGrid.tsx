@@ -3,14 +3,12 @@ import React, { useEffect } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getViewInsets } from '@/utils/insets';
-import SettingsDialog from '@/components/settings/SettingsDialog';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
@@ -36,7 +34,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
   const { getProgress, getViewState, getViewSettings } = useReaderStore();
   const { setGridInsets, hoveredBookKey } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { isSettingsDialogOpen } = useSettingsStore();
 
   const { safeAreaInsets: screenInsets } = useThemeStore();
   const aspectRatio = window.innerWidth / window.innerHeight;
@@ -211,7 +208,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               isHoveredAnim={false}
               gridInsets={gridInsets}
             />
-            {isSettingsDialogOpen && <SettingsDialog bookKey={bookKey} />}
           </div>
         );
       })}
