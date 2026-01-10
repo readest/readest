@@ -5,6 +5,7 @@ import {
   MdOutlineCloudUpload,
   MdOutlineDelete,
   MdOutlineEdit,
+  MdOutlineRefresh,
 } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -14,6 +15,7 @@ import {
   formatAuthors,
   formatDate,
   formatBytes,
+  formatTime,
   formatLanguage,
   formatPublisher,
   formatTitle,
@@ -32,6 +34,7 @@ interface BookDetailViewProps {
   onDeleteLocalCopy?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
+  onResetReadTime?: () => void;
 }
 
 const BookDetailView: React.FC<BookDetailViewProps> = ({
@@ -44,6 +47,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDeleteLocalCopy,
   onDownload,
   onUpload,
+  onResetReadTime,
 }) => {
   const _ = useTranslation();
 
@@ -118,6 +122,9 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>
             )}
+            <button onClick={onResetReadTime} title={_('Reset read time')}>
+              <MdOutlineRefresh className='fill-base-content' />
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +180,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               __html: metadata?.description || _('No description available'),
             }}
           ></p>
+        </div>
+        <div>
+          <span className='font-bold'>{_('Read Time')}</span>
+          <p className='text-neutral-content prose prose-sm max-w-full text-sm'>
+            {formatTime(book.totalReadTime) || _('Never')}
+          </p>
         </div>
       </div>
     </div>
