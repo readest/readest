@@ -108,6 +108,7 @@ pub async fn download_file(
     headers: HashMap<String, String>,
     body: Option<String>,
     single_threaded: Option<bool>,
+    skip_ssl_verification: Option<bool>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<()> {
     use futures::stream::{self, StreamExt};
@@ -116,7 +117,10 @@ pub async fn download_file(
 
     const PART_SIZE: u64 = 1024 * 1024;
 
-    let client = reqwest::Client::new();
+    let client = reqwest::ClientBuilder::new()
+        .danger_accept_invalid_certs(skip_ssl_verification.unwrap_or(false))
+        .danger_accept_invalid_hostnames(skip_ssl_verification.unwrap_or(false))
+        .build()?;
     let force_single = single_threaded.unwrap_or(false);
 
     async fn single_threaded_download(

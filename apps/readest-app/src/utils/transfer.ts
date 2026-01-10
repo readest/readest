@@ -123,6 +123,7 @@ export const tauriDownload = async (
   headers?: Record<string, string>,
   body?: string,
   singleThreaded?: boolean,
+  skipSslVerification?: boolean,
 ): Promise<void> => {
   const ids = new Uint32Array(1);
   window.crypto.getRandomValues(ids);
@@ -141,5 +142,6 @@ export const tauriDownload = async (
     onProgress,
     body,
     singleThreaded,
+    skipSslVerification,
   });
 };
