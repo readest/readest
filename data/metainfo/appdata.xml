@@ -59,6 +59,25 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.97" date="2026-01-10">
+      <description>
+        <ul>
+          <li>Annotations: Added annotation bubble icons directly on text with instant note popups</li>
+          <li>Annotations: Enabled quick highlighting when selecting text</li>
+          <li>Annotations: Added the ability to edit the text range of existing highlights</li>
+          <li>Annotations: Added an annotation navigation bar for easier browsing</li>
+          <li>OPDS: Fixed an issue where CBZ files could not be downloaded from OPDS catalogs</li>
+          <li>OPDS: Improved compatibility with Komga OPDS servers</li>
+          <li>OPDS: Added support for OPDS servers using self-signed SSL certificates</li>
+          <li>PDF: Fixed an issue where some PDF files failed to open</li>
+          <li>E-ink: Optimized colors and layout for improved e-ink device readability</li>
+          <li>Search: Added search term history for quicker repeated searches</li>
+          <li>Text-to-Speech: Reduced excessive pauses between sentences for smoother playback</li>
+          <li>File Transfer: Introduced a background transfer queue for uploading and downloading books</li>
+          <li>Proofreading: Added a proofread tool that can replace text directly within books</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.96" date="2025-12-19">
       <description>
         <ul>
@@ -195,17 +214,6 @@
           <li>Theme: Fixed auto theme switching in new reader windows</li>
           <li>TTS: Improved scrolling accuracy to highlighted text during read-aloud</li>
           <li>TTS: Fixed crash issues on certain Android systems</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.86" date="2025-10-14">
-      <description>
-        <ul>
-          <li>Reader: Added support for per-book background image customization</li>
-          <li>Reader: Added option to override book language metadata for improved hyphenation accuracy</li>
-          <li>Sync: Readest sync in KOReader can now be triggered using gesture controls</li>
-          <li>Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book</li>
-          <li>Sync: Improved upload performance with concurrent upload support</li>
         </ul>
       </description>
     </release>

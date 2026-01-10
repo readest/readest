@@ -1,5 +1,23 @@
 {
   "releases": {
+    "0.9.97": {
+      "date": "2026-01-10",
+      "notes": [
+        "Annotations: Added annotation bubble icons directly on text with instant note popups",
+        "Annotations: Enabled quick highlighting when selecting text",
+        "Annotations: Added the ability to edit the text range of existing highlights",
+        "Annotations: Added an annotation navigation bar for easier browsing",
+        "OPDS: Fixed an issue where CBZ files could not be downloaded from OPDS catalogs",
+        "OPDS: Improved compatibility with Komga OPDS servers",
+        "OPDS: Added support for OPDS servers using self-signed SSL certificates",
+        "PDF: Fixed an issue where some PDF files failed to open",
+        "E-ink: Optimized colors and layout for improved e-ink device readability",
+        "Search: Added search term history for quicker repeated searches",
+        "Text-to-Speech: Reduced excessive pauses between sentences for smoother playback",
+        "File Transfer: Introduced a background transfer queue for uploading and downloading books",
+        "Proofreading: Added a proofread tool that can replace text directly within books"
+      ]
+    },
     "0.9.96": {
       "date": "2025-12-19",
       "notes": [
