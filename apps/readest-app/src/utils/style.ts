@@ -416,7 +416,7 @@ const getLayoutStyles = (
   body.paginated-mode div[style*="page-break-after:always"],
   body.paginated-mode p[style*="page-break-after: always"],
   body.paginated-mode p[style*="page-break-after:always"] {
-    margin-bottom: 100vh !important;
+    margin-bottom: calc(var(--available-height) * 1px);
   }
 
   /* workaround for some badly designed epubs */
@@ -650,14 +650,14 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
   if (isInlineStyle) {
     const hasPageBreakAfterAlways = /page-break-after\s*:\s*always\s*[;]?/.test(css);
     if (hasPageBreakAfterAlways && !/margin-bottom\s*:/.test(css)) {
-      css = css.replace(/;?\s*$/, '') + '; margin-bottom: 100vh !important';
+      css = css.replace(/;?\s*$/, '') + '; margin-bottom: calc(var(--available-height) * 1px)';
     }
   } else {
     css = css.replace(ruleRegex, (match, selector, block) => {
       const hasPageBreakAfterAlways = /page-break-after\s*:\s*always\s*[;$]/.test(block);
       if (hasPageBreakAfterAlways) {
         if (!/margin-bottom\s*:/.test(block)) {
-          block = block.replace(/}$/, ' margin-bottom: 100vh !important; }');
+          block = block.replace(/}$/, ' margin-bottom: calc(var(--available-height) * 1px); }');
         }
         return selector + block;
       }

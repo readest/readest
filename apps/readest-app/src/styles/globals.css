@@ -538,9 +538,9 @@ foliate-fxl {
 }
 
 [data-eink="true"] .btn-primary {
-  background-color: theme('colors.base-100') !important;
+  background-color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
-  color: theme('colors.base-content') !important;
+  color: theme('colors.base-100') !important;
 }
 
 [data-eink="true"] .bg-primary {
