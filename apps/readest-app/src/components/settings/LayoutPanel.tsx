@@ -249,15 +249,17 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   useEffect(() => {
     if (maxColumnCount === viewSettings.maxColumnCount) return;
     saveViewSettings(envConfig, bookKey, 'maxColumnCount', maxColumnCount, false, false);
+    const newViewSettings = getViewSettings(bookKey)!;
     view?.renderer.setAttribute('max-column-count', maxColumnCount);
-    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
+    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(newViewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxColumnCount]);
 
   useEffect(() => {
     if (maxInlineSize === viewSettings.maxInlineSize) return;
     saveViewSettings(envConfig, bookKey, 'maxInlineSize', maxInlineSize, false, false);
-    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
+    const newViewSettings = getViewSettings(bookKey)!;
+    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(newViewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxInlineSize]);
 
@@ -279,7 +281,8 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true).then(() => {
       if (view) {
-        view.renderer.setStyles?.(getStyles(viewSettings));
+        const newViewSettings = getViewSettings(bookKey)!;
+        view.renderer.setStyles?.(getStyles(newViewSettings));
         view.book.dir = getBookDirFromWritingMode(writingMode);
       }
       if (
