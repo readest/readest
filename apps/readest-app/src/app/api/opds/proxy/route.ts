@@ -103,6 +103,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       return new NextResponse(null, {
         status: 200,
         headers: {
+          ...Object.fromEntries(response.headers.entries()),
           'Content-Type': contentType,
           'Content-Length': contentLength || '',
           'Cache-Control': 'public, max-age=300',
