@@ -836,5 +836,9 @@
   "Clear search": "অনুসন্ধান সাফ করুন",
   "Clear search history": "অনুসন্ধান ইতিহাস সাফ করুন",
   "Quick action disabled": "দ্রুত কার্যক্রম অক্ষম",
-  "Tap to Toggle Footer": "ফুটার টগল করতে আলতো চাপুন"
+  "Tap to Toggle Footer": "ফুটার টগল করতে আলতো চাপুন",
+  "Exported successfully": "সফলভাবে রপ্তানি হয়েছে",
+  "Book exported successfully.": "বইটি সফলভাবে রপ্তানি হয়েছে।",
+  "Failed to export the book.": "বই রপ্তানি করতে ব্যর্থ।",
+  "Export Book": "বই রপ্তানি করুন"
 }

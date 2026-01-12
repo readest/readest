@@ -826,5 +826,9 @@
   "Clear search": "ล้างการค้นหา",
   "Clear search history": "ล้างประวัติการค้นหา",
   "Quick action disabled": "ปิดใช้งานการดำเนินการด่วน",
-  "Tap to Toggle Footer": "แตะเพื่อสลับส่วนท้าย"
+  "Tap to Toggle Footer": "แตะเพื่อสลับส่วนท้าย",
+  "Exported successfully": "ส่งออกสำเร็จ",
+  "Book exported successfully.": "ส่งออกหนังสือสำเร็จ",
+  "Failed to export the book.": "ส่งออกหนังสือล้มเหลว",
+  "Export Book": "ส่งออกหนังสือ"
 }

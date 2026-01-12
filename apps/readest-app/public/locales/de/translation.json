@@ -836,5 +836,9 @@
   "Clear search": "Suche löschen",
   "Clear search history": "Suchverlauf löschen",
   "Quick action disabled": "Schnellaktion deaktiviert",
-  "Tap to Toggle Footer": "Tippen, um Fußzeile umzuschalten"
+  "Tap to Toggle Footer": "Tippen, um Fußzeile umzuschalten",
+  "Exported successfully": "Erfolgreich exportiert",
+  "Book exported successfully.": "Buch erfolgreich exportiert.",
+  "Failed to export the book.": "Buch konnte nicht exportiert werden.",
+  "Export Book": "Buch exportieren"
 }

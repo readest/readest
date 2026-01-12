@@ -7,7 +7,7 @@ import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
-import { getLocale, getOSPlatform, uniqueId } from '@/utils/misc';
+import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
 import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -746,7 +746,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     [selection?.text],
   );
 
-  const handleExportMarkdown = (event: CustomEvent) => {
+  const handleExportMarkdown = async (event: CustomEvent) => {
     const { bookKey: exportBookKey } = event.detail;
     if (bookKey !== exportBookKey) return;
 
@@ -813,22 +813,18 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
 
     const markdownContent = lines.join('\n');
+    setTimeout(() => {
+      // Delay to ensure it won't be overridden by system clipboard actions
+      navigator.clipboard?.writeText(markdownContent);
+    }, 100);
 
-    navigator.clipboard?.writeText(markdownContent);
+    const filename = `${makeSafeFilename(book.title)}.md`;
+    const saved = await appService?.saveFile(filename, markdownContent, 'text/markdown');
     eventDispatcher.dispatch('toast', {
       type: 'info',
-      message: _('Copied to clipboard'),
-      className: 'whitespace-nowrap',
+      message: saved ? _('Exported successfully') : _('Copied to clipboard'),
       timeout: 2000,
     });
-    if (appService?.isMobile) return;
-    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${book.title.replace(/\s+/g, '_')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const selectionAnnotated = selection?.annotated;

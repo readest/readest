@@ -846,5 +846,9 @@
   "Clear search": "Limpar pesquisa",
   "Clear search history": "Limpar histórico de pesquisa",
   "Quick action disabled": "Ação rápida desativada",
-  "Tap to Toggle Footer": "Toque para alternar rodapé"
+  "Tap to Toggle Footer": "Toque para alternar rodapé",
+  "Exported successfully": "Exportado com sucesso",
+  "Book exported successfully.": "Livro exportado com sucesso.",
+  "Failed to export the book.": "Falha ao exportar o livro.",
+  "Export Book": "Exportar livro"
 }

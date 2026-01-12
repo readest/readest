@@ -846,5 +846,9 @@
   "Clear search": "Cancella ricerca",
   "Clear search history": "Cancella cronologia ricerche",
   "Quick action disabled": "Azione rapida disattivata",
-  "Tap to Toggle Footer": "Tocca per mostrare/nascondere il piè di pagina"
+  "Tap to Toggle Footer": "Tocca per mostrare/nascondere il piè di pagina",
+  "Exported successfully": "Esportato con successo",
+  "Book exported successfully.": "Libro esportato con successo.",
+  "Failed to export the book.": "Impossibile esportare il libro.",
+  "Export Book": "Esporta libro"
 }

@@ -826,5 +826,9 @@
   "Clear search": "清除搜尋",
   "Clear search history": "清除搜尋歷史",
   "Quick action disabled": "快捷操作已停用",
-  "Tap to Toggle Footer": "點擊切換頁尾"
+  "Tap to Toggle Footer": "點擊切換頁尾",
+  "Exported successfully": "匯出成功",
+  "Book exported successfully.": "書籍匯出成功。",
+  "Failed to export the book.": "書籍匯出失敗。",
+  "Export Book": "匯出書籍"
 }

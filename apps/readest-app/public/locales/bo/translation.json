@@ -826,5 +826,9 @@
   "Clear search": "འཚོལ་བཤེར་གཙང་སེལ།",
   "Clear search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་གཙང་སེལ།",
   "Quick action disabled": "མྱུར་མགྱོགས་བྱ་འགུལ་བཀག་འགོག",
-  "Tap to Toggle Footer": "ཞབས་མཇུག་སྒོ་འབྱེད་བྱེད་པར་གནོན།"
+  "Tap to Toggle Footer": "ཞབས་མཇུག་སྒོ་འབྱེད་བྱེད་པར་གནོན།",
+  "Exported successfully": "ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
+  "Book exported successfully.": "དཔེ་དེབ་ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
+  "Failed to export the book.": "དཔེ་དེབ་ཕྱིར་འདོན་མི་ཐུབ།",
+  "Export Book": "དཔེ་དེབ་ཕྱིར་འདོན།"
 }

@@ -826,5 +826,9 @@
   "Clear search": "Kosongkan carian",
   "Clear search history": "Kosongkan sejarah carian",
   "Quick action disabled": "Tindakan pantas dilumpuhkan",
-  "Tap to Toggle Footer": "Ketik untuk togol pengaki"
+  "Tap to Toggle Footer": "Ketik untuk togol pengaki",
+  "Exported successfully": "Berjaya dieksport",
+  "Book exported successfully.": "Buku berjaya dieksport.",
+  "Failed to export the book.": "Gagal mengeksport buku.",
+  "Export Book": "Eksport Buku"
 }

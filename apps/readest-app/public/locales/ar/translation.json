@@ -876,5 +876,9 @@
   "Clear search": "مسح البحث",
   "Clear search history": "مسح سجل البحث",
   "Quick action disabled": "الإجراء السريع معطل",
-  "Tap to Toggle Footer": "انقر لتبديل التذييل"
+  "Tap to Toggle Footer": "انقر لتبديل التذييل",
+  "Exported successfully": "تم التصدير بنجاح",
+  "Book exported successfully.": "تم تصدير الكتاب بنجاح.",
+  "Failed to export the book.": "فشل تصدير الكتاب.",
+  "Export Book": "تصدير الكتاب"
 }

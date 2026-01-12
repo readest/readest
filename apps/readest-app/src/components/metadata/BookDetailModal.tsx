@@ -8,11 +8,14 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
+import { eventDispatcher } from '@/utils/event';
+import { isWebAppPlatform } from '@/services/environment';
 import Alert from '@/components/Alert';
 import Dialog from '@/components/Dialog';
 import BookDetailView from './BookDetailView';
 import BookDetailEdit from './BookDetailEdit';
 import SourceSelector from './SourceSelector';
+import Spinner from '../Spinner';
 
 interface BookDetailModalProps {
   book: Book;
@@ -44,9 +47,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -167,6 +171,20 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
   };
 
+  const handleBookExport = async () => {
+    setIsLoading(true);
+    setTimeout(async () => {
+      const success = await appService?.exportBook(book);
+      setIsLoading(false);
+      if (!isWebAppPlatform()) {
+        eventDispatcher.dispatch('toast', {
+          type: success ? 'info' : 'error',
+          message: success ? _('Book exported successfully.') : _('Failed to export the book.'),
+        });
+      }
+    }, 0);
+  };
+
   const currentDeleteConfig = activeDeleteAction ? deleteConfigs[activeDeleteAction] : null;
 
   return (
@@ -213,6 +231,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDeleteLocalCopy={handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined}
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
+                onExport={handleBookExport}
               />
             )}
           </div>
@@ -226,6 +245,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
             onSelect={handleSourceSelection}
             onClose={handleCloseSourceSelection}
           />
+        )}
+
+        {isLoading && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center'>
+            <Spinner loading />
+          </div>
         )}
 
         {activeDeleteAction && currentDeleteConfig && (
