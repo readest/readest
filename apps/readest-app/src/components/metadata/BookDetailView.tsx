@@ -5,6 +5,7 @@ import {
   MdOutlineCloudUpload,
   MdOutlineDelete,
   MdOutlineEdit,
+  MdSaveAlt,
 } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -32,6 +33,7 @@ interface BookDetailViewProps {
   onDeleteLocalCopy?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
+  onExport?: () => void;
 }
 
 const BookDetailView: React.FC<BookDetailViewProps> = ({
@@ -44,13 +46,14 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDeleteLocalCopy,
   onDownload,
   onUpload,
+  onExport,
 }) => {
   const _ = useTranslation();
 
   return (
     <div className='relative w-full rounded-lg'>
       <div className='mb-6 me-4 flex h-32 items-start'>
-        <div className='me-10 aspect-[28/41] h-32 shadow-lg'>
+        <div className='me-6 aspect-[28/41] h-32 shadow-lg sm:me-10'>
           <BookCover mode='list' book={book} />
         </div>
         <div className='title-author flex h-32 flex-col justify-between'>
@@ -62,7 +65,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               {formatAuthors(book.author, book.primaryLanguage) || _('Unknown')}
             </p>
           </div>
-          <div className='flex flex-wrap items-center gap-x-4'>
+          <div className='flex flex-nowrap items-center gap-3 sm:gap-x-4'>
             {onEdit && (
               <button
                 onClick={onEdit}
@@ -116,6 +119,11 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             {book.downloadedAt && onUpload && (
               <button onClick={onUpload} title={_('Upload to Cloud')}>
                 <MdOutlineCloudUpload className='fill-base-content' />
+              </button>
+            )}
+            {book.downloadedAt && onExport && (
+              <button onClick={onExport} title={_('Export Book')}>
+                <MdSaveAlt className='fill-base-content' />
               </button>
             )}
           </div>

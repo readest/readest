@@ -52,6 +52,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.735.0
         version: 3.735.0
+      '@choochmeque/tauri-plugin-sharekit-api':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@fabianlars/tauri-plugin-oauth':
         specifier: '2'
         version: 2.0.0
@@ -953,6 +956,9 @@ packages:
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
+
+  '@choochmeque/tauri-plugin-sharekit-api@0.3.0':
+    resolution: {integrity: sha512-YuFbBOZIVQF2080stK4llB9l2KFKY3YuhurRVS0TeHEAiLWMbblsXuuwC4IufEM9hTChRGQyJIOnxNCn7+T/EQ==}
 
   '@cloudflare/kv-asset-handler@0.4.1':
     resolution: {integrity: sha512-Nu8ahitGFFJztxUml9oD/DLb7Z28C8cd8F46IVQ7y5Btz575pvMY8AqZsXkX7Gds29eCKdMgIHjIvzskHgPSFg==}
@@ -8237,6 +8243,10 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@choochmeque/tauri-plugin-sharekit-api@0.3.0':
+    dependencies:
+      '@tauri-apps/api': 2.9.1
+
   '@cloudflare/kv-asset-handler@0.4.1':
     dependencies:
       mime: 3.0.0
@@ -14287,7 +14297,7 @@ snapshots:
       '@webassemblyjs/wasm-edit': 1.14.1
       '@webassemblyjs/wasm-parser': 1.14.1
       acorn: 8.15.0
-      browserslist: 4.24.4
+      browserslist: 4.28.1
       chrome-trace-event: 1.0.4
       enhanced-resolve: 5.18.3
       es-module-lexer: 1.7.0

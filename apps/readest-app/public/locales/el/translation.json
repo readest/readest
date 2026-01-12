@@ -836,5 +836,9 @@
   "Clear search": "Εκκαθάριση αναζήτησης",
   "Clear search history": "Εκκαθάριση ιστορικού αναζήτησης",
   "Quick action disabled": "Η γρήγορη ενέργεια απενεργοποιήθηκε",
-  "Tap to Toggle Footer": "Πατήστε για εναλλαγή υποσέλιδου"
+  "Tap to Toggle Footer": "Πατήστε για εναλλαγή υποσέλιδου",
+  "Exported successfully": "Εξαγωγή επιτυχής",
+  "Book exported successfully.": "Το βιβλίο εξήχθη επιτυχώς.",
+  "Failed to export the book.": "Αποτυχία εξαγωγής του βιβλίου.",
+  "Export Book": "Εξαγωγή βιβλίου"
 }

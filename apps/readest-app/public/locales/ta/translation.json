@@ -836,5 +836,9 @@
   "Clear search": "தேடலை அழி",
   "Clear search history": "தேடல் வரலாற்றை அழி",
   "Quick action disabled": "விரைவு செயல் முடக்கப்பட்டது",
-  "Tap to Toggle Footer": "அடிக்குறிப்பை மாற்ற தட்டவும்"
+  "Tap to Toggle Footer": "அடிக்குறிப்பை மாற்ற தட்டவும்",
+  "Exported successfully": "ஏற்றுமதி வெற்றி",
+  "Book exported successfully.": "புத்தகம் வெற்றிகரமாக ஏற்றுமதி செய்யப்பட்டது.",
+  "Failed to export the book.": "புத்தகத்தை ஏற்றுமதி செய்ய இயலவில்லை.",
+  "Export Book": "புத்தகத்தை ஏற்றுமதி செய்"
 }

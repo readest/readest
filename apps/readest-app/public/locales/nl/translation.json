@@ -836,5 +836,9 @@
   "Clear search": "Zoekopdracht wissen",
   "Clear search history": "Zoekgeschiedenis wissen",
   "Quick action disabled": "Snelle actie uitgeschakeld",
-  "Tap to Toggle Footer": "Tik om voettekst te wisselen"
+  "Tap to Toggle Footer": "Tik om voettekst te wisselen",
+  "Exported successfully": "Succesvol geëxporteerd",
+  "Book exported successfully.": "Boek succesvol geëxporteerd.",
+  "Failed to export the book.": "Exporteren van het boek mislukt.",
+  "Export Book": "Boek exporteren"
 }

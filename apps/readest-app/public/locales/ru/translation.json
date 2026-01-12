@@ -856,5 +856,9 @@
   "Clear search": "Очистить поиск",
   "Clear search history": "Очистить историю поиска",
   "Quick action disabled": "Быстрое действие отключено",
-  "Tap to Toggle Footer": "Нажмите для переключения нижнего колонтитула"
+  "Tap to Toggle Footer": "Нажмите для переключения нижнего колонтитула",
+  "Exported successfully": "Успешно экспортировано",
+  "Book exported successfully.": "Книга успешно экспортирована.",
+  "Failed to export the book.": "Не удалось экспортировать книгу.",
+  "Export Book": "Экспорт книги"
 }

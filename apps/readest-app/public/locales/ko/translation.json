@@ -826,5 +826,9 @@
   "Clear search": "검색 지우기",
   "Clear search history": "검색 기록 지우기",
   "Quick action disabled": "빠른 작업 비활성화됨",
-  "Tap to Toggle Footer": "탭하여 바닥글 전환"
+  "Tap to Toggle Footer": "탭하여 바닥글 전환",
+  "Exported successfully": "내보내기 성공",
+  "Book exported successfully.": "책을 성공적으로 내보냈습니다.",
+  "Failed to export the book.": "책 내보내기에 실패했습니다.",
+  "Export Book": "책 내보내기"
 }

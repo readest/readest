@@ -14,7 +14,7 @@ import {
   DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
 import {
   join,
   basename,
@@ -25,6 +25,7 @@ import {
   tempDir,
 } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api';
 
 import {
   FileSystem,
@@ -472,6 +473,38 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     return Array.isArray(selected) ? selected : selected ? [selected] : [];
+  }
+
+  async saveFile(
+    filename: string,
+    content: string | ArrayBuffer,
+    filepath: string,
+    mimeType?: string,
+  ): Promise<boolean> {
+    try {
+      const ext = filename.split('.').pop() || '';
+      if (this.isIOSApp) {
+        await shareFile(filepath, {
+          mimeType: mimeType || 'application/octet-stream',
+        });
+      } else {
+        const filePath = await saveDialog({
+          defaultPath: filename,
+          filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+        });
+        if (!filePath) return false;
+
+        if (typeof content === 'string') {
+          await writeTextFile(filePath, content);
+        } else {
+          await writeFile(filePath, new Uint8Array(content));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      return false;
+    }
   }
 
   async migrate20251029() {

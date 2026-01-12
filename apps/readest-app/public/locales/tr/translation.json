@@ -836,5 +836,9 @@
   "Clear search": "Aramayı temizle",
   "Clear search history": "Arama geçmişini temizle",
   "Quick action disabled": "Hızlı eylem devre dışı",
-  "Tap to Toggle Footer": "Altbilgiyi değiştirmek için dokunun"
+  "Tap to Toggle Footer": "Altbilgiyi değiştirmek için dokunun",
+  "Exported successfully": "Başarıyla dışa aktarıldı",
+  "Book exported successfully.": "Kitap başarıyla dışa aktarıldı.",
+  "Failed to export the book.": "Kitap dışa aktarılamadı.",
+  "Export Book": "Kitabı Dışa Aktar"
 }

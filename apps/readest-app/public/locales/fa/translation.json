@@ -836,5 +836,9 @@
   "Clear search": "پاک کردن جستجو",
   "Clear search history": "پاک کردن تاریخچه جستجو",
   "Quick action disabled": "عملکرد سریع غیرفعال است",
-  "Tap to Toggle Footer": "برای تغییر پاورقی ضربه بزنید"
+  "Tap to Toggle Footer": "برای تغییر پاورقی ضربه بزنید",
+  "Exported successfully": "صادرات موفق",
+  "Book exported successfully.": "کتاب با موفقیت صادر شد.",
+  "Failed to export the book.": "صادر کردن کتاب ناموفق بود.",
+  "Export Book": "صادر کردن کتاب"
 }

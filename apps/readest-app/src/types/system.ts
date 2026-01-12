@@ -107,6 +107,7 @@ export interface AppService {
   selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
   readDirectory(path: string, base: BaseDir): Promise<FileItem[]>;
+  saveFile(filename: string, content: string | ArrayBuffer, mimeType?: string): Promise<boolean>;
 
   getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;
@@ -132,6 +133,7 @@ export interface AppService {
     onProgress?: ProgressHandler,
   ): Promise<void>;
   downloadBookCovers(books: Book[], redownload?: boolean): Promise<void>;
+  exportBook(book: Book): Promise<boolean>;
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;

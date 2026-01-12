@@ -58,7 +58,14 @@ import {
   DEFAULT_EINK_VIEW_SETTINGS,
 } from './constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
+import {
+  getOSPlatform,
+  getTargetLang,
+  isCJKEnv,
+  isContentURI,
+  isValidURL,
+  makeSafeFilename,
+} from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import {
   downloadFile,
@@ -114,6 +121,12 @@ export abstract class BaseAppService implements AppService {
   abstract setCustomRootDir(customRootDir: string): Promise<void>;
   abstract selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
+  abstract saveFile(
+    filename: string,
+    content: string | ArrayBuffer,
+    filepath: string,
+    mimeType?: string,
+  ): Promise<boolean>;
 
   protected async runMigrations(lastMigrationVersion: number): Promise<void> {
     if (lastMigrationVersion < 20251124) {
@@ -659,6 +672,15 @@ export abstract class BaseAppService implements AppService {
     if ((bookCoverDownloaded || !needDownCover) && !book.coverDownloadedAt) {
       book.coverDownloadedAt = Date.now();
     }
+  }
+
+  async exportBook(book: Book): Promise<boolean> {
+    const { file } = await this.loadBookContent(book);
+    const content = await file.arrayBuffer();
+    const filename = `${makeSafeFilename(book.title)}.${book.format.toLowerCase()}`;
+    const filepath = await this.resolveFilePath(getLocalBookFilename(book), 'Books');
+    const fileType = file.type || 'application/octet-stream';
+    return await this.saveFile(filename, content, filepath, fileType);
   }
 
   async isBookAvailable(book: Book): Promise<boolean> {

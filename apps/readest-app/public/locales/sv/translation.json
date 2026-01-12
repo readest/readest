@@ -836,5 +836,9 @@
   "Clear search": "Rensa sökning",
   "Clear search history": "Rensa sökhistorik",
   "Quick action disabled": "Snabbåtgärd inaktiverad",
-  "Tap to Toggle Footer": "Tryck för att växla sidfot"
+  "Tap to Toggle Footer": "Tryck för att växla sidfot",
+  "Exported successfully": "Exporterad",
+  "Book exported successfully.": "Boken har exporterats.",
+  "Failed to export the book.": "Det gick inte att exportera boken.",
+  "Export Book": "Exportera bok"
 }

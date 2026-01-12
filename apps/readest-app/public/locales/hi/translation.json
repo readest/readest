@@ -836,5 +836,9 @@
   "Clear search": "खोज साफ़ करें",
   "Clear search history": "खोज इतिहास साफ़ करें",
   "Quick action disabled": "त्वरित क्रिया अक्षम",
-  "Tap to Toggle Footer": "फुटर टॉगल करने के लिए टैप करें"
+  "Tap to Toggle Footer": "फुटर टॉगल करने के लिए टैप करें",
+  "Exported successfully": "सफलतापूर्वक निर्यात किया गया",
+  "Book exported successfully.": "पुस्तक सफलतापूर्वक निर्यात की गई।",
+  "Failed to export the book.": "पुस्तक निर्यात करने में विफल।",
+  "Export Book": "पुस्तक निर्यात करें"
 }

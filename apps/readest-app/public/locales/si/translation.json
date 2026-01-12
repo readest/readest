@@ -836,5 +836,9 @@
   "Clear search": "සෙවුම හිස් කරන්න",
   "Clear search history": "සෙවුම් ඉතිහාසය හිස් කරන්න",
   "Quick action disabled": "ඉක්මන් ක්‍රියාව අක්‍රීයයි",
-  "Tap to Toggle Footer": "පාදකය ටොගල් කිරීමට තට්ටු කරන්න"
+  "Tap to Toggle Footer": "පාදකය ටොගල් කිරීමට තට්ටු කරන්න",
+  "Exported successfully": "සාර්ථකව අපනයනය කරන ලදී",
+  "Book exported successfully.": "පොත සාර්ථකව අපනයනය කරන ලදී.",
+  "Failed to export the book.": "පොත අපනයනය කිරීමට අසමත් විය.",
+  "Export Book": "පොත අපනයනය කරන්න"
 }

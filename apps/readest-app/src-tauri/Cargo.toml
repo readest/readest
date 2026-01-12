@@ -53,6 +53,7 @@ tauri-plugin-persisted-scope = "2"
 tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }
 tauri-plugin-websocket = "2"
+tauri-plugin-sharekit = "0.3"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"
