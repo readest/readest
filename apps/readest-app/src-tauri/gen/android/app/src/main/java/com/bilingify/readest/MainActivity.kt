@@ -24,7 +24,7 @@ import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
-    private lateinit var wv: WebView
+    private var wv: WebView? = null
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
 
@@ -65,7 +65,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
             val y = event.getY(pointerIndex)
             val pressure = event.getPressure(pointerIndex)
 
-            wv.evaluateJavascript(
+            wv?.evaluateJavascript(
                 """
                 try {
                     if (window.onNativeTouch) {
@@ -103,7 +103,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 }
 
                 if (shouldIntercept) {
-                    wv.evaluateJavascript(
+                    wv?.evaluateJavascript(
                         """
                         try { window.onNativeKeyDown("$keyName", $keyCode); } catch (_) {}
                         """.trimIndent(),
@@ -119,7 +119,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val keyName = keyEventMap[keyCode]
         if (keyName != null) {
-            wv.evaluateJavascript(
+            wv?.evaluateJavascript(
                 """
                 try {
                     window.onNativeKeyDown("$keyName", $keyCode)
@@ -178,7 +178,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                     Log.d("MainActivity", "Back invoked callback triggered ${interceptBackKeyEnabled}")
                     if (interceptBackKeyEnabled) {
                         Log.d("MainActivity", "Back intercepted (OnBackInvokedCallback)")
-                        wv.evaluateJavascript(
+                        wv?.evaluateJavascript(
                             """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
                             null
                         )
@@ -194,7 +194,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 override fun handleOnBackPressed() {
                     if (interceptBackKeyEnabled) {
                         Log.d("MainActivity", "Back intercepted (OnBackPressedDispatcher)")
-                        wv.evaluateJavascript(
+                        wv?.evaluateJavascript(
                             """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
                             null
                         )
