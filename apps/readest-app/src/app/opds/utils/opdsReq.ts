@@ -245,6 +245,46 @@ export const probeAuth = async (
   return createBasicAuth(finalUsername, finalPassword);
 };
 
+export const probeFilename = async (
+  url: string,
+  useProxy = false,
+  headers?: Record<string, string>,
+) => {
+  const { url: cleanUrl } = extractCredentialsFromURL(url);
+
+  const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
+  const baseHeaders: Record<string, string> = {
+    'User-Agent': READEST_OPDS_USER_AGENT,
+    Accept: 'application/atom+xml, application/xml, text/xml, */*',
+  };
+
+  const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+  const res = await fetch(fetchURL, {
+    method: 'HEAD',
+    headers: { ...baseHeaders, ...(headers || {}) },
+    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+  });
+
+  if (res.ok) {
+    const contentDisposition = res.headers.get('content-disposition');
+    if (contentDisposition) {
+      const extendedMatch = contentDisposition.match(
+        /filename\*\s*=\s*(?:utf-8|UTF-8)'[^']*'([^;\s]+)/i,
+      );
+      if (extendedMatch?.[1]) {
+        return decodeURIComponent(extendedMatch[1]);
+      }
+
+      const plainMatch = contentDisposition.match(/filename\s*=\s*["']?([^"';\s]+)["']?/i);
+      if (plainMatch?.[1]) {
+        return decodeURIComponent(plainMatch[1]);
+      }
+    }
+  }
+
+  return '';
+};
+
 /**
  * Perform authenticated HTTP request with retry logic for Digest/Basic auth
  */
