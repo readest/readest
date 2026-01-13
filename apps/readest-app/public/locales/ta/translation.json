@@ -840,5 +840,9 @@
   "Exported successfully": "ஏற்றுமதி வெற்றி",
   "Book exported successfully.": "புத்தகம் வெற்றிகரமாக ஏற்றுமதி செய்யப்பட்டது.",
   "Failed to export the book.": "புத்தகத்தை ஏற்றுமதி செய்ய இயலவில்லை.",
-  "Export Book": "புத்தகத்தை ஏற்றுமதி செய்"
+  "Export Book": "புத்தகத்தை ஏற்றுமதி செய்",
+  "Whole word:": "முழு சொல்:",
+  "Error": "பிழை",
+  "Unable to load the article. Try searching directly on {{link}}.": "கட்டுரையை ஏற்ற முடியவில்லை. நேரடியாக {{link}} இல் தேடவும்.",
+  "Unable to load the word. Try searching directly on {{link}}.": "சொல்லை ஏற்ற முடியவில்லை. நேரடியாக {{link}} இல் தேடவும்."
 }

@@ -850,5 +850,9 @@
   "Exported successfully": "Esportato con successo",
   "Book exported successfully.": "Libro esportato con successo.",
   "Failed to export the book.": "Impossibile esportare il libro.",
-  "Export Book": "Esporta libro"
+  "Export Book": "Esporta libro",
+  "Whole word:": "Parola intera:",
+  "Error": "Errore",
+  "Unable to load the article. Try searching directly on {{link}}.": "Impossibile caricare l'articolo. Prova a cercare direttamente su {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Impossibile caricare la parola. Prova a cercare direttamente su {{link}}."
 }

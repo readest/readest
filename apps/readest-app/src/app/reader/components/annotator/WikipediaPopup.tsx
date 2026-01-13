@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface WikipediaPopupProps {
   text: string;
@@ -21,6 +22,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
   popupHeight,
   onDismiss,
 }) => {
+  const _ = useTranslation();
   const isLoading = useRef(false);
 
   useEffect(() => {
@@ -85,12 +87,14 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
 
         const errorDiv = document.createElement('div');
         const h1 = document.createElement('h1');
-        h1.innerText = 'Error';
+        h1.innerText = _('Error');
 
         const errorMsg = document.createElement('p');
-        errorMsg.innerHTML = `Unable to load the article. Try searching directly on <a href="https://${language}.wikipedia.org/w/index.php?search=${encodeURIComponent(
-          query,
-        )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wikipedia</a>.`;
+        errorMsg.innerHTML = _('Unable to load the article. Try searching directly on {{link}}.', {
+          link: `<a href="https://${language}.wikipedia.org/w/index.php?search=${encodeURIComponent(
+            query,
+          )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wikipedia</a>`,
+        });
 
         errorDiv.append(h1, errorMsg);
         main.appendChild(errorDiv);
@@ -101,7 +105,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
     const bookLang = typeof lang === 'string' ? lang : lang?.[0];
     const langCode = bookLang ? bookLang.split('-')[0]! : 'en';
     fetchSummary(text, langCode);
-  }, [text, lang]);
+  }, [_, text, lang]);
 
   return (
     <div>

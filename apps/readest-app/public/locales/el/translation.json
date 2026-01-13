@@ -840,5 +840,9 @@
   "Exported successfully": "Εξαγωγή επιτυχής",
   "Book exported successfully.": "Το βιβλίο εξήχθη επιτυχώς.",
   "Failed to export the book.": "Αποτυχία εξαγωγής του βιβλίου.",
-  "Export Book": "Εξαγωγή βιβλίου"
+  "Export Book": "Εξαγωγή βιβλίου",
+  "Whole word:": "Ολόκληρη λέξη:",
+  "Error": "Σφάλμα",
+  "Unable to load the article. Try searching directly on {{link}}.": "Αδυναμία φόρτωσης του άρθρου. Δοκιμάστε να αναζητήσετε απευθείας στο {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Αδυναμία φόρτωσης της λέξης. Δοκιμάστε να αναζητήσετε απευθείας στο {{link}}."
 }

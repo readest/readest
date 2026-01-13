@@ -840,5 +840,9 @@
   "Exported successfully": "সফলভাবে রপ্তানি হয়েছে",
   "Book exported successfully.": "বইটি সফলভাবে রপ্তানি হয়েছে।",
   "Failed to export the book.": "বই রপ্তানি করতে ব্যর্থ।",
-  "Export Book": "বই রপ্তানি করুন"
+  "Export Book": "বই রপ্তানি করুন",
+  "Whole word:": "সম্পূর্ণ শব্দ:",
+  "Error": "ত্রুটি",
+  "Unable to load the article. Try searching directly on {{link}}.": "নিবন্ধ লোড করতে অক্ষম। সরাসরি {{link}} এ অনুসন্ধান করার চেষ্টা করুন।",
+  "Unable to load the word. Try searching directly on {{link}}.": "শব্দ লোড করতে অক্ষম। সরাসরি {{link}} এ অনুসন্ধান করার চেষ্টা করুন।"
 }

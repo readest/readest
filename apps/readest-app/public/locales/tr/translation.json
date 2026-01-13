@@ -840,5 +840,9 @@
   "Exported successfully": "Başarıyla dışa aktarıldı",
   "Book exported successfully.": "Kitap başarıyla dışa aktarıldı.",
   "Failed to export the book.": "Kitap dışa aktarılamadı.",
-  "Export Book": "Kitabı Dışa Aktar"
+  "Export Book": "Kitabı Dışa Aktar",
+  "Whole word:": "Tam kelime:",
+  "Error": "Hata",
+  "Unable to load the article. Try searching directly on {{link}}.": "Makale yüklenemiyor. Doğrudan {{link}} üzerinde arama yapmayı deneyin.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Kelime yüklenemiyor. Doğrudan {{link}} üzerinde arama yapmayı deneyin."
 }

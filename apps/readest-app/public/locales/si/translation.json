@@ -840,5 +840,9 @@
   "Exported successfully": "සාර්ථකව අපනයනය කරන ලදී",
   "Book exported successfully.": "පොත සාර්ථකව අපනයනය කරන ලදී.",
   "Failed to export the book.": "පොත අපනයනය කිරීමට අසමත් විය.",
-  "Export Book": "පොත අපනයනය කරන්න"
+  "Export Book": "පොත අපනයනය කරන්න",
+  "Whole word:": "සම්පූර්ණ වචනය:",
+  "Error": "දෝෂය",
+  "Unable to load the article. Try searching directly on {{link}}.": "ලිපිය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න.",
+  "Unable to load the word. Try searching directly on {{link}}.": "වචනය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න."
 }

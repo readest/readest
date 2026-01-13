@@ -830,5 +830,9 @@
   "Exported successfully": "Berhasil diekspor",
   "Book exported successfully.": "Buku berhasil diekspor.",
   "Failed to export the book.": "Gagal mengekspor buku.",
-  "Export Book": "Ekspor Buku"
+  "Export Book": "Ekspor Buku",
+  "Whole word:": "Kata utuh:",
+  "Error": "Kesalahan",
+  "Unable to load the article. Try searching directly on {{link}}.": "Tidak dapat memuat artikel. Coba cari langsung di {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Tidak dapat memuat kata. Coba cari langsung di {{link}}."
 }
