@@ -24,7 +24,7 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   let utf8Bytes = encoder.encode(safeName);
 
   while (utf8Bytes.length > maxFilenameBytes) {
-    safeName = safeName.slice(0, -1);
+    safeName = Array.from(safeName).slice(0, -1).join('');
     utf8Bytes = encoder.encode(safeName);
   }
 
