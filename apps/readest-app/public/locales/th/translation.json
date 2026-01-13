@@ -830,5 +830,9 @@
   "Exported successfully": "ส่งออกสำเร็จ",
   "Book exported successfully.": "ส่งออกหนังสือสำเร็จ",
   "Failed to export the book.": "ส่งออกหนังสือล้มเหลว",
-  "Export Book": "ส่งออกหนังสือ"
+  "Export Book": "ส่งออกหนังสือ",
+  "Whole word:": "คำทั้งคำ:",
+  "Error": "ข้อผิดพลาด",
+  "Unable to load the article. Try searching directly on {{link}}.": "ไม่สามารถโหลดบทความได้ ลองค้นหาโดยตรงที่ {{link}}",
+  "Unable to load the word. Try searching directly on {{link}}.": "ไม่สามารถโหลดคำได้ ลองค้นหาโดยตรงที่ {{link}}"
 }

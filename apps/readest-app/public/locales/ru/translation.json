@@ -860,5 +860,9 @@
   "Exported successfully": "Успешно экспортировано",
   "Book exported successfully.": "Книга успешно экспортирована.",
   "Failed to export the book.": "Не удалось экспортировать книгу.",
-  "Export Book": "Экспорт книги"
+  "Export Book": "Экспорт книги",
+  "Whole word:": "Слово целиком:",
+  "Error": "Ошибка",
+  "Unable to load the article. Try searching directly on {{link}}.": "Не удалось загрузить статью. Попробуйте искать напрямую на {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Не удалось загрузить слово. Попробуйте искать напрямую на {{link}}."
 }

@@ -840,5 +840,9 @@
   "Exported successfully": "Exporterad",
   "Book exported successfully.": "Boken har exporterats.",
   "Failed to export the book.": "Det gick inte att exportera boken.",
-  "Export Book": "Exportera bok"
+  "Export Book": "Exportera bok",
+  "Whole word:": "Hela ordet:",
+  "Error": "Fel",
+  "Unable to load the article. Try searching directly on {{link}}.": "Kan inte ladda artikeln. Försök söka direkt på {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Kan inte ladda ordet. Försök söka direkt på {{link}}."
 }

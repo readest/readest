@@ -830,5 +830,9 @@
   "Exported successfully": "导出成功",
   "Book exported successfully.": "书籍导出成功。",
   "Failed to export the book.": "书籍导出失败。",
-  "Export Book": "导出书籍"
+  "Export Book": "导出书籍",
+  "Whole word:": "全词匹配:",
+  "Error": "错误",
+  "Unable to load the article. Try searching directly on {{link}}.": "无法加载文章。请直接在 {{link}} 上搜索。",
+  "Unable to load the word. Try searching directly on {{link}}.": "无法加载词汇。请直接在 {{link}} 上搜索。"
 }

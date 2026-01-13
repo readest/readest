@@ -830,5 +830,9 @@
   "Exported successfully": "내보내기 성공",
   "Book exported successfully.": "책을 성공적으로 내보냈습니다.",
   "Failed to export the book.": "책 내보내기에 실패했습니다.",
-  "Export Book": "책 내보내기"
+  "Export Book": "책 내보내기",
+  "Whole word:": "전체 단어:",
+  "Error": "오류",
+  "Unable to load the article. Try searching directly on {{link}}.": "문서를 로드할 수 없습니다. {{link}}에서 직접 검색해 보세요.",
+  "Unable to load the word. Try searching directly on {{link}}.": "단어를 로드할 수 없습니다. {{link}}에서 직접 검색해 보세요."
 }

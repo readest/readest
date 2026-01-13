@@ -830,5 +830,9 @@
   "Exported successfully": "エクスポート成功",
   "Book exported successfully.": "書籍のエクスポートに成功しました。",
   "Failed to export the book.": "書籍のエクスポートに失敗しました。",
-  "Export Book": "書籍をエクスポート"
+  "Export Book": "書籍をエクスポート",
+  "Whole word:": "単語全体:",
+  "Error": "エラー",
+  "Unable to load the article. Try searching directly on {{link}}.": "記事を読み込めません。{{link}}で直接検索してみてください。",
+  "Unable to load the word. Try searching directly on {{link}}.": "単語を読み込めません。{{link}}で直接検索してみてください。"
 }

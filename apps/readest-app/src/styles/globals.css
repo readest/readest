@@ -595,6 +595,10 @@ foliate-fxl {
   background-color: theme('colors.base-100') !important;
 }
 
+[data-eink="true"] input[type="checkbox"] {
+  --tglbg: theme('colors.base-100') !important;
+}
+
 .no-transitions * {
   transition: none !important;
 }

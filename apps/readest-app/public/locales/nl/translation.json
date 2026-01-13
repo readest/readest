@@ -840,5 +840,9 @@
   "Exported successfully": "Succesvol geëxporteerd",
   "Book exported successfully.": "Boek succesvol geëxporteerd.",
   "Failed to export the book.": "Exporteren van het boek mislukt.",
-  "Export Book": "Boek exporteren"
+  "Export Book": "Boek exporteren",
+  "Whole word:": "Heel woord:",
+  "Error": "Fout",
+  "Unable to load the article. Try searching directly on {{link}}.": "Kan het artikel niet laden. Probeer direct te zoeken op {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Kan het woord niet laden. Probeer direct te zoeken op {{link}}."
 }
