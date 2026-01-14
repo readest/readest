@@ -222,7 +222,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   }
 
   return (
-    <div className='pointer-events-none fixed inset-0 z-40'>
+    <div className='pointer-events-none fixed inset-0 z-50'>
       <Handle
         position={currentStart}
         isVertical={isVertical}

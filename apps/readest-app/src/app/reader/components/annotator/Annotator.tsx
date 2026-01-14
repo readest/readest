@@ -260,7 +260,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     detail.doc?.addEventListener('pointermove', handlePointerMove.bind(null, doc, index), opts);
     detail.doc?.addEventListener('pointercancel', handlePointerCancel.bind(null, doc, index));
     detail.doc?.addEventListener('pointerup', handlePointerUp.bind(null, doc, index));
-    detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc));
+    detail.doc?.addEventListener('selectionchange', handleSelectionchange.bind(null, doc, index));
 
     // For PDF selections, enable right-click context menu to directly open translator popup.
     if (bookData.book?.format === 'PDF') {
@@ -493,7 +493,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection?.cfi, bookKey]);
+  }, [selection, bookKey]);
 
   useEffect(() => {
     if (!progress) return;
