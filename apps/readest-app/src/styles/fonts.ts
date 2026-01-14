@@ -26,6 +26,31 @@ const cjkGoogleFonts = [
   { family: 'Noto Serif JP', weights: '' },
 ];
 
+// Resource hints for faster font loading
+const getResourceHints = (includeCJK = false) => {
+  const basicHints = `
+  <!-- Preconnect to Google Fonts for faster DNS resolution and connection -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+`;
+
+  const cjkHints = `
+  <!-- Preconnect to CJK font CDNs -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://ik.imagekit.io">
+  <link rel="preconnect" href="https://db.onlinewebfonts.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="https://ik.imagekit.io">
+  <link rel="dns-prefetch" href="https://db.onlinewebfonts.com">
+`;
+
+  return includeCJK ? basicHints + cjkHints : basicHints;
+};
+
 const getAdditionalBasicFontLinks = () => `
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${basicGoogleFonts
     .map(
@@ -93,21 +118,52 @@ const getAdditionalCJKFontFaces = () => `
 }
 `;
 
-export const mountAdditionalFonts = (document: Document, isCJK = false) => {
+export const mountAdditionalFonts = async (document: Document, isCJK = false) => {
   const mountCJKFonts = isCJK || isCJKEnv();
-  let links = getAdditionalBasicFontLinks();
-  if (mountCJKFonts) {
-    const style = document.createElement('style');
-    style.textContent = getAdditionalCJKFontFaces();
-    document.head.appendChild(style);
 
+  const hints = getResourceHints(mountCJKFonts);
+  const hintsParser = new DOMParser();
+  const hintsDocument = hintsParser.parseFromString(hints, 'text/html');
+
+  // Mount resource hints at the beginning of head for priority
+  Array.from(hintsDocument.head.children).forEach((child) => {
+    if (child.tagName === 'LINK') {
+      const link = document.createElement('link');
+      link.rel = child.getAttribute('rel') || '';
+      link.href = child.getAttribute('href') || '';
+      const crossorigin = child.getAttribute('crossorigin');
+      if (crossorigin) {
+        link.crossOrigin = crossorigin;
+      }
+
+      // Insert at the beginning of head for maximum priority
+      if (document.head.firstChild) {
+        document.head.insertBefore(link, document.head.firstChild);
+      } else {
+        document.head.appendChild(link);
+      }
+    }
+  });
+
+  // Mount font stylesheets and @font-face rules
+  let links = getAdditionalBasicFontLinks();
+  let fontFaces = '';
+
+  if (mountCJKFonts) {
+    fontFaces = getAdditionalCJKFontFaces();
     links = `${links}\n${getAdditionalCJKFontLinks()}`;
   }
 
-  const parser = new DOMParser();
-  const parsedDocument = parser.parseFromString(links, 'text/html');
+  if (fontFaces) {
+    const style = document.createElement('style');
+    style.textContent = fontFaces;
+    document.head.appendChild(style);
+  }
 
-  Array.from(parsedDocument.head.children).forEach((child) => {
+  const parser = new DOMParser();
+  const linksDocument = parser.parseFromString(links, 'text/html');
+
+  Array.from(linksDocument.head.children).forEach((child) => {
     if (child.tagName === 'LINK') {
       const link = document.createElement('link');
       link.rel = child.getAttribute('rel') || '';
