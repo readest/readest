@@ -844,5 +844,6 @@
   "Whole word:": "සම්පූර්ණ වචනය:",
   "Error": "දෝෂය",
   "Unable to load the article. Try searching directly on {{link}}.": "ලිපිය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න.",
-  "Unable to load the word. Try searching directly on {{link}}.": "වචනය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න."
+  "Unable to load the word. Try searching directly on {{link}}.": "වචනය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න.",
+  "Date Published": "ප්‍රකාශන දිනය"
 }

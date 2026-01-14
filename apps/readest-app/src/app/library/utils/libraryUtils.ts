@@ -47,6 +47,27 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     case 'format':
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
+    case 'published':
+      const aPublished = a.metadata?.published || '0001-01-01';
+      const bPublished = b.metadata?.published || '0001-01-01';
+
+      // Handle cases where published date might not exist
+      if (!aPublished && !bPublished) return 0;
+      if (!aPublished) return 1; // Books without published date go to the end
+      if (!bPublished) return -1;
+
+      // Try to parse dates - handle various date formats
+      const aDate = new Date(aPublished).getTime();
+      const bDate = new Date(bPublished).getTime();
+
+      // If dates are invalid (NaN), fall back to string comparison
+      if (isNaN(aDate) && isNaN(bDate)) {
+        return aPublished.localeCompare(bPublished, uiLanguage || navigator.language);
+      }
+      if (isNaN(aDate)) return 1;
+      if (isNaN(bDate)) return -1;
+
+      return aDate - bDate;
     default:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
   }

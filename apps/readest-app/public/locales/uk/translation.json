@@ -864,5 +864,6 @@
   "Whole word:": "Ціле слово:",
   "Error": "Помилка",
   "Unable to load the article. Try searching directly on {{link}}.": "Не вдалося завантажити статтю. Спробуйте шукати безпосередньо на {{link}}.",
-  "Unable to load the word. Try searching directly on {{link}}.": "Не вдалося завантажити слово. Спробуйте шукати безпосередньо на {{link}}."
+  "Unable to load the word. Try searching directly on {{link}}.": "Не вдалося завантажити слово. Спробуйте шукати безпосередньо на {{link}}.",
+  "Date Published": "Дата публікації"
 }

@@ -44,6 +44,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Format'), value: 'format' },
     { label: _('Date Read'), value: 'updated' },
     { label: _('Date Added'), value: 'created' },
+    { label: _('Date Published'), value: 'published' },
   ];
 
   const sortingOptions = [

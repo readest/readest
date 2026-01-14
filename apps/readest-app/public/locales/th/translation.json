@@ -834,5 +834,6 @@
   "Whole word:": "คำทั้งคำ:",
   "Error": "ข้อผิดพลาด",
   "Unable to load the article. Try searching directly on {{link}}.": "ไม่สามารถโหลดบทความได้ ลองค้นหาโดยตรงที่ {{link}}",
-  "Unable to load the word. Try searching directly on {{link}}.": "ไม่สามารถโหลดคำได้ ลองค้นหาโดยตรงที่ {{link}}"
+  "Unable to load the word. Try searching directly on {{link}}.": "ไม่สามารถโหลดคำได้ ลองค้นหาโดยตรงที่ {{link}}",
+  "Date Published": "วันที่เผยแพร่"
 }

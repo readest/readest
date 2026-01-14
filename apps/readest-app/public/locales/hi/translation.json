@@ -844,5 +844,6 @@
   "Whole word:": "पूरा शब्द:",
   "Error": "त्रुटि",
   "Unable to load the article. Try searching directly on {{link}}.": "लेख लोड करने में असमर्थ। सीधे {{link}} पर खोजने का प्रयास करें।",
-  "Unable to load the word. Try searching directly on {{link}}.": "शब्द लोड करने में असमर्थ। सीधे {{link}} पर खोजने का प्रयास करें।"
+  "Unable to load the word. Try searching directly on {{link}}.": "शब्द लोड करने में असमर्थ। सीधे {{link}} पर खोजने का प्रयास करें।",
+  "Date Published": "प्रकाशन तिथि"
 }

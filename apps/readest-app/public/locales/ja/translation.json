@@ -834,5 +834,6 @@
   "Whole word:": "単語全体:",
   "Error": "エラー",
   "Unable to load the article. Try searching directly on {{link}}.": "記事を読み込めません。{{link}}で直接検索してみてください。",
-  "Unable to load the word. Try searching directly on {{link}}.": "単語を読み込めません。{{link}}で直接検索してみてください。"
+  "Unable to load the word. Try searching directly on {{link}}.": "単語を読み込めません。{{link}}で直接検索してみてください。",
+  "Date Published": "出版日"
 }
