@@ -40,7 +40,6 @@ export const useTextSelector = (
 
   const makeSelection = async (sel: Selection, index: number, rebuildRange = false) => {
     isTextSelected.current = true;
-    isUpToPopup.current = true;
     const range = sel.getRangeAt(0);
     if (rebuildRange) {
       sel.removeAllRanges();
@@ -57,7 +56,6 @@ export const useTextSelector = (
   // FIXME: extremely hacky way to dismiss system selection tools on iOS
   const makeSelectionOnIOS = async (sel: Selection, index: number) => {
     isTextSelected.current = true;
-    isUpToPopup.current = true;
     const range = sel.getRangeAt(0);
     setTimeout(() => {
       sel.removeAllRanges();
@@ -140,11 +138,11 @@ export const useTextSelector = (
     if (isValidSelection(sel)) {
       const isPointerInside = ev && isPointerInsideSelection(sel, ev);
       const isIOS = osPlatform === 'ios' || appService?.isIOSApp;
-      const isAndroid = appService?.isAndroidApp;
 
       if (isPointerInside && isIOS) {
         makeSelectionOnIOS(sel, index);
-      } else if (isPointerInside || isAndroid) {
+      } else if (isPointerInside) {
+        isUpToPopup.current = true;
         makeSelection(sel, index, true);
       }
     }
@@ -160,7 +158,7 @@ export const useTextSelector = (
   const handleTouchEnd = () => {
     isTouchStarted.current = false;
   };
-  const handleSelectionchange = (doc: Document) => {
+  const handleSelectionchange = (doc: Document, index: number) => {
     // Available on iOS, Android and Desktop, fired when the selection is changed
     if (osPlatform !== 'android' || !appService?.isAndroidApp) return;
 
@@ -169,6 +167,7 @@ export const useTextSelector = (
       if (!selectionPosition.current) {
         selectionPosition.current = view?.renderer?.start || null;
       }
+      makeSelection(sel, index, false);
     } else {
       selectionPosition.current = null;
     }
