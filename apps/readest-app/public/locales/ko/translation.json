@@ -835,5 +835,6 @@
   "Error": "오류",
   "Unable to load the article. Try searching directly on {{link}}.": "문서를 로드할 수 없습니다. {{link}}에서 직접 검색해 보세요.",
   "Unable to load the word. Try searching directly on {{link}}.": "단어를 로드할 수 없습니다. {{link}}에서 직접 검색해 보세요.",
-  "Date Published": "출판일"
+  "Date Published": "출판일",
+  "Only for TTS:": "TTS 전용:"
 }

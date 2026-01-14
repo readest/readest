@@ -1,14 +1,17 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useProofreadStore } from '@/store/proofreadStore';
+import { TransformContext } from '@/services/transformers/types';
+import { proofreadTransformer } from '@/services/transformers/proofread';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { TTSController, SILENCE_DATA, TTSMark } from '@/services/tts';
+import { TTSController, SILENCE_DATA, TTSMark, TTSHighlightOptions } from '@/services/tts';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
@@ -38,11 +41,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { user } = useAuth();
-  const { safeAreaInsets } = useThemeStore();
+  const { safeAreaInsets, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
   const { setViewSettings, setTTSEnabled } = useReaderStore();
+  const { getMergedRules } = useProofreadStore();
   const viewSettings = getViewSettings(bookKey);
   const [ttsLang, setTtsLang] = useState<string>('en');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -285,6 +289,61 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     ttsControllerRef.current?.setTargetLang(getTTSTargetLang() || '');
   }, [getTTSTargetLang]);
 
+  const transformCtx: TransformContext = useMemo(
+    () => ({
+      bookKey,
+      viewSettings: getViewSettings(bookKey)!,
+      userLocale: getLocale(),
+      content: '',
+      transformers: [],
+      reversePunctuationTransform: true,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const preprocessSSMLForTTS = useCallback(
+    async (ssml: string) => {
+      const rules = getMergedRules(bookKey);
+      const viewSettings = getViewSettings(bookKey)!;
+      const ttsOnlyRules = rules.filter(
+        (rule) =>
+          rule.enabled && rule.onlyForTTS && (rule.scope === 'book' || rule.scope === 'library'),
+      );
+      if (ttsOnlyRules.length === 0) return ssml;
+
+      transformCtx['content'] = ssml;
+      transformCtx['viewSettings'] = viewSettings;
+      ssml = await proofreadTransformer.transform(transformCtx, {
+        docType: 'text/xml',
+        onlyForTTS: true,
+      });
+      return ssml;
+    },
+    [bookKey, getMergedRules, getViewSettings, transformCtx],
+  );
+
+  const getTTSHighlightOptions = useCallback(
+    (ttsHighlightOptions: TTSHighlightOptions, isEink: boolean) => {
+      const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
+      const color = isEink ? einkBgColor : ttsHighlightOptions.color;
+      return {
+        ...ttsHighlightOptions,
+        color,
+      };
+    },
+    [isDarkMode],
+  );
+
+  useEffect(() => {
+    const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
+    if (ttsControllerRef.current && ttsHighlightOptions) {
+      ttsControllerRef.current.initViewTTS(
+        getTTSHighlightOptions(ttsHighlightOptions, viewSettings.isEink),
+      );
+    }
+  }, [viewSettings?.ttsHighlightOptions, viewSettings?.isEink, getTTSHighlightOptions]);
+
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey, range, oneTime = false } = event.detail;
     if (bookKey !== ttsBookKey) return;
@@ -338,12 +397,14 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       if (!oneTime) {
         setShowIndicator(true);
       }
-      const ttsController = new TTSController(appService, view, !!user?.id);
+      const ttsController = new TTSController(appService, view, !!user?.id, preprocessSSMLForTTS);
       ttsControllerRef.current = ttsController;
       setTtsController(ttsController);
 
       await ttsController.init();
-      await ttsController.initViewTTS(viewSettings.ttsHighlightOptions);
+      await ttsController.initViewTTS(
+        getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
+      );
       const ssml = view.tts?.from(ttsFromRange);
       if (ssml) {
         const lang = parseSSMLLang(ssml, primaryLang) || 'en';
@@ -642,13 +703,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       }
     };
   }, [hoveredBookKey]);
-
-  useEffect(() => {
-    const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
-    if (ttsControllerRef.current && ttsHighlightOptions) {
-      ttsControllerRef.current.initViewTTS(ttsHighlightOptions);
-    }
-  }, [viewSettings?.ttsHighlightOptions]);
 
   return (
     <>

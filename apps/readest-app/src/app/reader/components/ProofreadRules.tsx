@@ -86,14 +86,14 @@ const RuleItem: React.FC<{
   }
 
   return (
-    <div className='flex items-start justify-between gap-3 p-3'>
+    <div className='relative flex items-start justify-between gap-3 p-3'>
       <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
         <div className='break-words text-base font-medium leading-snug'>{rule.pattern}</div>
         <div className='text-base-content/70 break-words text-sm'>
           <span className='text-base-content/80 mr-1.5 text-xs font-medium'>
             {_('Replace with:')}
           </span>
-          <span className='text-base-content/90'>{rule.replacement}</span>
+          <span className='text-base-content/90 text-xs'>{rule.replacement}</span>
         </div>
         <div className='text-base-content/60 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs'>
           <span className='inline-flex items-center gap-1'>
@@ -116,9 +116,16 @@ const RuleItem: React.FC<{
               {rule.caseSensitive !== false ? _('Yes') : _('No')}
             </span>
           </span>
+          <span className='text-base-content/30'>•</span>
+          <span className='inline-flex items-center gap-1'>
+            <span className='text-base-content/50'>{_('Only for TTS:')}</span>
+            <span className='text-base-content/70 font-medium'>
+              {rule.onlyForTTS === true ? _('Yes') : _('No')}
+            </span>
+          </span>
         </div>
       </div>
-      <div className='flex shrink-0 items-center gap-1'>
+      <div className='absolute right-2 top-2 flex items-center gap-1'>
         <button
           className='btn btn-ghost btn-sm h-8 w-8 p-0'
           onClick={onEdit}
@@ -187,7 +194,8 @@ export const ProofreadRulesManager: React.FC = () => {
     pattern: string;
     replacement: string;
     enabled: boolean;
-  }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
+    onlyForTTS: boolean;
+  }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true, onlyForTTS: false });
 
   const { singleRules, bookRules } = useReplacementRules(sideBarBookKey);
 
@@ -199,18 +207,26 @@ export const ProofreadRulesManager: React.FC = () => {
       el?.removeEventListener('setProofreadRulesVisibility', handleVisibility as EventListener);
   }, []);
 
-  const startEdit = (rule: ProofreadRule, scope: ProofreadScope) => {
+  const startEdit = (rule: ProofreadRule) => {
     setEditing({
       id: rule.id,
-      scope,
+      scope: rule.scope,
       pattern: rule.pattern,
       replacement: rule.replacement,
       enabled: !!rule.enabled,
+      onlyForTTS: !!rule.onlyForTTS,
     });
   };
 
   const cancelEdit = () => {
-    setEditing({ id: null, scope: null, pattern: '', replacement: '', enabled: true });
+    setEditing({
+      id: null,
+      scope: null,
+      pattern: '',
+      replacement: '',
+      enabled: true,
+      onlyForTTS: false,
+    });
   };
 
   const saveEdit = async () => {
@@ -221,16 +237,22 @@ export const ProofreadRulesManager: React.FC = () => {
       pattern: editing.pattern,
       replacement: editing.replacement,
       enabled: editing.enabled,
+      onlyForTTS: editing.onlyForTTS,
     });
 
     cancelEdit();
-    recreateViewer(envConfig, sideBarBookKey);
+
+    if (!editing.onlyForTTS) {
+      recreateViewer(envConfig, sideBarBookKey);
+    }
   };
 
-  const deleteRule = async (ruleId: string, scope: ProofreadScope) => {
+  const deleteRule = async (rule: ProofreadRule) => {
     if (!sideBarBookKey) return;
-    await removeRule(envConfig, sideBarBookKey, ruleId, scope);
-    recreateViewer(envConfig, sideBarBookKey);
+    await removeRule(envConfig, sideBarBookKey, rule.id, rule.scope);
+    if (!rule.onlyForTTS) {
+      recreateViewer(envConfig, sideBarBookKey);
+    }
   };
 
   const renderRuleList = (
@@ -260,10 +282,8 @@ export const ProofreadRulesManager: React.FC = () => {
                   editing.scope === (scopeType === 'selection' ? 'selection' : rule.scope)
                 }
                 editingData={editing}
-                onEdit={() => startEdit(rule, scopeType === 'selection' ? 'selection' : rule.scope)}
-                onDelete={() =>
-                  deleteRule(rule.id, scopeType === 'selection' ? 'selection' : rule.scope)
-                }
+                onEdit={() => startEdit(rule)}
+                onDelete={() => deleteRule(rule)}
                 onSave={saveEdit}
                 onCancel={cancelEdit}
                 onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}

@@ -835,5 +835,6 @@
   "Error": "Lỗi",
   "Unable to load the article. Try searching directly on {{link}}.": "Không thể tải bài viết. Hãy thử tìm kiếm trực tiếp trên {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Không thể tải từ. Hãy thử tìm kiếm trực tiếp trên {{link}}.",
-  "Date Published": "Ngày xuất bản"
+  "Date Published": "Ngày xuất bản",
+  "Only for TTS:": "Chỉ dành cho TTS:"
 }

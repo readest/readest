@@ -835,5 +835,6 @@
   "Error": "ནོར་འཁྲུལ།",
   "Unable to load the article. Try searching directly on {{link}}.": "རྩོམ་ཡིག་མངོན་མི་ཐུབ། {{link}} ཐད་ཀར་འཚོལ་བ་བྱོས།",
   "Unable to load the word. Try searching directly on {{link}}.": "ཚིག་མངོན་མི་ཐུབ། {{link}} ཐད་ཀར་འཚོལ་བ་བྱོས།",
-  "Date Published": "པར་སྐྲུན་ཚེས་གྲངས།"
+  "Date Published": "པར་སྐྲུན་ཚེས་གྲངས།",
+  "Only for TTS:": "TTS ལ་ཁོ་ན།:"
 }
