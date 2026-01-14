@@ -865,5 +865,6 @@
   "Error": "Błąd",
   "Unable to load the article. Try searching directly on {{link}}.": "Nie można załadować artykułu. Spróbuj wyszukać bezpośrednio na {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Nie można załadować słowa. Spróbuj wyszukać bezpośrednio na {{link}}.",
-  "Date Published": "Data wydania"
+  "Date Published": "Data wydania",
+  "Only for TTS:": "Tylko dla TTS:"
 }

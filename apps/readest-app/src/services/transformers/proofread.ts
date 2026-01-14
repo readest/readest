@@ -205,7 +205,12 @@ function getTextNodes(doc: Document): Text[] {
 export const proofreadTransformer: Transformer = {
   name: 'proofread',
 
-  transform: async (ctx) => {
+  transform: async (ctx, options) => {
+    const { docType = 'text/html', onlyForTTS = false } =
+      (options as {
+        docType?: DOMParserSupportedType;
+        onlyForTTS?: boolean;
+      }) || {};
     const globalRules = useSettingsStore.getState().settings?.globalViewSettings?.proofreadRules;
     const bookRules = ctx.viewSettings.proofreadRules;
     const merged = [...(globalRules ?? []), ...(bookRules ?? [])].sort(
@@ -215,6 +220,7 @@ export const proofreadTransformer: Transformer = {
 
     const processed = merged
       .filter((r) => r.enabled && r.pattern.trim())
+      .filter((r) => (onlyForTTS ? r.onlyForTTS : !r.onlyForTTS))
       .map((r) => ({
         ...r,
         normalizedPattern: normalizePattern(r.pattern, r.isRegex, r.caseSensitive !== false),
@@ -223,7 +229,7 @@ export const proofreadTransformer: Transformer = {
     if (!processed.length) return ctx.content;
 
     const parser = new DOMParser();
-    const doc = parser.parseFromString(ctx.content, 'text/html');
+    const doc = parser.parseFromString(ctx.content, docType);
     const textNodes = getTextNodes(doc);
 
     const byScope = {

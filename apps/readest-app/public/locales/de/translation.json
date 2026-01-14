@@ -845,5 +845,6 @@
   "Error": "Fehler",
   "Unable to load the article. Try searching directly on {{link}}.": "Artikel kann nicht geladen werden. Versuchen Sie die direkte Suche auf {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Wort kann nicht geladen werden. Versuchen Sie die direkte Suche auf {{link}}.",
-  "Date Published": "Veröffentlichungsdatum"
+  "Date Published": "Veröffentlichungsdatum",
+  "Only for TTS:": "Nur für TTS:"
 }

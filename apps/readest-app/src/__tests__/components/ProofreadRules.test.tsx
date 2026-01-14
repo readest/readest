@@ -402,11 +402,11 @@ describe('ProofreadRulesManager', () => {
 
     const csRuleElement = screen.getByText('case-sensitive').closest('li');
     expect(within(csRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(csRuleElement!).getByText(/Yes/)).toBeTruthy();
+    expect(within(csRuleElement!).getAllByText(/Yes/)).toBeTruthy();
 
     const ciRuleElement = screen.getByText('case-insensitive').closest('li');
     expect(within(ciRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(ciRuleElement!).getByText(/No/)).toBeTruthy();
+    expect(within(ciRuleElement!).getAllByText(/No/)).toBeTruthy();
   });
 
   it('opens when BookMenu item is clicked (integration)', async () => {

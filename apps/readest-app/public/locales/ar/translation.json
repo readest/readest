@@ -885,5 +885,6 @@
   "Error": "خطأ",
   "Unable to load the article. Try searching directly on {{link}}.": "تعذر تحميل المقال. حاول البحث مباشرة على {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "تعذر تحميل الكلمة. حاول البحث مباشرة على {{link}}.",
-  "Date Published": "تاريخ النشر"
+  "Date Published": "تاريخ النشر",
+  "Only for TTS:": "فقط لـ TTS:"
 }
