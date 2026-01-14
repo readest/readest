@@ -834,5 +834,6 @@
   "Whole word:": "Kata utuh:",
   "Error": "Kesalahan",
   "Unable to load the article. Try searching directly on {{link}}.": "Tidak dapat memuat artikel. Coba cari langsung di {{link}}.",
-  "Unable to load the word. Try searching directly on {{link}}.": "Tidak dapat memuat kata. Coba cari langsung di {{link}}."
+  "Unable to load the word. Try searching directly on {{link}}.": "Tidak dapat memuat kata. Coba cari langsung di {{link}}.",
+  "Date Published": "Tanggal terbit"
 }

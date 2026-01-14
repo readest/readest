@@ -864,5 +864,6 @@
   "Whole word:": "Слово целиком:",
   "Error": "Ошибка",
   "Unable to load the article. Try searching directly on {{link}}.": "Не удалось загрузить статью. Попробуйте искать напрямую на {{link}}.",
-  "Unable to load the word. Try searching directly on {{link}}.": "Не удалось загрузить слово. Попробуйте искать напрямую на {{link}}."
+  "Unable to load the word. Try searching directly on {{link}}.": "Не удалось загрузить слово. Попробуйте искать напрямую на {{link}}.",
+  "Date Published": "Дата публикации"
 }

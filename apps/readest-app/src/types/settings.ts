@@ -6,7 +6,7 @@ import { OPDSCatalog } from './opds';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
-export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'size' | 'format';
+export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'size' | 'format' | 'published';
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export type KOSyncChecksumMethod = 'binary' | 'filename';

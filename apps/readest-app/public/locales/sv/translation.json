@@ -844,5 +844,6 @@
   "Whole word:": "Hela ordet:",
   "Error": "Fel",
   "Unable to load the article. Try searching directly on {{link}}.": "Kan inte ladda artikeln. Försök söka direkt på {{link}}.",
-  "Unable to load the word. Try searching directly on {{link}}.": "Kan inte ladda ordet. Försök söka direkt på {{link}}."
+  "Unable to load the word. Try searching directly on {{link}}.": "Kan inte ladda ordet. Försök söka direkt på {{link}}.",
+  "Date Published": "Publiceringsdatum"
 }

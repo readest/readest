@@ -834,5 +834,6 @@
   "Whole word:": "全詞匹配:",
   "Error": "錯誤",
   "Unable to load the article. Try searching directly on {{link}}.": "無法載入文章。請直接在 {{link}} 上搜尋。",
-  "Unable to load the word. Try searching directly on {{link}}.": "無法載入詞彙。請直接在 {{link}} 上搜尋。"
+  "Unable to load the word. Try searching directly on {{link}}.": "無法載入詞彙。請直接在 {{link}} 上搜尋。",
+  "Date Published": "出版日期"
 }

@@ -844,5 +844,6 @@
   "Whole word:": "সম্পূর্ণ শব্দ:",
   "Error": "ত্রুটি",
   "Unable to load the article. Try searching directly on {{link}}.": "নিবন্ধ লোড করতে অক্ষম। সরাসরি {{link}} এ অনুসন্ধান করার চেষ্টা করুন।",
-  "Unable to load the word. Try searching directly on {{link}}.": "শব্দ লোড করতে অক্ষম। সরাসরি {{link}} এ অনুসন্ধান করার চেষ্টা করুন।"
+  "Unable to load the word. Try searching directly on {{link}}.": "শব্দ লোড করতে অক্ষম। সরাসরি {{link}} এ অনুসন্ধান করার চেষ্টা করুন।",
+  "Date Published": "প্রকাশনার তারিখ"
 }
