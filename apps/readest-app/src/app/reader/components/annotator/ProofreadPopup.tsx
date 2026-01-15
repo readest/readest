@@ -125,7 +125,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
       >
         <div className='flex flex-col gap-6 p-4'>
           <div className='not-eink:text-gray-400 flex gap-1 text-xs'>
-            <span>{_('Selected text:')}</span>
+            <span className='text-nowrap'>{_('Selected text:')}</span>
             <span className='not-eink:text-yellow-300 line-clamp-1 select-text break-words font-medium'>
               &quot;{selection?.text || ''}&quot;
             </span>
@@ -141,7 +141,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               value={replacementText}
               onChange={handleInputChange}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && replacementText.trim()) {
+                if (e.key === 'Enter' && replacementText) {
                   handleApply();
                 }
               }}
@@ -153,7 +153,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             />
             <button
               onClick={handleApply}
-              disabled={!replacementText.trim()}
+              disabled={!replacementText}
               className={clsx(
                 'btn btn-sm btn-ghost btn-primary disabled:text-base-content/75 text-blue-600 disabled:opacity-75',
                 'bg-transparent hover:bg-transparent disabled:bg-transparent',
@@ -171,7 +171,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             </span>
             <input
               type='checkbox'
-              className='toggle toggle-sm not-eink:bg-gray-500 checked:bg-black hover:bg-gray-500 hover:checked:bg-black'
+              className='toggle toggle-sm bg-gray-500 checked:bg-black hover:bg-gray-500 hover:checked:bg-black'
               style={
                 {
                   '--tglbg': '#4B5563',

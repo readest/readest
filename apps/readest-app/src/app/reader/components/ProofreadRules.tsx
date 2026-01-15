@@ -88,12 +88,12 @@ const RuleItem: React.FC<{
   return (
     <div className='relative flex items-start justify-between gap-3 p-3'>
       <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-        <div className='break-words text-base font-medium leading-snug'>{rule.pattern}</div>
+        <div className='break-words pe-20 text-base font-medium leading-snug'>{rule.pattern}</div>
         <div className='text-base-content/70 break-words text-sm'>
           <span className='text-base-content/80 mr-1.5 text-xs font-medium'>
             {_('Replace with:')}
           </span>
-          <span className='text-base-content/90 text-xs'>{rule.replacement}</span>
+          <span className='text-base-content/90 text-xs'>{"'" + rule.replacement + "'"}</span>
         </div>
         <div className='text-base-content/60 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs'>
           <span className='inline-flex items-center gap-1'>
