@@ -169,12 +169,14 @@ export class EdgeTTSClient implements TTSClient {
           };
           this.#isPlaying = true;
           audio.src = audioUrl || '';
-          audio.playbackRate = this.#rate;
-          audio.play().catch((err) => {
-            cleanUp();
-            console.error('Failed to play audio:', err);
-            resolve({ code: 'error', message: 'Playback failed: ' + err.message });
-          });
+          audio
+            .play()
+            .then(() => (audio.playbackRate = this.#rate))
+            .catch((err) => {
+              cleanUp();
+              console.error('Failed to play audio:', err);
+              resolve({ code: 'error', message: 'Playback failed: ' + err.message });
+            });
         });
         yield result;
       } catch (error) {
