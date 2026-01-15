@@ -856,5 +856,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "Impossible de charger l'article. Essayez de rechercher directement sur {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Impossible de charger le mot. Essayez de rechercher directement sur {{link}}.",
   "Date Published": "Date de publication",
-  "Only for TTS:": "Uniquement pour TTS :"
+  "Only for TTS:": "Uniquement pour TTS :",
+  "Uploaded": "Téléversé",
+  "Downloaded": "Téléchargé",
+  "Deleted": "Supprimé"
 }

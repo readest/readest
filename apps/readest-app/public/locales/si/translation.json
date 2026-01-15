@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "ලිපිය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න.",
   "Unable to load the word. Try searching directly on {{link}}.": "වචනය පූරණය කළ නොහැක. {{link}} හි කෙලින්ම සෙවීමට උත්සාහ කරන්න.",
   "Date Published": "ප්‍රකාශන දිනය",
-  "Only for TTS:": "TTS සඳහා පමණක්:"
+  "Only for TTS:": "TTS සඳහා පමණක්:",
+  "Uploaded": "උඩුගත කරන ලදී",
+  "Downloaded": "බාගත කරන ලදී",
+  "Deleted": "මකා දමන ලදී"
 }

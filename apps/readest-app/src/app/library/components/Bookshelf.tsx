@@ -10,7 +10,6 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
@@ -24,7 +23,6 @@ import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import GroupingModal from './GroupingModal';
-import TransferQueuePanel from './TransferQueuePanel';
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -79,6 +77,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [showGroupingModal, setShowGroupingModal] = useState(false);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
+  const abortDeletionRef = useRef(false);
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
   const autofocusRef = useAutoFocus<HTMLDivElement>();
@@ -86,8 +85,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { setCurrentBookshelf, setLibrary } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
   const { getGroupName } = useLibraryStore();
-
-  const { isTransferQueueOpen } = useTransferStore();
 
   const uiLanguage = localStorage?.getItem('i18nextLng') || '';
 
@@ -223,9 +220,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const confirmDelete = async () => {
     const books = getBooksToDelete();
-    const concurrency = 4;
+    const concurrency = 20;
 
     for (let i = 0; i < books.length; i += concurrency) {
+      if (abortDeletionRef.current) {
+        abortDeletionRef.current = false;
+        break;
+      }
       const batch = books.slice(i, i + concurrency);
       await Promise.all(batch.map((book) => handleBookDelete(book, false)));
     }
@@ -383,11 +384,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         </ModalPortal>
       )}
-      {isTransferQueueOpen && (
-        <ModalPortal>
-          <TransferQueuePanel />
-        </ModalPortal>
-      )}
       {showDeleteAlert && (
         <div
           className={clsx('delete-alert fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
@@ -401,6 +397,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               count: getBooksToDelete().length,
             })}
             onCancel={() => {
+              abortDeletionRef.current = true;
               setShowDeleteAlert(false);
               setShowSelectModeActions(true);
             }}

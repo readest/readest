@@ -94,6 +94,25 @@ class TransferManager {
     return transferId;
   }
 
+  queueDelete(book: Book, priority: number = 10, isBackground: boolean = false): string | null {
+    if (!this.isReady()) {
+      console.warn('TransferManager not initialized');
+      return null;
+    }
+
+    const store = useTransferStore.getState();
+
+    const existing = store.getTransferByBookHash(book.hash, 'delete');
+    if (existing) {
+      return existing.id;
+    }
+
+    const transferId = store.addTransfer(book.hash, book.title, 'delete', priority, isBackground);
+    this.persistQueue();
+    this.processQueue();
+    return transferId;
+  }
+
   queueBatchUploads(books: Book[], priority: number = 10): string[] {
     return books
       .map((book) => this.queueUpload(book, priority))
@@ -221,23 +240,31 @@ class TransferManager {
       if (transfer.type === 'upload') {
         await this.appService.uploadBook(book, progressHandler);
         book.uploadedAt = Date.now();
-      } else {
+        await this.updateBook(book);
+      } else if (transfer.type === 'download') {
         await this.appService.downloadBook(book, false, false, progressHandler);
         book.downloadedAt = Date.now();
+        await this.updateBook(book);
+      } else if (transfer.type === 'delete') {
+        await this.appService.deleteBook(book, 'cloud');
+        await this.updateBook(book);
       }
-
-      await this.updateBook(book);
 
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
 
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        timeout: 2000,
-        message:
-          transfer.type === 'upload'
-            ? _('Book uploaded: {{title}}', { title: transfer.bookTitle })
-            : _('Book downloaded: {{title}}', { title: transfer.bookTitle }),
-      });
+      const successMessages = {
+        upload: _('Book uploaded: {{title}}', { title: transfer.bookTitle }),
+        download: _('Book downloaded: {{title}}', { title: transfer.bookTitle }),
+        delete: _('Deleted cloud backup of the book: {{title}}', { title: transfer.bookTitle }),
+      };
+
+      if (!transfer.isBackground) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          timeout: 2000,
+          message: successMessages[transfer.type],
+        });
+      }
     } catch (error) {
       if (abortController.signal.aborted) {
         // Already cancelled, don't update status
@@ -273,16 +300,17 @@ class TransferManager {
             message: _('Insufficient storage quota'),
           });
         } else {
+          const errorMessages = {
+            upload: _('Failed to upload book: {{title}}', { title: transfer.bookTitle }),
+            download: _('Failed to download book: {{title}}', { title: transfer.bookTitle }),
+            delete: _('Failed to delete cloud backup of the book: {{title}}', {
+              title: transfer.bookTitle,
+            }),
+          };
+
           eventDispatcher.dispatch('toast', {
             type: 'error',
-            message:
-              transfer.type === 'upload'
-                ? _('Failed to upload book: {{title}}', {
-                    title: transfer.bookTitle,
-                  })
-                : _('Failed to download book: {{title}}', {
-                    title: transfer.bookTitle,
-                  }),
+            message: errorMessages[transfer.type],
           });
         }
 

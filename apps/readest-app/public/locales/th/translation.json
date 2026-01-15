@@ -836,5 +836,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "ไม่สามารถโหลดบทความได้ ลองค้นหาโดยตรงที่ {{link}}",
   "Unable to load the word. Try searching directly on {{link}}.": "ไม่สามารถโหลดคำได้ ลองค้นหาโดยตรงที่ {{link}}",
   "Date Published": "วันที่เผยแพร่",
-  "Only for TTS:": "สำหรับ TTS เท่านั้น:"
+  "Only for TTS:": "สำหรับ TTS เท่านั้น:",
+  "Uploaded": "อัปโหลดแล้ว",
+  "Downloaded": "ดาวน์โหลดแล้ว",
+  "Deleted": "ลบแล้ว"
 }

@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "Αδυναμία φόρτωσης του άρθρου. Δοκιμάστε να αναζητήσετε απευθείας στο {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Αδυναμία φόρτωσης της λέξης. Δοκιμάστε να αναζητήσετε απευθείας στο {{link}}.",
   "Date Published": "Ημερομηνία δημοσίευσης",
-  "Only for TTS:": "Μόνο για TTS:"
+  "Only for TTS:": "Μόνο για TTS:",
+  "Uploaded": "Μεταφορτώθηκε",
+  "Downloaded": "Λήφθηκε",
+  "Deleted": "Διαγράφηκε"
 }

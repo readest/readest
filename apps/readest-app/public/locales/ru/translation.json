@@ -866,5 +866,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "Не удалось загрузить статью. Попробуйте искать напрямую на {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Не удалось загрузить слово. Попробуйте искать напрямую на {{link}}.",
   "Date Published": "Дата публикации",
-  "Only for TTS:": "Только для TTS:"
+  "Only for TTS:": "Только для TTS:",
+  "Uploaded": "Загружено",
+  "Downloaded": "Скачано",
+  "Deleted": "Удалено"
 }
