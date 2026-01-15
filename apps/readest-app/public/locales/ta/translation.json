@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "கட்டுரையை ஏற்ற முடியவில்லை. நேரடியாக {{link}} இல் தேடவும்.",
   "Unable to load the word. Try searching directly on {{link}}.": "சொல்லை ஏற்ற முடியவில்லை. நேரடியாக {{link}} இல் தேடவும்.",
   "Date Published": "வெளியீட்டு தேதி",
-  "Only for TTS:": "TTS க்கு மட்டும்:"
+  "Only for TTS:": "TTS க்கு மட்டும்:",
+  "Uploaded": "பதிவேற்றப்பட்டது",
+  "Downloaded": "பதிவிறக்கப்பட்டது",
+  "Deleted": "நீக்கப்பட்டது"
 }

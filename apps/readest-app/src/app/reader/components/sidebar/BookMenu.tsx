@@ -3,7 +3,7 @@ import React from 'react';
 import Image from 'next/image';
 
 import { MdCheck } from 'react-icons/md';
-import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -12,10 +12,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
+import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
-import { FIXED_LAYOUT_FORMATS } from '@/types/book';
+import { setAboutDialogVisible } from '@/components/AboutWindow';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -27,8 +28,9 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { bookKeys, getViewSettings, setViewSettings } = useReaderStore();
+  const { bookKeys, recreateViewer, getViewSettings, setViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
@@ -64,8 +66,8 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       const viewSettings = getViewSettings(sideBarBookKey)!;
       viewSettings.sortedTOC = !isSortedTOC;
       setViewSettings(sideBarBookKey, viewSettings);
+      recreateViewer(envConfig, sideBarBookKey);
     }
-    setTimeout(() => window.location.reload(), 100);
   };
   const handleSetParallel = () => {
     setParallel(bookKeys);

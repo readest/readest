@@ -52,7 +52,7 @@ const formatDateTime = (timestamp: number): string => {
 
 const StatusIcon: React.FC<{
   status: TransferStatus;
-  type: 'upload' | 'download';
+  type: 'upload' | 'download' | 'delete';
   size: number;
 }> = ({ status, type, size }) => {
   switch (status) {
@@ -67,6 +67,8 @@ const StatusIcon: React.FC<{
     default:
       return type === 'upload' ? (
         <MdCloudUpload className='text-primary' size={size} />
+      ) : type === 'delete' ? (
+        <MdDeleteSweep className='text-primary' size={size} />
       ) : (
         <MdCloudDownload className='text-primary' size={size} />
       );
@@ -80,6 +82,12 @@ const TransferItemRow: React.FC<{
   iconSize: number;
 }> = ({ transfer, onCancel, onRetry, iconSize }) => {
   const _ = useTranslation();
+
+  const completedLabel = {
+    upload: _('Uploaded'),
+    download: _('Downloaded'),
+    delete: _('Deleted'),
+  };
 
   return (
     <div className='hover:bg-base-200 flex items-center gap-3 rounded-lg p-3'>
@@ -100,7 +108,7 @@ const TransferItemRow: React.FC<{
           {transfer.status === 'failed' && (
             <span className='text-error'>{transfer.error || _('Failed')}</span>
           )}
-          {transfer.status === 'completed' && _('Completed')}
+          {transfer.status === 'completed' && (completedLabel[transfer.type] || _('Completed'))}
           {transfer.status === 'cancelled' && _('Cancelled')}
           {' · '}
           {formatDateTime(transfer.completedAt || transfer.startedAt || transfer.createdAt)}
@@ -167,9 +175,7 @@ const TransferQueuePanel: React.FC = () => {
   const onClose = () => setIsOpen(false);
   const divRef = useKeyDownActions({ onCancel: onClose, onConfirm: onClose });
 
-  const booksToUpload = getVisibleLibrary().filter(
-    (book) => book.downloadedAt && !book.uploadedAt,
-  );
+  const booksToUpload = getVisibleLibrary().filter((book) => book.downloadedAt && !book.uploadedAt);
   const booksToDownload = getVisibleLibrary().filter(
     (book) => book.uploadedAt && !book.downloadedAt,
   );

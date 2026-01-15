@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "بارگذاری مقاله امکان‌پذیر نیست. سعی کنید مستقیماً در {{link}} جستجو کنید.",
   "Unable to load the word. Try searching directly on {{link}}.": "بارگذاری کلمه امکان‌پذیر نیست. سعی کنید مستقیماً در {{link}} جستجو کنید.",
   "Date Published": "تاریخ انتشار",
-  "Only for TTS:": "فقط برای TTS:"
+  "Only for TTS:": "فقط برای TTS:",
+  "Uploaded": "بارگذاری شد",
+  "Downloaded": "دانلود شد",
+  "Deleted": "حذف شد"
 }

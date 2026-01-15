@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "Makale yüklenemiyor. Doğrudan {{link}} üzerinde arama yapmayı deneyin.",
   "Unable to load the word. Try searching directly on {{link}}.": "Kelime yüklenemiyor. Doğrudan {{link}} üzerinde arama yapmayı deneyin.",
   "Date Published": "Yayın tarihi",
-  "Only for TTS:": "Sadece TTS için:"
+  "Only for TTS:": "Sadece TTS için:",
+  "Uploaded": "Yüklendi",
+  "Downloaded": "İndirildi",
+  "Deleted": "Silindi"
 }

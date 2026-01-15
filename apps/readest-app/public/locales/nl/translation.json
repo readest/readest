@@ -846,5 +846,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "Kan het artikel niet laden. Probeer direct te zoeken op {{link}}.",
   "Unable to load the word. Try searching directly on {{link}}.": "Kan het woord niet laden. Probeer direct te zoeken op {{link}}.",
   "Date Published": "Publicatiedatum",
-  "Only for TTS:": "Alleen voor TTS:"
+  "Only for TTS:": "Alleen voor TTS:",
+  "Uploaded": "Geüpload",
+  "Downloaded": "Gedownload",
+  "Deleted": "Verwijderd"
 }

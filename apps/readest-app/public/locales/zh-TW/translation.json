@@ -836,5 +836,8 @@
   "Unable to load the article. Try searching directly on {{link}}.": "無法載入文章。請直接在 {{link}} 上搜尋。",
   "Unable to load the word. Try searching directly on {{link}}.": "無法載入詞彙。請直接在 {{link}} 上搜尋。",
   "Date Published": "出版日期",
-  "Only for TTS:": "僅用於TTS："
+  "Only for TTS:": "僅用於TTS：",
+  "Uploaded": "已上傳",
+  "Downloaded": "已下載",
+  "Deleted": "已刪除"
 }
