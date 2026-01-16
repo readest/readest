@@ -38,7 +38,9 @@ const BookCard = ({ book }: { book: Book }) => {
         />
       </div>
       <div className='min-w-0 flex-1'>
-        <h4 className='line-clamp-2 w-[90%] text-sm font-semibold'>{formatTitle(title)}</h4>
+        <h4 className='line-clamp-2 w-[90%] text-sm font-semibold'>
+          {formatTitle(title).replace(/\u00A0/g, ' ')}
+        </h4>
         <p className='truncate text-xs opacity-75'>{formatAuthors(author)}</p>
       </div>
       <button
