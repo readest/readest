@@ -110,7 +110,7 @@ pub async fn download_file(
     single_threaded: Option<bool>,
     skip_ssl_verification: Option<bool>,
     on_progress: Channel<ProgressPayload>,
-) -> Result<()> {
+) -> Result<HashMap<String, String>> {
     use futures::stream::{self, StreamExt};
     use std::cmp::min;
     use tokio::io::AsyncSeekExt;
@@ -130,7 +130,7 @@ pub async fn download_file(
         headers: &HashMap<String, String>,
         body: &Option<String>,
         on_progress: Channel<ProgressPayload>,
-    ) -> Result<()> {
+    ) -> Result<HashMap<String, String>> {
         let mut request = if let Some(body) = body {
             client.post(url).body(body.clone())
         } else {
@@ -149,6 +149,13 @@ pub async fn download_file(
             ));
         }
 
+        let mut resp_headers = HashMap::new();
+        for (key, value) in response.headers().iter() {
+            if let Ok(val_str) = value.to_str() {
+                resp_headers.insert(key.to_string(), val_str.to_string());
+            }
+        }
+
         let total = response.content_length().unwrap_or(0);
         let mut file = BufWriter::new(File::create(file_path).await?);
         let mut stream = response.bytes_stream();
@@ -165,7 +172,7 @@ pub async fn download_file(
         }
         file.flush().await?;
 
-        Ok(())
+        Ok(resp_headers)
     }
 
     if force_single {
@@ -192,6 +199,13 @@ pub async fn download_file(
         .and_then(|s| s.split('/').nth(1))
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(0);
+
+    let mut resp_headers = HashMap::new();
+    for (key, value) in range_resp.headers().iter() {
+        if let Ok(val_str) = value.to_str() {
+            resp_headers.insert(key.to_string(), val_str.to_string());
+        }
+    }
 
     if !accept_ranges || total == 0 {
         return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
@@ -260,7 +274,7 @@ pub async fn download_file(
         })
         .await;
 
-    Ok(())
+    Ok(resp_headers)
 }
 
 #[command]

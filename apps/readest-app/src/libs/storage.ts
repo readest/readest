@@ -149,10 +149,15 @@ export const downloadFile = async ({
     }
 
     if (isWebAppPlatform()) {
-      const file = await webDownload(downloadUrl, onProgress, headers);
-      await appService.writeFile(dst, 'None', await file.arrayBuffer());
+      const { headers: responseHeaders, blob } = await webDownload(
+        downloadUrl,
+        onProgress,
+        headers,
+      );
+      await appService.writeFile(dst, 'None', await blob.arrayBuffer());
+      return responseHeaders;
     } else {
-      await tauriDownload(
+      return await tauriDownload(
         downloadUrl,
         dst,
         onProgress,
