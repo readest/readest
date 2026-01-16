@@ -436,14 +436,14 @@ export default function BrowserPage() {
             }
           }
 
-          const probedFilename = await probeFilename(url, useProxy, headers);
           const pathname = decodeURIComponent(new URL(url).pathname);
           const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
           const basename = pathname.replaceAll('/', '_');
-          const filename = probedFilename ? probedFilename : ext ? `${basename}.${ext}` : basename;
-          const dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
-          console.log('Downloading to:', dstFilePath);
-          await downloadFile({
+          const filename = ext ? `${basename}.${ext}` : basename;
+          let dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
+          console.log('Downloading to:', url, dstFilePath);
+
+          const responseHeaders = await downloadFile({
             appService,
             dst: dstFilePath,
             cfp: '',
@@ -453,6 +453,15 @@ export default function BrowserPage() {
             skipSslVerification: true,
             onProgress,
           });
+          const probedFilename = await probeFilename(responseHeaders);
+          if (probedFilename) {
+            const newFilePath = await appService?.resolveFilePath(probedFilename, 'Cache');
+            await appService?.copyFile(dstFilePath, newFilePath, 'None');
+            await appService?.deleteFile(dstFilePath, 'None');
+            console.log('Renamed downloaded file to:', newFilePath);
+            dstFilePath = newFilePath;
+          }
+
           const { library, setLibrary } = useLibraryStore.getState();
           const book = await appService.importBook(dstFilePath, library);
           if (user && book && !book.uploadedAt && settings.autoUpload) {
