@@ -316,12 +316,8 @@ export const nativeFileSystem: FileSystem = {
         if (entry.isDirectory) {
           const dir = await join(parent, entry.name);
           const relativeDir = relative ? await join(relative, entry.name) : entry.name;
-          await readDirRecursively(
-            dir,
-            relativeDir,
-            await readDir(dir, baseDir ? { baseDir } : undefined),
-            fileList,
-          );
+          const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
+          await readDirRecursively(dir, relativeDir, entries, fileList);
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;
@@ -463,6 +459,7 @@ export class NativeAppService extends BaseAppService {
     const selected = await openDialog({
       directory: true,
       multiple: false,
+      recursive: true,
     });
     return selected as string;
   }
