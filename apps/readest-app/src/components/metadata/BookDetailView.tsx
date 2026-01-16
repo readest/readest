@@ -58,8 +58,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         </div>
         <div className='title-author flex h-32 flex-col justify-between'>
           <div>
-            <p className='text-base-content mb-2 line-clamp-2 text-lg font-bold'>
-              {formatTitle(book.title) || _('Untitled')}
+            <p className='text-base-content mb-2 line-clamp-2 break-words text-lg font-bold'>
+              {formatTitle(book.title).replace(/\u00A0/g, ' ') || _('Untitled')}
             </p>
             <p className='text-neutral-content line-clamp-1'>
               {formatAuthors(book.author, book.primaryLanguage) || _('Unknown')}
