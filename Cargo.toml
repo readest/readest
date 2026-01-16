@@ -4,6 +4,8 @@ members = [
   "packages/tauri/crates/tauri",
   "packages/tauri/crates/tauri-utils",
   "packages/tauri/crates/tauri-build",
+  "packages/tauri-plugins/plugins/deep-link",
+  "packages/tauri-plugins/plugins/single-instance"
 ]
 resolver = "2"
 
@@ -19,6 +21,7 @@ schemars = "0.8"
 serde_json = "1"
 thiserror = "2"
 glob = "0.3"
+zbus = "5.9"
 dunce = "1"
 url = "2"
 
@@ -35,3 +38,5 @@ rust-version = "1.77.2"
 tauri = { path = "packages/tauri/crates/tauri" }
 tauri-utils = { path = "packages/tauri/crates/tauri-utils" }
 tauri-build = { path = "packages/tauri/crates/tauri-build" }
+tauri-plugin-deep-link = { path = "packages/tauri-plugins/plugins/deep-link" }
+tauri-plugin-single-instance = { path = "packages/tauri-plugins/plugins/single-instance" }
