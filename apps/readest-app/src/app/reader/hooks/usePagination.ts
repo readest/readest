@@ -12,7 +12,7 @@ import { tauriGetWindowLogicalPosition } from '@/utils/window';
 export type ScrollSource = 'touch' | 'mouse';
 
 type PaginationSide = 'left' | 'right' | 'up' | 'down';
-type PaginationMode = 'page' | 'section';
+type PaginationMode = 'pan' | 'page' | 'section';
 
 const swapLeftRight = (side: PaginationSide) => {
   if (side === 'left') return 'right';
@@ -20,11 +20,36 @@ const swapLeftRight = (side: PaginationSide) => {
   return side;
 };
 
+const isPanningView = (view: FoliateView | null, viewSettings: ViewSettings | null | undefined) => {
+  if (!view || !viewSettings) return false;
+  return (
+    view.book.rendition?.layout === 'pre-paginated' &&
+    (viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page')
+  );
+};
+
+const hasHorizontalPanning = (
+  view: FoliateView | null,
+  viewSettings: ViewSettings | null | undefined,
+) => {
+  if (!view || !viewSettings) return false;
+  return isPanningView(view, viewSettings) && view.isOverflowX();
+};
+
+const hasVerticalPanning = (
+  view: FoliateView | null,
+  viewSettings: ViewSettings | null | undefined,
+) => {
+  if (!view || !viewSettings) return false;
+  return isPanningView(view, viewSettings) && view.isOverflowY();
+};
+
 export const viewPagination = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
   side: PaginationSide,
   mode: PaginationMode = 'page',
+  panDistance: number = 50,
 ) => {
   if (!view || !viewSettings) return;
   const renderer = view.renderer;
@@ -38,25 +63,37 @@ export const viewPagination = (
     const scrollingOverlap = viewSettings.scrollingOverlap;
     const distance = size - scrollingOverlap - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
     switch (mode) {
-      case 'page':
-        return side === 'left' || side === 'up' ? view.prev(distance) : view.next(distance);
       case 'section':
         if (side === 'left' || side === 'up') {
           return view.renderer.prevSection?.();
         } else {
           return view.renderer.nextSection?.();
         }
+      case 'pan':
+      case 'page':
+      default:
+        return side === 'left' || side === 'up' ? view.prev(distance) : view.next(distance);
+    }
+  } else if (mode === 'pan' && isPanningView(view, viewSettings)) {
+    if (hasHorizontalPanning(view, viewSettings) && (side === 'left' || side === 'right')) {
+      return view.pan(side === 'left' ? -panDistance : panDistance, 0);
+    } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
+      return view.pan(0, side === 'up' ? -panDistance : panDistance);
+    } else {
+      return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   } else {
     switch (mode) {
-      case 'page':
-        return side === 'left' || side === 'up' ? view.prev() : view.next();
       case 'section':
         if (side === 'left' || side === 'up') {
           return view.renderer.prevSection?.();
         } else {
           return view.renderer.nextSection?.();
         }
+      case 'pan':
+      case 'page':
+      default:
+        return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   }
 };
@@ -142,7 +179,7 @@ export const usePagination = (
         } else if (
           msg.data.type === 'iframe-wheel' &&
           !viewSettings.scrolled &&
-          (!bookData.isFixedLayout || viewSettings.zoomLevel <= 100)
+          !isPanningView(viewRef.current, viewSettings)
         ) {
           // The wheel event is handled by the iframe itself in scrolled mode.
           const { deltaY } = msg.data;
@@ -172,7 +209,7 @@ export const usePagination = (
       } else if (
         msg.type === 'touch-swipe' &&
         bookData.isFixedLayout &&
-        viewSettings!.zoomLevel <= 100
+        !isPanningView(viewRef.current, viewSettings)
       ) {
         const { deltaX, deltaY, deltaT } = msg.detail;
         const vx = Math.abs(deltaX / deltaT);

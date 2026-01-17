@@ -38,7 +38,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
-  const { setSettingsDialogOpen } = useSettingsStore();
+  const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -62,6 +62,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
+    setSettingsDialogBookKey(bookKey);
     setSettingsDialogOpen(true);
   };
 
@@ -258,7 +259,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         shortcut='Shift+J'
         Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
-        disabled={bookData.bookDoc?.rendition?.layout === 'pre-paginated'}
+        disabled={bookData.isFixedLayout}
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />

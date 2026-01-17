@@ -14,6 +14,9 @@ export interface FoliateView extends HTMLElement {
   goToFraction: (fraction: number) => void;
   prev: (distance?: number) => void;
   next: (distance?: number) => void;
+  pan: (dx: number, dy: number) => void;
+  isOverflowX: () => boolean;
+  isOverflowY: () => boolean;
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
