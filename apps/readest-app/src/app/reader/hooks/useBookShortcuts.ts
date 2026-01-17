@@ -46,12 +46,26 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const goLeft = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
-    viewPagination(getView(sideBarBookKey), viewSettings, 'left');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance);
   };
 
   const goRight = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
-    viewPagination(getView(sideBarBookKey), viewSettings, 'right');
+    viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance);
+  };
+
+  const goUp = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    viewPagination(view, viewSettings, 'up', 'pan', distance);
+  };
+
+  const goDown = (event?: KeyboardEvent | MessageEvent) => {
+    const view = getView(sideBarBookKey);
+    const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    viewPagination(view, viewSettings, 'down', 'pan', distance);
   };
 
   const goPrevSection = () => {
@@ -80,32 +94,6 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const goNext = () => {
     getView(sideBarBookKey)?.next(distance);
-  };
-
-  const goPrevArrowUp = (event?: KeyboardEvent | MessageEvent) => {
-    const view = getView(sideBarBookKey);
-    if (
-      view?.renderer.scrolled &&
-      event instanceof MessageEvent &&
-      event.data.type === 'iframe-keydown'
-    ) {
-      // already handled in the iframe for better smoothness
-      return;
-    }
-    view?.prev(distance);
-  };
-
-  const goNextArrowDown = (event?: KeyboardEvent | MessageEvent) => {
-    const view = getView(sideBarBookKey);
-    if (
-      view?.renderer.scrolled &&
-      event instanceof MessageEvent &&
-      event.data.type === 'iframe-keydown'
-    ) {
-      // already handled in the iframe for better smoothness
-      return;
-    }
-    view?.next(distance);
   };
 
   const goBack = () => {
@@ -251,10 +239,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onQuitApp: quitApp,
       onGoLeft: goLeft,
       onGoRight: goRight,
+      onGoUp: goUp,
+      onGoDown: goDown,
       onGoPrev: goPrev,
       onGoNext: goNext,
-      onGoPrevArrowUp: goPrevArrowUp,
-      onGoNextArrowDown: goNextArrowDown,
       onGoHalfPageDown: goHalfPageDown,
       onGoHalfPageUp: goHalfPageUp,
       onGoPrevSection: goPrevSection,
