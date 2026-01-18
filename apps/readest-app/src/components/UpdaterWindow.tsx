@@ -5,8 +5,10 @@ import { useEnv } from '@/context/EnvContext';
 import { useEffect, useState } from 'react';
 import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
 import { check, Update } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { relaunch, exit } from '@tauri-apps/plugin-process';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { Command } from '@tauri-apps/plugin-shell';
+import { invoke } from '@tauri-apps/api/core';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,6 +16,7 @@ import { useSearchParams } from 'next/navigation';
 import { getAppVersion } from '@/utils/version';
 import { tauriDownload } from '@/utils/transfer';
 import { installPackage } from '@/utils/bridge';
+import { join } from '@tauri-apps/api/path';
 import { getLocale } from '@/utils/misc';
 import { setLastShownReleaseNotesVersion } from '@/helpers/updater';
 import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
@@ -167,9 +170,76 @@ export const UpdaterContent = ({
         } as GenericUpdate);
       }
     };
+    const checkWindowsPortableUpdate = async () => {
+      if (!appService) return;
+      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+      const response = await fetch(READEST_UPDATER_FILE);
+      const data = await response.json();
+      if (semver.gt(data.version, currentVersion)) {
+        const OS_ARCH = osArch();
+        const platformKey =
+          OS_ARCH === 'x86_64' ? 'windows-x86_64-portable' : 'windows-aarch64-portable';
+        const arch = OS_ARCH === 'x86_64' ? 'x64' : 'arm64';
+        const downloadUrl = data.platforms[platformKey]?.url as string;
+        const execDir = await invoke<string>('get_executable_dir');
+        const exeFileName = `Readest_${data.version}_${arch}-portable.exe`;
+        const exeFilePath = await join(execDir, exeFileName);
+        setUpdate({
+          currentVersion,
+          version: data.version,
+          date: data.pub_date,
+          body: data.notes,
+          downloadAndInstall: async (onEvent) => {
+            await new Promise<void>(async (resolve, reject) => {
+              let downloaded = 0;
+              let total = 0;
+              await tauriDownload(downloadUrl, exeFilePath, (progress) => {
+                if (!onEvent) return;
+                if (!total && progress.total) {
+                  total = progress.total;
+                  onEvent({
+                    event: 'Started',
+                    data: { contentLength: total },
+                  });
+                } else if (downloaded > 0 && progress.progress === progress.total) {
+                  console.log('Portable EXE downloaded to', exeFilePath);
+                  onEvent?.({ event: 'Finished' });
+                  setTimeout(() => {
+                    resolve();
+                  }, 1000);
+                }
+
+                onEvent({
+                  event: 'Progress',
+                  data: { chunkLength: progress.progress - downloaded },
+                });
+                downloaded = progress.progress;
+              }).catch((error) => {
+                console.error('Download failed:', error);
+                reject(error);
+              });
+            });
+
+            try {
+              console.log('Launching new executable:', exeFilePath);
+              const command = Command.create('start-readest', ['/C', 'start', '', exeFilePath]);
+              await command.spawn();
+              console.log('New executable launched, exiting current app...');
+              setTimeout(async () => {
+                await exit(0);
+              }, 500);
+            } catch (error) {
+              console.error('Failed to launch new executable:', error);
+            }
+          },
+        } as GenericUpdate);
+      }
+    };
     const checkForUpdates = async () => {
       const OS_TYPE = osType();
-      if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
+      if (appService?.isPortableApp && OS_TYPE === 'windows') {
+        checkWindowsPortableUpdate();
+      } else if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
         checkDesktopUpdate();
       } else if (OS_TYPE === 'android') {
         checkAndroidUpdate();
