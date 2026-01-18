@@ -110,9 +110,11 @@ const BookItem: React.FC<BookItemProps> = ({
             </p>
           )}
         </div>
-        <h4 className='text-neutral-content line-clamp-1 text-sm'>
-          {formatDescription(book.metadata?.description)}
-        </h4>
+        {mode === 'list' && (
+          <h4 className='text-neutral-content line-clamp-1 text-sm'>
+            {formatDescription(book.metadata?.description)}
+          </h4>
+        )}
         <div
           className={clsx('flex items-center', book.progress ? 'justify-between' : 'justify-end')}
           style={{
