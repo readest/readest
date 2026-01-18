@@ -133,6 +133,15 @@ export const formatTitle = (title: string | LanguageMap) => {
   return typeof title === 'string' ? title : formatLanguageMap(title);
 };
 
+export const formatDescription = (description?: string | LanguageMap) => {
+  if (!description) return '';
+  const text = typeof description === 'string' ? description : formatLanguageMap(description);
+  return text
+    .replace(/<\/?[^>]+(>|$)/g, '')
+    .replace(/&#\d+;/g, '')
+    .trim();
+};
+
 export const formatPublisher = (publisher: string | LanguageMap) => {
   return typeof publisher === 'string' ? publisher : formatLanguageMap(publisher);
 };
