@@ -218,10 +218,25 @@ export interface TranslatorConfig {
   ttsReadAloudText: string;
 }
 
+export interface NoteExportConfig {
+  includeTitle: boolean;
+  includeAuthor: boolean;
+  includeDate: boolean;
+  includeChapterTitles: boolean;
+  includeQuotes: boolean;
+  includeNotes: boolean;
+  includeTimestamp: boolean;
+  includeChapterSeparator: boolean;
+  noteSeparator: string;
+  useCustomTemplate: boolean;
+  customTemplate: string;
+}
+
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
   copyToNotebook: boolean;
+  noteExportConfig: NoteExportConfig;
 }
 
 export interface ScreenConfig {
