@@ -908,5 +908,8 @@
   "Second (00-59)": "Sekunda (00-59)",
   "Show Source": "Pokaż źródło",
   "No content to preview": "Brak treści do podglądu",
-  "Export": "Eksportuj"
+  "Export": "Eksportuj",
+  "Set Timeout": "Ustaw limit czasu",
+  "Select Voice": "Wybierz głos",
+  "Toggle Sticky Bottom TTS Bar": "Przełącz przypiętą dolną belkę TTS"
 }

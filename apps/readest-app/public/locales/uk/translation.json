@@ -908,5 +908,8 @@
   "Second (00-59)": "Секунда (00-59)",
   "Show Source": "Показати джерело",
   "No content to preview": "Немає вмісту для перегляду",
-  "Export": "Експортувати"
+  "Export": "Експортувати",
+  "Set Timeout": "Встановити тайм-аут",
+  "Select Voice": "Вибрати голос",
+  "Toggle Sticky Bottom TTS Bar": "Перемкнути закріплену панель TTS"
 }

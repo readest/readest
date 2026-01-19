@@ -878,5 +878,8 @@
   "Second (00-59)": "초 (00-59)",
   "Show Source": "소스 표시",
   "No content to preview": "미리 볼 내용 없음",
-  "Export": "내보내기"
+  "Export": "내보내기",
+  "Set Timeout": "시간 제한 설정",
+  "Select Voice": "음성 선택",
+  "Toggle Sticky Bottom TTS Bar": "고정 TTS 바 전환"
 }

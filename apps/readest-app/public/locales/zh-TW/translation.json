@@ -878,5 +878,8 @@
   "Second (00-59)": "秒（00-59）",
   "Show Source": "顯示原始碼",
   "No content to preview": "無內容可預覽",
-  "Export": "匯出"
+  "Export": "匯出",
+  "Set Timeout": "設定逾時",
+  "Select Voice": "選擇語音",
+  "Toggle Sticky Bottom TTS Bar": "切換固定TTS欄"
 }

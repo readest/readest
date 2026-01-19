@@ -888,5 +888,8 @@
   "Second (00-59)": "Δευτερόλεπτο (00-59)",
   "Show Source": "Εμφάνιση πηγής",
   "No content to preview": "Δεν υπάρχει περιεχόμενο για προεπισκόπηση",
-  "Export": "Εξαγωγή"
+  "Export": "Εξαγωγή",
+  "Set Timeout": "Ορισμός χρονικού ορίου",
+  "Select Voice": "Επιλογή φωνής",
+  "Toggle Sticky Bottom TTS Bar": "Εναλλαγή καρφιτσωμένης μπάρας TTS"
 }

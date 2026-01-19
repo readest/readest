@@ -888,5 +888,8 @@
   "Second (00-59)": "Saniye (00-59)",
   "Show Source": "Kaynağı Göster",
   "No content to preview": "Önizlenecek içerik yok",
-  "Export": "Dışa Aktar"
+  "Export": "Dışa Aktar",
+  "Set Timeout": "Zaman aşımını ayarla",
+  "Select Voice": "Ses seç",
+  "Toggle Sticky Bottom TTS Bar": "Sabit TTS çubuğunu değiştir"
 }

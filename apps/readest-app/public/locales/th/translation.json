@@ -878,5 +878,8 @@
   "Second (00-59)": "วินาที (00-59)",
   "Show Source": "แสดงซอร์ส",
   "No content to preview": "ไม่มีเนื้อหาให้แสดงตัวอย่าง",
-  "Export": "ส่งออก"
+  "Export": "ส่งออก",
+  "Set Timeout": "ตั้งค่าหมดเวลา",
+  "Select Voice": "เลือกเสียง",
+  "Toggle Sticky Bottom TTS Bar": "สลับแถบ TTS แบบติด"
 }

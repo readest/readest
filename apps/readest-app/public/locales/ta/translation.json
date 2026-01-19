@@ -888,5 +888,8 @@
   "Second (00-59)": "விநாடி (00-59)",
   "Show Source": "மூலத்தைக் காட்டு",
   "No content to preview": "முன்னோட்டத்திற்கு உள்ளடக்கம் இல்லை",
-  "Export": "ஏற்றுமதி"
+  "Export": "ஏற்றுமதி",
+  "Set Timeout": "நேர வரம்பை அமைக்கவும்",
+  "Select Voice": "குரலைத் தேர்ந்தெடுக்கவும்",
+  "Toggle Sticky Bottom TTS Bar": "நிலையான TTS பட்டியை மாற்றவும்"
 }

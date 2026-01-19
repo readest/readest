@@ -888,5 +888,8 @@
   "Second (00-59)": "सेकंड (00-59)",
   "Show Source": "स्रोत दिखाएं",
   "No content to preview": "पूर्वावलोकन के लिए कोई सामग्री नहीं",
-  "Export": "निर्यात करें"
+  "Export": "निर्यात करें",
+  "Set Timeout": "टाइमआउट सेट करें",
+  "Select Voice": "आवाज़ चुनें",
+  "Toggle Sticky Bottom TTS Bar": "स्थिर TTS बार टॉगल करें"
 }

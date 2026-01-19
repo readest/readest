@@ -888,5 +888,8 @@
   "Second (00-59)": "Sekund (00-59)",
   "Show Source": "Visa källa",
   "No content to preview": "Inget innehåll att förhandsgranska",
-  "Export": "Exportera"
+  "Export": "Exportera",
+  "Set Timeout": "Ställ in timeout",
+  "Select Voice": "Välj röst",
+  "Toggle Sticky Bottom TTS Bar": "Växla fast TTS-fält"
 }

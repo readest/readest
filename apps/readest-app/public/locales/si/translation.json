@@ -888,5 +888,8 @@
   "Second (00-59)": "තත්පර (00-59)",
   "Show Source": "මූලාශ්‍රය පෙන්වන්න",
   "No content to preview": "පෙරදසුන සඳහා අන්තර්ගතයක් නැත",
-  "Export": "අපනයනය කරන්න"
+  "Export": "අපනයනය කරන්න",
+  "Set Timeout": "කාල සීමාව සකසන්න",
+  "Select Voice": "හඬ තෝරන්න",
+  "Toggle Sticky Bottom TTS Bar": "ඇලවූ TTS තීරුව මාරු කරන්න"
 }
