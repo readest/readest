@@ -908,5 +908,7 @@
   "Export": "Eksportuj",
   "Set Timeout": "Ustaw limit czasu",
   "Select Voice": "Wybierz głos",
-  "Toggle Sticky Bottom TTS Bar": "Przełącz przypiętą dolną belkę TTS"
+  "Toggle Sticky Bottom TTS Bar": "Przełącz przypiętą dolną belkę TTS",
+  "Display what I'm reading on Discord": "Wyświetl to, co czytam na Discord",
+  "Show on Discord": "Pokaż na Discord"
 }

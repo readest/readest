@@ -888,5 +888,7 @@
   "Export": "خروجی",
   "Set Timeout": "تنظیم مهلت زمانی",
   "Select Voice": "انتخاب صدا",
-  "Toggle Sticky Bottom TTS Bar": "تغییر نوار TTS ثابت"
+  "Toggle Sticky Bottom TTS Bar": "تغییر نوار TTS ثابت",
+  "Display what I'm reading on Discord": "نمایش کتاب در حال خواندن در Discord",
+  "Show on Discord": "نمایش در Discord"
 }

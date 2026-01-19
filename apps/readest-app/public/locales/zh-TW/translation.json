@@ -878,5 +878,7 @@
   "Export": "匯出",
   "Set Timeout": "設定逾時",
   "Select Voice": "選擇語音",
-  "Toggle Sticky Bottom TTS Bar": "切換固定TTS欄"
+  "Toggle Sticky Bottom TTS Bar": "切換固定TTS欄",
+  "Display what I'm reading on Discord": "在Discord顯示閱讀狀態",
+  "Show on Discord": "在Discord顯示"
 }

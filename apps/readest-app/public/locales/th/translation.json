@@ -878,5 +878,7 @@
   "Export": "ส่งออก",
   "Set Timeout": "ตั้งค่าหมดเวลา",
   "Select Voice": "เลือกเสียง",
-  "Toggle Sticky Bottom TTS Bar": "สลับแถบ TTS แบบติด"
+  "Toggle Sticky Bottom TTS Bar": "สลับแถบ TTS แบบติด",
+  "Display what I'm reading on Discord": "แสดงหนังสือที่กำลังอ่านบน Discord",
+  "Show on Discord": "แสดงบน Discord"
 }

@@ -898,5 +898,7 @@
   "Export": "Exporter",
   "Set Timeout": "Définir le délai",
   "Select Voice": "Sélectionner la voix",
-  "Toggle Sticky Bottom TTS Bar": "Basculer la barre TTS fixée"
+  "Toggle Sticky Bottom TTS Bar": "Basculer la barre TTS fixée",
+  "Display what I'm reading on Discord": "Afficher ce que je lis sur Discord",
+  "Show on Discord": "Afficher sur Discord"
 }
