@@ -318,8 +318,8 @@ export const nativeFileSystem: FileSystem = {
             const filePath = file.path;
             let relativePath = filePath;
 
-            // handle case-sensitivity for windows
-            if (filePath.toLowerCase().startsWith(fp.toLowerCase()) || filePath.startsWith(fp)) {
+            // handle case-insensitive prefix comparison
+            if (filePath.toLowerCase().startsWith(fp.toLowerCase())) {
               relativePath = filePath.substring(fp.length);
             }
 

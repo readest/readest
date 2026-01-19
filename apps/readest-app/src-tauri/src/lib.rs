@@ -145,31 +145,45 @@ struct ScannedFile {
 }
 
 #[tauri::command]
-fn scan_library_recursive(path: String) -> Vec<ScannedFile> {
-    println!("RUST: Starting recursive scan of: {}", path);
+fn scan_library_recursive(app: AppHandle, path: String) -> Result<Vec<ScannedFile>, String> {
+    let scope = app.fs_scope();
+    let path_buf = std::path::PathBuf::from(&path);
+    
+    if !scope.is_allowed(&path_buf) {
+        return Err("Permission denied: Path not in filesystem scope".to_string());
+    }
+
+    log::info!("RUST: Starting recursive scan of: {}", path);
+    
     let mut books = Vec::new();
     let extensions = vec![
         "epub", "pdf", "mobi", "azw", "azw3", "fb2", "zip", "cbz", "txt",
     ];
 
-    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            let p = entry.path();
-            if let Some(ext) = p.extension() {
-                if let Some(ext_str) = ext.to_str() {
-                    if extensions.contains(&ext_str.to_lowercase().as_str()) {
-                        let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-                        books.push(ScannedFile {
-                            path: p.to_string_lossy().to_string(),
-                            size,
-                        });
+    for entry_result in WalkDir::new(path).into_iter() {
+        match entry_result {
+            Ok(entry) => {
+                if entry.file_type().is_file() {
+                    let p = entry.path();
+                    if let Some(ext) = p.extension() {
+                        let ext_str = ext.to_string_lossy().to_lowercase();
+                        if extensions.contains(&ext_str.as_str()) {
+                            let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                            books.push(ScannedFile {
+                                path: p.to_string_lossy().to_string(),
+                                size,
+                            });
+                        }
                     }
                 }
+            },
+            Err(e) => {
+                log::warn!("RUST: Skipping file due to error: {}", e);
             }
         }
     }
-    println!("RUST: Scan complete. Found {} books.", books.len());
-    books
+    log::info!("RUST: Scan complete. Found {} books.", books.len());
+    Ok(books)
 }
 
 #[derive(Clone, serde::Serialize)]
