@@ -878,5 +878,8 @@
   "Second (00-59)": "秒(00-59)",
   "Show Source": "ソース表示",
   "No content to preview": "プレビューするコンテンツがありません",
-  "Export": "エクスポート"
+  "Export": "エクスポート",
+  "Set Timeout": "タイムアウト設定",
+  "Select Voice": "音声選択",
+  "Toggle Sticky Bottom TTS Bar": "TTSバー固定切替"
 }

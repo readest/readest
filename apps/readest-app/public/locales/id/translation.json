@@ -878,5 +878,8 @@
   "Second (00-59)": "Detik (00-59)",
   "Show Source": "Tampilkan Sumber",
   "No content to preview": "Tidak ada konten untuk dipratinjau",
-  "Export": "Ekspor"
+  "Export": "Ekspor",
+  "Set Timeout": "Atur batas waktu",
+  "Select Voice": "Pilih suara",
+  "Toggle Sticky Bottom TTS Bar": "Alihkan bilah TTS tetap"
 }

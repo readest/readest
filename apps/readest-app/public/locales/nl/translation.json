@@ -888,5 +888,8 @@
   "Second (00-59)": "Seconde (00-59)",
   "Show Source": "Bron tonen",
   "No content to preview": "Geen inhoud om te bekijken",
-  "Export": "Exporteren"
+  "Export": "Exporteren",
+  "Set Timeout": "Time-out instellen",
+  "Select Voice": "Stem selecteren",
+  "Toggle Sticky Bottom TTS Bar": "Vaste TTS-balk schakelen"
 }

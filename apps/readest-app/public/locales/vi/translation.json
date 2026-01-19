@@ -878,5 +878,8 @@
   "Second (00-59)": "Giây (00-59)",
   "Show Source": "Hiển thị nguồn",
   "No content to preview": "Không có nội dung để xem trước",
-  "Export": "Xuất"
+  "Export": "Xuất",
+  "Set Timeout": "Đặt thời gian chờ",
+  "Select Voice": "Chọn giọng nói",
+  "Toggle Sticky Bottom TTS Bar": "Bật/tắt thanh TTS cố định"
 }

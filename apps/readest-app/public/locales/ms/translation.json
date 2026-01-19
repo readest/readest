@@ -878,5 +878,8 @@
   "Second (00-59)": "Saat (00-59)",
   "Show Source": "Tunjukkan Sumber",
   "No content to preview": "Tiada kandungan untuk pratonton",
-  "Export": "Eksport"
+  "Export": "Eksport",
+  "Set Timeout": "Tetapkan masa tamat",
+  "Select Voice": "Pilih suara",
+  "Toggle Sticky Bottom TTS Bar": "Togol bar TTS melekit"
 }

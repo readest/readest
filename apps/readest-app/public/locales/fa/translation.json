@@ -888,5 +888,8 @@
   "Second (00-59)": "ثانیه (۰۰-۵۹)",
   "Show Source": "نمایش منبع",
   "No content to preview": "محتوایی برای پیش‌نمایش وجود ندارد",
-  "Export": "خروجی"
+  "Export": "خروجی",
+  "Set Timeout": "تنظیم مهلت زمانی",
+  "Select Voice": "انتخاب صدا",
+  "Toggle Sticky Bottom TTS Bar": "تغییر نوار TTS ثابت"
 }

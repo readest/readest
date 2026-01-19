@@ -888,5 +888,8 @@
   "Second (00-59)": "Sekunde (00-59)",
   "Show Source": "Quelle anzeigen",
   "No content to preview": "Kein Inhalt zur Vorschau",
-  "Export": "Exportieren"
+  "Export": "Exportieren",
+  "Set Timeout": "Zeitlimit festlegen",
+  "Select Voice": "Stimme auswählen",
+  "Toggle Sticky Bottom TTS Bar": "Fixierte TTS-Leiste umschalten"
 }
