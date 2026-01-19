@@ -19,6 +19,7 @@ use tauri::TitleBarStyle;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
+use walkdir::WalkDir;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
@@ -137,6 +138,40 @@ fn get_executable_dir() -> String {
         .unwrap_or_default()
 }
 
+#[derive(serde::Serialize)]
+struct ScannedFile {
+    path: String,
+    size: u64,
+}
+
+#[tauri::command]
+fn scan_library_recursive(path: String) -> Vec<ScannedFile> {
+    println!("RUST: Starting recursive scan of: {}", path);
+    let mut books = Vec::new();
+    let extensions = vec![
+        "epub", "pdf", "mobi", "azw", "azw3", "fb2", "zip", "cbz", "txt",
+    ];
+
+    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+        if entry.file_type().is_file() {
+            let p = entry.path();
+            if let Some(ext) = p.extension() {
+                if let Some(ext_str) = ext.to_str() {
+                    if extensions.contains(&ext_str.to_lowercase().as_str()) {
+                        let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                        books.push(ScannedFile {
+                            path: p.to_string_lossy().to_string(),
+                            size,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    println!("RUST: Scan complete. Found {} books.", books.len());
+    books
+}
+
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct SingleInstancePayload {
@@ -156,6 +191,7 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            scan_library_recursive,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]

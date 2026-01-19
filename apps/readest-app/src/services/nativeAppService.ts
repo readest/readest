@@ -304,6 +304,42 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
+    // use Rust WalkDir for massive performance gain on absolute paths
+    // we only use the Rust scanner if we are scanning an external library path (baseDir is 0/undefined)
+    // to bypass the permission bug
+    if (!baseDir || baseDir === 0) {
+      try {
+        const files = await invoke<{ path: string; size: number }[]>('scan_library_recursive', {
+          path: fp,
+        });
+
+        const fileItems: FileItem[] = await Promise.all(
+          files.map(async (file) => {
+            const filePath = file.path;
+            let relativePath = filePath;
+
+            // handle case-sensitivity for windows
+            if (filePath.toLowerCase().startsWith(fp.toLowerCase()) || filePath.startsWith(fp)) {
+              relativePath = filePath.substring(fp.length);
+            }
+
+            if (relativePath.startsWith('\\') || relativePath.startsWith('/')) {
+              relativePath = relativePath.substring(1);
+            }
+
+            return {
+              path: relativePath,
+              size: file.size,
+            };
+          }),
+        );
+        return fileItems;
+      } catch (e) {
+        console.error('Rust native scan failed, falling back to JS recursion', e);
+      }
+    }
+
+    // old logic kept as fallback for internal app directories
     const entries = await readDir(fp, baseDir ? { baseDir } : undefined);
     const fileList: FileItem[] = [];
     const readDirRecursively = async (
@@ -316,8 +352,12 @@ export const nativeFileSystem: FileSystem = {
         if (entry.isDirectory) {
           const dir = await join(parent, entry.name);
           const relativeDir = relative ? await join(relative, entry.name) : entry.name;
-          const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
-          await readDirRecursively(dir, relativeDir, entries, fileList);
+          try {
+            const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
+            await readDirRecursively(dir, relativeDir, entries, fileList);
+          } catch {
+            console.warn(`Skipping unreadable folder: ${dir}`);
+          }
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;

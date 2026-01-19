@@ -23,6 +23,7 @@ interface LibraryState {
   setCheckLastOpenBooks: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
+  addBooks: (envConfig: EnvConfigType, books: Book[]) => void;
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
   refreshGroups: () => void;
   addGroup: (name: string) => BookGroupType;
@@ -67,6 +68,20 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
     set({ library: [...library] });
     await appService.saveLibraryBooks(library);
+  },
+  addBooks: async (envConfig: EnvConfigType, books: Book[]) => {
+    const appService = await envConfig.getAppService();
+    const { library, refreshGroups } = get();
+
+    const bookMap = new Map(library.map((b) => [b.hash, b]));
+    books.forEach((book) => {
+      bookMap.set(book.hash, book);
+    });
+
+    const newLibrary = Array.from(bookMap.values());
+    set({ library: newLibrary });
+    refreshGroups();
+    await appService.saveLibraryBooks(newLibrary);
   },
 
   setSelectedBooks: (ids: string[]) => {

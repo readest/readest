@@ -83,6 +83,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     isSyncing,
     syncProgress,
     updateBook,
+    addBooks,
     setLibrary,
     getGroupId,
     getGroupName,
@@ -405,28 +406,30 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ['Unsupported or corrupted book file', _('The book file is corrupted')],
     ];
 
+    const booksToAdd: Book[] = [];
+
     const processFile = async (selectedFile: SelectedFile) => {
       const file = selectedFile.file || selectedFile.path;
       if (!file) return;
       try {
         const book = await appService?.importBook(file, library);
         const { path, basePath } = selectedFile;
-        if (book && groupId) {
-          book.groupId = groupId;
-          book.groupName = getGroupName(groupId);
-          await updateBook(envConfig, book);
-        } else if (book && path && basePath) {
-          const rootPath = getDirPath(basePath);
-          const groupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
-          book.groupName = groupName;
-          book.groupId = getGroupId(groupName);
-          await updateBook(envConfig, book);
-        }
-        if (user && book && !book.uploadedAt && settings.autoUpload) {
-          console.log('Queueing upload for book:', book.title);
-          transferManager.queueUpload(book);
-        }
         if (book) {
+          if (groupId) {
+            book.groupId = groupId;
+            book.groupName = getGroupName(groupId);
+          } else if (path && basePath) {
+            const rootPath = getDirPath(basePath);
+            const groupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
+            book.groupName = groupName;
+            book.groupId = getGroupId(groupName);
+          }
+           booksToAdd.push(book);
+
+          if (user && !book.uploadedAt && settings.autoUpload) {
+            console.log('Queueing upload for book:', book.title);
+            transferManager.queueUpload(book);
+          }
           successfulImports.push(book.title);
         }
       } catch (error) {
@@ -445,6 +448,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     for (let i = 0; i < files.length; i += concurrency) {
       const batch = files.slice(i, i + concurrency);
       await Promise.all(batch.map(processFile));
+    }
+
+     if (booksToAdd.length > 0) {
+      await addBooks(envConfig, booksToAdd);
     }
     pushLibrary();
 
@@ -470,8 +477,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       });
     }
 
-    setLibrary([...library]);
-    appService?.saveLibraryBooks(library);
     setLoading(false);
   };
 
