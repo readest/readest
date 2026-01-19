@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { FcGoogle } from 'react-icons/fc';
-import { FaApple } from 'react-icons/fa';
-import { FaGithub } from 'react-icons/fa';
+import { FaApple, FaGithub, FaDiscord } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
 
 import { useAuth } from '@/context/AuthContext';
@@ -29,7 +28,7 @@ import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
 
-type OAuthProvider = 'google' | 'apple' | 'azure' | 'github';
+type OAuthProvider = 'google' | 'apple' | 'azure' | 'github' | 'discord';
 
 interface SingleInstancePayload {
   args: string[];
@@ -390,7 +389,7 @@ export default function AuthPage() {
             provider='google'
             handleSignIn={tauriSignIn}
             Icon={FcGoogle}
-            label={_('Sign in with Google')}
+            label={_('Sign in with {{provider}}', { provider: 'Google' })}
           />
           <ProviderLogin
             provider='apple'
@@ -398,13 +397,19 @@ export default function AuthPage() {
               appService?.isIOSApp || USE_APPLE_SIGN_IN ? tauriSignInApple : tauriSignIn
             }
             Icon={FaApple}
-            label={_('Sign in with Apple')}
+            label={_('Sign in with {{provider}}', { provider: 'Apple' })}
           />
           <ProviderLogin
             provider='github'
             handleSignIn={tauriSignIn}
             Icon={FaGithub}
-            label={_('Sign in with GitHub')}
+            label={_('Sign in with {{provider}}', { provider: 'GitHub' })}
+          />
+          <ProviderLogin
+            provider='discord'
+            handleSignIn={tauriSignIn}
+            Icon={FaDiscord}
+            label={_('Sign in with {{provider}}', { provider: 'Discord' })}
           />
           <hr className='border-base-300 my-3 mt-6 w-64 border-t' />
           <div className='w-full'>
@@ -434,7 +439,7 @@ export default function AuthPage() {
         appearance={{ theme: ThemeSupa }}
         theme={isDarkMode ? 'dark' : 'light'}
         magicLink={true}
-        providers={['google', 'apple', 'github']}
+        providers={['google', 'apple', 'github', 'discord']}
         redirectTo={getWebRedirectTo()}
         localization={getAuthLocalization()}
       />

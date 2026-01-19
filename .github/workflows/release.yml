@@ -286,10 +286,15 @@ jobs:
           echo "Uploading updated latest.json to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
+      - name: Override tauri-cli with custom AppImage format (Linux)
+        if: matrix.config.release == 'linux'
+        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
+
       - uses: tauri-apps/tauri-action@v0
         if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -347,6 +352,44 @@ jobs:
 
           echo "Uploading $bin_file to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
+
+          echo "Signing portable binary"
+          pnpm tauri signer sign $bin_file
+          echo "Uploading signature to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
+
+      - name: download and update latest.json for Windows portable release
+        if: matrix.config.os == 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+
+          version=${{ needs.get-release.outputs.release_version }}
+          arch=${{ matrix.config.arch }}
+
+          if [ "$arch" = "x86_64" ]; then
+            bin_file="Readest_${version}_x64-portable.exe"
+            platform_key="windows-x86_64-portable"
+          elif [ "$arch" = "aarch64" ]; then
+            bin_file="Readest_${version}_arm64-portable.exe"
+            platform_key="windows-aarch64-portable"
+          else
+            echo "Unknown architecture: $arch"
+            exit 1
+          fi
+
+          portable_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/$bin_file"
+          portable_sig=$(cat $bin_file.sig)
+
+          jq --arg url "$portable_url" \
+              --arg sig "$portable_sig" \
+              --arg key "$platform_key" \
+              '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+
+          echo "Uploading updated latest.json to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
   upload-to-r2:
     needs: [get-release, build-tauri]

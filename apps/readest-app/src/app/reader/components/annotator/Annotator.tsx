@@ -38,6 +38,7 @@ import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
+import ExportMarkdownDialog from './ExportMarkdownDialog';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -76,6 +77,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
   const [annotationNotes, setAnnotationNotes] = useState<BookNote[]>([]);
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportData, setExportData] = useState<{
+    booknotes: BookNote[];
+    booknoteGroups: { [href: string]: BooknoteGroup };
+  } | null>(null);
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
@@ -414,12 +420,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         handleDismissPopupAndSelection();
         break;
       case 'highlight':
-        // Delay to ensure highlight is applied after selection is set
-        // so that onShowAnnotation won't be triggered immediately
-        setTimeout(() => {
-          handleHighlight();
-          handleDismissPopupAndSelection();
-        }, 0);
+        // highlight is already applied in instant annotating
+        handleDismissPopupAndSelection();
         break;
       case 'search':
         handleSearch();
@@ -765,6 +767,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       });
       return;
     }
+
+    // Organize booknotes into groups by chapter
     const booknoteGroups: { [href: string]: BooknoteGroup } = {};
     for (const booknote of booknotes) {
       const tocItem = findTocItemBS(bookDoc.toc ?? [], booknote.cfi);
@@ -783,36 +787,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       });
     });
 
-    const sortedGroups = Object.values(booknoteGroups).sort((a, b) => {
-      return a.id - b.id;
-    });
+    setExportData({ booknotes, booknoteGroups });
+    setShowExportDialog(true);
+  };
 
-    const lines: string[] = [];
-    lines.push(`# ${book.title}`);
-    lines.push(`**${_('Author')}**: ${book.author || ''}`);
-    lines.push('');
-    lines.push(`**${_('Exported from Readest')}**: ${new Date().toISOString().slice(0, 10)}`);
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-    lines.push(`## ${_('Highlights & Annotations')}`);
-    lines.push('');
+  const handleConfirmExport = async (markdownContent: string) => {
+    const { book } = bookData;
+    if (!book) return;
 
-    for (const group of sortedGroups) {
-      const chapterTitle = group.label || _('Untitled');
-      lines.push(`### ${chapterTitle}`);
-      for (const note of group.booknotes) {
-        lines.push(`> "${note.text}"`);
-        if (note.note) {
-          lines.push(`**${_('Note')}**:: ${note.note}`);
-        }
-        lines.push('');
-      }
-      lines.push('---');
-      lines.push('');
-    }
-
-    const markdownContent = lines.join('\n');
     setTimeout(() => {
       // Delay to ensure it won't be overridden by system clipboard actions
       navigator.clipboard?.writeText(markdownContent);
@@ -825,6 +807,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       message: saved ? _('Exported successfully') : _('Copied to clipboard'),
       timeout: 2000,
     });
+
+    setShowExportDialog(false);
+    setExportData(null);
+  };
+
+  const handleCancelExport = () => {
+    setShowExportDialog(false);
+    setExportData(null);
   };
 
   const selectionAnnotated = selection?.annotated;
@@ -951,6 +941,18 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           getAnnotationText={getAnnotationText}
           setSelection={setSelection}
           onStartEdit={handleStartEditAnnotation}
+        />
+      )}
+      {showExportDialog && exportData && bookData.book && (
+        <ExportMarkdownDialog
+          bookKey={bookKey}
+          isOpen={showExportDialog}
+          bookTitle={bookData.book.title}
+          bookAuthor={bookData.book.author || ''}
+          booknotes={exportData.booknotes}
+          booknoteGroups={exportData.booknoteGroups}
+          onCancel={handleCancelExport}
+          onExport={handleConfirmExport}
         />
       )}
     </div>
