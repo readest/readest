@@ -888,5 +888,7 @@
   "Export": "Dışa Aktar",
   "Set Timeout": "Zaman aşımını ayarla",
   "Select Voice": "Ses seç",
-  "Toggle Sticky Bottom TTS Bar": "Sabit TTS çubuğunu değiştir"
+  "Toggle Sticky Bottom TTS Bar": "Sabit TTS çubuğunu değiştir",
+  "Display what I'm reading on Discord": "Discord'da okuduğumu göster",
+  "Show on Discord": "Discord'da göster"
 }

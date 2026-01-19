@@ -878,5 +878,7 @@
   "Export": "エクスポート",
   "Set Timeout": "タイムアウト設定",
   "Select Voice": "音声選択",
-  "Toggle Sticky Bottom TTS Bar": "TTSバー固定切替"
+  "Toggle Sticky Bottom TTS Bar": "TTSバー固定切替",
+  "Display what I'm reading on Discord": "読書中の本をDiscordに表示",
+  "Show on Discord": "Discordに表示"
 }

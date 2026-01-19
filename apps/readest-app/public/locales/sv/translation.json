@@ -888,5 +888,7 @@
   "Export": "Exportera",
   "Set Timeout": "Ställ in timeout",
   "Select Voice": "Välj röst",
-  "Toggle Sticky Bottom TTS Bar": "Växla fast TTS-fält"
+  "Toggle Sticky Bottom TTS Bar": "Växla fast TTS-fält",
+  "Display what I'm reading on Discord": "Visa vad jag läser på Discord",
+  "Show on Discord": "Visa på Discord"
 }

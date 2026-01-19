@@ -888,5 +888,7 @@
   "Export": "রপ্তানি",
   "Set Timeout": "টাইমআউট সেট করুন",
   "Select Voice": "ভয়েস নির্বাচন করুন",
-  "Toggle Sticky Bottom TTS Bar": "স্থির TTS বার টগল করুন"
+  "Toggle Sticky Bottom TTS Bar": "স্থির TTS বার টগল করুন",
+  "Display what I'm reading on Discord": "Discord-এ পড়ছি যা দেখান",
+  "Show on Discord": "Discord-এ দেখান"
 }

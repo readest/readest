@@ -878,5 +878,7 @@
   "Export": "ཕྱིར་འདོན།",
   "Set Timeout": "དུས་ཚོད་སྒྲིག་པ།",
   "Select Voice": "སྐད་གདངས་འདེམས།",
-  "Toggle Sticky Bottom TTS Bar": "TTS སྡོམ་ཐིག་བརྗེ་བ།"
+  "Toggle Sticky Bottom TTS Bar": "TTS སྡོམ་ཐིག་བརྗེ་བ།",
+  "Display what I'm reading on Discord": "Discord ཐོག་ཀློག་བཞིན་པའི་དཔེ་ཆ་སྟོན།",
+  "Show on Discord": "Discord ཐོག་སྟོན།"
 }

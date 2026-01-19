@@ -888,5 +888,7 @@
   "Export": "निर्यात करें",
   "Set Timeout": "टाइमआउट सेट करें",
   "Select Voice": "आवाज़ चुनें",
-  "Toggle Sticky Bottom TTS Bar": "स्थिर TTS बार टॉगल करें"
+  "Toggle Sticky Bottom TTS Bar": "स्थिर TTS बार टॉगल करें",
+  "Display what I'm reading on Discord": "Discord पर पढ़ रही किताब दिखाएं",
+  "Show on Discord": "Discord पर दिखाएं"
 }

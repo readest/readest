@@ -132,6 +132,14 @@ export interface AppService {
     redownload?: boolean,
     onProgress?: ProgressHandler,
   ): Promise<void>;
+  uploadFileToCloud(
+    lfp: string,
+    cfp: string,
+    base: BaseDir,
+    handleProgress: ProgressHandler,
+    hash: string,
+    temp?: boolean,
+  ): Promise<string | undefined>;
   downloadBookCovers(books: Book[], redownload?: boolean): Promise<void>;
   exportBook(book: Book): Promise<boolean>;
   isBookAvailable(book: Book): Promise<boolean>;

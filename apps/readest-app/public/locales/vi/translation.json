@@ -878,5 +878,7 @@
   "Export": "Xuất",
   "Set Timeout": "Đặt thời gian chờ",
   "Select Voice": "Chọn giọng nói",
-  "Toggle Sticky Bottom TTS Bar": "Bật/tắt thanh TTS cố định"
+  "Toggle Sticky Bottom TTS Bar": "Bật/tắt thanh TTS cố định",
+  "Display what I'm reading on Discord": "Hiển thị sách đang đọc trên Discord",
+  "Show on Discord": "Hiện trên Discord"
 }

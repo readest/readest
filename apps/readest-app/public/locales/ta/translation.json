@@ -888,5 +888,7 @@
   "Export": "ஏற்றுமதி",
   "Set Timeout": "நேர வரம்பை அமைக்கவும்",
   "Select Voice": "குரலைத் தேர்ந்தெடுக்கவும்",
-  "Toggle Sticky Bottom TTS Bar": "நிலையான TTS பட்டியை மாற்றவும்"
+  "Toggle Sticky Bottom TTS Bar": "நிலையான TTS பட்டியை மாற்றவும்",
+  "Display what I'm reading on Discord": "Discord இல் படிக்கும் புத்தகத்தை காட்டு",
+  "Show on Discord": "Discord இல் காட்டு"
 }

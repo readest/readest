@@ -514,15 +514,23 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {
+  async uploadFileToCloud(
+    lfp: string,
+    cfp: string,
+    base: BaseDir,
+    handleProgress: ProgressHandler,
+    hash: string,
+    temp: boolean = false,
+  ) {
     console.log('Uploading file:', lfp, 'to', cfp);
-    const file = await this.fs.openFile(lfp, 'Books', cfp);
-    const localFullpath = `${this.localBooksDir}/${lfp}`;
-    await uploadFile(file, localFullpath, handleProgress, hash);
+    const file = await this.fs.openFile(lfp, base, cfp);
+    const localFullpath = await this.resolveFilePath(lfp, base);
+    const downloadUrl = await uploadFile(file, localFullpath, handleProgress, hash, temp);
     const f = file as ClosableFile;
     if (f && f.close) {
       await f.close();
     }
+    return downloadUrl;
   }
 
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
@@ -549,7 +557,7 @@ export abstract class BaseAppService implements AppService {
     if (coverExist) {
       const lfp = getCoverFilename(book);
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
-      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
+      await this.uploadFileToCloud(lfp, cfp, 'Books', handleProgress, book.hash);
       uploaded = true;
       completedFiles.count++;
     }
@@ -557,7 +565,7 @@ export abstract class BaseAppService implements AppService {
     if (bookFileExist) {
       const lfp = getLocalBookFilename(book);
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
-      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
+      await this.uploadFileToCloud(lfp, cfp, 'Books', handleProgress, book.hash);
       uploaded = true;
       completedFiles.count++;
     }
