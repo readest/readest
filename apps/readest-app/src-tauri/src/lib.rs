@@ -23,6 +23,8 @@ use walkdir::WalkDir;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
@@ -42,14 +44,14 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
         if let Err(e) = fs_scope.allow_file(file) {
-            eprintln!("Failed to allow file in fs_scope: {e}");
+            log::error!("Failed to allow file in fs_scope: {e}");
         } else {
-            println!("Allowed file in fs_scope: {file:?}");
+            log::debug!("Allowed file in fs_scope: {file:?}");
         }
         if let Err(e) = asset_protocol_scope.allow_file(file) {
-            eprintln!("Failed to allow file in asset_protocol_scope: {e}");
+            log::error!("Failed to allow file in asset_protocol_scope: {e}");
         } else {
-            println!("Allowed file in asset_protocol_scope: {file:?}");
+            log::debug!("Allowed file in asset_protocol_scope: {file:?}");
         }
     }
 }
@@ -58,14 +60,14 @@ fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     if let Err(e) = fs_scope.allow_directory(dir, true) {
-        eprintln!("Failed to allow directory in fs_scope: {e}");
+        log::error!("Failed to allow directory in fs_scope: {e}");
     } else {
-        println!("Allowed directory in fs_scope: {dir:?}");
+        log::info!("Allowed directory in fs_scope: {dir:?}");
     }
     if let Err(e) = asset_protocol_scope.allow_directory(dir, true) {
-        eprintln!("Failed to allow directory in asset_protocol_scope: {e}");
+        log::error!("Failed to allow directory in asset_protocol_scope: {e}");
     } else {
-        println!("Allowed directory in asset_protocol_scope: {dir:?}");
+        log::info!("Allowed directory in asset_protocol_scope: {dir:?}");
     }
 }
 
@@ -196,6 +198,11 @@ struct SingleInstancePayload {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
         .plugin(tauri_plugin_websocket::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_oauth::init())
@@ -212,6 +219,10 @@ pub fn run() {
             macos::apple_auth::start_apple_sign_in,
             #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            discord_rpc::update_book_presence,
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            discord_rpc::clear_book_presence,
         ])
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
@@ -260,6 +271,13 @@ pub fn run() {
 
     builder
         .setup(|#[allow(unused_variables)] app| {
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            {
+                use std::sync::{Arc, Mutex};
+                let discord_client = Arc::new(Mutex::new(discord_rpc::DiscordRpcClient::new()));
+                app.manage(discord_client);
+            }
+
             #[cfg(desktop)]
             {
                 let files = get_files_from_argv(std::env::args().collect());
@@ -315,14 +333,6 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let _ = app.deep_link().register_all();
             }
-
-            if let Err(e) = app.handle().plugin(
-                tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
-                    .build(),
-            ) {
-                eprintln!("Failed to initialize tauri_plugin_log: {e}");
-            };
 
             // Check for e-ink device on Android before building the window
             #[cfg(target_os = "android")]

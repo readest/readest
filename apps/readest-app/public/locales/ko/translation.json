@@ -878,5 +878,7 @@
   "Export": "내보내기",
   "Set Timeout": "시간 제한 설정",
   "Select Voice": "음성 선택",
-  "Toggle Sticky Bottom TTS Bar": "고정 TTS 바 전환"
+  "Toggle Sticky Bottom TTS Bar": "고정 TTS 바 전환",
+  "Display what I'm reading on Discord": "Discord에 읽는 책 표시",
+  "Show on Discord": "Discord에 표시"
 }

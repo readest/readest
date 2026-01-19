@@ -888,5 +888,7 @@
   "Export": "Exportieren",
   "Set Timeout": "Zeitlimit festlegen",
   "Select Voice": "Stimme auswählen",
-  "Toggle Sticky Bottom TTS Bar": "Fixierte TTS-Leiste umschalten"
+  "Toggle Sticky Bottom TTS Bar": "Fixierte TTS-Leiste umschalten",
+  "Display what I'm reading on Discord": "Zeige was ich auf Discord lese",
+  "Show on Discord": "Auf Discord zeigen"
 }

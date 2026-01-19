@@ -928,5 +928,7 @@
   "Export": "تصدير",
   "Set Timeout": "تعيين المهلة",
   "Select Voice": "اختر الصوت",
-  "Toggle Sticky Bottom TTS Bar": "تبديل شريط TTS الثابت"
+  "Toggle Sticky Bottom TTS Bar": "تبديل شريط TTS الثابت",
+  "Display what I'm reading on Discord": "عرض ما أقرأه على Discord",
+  "Show on Discord": "عرض على Discord"
 }

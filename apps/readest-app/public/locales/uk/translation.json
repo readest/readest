@@ -908,5 +908,7 @@
   "Export": "Експортувати",
   "Set Timeout": "Встановити тайм-аут",
   "Select Voice": "Вибрати голос",
-  "Toggle Sticky Bottom TTS Bar": "Перемкнути закріплену панель TTS"
+  "Toggle Sticky Bottom TTS Bar": "Перемкнути закріплену панель TTS",
+  "Display what I'm reading on Discord": "Показувати книгу в Discord",
+  "Show on Discord": "Показати в Discord"
 }

@@ -44,6 +44,7 @@ export const uploadFile = async (
   fileFullPath: string,
   onProgress?: ProgressHandler,
   bookHash?: string,
+  temp = false,
 ) => {
   try {
     const response = await fetchWithAuth(API_ENDPOINTS.upload, {
@@ -55,15 +56,18 @@ export const uploadFile = async (
         fileName: file.name,
         fileSize: file.size,
         bookHash,
+        temp,
       }),
     });
 
-    const { uploadUrl } = await response.json();
+    const { uploadUrl, downloadUrl }: { uploadUrl: string; downloadUrl?: string } =
+      await response.json();
     if (isWebAppPlatform()) {
       await webUpload(file, uploadUrl, onProgress);
     } else {
       await tauriUpload(uploadUrl, fileFullPath, 'PUT', onProgress);
     }
+    return temp ? downloadUrl : undefined;
   } catch (error) {
     console.error('File upload failed:', error);
     if (error instanceof Error) {

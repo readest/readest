@@ -888,5 +888,7 @@
   "Export": "Εξαγωγή",
   "Set Timeout": "Ορισμός χρονικού ορίου",
   "Select Voice": "Επιλογή φωνής",
-  "Toggle Sticky Bottom TTS Bar": "Εναλλαγή καρφιτσωμένης μπάρας TTS"
+  "Toggle Sticky Bottom TTS Bar": "Εναλλαγή καρφιτσωμένης μπάρας TTS",
+  "Display what I'm reading on Discord": "Εμφάνιση του βιβλίου που διαβάζω στο Discord",
+  "Show on Discord": "Εμφάνιση στο Discord"
 }

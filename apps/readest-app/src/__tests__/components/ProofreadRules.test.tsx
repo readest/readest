@@ -67,9 +67,14 @@ vi.mock('@/services/environment', async (importOriginal) => {
 });
 
 import { EnvProvider } from '@/context/EnvContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 function renderWithProviders(ui: React.ReactNode) {
-  return render(<EnvProvider>{ui}</EnvProvider>);
+  return render(
+    <EnvProvider>
+      <AuthProvider>{ui}</AuthProvider>
+    </EnvProvider>,
+  );
 }
 
 describe('ProofreadRulesManager', () => {
