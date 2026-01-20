@@ -26,31 +26,6 @@ const cjkGoogleFonts = [
   { family: 'Noto Serif JP', weights: '' },
 ];
 
-// Resource hints for faster font loading
-const getResourceHints = (includeCJK = false) => {
-  const basicHints = `
-  <!-- Preconnect to Google Fonts for faster DNS resolution and connection -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-`;
-
-  const cjkHints = `
-  <!-- Preconnect to CJK font CDNs -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="preconnect" href="https://ik.imagekit.io">
-  <link rel="preconnect" href="https://db.onlinewebfonts.com">
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-  <link rel="dns-prefetch" href="https://ik.imagekit.io">
-  <link rel="dns-prefetch" href="https://db.onlinewebfonts.com">
-`;
-
-  return includeCJK ? basicHints + cjkHints : basicHints;
-};
-
 const getAdditionalBasicFontLinks = () => `
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${basicGoogleFonts
     .map(
@@ -63,10 +38,10 @@ const getAdditionalBasicFontLinks = () => `
 const getAdditionalCJKFontLinks = () => `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-screen-web/1.520.0/lxgwwenkaigbscreen/result.css" crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://ik.imagekit.io/fonts131/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://ik.imagekit.io/fonts131/packages/jhlst/dist/%E4%BA%AC%E8%8F%AF%E8%80%81%E5%AE%8B%E4%BD%93v2_002/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://ik.imagekit.io/fonts131/packages/syst/dist/SourceHanSerifCN/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://ik.imagekit.io/fonts131/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Huiwen-MinchoGBK/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/KingHwa_OldSong/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Source%20Han%20Serif%20CN/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${cjkGoogleFonts
     .map(
       ({ family, weights }) =>
@@ -120,30 +95,6 @@ const getAdditionalCJKFontFaces = () => `
 
 export const mountAdditionalFonts = async (document: Document, isCJK = false) => {
   const mountCJKFonts = isCJK || isCJKEnv();
-
-  const hints = getResourceHints(mountCJKFonts);
-  const hintsParser = new DOMParser();
-  const hintsDocument = hintsParser.parseFromString(hints, 'text/html');
-
-  // Mount resource hints at the beginning of head for priority
-  Array.from(hintsDocument.head.children).forEach((child) => {
-    if (child.tagName === 'LINK') {
-      const link = document.createElement('link');
-      link.rel = child.getAttribute('rel') || '';
-      link.href = child.getAttribute('href') || '';
-      const crossorigin = child.getAttribute('crossorigin');
-      if (crossorigin) {
-        link.crossOrigin = crossorigin;
-      }
-
-      // Insert at the beginning of head for maximum priority
-      if (document.head.firstChild) {
-        document.head.insertBefore(link, document.head.firstChild);
-      } else {
-        document.head.appendChild(link);
-      }
-    }
-  });
 
   // Mount font stylesheets and @font-face rules
   let links = getAdditionalBasicFontLinks();
