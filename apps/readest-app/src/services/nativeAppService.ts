@@ -304,42 +304,36 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
-    // use Rust WalkDir for massive performance gain on absolute paths
-    // we only use the Rust scanner if we are scanning an external library path (baseDir is 0/undefined)
-    // to bypass the permission bug
+    const getRelativePath = (filePath: string, basePath: string): string => {
+      let relativePath = filePath;
+      if (filePath.toLowerCase().startsWith(basePath.toLowerCase())) {
+        relativePath = filePath.substring(basePath.length);
+      }
+      if (relativePath.startsWith('\\') || relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      return relativePath;
+    };
+
+    // Use Rust WalkDir for massive performance gain on absolute paths
     if (!baseDir || baseDir === 0) {
       try {
-        const files = await invoke<{ path: string; size: number }[]>('scan_library_recursive', {
+        const files = await invoke<{ path: string; size: number }[]>('read_dir', {
           path: fp,
+          recursive: true,
+          extensions: ['*'],
         });
 
-        const fileItems: FileItem[] = await Promise.all(
-          files.map(async (file) => {
-            const filePath = file.path;
-            let relativePath = filePath;
-
-            // handle case-insensitive prefix comparison
-            if (filePath.toLowerCase().startsWith(fp.toLowerCase())) {
-              relativePath = filePath.substring(fp.length);
-            }
-
-            if (relativePath.startsWith('\\') || relativePath.startsWith('/')) {
-              relativePath = relativePath.substring(1);
-            }
-
-            return {
-              path: relativePath,
-              size: file.size,
-            };
-          }),
-        );
-        return fileItems;
+        return files.map((file) => ({
+          path: getRelativePath(file.path, fp),
+          size: file.size,
+        }));
       } catch (e) {
-        console.error('Rust native scan failed, falling back to JS recursion', e);
+        console.error('Rust read_dir failed, falling back to JS recursion', e);
       }
     }
 
-    // old logic kept as fallback for internal app directories
+    // Fallback to readDir for non-absolute paths or on error
     const entries = await readDir(fp, baseDir ? { baseDir } : undefined);
     const fileList: FileItem[] = [];
     const readDirRecursively = async (
@@ -356,7 +350,7 @@ export const nativeFileSystem: FileSystem = {
             const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
             await readDirRecursively(dir, relativeDir, entries, fileList);
           } catch {
-            console.warn(`Skipping unreadable folder: ${dir}`);
+            console.warn(`Skipping unreadable dir: ${dir}`);
           }
         } else {
           const filePath = await join(parent, entry.name);

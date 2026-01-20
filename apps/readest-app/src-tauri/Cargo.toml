@@ -26,6 +26,7 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 thiserror = "2"
+walkdir = "2"
 tokio = { version = "1", features = ["fs"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 futures-util = "0.3"
@@ -54,7 +55,6 @@ tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }
 tauri-plugin-websocket = "2"
 tauri-plugin-sharekit = "0.3"
-walkdir = "2"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"

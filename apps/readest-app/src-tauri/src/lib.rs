@@ -19,10 +19,10 @@ use tauri::TitleBarStyle;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
-use walkdir::WalkDir;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 #[cfg(target_os = "macos")]
@@ -140,54 +140,6 @@ fn get_executable_dir() -> String {
         .unwrap_or_default()
 }
 
-#[derive(serde::Serialize)]
-struct ScannedFile {
-    path: String,
-    size: u64,
-}
-
-#[tauri::command]
-fn scan_library_recursive(app: AppHandle, path: String) -> Result<Vec<ScannedFile>, String> {
-    let scope = app.fs_scope();
-    let path_buf = std::path::PathBuf::from(&path);
-    
-    if !scope.is_allowed(&path_buf) {
-        return Err("Permission denied: Path not in filesystem scope".to_string());
-    }
-
-    log::info!("RUST: Starting recursive scan of: {}", path);
-    
-    let mut books = Vec::new();
-    let extensions = vec![
-        "epub", "pdf", "mobi", "azw", "azw3", "fb2", "zip", "cbz", "txt",
-    ];
-
-    for entry_result in WalkDir::new(path).into_iter() {
-        match entry_result {
-            Ok(entry) => {
-                if entry.file_type().is_file() {
-                    let p = entry.path();
-                    if let Some(ext) = p.extension() {
-                        let ext_str = ext.to_string_lossy().to_lowercase();
-                        if extensions.contains(&ext_str.as_str()) {
-                            let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-                            books.push(ScannedFile {
-                                path: p.to_string_lossy().to_string(),
-                                size,
-                            });
-                        }
-                    }
-                }
-            },
-            Err(e) => {
-                log::warn!("RUST: Skipping file due to error: {}", e);
-            }
-        }
-    }
-    log::info!("RUST: Scan complete. Found {} books.", books.len());
-    Ok(books)
-}
-
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct SingleInstancePayload {
@@ -212,7 +164,7 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
-            scan_library_recursive,
+            dir_scanner::read_dir,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
