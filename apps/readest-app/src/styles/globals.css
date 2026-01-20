@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   border-radius: 10px;
   scrollbar-gutter: auto !important;
@@ -16,14 +32,7 @@
 
 /* Fixes the scrollbar gutter issue for DaisyUI */
 /* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
-:root:has(
-    :is(
-        .modal-open,
-        .modal:target,
-        .modal-toggle:checked + .modal,
-        .modal[open]
-      )
-  ) {
+:root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
   scrollbar-gutter: unset !important;
 }
 
@@ -40,8 +49,6 @@ html[data-page='reader'] {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
   border-radius: 10px;
   background-color: transparent;
   cursor: default;
@@ -82,9 +89,11 @@ foliate-fxl {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.02);
   }
+
   100% {
     transform: scale(1);
   }
@@ -102,15 +111,19 @@ foliate-fxl {
 .rounded-window {
   border-radius: 10px;
 }
+
 .rounded-window-top-left {
   border-top-left-radius: 10px;
 }
+
 .rounded-window-bottom-left {
   border-bottom-left-radius: 10px;
 }
+
 .rounded-window-top-right {
   border-top-right-radius: 10px;
 }
+
 .rounded-window-bottom-right {
   border-bottom-right-radius: 10px;
 }
@@ -167,14 +180,17 @@ foliate-fxl {
 .dropdown-content.bgcolor-base-200 {
   background-color: theme('colors.base-200');
 }
+
 .dropdown-content.bgcolor-base-200::before {
   border-bottom: 12px solid theme('colors.base-200');
   z-index: 1;
 }
+
 .dropdown-content.bordercolor-content::before {
   border-bottom: 12px solid theme('colors.base-content');
   z-index: 1;
 }
+
 .dropdown-content.bordercolor-content::after {
   top: -11px;
   border-bottom: 13px solid theme('colors.base-100');
@@ -389,7 +405,7 @@ foliate-fxl {
 }
 
 .touch-target::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -12px;
 }
@@ -404,40 +420,39 @@ foliate-fxl {
 }
 
 .book-spine {
-  background-image:
-    linear-gradient(180deg,
-      hsla(0, 0%, 95%, 0.2) 0%,    /* Top highlight */
-      hsla(0, 0%, 90%, 0.1) 1%,    /* Top highlight */
-      transparent 2%,                /* Main book surface */
-      transparent 50%,               /* Main book surface */
-      hsla(0, 0%, 25%, 0.15) 95%,  /* Bottom shadow */
-      hsla(0, 0%, 15%, 0.2) 100%   /* Bottom edge dark */
+  background-image: linear-gradient(
+      180deg,
+      hsla(0, 0%, 95%, 0.2) 0%,
+      /* Top highlight */ hsla(0, 0%, 90%, 0.1) 1%,
+      /* Top highlight */ transparent 2%,
+      /* Main book surface */ transparent 50%,
+      /* Main book surface */ hsla(0, 0%, 25%, 0.15) 95%,
+      /* Bottom shadow */ hsla(0, 0%, 15%, 0.2) 100% /* Bottom edge dark */
     ),
-    linear-gradient(90deg,
-      hsla(0, 0%, 0%, 0.1) 0%,       /* Left binding shadow */
-      hsla(0, 0%, 20%, 0.2) 0.5%,    /* Dark transition */
-      hsla(0, 0%, 95%, 0.4) 0.8%,    /* Peak highlight */
-      hsla(0, 0%, 85%, 0.4) 2.0%,    /* Peak highlight */
-      hsla(0, 0%, 60%, 0.3) 2.8%,    /* Gradient highlight */
-      hsla(0, 0%, 40%, 0.2) 4.2%,    /* Shadow between highlights */
-      hsla(0, 0%, 70%, 0.15) 4.6%,   /* Second peak highlight */
-      hsla(0, 0%, 60%, 0.15) 5.4%,   /* Second gradient highlight */
-      hsla(0, 0%, 40%, 0.1) 6.0%,    /* Transition shadow */
-      transparent 88%,                 /* Main book surface */
-      hsla(0, 0%, 30%, 0.1) 99%,     /* Right edge highlight */
-      hsla(0, 0%, 30%, 0.2) 99.5%,   /* Right edge shadow */
-      hsla(0, 0%, 10%, 0.2) 100%     /* Right binding edge */
+    linear-gradient(
+      90deg,
+      hsla(0, 0%, 0%, 0.1) 0%,
+      /* Left binding shadow */ hsla(0, 0%, 20%, 0.2) 0.5%,
+      /* Dark transition */ hsla(0, 0%, 95%, 0.4) 0.8%,
+      /* Peak highlight */ hsla(0, 0%, 85%, 0.4) 2%,
+      /* Peak highlight */ hsla(0, 0%, 60%, 0.3) 2.8%,
+      /* Gradient highlight */ hsla(0, 0%, 40%, 0.2) 4.2%,
+      /* Shadow between highlights */ hsla(0, 0%, 70%, 0.15) 4.6%,
+      /* Second peak highlight */ hsla(0, 0%, 60%, 0.15) 5.4%,
+      /* Second gradient highlight */ hsla(0, 0%, 40%, 0.1) 6%,
+      /* Transition shadow */ transparent 88%,
+      /* Main book surface */ hsla(0, 0%, 30%, 0.1) 99%,
+      /* Right edge highlight */ hsla(0, 0%, 30%, 0.2) 99.5%,
+      /* Right edge shadow */ hsla(0, 0%, 10%, 0.2) 100% /* Right binding edge */
     );
-  mask: linear-gradient(180deg,
-    black 0%,
-    rgba(0,0,0,0.9) 50%,
-    rgba(0,0,0,0.5) 100%
-  );
+  mask: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.9) 50%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 .visible-focus-inset-2:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px #6396e7;
+  box-shadow:
+    inset 0 0 0 2px transparent,
+    inset 0 0 0 3px #6396e7;
 }
 
 .window-button {
@@ -454,6 +469,7 @@ foliate-fxl {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(-360deg);
   }
@@ -463,139 +479,142 @@ foliate-fxl {
   animation: spin-counterclockwise 1s linear;
 }
 
-[data-eink="true"] [class*="shadow-"] {
+[data-eink='true'] [class*='shadow-'] {
   box-shadow: none !important;
 }
 
-[data-eink="true"] [class*="text-base-content"] {
+[data-eink='true'] [class*='text-base-content'] {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="text-blue"] {
-  color: theme('colors.base-content') !important;
-  font-weight: normal;
-}
-
-[data-eink="true"] [class*="text-red"] {
+[data-eink='true'] [class*='text-blue'] {
   color: theme('colors.base-content') !important;
   font-weight: normal;
 }
 
-[data-eink="true"] [class*="text-neutral-content"] {
+[data-eink='true'] [class*='text-red'] {
+  color: theme('colors.base-content') !important;
+  font-weight: normal;
+}
+
+[data-eink='true'] [class*='text-neutral-content'] {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="placeholder"]::placeholder {
+[data-eink='true'] [class*='placeholder']::placeholder {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="bg-base-content"] {
+[data-eink='true'] [class*='bg-base-content'] {
   background-color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] [class*="font-light"] {
+[data-eink='true'] [class*='font-light'] {
   font-weight: normal !important;
 }
 
-[data-eink="true"] [class*="text-bold-in-eink"] {
+[data-eink='true'] [class*='text-bold-in-eink'] {
   font-weight: bold;
 }
 
-[data-eink="true"] .eink-bordered {
+[data-eink='true'] .eink-bordered {
   border-width: 1px !important;
   border-color: theme('colors.base-content') !important;
   background-color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] input.search-input, [data-eink="true"] input.search-input:focus {
+[data-eink='true'] input.search-input,
+[data-eink='true'] input.search-input:focus {
   border-width: 1px !important;
   border-radius: 9999px;
   border-color: theme('colors.base-content') !important;
   background-color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] .modal-box {
+[data-eink='true'] .modal-box {
   box-shadow: none !important;
   border-width: 1px !important;
   border-color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .dialog-overlay {
+[data-eink='true'] .dialog-overlay {
   background-color: transparent !important;
 }
 
-[data-eink="true"] .menu-container {
+[data-eink='true'] .menu-container {
   background-color: theme('colors.base-100') !important;
   border: 1px solid theme('colors.base-content') !important;
 }
 
-[data-eink="true"] hr {
+[data-eink='true'] hr {
   border-color: theme('colors.base-content/0.75') !important;
 }
 
-[data-eink="true"] button, [data-eink="true"] .btn {
+[data-eink='true'] button,
+[data-eink='true'] .btn {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .btn-primary {
+[data-eink='true'] .btn-primary {
   background-color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
   color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] .bg-primary {
+[data-eink='true'] .bg-primary {
   background-color: theme('colors.base-100') !important;
   border: 1px solid theme('colors.base-content') !important;
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .dropdown-toggle {
+[data-eink='true'] .dropdown-toggle {
   background-color: theme('colors.transparent') !important;
 }
 
-[data-eink="true"] .opds-navigation .card {
+[data-eink='true'] .opds-navigation .card {
   background-color: theme('colors.base-100') !important;
   border: 1px solid theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .booknote-item {
+[data-eink='true'] .booknote-item {
   background-color: theme('colors.base-100') !important;
   border: 1px solid theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .booknote-text {
+[data-eink='true'] .booknote-text {
   background-color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] .bookitem-main, [data-eink="true"] .groupitem-main {
+[data-eink='true'] .bookitem-main,
+[data-eink='true'] .groupitem-main {
   border: 1px solid theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .popup-container {
+[data-eink='true'] .popup-container {
   border: 1px solid theme('colors.base-content') !important;
   background-color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] .popup-triangle-outer {
+[data-eink='true'] .popup-triangle-outer {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink="true"] .popup-triangle-inner {
+[data-eink='true'] .popup-triangle-inner {
   color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] .annotation-notes {
+[data-eink='true'] .annotation-notes {
   transform-origin: top left;
   transform: translate(-1px, -1px);
 }
 
-[data-eink="true"] .alert {
+[data-eink='true'] .alert {
   color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
   background-color: theme('colors.base-100') !important;
 }
 
-[data-eink="true"] input[type="checkbox"] {
+[data-eink='true'] input[type='checkbox'] {
   --tglbg: theme('colors.base-100') !important;
 }
 
