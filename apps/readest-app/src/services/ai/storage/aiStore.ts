@@ -30,6 +30,24 @@ class AIStore {
   private indexCache = new Map<string, lunr.Index>();
   private metaCache = new Map<string, BookIndexMeta>();
 
+  /**
+   * recovers from DB errors by closing and reopening connection
+   */
+  async recoverFromError(): Promise<void> {
+    if (this.db) {
+      try {
+        this.db.close();
+      } catch {
+        // ignore close errors
+      }
+      this.db = null;
+    }
+    this.chunkCache.clear();
+    this.indexCache.clear();
+    this.metaCache.clear();
+    await this.openDB();
+  }
+
   private async openDB(): Promise<IDBDatabase> {
     if (this.db) return this.db;
     return new Promise((resolve, reject) => {
