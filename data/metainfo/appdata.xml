@@ -59,6 +59,26 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.98" date="2026-01-21">
+      <description>
+        <ul>
+          <li>Bookshelf: Added the ability to export original book files directly from the book details dialog</li>
+          <li>Bookshelf: Added a new sorting option to organize books by publish date</li>
+          <li>Bookshelf: Improved performance for large library with faster and more stable imports</li>
+          <li>OPDS: Improved download reliability by correctly detecting filenames for PDF and CBZ files</li>
+          <li>Proofreading: Added support for whole-word replacement to make text corrections more precise</li>
+          <li>Notes: Added the ability to export notes using a customizable template</li>
+          <li>PDF: Added support for panning within PDF documents for easier navigation</li>
+          <li>PDF: Improved performance by pre-rendering the next page for smoother page transitions</li>
+          <li>Text-to-Speech: Added support for word replacement to improve pronunciation during playback</li>
+          <li>Text-to-Speech: Fixed an issue where playback speed settings were not applied correctly on Linux</li>
+          <li>E-ink: Improved reading stability by preventing unwanted scrolling when animations are disabled or on e-ink devices</li>
+          <li>Discord: Added Discord Rich Presence to display your current reading status on Desktop platforms</li>
+          <li>Android: Fixed an issue that could cause occasional crashes during app startup</li>
+          <li>Fonts: Improved web font loading for faster and more stable text rendering</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.97" date="2026-01-10">
       <description>
         <ul>
@@ -203,17 +223,6 @@
           <li>Reader: Added localized number display for reading progress in vertical layout</li>
           <li>Reader: Enhanced swipe responsiveness for smoother page transitions</li>
           <li>Settings: Added an option to disable animations when using E-Ink mode</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.87" date="2025-10-16">
-      <description>
-        <ul>
-          <li>Reader: Improved chapter detection with better chapter title recognition</li>
-          <li>Reader: Enhanced compatibility for parsing more footnote formats</li>
-          <li>Theme: Fixed auto theme switching in new reader windows</li>
-          <li>TTS: Improved scrolling accuracy to highlighted text during read-aloud</li>
-          <li>TTS: Fixed crash issues on certain Android systems</li>
         </ul>
       </description>
     </release>
