@@ -6,6 +6,7 @@ import { PiNotePencil, PiRobot } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TabNavigation: React.FC<{
@@ -14,16 +15,23 @@ const TabNavigation: React.FC<{
 }> = ({ activeTab, onTabChange }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const tabs = ['toc', 'annotations', 'bookmarks', 'ai'];
+  const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['ai'] : [])];
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
-      case 'toc': return _('TOC');
-      case 'annotations': return _('Annotate');
-      case 'bookmarks': return _('Bookmark');
-      case 'ai': return _('AI');
-      default: return '';
+      case 'toc':
+        return _('TOC');
+      case 'annotations':
+        return _('Annotate');
+      case 'bookmarks':
+        return _('Bookmark');
+      case 'ai':
+        return _('AI');
+      default:
+        return '';
     }
   };
 
