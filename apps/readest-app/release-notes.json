@@ -1,5 +1,24 @@
 {
   "releases": {
+    "0.9.98": {
+      "date": "2026-01-21",
+      "notes": [
+        "Bookshelf: Added the ability to export original book files directly from the book details dialog",
+        "Bookshelf: Added a new sorting option to organize books by publish date",
+        "Bookshelf: Improved performance for large library with faster and more stable imports",
+        "OPDS: Improved download reliability by correctly detecting filenames for PDF and CBZ files",
+        "Proofreading: Added support for whole-word replacement to make text corrections more precise",
+        "Notes: Added the ability to export notes using a customizable template",
+        "PDF: Added support for panning within PDF documents for easier navigation",
+        "PDF: Improved performance by pre-rendering the next page for smoother page transitions",
+        "Text-to-Speech: Added support for word replacement to improve pronunciation during playback",
+        "Text-to-Speech: Fixed an issue where playback speed settings were not applied correctly on Linux",
+        "E-ink: Improved reading stability by preventing unwanted scrolling when animations are disabled or on e-ink devices",
+        "Discord: Added Discord Rich Presence to display your current reading status on Desktop platforms",
+        "Android: Fixed an issue that could cause occasional crashes during app startup",
+        "Fonts: Improved web font loading for faster and more stable text rendering"
+      ]
+    },
     "0.9.97": {
       "date": "2026-01-10",
       "notes": [
