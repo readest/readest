@@ -1,6 +1,7 @@
 import { embed, embedMany } from 'ai';
 import { aiStore } from './storage/aiStore';
 import { chunkSection, extractTextFromDocument } from './utils/chunker';
+import { withRetryAndTimeout, AI_TIMEOUTS, AI_RETRY_CONFIGS } from './utils/retry';
 import { getAIProvider } from './providers';
 import { aiLogger } from './logger';
 import type {
@@ -139,10 +140,15 @@ export async function indexBook(
 
     const texts = allChunks.map((c) => c.text);
     try {
-      const { embeddings } = await embedMany({
-        model: provider.getEmbeddingModel(),
-        values: texts,
-      });
+      const { embeddings } = await withRetryAndTimeout(
+        () =>
+          embedMany({
+            model: provider.getEmbeddingModel(),
+            values: texts,
+          }),
+        AI_TIMEOUTS.EMBEDDING_BATCH,
+        AI_RETRY_CONFIGS.EMBEDDING,
+      );
 
       for (let i = 0; i < allChunks.length; i++) {
         allChunks[i]!.embedding = embeddings[i];
@@ -201,10 +207,15 @@ export async function hybridSearch(
 
   try {
     // use AI SDK embed with provider's embedding model
-    const { embedding } = await embed({
-      model: provider.getEmbeddingModel(),
-      value: query,
-    });
+    const { embedding } = await withRetryAndTimeout(
+      () =>
+        embed({
+          model: provider.getEmbeddingModel(),
+          value: query,
+        }),
+      AI_TIMEOUTS.EMBEDDING_SINGLE,
+      AI_RETRY_CONFIGS.EMBEDDING,
+    );
     queryEmbedding = embedding;
   } catch {
     // bm25 only fallback
