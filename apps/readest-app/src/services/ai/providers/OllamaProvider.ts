@@ -2,6 +2,7 @@ import { createOllama } from 'ai-sdk-ollama';
 import type { LanguageModel, EmbeddingModel } from 'ai';
 import type { AIProvider, AISettings, AIProviderName } from '../types';
 import { aiLogger } from '../logger';
+import { AI_TIMEOUTS } from '../utils/retry';
 
 export class OllamaProvider implements AIProvider {
   id: AIProviderName = 'ollama';
@@ -29,7 +30,12 @@ export class OllamaProvider implements AIProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), AI_TIMEOUTS.OLLAMA_CONNECT);
+      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       return response.ok;
     } catch {
       return false;
@@ -38,7 +44,12 @@ export class OllamaProvider implements AIProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), AI_TIMEOUTS.HEALTH_CHECK);
+      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       if (!response.ok) return false;
       const data = await response.json();
       const modelName = this.settings.ollamaModel?.split(':')[0] ?? '';
