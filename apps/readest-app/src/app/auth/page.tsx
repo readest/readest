@@ -231,7 +231,12 @@ export default function AuthPage() {
     settings.keepLogin = false;
     setSettings(settings);
     saveSettings(envConfig, settings);
-    router.back();
+    const redirectTo = new URLSearchParams(window.location.search).get('redirect');
+    if (redirectTo) {
+      router.push(redirectTo);
+    } else {
+      router.back();
+    }
   };
 
   const getAuthLocalization = () => {
