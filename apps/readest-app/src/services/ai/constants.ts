@@ -1,10 +1,11 @@
 import type { AISettings } from './types';
 
+// cheapest popular models as of 2025
 export const GATEWAY_MODELS = {
-  CLAUDE_SONNET: 'openai/gpt-5.2',
-  GEMINI_3_FLASH: 'google/gemini-3-flash',
-  GPT_5_2_MINI: 'openai/gpt-5.2-mini',
-  GEMINI_3_FLASH_EXP: 'google/gemini-3-flash-exp',
+  GEMINI_FLASH_LITE: 'google/gemini-2.5-flash-lite', // $0.02/M - cheapest
+  GEMINI_FLASH: 'google/gemini-2.5-flash', // $0.10/M
+  GPT_4O_MINI: 'openai/gpt-4o-mini', // $0.15/M
+  DEEPSEEK_V3: 'deepseek/deepseek-v3', // $0.27/M
 } as const;
 
 export const OLLAMA_MODELS = {
@@ -13,7 +14,7 @@ export const OLLAMA_MODELS = {
 } as const;
 
 export const EMBEDDING_MODELS = {
-  OPENAI_SMALL: 'openai/text-embedding-3-small',
+  OPENAI_SMALL: 'openai/text-embedding-3-small', // $0.02/M
   NOMIC: 'nomic-embed-text-v2',
 } as const;
 
@@ -25,8 +26,8 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   ollamaModel: 'llama3.2',
   ollamaEmbeddingModel: 'nomic-embed-text',
 
-  aiGatewayModel: 'openai/gpt-5.2',
-  aiGatewayEmbeddingModel: 'openai/text-embedding-3-small',
+  aiGatewayModel: 'google/gemini-2.5-flash-lite', // cheapest @ $0.02/M input
+  aiGatewayEmbeddingModel: 'openai/text-embedding-3-small', // $0.02/M
 
   spoilerProtection: true,
   maxContextChunks: 10,
