@@ -304,6 +304,36 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
+    const getRelativePath = (filePath: string, basePath: string): string => {
+      let relativePath = filePath;
+      if (filePath.toLowerCase().startsWith(basePath.toLowerCase())) {
+        relativePath = filePath.substring(basePath.length);
+      }
+      if (relativePath.startsWith('\\') || relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      return relativePath;
+    };
+
+    // Use Rust WalkDir for massive performance gain on absolute paths
+    if (!baseDir || baseDir === 0) {
+      try {
+        const files = await invoke<{ path: string; size: number }[]>('read_dir', {
+          path: fp,
+          recursive: true,
+          extensions: ['*'],
+        });
+
+        return files.map((file) => ({
+          path: getRelativePath(file.path, fp),
+          size: file.size,
+        }));
+      } catch (e) {
+        console.error('Rust read_dir failed, falling back to JS recursion', e);
+      }
+    }
+
+    // Fallback to readDir for non-absolute paths or on error
     const entries = await readDir(fp, baseDir ? { baseDir } : undefined);
     const fileList: FileItem[] = [];
     const readDirRecursively = async (
@@ -316,8 +346,12 @@ export const nativeFileSystem: FileSystem = {
         if (entry.isDirectory) {
           const dir = await join(parent, entry.name);
           const relativeDir = relative ? await join(relative, entry.name) : entry.name;
-          const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
-          await readDirRecursively(dir, relativeDir, entries, fileList);
+          try {
+            const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
+            await readDirRecursively(dir, relativeDir, entries, fileList);
+          } catch {
+            console.warn(`Skipping unreadable dir: ${dir}`);
+          }
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;

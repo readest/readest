@@ -22,6 +22,7 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 #[cfg(target_os = "macos")]
@@ -163,6 +164,7 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            dir_scanner::read_dir,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
