@@ -4,3 +4,5 @@ export * from './providers';
 export * from './chatService';
 export * from './ragService';
 export * from './adapters';
+export * from './storage/aiStore';
+export * from './logger';
