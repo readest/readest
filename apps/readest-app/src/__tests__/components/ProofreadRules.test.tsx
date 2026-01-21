@@ -67,9 +67,14 @@ vi.mock('@/services/environment', async (importOriginal) => {
 });
 
 import { EnvProvider } from '@/context/EnvContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 function renderWithProviders(ui: React.ReactNode) {
-  return render(<EnvProvider>{ui}</EnvProvider>);
+  return render(
+    <EnvProvider>
+      <AuthProvider>{ui}</AuthProvider>
+    </EnvProvider>,
+  );
 }
 
 describe('ProofreadRulesManager', () => {
@@ -150,9 +155,9 @@ describe('ProofreadRulesManager', () => {
     expect(dialog).toBeTruthy();
     // Library (global) rules
     expect(screen.getByText('foo')).toBeTruthy();
-    expect(screen.getByText('bar')).toBeTruthy();
+    expect(screen.getByText("'bar'")).toBeTruthy();
     expect(screen.getByText('hello')).toBeTruthy();
-    expect(screen.getByText('world')).toBeTruthy();
+    expect(screen.getByText("'world'")).toBeTruthy();
   });
 
   it('renders selection rules separately from book/library rules', async () => {
@@ -231,11 +236,11 @@ describe('ProofreadRulesManager', () => {
     // Single Instance Rules section
     expect(screen.getByText('Selected Text Rules')).toBeTruthy();
     expect(screen.getByText('only-once')).toBeTruthy();
-    expect(screen.getByText('single-hit')).toBeTruthy();
+    expect(screen.getByText("'single-hit'")).toBeTruthy();
 
     // Book section should still show book-wide rule
     expect(screen.getByText('book-wide')).toBeTruthy();
-    expect(screen.getByText('book-hit')).toBeTruthy();
+    expect(screen.getByText("'book-hit'")).toBeTruthy();
   });
 
   it('displays correct scope labels for different rule types', async () => {
@@ -402,11 +407,11 @@ describe('ProofreadRulesManager', () => {
 
     const csRuleElement = screen.getByText('case-sensitive').closest('li');
     expect(within(csRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(csRuleElement!).getByText(/Yes/)).toBeTruthy();
+    expect(within(csRuleElement!).getAllByText(/Yes/)).toBeTruthy();
 
     const ciRuleElement = screen.getByText('case-insensitive').closest('li');
     expect(within(ciRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(ciRuleElement!).getByText(/No/)).toBeTruthy();
+    expect(within(ciRuleElement!).getAllByText(/No/)).toBeTruthy();
   });
 
   it('opens when BookMenu item is clicked (integration)', async () => {

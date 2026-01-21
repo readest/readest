@@ -36,6 +36,7 @@ import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
@@ -65,6 +66,8 @@ import Bookshelf from './components/Bookshelf';
 import useShortcuts from '@/hooks/useShortcuts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
+import ModalPortal from '@/components/ModalPortal';
+import TransferQueuePanel from './components/TransferQueuePanel';
 
 const LibraryPageWithSearchParams = () => {
   const searchParams = useSearchParams();
@@ -80,6 +83,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     isSyncing,
     syncProgress,
     updateBook,
+    updateBooks,
     setLibrary,
     getGroupId,
     getGroupName,
@@ -95,6 +99,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { clearBookData } = useBookDataStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
+  const { isTransferQueueOpen } = useTransferStore();
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
@@ -401,30 +406,29 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ['Unsupported or corrupted book file', _('The book file is corrupted')],
     ];
 
-    const processFile = async (selectedFile: SelectedFile) => {
+    const processFile = async (selectedFile: SelectedFile): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
-      if (!file) return;
+      if (!file) return null;
       try {
         const book = await appService?.importBook(file, library);
+        if (!book) return null;
         const { path, basePath } = selectedFile;
-        if (book && groupId) {
+        if (groupId) {
           book.groupId = groupId;
           book.groupName = getGroupName(groupId);
-          await updateBook(envConfig, book);
-        } else if (book && path && basePath) {
+        } else if (path && basePath) {
           const rootPath = getDirPath(basePath);
           const groupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
           book.groupName = groupName;
           book.groupId = getGroupId(groupName);
-          await updateBook(envConfig, book);
         }
-        if (user && book && !book.uploadedAt && settings.autoUpload) {
+
+        if (user && !book.uploadedAt && settings.autoUpload) {
           console.log('Queueing upload for book:', book.title);
           transferManager.queueUpload(book);
         }
-        if (book) {
-          successfulImports.push(book.title);
-        }
+        successfulImports.push(book.title);
+        return book;
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
         const baseFilename = getFilename(filename);
@@ -434,14 +438,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             : '';
         failedImports.push({ filename: baseFilename, errorMessage });
         console.error('Failed to import book:', filename, error);
+        return null;
       }
     };
 
     const concurrency = 4;
     for (let i = 0; i < files.length; i += concurrency) {
       const batch = files.slice(i, i + concurrency);
-      await Promise.all(batch.map(processFile));
+      const importedBooks = (await Promise.all(batch.map(processFile))).filter((book) => !!book);
+      await updateBooks(envConfig, importedBooks);
     }
+
     pushLibrary();
 
     if (failedImports.length > 0) {
@@ -466,8 +473,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       });
     }
 
-    setLibrary([...library]);
-    appService?.saveLibraryBooks(library);
     setLoading(false);
   };
 
@@ -558,14 +563,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         cloud: _('Failed to delete cloud backup of the book: {{title}}', { title: book.title }),
         local: _('Failed to delete local copy of the book: {{title}}', { title: book.title }),
       };
+
       try {
-        await appService?.deleteBook(book, deleteAction);
-        await updateBook(envConfig, book);
-        clearBookData(book.hash);
-        if (syncBooks) pushLibrary();
+        // Handle local deletion immediately
+        if (deleteAction === 'local' || deleteAction === 'both') {
+          await appService?.deleteBook(book, 'local');
+          if (deleteAction === 'both') {
+            book.deletedAt = Date.now();
+            book.downloadedAt = null;
+            book.coverDownloadedAt = null;
+          }
+          await updateBook(envConfig, book);
+          clearBookData(book.hash);
+          if (syncBooks) pushLibrary();
+        }
+
+        // Queue cloud deletion
+        if (deleteAction === 'cloud' || deleteAction === 'both') {
+          const transferId = transferManager.queueDelete(book, 1, true);
+          if (!transferId) {
+            throw new Error('Failed to queue cloud deletion');
+          }
+        }
+
         eventDispatcher.dispatch('toast', {
           type: 'info',
-          timeout: 2000,
+          timeout: 1000,
           message: deletionMessages[deleteAction],
         });
         return true;
@@ -848,6 +871,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
+      )}
+      {isTransferQueueOpen && (
+        <ModalPortal>
+          <TransferQueuePanel />
+        </ModalPortal>
       )}
       <AboutWindow />
       <UpdaterWindow />

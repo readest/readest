@@ -29,7 +29,13 @@ import {
   parseMediaType,
   resolveURL,
 } from './utils/opdsUtils';
-import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
+import {
+  getProxiedURL,
+  fetchWithAuth,
+  probeAuth,
+  needsProxy,
+  probeFilename,
+} from './utils/opdsReq';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
@@ -414,47 +420,58 @@ export default function BrowserPage() {
           }
           return;
         } else {
-          const pathname = new URL(url).pathname;
+          const username = usernameRef.current || '';
+          const password = passwordRef.current || '';
+          const useProxy = needsProxy(url);
+          let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
+          const headers: Record<string, string> = {
+            'User-Agent': READEST_OPDS_USER_AGENT,
+            Accept: '*/*',
+          };
+          if (username || password) {
+            const authHeader = await probeAuth(url, username, password, useProxy);
+            if (authHeader) {
+              headers['Authorization'] = authHeader;
+              downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
+            }
+          }
+
+          const pathname = decodeURIComponent(new URL(url).pathname);
           const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
           const basename = pathname.replaceAll('/', '_');
           const filename = ext ? `${basename}.${ext}` : basename;
-          const dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
-          if (dstFilePath) {
-            const username = usernameRef.current || '';
-            const password = passwordRef.current || '';
-            const useProxy = needsProxy(url);
-            let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
-            const headers: Record<string, string> = {
-              'User-Agent': READEST_OPDS_USER_AGENT,
-            };
-            if (username || password) {
-              const authHeader = await probeAuth(url, username, password, useProxy);
-              if (authHeader) {
-                headers['Authorization'] = authHeader;
-                downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
-              }
-            }
+          let dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
+          console.log('Downloading to:', url, dstFilePath);
 
-            await downloadFile({
-              appService,
-              dst: dstFilePath,
-              cfp: '',
-              url: downloadUrl,
-              headers,
-              singleThreaded: true,
-              onProgress,
-            });
-            const { library, setLibrary } = useLibraryStore.getState();
-            const book = await appService.importBook(dstFilePath, library);
-            if (user && book && !book.uploadedAt && settings.autoUpload) {
-              setTimeout(() => {
-                transferManager.queueUpload(book);
-              }, 3000);
-            }
-            setLibrary(library);
-            appService.saveLibraryBooks(library);
-            return book;
+          const responseHeaders = await downloadFile({
+            appService,
+            dst: dstFilePath,
+            cfp: '',
+            url: downloadUrl,
+            headers,
+            singleThreaded: true,
+            skipSslVerification: true,
+            onProgress,
+          });
+          const probedFilename = await probeFilename(responseHeaders);
+          if (probedFilename) {
+            const newFilePath = await appService?.resolveFilePath(probedFilename, 'Cache');
+            await appService?.copyFile(dstFilePath, newFilePath, 'None');
+            await appService?.deleteFile(dstFilePath, 'None');
+            console.log('Renamed downloaded file to:', newFilePath);
+            dstFilePath = newFilePath;
           }
+
+          const { library, setLibrary } = useLibraryStore.getState();
+          const book = await appService.importBook(dstFilePath, library);
+          if (user && book && !book.uploadedAt && settings.autoUpload) {
+            setTimeout(() => {
+              transferManager.queueUpload(book);
+            }, 3000);
+          }
+          setLibrary(library);
+          appService.saveLibraryBooks(library);
+          return book;
         }
       } catch (e) {
         console.error('Download error:', e);
@@ -497,6 +514,7 @@ export default function BrowserPage() {
           cfp: '',
           url: downloadUrl,
           singleThreaded: true,
+          skipSslVerification: true,
           headers,
         });
         return await appService.getImageURL(cachedPath);

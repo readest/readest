@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { MdOutlineBookmarkAdd, MdOutlineBookmark } from 'react-icons/md';
-import * as CFI from 'foliate-js/epubcfi.js';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -12,6 +11,7 @@ import { uniqueId } from '@/utils/misc';
 import Button from '@/components/Button';
 import { getCurrentPage } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
+import { isCfiInLocation } from '@/utils/cfi';
 
 interface BookmarkTogglerProps {
   bookKey: string;
@@ -66,13 +66,8 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
       }
     } else {
       setIsBookmarked(false);
-      const start = CFI.collapse(cfi);
-      const end = CFI.collapse(cfi, true);
       bookmarks.forEach((item) => {
-        if (
-          item.type === 'bookmark' &&
-          CFI.compare(start, item.cfi) * CFI.compare(end, item.cfi) <= 0
-        ) {
+        if (item.type === 'bookmark' && isCfiInLocation(item.cfi, cfi)) {
           item.deletedAt = Date.now();
         }
       });
@@ -101,11 +96,9 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
     const { location: cfi } = progress || {};
     if (!cfi) return;
 
-    const start = CFI.collapse(cfi);
-    const end = CFI.collapse(cfi, true);
     const locationBookmarked = booknotes
       .filter((booknote) => booknote.type === 'bookmark' && !booknote.deletedAt)
-      .some((item) => CFI.compare(start, item.cfi) * CFI.compare(end, item.cfi) <= 0);
+      .some((item) => isCfiInLocation(item.cfi, cfi));
     setIsBookmarked(locationBookmarked);
     setBookmarkRibbonVisibility(bookKey, locationBookmarked);
     // eslint-disable-next-line react-hooks/exhaustive-deps

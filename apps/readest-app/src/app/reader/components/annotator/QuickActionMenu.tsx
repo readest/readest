@@ -1,10 +1,10 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdCheck } from 'react-icons/md';
 
 import { AnnotationToolType } from '@/types/annotator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { annotationToolQuickActions } from './AnnotationTools';
+import { eventDispatcher } from '@/utils/event';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
@@ -23,13 +23,27 @@ const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
 
   const handleActionClick = (action: AnnotationToolType) => {
     onActionSelect(action);
+    if (selectedAction === action) {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 2000,
+        message: _('Quick action disabled'),
+      });
+    } else {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 2000,
+        message: _(annotationToolQuickActions.find((btn) => btn.type === action)?.tooltip || ''),
+      });
+    }
+    setIsDropdownOpen?.(false);
   };
 
   return (
     <Menu
       className={clsx(
         'annotation-quick-action-menu dropdown-content z-20 mt-1 border',
-        'bgcolor-base-200 border-base-200 shadow-2xl',
+        'bgcolor-base-200 shadow-2xl',
       )}
       style={{
         maxWidth: `${window.innerWidth - 40}px`,
@@ -41,7 +55,8 @@ const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
           key={button.type}
           label={_(button.label)}
           tooltip={_(button.tooltip)}
-          Icon={selectedAction === button.type ? MdCheck : button.Icon}
+          buttonClass={selectedAction === button.type ? 'bg-base-300/85' : ''}
+          Icon={button.Icon}
           onClick={() => handleActionClick(button.type)}
         />
       ))}

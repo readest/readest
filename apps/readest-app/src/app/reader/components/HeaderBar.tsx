@@ -62,7 +62,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
 
   const docs = view?.renderer.getContents() ?? [];
-  const pointerInDoc = docs.some(({ doc }) => doc.body?.style.cursor === 'pointer');
+  const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
 
   const enableAnnotationQuickActions = viewSettings?.enableAnnotationQuickActions;
   const annotationQuickActionButton =
@@ -185,7 +185,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                     size={iconSize16}
                     tipColor={annotationQuickAction === null ? '#8F8F8F' : highlightHexColor}
                     tipStyle={{
-                      opacity: annotationQuickAction === null ? 0.3 : 0.5,
+                      opacity: annotationQuickAction === null ? 0.5 : 0.8,
                       mixBlendMode: isDarkMode ? 'screen' : 'multiply',
                     }}
                   />
@@ -223,7 +223,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
-          <SettingsToggler />
+          <SettingsToggler bookKey={bookKey} />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
             label={_('View Options')}

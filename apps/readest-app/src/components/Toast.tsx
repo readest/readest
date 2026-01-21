@@ -23,9 +23,9 @@ export const Toast = () => {
 
   const alertClassMap = {
     info: 'alert-primary border-base-300',
-    success: 'alert-success border-0 bg-gradient-to-r from-green-500 to-emerald-500',
-    warning: 'alert-warning border-0 bg-gradient-to-r from-amber-500 to-orange-500',
-    error: 'alert-error border-0 bg-gradient-to-r from-red-500 to-rose-500',
+    success: 'alert-success not-eink:from-green-500 not-eink:to-emerald-500',
+    warning: 'alert-warning not-eink:from-amber-500 not-eink:to-orange-500',
+    error: 'alert-error not-eink:from-red-500 not-eink:to-rose-500',
   };
 
   const iconMap = {
@@ -132,7 +132,9 @@ export const Toast = () => {
           className={clsx(
             'alert flex items-center gap-3 shadow-2xl backdrop-blur-sm',
             'min-h-0 rounded-2xl px-5 py-4',
+            'not-eink:bg-gradient-to-r border-0',
             alertClassMap[toastType],
+            'eink:bg-base-100 eink:border eink:border-base-content',
             toastType !== 'info' && 'text-white',
           )}
         >

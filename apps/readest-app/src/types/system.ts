@@ -85,6 +85,7 @@ export interface AppService {
   isLinuxApp: boolean;
   isPortableApp: boolean;
   isDesktopApp: boolean;
+  isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
   distChannel: DistChannel;
@@ -92,6 +93,7 @@ export interface AppService {
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;
   copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void>;
+  readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
   writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   deleteFile(path: string, base: BaseDir): Promise<void>;
@@ -105,6 +107,7 @@ export interface AppService {
   selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
   readDirectory(path: string, base: BaseDir): Promise<FileItem[]>;
+  saveFile(filename: string, content: string | ArrayBuffer, mimeType?: string): Promise<boolean>;
 
   getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;
@@ -129,7 +132,16 @@ export interface AppService {
     redownload?: boolean,
     onProgress?: ProgressHandler,
   ): Promise<void>;
+  uploadFileToCloud(
+    lfp: string,
+    cfp: string,
+    base: BaseDir,
+    handleProgress: ProgressHandler,
+    hash: string,
+    temp?: boolean,
+  ): Promise<string | undefined>;
   downloadBookCovers(books: Book[], redownload?: boolean): Promise<void>;
+  exportBook(book: Book): Promise<boolean>;
   isBookAvailable(book: Book): Promise<boolean>;
   getBookFileSize(book: Book): Promise<number | null>;
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;

@@ -186,7 +186,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       },
       ...annotationToolQuickActions.map((button) => ({
         value: button.type,
-        label: button.label,
+        label: _(button.label),
       })),
     ];
   };
@@ -209,6 +209,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 type='checkbox'
                 className='toggle'
                 checked={isScrolledMode}
+                disabled={bookData?.isFixedLayout}
                 onChange={() => setScrolledMode(!isScrolledMode)}
               />
             </div>
@@ -218,6 +219,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 type='checkbox'
                 className='toggle'
                 checked={isContinuousScroll}
+                disabled={bookData?.isFixedLayout}
                 onChange={() => setIsContinuousScroll(!isContinuousScroll)}
               />
             </div>

@@ -10,6 +10,7 @@ const Alert: React.FC<{
   onConfirm: () => void;
 }> = ({ title, message, onCancel, onConfirm }) => {
   const _ = useTranslation();
+  const [isProcessing, setIsProcessing] = React.useState(false);
   const divRef = useKeyDownActions({ onCancel, onConfirm });
 
   return (
@@ -39,15 +40,21 @@ const Alert: React.FC<{
             ></path>
           </svg>
           <div className='flex flex-col gap-y-2'>
-            <h3 className='text-start text-sm sm:text-center'>{title}</h3>
-            <div className='text-start text-xs sm:text-center'>{message}</div>
+            <h3 className='text-start text-sm font-medium sm:text-center'>{title}</h3>
+            <div className='text-start text-sm sm:text-center'>{message}</div>
           </div>
         </div>
         <div className='buttons flex flex-wrap items-center justify-end gap-2 self-end sm:max-w-[20vw] sm:self-center'>
           <button className='btn btn-sm btn-neutral' onClick={onCancel}>
             {_('Cancel')}
           </button>
-          <button className='btn btn-sm btn-warning' onClick={onConfirm}>
+          <button
+            className={clsx('btn btn-sm btn-warning', { 'btn-disabled': isProcessing })}
+            onClick={() => {
+              setIsProcessing(true);
+              onConfirm();
+            }}
+          >
             {_('Confirm')}
           </button>
         </div>

@@ -144,7 +144,7 @@ const getColorStyles = (
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
     }
     a:any-link {
-      ${overrideColor ? `color: ${primary};` : isDarkMode ? `color: lightblue;` : ''}
+      ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
@@ -164,6 +164,11 @@ const getColorStyles = (
     /* inline images */
     p img, span img, sup img {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    }
+    table {
+      max-width: calc(var(--available-width));
+      overflow: auto;
+      table-layout: fixed;
     }
     /* code */
     body.theme-dark code {
@@ -242,9 +247,10 @@ const getLayoutStyles = (
   }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
-    ${vertical ? 'font-feature-settings: "vrt2" 1, "vert" 1; text-orientation: upright;' : ''}
     text-align: var(--default-text-align);
     max-height: unset;
+    -webkit-touch-callout: none;
+    -webkit-user-select: text;
   }
   body {
     overflow: unset;
@@ -324,9 +330,6 @@ const getLayoutStyles = (
     ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
   }
-  h1, h2, h3, h4, h5, h6 {
-    text-align: initial;
-  }
 
   :lang(zh), :lang(ja), :lang(ko) {
     widows: 1;
@@ -389,7 +392,7 @@ const getLayoutStyles = (
     height: 1em;
   }
   img.has-text-siblings {
-    height: 1em;
+    ${vertical ? 'width: 1em;' : 'height: 1em;'}
     vertical-align: baseline;
   }
   :is(div) > img.has-text-siblings[style*="object-fit"] {
@@ -405,6 +408,14 @@ const getLayoutStyles = (
     position: relative;
     width: auto;
     height: auto;
+  }
+
+  /* page break */
+  body.paginated-mode div[style*="page-break-after: always"],
+  body.paginated-mode div[style*="page-break-after:always"],
+  body.paginated-mode p[style*="page-break-after: always"],
+  body.paginated-mode p[style*="page-break-after:always"] {
+    margin-bottom: calc(var(--available-height) * 1px);
   }
 
   /* workaround for some badly designed epubs */
@@ -606,6 +617,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 export const transformStylesheet = (css: string, vw: number, vh: number, vertical: boolean) => {
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
+  const isInlineStyle = !css.includes('{');
   const ruleRegex = /([^{]+)({[^}]+})/g;
   css = css.replace(ruleRegex, (match, selector, block) => {
     const hasTextAlignCenter = /text-align\s*:\s*center\s*[;$]/.test(block);
@@ -633,6 +645,24 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     }
     return match;
   });
+
+  if (isInlineStyle) {
+    const hasPageBreakAfterAlways = /page-break-after\s*:\s*always\s*[;]?/.test(css);
+    if (hasPageBreakAfterAlways && !/margin-bottom\s*:/.test(css)) {
+      css = css.replace(/;?\s*$/, '') + '; margin-bottom: calc(var(--available-height) * 1px)';
+    }
+  } else {
+    css = css.replace(ruleRegex, (match, selector, block) => {
+      const hasPageBreakAfterAlways = /page-break-after\s*:\s*always\s*[;$]/.test(block);
+      if (hasPageBreakAfterAlways) {
+        if (!/margin-bottom\s*:/.test(block)) {
+          block = block.replace(/}$/, ' margin-bottom: calc(var(--available-height) * 1px); }');
+        }
+        return selector + block;
+      }
+      return match;
+    });
+  }
 
   // Process duokan-bleed
   css = css.replace(ruleRegex, (_, selector, block) => {
@@ -705,6 +735,9 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)pt/gi, (_, pt) => {
       const rem = parseFloat(pt) / fontScale / 12;
       return `font-size: ${rem}rem`;
+    })
+    .replace(/font-size\s*:\s*(\d*\.?\d+)(px|rem|em|%)?/gi, (_, size, unit = 'px') => {
+      return `font-size: max(${size}${unit}, var(--min-font-size, 8px))`;
     })
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
     .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
@@ -793,7 +826,7 @@ export const applyTableStyle = (document: Document) => {
           const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
 
           if (widthUnit === 'px' || !widthUnit) {
-            rowWidth += widthValue + 6;
+            rowWidth += widthValue;
           } else if (widthUnit === '%') {
             rowWidth += (window.innerWidth * widthValue) / 100;
           }

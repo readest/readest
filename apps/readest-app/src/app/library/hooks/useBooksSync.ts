@@ -11,7 +11,7 @@ export const useBooksSync = () => {
   const { user } = useAuth();
   const { appService } = useEnv();
   const { library, isSyncing, setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
-  const { syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
+  const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
   const isPullingRef = useRef(false);
 
   const getNewBooks = useCallback(() => {
@@ -64,8 +64,7 @@ export const useBooksSync = () => {
       return;
     }
     handleAutoSync();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library, handleAutoSync]);
+  }, [user, library, handleAutoSync]);
 
   const pushLibrary = useCallback(async () => {
     if (!user) return;
@@ -76,9 +75,9 @@ export const useBooksSync = () => {
   }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !useSyncInited) return;
     pullLibrary();
-  }, [user, pullLibrary]);
+  }, [user, useSyncInited, pullLibrary]);
 
   const updateLibrary = async () => {
     if (isSyncing) return;
@@ -107,13 +106,16 @@ export const useBooksSync = () => {
       return oldBook;
     };
 
-    const oldBooksBatchSize = 20;
+    const oldBooksBatchSize = 100;
     for (let i = 0; i < oldBooksNeedsDownload.length; i += oldBooksBatchSize) {
       const batch = oldBooksNeedsDownload.slice(i, i + oldBooksBatchSize);
       await appService?.downloadBookCovers(batch);
     }
 
     const updatedLibrary = await Promise.all(library.map(processOldBook));
+    setLibrary(updatedLibrary);
+    appService?.saveLibraryBooks(updatedLibrary);
+
     const bookHashesInLibrary = new Set(updatedLibrary.map((book) => book.hash));
     const newBooks = syncedBooks.filter(
       (newBook) =>
@@ -136,11 +138,12 @@ export const useBooksSync = () => {
         await appService?.downloadBookCovers(batch);
         await Promise.all(batch.map(processNewBook));
         const progress = Math.min((i + batchSize) / newBooks.length, 1);
-        setLibrary([...updatedLibrary]);
         setSyncProgress(progress);
+        setLibrary([...updatedLibrary]);
+        appService?.saveLibraryBooks(updatedLibrary);
       }
-      setLibrary(updatedLibrary);
-      appService?.saveLibraryBooks(updatedLibrary);
+    } catch (err) {
+      console.error('Error updating new books:', err);
     } finally {
       if (newBooks.length > 0) {
         setIsSyncing(false);

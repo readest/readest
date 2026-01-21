@@ -3,7 +3,9 @@ import React from 'react';
 import Image from 'next/image';
 
 import { MdCheck } from 'react-icons/md';
-import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { useRouter } from 'next/navigation';
+import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -12,10 +14,13 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
+import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { navigateToLogin } from '@/utils/nav';
+import { saveSysSettings } from '@/helpers/settings';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
-import { FIXED_LAYOUT_FORMATS } from '@/types/book';
+import { setAboutDialogVisible } from '@/components/AboutWindow';
 import useBooksManager from '../../hooks/useBooksManager';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -27,8 +32,11 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
+  const router = useRouter();
+  const { envConfig, appService } = useEnv();
+  const { user } = useAuth();
   const { settings } = useSettingsStore();
-  const { bookKeys, getViewSettings, setViewSettings } = useReaderStore();
+  const { bookKeys, recreateViewer, getViewSettings, setViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
@@ -64,8 +72,8 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       const viewSettings = getViewSettings(sideBarBookKey)!;
       viewSettings.sortedTOC = !isSortedTOC;
       setViewSettings(sideBarBookKey, viewSettings);
+      recreateViewer(envConfig, sideBarBookKey);
     }
-    setTimeout(() => window.location.reload(), 100);
   };
   const handleSetParallel = () => {
     setParallel(bookKeys);
@@ -91,10 +99,18 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const toggleDiscordPresence = () => {
+    const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;
+    saveSysSettings(envConfig, 'discordRichPresenceEnabled', discordRichPresenceEnabled);
+    setIsDropdownOpen?.(false);
+    if (discordRichPresenceEnabled && !user) {
+      navigateToLogin(router);
+    }
+  };
 
   return (
     <Menu
-      className={clsx('book-menu dropdown-content border-base-100 z-20 shadow-2xl', menuClassName)}
+      className={clsx('book-menu dropdown-content z-20 shadow-2xl', menuClassName)}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       <MenuItem
@@ -149,6 +165,17 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         <>
           <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
           <MenuItem label={_('Pull Progress')} onClick={handlePullKOSync} />
+        </>
+      )}
+      {appService?.isDesktopApp && (
+        <>
+          <hr className='border-base-200 my-1' />
+          <MenuItem
+            label={_('Show on Discord')}
+            tooltip={_("Display what I'm reading on Discord")}
+            toggled={settings.discordRichPresenceEnabled}
+            onClick={toggleDiscordPresence}
+          />
         </>
       )}
       <hr className='border-base-200 my-1' />

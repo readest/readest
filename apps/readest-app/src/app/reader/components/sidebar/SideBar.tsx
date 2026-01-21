@@ -7,7 +7,6 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BookSearchResult } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
@@ -34,12 +33,13 @@ const SideBar: React.FC<{
   const { appService } = useEnv();
   const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { sideBarBookKey } = useSidebarStore();
+  const { sideBarBookKey, setSideBarBookKey, getSearchNavState, setSearchTerm, clearSearch } =
+    useSidebarStore();
+  const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
+  const { searchTerm = '', searchResults = null } = searchNavState || {};
   const { getBookData } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
-  const [searchResults, setSearchResults] = useState<BookSearchResult[] | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const searchTermRef = useRef(searchTerm);
   const sidebarHeight = useRef(1.0);
   const isMobile = window.innerWidth < 640;
@@ -57,11 +57,12 @@ const SideBar: React.FC<{
   );
 
   const onSearchEvent = async (event: CustomEvent) => {
-    const { term } = event.detail;
+    const { term, bookKey } = event.detail;
     setSideBarVisible(true);
+    setSideBarBookKey(bookKey);
     setIsSearchBarVisible(true);
     if (term !== undefined && term !== null) {
-      setSearchTerm(term);
+      setSearchTerm(bookKey, term);
     }
   };
 
@@ -87,10 +88,10 @@ const SideBar: React.FC<{
   }, [searchTerm]);
 
   useEffect(() => {
-    eventDispatcher.on('search', onSearchEvent);
+    eventDispatcher.on('search-term', onSearchEvent);
     eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
-      eventDispatcher.off('search', onSearchEvent);
+      eventDispatcher.off('search-term', onSearchEvent);
       eventDispatcher.off('navigate', onNavigateEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,13 +194,12 @@ const SideBar: React.FC<{
 
   const handleHideSearchBar = useCallback(() => {
     setIsSearchBarVisible(false);
-    setSearchResults(null);
     setTimeout(() => {
-      setSearchTerm('');
+      if (sideBarBookKey) clearSearch(sideBarBookKey);
     }, 100);
     getView(sideBarBookKey)?.clearSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideBarBookKey]);
+  }, [sideBarBookKey, clearSearch]);
 
   const handleHideSideBar = useCallback(() => {
     if (searchTermRef.current) {
@@ -317,8 +317,6 @@ const SideBar: React.FC<{
             <SearchBar
               isVisible={isSearchBarVisible}
               bookKey={sideBarBookKey!}
-              searchTerm={searchTerm}
-              onSearchResultChange={setSearchResults}
               onHideSearchBar={handleHideSearchBar}
             />
           </div>

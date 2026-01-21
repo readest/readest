@@ -57,12 +57,14 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { settings } = useSettingsStore();
   const { libraryLoaded } = useLibrary();
   const { sideBarBookKey } = useSidebarStore();
-  const { hoveredBookKey, getView } = useReaderStore();
+  const { hoveredBookKey } = useReaderStore();
   const { showSystemUI, dismissSystemUI } = useThemeStore();
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
-  const { isSideBarVisible, getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
-  const { isNotebookVisible, getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
+  const { isSideBarVisible, isSideBarPinned } = useSidebarStore();
+  const { getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
+  const { isNotebookVisible, isNotebookPinned } = useNotebookStore();
+  const { getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
 
   useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
@@ -100,14 +102,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   }, [appService]);
 
   const handleKeyDown = (event: CustomEvent) => {
-    const view = getView(sideBarBookKey!);
     if (event.detail.keyName === 'Back') {
-      if (getIsSideBarVisible()) {
+      if (getIsSideBarVisible() && !isSideBarPinned) {
         setSideBarVisible(false);
-      } else if (getIsNotebookVisible()) {
+      } else if (getIsNotebookVisible() && !isNotebookPinned) {
         setNotebookVisible(false);
-      } else if (view?.history.canGoBack) {
-        view.history.back();
       } else {
         eventDispatcher.dispatch('close-reader');
         router.back();
@@ -136,7 +135,14 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.isAndroidApp, sideBarBookKey, isSideBarVisible, isNotebookVisible]);
+  }, [
+    appService?.isAndroidApp,
+    sideBarBookKey,
+    isSideBarPinned,
+    isSideBarVisible,
+    isNotebookPinned,
+    isNotebookVisible,
+  ]);
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;

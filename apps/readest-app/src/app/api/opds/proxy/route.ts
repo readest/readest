@@ -103,6 +103,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       return new NextResponse(null, {
         status: 200,
         headers: {
+          ...Object.fromEntries(response.headers.entries()),
           'Content-Type': contentType,
           'Content-Length': contentLength || '',
           'Cache-Control': 'public, max-age=300',
@@ -113,12 +114,13 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       });
     }
 
-    if (stream === 'true' || (contentLength && parseInt(contentLength) > 1024 * 1024)) {
+    if (stream === 'true' && contentLength && parseInt(contentLength) > 1024 * 1024) {
       console.log(`[OPDS Proxy] Streaming: ${url}`);
 
       return new NextResponse(response.body, {
         status: 200,
         headers: {
+          ...Object.fromEntries(response.headers.entries()),
           'Content-Type': contentType,
           'X-Content-Length': contentLength || '',
           'Cache-Control': 'public, max-age=300',
@@ -129,13 +131,16 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
         },
       });
     } else {
-      const data = await response.text();
-      console.log(`[OPDS Proxy] Success: ${url} (${data.length} bytes)`);
+      const buf = await response.arrayBuffer();
+      const length = buf.byteLength;
+      console.log(`[OPDS Proxy] Success: ${url} (${length} bytes)`);
 
-      return new NextResponse(data, {
+      return new NextResponse(buf, {
         status: 200,
         headers: {
+          ...Object.fromEntries(response.headers.entries()),
           'Content-Type': contentType,
+          'Content-Length': length.toString(),
           'Cache-Control': 'public, max-age=300',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
