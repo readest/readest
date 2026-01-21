@@ -17,10 +17,20 @@ function buildSystemPrompt(
 ): string {
   const contextSection =
     chunks.length > 0
-      ? `\n\nRelevant passages:\n${chunks.map((c, i) => `[${i + 1}] "${c.text}"`).join('\n\n')}`
+      ? `\n\nBook Content:\n${chunks
+          .map((c) => {
+            const header = c.chapterTitle || `Section ${c.sectionIndex + 1}`;
+            return `--- ${header} ---\n${c.text}`;
+          })
+          .join('\n\n')}`
       : '';
-  const spoilerNote = spoilerProtection ? '\nOnly use info from passages provided.' : '';
-  return `You are a reading companion for "${bookTitle}"${authorName ? ` by ${authorName}` : ''}. Answer based on context. Be concise and helpful.${spoilerNote}${contextSection}`;
+  const spoilerNote = spoilerProtection ? '\nOnly use info from the book content provided.' : '';
+  const citationNote =
+    '\nDo not use internal passage numbers or indices like [1] or [2]. If you need to cite a source, use the official chapter or section headings provided in the headers.';
+
+  return `You are a reading companion for "${bookTitle}"${
+    authorName ? ` by ${authorName}` : ''
+  }. Answer based on the book content. Be concise and helpful.${spoilerNote}${citationNote}${contextSection}`;
 }
 
 export async function sendMessage(
