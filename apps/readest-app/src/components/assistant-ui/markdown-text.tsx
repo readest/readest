@@ -17,7 +17,11 @@ import { cn } from '@/lib/utils';
 
 const MarkdownTextImpl = () => {
   return (
-    <MarkdownTextPrimitive remarkPlugins={[remarkGfm]} className='aui-md' components={defaultComponents} />
+    <MarkdownTextPrimitive
+      remarkPlugins={[remarkGfm]}
+      className='aui-md'
+      components={defaultComponents}
+    />
   );
 };
 
@@ -31,7 +35,7 @@ const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   };
 
   return (
-    <div className='mt-4 flex items-center justify-between gap-4 rounded-t-lg bg-muted px-4 py-2 text-sm font-semibold text-foreground'>
+    <div className='bg-muted text-foreground mt-4 flex items-center justify-between gap-4 rounded-t-lg px-4 py-2 text-sm font-semibold'>
       <span className='lowercase [&>span]:text-xs'>{language}</span>
       <TooltipIconButton tooltip='Copy' onClick={onCopy}>
         {!isCopied && <CopyIcon className='size-3' />}
@@ -58,15 +62,14 @@ const useCopyToClipboard = ({ copiedDuration = 3000 }: { copiedDuration?: number
 
 const defaultComponents = memoizeMarkdownComponents({
   h1: ({ className, ...props }) => (
+    // eslint-disable-next-line jsx-a11y/heading-has-content
     <h1
-      className={cn(
-        'mb-4 scroll-m-20 text-2xl font-bold tracking-tight last:mb-0',
-        className,
-      )}
+      className={cn('mb-4 scroll-m-20 text-2xl font-bold tracking-tight last:mb-0', className)}
       {...props}
     />
   ),
   h2: ({ className, ...props }) => (
+    // eslint-disable-next-line jsx-a11y/heading-has-content
     <h2
       className={cn(
         'mb-3 mt-6 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0',
@@ -76,6 +79,7 @@ const defaultComponents = memoizeMarkdownComponents({
     />
   ),
   h3: ({ className, ...props }) => (
+    // eslint-disable-next-line jsx-a11y/heading-has-content
     <h3
       className={cn(
         'mb-2 mt-4 scroll-m-20 text-lg font-semibold tracking-tight first:mt-0 last:mb-0',
@@ -88,8 +92,9 @@ const defaultComponents = memoizeMarkdownComponents({
     <p className={cn('mb-3 leading-7 first:mt-0 last:mb-0', className)} {...props} />
   ),
   a: ({ className, ...props }) => (
+    // eslint-disable-next-line jsx-a11y/anchor-has-content
     <a
-      className={cn('font-medium text-primary underline underline-offset-4', className)}
+      className={cn('text-primary font-medium underline underline-offset-4', className)}
       {...props}
     />
   ),
@@ -102,9 +107,7 @@ const defaultComponents = memoizeMarkdownComponents({
   ol: ({ className, ...props }) => (
     <ol className={cn('my-3 ml-6 list-decimal [&>li]:mt-1', className)} {...props} />
   ),
-  hr: ({ className, ...props }) => (
-    <hr className={cn('my-4 border-b', className)} {...props} />
-  ),
+  hr: ({ className, ...props }) => <hr className={cn('my-4 border-b', className)} {...props} />,
   pre: ({ className, ...props }) => (
     <pre
       className={cn(
@@ -119,7 +122,7 @@ const defaultComponents = memoizeMarkdownComponents({
     return (
       <code
         className={cn(
-          !isCodeBlock && 'rounded border bg-muted px-1 py-0.5 font-mono text-sm',
+          !isCodeBlock && 'bg-muted rounded border px-1 py-0.5 font-mono text-sm',
           className,
         )}
         {...props}
