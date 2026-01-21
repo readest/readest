@@ -8,12 +8,12 @@
     "strict": true,
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "files": [],
   "references": [
     {
       "path": "./apps/readest-app"
-    },
+    }
   ]
 }
