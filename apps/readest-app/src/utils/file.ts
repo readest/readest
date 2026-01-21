@@ -1,5 +1,14 @@
-import { FileHandle, open, BaseDirectory, SeekMode } from '@tauri-apps/plugin-fs';
+import type { FileHandle, BaseDirectory, SeekMode } from '@tauri-apps/plugin-fs';
 import { getOSPlatform } from './misc';
+
+// dynamic import for tauri fs plugin, prevents crashes in web mode
+const isTauri = () =>
+  typeof window !== 'undefined' && (window as unknown as { __TAURI__?: unknown }).__TAURI__ != null;
+
+async function fs() {
+  if (!isTauri()) throw new Error('Tauri FS not available in web mode');
+  return import('@tauri-apps/plugin-fs');
+}
 
 class DeferredBlob extends Blob {
   #dataPromise: Promise<ArrayBuffer>;
@@ -78,6 +87,7 @@ export class NativeFile extends File implements ClosableFile {
   }
 
   async open() {
+    const { open } = await fs();
     this.#handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
     const stats = await this.#handle.stat();
     this.#size = stats.size;
@@ -128,9 +138,10 @@ export class NativeFile extends File implements ClosableFile {
     const size = end - start;
 
     if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
+      const { open, SeekMode: SM } = await fs();
       const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
       try {
-        await handle.seek(start, SeekMode.Start);
+        await handle.seek(start, SM.Start);
         const buffer = new Uint8Array(size);
         await handle.read(buffer);
         return buffer.buffer;
@@ -169,13 +180,14 @@ export class NativeFile extends File implements ClosableFile {
   }
 
   async #readAndCacheChunkSafe(start: number, size: number): Promise<ArrayBuffer> {
+    const { open, SeekMode: SM } = await fs();
     const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
     try {
       const chunkStart = Math.max(0, start - 1024);
       const chunkEnd = Math.min(this.size, start + NativeFile.MAX_CACHE_CHUNK_SIZE);
       const chunkSize = chunkEnd - chunkStart;
 
-      await handle.seek(chunkStart, SeekMode.Start);
+      await handle.seek(chunkStart, SM.Start);
       const buffer = new Uint8Array(chunkSize);
       await handle.read(buffer);
 
@@ -230,10 +242,11 @@ export class NativeFile extends File implements ClosableFile {
           return;
         }
 
+        const { SeekMode: SM } = await fs();
         const end = Math.min(offset + CHUNK_SIZE, this.size);
         const buffer = new Uint8Array(end - offset);
 
-        await this.#handle.seek(offset, SeekMode.Start);
+        await this.#handle.seek(offset, SM.Start);
         const bytesRead = await this.#handle.read(buffer);
 
         if (bytesRead === null || bytesRead === 0) {
