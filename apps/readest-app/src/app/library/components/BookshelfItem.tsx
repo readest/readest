@@ -115,9 +115,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { updateBook } = useLibraryStore();
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
-    if (await makeBookAvailable(book)) {
-      handleShowDetailsBook(book);
-    }
+    handleShowDetailsBook(book);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -363,7 +361,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
             'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-2 sm:px-4 sm:py-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
           appService?.isMobileApp && 'no-context-menu',
-          pressing && mode === 'grid' ? 'scale-95' : 'scale-100',
+          pressing && mode === 'grid' ? 'not-eink:scale-95' : 'scale-100',
         )}
         role='button'
         tabIndex={0}

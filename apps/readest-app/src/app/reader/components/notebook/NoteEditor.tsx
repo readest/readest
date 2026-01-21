@@ -99,7 +99,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
   const canSave = Boolean(note.trim());
 
   return (
-    <div className='content note-editor-container bg-base-100 mt-2 rounded-md p-2'>
+    <div className='content booknote-item note-editor-container bg-base-100 mt-2 rounded-md p-2'>
       <div className='flex w-full'>
         <TextEditor
           ref={editorRef}

@@ -53,6 +53,7 @@ import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
+import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { removeTabIndex } from '@/utils/a11y';
@@ -85,6 +86,7 @@ const FoliateViewer: React.FC<{
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
+  const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -97,6 +99,12 @@ const FoliateViewer: React.FC<{
   const docLoaded = useRef(false);
 
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
+
+  useDiscordPresence(
+    bookData?.book || null,
+    !!viewState?.isPrimary,
+    settings.discordRichPresenceEnabled,
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
@@ -188,7 +196,9 @@ const FoliateViewer: React.FC<{
         setViewSettings(bookKey, { ...viewSettings });
       }
 
-      mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+      if (!bookData?.isFixedLayout) {
+        mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+      }
 
       getLoadedFonts().forEach((font) => {
         mountCustomFont(detail.doc, font);

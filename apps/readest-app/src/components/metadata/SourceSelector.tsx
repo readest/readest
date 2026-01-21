@@ -57,7 +57,7 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
               tabIndex={0}
               key={index}
               onClick={() => onSelect(source)}
-              className='hover:bg-base-300/75 bg-base-200 border-base-200 cursor-pointer rounded-md border p-3 transition-colors'
+              className='hover:bg-base-300/75 bg-base-200 border-base-200 w-full cursor-pointer rounded-md border p-3 transition-colors'
             >
               <div className='flex items-start gap-4'>
                 <div className='aspect-[28/41] h-full w-[40%] max-w-32 shadow-md'>

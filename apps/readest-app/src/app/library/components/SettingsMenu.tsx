@@ -232,7 +232,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <Menu
       className={clsx(
-        'settings-menu dropdown-content no-triangle border-base-100',
+        'settings-menu dropdown-content no-triangle',
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
       onCancel={() => setIsDropdownOpen?.(false)}
@@ -264,11 +264,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
-      <MenuItem
-        label={_('Auto Upload Books to Cloud')}
-        toggled={isAutoUpload}
-        onClick={toggleAutoUploadBooks}
-      />
       {user && (
         <MenuItem
           label={_('Cloud File Transfers')}
@@ -286,6 +281,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
           onClick={openTransferQueue}
         />
       )}
+      <MenuItem
+        label={_('Auto Upload Books to Cloud')}
+        toggled={isAutoUpload}
+        onClick={toggleAutoUploadBooks}
+      />
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}

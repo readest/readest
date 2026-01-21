@@ -8,7 +8,7 @@ import { CreateProofreadRuleOptions, useProofreadStore } from '@/store/proofread
 import { ProofreadScope } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import { Position, TextSelection } from '@/utils/sel';
-import { isWholeWord } from '@/utils/word';
+import { isPunctuationOnly, isWholeWord } from '@/utils/word';
 import Select from '@/components/Select';
 import Popup from '@/components/Popup';
 
@@ -41,10 +41,17 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
 
   const [replacementText, setReplacementText] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
+  const [wholeWord, setWholeWord] = useState(!isPunctuationOnly(selection?.text || ''));
   const [scope, setScope] = useState<ProofreadScope>('selection');
+  const [onlyForTTS, setOnlyForTTS] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   useAutoFocus<HTMLInputElement>({ ref: inputRef });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setReplacementText(text);
+  };
 
   const handleScopeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setScope(event.target.value as ProofreadScope);
@@ -58,10 +65,10 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
     if (range) {
       const isValidWholeWord = isWholeWord(range, selection?.text || '');
 
-      if (!isValidWholeWord) {
+      if (wholeWord && !isValidWholeWord) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',
-          message: `Cannot replace "${selection.text}" - please select a complete word. Partial word selections (like "and" in "England" or "errand") are not supported.`,
+          message: 'Please select a whole word or uncheck the "Whole word" option.',
           timeout: 5000,
         });
         return;
@@ -73,7 +80,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         range.insertNode(textNode);
       }
 
-      const options = {
+      const options: CreateProofreadRuleOptions = {
         scope,
         pattern: selection.text,
         replacement: replacementText.trim(),
@@ -82,7 +89,8 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         isRegex: false,
         enabled: true,
         caseSensitive,
-        wholeWord: true,
+        wholeWord: wholeWord,
+        onlyForTTS: scope !== 'selection' ? onlyForTTS : undefined,
       };
       onConfirm?.(options);
 
@@ -90,7 +98,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
 
       onDismiss();
 
-      if (scope !== 'selection') {
+      if (scope !== 'selection' && !onlyForTTS) {
         if (getView(bookKey)) {
           recreateViewer(envConfig, bookKey);
         }
@@ -111,14 +119,14 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         width={popupWidth}
         minHeight={popupHeight}
         position={position}
-        className='flex flex-col justify-between rounded-lg bg-gray-700 text-gray-400'
+        className='not-eink:text-gray-400 flex flex-col justify-between rounded-lg bg-gray-700'
         triangleClassName='text-gray-700'
         onDismiss={onDismiss}
       >
         <div className='flex flex-col gap-6 p-4'>
-          <div className='flex gap-1 text-xs text-gray-400'>
-            <span>{_('Selected text:')}</span>
-            <span className='line-clamp-1 select-text break-words text-yellow-300'>
+          <div className='not-eink:text-gray-400 flex gap-1 text-xs'>
+            <span className='text-nowrap'>{_('Selected text:')}</span>
+            <span className='not-eink:text-yellow-300 line-clamp-1 select-text break-words font-medium'>
               &quot;{selection?.text || ''}&quot;
             </span>
           </div>
@@ -131,20 +139,23 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               ref={inputRef}
               type='text'
               value={replacementText}
-              onChange={(e) => setReplacementText(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && replacementText.trim()) {
+                if (e.key === 'Enter' && replacementText) {
                   handleApply();
                 }
               }}
               placeholder={_('Enter text...')}
-              className='w-full flex-1 rounded-md bg-gray-600 p-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-0'
+              className={clsx(
+                'w-full flex-1 rounded-md p-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-0',
+                'not-eink:bg-gray-600 not-eink:text-white eink:border eink:border-base-content',
+              )}
             />
             <button
               onClick={handleApply}
-              disabled={!replacementText.trim()}
+              disabled={!replacementText}
               className={clsx(
-                'btn btn-sm btn-ghost text-blue-600 disabled:text-gray-600',
+                'btn btn-sm btn-ghost btn-primary disabled:text-base-content/75 text-blue-600 disabled:opacity-75',
                 'bg-transparent hover:bg-transparent disabled:bg-transparent',
               )}
             >
@@ -153,8 +164,8 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
           </div>
         </div>
 
-        <div className='flex items-center justify-between gap-4 p-4'>
-          <label className='flex max-w-[30%] cursor-pointer items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-4 p-4'>
+          <label className='flex cursor-pointer items-center gap-2'>
             <span className='line-clamp-1 text-xs' title={_('Case sensitive:')}>
               {_('Case sensitive:')}
             </span>
@@ -171,17 +182,51 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             />
           </label>
 
-          <div className='flex max-w-[65%] flex-1 items-center justify-between gap-2'>
-            <label htmlFor='scope-select' className='line-clamp-1 text-xs' title={_('Scope:')}>
-              {_('Scope:')}
-            </label>
-            <Select
-              className='max-w-[50%] bg-gray-600 text-white'
-              value={scope}
-              onChange={handleScopeChange}
-              options={scopeOptions}
+          <label className='flex cursor-pointer items-center gap-2'>
+            <span className='line-clamp-1 text-xs' title={_('Whole word:')}>
+              {_('Whole word:')}
+            </span>
+            <input
+              type='checkbox'
+              className='toggle toggle-sm bg-gray-500 checked:bg-black hover:bg-gray-500 hover:checked:bg-black'
+              style={
+                {
+                  '--tglbg': '#4B5563',
+                } as React.CSSProperties
+              }
+              checked={wholeWord}
+              onChange={(e) => setWholeWord(e.target.checked)}
             />
-          </div>
+          </label>
+
+          <label className='flex cursor-pointer items-center gap-2'>
+            <span className='line-clamp-1 text-xs' title={_('Only for TTS:')}>
+              {_('Only for TTS:')}
+            </span>
+            <input
+              type='checkbox'
+              disabled={scope === 'selection'}
+              className='toggle toggle-sm bg-gray-500 checked:bg-black hover:bg-gray-500 hover:checked:bg-black'
+              style={
+                {
+                  '--tglbg': '#4B5563',
+                } as React.CSSProperties
+              }
+              checked={onlyForTTS}
+              onChange={(e) => setOnlyForTTS(e.target.checked)}
+            />
+          </label>
+        </div>
+        <div className='flex flex-1 items-center justify-between gap-2 p-4'>
+          <label htmlFor='scope-select' className='line-clamp-1 text-xs' title={_('Scope:')}>
+            {_('Scope:')}
+          </label>
+          <Select
+            className='not-eink:bg-gray-600 eink:bg-base-100 not-eink:text-white max-w-[85%]'
+            value={scope}
+            onChange={handleScopeChange}
+            options={scopeOptions}
+          />
         </div>
       </Popup>
     </div>

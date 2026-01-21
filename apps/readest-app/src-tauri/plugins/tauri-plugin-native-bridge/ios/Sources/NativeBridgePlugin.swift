@@ -581,7 +581,6 @@ class NativeBridgePlugin: Plugin {
     let darkMode = args.darkMode
 
     DispatchQueue.main.async {
-      UIApplication.shared.isIdleTimerDisabled = !visible
       UIApplication.shared.setStatusBarHidden(!visible, with: .none)
 
       let windows = UIApplication.shared.connectedScenes

@@ -38,7 +38,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
-  const { setSettingsDialogOpen } = useSettingsStore();
+  const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -62,6 +62,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
+    setSettingsDialogBookKey(bookKey);
     setSettingsDialogOpen(true);
   };
 
@@ -147,7 +148,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     <Menu
       className={clsx(
         'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1 border',
-        'bgcolor-base-200 border-base-200 shadow-2xl',
+        'bgcolor-base-200 shadow-2xl',
       )}
       style={{
         maxWidth: `${window.innerWidth - 40}px`,
@@ -258,7 +259,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         shortcut='Shift+J'
         Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
-        disabled={bookData.bookDoc?.rendition?.layout === 'pre-paginated'}
+        disabled={bookData.isFixedLayout}
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />

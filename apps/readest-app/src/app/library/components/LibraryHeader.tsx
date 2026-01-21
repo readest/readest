@@ -12,7 +12,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { debounce } from '@/utils/debounce';
@@ -48,13 +47,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { appService } = useEnv();
-  const { settings } = useSettingsStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
   const { isTrafficLightVisible } = useTrafficLight();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
-  const viewSettings = settings.globalViewSettings;
   const headerRef = useRef<HTMLDivElement>(null);
   const iconSize18 = useResponsiveSize(18);
   const { safeAreaInsets: insets } = useThemeStore();
@@ -110,7 +107,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
-            <span className='text-base-content/50 absolute left-3'>
+            <span className='text-base-content/50 absolute ps-3'>
               <FaSearch className='h-4 w-4' />
             </span>
             <input
@@ -126,10 +123,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'input rounded-badge h-9 w-full pl-10 pr-[30%] sm:h-7',
-                viewSettings?.isEink
-                  ? 'border-1 border-base-content focus:border-base-content'
-                  : 'bg-base-300/45 border-none',
+                'search-input input h-9 w-full rounded-full pr-[30%] ps-10 sm:h-7',
+                'bg-base-300/45 border-0',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50 truncate',
                 'focus:outline-none focus:ring-0',

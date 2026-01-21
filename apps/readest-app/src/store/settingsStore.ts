@@ -8,11 +8,13 @@ export type FontPanelView = 'main-fonts' | 'custom-fonts';
 
 interface SettingsState {
   settings: SystemSettings;
+  settingsDialogBookKey: string;
   isSettingsDialogOpen: boolean;
   isSettingsGlobal: boolean;
   fontPanelView: FontPanelView;
   setSettings: (settings: SystemSettings) => void;
   saveSettings: (envConfig: EnvConfigType, settings: SystemSettings) => void;
+  setSettingsDialogBookKey: (bookKey: string) => void;
   setSettingsDialogOpen: (open: boolean) => void;
   setSettingsGlobal: (global: boolean) => void;
   setFontPanelView: (view: FontPanelView) => void;
@@ -22,6 +24,7 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: {} as SystemSettings,
+  settingsDialogBookKey: '',
   isSettingsDialogOpen: false,
   isSettingsGlobal: true,
   fontPanelView: 'main-fonts',
@@ -30,6 +33,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const appService = await envConfig.getAppService();
     await appService.saveSettings(settings);
   },
+  setSettingsDialogBookKey: (bookKey) => set({ settingsDialogBookKey: bookKey }),
   setSettingsDialogOpen: (open) => set({ isSettingsDialogOpen: open }),
   setSettingsGlobal: (global) => set({ isSettingsGlobal: global }),
   setFontPanelView: (view) => set({ fontPanelView: view }),

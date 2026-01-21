@@ -18,6 +18,8 @@ export interface SyncResult {
   configs: BookConfigRecord[] | null;
 }
 
+export type SyncRecord = BookRecord & BookConfigRecord & BookNoteRecord;
+
 export interface SyncData {
   books?: Partial<BookRecord>[];
   notes?: Partial<BookNoteRecord>[];

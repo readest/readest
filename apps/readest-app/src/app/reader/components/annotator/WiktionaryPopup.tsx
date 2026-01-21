@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Position } from '@/utils/sel';
+import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/Popup';
 
 type Definition = {
@@ -32,6 +33,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
   popupHeight,
   onDismiss,
 }) => {
+  const _ = useTranslation();
   const [lookupWord, setLookupWord] = useState(word);
   const isLookingUp = useRef(false);
 
@@ -141,13 +143,15 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
           'flex flex-col items-center justify-center w-full h-full text-center absolute inset-0';
 
         const h1 = document.createElement('h1');
-        h1.innerText = 'Error';
+        h1.innerText = _('Error');
         h1.className = 'text-lg font-bold';
 
         const p = document.createElement('p');
-        p.innerHTML = `Unable to load the word. Try searching directly on <a href="https://en.wiktionary.org/w/index.php?search=${encodeURIComponent(
-          word,
-        )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wiktionary</a>.`;
+        p.innerHTML = _('Unable to load the word. Try searching directly on {{link}}.', {
+          link: `<a href="https://en.wiktionary.org/w/index.php?search=${encodeURIComponent(
+            word,
+          )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wiktionary</a>`,
+        });
 
         div.append(h1, p);
         main.append(div);
@@ -156,7 +160,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
 
     const langCode = typeof lang === 'string' ? lang : lang?.[0];
     fetchDefinitions(lookupWord, langCode);
-  }, [lookupWord, lang]);
+  }, [_, lookupWord, lang]);
 
   return (
     <div>

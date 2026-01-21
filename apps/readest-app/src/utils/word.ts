@@ -30,6 +30,11 @@ export const isWholeWord = (range: Range, selectedText: string): boolean => {
   }
 };
 
+export const isPunctuationOnly = (text: string): boolean => {
+  const punctuationPattern = /^[\p{P}\p{S}\s]+$/u;
+  return punctuationPattern.test(text);
+};
+
 // Helper to get characters before and after the selection
 const getBoundaryChars = (range: Range): { charBefore: string; charAfter: string } => {
   let charBefore = '';

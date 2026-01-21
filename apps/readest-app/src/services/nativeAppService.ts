@@ -14,7 +14,7 @@ import {
   DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
 import {
   join,
   basename,
@@ -25,6 +25,7 @@ import {
   tempDir,
 } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api';
 
 import {
   FileSystem,
@@ -52,6 +53,7 @@ import {
 declare global {
   interface Window {
     __READEST_UPDATER_DISABLED?: boolean;
+    __READEST_IS_EINK?: boolean;
   }
 }
 
@@ -205,7 +207,7 @@ export const nativeFileSystem: FileSystem = {
         // or file:// URIs is security scoped resource in iOS (e.g. from Files app),
         // we cannot access the file directly — so we copy it to a temporary cache location.
         const prefix = await this.getPrefix('Cache');
-        const dst = await join(prefix, fname);
+        const dst = await join(prefix, decodeURIComponent(fname));
         const res = await copyURIToPath({ uri: path, dst });
         if (!res.success) {
           console.error('Failed to open file:', res);
@@ -302,6 +304,36 @@ export const nativeFileSystem: FileSystem = {
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
+    const getRelativePath = (filePath: string, basePath: string): string => {
+      let relativePath = filePath;
+      if (filePath.toLowerCase().startsWith(basePath.toLowerCase())) {
+        relativePath = filePath.substring(basePath.length);
+      }
+      if (relativePath.startsWith('\\') || relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      return relativePath;
+    };
+
+    // Use Rust WalkDir for massive performance gain on absolute paths
+    if (!baseDir || baseDir === 0) {
+      try {
+        const files = await invoke<{ path: string; size: number }[]>('read_dir', {
+          path: fp,
+          recursive: true,
+          extensions: ['*'],
+        });
+
+        return files.map((file) => ({
+          path: getRelativePath(file.path, fp),
+          size: file.size,
+        }));
+      } catch (e) {
+        console.error('Rust read_dir failed, falling back to JS recursion', e);
+      }
+    }
+
+    // Fallback to readDir for non-absolute paths or on error
     const entries = await readDir(fp, baseDir ? { baseDir } : undefined);
     const fileList: FileItem[] = [];
     const readDirRecursively = async (
@@ -314,12 +346,12 @@ export const nativeFileSystem: FileSystem = {
         if (entry.isDirectory) {
           const dir = await join(parent, entry.name);
           const relativeDir = relative ? await join(relative, entry.name) : entry.name;
-          await readDirRecursively(
-            dir,
-            relativeDir,
-            await readDir(dir, baseDir ? { baseDir } : undefined),
-            fileList,
-          );
+          try {
+            const entries = await readDir(dir, baseDir ? { baseDir } : undefined);
+            await readDirRecursively(dir, relativeDir, entries, fileList);
+          } catch {
+            console.warn(`Skipping unreadable dir: ${dir}`);
+          }
         } else {
           const filePath = await join(parent, entry.name);
           const relativePath = relative ? await join(relative, entry.name) : entry.name;
@@ -367,6 +399,7 @@ export class NativeAppService extends BaseAppService {
   override isLinuxApp = OS_TYPE === 'linux';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
   override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
+  override isEink = Boolean(window.__READEST_IS_EINK);
   override hasTrafficLight = OS_TYPE === 'macos';
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
@@ -460,6 +493,7 @@ export class NativeAppService extends BaseAppService {
     const selected = await openDialog({
       directory: true,
       multiple: false,
+      recursive: true,
     });
     return selected as string;
   }
@@ -470,6 +504,38 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     return Array.isArray(selected) ? selected : selected ? [selected] : [];
+  }
+
+  async saveFile(
+    filename: string,
+    content: string | ArrayBuffer,
+    filepath: string,
+    mimeType?: string,
+  ): Promise<boolean> {
+    try {
+      const ext = filename.split('.').pop() || '';
+      if (this.isIOSApp) {
+        await shareFile(filepath, {
+          mimeType: mimeType || 'application/octet-stream',
+        });
+      } else {
+        const filePath = await saveDialog({
+          defaultPath: filename,
+          filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+        });
+        if (!filePath) return false;
+
+        if (typeof content === 'string') {
+          await writeTextFile(filePath, content);
+        } else {
+          await writeFile(filePath, new Uint8Array(content));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      return false;
+    }
   }
 
   async migrate20251029() {

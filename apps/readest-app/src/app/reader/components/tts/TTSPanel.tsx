@@ -267,6 +267,8 @@ const TTSPanel = ({
             tabIndex={0}
             className='flex flex-col items-center justify-center rounded-full p-1 transition-transform duration-200 hover:scale-105'
             onClick={(e) => e.currentTarget.focus()}
+            title={_('Set Timeout')}
+            aria-label={_('Set Timeout')}
           >
             <MdAlarm size={iconSize32} />
             {timeoutCountdown && (
@@ -325,6 +327,8 @@ const TTSPanel = ({
               'dropdown-content bgcolor-base-200 no-triangle menu menu-vertical rounded-box absolute right-0 z-[1] shadow',
               'mt-4 inline max-h-96 w-[250px] overflow-y-scroll',
             )}
+            title={_('Select Voice')}
+            aria-label={_('Select Voice')}
           >
             {voiceGroups.map((voiceGroup, index) => {
               return (
@@ -373,7 +377,12 @@ const TTSPanel = ({
         </div>
       </div>
       <div className='flex h-4 items-center justify-center opacity-60 transition-transform duration-200 hover:scale-105 hover:opacity-100'>
-        <button onClick={onToogleTTSBar} className='p-0'>
+        <button
+          onClick={onToogleTTSBar}
+          className='p-0'
+          title={_('Toggle Sticky Bottom TTS Bar')}
+          aria-label={_('Toggle Sticky Bottom TTS Bar')}
+        >
           {viewSettings?.showTTSBar ? (
             <TbChevronCompactUp size={iconSize48} style={{ transform: 'scaleY(0.85)' }} />
           ) : (

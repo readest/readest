@@ -26,6 +26,7 @@ export class TTSController extends EventTarget {
   appService: AppService | null = null;
   view: FoliateView;
   isAuthenticated: boolean = false;
+  preprocessCallback?: (ssml: string) => Promise<string>;
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
@@ -44,7 +45,12 @@ export class TTSController extends EventTarget {
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
 
-  constructor(appService: AppService | null, view: FoliateView, isAuthenticated: boolean = false) {
+  constructor(
+    appService: AppService | null,
+    view: FoliateView,
+    isAuthenticated: boolean = false,
+    preprocessCallback?: (ssml: string) => Promise<string>,
+  ) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this);
@@ -56,6 +62,7 @@ export class TTSController extends EventTarget {
     this.appService = appService;
     this.view = view;
     this.isAuthenticated = isAuthenticated;
+    this.preprocessCallback = preprocessCallback;
   }
 
   async init() {
@@ -111,8 +118,8 @@ export class TTSController extends EventTarget {
     await this.view.initTTS(
       granularity,
       createRejectFilter({
-        tags: ['rt', 'sup'],
-        contents: [{ tag: 'a', content: /^\d+$/ }],
+        tags: ['rt'],
+        contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
       }),
       this.#getHighlighter(),
     );
@@ -124,12 +131,12 @@ export class TTSController extends EventTarget {
     for await (const _ of iter);
   }
 
-  async preloadNextSSML(count: number = 2) {
+  async preloadNextSSML(count: number = 4) {
     const tts = this.view.tts;
     if (!tts) return;
     let preloaded = 0;
     for (let i = 0; i < count; i++) {
-      const ssml = this.#preprocessSSML(tts.next());
+      const ssml = await this.#preprocessSSML(tts.next());
       this.preloadSSML(ssml, new AbortController().signal);
       if (ssml) preloaded++;
     }
@@ -138,7 +145,7 @@ export class TTSController extends EventTarget {
     }
   }
 
-  #preprocessSSML(ssml?: string) {
+  async #preprocessSSML(ssml?: string) {
     if (!ssml) return;
     ssml = ssml
       .replace(/<emphasis[^>]*>([^<]+)<\/emphasis>/g, '$1')
@@ -152,6 +159,11 @@ export class TTSController extends EventTarget {
     if (this.ttsTargetLang) {
       ssml = filterSSMLWithLang(ssml, this.ttsTargetLang);
     }
+
+    if (this.preprocessCallback) {
+      ssml = await this.preprocessCallback(ssml);
+    }
+
     return ssml;
   }
 
@@ -169,7 +181,7 @@ export class TTSController extends EventTarget {
           resolve();
         });
 
-        ssml = this.#preprocessSSML(await ssml);
+        ssml = await this.#preprocessSSML(await ssml);
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this

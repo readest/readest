@@ -15,5 +15,5 @@ export type TransformContext = {
 
 export type Transformer = {
   name: string;
-  transform: (ctx: TransformContext) => Promise<string>;
+  transform: (ctx: TransformContext, options?: unknown) => Promise<string>;
 };

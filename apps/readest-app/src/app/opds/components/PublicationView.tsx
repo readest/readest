@@ -163,19 +163,13 @@ export function PublicationView({
                     <Dropdown
                       label={_('Download')}
                       className='dropdown-bottom flex justify-center'
-                      buttonClassName='btn btn-ghost p-0 hover:bg-transparent'
+                      buttonClassName={clsx(
+                        'btn btn-ghost btn-primary min-w-20 rounded-3xl p-0 hover:bg-transparent',
+                        downloadedBook && 'btn-success',
+                      )}
                       disabled={downloading}
                       toggleButton={
-                        <div
-                          role='button'
-                          tabIndex={0}
-                          className={clsx(
-                            `btn btn-primary min-w-20 rounded-3xl ${downloading ? 'btn-disabled' : ''}`,
-                            downloadedBook && 'btn-success',
-                          )}
-                        >
-                          {downloadedBook ? _('Open') : getAcquisitionLabel(rel)}
-                        </div>
+                        <div>{downloadedBook ? _('Open') : getAcquisitionLabel(rel)}</div>
                       }
                     >
                       <div
