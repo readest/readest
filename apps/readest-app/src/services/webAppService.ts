@@ -1,6 +1,6 @@
 import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/types/system';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
-import { RemoteFile } from '@/utils/file';
+import { RemoteFile } from '@/utils/file.web';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
 import {
