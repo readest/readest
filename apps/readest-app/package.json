@@ -54,9 +54,9 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.118",
-    "@assistant-ui/react": "^0.11.53",
-    "@assistant-ui/react-ai-sdk": "^1.1.20",
-    "@assistant-ui/react-markdown": "^0.11.9",
+    "@assistant-ui/react": "^0.11.58",
+    "@assistant-ui/react-ai-sdk": "^1.2.0",
+    "@assistant-ui/react-markdown": "^0.11.10",
     "@aws-sdk/client-s3": "^3.735.0",
     "@aws-sdk/s3-request-presigner": "^3.735.0",
     "@choochmeque/tauri-plugin-sharekit-api": "^0.3.0",
@@ -142,7 +142,7 @@
     "uuid": "^11.1.0",
     "ws": "^8.18.3",
     "zod": "^4.0.8",
-    "zustand": "5.0.6"
+    "zustand": "5.0.10"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.2",
