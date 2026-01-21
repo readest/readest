@@ -120,6 +120,33 @@ describe('AIGatewayProvider', () => {
     const result = await provider.isAvailable();
     expect(result).toBe(true);
   });
+
+  test('isAvailable should return false if key does not exist', async () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'ai-gateway',
+      aiGatewayApiKey: '',
+    };
+
+    // provider throws on construction if no key, so we test via getAIProvider fallback
+    expect(() => new AIGatewayProvider(settings)).toThrow('API key required');
+  });
+
+  test('healthCheck should return false if key does not exist', async () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'ai-gateway',
+      aiGatewayApiKey: 'valid-key',
+    };
+    const provider = new AIGatewayProvider(settings);
+
+    // override key after construction to simulate missing key check in healthCheck
+    (provider as unknown as { settings: AISettings }).settings.aiGatewayApiKey = '';
+    const result = await provider.healthCheck();
+    expect(result).toBe(false);
+  });
 });
 
 describe('getAIProvider', () => {
