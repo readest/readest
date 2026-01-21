@@ -2,12 +2,7 @@
   "extends": "@sindresorhus/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "webworker",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "webworker", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -25,25 +20,11 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@pdfjs/*": [
-        "./public/vendor/pdfjs/*"
-      ],
-      "@simplecc/*": [
-        "./public/vendor/simplecc/*"
-      ]
+      "@/*": ["./src/*"],
+      "@pdfjs/*": ["./public/vendor/pdfjs/*"],
+      "@simplecc/*": ["./public/vendor/simplecc/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "raw-loader.d.ts",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "raw-loader.d.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
