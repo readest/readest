@@ -3,6 +3,7 @@ import type { LanguageModel, EmbeddingModel } from 'ai';
 import type { AIProvider, AISettings, AIProviderName } from '../types';
 import { aiLogger } from '../logger';
 import { GATEWAY_MODELS } from '../constants';
+import { AI_TIMEOUTS } from '../utils/retry';
 import { createProxiedEmbeddingModel } from './ProxiedGatewayEmbedding';
 
 export class AIGatewayProvider implements AIProvider {
@@ -18,7 +19,6 @@ export class AIGatewayProvider implements AIProvider {
     if (!settings.aiGatewayApiKey) {
       throw new Error('AI Gateway API key required');
     }
-    // create gateway instance with explicit apiKey
     this.gateway = createGateway({ apiKey: settings.aiGatewayApiKey });
     aiLogger.provider.init(
       'ai-gateway',
@@ -34,7 +34,6 @@ export class AIGatewayProvider implements AIProvider {
   getEmbeddingModel(): EmbeddingModel<string> {
     const embedModel = this.settings.aiGatewayEmbeddingModel || 'openai/text-embedding-3-small';
 
-    // in browser, route through API proxy to avoid CORS
     if (typeof window !== 'undefined') {
       return createProxiedEmbeddingModel({
         apiKey: this.settings.aiGatewayApiKey!,
@@ -42,7 +41,6 @@ export class AIGatewayProvider implements AIProvider {
       });
     }
 
-    // server-side can call gateway directly
     return this.gateway.textEmbeddingModel(embedModel);
   }
 
@@ -51,6 +49,34 @@ export class AIGatewayProvider implements AIProvider {
   }
 
   async healthCheck(): Promise<boolean> {
-    return !!this.settings.aiGatewayApiKey;
+    if (!this.settings.aiGatewayApiKey) return false;
+
+    try {
+      const modelId = this.settings.aiGatewayModel || GATEWAY_MODELS.GEMINI_FLASH_LITE;
+      aiLogger.provider.init('ai-gateway', `healthCheck starting with model: ${modelId}`);
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hi' }],
+          apiKey: this.settings.aiGatewayApiKey,
+          model: modelId,
+        }),
+        signal: AbortSignal.timeout(AI_TIMEOUTS.HEALTH_CHECK),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || `Health check failed: ${response.status}`);
+      }
+
+      aiLogger.provider.init('ai-gateway', 'healthCheck success');
+      return true;
+    } catch (e) {
+      const error = e as Error;
+      aiLogger.provider.error('ai-gateway', `healthCheck failed: ${error.message}`);
+      return false;
+    }
   }
 }
