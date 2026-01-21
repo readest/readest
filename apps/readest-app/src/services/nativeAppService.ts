@@ -24,7 +24,7 @@ import {
   appLogDir,
   tempDir,
 } from '@tauri-apps/api/path';
-import { type as osType } from '@tauri-apps/plugin-os';
+// osType is dynamically imported to prevent crashes in web mode
 import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api';
 
 import {
@@ -57,7 +57,13 @@ declare global {
   }
 }
 
-const OS_TYPE = osType();
+// osType is dynamically fetched in NativeAppService.init() to prevent crashes in web mode
+let OS_TYPE: string | null = null;
+
+async function fetchOsType(): Promise<string> {
+  const { type } = await import('@tauri-apps/plugin-os');
+  return type();
+}
 
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
@@ -391,33 +397,27 @@ const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as D
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   override appPlatform = 'tauri' as AppPlatform;
-  override isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
-  override isMobile = ['android', 'ios'].includes(OS_TYPE);
-  override isAndroidApp = OS_TYPE === 'android';
-  override isIOSApp = OS_TYPE === 'ios';
-  override isMacOSApp = OS_TYPE === 'macos';
-  override isLinuxApp = OS_TYPE === 'linux';
-  override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
-  override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
+  // these are initialized in init() after osType is fetched
+  override isAppDataSandbox = false;
+  override isMobile = false;
+  override isAndroidApp = false;
+  override isIOSApp = false;
+  override isMacOSApp = false;
+  override isLinuxApp = false;
+  override isMobileApp = false;
+  override isDesktopApp = false;
   override isEink = Boolean(window.__READEST_IS_EINK);
-  override hasTrafficLight = OS_TYPE === 'macos';
-  override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasRoundedWindow = OS_TYPE === 'linux';
-  override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  override hasUpdater =
-    OS_TYPE !== 'ios' &&
-    !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
-    !window.__READEST_UPDATER_DISABLED;
-  // orientation lock is not supported on iPad
-  override hasOrientationLock =
-    (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
-  override hasScreenBrightness = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  override hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
-  // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
-  // See: https://github.com/tauri-apps/tauri/issues/3716
+  override hasTrafficLight = false;
+  override hasWindow = true;
+  override hasWindowBar = true;
+  override hasContextMenu = true;
+  override hasRoundedWindow = false;
+  override hasSafeAreaInset = false;
+  override hasHaptics = false;
+  override hasUpdater = !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
+  override hasOrientationLock = false;
+  override hasScreenBrightness = false;
+  override hasIAP = false;
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
@@ -425,6 +425,30 @@ export class NativeAppService extends BaseAppService {
   private execDir?: string = undefined;
 
   override async init() {
+    // fetch osType dynamically to prevent crashes if accidentally evaluated in web mode
+    OS_TYPE = await fetchOsType();
+
+    // initialize all OS_TYPE-dependent properties now
+    this.isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
+    this.isMobile = ['android', 'ios'].includes(OS_TYPE);
+    this.isAndroidApp = OS_TYPE === 'android';
+    this.isIOSApp = OS_TYPE === 'ios';
+    this.isMacOSApp = OS_TYPE === 'macos';
+    this.isLinuxApp = OS_TYPE === 'linux';
+    this.isMobileApp = ['android', 'ios'].includes(OS_TYPE);
+    this.isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
+    this.hasTrafficLight = OS_TYPE === 'macos';
+    this.hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+    this.hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+    this.hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+    this.hasRoundedWindow = OS_TYPE === 'linux';
+    this.hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
+    this.hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
+    this.hasUpdater = OS_TYPE !== 'ios' && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
+    this.hasOrientationLock = (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
+    this.hasScreenBrightness = OS_TYPE === 'ios' || OS_TYPE === 'android';
+    this.hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
+
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
     if (
