@@ -36,9 +36,10 @@ import type { ScoredChunk } from '@/services/ai/types';
 interface ThreadProps {
   sources?: ScoredChunk[];
   onClear?: () => void;
+  onResetIndex?: () => void;
 }
 
-export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
+export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex }) => {
   return (
     <ThreadPrimitive.Root className='bg-base-100 flex h-full w-full flex-col items-stretch px-3'>
       <ThreadPrimitive.Empty>
@@ -48,7 +49,7 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
           </div>
           <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
           <p className='text-base-content/60 mb-4 text-xs'>Get answers based on the book content</p>
-          <Composer onClear={onClear} />
+          <Composer onClear={onClear} onResetIndex={onResetIndex} />
         </div>
       </ThreadPrimitive.Empty>
 
@@ -65,7 +66,7 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
             AI can make mistakes. Verify with the book.
           </p>
         </ThreadPrimitive.Viewport>
-        <Composer onClear={onClear} />
+        <Composer onClear={onClear} onResetIndex={onResetIndex} />
       </AssistantIf>
     </ThreadPrimitive.Root>
   );
@@ -73,9 +74,10 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
 
 interface ComposerProps {
   onClear?: () => void;
+  onResetIndex?: () => void;
 }
 
-const Composer: FC<ComposerProps> = ({ onClear }) => {
+const Composer: FC<ComposerProps> = ({ onClear, onResetIndex }) => {
   const isEmpty = useAssistantState((s) => s.composer.isEmpty);
   const isRunning = useAssistantState((s) => s.thread.isRunning);
 
@@ -95,6 +97,18 @@ const Composer: FC<ComposerProps> = ({ onClear }) => {
               aria-label='Clear chat'
             >
               <Trash2Icon className='size-3.5' />
+            </button>
+          )}
+
+          {onResetIndex && (
+            <button
+              type='button'
+              onClick={onResetIndex}
+              className='text-base-content hover:bg-base-300 mb-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-colors'
+              title='Re-index book'
+              aria-label='Re-index book'
+            >
+              <RefreshCwIcon className='size-3.5' />
             </button>
           )}
 
