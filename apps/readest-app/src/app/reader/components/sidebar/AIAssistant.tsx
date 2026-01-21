@@ -24,7 +24,7 @@ import type { EmbeddingProgress, AISettings } from '@/services/ai/types';
 
 import { Thread } from '@/components/assistant-ui/thread';
 import { Button } from '@/components/ui/button';
-import { Loader2Icon, BookOpenIcon, SparklesIcon } from 'lucide-react';
+import { Loader2Icon, BookOpenIcon } from 'lucide-react';
 
 interface AIAssistantProps {
   bookKey: string;
@@ -172,7 +172,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
         <div className='bg-primary/10 rounded-full p-3'>
-          <SparklesIcon className='text-primary size-6' />
+          <BookOpenIcon className='text-primary size-6' />
         </div>
         <div>
           <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
