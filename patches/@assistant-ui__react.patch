@@ -1,3 +1,86 @@
+diff --git a/dist/client/util-hooks/tapLookupResources.js b/dist/client/util-hooks/tapLookupResources.js
+index 427a2c2072d38b94488042a9a278eca641a69f05..fdf7716a4497fce83cd043ccf843a44d297f3c77 100644
+--- a/dist/client/util-hooks/tapLookupResources.js
++++ b/dist/client/util-hooks/tapLookupResources.js
+@@ -1,5 +1,5 @@
+ import { tapMemo, tapResources } from "@assistant-ui/tap";
+-export const tapLookupResources = (elements) => {
++export const tapLookupResources = (elements, fallback) => {
+     const elementsMap = tapMemo(() => Object.fromEntries(elements), [elements]);
+     const resources = tapResources(elementsMap, (t) => t, []);
+     const keys = tapMemo(() => Object.keys(resources), [resources]);
+@@ -17,6 +17,7 @@ export const tapLookupResources = (elements) => {
+                 ? resources[keys[lookup.index]]?.api
+                 : resources[lookup.key]?.api;
+             if (!value) {
++                if (fallback) return fallback(lookup);
+                 throw new Error(`tapLookupResources: Resource not found for lookup: ${JSON.stringify(lookup)}`);
+             }
+             return value;
+diff --git a/dist/legacy-runtime/client/ThreadListRuntimeClient.js b/dist/legacy-runtime/client/ThreadListRuntimeClient.js
+index 10576299f3e822408c45f0acb28b184b78510383..c8587d100a5287fca789617ce0975832a028d690 100644
+--- a/dist/legacy-runtime/client/ThreadListRuntimeClient.js
++++ b/dist/legacy-runtime/client/ThreadListRuntimeClient.js
+@@ -18,7 +18,25 @@ export const ThreadListClient = resource(({ runtime, __internal_assistantRuntime
+     const threadItems = tapLookupResources(Object.keys(runtimeState.threadItems).map((id) => [
+         id,
+         ThreadListItemClientById({ runtime, id }),
+-    ]));
++    ]), (lookup) => {
++        const id = "key" in lookup ? lookup.key : "unknown";
++        return {
++            getState: () => ({
++                id,
++                status: "deleted",
++                remoteId: undefined,
++                externalId: undefined,
++            }),
++            switchTo: () => {},
++            rename: () => {},
++            archive: () => {},
++            unarchive: () => {},
++            delete: () => {},
++            generateTitle: () => {},
++            initialize: () => Promise.resolve({ remoteId: id, externalId: undefined }),
++            detach: () => {},
++        };
++    });
+     const state = tapMemo(() => {
+         return {
+             mainThreadId: runtimeState.mainThreadId,
+diff --git a/dist/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.js b/dist/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.js
+index d2defe0ea8dbae95e7aa587422a5a49c8172d257..d9ff78ac5f543be02cf5d1eae957d5b138e6f30e 100644
+--- a/dist/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.js
++++ b/dist/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.js
+@@ -48,6 +48,7 @@ export class LocalThreadRuntimeCore extends BaseThreadRuntimeCore {
+     }
+     _getInitializePromise;
+     __internal_setGetInitializePromise(getPromise) {
++        if (!this) return; // guard against undefined this during React lifecycle edge cases
+         this._getInitializePromise = getPromise;
+     }
+     get extras() {
+diff --git a/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js b/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
+index ed6746709955e59997f79709526c2f3c4aa243dd..3da36eeb997d3ec41af959c687dac7afde1c9539 100644
+--- a/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
++++ b/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
+@@ -77,10 +77,13 @@ export class RemoteThreadListHookInstanceManager extends BaseSubscribable {
+         const initPromiseRef = useRef(undefined);
+         useEffect(() => {
+             const runtimeCore = threadBinding.getState();
++            if (!runtimeCore) return;
+             const setGetInitializePromise = runtimeCore["__internal_setGetInitializePromise"];
+-            if (typeof setGetInitializePromise === "function") {
+-                setGetInitializePromise(() => initPromiseRef.current);
+-            }
++            try {
++                if (typeof setGetInitializePromise === "function") {
++                    setGetInitializePromise.call(runtimeCore, () => initPromiseRef.current);
++                }
++            } catch { /* ignore errors during unmount/remount cycles */ }
+         }, [threadBinding]);
+         useEffect(() => {
+             return runtime.threads.main.unstable_on("initialize", () => {
 diff --git a/src/client/util-hooks/tapLookupResources.ts b/src/client/util-hooks/tapLookupResources.ts
 index a04a77367ef643ada75895cec71fb11ad3a65a0b..9ba1067b6e5008c414d65a1645b20909ce9a1916 100644
 --- a/src/client/util-hooks/tapLookupResources.ts
@@ -51,16 +134,38 @@ index 90c0bee081bb5a05a8d601f7608c2f3ee0714d30..b6ed80ddadcee30d528586d2ea062cb0
      );
  
      const state = tapMemo<ThreadListClientState>(() => {
+diff --git a/src/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.tsx b/src/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.tsx
+index a2c53d8af7acd4fda83e36ce07447a32350baf33..5beef6cf60793ec9ecd67c92fceac840786845d7 100644
+--- a/src/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.tsx
++++ b/src/legacy-runtime/runtime-cores/local/LocalThreadRuntimeCore.tsx
+@@ -84,6 +84,7 @@ export class LocalThreadRuntimeCore
+   public __internal_setGetInitializePromise(
+     getPromise: () => Promise<unknown> | undefined,
+   ) {
++    if (!this) return; // guard against undefined this during React lifecycle edge cases
+     this._getInitializePromise = getPromise;
+   }
+ 
 diff --git a/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx b/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
-index 969328d75ec3a7e1f72b23b1ea2aae3a777d594d..18b8be12a0f07fb0e726b090ab3f81ff8fb66f5c 100644
+index 969328d75ec3a7e1f72b23b1ea2aae3a777d594d..c6e15f4a22b995dcb7a8dbeb291a4243cf89fffd 100644
 --- a/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
 +++ b/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
-@@ -112,7 +112,7 @@ export class RemoteThreadListHookInstanceManager extends BaseSubscribable {
+@@ -108,12 +108,15 @@ export class RemoteThreadListHookInstanceManager extends BaseSubscribable {
+ 
+     useEffect(() => {
+       const runtimeCore = threadBinding.getState();
++      if (!runtimeCore) return;
+       const setGetInitializePromise = (runtimeCore as Record<string, unknown>)[
          "__internal_setGetInitializePromise"
        ];
-       if (typeof setGetInitializePromise === "function") {
+-      if (typeof setGetInitializePromise === "function") {
 -        setGetInitializePromise(() => initPromiseRef.current);
-+        (setGetInitializePromise as Function).call(runtimeCore, () => initPromiseRef.current);
-       }
+-      }
++      try {
++        if (typeof setGetInitializePromise === "function") {
++          (setGetInitializePromise as Function).call(runtimeCore, () => initPromiseRef.current);
++        }
++      } catch { /* ignore errors during unmount/remount cycles */ }
      }, [threadBinding]);
  
+     useEffect(() => {
