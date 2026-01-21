@@ -115,11 +115,13 @@ async function* streamViaApiRoute(
   }
 }
 
-export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapter {
-  const { settings, bookHash, bookTitle, authorName, currentPage } = options;
-
+export function createTauriAdapter(
+  getOptions: () => TauriAdapterOptions,
+): ChatModelAdapter {
   return {
     async *run({ messages, abortSignal }): AsyncGenerator<ChatModelRunResult> {
+      const options = getOptions();
+      const { settings, bookHash, bookTitle, authorName, currentPage } = options;
       const provider = getAIProvider(settings);
       let chunks: ScoredChunk[] = [];
 
