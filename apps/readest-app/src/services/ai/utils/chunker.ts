@@ -1,5 +1,8 @@
 import { TextChunk } from '../types';
 
+// same formula as toc.ts - 1500 chars = 1 page
+export const SIZE_PER_PAGE = 1500;
+
 interface ChunkingOptions {
   maxChunkSize: number;
   overlapSize: number;
@@ -44,6 +47,7 @@ export function chunkSection(
   sectionIndex: number,
   chapterTitle: string,
   bookHash: string,
+  cumulativeSizeBeforeSection: number, // total chars in all sections before this one
   options?: Partial<ChunkingOptions>,
 ): TextChunk[] {
   const opts = { ...DEFAULT_OPTIONS, ...options };
@@ -58,6 +62,7 @@ export function chunkSection(
             sectionIndex,
             chapterTitle,
             text: text.trim(),
+            pageNumber: Math.floor(cumulativeSizeBeforeSection / SIZE_PER_PAGE),
           },
         ]
       : [];
@@ -79,6 +84,7 @@ export function chunkSection(
           sectionIndex,
           chapterTitle,
           text: remaining,
+          pageNumber: Math.floor((cumulativeSizeBeforeSection + position) / SIZE_PER_PAGE),
         });
       } else if (chunks.length > 0) {
         chunks[chunks.length - 1]!.text += ' ' + remaining;
@@ -96,6 +102,7 @@ export function chunkSection(
         sectionIndex,
         chapterTitle,
         text: chunkText,
+        pageNumber: Math.floor((cumulativeSizeBeforeSection + position) / SIZE_PER_PAGE),
       });
       chunkIndex++;
     }
