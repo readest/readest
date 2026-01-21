@@ -313,7 +313,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
       const { writingMode } = defaultView.getComputedStyle(el);
-      draw((Overlayer as any).bubble, { writingMode });
+      draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
       draw(Overlayer.highlight, { color: isEink ? einkBgColor : hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
