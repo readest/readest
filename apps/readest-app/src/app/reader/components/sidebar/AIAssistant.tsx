@@ -58,12 +58,23 @@ const AIAssistantChat = ({
     });
   }, [aiSettings, bookHash, bookTitle, authorName, currentPage]);
 
-  // use LocalRuntime with the adapter
-  const runtime = useLocalRuntime(adapter!);
-
+  // guard: return early if no adapter (prevents calling useLocalRuntime with null)
   if (!adapter) {
     return null;
   }
+
+  return <AIAssistantWithRuntime adapter={adapter} onResetIndex={onResetIndex} />;
+};
+
+// separate component to ensure useLocalRuntime is always called with a valid adapter
+const AIAssistantWithRuntime = ({
+  adapter,
+  onResetIndex,
+}: {
+  adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
+  onResetIndex: () => void;
+}) => {
+  const runtime = useLocalRuntime(adapter);
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
