@@ -92,7 +92,15 @@ export async function indexBook(
   const sections = bookDoc.sections || [];
   const toc = bookDoc.toc || [];
 
-  aiLogger.chunker.start(bookHash, sections.length);
+  // calculate cumulative character sizes like toc.ts does
+  const sizes = sections.map((s) => (s.linear !== 'no' && s.size > 0 ? s.size : 0));
+  let cumulative = 0;
+  const cumulativeSizes = sizes.map((size) => {
+    const current = cumulative;
+    cumulative += size;
+    return current;
+  });
+
   const state: IndexingState = {
     bookHash,
     status: 'indexing',
@@ -113,7 +121,13 @@ export async function indexBook(
         const doc = await section.createDocument();
         const text = extractTextFromDocument(doc);
         if (text.length < 100) continue;
-        const sectionChunks = chunkSection(doc, i, getChapterTitle(toc, i), bookHash);
+        const sectionChunks = chunkSection(
+          doc,
+          i,
+          getChapterTitle(toc, i),
+          bookHash,
+          cumulativeSizes[i] ?? 0,
+        );
         aiLogger.chunker.section(i, text.length, sectionChunks.length);
         allChunks.push(...sectionChunks);
       } catch (e) {
@@ -199,9 +213,9 @@ export async function hybridSearch(
   query: string,
   settings: AISettings,
   topK = 10,
-  maxSectionIndex?: number,
+  maxPage?: number,
 ): Promise<ScoredChunk[]> {
-  aiLogger.search.query(query, maxSectionIndex);
+  aiLogger.search.query(query, maxPage);
   const provider = getAIProvider(settings);
   let queryEmbedding: number[] | null = null;
 
@@ -221,13 +235,7 @@ export async function hybridSearch(
     // bm25 only fallback
   }
 
-  const results = await aiStore.hybridSearch(
-    bookHash,
-    queryEmbedding,
-    query,
-    topK,
-    maxSectionIndex,
-  );
+  const results = await aiStore.hybridSearch(bookHash, queryEmbedding, query, topK, maxPage);
   aiLogger.search.hybridResults(results.length, [...new Set(results.map((r) => r.searchMethod))]);
   return results;
 }
@@ -236,14 +244,14 @@ export async function getRelevantContext(
   bookHash: string,
   query: string,
   settings: AISettings,
-  maxSectionIndex?: number,
+  maxPage?: number,
 ): Promise<string[]> {
   const results = await hybridSearch(
     bookHash,
     query,
     settings,
     settings.maxContextChunks || 5,
-    maxSectionIndex,
+    maxPage,
   );
   const texts = results.map((r) => r.text);
   aiLogger.chat.context(results.length, texts.join('').length);
