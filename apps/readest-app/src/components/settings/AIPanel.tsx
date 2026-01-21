@@ -1,15 +1,64 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { PiCheckCircle, PiWarningCircle, PiArrowsClockwise } from 'react-icons/pi';
+import { PiCheckCircle, PiWarningCircle, PiArrowsClockwise, PiSpinner } from 'react-icons/pi';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
-import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS } from '@/services/ai/constants';
+import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
+type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
+
+const CUSTOM_MODEL_VALUE = '__custom__';
+
+interface ModelOption {
+  id: string;
+  label: string;
+  inputCost: string;
+  outputCost: string;
+}
+
+const getModelOptions = (): ModelOption[] => [
+  {
+    id: GATEWAY_MODELS.GEMINI_FLASH_LITE,
+    label: 'Gemini 2.5 Flash Lite',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.GEMINI_FLASH_LITE]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.GEMINI_FLASH_LITE]?.output ?? '?',
+  },
+  {
+    id: GATEWAY_MODELS.GPT_5_NANO,
+    label: 'GPT-5 Nano',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.GPT_5_NANO]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.GPT_5_NANO]?.output ?? '?',
+  },
+  {
+    id: GATEWAY_MODELS.LLAMA_4_SCOUT,
+    label: 'Llama 4 Scout',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.LLAMA_4_SCOUT]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.LLAMA_4_SCOUT]?.output ?? '?',
+  },
+  {
+    id: GATEWAY_MODELS.GROK_4_1_FAST,
+    label: 'Grok 4.1 Fast',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.GROK_4_1_FAST]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.GROK_4_1_FAST]?.output ?? '?',
+  },
+  {
+    id: GATEWAY_MODELS.DEEPSEEK_V3_2,
+    label: 'DeepSeek V3.2',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.DEEPSEEK_V3_2]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.DEEPSEEK_V3_2]?.output ?? '?',
+  },
+  {
+    id: GATEWAY_MODELS.QWEN_3_235B,
+    label: 'Qwen 3 235B',
+    inputCost: MODEL_PRICING[GATEWAY_MODELS.QWEN_3_235B]?.input ?? '?',
+    outputCost: MODEL_PRICING[GATEWAY_MODELS.QWEN_3_235B]?.output ?? '?',
+  },
+];
 
 const AIPanel: React.FC = () => {
   const _ = useTranslation();
@@ -25,13 +74,29 @@ const AIPanel: React.FC = () => {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [gatewayKey, setGatewayKey] = useState(aiSettings.aiGatewayApiKey ?? '');
-  const [gatewayModel, setGatewayModel] = useState(
-    aiSettings.aiGatewayModel ?? DEFAULT_AI_SETTINGS.aiGatewayModel ?? '',
+
+  const savedCustomModel = aiSettings.aiGatewayCustomModel ?? '';
+  const savedModel = aiSettings.aiGatewayModel ?? DEFAULT_AI_SETTINGS.aiGatewayModel ?? '';
+  const isCustomModelSaved = savedCustomModel.length > 0;
+
+  const [selectedModel, setSelectedModel] = useState(
+    isCustomModelSaved ? CUSTOM_MODEL_VALUE : savedModel,
   );
+  const [customModelInput, setCustomModelInput] = useState(savedCustomModel);
+  const [customModelStatus, setCustomModelStatus] = useState<CustomModelStatus>(
+    isCustomModelSaved ? 'valid' : 'idle',
+  );
+  const [customModelPricing, setCustomModelPricing] = useState<{
+    input: string;
+    output: string;
+  } | null>(isCustomModelSaved ? { input: '?', output: '?' } : null);
+  const [customModelError, setCustomModelError] = useState('');
+
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   const isMounted = useRef(false);
+  const modelOptions = getModelOptions();
 
   const settingsRef = useRef(settings);
   useEffect(() => {
@@ -66,7 +131,7 @@ const AIPanel: React.FC = () => {
       if (models.length > 0 && !models.includes(ollamaModel)) {
         setOllamaModel(models[0]!);
       }
-    } catch (err) {
+    } catch (_err) {
       setOllamaModels([]);
     } finally {
       setFetchingModels(false);
@@ -124,13 +189,80 @@ const AIPanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gatewayKey]);
 
+  // Get the effective model ID to use (either selected or custom)
+  const getEffectiveModelId = useCallback(() => {
+    if (selectedModel === CUSTOM_MODEL_VALUE && customModelStatus === 'valid') {
+      return customModelInput;
+    }
+    return selectedModel;
+  }, [selectedModel, customModelStatus, customModelInput]);
+
+  // Save model selection when it changes
   useEffect(() => {
     if (!isMounted.current) return;
-    if (gatewayModel !== aiSettings.aiGatewayModel) {
-      saveAiSetting('aiGatewayModel', gatewayModel);
+    const effectiveModel = getEffectiveModelId();
+    if (effectiveModel !== aiSettings.aiGatewayModel) {
+      saveAiSetting('aiGatewayModel', effectiveModel);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gatewayModel]);
+  }, [selectedModel, customModelStatus, customModelInput]);
+
+  // Save custom model separately
+  useEffect(() => {
+    if (!isMounted.current) return;
+    const customToSave =
+      selectedModel === CUSTOM_MODEL_VALUE && customModelStatus === 'valid' ? customModelInput : '';
+    if (customToSave !== (aiSettings.aiGatewayCustomModel ?? '')) {
+      saveAiSetting('aiGatewayCustomModel', customToSave);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModel, customModelStatus, customModelInput]);
+
+  const handleModelChange = (value: string) => {
+    setSelectedModel(value);
+    if (value !== CUSTOM_MODEL_VALUE) {
+      setCustomModelStatus('idle');
+      setCustomModelError('');
+      setCustomModelPricing(null);
+    }
+  };
+
+  const validateCustomModel = async () => {
+    if (!customModelInput.trim()) {
+      setCustomModelError(_('Please enter a model ID'));
+      setCustomModelStatus('invalid');
+      return;
+    }
+
+    setCustomModelStatus('validating');
+    setCustomModelError('');
+
+    try {
+      // Simple validation: try to make a minimal request to verify model exists
+      // This uses the AI Gateway to check if the model is available
+      const testSettings: AISettings = {
+        ...aiSettings,
+        provider: 'ai-gateway',
+        aiGatewayApiKey: gatewayKey,
+        aiGatewayModel: customModelInput.trim(),
+      };
+
+      const aiProvider = getAIProvider(testSettings);
+      const isAvailable = await aiProvider.isAvailable();
+
+      if (isAvailable) {
+        setCustomModelStatus('valid');
+        // Set unknown pricing for custom models
+        setCustomModelPricing({ input: '?', output: '?' });
+      } else {
+        setCustomModelStatus('invalid');
+        setCustomModelError(_('Model not available or invalid'));
+      }
+    } catch (_err) {
+      setCustomModelStatus('invalid');
+      setCustomModelError(_('Failed to validate model'));
+    }
+  };
 
   const handleTestConnection = async () => {
     if (!enabled) return;
@@ -138,13 +270,14 @@ const AIPanel: React.FC = () => {
     setErrorMessage('');
 
     try {
+      const effectiveModel = getEffectiveModelId();
       const testSettings: AISettings = {
         ...aiSettings,
         provider,
         ollamaBaseUrl: ollamaUrl,
         ollamaModel,
         aiGatewayApiKey: gatewayKey,
-        aiGatewayModel: gatewayModel,
+        aiGatewayModel: effectiveModel,
       };
       const aiProvider = getAIProvider(testSettings);
       const isHealthy = await aiProvider.healthCheck();
@@ -270,6 +403,11 @@ const AIPanel: React.FC = () => {
       {provider === 'ai-gateway' && (
         <div className={clsx('w-full', disabledSection)}>
           <h2 className='mb-2 font-medium'>{_('AI Gateway Configuration')}</h2>
+          <p className='text-base-content/70 mb-3 text-sm'>
+            {_(
+              'Choose from a selection of high-quality, economical AI models. You can also bring your own model by selecting "Custom Model" below.',
+            )}
+          </p>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200 divide-y'>
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
@@ -297,16 +435,59 @@ const AIPanel: React.FC = () => {
                 <span>{_('Model')}</span>
                 <select
                   className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                  value={gatewayModel}
-                  onChange={(e) => setGatewayModel(e.target.value)}
+                  value={selectedModel}
+                  onChange={(e) => handleModelChange(e.target.value)}
                   disabled={!enabled}
                 >
-                  <option value={GATEWAY_MODELS.CLAUDE_SONNET}>GPT-5.2</option>
-                  <option value={GATEWAY_MODELS.GEMINI_3_FLASH}>Gemini 3 Flash</option>
-                  <option value={GATEWAY_MODELS.GPT_5_2_MINI}>GPT-5.2 Mini</option>
-                  <option value={GATEWAY_MODELS.GEMINI_3_FLASH_EXP}>Gemini 3 Flash Exp</option>
+                  {modelOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label} — ${opt.inputCost}/M in, ${opt.outputCost}/M out
+                    </option>
+                  ))}
+                  <option value={CUSTOM_MODEL_VALUE}>{_('Custom Model...')}</option>
                 </select>
               </div>
+
+              {selectedModel === CUSTOM_MODEL_VALUE && (
+                <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+                  <span>{_('Custom Model ID')}</span>
+                  <div className='flex w-full gap-2'>
+                    <input
+                      type='text'
+                      className='input input-bordered input-sm flex-1'
+                      value={customModelInput}
+                      onChange={(e) => {
+                        setCustomModelInput(e.target.value);
+                        setCustomModelStatus('idle');
+                        setCustomModelError('');
+                      }}
+                      placeholder='provider/model-name'
+                      disabled={!enabled}
+                    />
+                    <button
+                      className='btn btn-outline btn-sm'
+                      onClick={validateCustomModel}
+                      disabled={!enabled || customModelStatus === 'validating'}
+                    >
+                      {customModelStatus === 'validating' ? (
+                        <PiSpinner className='size-4 animate-spin' />
+                      ) : (
+                        _('Validate')
+                      )}
+                    </button>
+                  </div>
+                  {customModelStatus === 'valid' && customModelPricing && (
+                    <span className='text-success flex items-center gap-1 text-sm'>
+                      <PiCheckCircle />
+                      {_('Model available')} — ${customModelPricing.input}/M in, $
+                      {customModelPricing.output}/M out
+                    </span>
+                  )}
+                  {customModelStatus === 'invalid' && (
+                    <span className='text-error text-sm'>{customModelError}</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
