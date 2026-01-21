@@ -1,0 +1,26 @@
+diff --git a/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js b/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
+index ed6746709955e59997f79709526c2f3c4aa243dd..aa878b4b319be964da256c3939e12a34928c84e3 100644
+--- a/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
++++ b/dist/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.js
+@@ -79,7 +79,7 @@ export class RemoteThreadListHookInstanceManager extends BaseSubscribable {
+             const runtimeCore = threadBinding.getState();
+             const setGetInitializePromise = runtimeCore["__internal_setGetInitializePromise"];
+             if (typeof setGetInitializePromise === "function") {
+-                setGetInitializePromise(() => initPromiseRef.current);
++                setGetInitializePromise.call(runtimeCore, () => initPromiseRef.current);
+             }
+         }, [threadBinding]);
+         useEffect(() => {
+diff --git a/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx b/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
+index 969328d75ec3a7e1f72b23b1ea2aae3a777d594d..18b8be12a0f07fb0e726b090ab3f81ff8fb66f5c 100644
+--- a/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
++++ b/src/legacy-runtime/runtime-cores/remote-thread-list/RemoteThreadListHookInstanceManager.tsx
+@@ -112,7 +112,7 @@ export class RemoteThreadListHookInstanceManager extends BaseSubscribable {
+         "__internal_setGetInitializePromise"
+       ];
+       if (typeof setGetInitializePromise === "function") {
+-        setGetInitializePromise(() => initPromiseRef.current);
++        (setGetInitializePromise as Function).call(runtimeCore, () => initPromiseRef.current);
+       }
+     }, [threadBinding]);
+ 
