@@ -14,7 +14,7 @@ overrides:
 
 patchedDependencies:
   '@assistant-ui/react':
-    hash: fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc
+    hash: e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6
     path: patches/@assistant-ui__react.patch
 
 importers:
@@ -56,13 +56,13 @@ importers:
         version: 2.0.123(react@19.2.0)(zod@4.3.5)
       '@assistant-ui/react':
         specifier: ^0.11.58
-        version: 0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
+        version: 0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
       '@assistant-ui/react-ai-sdk':
         specifier: ^1.2.0
-        version: 1.2.0(@assistant-ui/react@0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react@18.3.12)(assistant-cloud@0.1.13)(react@19.2.0)
+        version: 1.2.0(@assistant-ui/react@0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react@18.3.12)(assistant-cloud@0.1.13)(react@19.2.0)
       '@assistant-ui/react-markdown':
         specifier: ^0.11.10
-        version: 0.11.10(@assistant-ui/react@0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 0.11.10(@assistant-ui/react@0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@aws-sdk/client-s3':
         specifier: ^3.735.0
         version: 3.972.0
@@ -8110,10 +8110,10 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
 
-  '@assistant-ui/react-ai-sdk@1.2.0(@assistant-ui/react@0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react@18.3.12)(assistant-cloud@0.1.13)(react@19.2.0)':
+  '@assistant-ui/react-ai-sdk@1.2.0(@assistant-ui/react@0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react@18.3.12)(assistant-cloud@0.1.13)(react@19.2.0)':
     dependencies:
       '@ai-sdk/react': 3.0.45(react@19.2.0)(zod@4.3.5)
-      '@assistant-ui/react': 0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
+      '@assistant-ui/react': 0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
       ai: 6.0.43(zod@4.3.5)
       react: 19.2.0
       zod: 4.3.5
@@ -8121,9 +8121,9 @@ snapshots:
       '@types/react': 18.3.12
       assistant-cloud: 0.1.13
 
-  '@assistant-ui/react-markdown@0.11.10(@assistant-ui/react@0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@assistant-ui/react-markdown@0.11.10(@assistant-ui/react@0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)))(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@assistant-ui/react': 0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
+      '@assistant-ui/react': 0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
       '@radix-ui/react-primitive': 2.1.4(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-use-callback-ref': 1.1.1(@types/react@18.3.12)(react@19.2.0)
       classnames: 2.5.1
@@ -8136,7 +8136,7 @@ snapshots:
       - react-dom
       - supports-color
 
-  '@assistant-ui/react@0.11.58(patch_hash=fd089db236bb6e3838fded514b97da8a1603a68c779d69ec6662918ad59d96dc)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))':
+  '@assistant-ui/react@0.11.58(patch_hash=e7360fd8d629e2982138f3c4730ea71f82eecc9ddf01f3066427577f003aeac6)(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))':
     dependencies:
       '@assistant-ui/tap': 0.3.6(@types/react@18.3.12)(react@19.2.0)
       '@radix-ui/primitive': 1.1.3
