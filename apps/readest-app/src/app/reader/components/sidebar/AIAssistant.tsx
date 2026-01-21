@@ -1,15 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react';
+import {
+  AssistantRuntimeProvider,
+  useLocalRuntime,
+  useAssistantRuntime,
+} from '@assistant-ui/react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
-import { indexBook, isBookIndexed } from '@/services/ai/ragService';
-import { createTauriAdapter, getLastSources, clearLastSources } from '@/services/ai/adapters';
-import { aiLogger } from '@/services/ai/logger';
+import {
+  indexBook,
+  isBookIndexed,
+  aiStore,
+  aiLogger,
+  createTauriAdapter,
+  getLastSources,
+  clearLastSources,
+} from '@/services/ai';
 import type { EmbeddingProgress, AISettings } from '@/services/ai/types';
 
 import { Thread } from '@/components/assistant-ui/thread';
@@ -26,15 +36,46 @@ const AIAssistantChat = ({
   bookHash,
   bookTitle,
   authorName,
-  currentSection,
+  currentPage,
+  onResetIndex,
 }: {
   aiSettings: AISettings;
   bookHash: string;
   bookTitle: string;
   authorName: string;
-  currentSection: number;
+  currentPage: number;
+  onResetIndex: () => void;
 }) => {
+  // create adapter with current settings
+  const adapter = useMemo(() => {
+    if (!aiSettings) return null;
+    return createTauriAdapter({
+      settings: aiSettings,
+      bookHash,
+      bookTitle,
+      authorName,
+      currentPage,
+    });
+  }, [aiSettings, bookHash, bookTitle, authorName, currentPage]);
+
+  // use LocalRuntime with the adapter
+  const runtime = useLocalRuntime(adapter!);
+
+  if (!adapter) {
+    return null;
+  }
+
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      <ThreadWrapper onResetIndex={onResetIndex} />
+    </AssistantRuntimeProvider>
+  );
+};
+
+// inner component that uses useAssistantRuntime (must be inside provider)
+const ThreadWrapper = ({ onResetIndex }: { onResetIndex: () => void }) => {
   const [sources, setSources] = useState(getLastSources());
+  const assistantRuntime = useAssistantRuntime();
 
   // poll for sources updates (adapter stores them)
   useEffect(() => {
@@ -47,32 +88,10 @@ const AIAssistantChat = ({
   const handleClear = useCallback(() => {
     clearLastSources();
     setSources([]);
-  }, []);
+    assistantRuntime.switchToNewThread();
+  }, [assistantRuntime]);
 
-  // create adapter with current settings
-  const adapter = useMemo(() => {
-    if (!aiSettings) return null;
-    return createTauriAdapter({
-      settings: aiSettings,
-      bookHash,
-      bookTitle,
-      authorName,
-      currentSection,
-    });
-  }, [aiSettings, bookHash, bookTitle, authorName, currentSection]);
-
-  // use LocalRuntime with the adapter
-  const runtime = useLocalRuntime(adapter!);
-
-  if (!adapter) {
-    return null;
-  }
-
-  return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <Thread sources={sources} onClear={handleClear} />
-    </AssistantRuntimeProvider>
-  );
+  return <Thread sources={sources} onClear={handleClear} onResetIndex={onResetIndex} />;
 };
 
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {
@@ -91,7 +110,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
   const authorName = bookData?.book?.author || '';
-  const currentSection = progress?.section?.current || 0;
+  const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
 
   // check if book is indexed on mount
@@ -125,10 +144,16 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     }
   }, [bookData?.bookDoc, bookHash, aiSettings]);
 
+  const handleResetIndex = useCallback(async () => {
+    if (!window.confirm('Are you sure you want to re-index this book?')) return;
+    await aiStore.clearBook(bookHash);
+    setIndexed(false);
+  }, [bookHash]);
+
   if (!aiSettings?.enabled) {
     return (
       <div className='flex h-full items-center justify-center p-4'>
-        <p className='text-sm text-muted-foreground'>{_('Enable AI in Settings')}</p>
+        <p className='text-muted-foreground text-sm'>{_('Enable AI in Settings')}</p>
       </div>
     );
   }
@@ -146,12 +171,12 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   if (!indexed && !isIndexing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-        <div className='rounded-full bg-primary/10 p-3'>
-          <SparklesIcon className='size-6 text-primary' />
+        <div className='bg-primary/10 rounded-full p-3'>
+          <SparklesIcon className='text-primary size-6' />
         </div>
         <div>
-          <h3 className='mb-0.5 text-sm font-medium text-foreground'>{_('Index This Book')}</h3>
-          <p className='text-xs text-muted-foreground'>
+          <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
+          <p className='text-muted-foreground text-xs'>
             {_('Enable AI search and chat for this book')}
           </p>
         </div>
@@ -166,18 +191,18 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   if (isIndexing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-        <Loader2Icon className='size-6 animate-spin text-primary' />
+        <Loader2Icon className='text-primary size-6 animate-spin' />
         <div>
-          <p className='mb-1 text-sm font-medium text-foreground'>{_('Indexing book...')}</p>
-          <p className='text-xs text-muted-foreground'>
+          <p className='text-foreground mb-1 text-sm font-medium'>{_('Indexing book...')}</p>
+          <p className='text-muted-foreground text-xs'>
             {indexProgress?.phase === 'embedding'
               ? `${indexProgress.current} / ${indexProgress.total} chunks`
               : _('Preparing...')}
           </p>
         </div>
-        <div className='h-1.5 w-32 overflow-hidden rounded-full bg-muted'>
+        <div className='bg-muted h-1.5 w-32 overflow-hidden rounded-full'>
           <div
-            className='h-full bg-primary transition-all duration-300'
+            className='bg-primary h-full transition-all duration-300'
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -191,7 +216,8 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       bookHash={bookHash}
       bookTitle={bookTitle}
       authorName={authorName}
-      currentSection={currentSection}
+      currentPage={currentPage}
+      onResetIndex={handleResetIndex}
     />
   );
 };
