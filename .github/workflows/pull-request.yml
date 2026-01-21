@@ -68,6 +68,10 @@ jobs:
         run: |
           pnpm install && pnpm setup-vendors
 
+      - name: run format check
+        run: |
+          pnpm format:check || (pnpm format && git diff && exit 1)
+
       - name: run tests
         working-directory: apps/readest-app
         run: |
