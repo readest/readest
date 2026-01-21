@@ -1,9 +1,3 @@
-/**
- * server-side embedding endpoint for web/mobile
- * proxies requests to AI Gateway to avoid CORS issues
- * protects api key by keeping it server-side
- */
-
 import { NextResponse } from 'next/server';
 import { embed, embedMany, createGateway } from 'ai';
 
@@ -17,7 +11,6 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Texts array required' }, { status: 400 });
     }
 
-    // use provided api key or fallback to server-side env var
     const gatewayApiKey = apiKey || process.env['AI_GATEWAY_API_KEY'];
     if (!gatewayApiKey) {
       return NextResponse.json({ error: 'API key required' }, { status: 401 });
@@ -37,7 +30,6 @@ export async function POST(req: Request): Promise<Response> {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[AI Embed Route]', errorMessage, error);
     return NextResponse.json({ error: `Embedding failed: ${errorMessage}` }, { status: 500 });
   }
 }
