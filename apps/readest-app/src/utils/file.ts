@@ -66,8 +66,9 @@ export class NativeFile extends File implements ClosableFile {
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 1024;
   static MAX_CACHE_ITEMS_SIZE = 50;
-  #cache: Map<number, ArrayBuffer> = new Map();
   #order: number[] = [];
+  #cache: Map<number, ArrayBuffer> = new Map();
+  #pendingReads: Map<string, Promise<ArrayBuffer>> = new Map();
 
   constructor(fp: string, name?: string, baseDir: BaseDirectory | null = null, type = '') {
     super([], name || fp, { type });
@@ -122,37 +123,54 @@ export class NativeFile extends File implements ClosableFile {
 
   // exclusive reading of the end: [start, end)
   async readData(start: number, end: number): Promise<ArrayBuffer> {
-    // PDF.js workers might call readData concurrently
-    // make readData thread-safe by always opening and closing the file handle
-    const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
-    if (!handle) {
-      throw new Error('File handle is not open');
-    }
+    start = Math.max(0, start);
+    end = Math.max(start, Math.min(this.size, end));
+    const size = end - start;
 
-    try {
-      start = Math.max(0, start);
-      end = Math.max(start, Math.min(this.size, end));
-      const size = end - start;
-
-      if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
+    if (size > NativeFile.MAX_CACHE_CHUNK_SIZE) {
+      const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
+      try {
         await handle.seek(start, SeekMode.Start);
         const buffer = new Uint8Array(size);
         await handle.read(buffer);
         return buffer.buffer;
+      } finally {
+        await handle.close();
       }
+    }
 
-      const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
-        const buffer = this.#cache.get(chunkStart)!;
-        return start >= chunkStart && end <= chunkStart + buffer.byteLength;
-      });
+    const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
+      const buffer = this.#cache.get(chunkStart)!;
+      return start >= chunkStart && end <= chunkStart + buffer.byteLength;
+    });
 
-      if (cachedChunkStart !== undefined) {
-        this.#updateAccessOrder(cachedChunkStart);
-        const buffer = this.#cache.get(cachedChunkStart)!;
-        const offset = start - cachedChunkStart;
-        return buffer.slice(offset, offset + size);
-      }
+    if (cachedChunkStart !== undefined) {
+      this.#updateAccessOrder(cachedChunkStart);
+      const buffer = this.#cache.get(cachedChunkStart)!;
+      const offset = start - cachedChunkStart;
+      return buffer.slice(offset, offset + size);
+    }
 
+    const readKey = `${start}-${end}`;
+    const pendingRead = this.#pendingReads.get(readKey);
+
+    if (pendingRead) {
+      return pendingRead;
+    }
+
+    const readPromise = this.#readAndCacheChunkSafe(start, size);
+    this.#pendingReads.set(readKey, readPromise);
+
+    try {
+      return await readPromise;
+    } finally {
+      this.#pendingReads.delete(readKey);
+    }
+  }
+
+  async #readAndCacheChunkSafe(start: number, size: number): Promise<ArrayBuffer> {
+    const handle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
+    try {
       const chunkStart = Math.max(0, start - 1024);
       const chunkEnd = Math.min(this.size, start + NativeFile.MAX_CACHE_CHUNK_SIZE);
       const chunkSize = chunkEnd - chunkStart;
@@ -161,6 +179,7 @@ export class NativeFile extends File implements ClosableFile {
       const buffer = new Uint8Array(chunkSize);
       await handle.read(buffer);
 
+      // Only one thread reaches here per unique range
       this.#cache.set(chunkStart, buffer.buffer);
       this.#updateAccessOrder(chunkStart);
       this.#ensureCacheSize();
@@ -249,11 +268,12 @@ export class RemoteFile extends File implements ClosableFile {
   #lastModified: number;
   #size: number = -1;
   #type: string = '';
-  #cache: Map<number, ArrayBuffer> = new Map(); // LRU cache
   #order: number[] = [];
+  #cache: Map<number, ArrayBuffer> = new Map(); // LRU cache
+  #pendingFetches: Map<string, Promise<ArrayBuffer>> = new Map();
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
-  static MAX_CACHE_ITEMS_SIZE: number = 10;
+  static MAX_CACHE_ITEMS_SIZE: number = 128;
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
     const basename = url.split('/').pop() || 'remote-file';
@@ -347,7 +367,7 @@ export class RemoteFile extends File implements ClosableFile {
     } else if (rangeSize > RemoteFile.MAX_CACHE_CHUNK_SIZE) {
       return this.fetchRangePart(start, end);
     } else {
-      let cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
+      const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
         const buffer = this.#cache.get(chunkStart)!;
         const bufferSize = buffer.byteLength;
         return start >= chunkStart && end <= chunkStart + bufferSize;
@@ -358,20 +378,40 @@ export class RemoteFile extends File implements ClosableFile {
         const offset = start - cachedChunkStart;
         return buffer.slice(offset, offset + rangeSize);
       }
-      cachedChunkStart = await this.#fetchAndCacheChunk(start, end);
-      const buffer = this.#cache.get(cachedChunkStart)!;
-      const offset = start - cachedChunkStart;
-      return buffer.slice(offset, offset + rangeSize);
+
+      const fetchKey = `${start}-${end}`;
+      const pendingFetch = this.#pendingFetches.get(fetchKey);
+
+      if (pendingFetch) {
+        return pendingFetch;
+      }
+
+      const fetchPromise = this.#fetchAndCacheChunkSafe(start, end, rangeSize);
+      this.#pendingFetches.set(fetchKey, fetchPromise);
+      try {
+        return await fetchPromise;
+      } finally {
+        this.#pendingFetches.delete(fetchKey);
+      }
     }
   }
 
-  async #fetchAndCacheChunk(start: number, end: number): Promise<number> {
+  async #fetchAndCacheChunkSafe(
+    start: number,
+    end: number,
+    rangeSize: number,
+  ): Promise<ArrayBuffer> {
     const chunkStart = Math.max(0, start - 1024);
     const chunkEnd = Math.max(end, start + RemoteFile.MAX_CACHE_CHUNK_SIZE - 1024 - 1);
-    this.#cache.set(chunkStart, await this.fetchRangePart(chunkStart, chunkEnd));
+    const buffer = await this.fetchRangePart(chunkStart, chunkEnd);
+
+    // Only one thread reaches here per unique range
+    this.#cache.set(chunkStart, buffer);
     this.#updateAccessOrder(chunkStart);
     this.#ensureCacheSize();
-    return chunkStart;
+
+    const offset = start - chunkStart;
+    return buffer.slice(offset, offset + rangeSize);
   }
 
   #updateAccessOrder(chunkStart: number) {

@@ -1,5 +1,60 @@
 {
   "releases": {
+    "0.9.98": {
+      "date": "2026-01-21",
+      "notes": [
+        "Bookshelf: Added the ability to export original book files directly from the book details dialog",
+        "Bookshelf: Added a new sorting option to organize books by publish date",
+        "Bookshelf: Improved performance for large library with faster and more stable imports",
+        "OPDS: Improved download reliability by correctly detecting filenames for PDF and CBZ files",
+        "Proofreading: Added support for whole-word replacement to make text corrections more precise",
+        "Notes: Added the ability to export notes using a customizable template",
+        "PDF: Added support for panning within PDF documents for easier navigation",
+        "PDF: Improved performance by pre-rendering the next page for smoother page transitions",
+        "Text-to-Speech: Added support for word replacement to improve pronunciation during playback",
+        "Text-to-Speech: Fixed an issue where playback speed settings were not applied correctly on Linux",
+        "E-ink: Improved reading stability by preventing unwanted scrolling when animations are disabled or on e-ink devices",
+        "Discord: Added Discord Rich Presence to display your current reading status on Desktop platforms",
+        "Android: Fixed an issue that could cause occasional crashes during app startup",
+        "Fonts: Improved web font loading for faster and more stable text rendering"
+      ]
+    },
+    "0.9.97": {
+      "date": "2026-01-10",
+      "notes": [
+        "Annotations: Added annotation bubble icons directly on text with instant note popups",
+        "Annotations: Enabled quick highlighting when selecting text",
+        "Annotations: Added the ability to edit the text range of existing highlights",
+        "Annotations: Added an annotation navigation bar for easier browsing",
+        "OPDS: Fixed an issue where CBZ files could not be downloaded from OPDS catalogs",
+        "OPDS: Improved compatibility with Komga OPDS servers",
+        "OPDS: Added support for OPDS servers using self-signed SSL certificates",
+        "PDF: Fixed an issue where some PDF files failed to open",
+        "E-ink: Optimized colors and layout for improved e-ink device readability",
+        "Search: Added search term history for quicker repeated searches",
+        "Text-to-Speech: Reduced excessive pauses between sentences for smoother playback",
+        "File Transfer: Introduced a background transfer queue for uploading and downloading books",
+        "Proofreading: Added a proofread tool that can replace text directly within books"
+      ]
+    },
+    "0.9.96": {
+      "date": "2025-12-19",
+      "notes": [
+        "TTS: Resolved an issue where Edge TTS was blocked in certain regions",
+        "OPDS: Improved compatibility with older versions of Calibre Web",
+        "OPDS: Added an instant search bar for faster browsing in OPDS catalogs",
+        "OPDS: Added a curated book catalog from Standard Ebooks",
+        "Bookshelf: Added a “Group Books” action to the context menu",
+        "Comics: Fixed layout issues to improve comic book reading",
+        "Layout: Footnote popups now adapt correctly to different screen sizes",
+        "Layout: Fixed an issue where the maximum inline width was not applied to EPUBs",
+        "Sync: Improved file downloading by correctly handling special characters in filenames",
+        "UI: Added an option to temporarily dismiss the reading progress bar",
+        "Settings: Screen brightness adjustments now apply only to the reader view",
+        "iOS: You can now open files directly in Readest from the Files app",
+        "macOS: Added a global menu option to open files with Readest"
+      ]
+    },
     "0.9.95": {
       "date": "2025-12-08",
       "notes": [

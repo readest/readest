@@ -44,6 +44,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Format'), value: 'format' },
     { label: _('Date Read'), value: 'updated' },
     { label: _('Date Added'), value: 'created' },
+    { label: _('Date Published'), value: 'published' },
   ];
 
   const sortingOptions = [
@@ -99,7 +100,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
   return (
     <Menu
-      className='view-menu dropdown-content no-triangle border-base-100 z-20 mt-2 shadow-2xl'
+      className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       {viewOptions.map((option) => (

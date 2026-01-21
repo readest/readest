@@ -207,7 +207,7 @@ export const probeAuth = async (
   const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
-    Accept: 'application/atom+xml, application/xml, text/xml',
+    Accept: 'application/atom+xml, application/xml, text/xml, */*',
   };
 
   // Probe with HEAD request
@@ -215,6 +215,7 @@ export const probeAuth = async (
   const res = await fetch(fetchURL, {
     method: 'HEAD',
     headers,
+    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
   });
 
   // Check if authentication is required
@@ -240,7 +241,27 @@ export const probeAuth = async (
     }
   }
 
-  return null;
+  // Komga returns 200 even if requires auth, so we return Basic auth header in this case
+  return createBasicAuth(finalUsername, finalPassword);
+};
+
+export const probeFilename = async (headers: Record<string, string>) => {
+  const contentDisposition = headers['content-disposition'];
+  if (contentDisposition) {
+    const extendedMatch = contentDisposition.match(
+      /filename\*\s*=\s*(?:utf-8|UTF-8)'[^']*'([^;\s]+)/i,
+    );
+    if (extendedMatch?.[1]) {
+      return decodeURIComponent(extendedMatch[1]);
+    }
+
+    const plainMatch = contentDisposition.match(/filename\s*=\s*["']?([^"';\s]+)["']?/i);
+    if (plainMatch?.[1]) {
+      return decodeURIComponent(plainMatch[1]);
+    }
+  }
+
+  return '';
 };
 
 /**
@@ -265,7 +286,7 @@ export const fetchWithAuth = async (
   const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
-    Accept: 'application/atom+xml, application/xml, text/xml',
+    Accept: 'application/atom+xml, application/xml, text/xml, */*',
     ...(options.headers as Record<string, string>),
   };
 
@@ -274,6 +295,7 @@ export const fetchWithAuth = async (
     ...options,
     method: options.method || 'GET',
     headers,
+    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
   });
 
   // Handle authentication if needed
@@ -301,6 +323,7 @@ export const fetchWithAuth = async (
           ...options,
           method: options.method || 'GET',
           headers: useProxy ? headers : { ...headers, Authorization: authHeader },
+          danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
         });
       }
     }

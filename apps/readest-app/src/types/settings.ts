@@ -7,7 +7,14 @@ import type { AISettings } from '@/services/ai/types';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
-export type LibrarySortByType = 'title' | 'author' | 'updated' | 'created' | 'size' | 'format';
+export type LibrarySortByType =
+  | 'title'
+  | 'author'
+  | 'updated'
+  | 'created'
+  | 'size'
+  | 'format'
+  | 'published';
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export type KOSyncChecksumMethod = 'binary' | 'filename';
@@ -61,6 +68,7 @@ export interface SystemSettings {
   savedBookCoverForLockScreen: string;
   savedBookCoverForLockScreenPath: string;
   telemetryEnabled: boolean;
+  discordRichPresenceEnabled: boolean;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;

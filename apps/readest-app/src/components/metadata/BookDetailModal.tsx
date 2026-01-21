@@ -8,18 +8,20 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
+import { eventDispatcher } from '@/utils/event';
+import { isWebAppPlatform } from '@/services/environment';
 import Alert from '@/components/Alert';
 import Dialog from '@/components/Dialog';
-import Spinner from '@/components/Spinner';
 import BookDetailView from './BookDetailView';
 import BookDetailEdit from './BookDetailEdit';
 import SourceSelector from './SourceSelector';
+import Spinner from '../Spinner';
 
 interface BookDetailModalProps {
   book: Book;
   isOpen: boolean;
   onClose: () => void;
-  handleBookDownload?: (book: Book, redownload?: boolean) => void;
+  handleBookDownload?: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   handleBookUpload?: (book: Book) => void;
   handleBookDelete?: (book: Book) => void;
   handleBookDeleteCloudBackup?: (book: Book) => void;
@@ -45,10 +47,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
-  const [loading, setLoading] = useState(false);
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -91,17 +93,17 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   };
 
   useEffect(() => {
-    const loadingTimeout = setTimeout(() => setLoading(true), 300);
     const fetchBookDetails = async () => {
       const appService = await envConfig.getAppService();
       try {
-        const details = book.metadata || (await appService.fetchBookDetails(book));
+        let details = book.metadata || null;
+        if (!details && book.downloadedAt) {
+          details = await appService.fetchBookDetails(book);
+        }
         setBookMeta(details);
         const size = await appService.getBookFileSize(book);
         setFileSize(size);
       } finally {
-        if (loadingTimeout) clearTimeout(loadingTimeout);
-        setLoading(false);
       }
     };
     fetchBookDetails();
@@ -158,7 +160,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleRedownload = async () => {
     handleClose();
     if (handleBookDownload) {
-      handleBookDownload(book, true);
+      handleBookDownload(book, { redownload: true, queued: false });
     }
   };
 
@@ -169,16 +171,21 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
   };
 
-  const currentDeleteConfig = activeDeleteAction ? deleteConfigs[activeDeleteAction] : null;
+  const handleBookExport = async () => {
+    setIsLoading(true);
+    setTimeout(async () => {
+      const success = await appService?.exportBook(book);
+      setIsLoading(false);
+      if (!isWebAppPlatform()) {
+        eventDispatcher.dispatch('toast', {
+          type: success ? 'info' : 'error',
+          message: success ? _('Book exported successfully.') : _('Failed to export the book.'),
+        });
+      }
+    }, 0);
+  };
 
-  if (!bookMeta)
-    return (
-      loading && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <Spinner loading />
-        </div>
-      )
-    );
+  const currentDeleteConfig = activeDeleteAction ? deleteConfigs[activeDeleteAction] : null;
 
   return (
     <>
@@ -194,7 +201,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
           contentClassName='!px-6 !py-4'
         >
           <div className='flex w-full select-text items-start justify-center'>
-            {editMode ? (
+            {editMode && bookMeta ? (
               <BookDetailEdit
                 book={book}
                 metadata={editedMeta}
@@ -224,6 +231,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDeleteLocalCopy={handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined}
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
+                onExport={handleBookExport}
               />
             )}
           </div>
@@ -237,6 +245,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
             onSelect={handleSourceSelection}
             onClose={handleCloseSourceSelection}
           />
+        )}
+
+        {isLoading && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center'>
+            <Spinner loading />
+          </div>
         )}
 
         {activeDeleteAction && currentDeleteConfig && (

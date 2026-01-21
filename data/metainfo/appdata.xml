@@ -59,6 +59,64 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.98" date="2026-01-21">
+      <description>
+        <ul>
+          <li>Bookshelf: Added the ability to export original book files directly from the book details dialog</li>
+          <li>Bookshelf: Added a new sorting option to organize books by publish date</li>
+          <li>Bookshelf: Improved performance for large library with faster and more stable imports</li>
+          <li>OPDS: Improved download reliability by correctly detecting filenames for PDF and CBZ files</li>
+          <li>Proofreading: Added support for whole-word replacement to make text corrections more precise</li>
+          <li>Notes: Added the ability to export notes using a customizable template</li>
+          <li>PDF: Added support for panning within PDF documents for easier navigation</li>
+          <li>PDF: Improved performance by pre-rendering the next page for smoother page transitions</li>
+          <li>Text-to-Speech: Added support for word replacement to improve pronunciation during playback</li>
+          <li>Text-to-Speech: Fixed an issue where playback speed settings were not applied correctly on Linux</li>
+          <li>E-ink: Improved reading stability by preventing unwanted scrolling when animations are disabled or on e-ink devices</li>
+          <li>Discord: Added Discord Rich Presence to display your current reading status on Desktop platforms</li>
+          <li>Android: Fixed an issue that could cause occasional crashes during app startup</li>
+          <li>Fonts: Improved web font loading for faster and more stable text rendering</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.97" date="2026-01-10">
+      <description>
+        <ul>
+          <li>Annotations: Added annotation bubble icons directly on text with instant note popups</li>
+          <li>Annotations: Enabled quick highlighting when selecting text</li>
+          <li>Annotations: Added the ability to edit the text range of existing highlights</li>
+          <li>Annotations: Added an annotation navigation bar for easier browsing</li>
+          <li>OPDS: Fixed an issue where CBZ files could not be downloaded from OPDS catalogs</li>
+          <li>OPDS: Improved compatibility with Komga OPDS servers</li>
+          <li>OPDS: Added support for OPDS servers using self-signed SSL certificates</li>
+          <li>PDF: Fixed an issue where some PDF files failed to open</li>
+          <li>E-ink: Optimized colors and layout for improved e-ink device readability</li>
+          <li>Search: Added search term history for quicker repeated searches</li>
+          <li>Text-to-Speech: Reduced excessive pauses between sentences for smoother playback</li>
+          <li>File Transfer: Introduced a background transfer queue for uploading and downloading books</li>
+          <li>Proofreading: Added a proofread tool that can replace text directly within books</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.96" date="2025-12-19">
+      <description>
+        <ul>
+          <li>TTS: Resolved an issue where Edge TTS was blocked in certain regions</li>
+          <li>OPDS: Improved compatibility with older versions of Calibre Web</li>
+          <li>OPDS: Added an instant search bar for faster browsing in OPDS catalogs</li>
+          <li>OPDS: Added a curated book catalog from Standard Ebooks</li>
+          <li>Bookshelf: Added a “Group Books” action to the context menu</li>
+          <li>Comics: Fixed layout issues to improve comic book reading</li>
+          <li>Layout: Footnote popups now adapt correctly to different screen sizes</li>
+          <li>Layout: Fixed an issue where the maximum inline width was not applied to EPUBs</li>
+          <li>Sync: Improved file downloading by correctly handling special characters in filenames</li>
+          <li>UI: Added an option to temporarily dismiss the reading progress bar</li>
+          <li>Settings: Screen brightness adjustments now apply only to the reader view</li>
+          <li>iOS: You can now open files directly in Readest from the Files app</li>
+          <li>macOS: Added a global menu option to open files with Readest</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.95" date="2025-12-08">
       <description>
         <ul>
@@ -165,42 +223,6 @@
           <li>Reader: Added localized number display for reading progress in vertical layout</li>
           <li>Reader: Enhanced swipe responsiveness for smoother page transitions</li>
           <li>Settings: Added an option to disable animations when using E-Ink mode</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.87" date="2025-10-16">
-      <description>
-        <ul>
-          <li>Reader: Improved chapter detection with better chapter title recognition</li>
-          <li>Reader: Enhanced compatibility for parsing more footnote formats</li>
-          <li>Theme: Fixed auto theme switching in new reader windows</li>
-          <li>TTS: Improved scrolling accuracy to highlighted text during read-aloud</li>
-          <li>TTS: Fixed crash issues on certain Android systems</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.86" date="2025-10-14">
-      <description>
-        <ul>
-          <li>Reader: Added support for per-book background image customization</li>
-          <li>Reader: Added option to override book language metadata for improved hyphenation accuracy</li>
-          <li>Sync: Readest sync in KOReader can now be triggered using gesture controls</li>
-          <li>Sync: Fixed a crash in KOReader that occurred when syncing progress without an open book</li>
-          <li>Sync: Improved upload performance with concurrent upload support</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.85" date="2025-10-14">
-      <description>
-        <ul>
-          <li>TTS: Improved media session control compatibility across more Android systems</li>
-          <li>TTS: Made the TTS icon less distracting during read-aloud mode</li>
-          <li>Settings: Added an option to adjust screen brightness while reading</li>
-          <li>Settings: Added support for custom background images</li>
-          <li>PDF: Fixed an issue where scrolling and panning didn’t work correctly when zoomed in</li>
-          <li>Android: Added adaptive launcher icon for better system integration</li>
-          <li>Reader: Added keyboard shortcuts for toggling bookmarks</li>
-          <li>Reader: Annotations are now rendered instantly when opening files</li>
         </ul>
       </description>
     </release>

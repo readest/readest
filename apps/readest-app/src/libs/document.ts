@@ -79,6 +79,8 @@ export const EXTS: Record<BookFormat, string> = {
   CBZ: 'cbz',
   FB2: 'fb2',
   FBZ: 'fbz',
+  TXT: 'txt',
+  MD: 'md',
 };
 
 export const MIMETYPES: Record<BookFormat, string[]> = {
@@ -87,9 +89,11 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
   MOBI: ['application/x-mobipocket-ebook'],
   AZW: ['application/vnd.amazon.ebook'],
   AZW3: ['application/vnd.amazon.mobi8-ebook', 'application/x-mobi8-ebook'],
-  CBZ: ['application/vnd.comicbook+zip', 'application/zip'],
+  CBZ: ['application/vnd.comicbook+zip', 'application/zip', 'application/x-cbz'],
   FB2: ['application/x-fictionbook+xml', 'text/xml', 'application/xml'],
   FBZ: ['application/x-zip-compressed-fb2', 'application/zip'],
+  TXT: ['text/plain'],
+  MD: ['text/markdown', 'text/x-markdown'],
 };
 
 export class DocumentLoader {
@@ -188,48 +192,56 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
-    if (await this.isZip()) {
-      const loader = await this.makeZipLoader();
-      const { entries } = loader;
+    try {
+      if (await this.isZip()) {
+        const loader = await this.makeZipLoader();
+        const { entries } = loader;
 
-      if (this.isCBZ()) {
-        const { makeComicBook } = await import('foliate-js/comic-book.js');
-        book = await makeComicBook(loader, this.file);
-        format = 'CBZ';
-      } else if (this.isFBZ()) {
-        const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));
-        const blob = await loader.loadBlob((entry ?? entries[0]!).filename);
+        if (this.isCBZ()) {
+          const { makeComicBook } = await import('foliate-js/comic-book.js');
+          book = await makeComicBook(loader, this.file);
+          format = 'CBZ';
+        } else if (this.isFBZ()) {
+          const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));
+          const blob = await loader.loadBlob((entry ?? entries[0]!).filename);
+          const { makeFB2 } = await import('foliate-js/fb2.js');
+          book = await makeFB2(blob);
+          format = 'FBZ';
+        } else {
+          const { EPUB } = await import('foliate-js/epub.js');
+          book = await new EPUB(loader).init();
+          format = 'EPUB';
+        }
+      } else if (await this.isPDF()) {
+        const { makePDF } = await import('foliate-js/pdf.js');
+        book = await makePDF(this.file);
+        format = 'PDF';
+      } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
+        const fflate = await import('foliate-js/vendor/fflate.js');
+        const { MOBI } = await import('foliate-js/mobi.js');
+        book = await new MOBI({ unzlib: fflate.unzlibSync }).open(this.file);
+        const ext = this.file.name.split('.').pop()?.toLowerCase();
+        switch (ext) {
+          case 'azw':
+            format = 'AZW';
+            break;
+          case 'azw3':
+            format = 'AZW3';
+            break;
+          default:
+            format = 'MOBI';
+        }
+      } else if (this.isFB2()) {
         const { makeFB2 } = await import('foliate-js/fb2.js');
-        book = await makeFB2(blob);
-        format = 'FBZ';
-      } else {
-        const { EPUB } = await import('foliate-js/epub.js');
-        book = await new EPUB(loader).init();
-        format = 'EPUB';
+        book = await makeFB2(this.file);
+        format = 'FB2';
       }
-    } else if (await this.isPDF()) {
-      const { makePDF } = await import('foliate-js/pdf.js');
-      book = await makePDF(this.file);
-      format = 'PDF';
-    } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
-      const fflate = await import('foliate-js/vendor/fflate.js');
-      const { MOBI } = await import('foliate-js/mobi.js');
-      book = await new MOBI({ unzlib: fflate.unzlibSync }).open(this.file);
-      const ext = this.file.name.split('.').pop()?.toLowerCase();
-      switch (ext) {
-        case 'azw':
-          format = 'AZW';
-          break;
-        case 'azw3':
-          format = 'AZW3';
-          break;
-        default:
-          format = 'MOBI';
+    } catch (e: unknown) {
+      console.error('Failed to open document:', e);
+      if (e instanceof Error && e.message?.includes('not a valid zip')) {
+        throw new Error('Unsupported or corrupted book file');
       }
-    } else if (this.isFB2()) {
-      const { makeFB2 } = await import('foliate-js/fb2.js');
-      book = await makeFB2(this.file);
-      format = 'FB2';
+      throw e;
     }
     return { book, format } as { book: BookDoc; format: BookFormat };
   }
@@ -243,7 +255,9 @@ export const getDirection = (doc: Document) => {
   return { vertical, rtl };
 };
 
-export const getFileExtFromMimeType = (mimeType: string): string => {
+export const getFileExtFromMimeType = (mimeType?: string): string => {
+  if (!mimeType) return '';
+
   for (const format in MIMETYPES) {
     const list = MIMETYPES[format as BookFormat];
     if (list.includes(mimeType)) {
@@ -251,4 +265,15 @@ export const getFileExtFromMimeType = (mimeType: string): string => {
     }
   }
   return '';
+};
+
+export const getMimeTypeFromFileExt = (ext: string): string => {
+  ext = ext.toLowerCase();
+  for (const format in EXTS) {
+    if (EXTS[format as BookFormat] === ext) {
+      const mimeTypes = MIMETYPES[format as BookFormat];
+      return mimeTypes[0] || 'application/octet-stream';
+    }
+  }
+  return 'application/octet-stream';
 };

@@ -38,10 +38,10 @@ const getAdditionalBasicFontLinks = () => `
 const getAdditionalCJKFontLinks = () => `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-screen-web/1.520.0/lxgwwenkaigbscreen/result.css" crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/jhlst/dist/%E4%BA%AC%E8%8F%AF%E8%80%81%E5%AE%8B%E4%BD%93v2_002/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/syst/dist/SourceHanSerifCN/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://chinese-fonts-cdn.netlify.app/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Huiwen-MinchoGBK/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/KingHwa_OldSong/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Source%20Han%20Serif%20CN/result.css' crossorigin="anonymous" />
+  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${cjkGoogleFonts
     .map(
       ({ family, weights }) =>
@@ -93,21 +93,28 @@ const getAdditionalCJKFontFaces = () => `
 }
 `;
 
-export const mountAdditionalFonts = (document: Document, isCJK = false) => {
+export const mountAdditionalFonts = async (document: Document, isCJK = false) => {
   const mountCJKFonts = isCJK || isCJKEnv();
-  let links = getAdditionalBasicFontLinks();
-  if (mountCJKFonts) {
-    const style = document.createElement('style');
-    style.textContent = getAdditionalCJKFontFaces();
-    document.head.appendChild(style);
 
+  // Mount font stylesheets and @font-face rules
+  let links = getAdditionalBasicFontLinks();
+  let fontFaces = '';
+
+  if (mountCJKFonts) {
+    fontFaces = getAdditionalCJKFontFaces();
     links = `${links}\n${getAdditionalCJKFontLinks()}`;
   }
 
-  const parser = new DOMParser();
-  const parsedDocument = parser.parseFromString(links, 'text/html');
+  if (fontFaces) {
+    const style = document.createElement('style');
+    style.textContent = fontFaces;
+    document.head.appendChild(style);
+  }
 
-  Array.from(parsedDocument.head.children).forEach((child) => {
+  const parser = new DOMParser();
+  const linksDocument = parser.parseFromString(links, 'text/html');
+
+  Array.from(linksDocument.head.children).forEach((child) => {
     if (child.tagName === 'LINK') {
       const link = document.createElement('link');
       link.rel = child.getAttribute('rel') || '';

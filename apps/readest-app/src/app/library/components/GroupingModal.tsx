@@ -102,6 +102,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     setShowInput(true);
     setIsRenaming(false);
     setOriginalGroupName(null);
+    setSelectedGroup(null);
   };
 
   const handleRenameGroup = () => {

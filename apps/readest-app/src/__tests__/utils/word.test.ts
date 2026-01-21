@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getWordCount, isWordLimitExceeded } from '../../utils/wordLimit';
+import { getWordCount } from '../../utils/word';
 
 describe('Word Limit Feature', () => {
   describe('getWordCount', () => {
@@ -49,49 +49,6 @@ describe('Word Limit Feature', () => {
       const thirtyOneWords = Array(31).fill('word').join(' ');
       expect(getWordCount(thirtyOneWords)).toBe(31);
     });
-  });
-
-  describe('isWordLimitExceeded', () => {
-    it('should return false for text under 30 words', () => {
-      expect(isWordLimitExceeded('hello world')).toBe(false);
-      expect(isWordLimitExceeded('a')).toBe(false);
-    });
-
-    it('should return false for exactly 30 words', () => {
-      const thirtyWords = Array(30).fill('word').join(' ');
-      expect(isWordLimitExceeded(thirtyWords)).toBe(false);
-    });
-
-    it('should return true for 31 words', () => {
-      const thirtyOneWords = Array(31).fill('word').join(' ');
-      expect(isWordLimitExceeded(thirtyOneWords)).toBe(true);
-    });
-
-    it('should return true for many words', () => {
-      const manyWords = Array(100).fill('word').join(' ');
-      expect(isWordLimitExceeded(manyWords)).toBe(true);
-    });
-
-    it('should return false for empty string', () => {
-      expect(isWordLimitExceeded('')).toBe(false);
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('should handle very long words', () => {
-      const longWord = 'a'.repeat(1000);
-      expect(getWordCount(longWord)).toBe(1);
-      expect(isWordLimitExceeded(longWord)).toBe(false);
-    });
-
-    it('should handle mixed content with newlines', () => {
-      const text = `Line one with words.
-      Line two with more words.
-      Line three.`;
-      // "Line one with words." = 4, "Line two with more words." = 5, "Line three." = 2 = 11 total
-      expect(getWordCount(text)).toBe(11);
-      expect(isWordLimitExceeded(text)).toBe(false);
-    });
 
     it('should handle unicode characters', () => {
       expect(getWordCount('你好 世界')).toBe(2);
@@ -102,6 +59,21 @@ describe('Word Limit Feature', () => {
     it('should handle numbers as words', () => {
       expect(getWordCount('1 2 3 4 5')).toBe(5);
       expect(getWordCount('chapter 1 section 2')).toBe(4);
+    });
+  });
+
+  describe('Edge cases', () => {
+    it('should handle very long words', () => {
+      const longWord = 'a'.repeat(1000);
+      expect(getWordCount(longWord)).toBe(1);
+    });
+
+    it('should handle mixed content with newlines', () => {
+      const text = `Line one with words.
+      Line two with more words.
+      Line three.`;
+      // "Line one with words." = 4, "Line two with more words." = 5, "Line three." = 2 = 11 total
+      expect(getWordCount(text)).toBe(11);
     });
   });
 });

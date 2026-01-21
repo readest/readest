@@ -2,6 +2,9 @@ import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
+import { LocaleWithTextInfo } from './misc';
+
+export const NOTE_PREFIX = 'foliate-note:';
 
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
@@ -11,11 +14,17 @@ export interface FoliateView extends HTMLElement {
   goToFraction: (fraction: number) => void;
   prev: (distance?: number) => void;
   next: (distance?: number) => void;
+  pan: (dx: number, dy: number) => void;
+  isOverflowX: () => boolean;
+  isOverflowY: () => boolean;
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
   resolveCFI: (cfi: string) => { index: number; anchor: (doc: Document) => Range };
-  addAnnotation: (note: BookNote, remove?: boolean) => { index: number; label: string };
+  addAnnotation: (
+    note: BookNote & { value?: string },
+    remove?: boolean,
+  ) => { index: number; label: string };
   search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
   clearSearch: () => void;
   select: (target: string | number | { fraction: number }) => void;
@@ -28,8 +37,10 @@ export interface FoliateView extends HTMLElement {
   book: BookDoc;
   tts: TTS | null;
   language: {
-    locale?: string;
+    locale?: LocaleWithTextInfo;
     isCJK?: boolean;
+    canonical?: string;
+    direction?: string;
   };
   history: {
     canGoBack: boolean;
@@ -40,6 +51,7 @@ export interface FoliateView extends HTMLElement {
   };
   renderer: {
     scrolled?: boolean;
+    scrollLocked: boolean;
     size: number; // current page height
     viewSize: number; // whole document view height
     start: number;

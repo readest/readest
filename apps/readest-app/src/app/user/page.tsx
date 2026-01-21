@@ -67,6 +67,19 @@ const ProfilePage = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => {
+    if (!mounted) return;
+
+    const isAuthenticated = user && token && appService;
+    if (isAuthenticated) return;
+
+    const timer = setTimeout(() => {
+      router.push('/auth?redirect=/library');
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [mounted, user, token, appService, router]);
+
   useTheme({ systemUIVisible: false });
 
   const { quotas, userProfilePlan = 'free' } = useQuotaStats();

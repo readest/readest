@@ -41,6 +41,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const actionTab = hoveredBookKey === bookKey ? userSelectedTab : '';
   const isVisible = hoveredBookKey === bookKey;
 
+  const docs = view?.renderer.getContents() ?? [];
+  const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
+
   const progressInfo = useMemo(
     () => (bookFormat === 'PDF' ? section : pageinfo),
     [bookFormat, section, pageinfo],
@@ -63,11 +66,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
   );
 
   const handleGoPrevPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'left');
+    viewPagination(view, viewSettings, 'left', 'page');
   }, [view, viewSettings]);
 
   const handleGoNextPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'right');
+    viewPagination(view, viewSettings, 'right', 'page');
   }, [view, viewSettings]);
 
   const handleGoPrevSection = useCallback(() => {
@@ -208,7 +211,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
+    needHorizontalScroll && 'sm:!bottom-3 sm:!h-10 sm:justify-end',
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
@@ -224,7 +227,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
-          isMobile ? 'pointer-events-none' : '',
+          isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
@@ -242,6 +245,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <MobileFooterBar {...commonProps} />
         <DesktopFooterBar {...commonProps} />
       </div>
+      {isVisible && needHorizontalScroll && (
+        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />
+      )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
     </>

@@ -1,10 +1,12 @@
 import {
+  AnnotatorConfig,
   BookFont,
   BookLanguage,
   BookLayout,
   BookSearchConfig,
   BookStyle,
   HighlightColor,
+  NoteExportConfig,
   ScreenConfig,
   TranslatorConfig,
   TTSConfig,
@@ -69,6 +71,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
   telemetryEnabled: true,
+  discordRichPresenceEnabled: false,
   libraryViewMode: 'grid',
   librarySortBy: 'updated',
   librarySortAscending: false,
@@ -199,6 +202,7 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   defaultFont: 'Sans-serif',
   marginBottomPx: 16,
   disableDoubleClick: true,
+  spreadMode: 'none',
 };
 
 export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
@@ -210,6 +214,12 @@ export const DEFAULT_CJK_VIEW_SETTINGS: Partial<ViewSettings> = {
 
 export const DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS: Partial<ViewSettings> = {
   overrideColor: false,
+};
+
+export const DEFAULT_EINK_VIEW_SETTINGS: Partial<ViewSettings> = {
+  isEink: true,
+  animated: false,
+  volumeKeysToFlip: true,
 };
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
@@ -226,6 +236,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  tapToToggleFooter: false,
   showMarginsOnScroll: false,
   progressStyle: 'fraction',
   progressInfoMode: 'all',
@@ -245,6 +256,27 @@ export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translateTargetLang: '',
   showTranslateSource: true,
   ttsReadAloudText: 'both',
+};
+
+export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
+  includeTitle: true,
+  includeAuthor: true,
+  includeDate: true,
+  includeChapterTitles: true,
+  includeQuotes: true,
+  includeNotes: true,
+  includeTimestamp: false,
+  includeChapterSeparator: false,
+  noteSeparator: '\n\n',
+  useCustomTemplate: false,
+  customTemplate: '',
+};
+
+export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
+  enableAnnotationQuickActions: true,
+  annotationQuickAction: null,
+  copyToNotebook: false,
+  noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
@@ -277,8 +309,8 @@ export const CJK_SERIF_FONTS = [
   _('LXGW WenKai GB Screen'),
   _('LXGW WenKai TC'),
   _('GuanKiapTsingKhai-T'),
-  _('Source Han Serif CN VF'),
-  _('Huiwen-mincho'),
+  _('Source Han Serif CN'),
+  _('Huiwen-MinchoGBK'),
   _('KingHwa_OldSong'),
 ];
 
@@ -617,6 +649,8 @@ const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
 
 export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`;
+
+export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://storage.readest.com';
 
 export const READEST_OPDS_USER_AGENT = 'Readest/1.0 (OPDS Browser)';
 

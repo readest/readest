@@ -77,7 +77,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 
   const handleTouchOrClick = () => {
     lastInteractionWasTapOrClick.current = true;
-    setTimeout(() => (lastInteractionWasTapOrClick.current = false), 100);
+    setTimeout(() => (lastInteractionWasTapOrClick.current = false), 200);
   };
 
   const handleFocus = () => {
@@ -141,7 +141,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           aria-label={label}
           title={showTooltip ? label : undefined}
           className={clsx(
-            'dropdown-toggle',
+            'dropdown-toggle touch-target',
             isFocused && isOpen && 'bg-base-300/50',
             buttonClassName,
           )}

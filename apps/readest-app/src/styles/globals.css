@@ -171,6 +171,15 @@ foliate-fxl {
   border-bottom: 12px solid theme('colors.base-200');
   z-index: 1;
 }
+.dropdown-content.bordercolor-content::before {
+  border-bottom: 12px solid theme('colors.base-content');
+  z-index: 1;
+}
+.dropdown-content.bordercolor-content::after {
+  top: -11px;
+  border-bottom: 13px solid theme('colors.base-100');
+  z-index: 1;
+}
 
 .dropdown-left::before,
 .dropdown-left::after {
@@ -251,6 +260,10 @@ foliate-fxl {
   @apply hover:bg-base-100/50;
 }
 
+.config-item > span {
+  @apply line-clamp-2;
+}
+
 .collapse-arrow > .collapse-title:after {
   top: var(--top-override, default-value);
   inset-inline-end: var(--end-override, default-value);
@@ -264,7 +277,7 @@ foliate-fxl {
 }
 
 .search-bar-visible {
-  max-height: 48px;
+  max-height: 100%;
   visibility: visible;
 }
 
@@ -458,8 +471,14 @@ foliate-fxl {
   color: theme('colors.base-content') !important;
 }
 
+[data-eink="true"] [class*="text-blue"] {
+  color: theme('colors.base-content') !important;
+  font-weight: normal;
+}
+
 [data-eink="true"] [class*="text-red"] {
   color: theme('colors.base-content') !important;
+  font-weight: normal;
 }
 
 [data-eink="true"] [class*="text-neutral-content"] {
@@ -480,6 +499,104 @@ foliate-fxl {
 
 [data-eink="true"] [class*="text-bold-in-eink"] {
   font-weight: bold;
+}
+
+[data-eink="true"] .eink-bordered {
+  border-width: 1px !important;
+  border-color: theme('colors.base-content') !important;
+  background-color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] input.search-input, [data-eink="true"] input.search-input:focus {
+  border-width: 1px !important;
+  border-radius: 9999px;
+  border-color: theme('colors.base-content') !important;
+  background-color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] .modal-box {
+  box-shadow: none !important;
+  border-width: 1px !important;
+  border-color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .dialog-overlay {
+  background-color: transparent !important;
+}
+
+[data-eink="true"] .menu-container {
+  background-color: theme('colors.base-100') !important;
+  border: 1px solid theme('colors.base-content') !important;
+}
+
+[data-eink="true"] hr {
+  border-color: theme('colors.base-content/0.75') !important;
+}
+
+[data-eink="true"] button, [data-eink="true"] .btn {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .btn-primary {
+  background-color: theme('colors.base-content') !important;
+  border: 1px solid theme('colors.base-content') !important;
+  color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] .bg-primary {
+  background-color: theme('colors.base-100') !important;
+  border: 1px solid theme('colors.base-content') !important;
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .dropdown-toggle {
+  background-color: theme('colors.transparent') !important;
+}
+
+[data-eink="true"] .opds-navigation .card {
+  background-color: theme('colors.base-100') !important;
+  border: 1px solid theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .booknote-item {
+  background-color: theme('colors.base-100') !important;
+  border: 1px solid theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .booknote-text {
+  background-color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] .bookitem-main, [data-eink="true"] .groupitem-main {
+  border: 1px solid theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .popup-container {
+  border: 1px solid theme('colors.base-content') !important;
+  background-color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] .popup-triangle-outer {
+  color: theme('colors.base-content') !important;
+}
+
+[data-eink="true"] .popup-triangle-inner {
+  color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] .annotation-notes {
+  transform-origin: top left;
+  transform: translate(-1px, -1px);
+}
+
+[data-eink="true"] .alert {
+  color: theme('colors.base-content') !important;
+  border: 1px solid theme('colors.base-content') !important;
+  background-color: theme('colors.base-100') !important;
+}
+
+[data-eink="true"] input[type="checkbox"] {
+  --tglbg: theme('colors.base-100') !important;
 }
 
 .no-transitions * {

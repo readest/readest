@@ -54,10 +54,19 @@ import {
   DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS,
   SETTINGS_FILENAME,
   DEFAULT_MOBILE_SYSTEM_SETTINGS,
+  DEFAULT_ANNOTATOR_CONFIG,
+  DEFAULT_EINK_VIEW_SETTINGS,
 } from './constants';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-import { getOSPlatform, getTargetLang, isCJKEnv, isContentURI, isValidURL } from '@/utils/misc';
+import {
+  getOSPlatform,
+  getTargetLang,
+  isCJKEnv,
+  isContentURI,
+  isValidURL,
+  makeSafeFilename,
+} from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import {
   downloadFile,
@@ -88,6 +97,7 @@ export abstract class BaseAppService implements AppService {
   isMobileApp = false;
   isPortableApp = false;
   isDesktopApp = false;
+  isEink = false;
   hasTrafficLight = false;
   hasWindow = false;
   hasWindowBar = false;
@@ -112,6 +122,12 @@ export abstract class BaseAppService implements AppService {
   abstract setCustomRootDir(customRootDir: string): Promise<void>;
   abstract selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
+  abstract saveFile(
+    filename: string,
+    content: string | ArrayBuffer,
+    filepath: string,
+    mimeType?: string,
+  ): Promise<boolean>;
 
   protected async runMigrations(lastMigrationVersion: number): Promise<void> {
     if (lastMigrationVersion < 20251124) {
@@ -133,6 +149,10 @@ export abstract class BaseAppService implements AppService {
 
   async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
     return await this.fs.copyFile(srcPath, dstPath, base);
+  }
+
+  async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
+    return await this.fs.readFile(path, base, mode);
   }
 
   async writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File) {
@@ -196,10 +216,12 @@ export abstract class BaseAppService implements AppService {
       ...DEFAULT_BOOK_FONT,
       ...DEFAULT_BOOK_LANGUAGE,
       ...(this.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+      ...(this.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
       ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
       ...DEFAULT_VIEW_CONFIG,
       ...DEFAULT_TTS_CONFIG,
       ...DEFAULT_SCREEN_CONFIG,
+      ...DEFAULT_ANNOTATOR_CONFIG,
       ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
     };
   }
@@ -497,15 +519,23 @@ export abstract class BaseAppService implements AppService {
     }
   }
 
-  async uploadFileToCloud(lfp: string, cfp: string, handleProgress: ProgressHandler, hash: string) {
+  async uploadFileToCloud(
+    lfp: string,
+    cfp: string,
+    base: BaseDir,
+    handleProgress: ProgressHandler,
+    hash: string,
+    temp: boolean = false,
+  ) {
     console.log('Uploading file:', lfp, 'to', cfp);
-    const file = await this.fs.openFile(lfp, 'Books', cfp);
-    const localFullpath = `${this.localBooksDir}/${lfp}`;
-    await uploadFile(file, localFullpath, handleProgress, hash);
+    const file = await this.fs.openFile(lfp, base, cfp);
+    const localFullpath = await this.resolveFilePath(lfp, base);
+    const downloadUrl = await uploadFile(file, localFullpath, handleProgress, hash, temp);
     const f = file as ClosableFile;
     if (f && f.close) {
       await f.close();
     }
+    return downloadUrl;
   }
 
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
@@ -532,7 +562,7 @@ export abstract class BaseAppService implements AppService {
     if (coverExist) {
       const lfp = getCoverFilename(book);
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
-      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
+      await this.uploadFileToCloud(lfp, cfp, 'Books', handleProgress, book.hash);
       uploaded = true;
       completedFiles.count++;
     }
@@ -540,7 +570,7 @@ export abstract class BaseAppService implements AppService {
     if (bookFileExist) {
       const lfp = getLocalBookFilename(book);
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
-      await this.uploadFileToCloud(lfp, cfp, handleProgress, book.hash);
+      await this.uploadFileToCloud(lfp, cfp, 'Books', handleProgress, book.hash);
       uploaded = true;
       completedFiles.count++;
     }
@@ -655,6 +685,15 @@ export abstract class BaseAppService implements AppService {
     if ((bookCoverDownloaded || !needDownCover) && !book.coverDownloadedAt) {
       book.coverDownloadedAt = Date.now();
     }
+  }
+
+  async exportBook(book: Book): Promise<boolean> {
+    const { file } = await this.loadBookContent(book);
+    const content = await file.arrayBuffer();
+    const filename = `${makeSafeFilename(book.title)}.${book.format.toLowerCase()}`;
+    const filepath = await this.resolveFilePath(getLocalBookFilename(book), 'Books');
+    const fileType = file.type || 'application/octet-stream';
+    return await this.saveFile(filename, content, filepath, fileType);
   }
 
   async isBookAvailable(book: Book): Promise<boolean> {

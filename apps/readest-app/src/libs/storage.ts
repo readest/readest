@@ -44,6 +44,7 @@ export const uploadFile = async (
   fileFullPath: string,
   onProgress?: ProgressHandler,
   bookHash?: string,
+  temp = false,
 ) => {
   try {
     const response = await fetchWithAuth(API_ENDPOINTS.upload, {
@@ -55,15 +56,18 @@ export const uploadFile = async (
         fileName: file.name,
         fileSize: file.size,
         bookHash,
+        temp,
       }),
     });
 
-    const { uploadUrl } = await response.json();
+    const { uploadUrl, downloadUrl }: { uploadUrl: string; downloadUrl?: string } =
+      await response.json();
     if (isWebAppPlatform()) {
       await webUpload(file, uploadUrl, onProgress);
     } else {
       await tauriUpload(uploadUrl, fileFullPath, 'PUT', onProgress);
     }
+    return temp ? downloadUrl : undefined;
   } catch (error) {
     console.error('File upload failed:', error);
     if (error instanceof Error) {
@@ -111,6 +115,7 @@ type DownloadFileParams = {
   url?: string;
   headers?: Record<string, string>;
   singleThreaded?: boolean;
+  skipSslVerification?: boolean;
   onProgress?: ProgressHandler;
 };
 
@@ -121,6 +126,7 @@ export const downloadFile = async ({
   url,
   headers,
   singleThreaded,
+  skipSslVerification,
   onProgress,
 }: DownloadFileParams) => {
   try {
@@ -147,10 +153,23 @@ export const downloadFile = async ({
     }
 
     if (isWebAppPlatform()) {
-      const file = await webDownload(downloadUrl, onProgress, headers);
-      await appService.writeFile(dst, 'None', await file.arrayBuffer());
+      const { headers: responseHeaders, blob } = await webDownload(
+        downloadUrl,
+        onProgress,
+        headers,
+      );
+      await appService.writeFile(dst, 'None', await blob.arrayBuffer());
+      return responseHeaders;
     } else {
-      await tauriDownload(downloadUrl, dst, onProgress, headers, undefined, singleThreaded);
+      return await tauriDownload(
+        downloadUrl,
+        dst,
+        onProgress,
+        headers,
+        undefined,
+        singleThreaded,
+        skipSslVerification,
+      );
     }
   } catch (error) {
     console.error(`File '${dst}' download failed:`, error);

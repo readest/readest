@@ -8,12 +8,12 @@ export type TransformContext = {
   width?: number;
   height?: number;
   content: string;
+  sectionHref?: string;
   transformers: string[];
   reversePunctuationTransform?: boolean;
-  sectionHref?: string; // Section href for single-instance replacement tracking
 };
 
 export type Transformer = {
   name: string;
-  transform: (ctx: TransformContext) => Promise<string>;
+  transform: (ctx: TransformContext, options?: unknown) => Promise<string>;
 };

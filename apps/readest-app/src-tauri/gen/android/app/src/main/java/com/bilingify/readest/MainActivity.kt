@@ -3,6 +3,7 @@ package com.bilingify.readest
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.webkit.WebView
 import android.net.Uri
 import android.util.Log
@@ -23,7 +24,7 @@ import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
-    private lateinit var wv: WebView
+    private var wv: WebView? = null
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
 
@@ -47,6 +48,48 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         interceptBackKeyEnabled = enabled
     }
 
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val action = when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> "touchstart"
+            MotionEvent.ACTION_UP -> "touchend"
+            MotionEvent.ACTION_CANCEL -> "touchcancel"
+            MotionEvent.ACTION_POINTER_DOWN -> "touchstart"
+            MotionEvent.ACTION_POINTER_UP -> "touchend"
+            else -> null
+        }
+
+        action?.let { eventType ->
+            val pointerIndex = event.actionIndex
+            val pointerId = event.getPointerId(pointerIndex)
+            val x = event.getX(pointerIndex)
+            val y = event.getY(pointerIndex)
+            val pressure = event.getPressure(pointerIndex)
+
+            wv?.evaluateJavascript(
+                """
+                try {
+                    if (window.onNativeTouch) {
+                        window.onNativeTouch({
+                            type: "$eventType",
+                            pointerId: $pointerId,
+                            x: $x,
+                            y: $y,
+                            pressure: $pressure,
+                            pointerCount: ${event.pointerCount},
+                            timestamp: ${event.eventTime}
+                        });
+                    }
+                } catch (err) {
+                    console.error('Native touch error:', err);
+                }
+                """.trimIndent(),
+                null
+            )
+        }
+
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val keyCode = event.keyCode
@@ -60,7 +103,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 }
 
                 if (shouldIntercept) {
-                    wv.evaluateJavascript(
+                    wv?.evaluateJavascript(
                         """
                         try { window.onNativeKeyDown("$keyName", $keyCode); } catch (_) {}
                         """.trimIndent(),
@@ -76,7 +119,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val keyName = keyEventMap[keyCode]
         if (keyName != null) {
-            wv.evaluateJavascript(
+            wv?.evaluateJavascript(
                 """
                 try {
                     window.onNativeKeyDown("$keyName", $keyCode)
@@ -135,7 +178,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                     Log.d("MainActivity", "Back invoked callback triggered ${interceptBackKeyEnabled}")
                     if (interceptBackKeyEnabled) {
                         Log.d("MainActivity", "Back intercepted (OnBackInvokedCallback)")
-                        wv.evaluateJavascript(
+                        wv?.evaluateJavascript(
                             """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
                             null
                         )
@@ -151,7 +194,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 override fun handleOnBackPressed() {
                     if (interceptBackKeyEnabled) {
                         Log.d("MainActivity", "Back intercepted (OnBackPressedDispatcher)")
-                        wv.evaluateJavascript(
+                        wv?.evaluateJavascript(
                             """window.onNativeKeyDown("Back", ${KeyEvent.KEYCODE_BACK});""",
                             null
                         )

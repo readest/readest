@@ -82,7 +82,10 @@ interface BookshelfItemProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
   handleGroupBooks: () => void;
-  handleBookDownload: (book: Book) => Promise<boolean>;
+  handleBookDownload: (
+    book: Book,
+    options?: { redownload?: boolean; queued?: boolean },
+  ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
@@ -112,9 +115,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { updateBook } = useLibraryStore();
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
-    if (await makeBookAvailable(book)) {
-      handleShowDetailsBook(book);
-    }
+    handleShowDetailsBook(book);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,7 +132,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       let available = false;
       const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
-        available = await handleBookDownload(book);
+        available = await handleBookDownload(book, { queued: false });
         await updateBook(envConfig, book);
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
@@ -216,7 +217,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const downloadBookMenuItem = await MenuItem.new({
       text: _('Download Book'),
       action: async () => {
-        handleBookDownload(book);
+        handleBookDownload(book, { queued: true });
       },
     });
     const uploadBookMenuItem = await MenuItem.new({
@@ -360,7 +361,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
             'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-2 sm:px-4 sm:py-4',
           mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
           appService?.isMobileApp && 'no-context-menu',
-          pressing && mode === 'grid' ? 'scale-95' : 'scale-100',
+          pressing && mode === 'grid' ? 'not-eink:scale-95' : 'scale-100',
         )}
         role='button'
         tabIndex={0}

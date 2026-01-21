@@ -6,7 +6,7 @@ import { whitespaceTransformer } from './whitespace';
 import { sanitizerTransformer } from './sanitizer';
 import { simpleccTransformer } from './simplecc';
 import { styleTransformer } from './style';
-import { replacementTransformer } from './replacement';
+import { proofreadTransformer } from './proofread';
 
 export const availableTransformers: Transformer[] = [
   punctuationTransformer,
@@ -16,6 +16,6 @@ export const availableTransformers: Transformer[] = [
   whitespaceTransformer,
   sanitizerTransformer,
   simpleccTransformer,
-  replacementTransformer,
+  proofreadTransformer,
   // Add more transformers here
 ];

@@ -181,7 +181,7 @@ export function useSync(bookKey?: string) {
         await pushChanges({ books });
       }
       if (op === 'pull' || op === 'both') {
-        await pullChanges('books', lastSyncedAtBooks, setLastSyncedAtBooks, setSyncingBooks);
+        await pullChanges('books', lastSyncedAtBooks + 1, setLastSyncedAtBooks, setSyncingBooks);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,6 +258,7 @@ export function useSync(bookKey?: string) {
     lastSyncedAtBooks,
     lastSyncedAtNotes,
     lastSyncedAtConfigs,
+    useSyncInited: lastSyncedAtInited,
     pullChanges,
     pushChanges,
     syncBooks,

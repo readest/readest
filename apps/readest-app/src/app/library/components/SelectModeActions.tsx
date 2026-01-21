@@ -41,8 +41,8 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
     >
       <div
         className={clsx(
-          'flex items-center justify-center shadow-lg',
-          'bg-base-300 text-base-content text-xs',
+          'text-base-content flex items-center justify-center text-xs shadow-lg',
+          'not-eink:bg-base-300 eink:bg-base-100 eink:border eink:border-base-content',
           'mx-auto w-fit space-x-6 rounded-lg p-4',
         )}
       >

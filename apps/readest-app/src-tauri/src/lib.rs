@@ -9,6 +9,9 @@ extern crate objc;
 #[cfg(target_os = "windows")]
 mod windows;
 
+#[cfg(target_os = "android")]
+mod android;
+
 use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -19,6 +22,9 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+mod dir_scanner;
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
@@ -38,14 +44,14 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
         if let Err(e) = fs_scope.allow_file(file) {
-            eprintln!("Failed to allow file in fs_scope: {e}");
+            log::error!("Failed to allow file in fs_scope: {e}");
         } else {
-            println!("Allowed file in fs_scope: {file:?}");
+            log::debug!("Allowed file in fs_scope: {file:?}");
         }
         if let Err(e) = asset_protocol_scope.allow_file(file) {
-            eprintln!("Failed to allow file in asset_protocol_scope: {e}");
+            log::error!("Failed to allow file in asset_protocol_scope: {e}");
         } else {
-            println!("Allowed file in asset_protocol_scope: {file:?}");
+            log::debug!("Allowed file in asset_protocol_scope: {file:?}");
         }
     }
 }
@@ -54,14 +60,14 @@ fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     if let Err(e) = fs_scope.allow_directory(dir, true) {
-        eprintln!("Failed to allow directory in fs_scope: {e}");
+        log::error!("Failed to allow directory in fs_scope: {e}");
     } else {
-        println!("Allowed directory in fs_scope: {dir:?}");
+        log::info!("Allowed directory in fs_scope: {dir:?}");
     }
     if let Err(e) = asset_protocol_scope.allow_directory(dir, true) {
-        eprintln!("Failed to allow directory in asset_protocol_scope: {e}");
+        log::error!("Failed to allow directory in asset_protocol_scope: {e}");
     } else {
-        println!("Allowed directory in asset_protocol_scope: {dir:?}");
+        log::info!("Allowed directory in asset_protocol_scope: {dir:?}");
     }
 }
 
@@ -144,6 +150,12 @@ struct SingleInstancePayload {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .plugin(tauri_plugin_websocket::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![
@@ -152,12 +164,17 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            dir_scanner::read_dir,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
             macos::apple_auth::start_apple_sign_in,
             #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            discord_rpc::update_book_presence,
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            discord_rpc::clear_book_presence,
         ])
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
@@ -166,6 +183,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_sharekit::init())
         .plugin(tauri_plugin_native_bridge::init())
         .plugin(tauri_plugin_native_tts::init());
 
@@ -205,6 +223,13 @@ pub fn run() {
 
     builder
         .setup(|#[allow(unused_variables)] app| {
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            {
+                use std::sync::{Arc, Mutex};
+                let discord_client = Arc::new(Mutex::new(discord_rpc::DiscordRpcClient::new()));
+                app.manage(discord_client);
+            }
+
             #[cfg(desktop)]
             {
                 let files = get_files_from_argv(std::env::args().collect());
@@ -261,42 +286,54 @@ pub fn run() {
                 let _ = app.deep_link().register_all();
             }
 
-            if let Err(e) = app.handle().plugin(
-                tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
-                    .build(),
-            ) {
-                eprintln!("Failed to initialize tauri_plugin_log: {e}");
+            // Check for e-ink device on Android before building the window
+            #[cfg(target_os = "android")]
+            let is_eink = android::is_eink_device();
+            #[cfg(not(target_os = "android"))]
+            let is_eink = false;
+
+            let eink_script = if is_eink {
+                "window.__READEST_IS_EINK = true;"
+            } else {
+                ""
             };
+
+            let init_script = format!(
+                r#"
+                    {eink_script}
+                    window.addEventListener('DOMContentLoaded', function() {{
+                        document.documentElement.classList.add('edge-to-edge');
+                        const isTauriLocal = window.location.protocol === 'tauri:' ||
+                                            window.location.protocol === 'about:' ||
+                                            window.location.hostname === 'tauri.localhost';
+                        const needsSafeArea = !isTauriLocal;
+                        if (needsSafeArea && !document.getElementById('safe-area-style')) {{
+                            const style = document.createElement('style');
+                            style.id = 'safe-area-style';
+                            style.textContent = `
+                                body {{
+                                    padding-top: env(safe-area-inset-top) !important;
+                                    padding-bottom: env(safe-area-inset-bottom) !important;
+                                    padding-left: env(safe-area-inset-left) !important;
+                                    padding-right: env(safe-area-inset-right) !important;
+                                }}
+                            `;
+                            document.head.appendChild(style);
+                        }}
+                    }});
+                "#,
+                eink_script = eink_script
+            );
 
             let app_handle = app.handle().clone();
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .background_throttling(BackgroundThrottlingPolicy::Disabled)
-                .background_color(tauri::window::Color(50, 49, 48, 255))
-                .initialization_script(
-                    r#"
-                        window.addEventListener('DOMContentLoaded', function() {
-                            document.documentElement.classList.add('edge-to-edge');
-                            const isTauriLocal = window.location.protocol === 'tauri:' ||
-                                                window.location.protocol === 'about:' ||
-                                                window.location.hostname === 'tauri.localhost';
-                            const needsSafeArea = !isTauriLocal;
-                            if (needsSafeArea && !document.getElementById('safe-area-style')) {
-                                const style = document.createElement('style');
-                                style.id = 'safe-area-style';
-                                style.textContent = `
-                                    body {
-                                        padding-top: env(safe-area-inset-top) !important;
-                                        padding-bottom: env(safe-area-inset-bottom) !important;
-                                        padding-left: env(safe-area-inset-left) !important;
-                                        padding-right: env(safe-area-inset-right) !important;
-                                    }
-                                `;
-                                document.head.appendChild(style);
-                            }
-                        });
-                    "#,
-                )
+                .background_color(if is_eink {
+                    tauri::window::Color(255, 255, 255, 255)
+                } else {
+                    tauri::window::Color(50, 49, 48, 255)
+                })
+                .initialization_script(&init_script)
                 .on_navigation(move |url| {
                     if url.scheme() == "alipays" || url.scheme() == "alipay" {
                         let url_str = url.as_str().to_string();

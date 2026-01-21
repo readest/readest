@@ -1,4 +1,4 @@
-import { detectLanguage, isSameLang, isValidLang } from '@/utils/lang';
+import { detectLanguage, getLanguageInfo, isSameLang, isValidLang } from '@/utils/lang';
 import type { Transformer } from './types';
 
 export const languageTransformer: Transformer = {
@@ -21,12 +21,25 @@ export const languageTransformer: Transformer = {
           isValidLang(primaryLanguage) && primaryLanguage !== 'en'
             ? primaryLanguage
             : detectLanguage(mainContent);
+        const languageInfo = getLanguageInfo(lang || '');
         const newLangAttr = ` lang="${lang}"`;
         const newXmlLangAttr = ` xml:lang="${lang}"`;
-        attrs = langMatch ? attrs.replace(langRegex, newLangAttr) : attrs + newLangAttr;
-        attrs = xmlLangMatch ? attrs.replace(xmlLangRegex, newXmlLangAttr) : attrs + newXmlLangAttr;
+        const dirAttr = languageInfo?.direction === 'rtl' ? ' dir="rtl"' : '';
+        attrs = langMatch ? attrs.replace(langRegex, newLangAttr) : attrs + newLangAttr + dirAttr;
+        attrs = xmlLangMatch
+          ? attrs.replace(xmlLangRegex, newXmlLangAttr)
+          : attrs + newXmlLangAttr + dirAttr;
         result = result.replace(attrsMatch[0], `<html${attrs}>`);
       }
+    } else {
+      const lang =
+        isValidLang(primaryLanguage) && primaryLanguage !== 'en'
+          ? primaryLanguage
+          : detectLanguage(result.replace(/<[^>]+>/g, ' '));
+      const languageInfo = getLanguageInfo(lang || '');
+      const dirAttr = languageInfo?.direction === 'rtl' ? ' dir="rtl"' : '';
+      const newAttrs = ` lang="${lang}" xml:lang="${lang}" ${dirAttr}`;
+      result = result.replace(/<html>/i, `<html${newAttrs}>`);
     }
     return result;
   },

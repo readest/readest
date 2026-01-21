@@ -53,6 +53,7 @@ import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
+import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { removeTabIndex } from '@/utils/a11y';
@@ -85,6 +86,7 @@ const FoliateViewer: React.FC<{
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
+  const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -97,6 +99,12 @@ const FoliateViewer: React.FC<{
   const docLoaded = useRef(false);
 
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
+
+  useDiscordPresence(
+    bookData?.book || null,
+    !!viewState?.isPrimary,
+    settings.discordRichPresenceEnabled,
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
@@ -132,7 +140,8 @@ const FoliateViewer: React.FC<{
           const bookData = getBookData(bookKey);
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(data, width, height, viewSettings.vertical);
-          if (viewSettings && bookData && detail.type === 'application/xhtml+xml') {
+          const isHtml = detail.type === 'application/xhtml+xml' || detail.type === 'text/html';
+          if (viewSettings && bookData && isHtml) {
             const ctx: TransformContext = {
               bookKey,
               viewSettings,
@@ -141,6 +150,7 @@ const FoliateViewer: React.FC<{
               primaryLanguage: bookData.book?.primaryLanguage,
               userLocale: getLocale(),
               content: data,
+              sectionHref: detail.name,
               transformers: [
                 'style',
                 'punctuation',
@@ -149,9 +159,8 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
-                'replacement',
+                'proofread',
               ],
-              sectionHref: detail.name, // Pass section href for single-instance replacements
             };
             return Promise.resolve(transformContent(ctx));
           }
@@ -187,7 +196,9 @@ const FoliateViewer: React.FC<{
         setViewSettings(bookKey, { ...viewSettings });
       }
 
-      mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+      if (!bookData?.isFixedLayout) {
+        mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
+      }
 
       getLoadedFonts().forEach((font) => {
         mountCustomFont(detail.doc, font);
@@ -328,8 +339,8 @@ const FoliateViewer: React.FC<{
       });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
       const viewHeight = appService?.isMobile ? screen.height : window.innerHeight;
-      const width = viewWidth - insets.left - insets.right;
-      const height = viewHeight - insets.top - insets.bottom;
+      const width = viewWidth;
+      const height = viewHeight;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
       applyTranslationStyle(viewSettings);

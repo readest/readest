@@ -14,7 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
-import { formatAuthors } from '@/utils/book';
+import { formatAuthors, formatDescription } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -26,7 +26,7 @@ interface BookItemProps {
   bookSelected: boolean;
   transferProgress: number | null;
   handleBookUpload: (book: Book) => void;
-  handleBookDownload: (book: Book) => void;
+  handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
 }
 
@@ -61,13 +61,19 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'relative flex aspect-[28/41] justify-center',
+          'bookitem-main relative flex aspect-[28/41] justify-center rounded',
           coverFit === 'crop' && 'overflow-hidden shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
       >
-        <BookCover mode={mode} book={book} coverFit={coverFit} showSpine={false} />
+        <BookCover
+          mode={mode}
+          book={book}
+          coverFit={coverFit}
+          showSpine={false}
+          imageClassName='rounded shadow-md'
+        />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
@@ -85,7 +91,7 @@ const BookItem: React.FC<BookItemProps> = ({
         className={clsx(
           'flex w-full flex-col p-0',
           mode === 'grid' && 'pt-2',
-          mode === 'list' && 'py-2',
+          mode === 'list' && 'gap-2 py-0',
         )}
       >
         <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-2')}>
@@ -104,6 +110,11 @@ const BookItem: React.FC<BookItemProps> = ({
             </p>
           )}
         </div>
+        {mode === 'list' && (
+          <h4 className='text-neutral-content line-clamp-1 text-sm'>
+            {formatDescription(book.metadata?.description)}
+          </h4>
+        )}
         <div
           className={clsx('flex items-center', book.progress ? 'justify-between' : 'justify-end')}
           style={{
@@ -154,7 +165,7 @@ const BookItem: React.FC<BookItemProps> = ({
                     if (!book.uploadedAt) {
                       handleBookUpload(book);
                     } else if (!book.downloadedAt) {
-                      handleBookDownload(book);
+                      handleBookDownload(book, { queued: true });
                     }
                   }}
                 >

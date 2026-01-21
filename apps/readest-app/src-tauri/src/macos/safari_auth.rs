@@ -35,14 +35,9 @@ impl ThreadSafeObjcPointer {
     }
 }
 
+#[derive(Default)]
 pub struct AuthSession {
     auth_session: Option<ThreadSafeObjcPointer>,
-}
-
-impl Default for AuthSession {
-    fn default() -> Self {
-        Self { auth_session: None }
-    }
 }
 
 impl Drop for AuthSession {

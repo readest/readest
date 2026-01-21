@@ -12,6 +12,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
+import { NOTE_PREFIX } from '@/types/view';
 import useScrollToItem from '../../hooks/useScrollToItem';
 import TextButton from '@/components/TextButton';
 import TextEditor, { TextEditorRef } from '@/components/TextEditor';
@@ -19,9 +20,10 @@ import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 interface BooknoteItemProps {
   bookKey: string;
   item: BookNote;
+  onClick?: () => void;
 }
 
-const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
+const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
@@ -42,6 +44,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
     event.preventDefault();
     eventDispatcher.dispatch('navigate', { bookKey, cfi });
 
+    onClick?.();
     getView(bookKey)?.goTo(cfi);
     if (note) {
       setNotebookVisible(true);
@@ -57,7 +60,9 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
       if (item.id === note.id) {
         item.deletedAt = Date.now();
         const views = getViewsById(bookKey.split('-')[0]!);
-        views.forEach((view) => view?.addAnnotation(item, true));
+        views.forEach((view) =>
+          view?.addAnnotation({ ...item, value: `${NOTE_PREFIX}${item.cfi}` }, true),
+        );
       }
     });
     const updatedConfig = updateBooknotes(bookKey, booknotes);
@@ -128,7 +133,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
       role='button'
       ref={viewRef}
       className={clsx(
-        'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
+        'booknote-item border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
         isCurrent
           ? 'bg-base-300/85 hover:bg-base-300 focus:bg-base-300'
           : 'hover:bg-base-300/55 focus:bg-base-300/55 bg-base-100',
@@ -172,7 +177,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
           <div className={clsx('content font-size-sm line-clamp-3', item.note && 'mt-2')}>
             <span
               className={clsx(
-                'inline leading-normal',
+                'booknote-text inline leading-normal',
                 item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',

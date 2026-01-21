@@ -1,5 +1,6 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
 import { OPDSLink } from '@/types/opds';
+import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
 
 export const groupByArray = <T, K>(arr: T[] | undefined, f: (el: T) => K | K[]): Map<K, T[]> => {
@@ -214,4 +215,14 @@ export const validateOPDSURL = async (
       error: e instanceof Error ? e.message : VALIDATION_ERROR.NOT_OPDS,
     };
   }
+};
+
+export const getFileExtFromPath = (pathname: string, delimiter = '/'): string => {
+  const parts = pathname.split(delimiter);
+  for (const ext of Object.values(EXTS)) {
+    if (parts.includes(ext)) {
+      return ext;
+    }
+  }
+  return '';
 };

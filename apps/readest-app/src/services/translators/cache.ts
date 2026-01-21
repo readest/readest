@@ -545,14 +545,14 @@ export const initCache = async (
   const {
     preload = true,
     preloadOptions = {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      maxEntries: 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxEntries: 10000,
     },
     autoPrune = true,
     pruneInterval = 60 * 60 * 1000,
     pruneOptions = {
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      maxEntries: 10000,
+      maxAge: 90 * 24 * 60 * 60 * 1000,
+      maxEntries: 100000,
       maxSizeInBytes: 10 * 1024 * 1024,
     },
   } = options;

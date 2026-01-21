@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { isWebAppPlatform } from '@/services/environment';
 import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
@@ -14,13 +15,27 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { transferManager } from '@/services/transferManager';
+import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
-import { isSearchLink, MIME, parseMediaType, resolveURL } from './utils/opdsUtils';
-import { getProxiedURL, fetchWithAuth, probeAuth, needsProxy } from './utils/opdsReq';
+import {
+  getFileExtFromPath,
+  isSearchLink,
+  MIME,
+  parseMediaType,
+  resolveURL,
+} from './utils/opdsUtils';
+import {
+  getProxiedURL,
+  fetchWithAuth,
+  probeAuth,
+  needsProxy,
+  probeFilename,
+} from './utils/opdsReq';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
@@ -49,6 +64,7 @@ export default function BrowserPage() {
   const _ = useTranslation();
   const router = useRouter();
   const { appService } = useEnv();
+  const { user } = useAuth();
   const { libraryLoaded } = useLibrary();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { settings } = useSettingsStore();
@@ -78,6 +94,7 @@ export default function BrowserPage() {
   const searchTermRef = useRef('');
 
   useTheme({ systemUIVisible: false });
+  useTransferQueue(libraryLoaded);
 
   useEffect(() => {
     startURLRef.current = state.startURL;
@@ -403,41 +420,58 @@ export default function BrowserPage() {
           }
           return;
         } else {
-          const ext = parsed?.mediaType ? getFileExtFromMimeType(parsed.mediaType) : '';
-          const basename = new URL(url).pathname.replaceAll('/', '_');
-          const filename = ext ? `${basename}.${ext}` : basename;
-          const dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
-          if (dstFilePath) {
-            const username = usernameRef.current || '';
-            const password = passwordRef.current || '';
-            const useProxy = needsProxy(url);
-            let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
-            const headers: Record<string, string> = {
-              'User-Agent': READEST_OPDS_USER_AGENT,
-            };
-            if (username || password) {
-              const authHeader = await probeAuth(url, username, password, useProxy);
-              if (authHeader) {
-                headers['Authorization'] = authHeader;
-                downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
-              }
+          const username = usernameRef.current || '';
+          const password = passwordRef.current || '';
+          const useProxy = needsProxy(url);
+          let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
+          const headers: Record<string, string> = {
+            'User-Agent': READEST_OPDS_USER_AGENT,
+            Accept: '*/*',
+          };
+          if (username || password) {
+            const authHeader = await probeAuth(url, username, password, useProxy);
+            if (authHeader) {
+              headers['Authorization'] = authHeader;
+              downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
             }
-
-            await downloadFile({
-              appService,
-              dst: dstFilePath,
-              cfp: '',
-              url: downloadUrl,
-              headers,
-              singleThreaded: true,
-              onProgress,
-            });
-            const { library, setLibrary } = useLibraryStore.getState();
-            const book = await appService.importBook(dstFilePath, library);
-            setLibrary(library);
-            appService.saveLibraryBooks(library);
-            return book;
           }
+
+          const pathname = decodeURIComponent(new URL(url).pathname);
+          const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
+          const basename = pathname.replaceAll('/', '_');
+          const filename = ext ? `${basename}.${ext}` : basename;
+          let dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
+          console.log('Downloading to:', url, dstFilePath);
+
+          const responseHeaders = await downloadFile({
+            appService,
+            dst: dstFilePath,
+            cfp: '',
+            url: downloadUrl,
+            headers,
+            singleThreaded: true,
+            skipSslVerification: true,
+            onProgress,
+          });
+          const probedFilename = await probeFilename(responseHeaders);
+          if (probedFilename) {
+            const newFilePath = await appService?.resolveFilePath(probedFilename, 'Cache');
+            await appService?.copyFile(dstFilePath, newFilePath, 'None');
+            await appService?.deleteFile(dstFilePath, 'None');
+            console.log('Renamed downloaded file to:', newFilePath);
+            dstFilePath = newFilePath;
+          }
+
+          const { library, setLibrary } = useLibraryStore.getState();
+          const book = await appService.importBook(dstFilePath, library);
+          if (user && book && !book.uploadedAt && settings.autoUpload) {
+            setTimeout(() => {
+              transferManager.queueUpload(book);
+            }, 3000);
+          }
+          setLibrary(library);
+          appService.saveLibraryBooks(library);
+          return book;
         }
       } catch (e) {
         console.error('Download error:', e);
@@ -445,7 +479,8 @@ export default function BrowserPage() {
       }
       return;
     },
-    [state.baseURL, appService, libraryLoaded],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, state.baseURL, appService, libraryLoaded],
   );
 
   const handleGenerateCachedImageUrl = useCallback(
@@ -479,6 +514,7 @@ export default function BrowserPage() {
           cfp: '',
           url: downloadUrl,
           singleThreaded: true,
+          skipSslVerification: true,
           headers,
         });
         return await appService.getImageURL(cachedPath);

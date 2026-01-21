@@ -74,6 +74,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
 
   const cycleProgressInfoModes = () => {
+    if (!viewSettings.tapToToggleFooter) return;
+
     const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
     const hasProgressInfo = viewSettings.showProgressInfo;
     const modeSequence: (typeof progressInfoMode)[] = ['all', 'remaining', 'progress', 'none'];
@@ -113,15 +115,17 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressInfoMode]);
 
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
+
   return (
     <div
       role='presentation'
       className={clsx(
-        'progressinfo absolute flex items-center justify-between font-sans',
-        'pointer-events-auto bottom-0',
+        'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
         isScrolled && !isVertical && 'bg-base-100',
+        isMobile ? 'pointer-events-auto' : 'pointer-events-none',
       )}
       onClick={() => cycleProgressInfoModes()}
       aria-label={[
@@ -139,7 +143,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
       style={
         isVertical
           ? {
-              bottom: `${contentInsets.bottom * 1.5}px`,
+              bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
                 : `calc(${Math.max(0, contentInsets.left - 32)}px)`,

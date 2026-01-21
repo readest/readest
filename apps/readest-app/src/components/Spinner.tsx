@@ -19,8 +19,10 @@ const Spinner: React.FC<{
       }}
       role='status'
     >
-      <span className={clsx('loading loading-dots loading-lg', className)}></span>
-      <span className='hidden'>{_('Loading...')}</span>
+      <span
+        className={clsx('loading loading-lg not-eink:loading-dots eink:loading-spinner', className)}
+      ></span>
+      <span className='sr-only'>{_('Loading...')}</span>
     </div>
   );
 };

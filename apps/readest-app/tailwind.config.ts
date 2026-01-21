@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss';
 import { themes } from './src/styles/themes';
 import daisyui from 'daisyui';
 import typography from '@tailwindcss/typography';
+import plugin from 'tailwindcss/plugin';
 
 const config: Config = {
   content: [
@@ -24,7 +25,14 @@ const config: Config = {
       },
     },
   },
-  plugins: [daisyui, typography],
+  plugins: [
+    daisyui,
+    typography,
+    plugin(function ({ addVariant }) {
+      addVariant('eink', 'html[data-eink="true"] &');
+      addVariant('not-eink', 'html:not([data-eink="true"]) &');
+    }),
+  ],
   daisyui: {
     themes: themes.reduce(
       (acc, { name, colors }) => {

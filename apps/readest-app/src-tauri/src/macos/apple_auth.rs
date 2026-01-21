@@ -38,8 +38,8 @@ pub struct AppleIDAuthorizationResponse {
 }
 
 thread_local! {
-    static APPLE_SIGN_IN_DELEGATE: RefCell<Option<Retained<ASAuthorizationControllerDelegateImpl>>> = RefCell::new(None);
-    static AUTHORIZATION_CONTROLLER: RefCell<Option<Retained<ASAuthorizationController>>> = RefCell::new(None);
+    static APPLE_SIGN_IN_DELEGATE: RefCell<Option<Retained<ASAuthorizationControllerDelegateImpl>>> = const { RefCell::new(None) };
+    static AUTHORIZATION_CONTROLLER: RefCell<Option<Retained<ASAuthorizationController>>> = const { RefCell::new(None) };
 }
 
 #[derive(Clone)]
@@ -70,7 +70,7 @@ define_class!(
             {
                 let user_identifier = {
                     let user = credential.user();
-                    if user.len() > 0 {
+                    if !user.is_empty() {
                         Some(user.to_string())
                     } else {
                         None
@@ -183,7 +183,7 @@ pub fn start_apple_sign_in(app: AppHandle, payload: AppleIDAuthorizationRequest)
         let auth_request = &request as &ASAuthorizationRequest;
         let controller = ASAuthorizationController::initWithAuthorizationRequests(
             ASAuthorizationController::alloc(),
-            &*NSArray::from_slice(&[auth_request]),
+            &NSArray::from_slice(&[auth_request]),
         );
 
         let delegate = ASAuthorizationControllerDelegateImpl::new(app.clone());

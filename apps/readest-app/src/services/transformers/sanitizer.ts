@@ -8,7 +8,7 @@ export const sanitizerTransformer: Transformer = {
     const allowScript = ctx.viewSettings.allowScript;
     if (allowScript) return ctx.content;
 
-    const result = ctx.content;
+    const result = ctx.content.replaceAll('&nbsp;', '&#160;');
 
     const sanitized = DOMPurify.sanitize(result, {
       WHOLE_DOCUMENT: true,
@@ -40,6 +40,7 @@ export const sanitizerTransformer: Transformer = {
 
     const serializer = new XMLSerializer();
     let serialized = serializer.serializeToString(sanitized);
+    serialized = serialized.replaceAll('&#160;', '&nbsp;').replaceAll('\u00A0', '&nbsp;');
     serialized = '<?xml version="1.0" encoding="utf-8"?>' + serialized;
     serialized = serialized.replace(/(<head[^>]*>)/i, '\n$1');
     serialized = serialized.replace(/(<\/body>)(<\/html>)/i, '$1\n$2');

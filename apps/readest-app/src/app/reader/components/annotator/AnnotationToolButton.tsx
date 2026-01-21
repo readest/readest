@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 
-interface PopupButtonProps {
+interface AnnotationToolButtonProps {
   showTooltip: boolean;
   tooltipText: string;
   disabled?: boolean;
@@ -9,7 +9,7 @@ interface PopupButtonProps {
   onClick: () => void;
 }
 
-const PopupButton: React.FC<PopupButtonProps> = ({
+const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
   showTooltip,
   tooltipText,
   disabled,
@@ -24,13 +24,15 @@ const PopupButton: React.FC<PopupButtonProps> = ({
   return (
     <div
       className='lg:tooltip lg:tooltip-bottom'
-      data-tip={!buttonClicked && showTooltip ? tooltipText : null}
+      title={!buttonClicked && showTooltip ? tooltipText : undefined}
     >
       <button
         onClick={handleClick}
         className={clsx(
           'flex h-8 min-h-8 w-8 items-center justify-center p-0',
-          disabled ? 'cursor-not-allowed opacity-50' : 'rounded-md hover:bg-gray-500',
+          disabled
+            ? 'cursor-not-allowed opacity-50'
+            : 'not-eink:hover:bg-gray-500 eink:hover:border rounded-md',
         )}
         disabled={disabled}
       >
@@ -40,4 +42,4 @@ const PopupButton: React.FC<PopupButtonProps> = ({
   );
 };
 
-export default PopupButton;
+export default AnnotationToolButton;

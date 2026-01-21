@@ -5,6 +5,7 @@
     "lib": [
       "dom",
       "dom.iterable",
+      "webworker",
       "esnext"
     ],
     "allowJs": true,

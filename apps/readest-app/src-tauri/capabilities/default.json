@@ -116,6 +116,7 @@
         }
       ]
     },
+    "websocket:default",
     "dialog:default",
     "os:default",
     "core:window:default",
@@ -151,12 +152,23 @@
         }
       ]
     },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "start-readest",
+          "cmd": "cmd",
+          "args": ["/C", "start", "", { "validator": "^.*Readest(.*)\\.exe$" }]
+        }
+      ]
+    },
     "haptics:allow-vibrate",
     "haptics:allow-impact-feedback",
     "haptics:allow-notification-feedback",
     "haptics:allow-selection-feedback",
-    "native-bridge:default",
+    "deep-link:default",
+    "sharekit:default",
     "native-tts:default",
-    "deep-link:default"
+    "native-bridge:default"
   ]
 }

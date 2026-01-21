@@ -406,9 +406,6 @@ export function CatalogManager() {
                 </div>
               </form>
             </div>
-            <form method='dialog' className='modal-backdrop'>
-              <button onClick={() => setShowAddDialog(false)}>{_('Close')}</button>
-            </form>
           </dialog>
         </ModalPortal>
       )}

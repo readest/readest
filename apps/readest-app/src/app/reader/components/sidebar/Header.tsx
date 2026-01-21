@@ -89,7 +89,9 @@ const SidebarHeader: React.FC<{
                     window.innerWidth < 640 && 'dropdown-end',
                     'dropdown-bottom flex justify-center',
                   )}
-                  menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
+                  menuClassName={
+                    window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'
+                  }
                   buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
                   toggleButton={<MdOutlineMenu className='fill-base-content' />}
                 >
@@ -113,7 +115,11 @@ const SidebarHeader: React.FC<{
                     isPinned ? 'bg-base-300' : 'bg-base-300/65',
                   )}
                 >
-                  {isPinned ? <MdPushPin size={iconSize14} /> : <MdOutlinePushPin size={iconSize14} />}
+                  {isPinned ? (
+                    <MdPushPin size={iconSize14} />
+                  ) : (
+                    <MdOutlinePushPin size={iconSize14} />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
