@@ -5,7 +5,7 @@ import { aiLogger } from '../logger';
 const lunr = require('lunr') as typeof import('lunr');
 
 const DB_NAME = 'readest-ai';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const CHUNKS_STORE = 'chunks';
 const META_STORE = 'bookMeta';
 const BM25_STORE = 'bm25Indices';
@@ -62,6 +62,16 @@ class AIStore {
       };
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
+
+        // Force re-indexing on schema changes
+        if (oldVersion > 0 && oldVersion < 2) {
+          if (db.objectStoreNames.contains(CHUNKS_STORE)) db.deleteObjectStore(CHUNKS_STORE);
+          if (db.objectStoreNames.contains(META_STORE)) db.deleteObjectStore(META_STORE);
+          if (db.objectStoreNames.contains(BM25_STORE)) db.deleteObjectStore(BM25_STORE);
+          aiLogger.store.error('migration', 'Clearing old AI stores for re-indexing (v2)');
+        }
+
         if (!db.objectStoreNames.contains(CHUNKS_STORE)) {
           const store = db.createObjectStore(CHUNKS_STORE, { keyPath: 'id' });
           store.createIndex('bookHash', 'bookHash', { unique: false });
@@ -202,13 +212,13 @@ class AIStore {
     bookHash: string,
     queryEmbedding: number[],
     topK: number,
-    maxSectionIndex?: number,
+    maxPage?: number,
   ): Promise<ScoredChunk[]> {
     const chunks = await this.getChunks(bookHash);
     const beforeFilter = chunks.filter((c) => c.embedding).length;
     const scored: ScoredChunk[] = [];
     for (const chunk of chunks) {
-      if (maxSectionIndex !== undefined && chunk.sectionIndex > maxSectionIndex) continue;
+      if (maxPage !== undefined && chunk.pageNumber > maxPage) continue;
       if (!chunk.embedding) continue;
       scored.push({
         ...chunk,
@@ -218,8 +228,8 @@ class AIStore {
     }
     scored.sort((a, b) => b.score - a.score);
     const results = scored.slice(0, topK);
-    if (maxSectionIndex !== undefined)
-      aiLogger.search.spoilerFiltered(beforeFilter, results.length, maxSectionIndex);
+    if (maxPage !== undefined)
+      aiLogger.search.spoilerFiltered(beforeFilter, results.length, maxPage);
     if (results.length > 0) aiLogger.search.vectorResults(results.length, results[0]!.score);
     return results;
   }
@@ -228,7 +238,7 @@ class AIStore {
     bookHash: string,
     query: string,
     topK: number,
-    maxSectionIndex?: number,
+    maxPage?: number,
   ): Promise<ScoredChunk[]> {
     const index = await this.loadBM25Index(bookHash);
     if (!index) return [];
@@ -240,7 +250,7 @@ class AIStore {
       for (const result of results) {
         const chunk = chunkMap.get(result.ref);
         if (!chunk) continue;
-        if (maxSectionIndex !== undefined && chunk.sectionIndex > maxSectionIndex) continue;
+        if (maxPage !== undefined && chunk.pageNumber > maxPage) continue;
         scored.push({ ...chunk, score: result.score, searchMethod: 'bm25' });
         if (scored.length >= topK) break;
       }
@@ -256,11 +266,11 @@ class AIStore {
     queryEmbedding: number[] | null,
     query: string,
     topK: number,
-    maxSectionIndex?: number,
+    maxPage?: number,
   ): Promise<ScoredChunk[]> {
     const [vectorResults, bm25Results] = await Promise.all([
-      queryEmbedding ? this.vectorSearch(bookHash, queryEmbedding, topK * 2, maxSectionIndex) : [],
-      this.bm25Search(bookHash, query, topK * 2, maxSectionIndex),
+      queryEmbedding ? this.vectorSearch(bookHash, queryEmbedding, topK * 2, maxPage) : [],
+      this.bm25Search(bookHash, query, topK * 2, maxPage),
     ]);
     const normalize = (results: ScoredChunk[], weight: number) => {
       if (results.length === 0) return [];
