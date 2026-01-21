@@ -29,6 +29,7 @@ export interface AISettings {
 
   aiGatewayApiKey?: string;
   aiGatewayModel?: string;
+  aiGatewayCustomModel?: string;
   aiGatewayEmbeddingModel?: string;
 
   spoilerProtection: boolean;
