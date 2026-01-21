@@ -54,7 +54,7 @@ describe('AI Chunker', () => {
 
     test('should create single chunk for short text', () => {
       const doc = createDocument('<p>Short text that is less than max chunk size.</p>');
-      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash);
+      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash, 0);
 
       expect(chunks.length).toBe(1);
       expect(chunks[0]!.id).toBe(`${bookHash}-${sectionIndex}-0`);
@@ -66,7 +66,7 @@ describe('AI Chunker', () => {
     test('should split long text into multiple chunks', () => {
       const longText = 'Lorem ipsum dolor sit amet. '.repeat(50);
       const doc = createDocument(`<p>${longText}</p>`);
-      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash);
+      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash, 0);
 
       expect(chunks.length).toBeGreaterThan(1);
       chunks.forEach((chunk, i) => {
@@ -76,14 +76,14 @@ describe('AI Chunker', () => {
 
     test('should return empty array for empty document', () => {
       const doc = createDocument('');
-      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash);
+      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash, 0);
       expect(chunks).toEqual([]);
     });
 
     test('should respect custom chunk options', () => {
       const longText = 'Word '.repeat(100);
       const doc = createDocument(`<p>${longText}</p>`);
-      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash, {
+      const chunks = chunkSection(doc, sectionIndex, chapterTitle, bookHash, 0, {
         maxChunkSize: 100,
         minChunkSize: 20,
       });
