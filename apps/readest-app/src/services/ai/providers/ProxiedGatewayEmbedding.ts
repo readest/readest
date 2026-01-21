@@ -1,8 +1,3 @@
-/**
- * custom embedding model that proxies AI Gateway requests through our API route
- * solves CORS issues when making gateway calls from browser
- */
-
 import type { EmbeddingModel } from 'ai';
 
 interface ProxiedEmbeddingOptions {
@@ -10,7 +5,6 @@ interface ProxiedEmbeddingOptions {
   model?: string;
 }
 
-// custom embedding model that routes requests through /api/ai/embed
 export function createProxiedEmbeddingModel(
   options: ProxiedEmbeddingOptions,
 ): EmbeddingModel<string> {
