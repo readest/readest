@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   AssistantRuntimeProvider,
   useLocalRuntime,
@@ -46,22 +46,31 @@ const AIAssistantChat = ({
   currentPage: number;
   onResetIndex: () => void;
 }) => {
-  // create adapter with current settings
-  const adapter = useMemo(() => {
-    if (!aiSettings) return null;
-    return createTauriAdapter({
+  // use a ref to keep up-to-date options without triggering re-renders of the runtime
+  const optionsRef = useRef({
+    settings: aiSettings,
+    bookHash,
+    bookTitle,
+    authorName,
+    currentPage,
+  });
+
+  // update ref on every render with latest values
+  useEffect(() => {
+    optionsRef.current = {
       settings: aiSettings,
       bookHash,
       bookTitle,
       authorName,
       currentPage,
-    });
-  }, [aiSettings, bookHash, bookTitle, authorName, currentPage]);
+    };
+  });
 
-  // guard: return early if no adapter (prevents calling useLocalRuntime with null)
-  if (!adapter) {
-    return null;
-  }
+  // create adapter ONCE and keep it stable
+  const adapter = useMemo(() => {
+    return createTauriAdapter(() => optionsRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <AIAssistantWithRuntime adapter={adapter} onResetIndex={onResetIndex} />;
 };
@@ -75,6 +84,9 @@ const AIAssistantWithRuntime = ({
   onResetIndex: () => void;
 }) => {
   const runtime = useLocalRuntime(adapter);
+
+  // ensure runtime is available before providing it
+  if (!runtime) return null;
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
