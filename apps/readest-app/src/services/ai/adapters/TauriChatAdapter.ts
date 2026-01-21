@@ -5,7 +5,6 @@ import { hybridSearch, isBookIndexed } from '../ragService';
 import { aiLogger } from '../logger';
 import type { AISettings, ScoredChunk } from '../types';
 
-// store last sources for UI access
 let lastSources: ScoredChunk[] = [];
 
 export function getLastSources(): ScoredChunk[] {
@@ -32,10 +31,53 @@ function buildSystemPrompt(
 ): string {
   const contextSection =
     chunks.length > 0
-      ? `\n\nRelevant passages:\n${chunks.map((c, i) => `[${i + 1}] "${c.text}"`).join('\n\n')}`
+      ? `\n\nBook Content:\n${chunks
+          .map((c) => {
+            const header = c.chapterTitle || `Section ${c.sectionIndex + 1}`;
+            return `--- ${header} ---\n${c.text}`;
+          })
+          .join('\n\n')}`
       : '';
-  const spoilerNote = spoilerProtection ? '\nOnly use info from passages provided.' : '';
-  return `You are a reading companion for "${bookTitle}"${authorName ? ` by ${authorName}` : ''}. Answer based on context. Be concise and helpful.${spoilerNote}${contextSection}`;
+  const spoilerNote = spoilerProtection ? '\nOnly use info from the book content provided.' : '';
+  const citationNote =
+    '\nDo not use internal passage numbers or indices like [1] or [2]. If you need to cite a source, use the official chapter or section headings provided in the headers.';
+
+  return `You are a reading companion for "${bookTitle}"${
+    authorName ? ` by ${authorName}` : ''
+  }. Answer based on the book content. Be concise and helpful.${spoilerNote}${citationNote}${contextSection}`;
+}
+
+async function* streamViaApiRoute(
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string,
+  settings: AISettings,
+  abortSignal?: AbortSignal,
+): AsyncGenerator<string> {
+  const response = await fetch('/api/ai/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      system: systemPrompt,
+      apiKey: settings.aiGatewayApiKey,
+      model: settings.aiGatewayModel || 'google/gemini-2.5-flash-lite',
+    }),
+    signal: abortSignal,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `Chat failed: ${response.status}`);
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    yield decoder.decode(value, { stream: true });
+  }
 }
 
 export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapter {
@@ -46,7 +88,6 @@ export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapt
       const provider = getAIProvider(settings);
       let chunks: ScoredChunk[] = [];
 
-      // get last user message for RAG query
       const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
       const query =
         lastUserMessage?.content
@@ -56,7 +97,6 @@ export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapt
 
       aiLogger.chat.send(query.length, false);
 
-      // perform hybrid search if book is indexed
       if (await isBookIndexed(bookHash)) {
         try {
           chunks = await hybridSearch(
@@ -76,7 +116,6 @@ export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapt
         lastSources = [];
       }
 
-      // build system prompt with context
       const systemPrompt = buildSystemPrompt(
         bookTitle,
         authorName,
@@ -84,7 +123,6 @@ export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapt
         settings.spoilerProtection,
       );
 
-      // convert messages to AI SDK format
       const aiMessages = messages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content
@@ -94,19 +132,32 @@ export function createTauriAdapter(options: TauriAdapterOptions): ChatModelAdapt
       }));
 
       try {
-        const result = streamText({
-          model: provider.getModel(),
-          system: systemPrompt,
-          messages: aiMessages,
-          abortSignal,
-        });
+        const useApiRoute = typeof window !== 'undefined' && settings.provider === 'ai-gateway';
 
         let text = '';
-        for await (const chunk of result.textStream) {
-          text += chunk;
-          yield {
-            content: [{ type: 'text', text }],
-          };
+
+        if (useApiRoute) {
+          for await (const chunk of streamViaApiRoute(
+            aiMessages,
+            systemPrompt,
+            settings,
+            abortSignal,
+          )) {
+            text += chunk;
+            yield { content: [{ type: 'text', text }] };
+          }
+        } else {
+          const result = streamText({
+            model: provider.getModel(),
+            system: systemPrompt,
+            messages: aiMessages,
+            abortSignal,
+          });
+
+          for await (const chunk of result.textStream) {
+            text += chunk;
+            yield { content: [{ type: 'text', text }] };
+          }
         }
 
         aiLogger.chat.complete(text.length);
