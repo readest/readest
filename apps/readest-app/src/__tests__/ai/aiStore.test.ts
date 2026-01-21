@@ -114,6 +114,7 @@ describe('AI Store', () => {
       bookHash: 'test-hash',
       sectionIndex: 0,
       chapterTitle: 'Test Chapter',
+      pageNumber: 1,
       text: 'This is test content for the chunk.',
       embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
     };
@@ -130,6 +131,7 @@ describe('AI Store', () => {
         bookHash: 'test-hash',
         sectionIndex: 0,
         chapterTitle: 'Test Chapter',
+        pageNumber: 1,
         text: 'Chunk without embedding.',
       };
       expect(chunkNoEmbed.embedding).toBeUndefined();
