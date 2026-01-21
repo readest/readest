@@ -415,9 +415,12 @@ export class NativeAppService extends BaseAppService {
   override hasSafeAreaInset = false;
   override hasHaptics = false;
   override hasUpdater = !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
+  // orientation lock is not supported on iPad
   override hasOrientationLock = false;
   override hasScreenBrightness = false;
   override hasIAP = false;
+  // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
+  // See: https://github.com/tauri-apps/tauri/issues/3716
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
