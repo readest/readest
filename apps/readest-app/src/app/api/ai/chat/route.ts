@@ -1,68 +1,42 @@
-/**
- * server-side chat endpoint for web/mobile
- * protects api key by keeping it server-side
- *
- * PLACEHOLDER - not yet implemented
- * will be activated when implementing free/paid tiers
- */
-
-import { NextResponse } from 'next/server';
+import { streamText, createGateway } from 'ai';
+import type { CoreMessage } from 'ai';
 
 export const runtime = 'edge';
 
-// placeholder: uncomment when implementing free/paid tiers
-/*
-import { gateway } from 'ai';
-
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
-    const { messages, bookHash, currentSection, context, settings } = await req.json();
+    const { messages, system, apiKey, model } = await req.json();
 
-    // validate request
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Messages required' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Messages required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // use server-side api key (never exposed to client)
-    const model = gateway(process.env.AI_GATEWAY_MODEL || 'openai/gpt-5.2');
+    const gatewayApiKey = apiKey || process.env['AI_GATEWAY_API_KEY'];
+    if (!gatewayApiKey) {
+      return new Response(JSON.stringify({ error: 'API key required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    // build system prompt with context
-    const systemPrompt = buildSystemPrompt(context, settings);
+    const gateway = createGateway({ apiKey: gatewayApiKey });
+    const languageModel = gateway(model || 'google/gemini-2.5-flash-lite');
 
     const result = streamText({
-      model,
-      system: systemPrompt,
-      messages,
+      model: languageModel,
+      system: system || 'You are a helpful assistant.',
+      messages: messages as CoreMessage[],
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
-    console.error('[AI Chat Route]', error);
-    return NextResponse.json(
-      { error: 'Chat failed' },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: `Chat failed: ${errorMessage}` }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-}
-
-function buildSystemPrompt(context: string[], settings: { spoilerProtection?: boolean }): string {
-  const contextSection = context?.length
-    ? `\n\nRelevant passages:\n${context.map((c, i) => `[${i + 1}] "${c}"`).join('\n\n')}`
-    : '';
-  const spoilerNote = settings?.spoilerProtection
-    ? '\nOnly use info from passages provided.'
-    : '';
-  return `You are a reading companion. Answer based on context. Be concise and helpful.${spoilerNote}${contextSection}`;
-}
-*/
-
-// placeholder response until implemented
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: 'Server-side AI chat not yet implemented. Use client-side with your own API key.',
-      hint: 'This endpoint will be active when free/paid tiers are implemented.',
-    },
-    { status: 501 },
-  );
 }
