@@ -64,8 +64,12 @@ describe('DEFAULT_AI_SETTINGS', () => {
 
 describe('Model constants', () => {
   test('GATEWAY_MODELS should have expected models', () => {
-    expect(GATEWAY_MODELS.CLAUDE_SONNET).toBeDefined();
-    expect(GATEWAY_MODELS.GEMINI_3_FLASH).toBeDefined();
+    expect(GATEWAY_MODELS.GEMINI_FLASH_LITE).toBeDefined();
+    expect(GATEWAY_MODELS.GPT_5_NANO).toBeDefined();
+    expect(GATEWAY_MODELS.LLAMA_4_SCOUT).toBeDefined();
+    expect(GATEWAY_MODELS.GROK_4_1_FAST).toBeDefined();
+    expect(GATEWAY_MODELS.DEEPSEEK_V3_2).toBeDefined();
+    expect(GATEWAY_MODELS.QWEN_3_235B).toBeDefined();
   });
 
   test('OLLAMA_MODELS should have local models', () => {
