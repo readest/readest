@@ -25,7 +25,11 @@ import {
 
 import { MarkdownText } from '@/components/assistant-ui/markdown-text';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ScoredChunk } from '@/services/ai/types';
 
@@ -36,20 +40,20 @@ interface ThreadProps {
 
 export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
   return (
-    <ThreadPrimitive.Root className='flex h-full w-full flex-col items-stretch bg-base-100 px-3'>
+    <ThreadPrimitive.Root className='bg-base-100 flex h-full w-full flex-col items-stretch px-3'>
       <ThreadPrimitive.Empty>
-        <div className='flex h-full flex-col items-center justify-center animate-in fade-in duration-300'>
-          <div className='mb-4 rounded-full bg-base-content/10 p-3'>
-            <BookOpenIcon className='size-6 text-base-content' />
+        <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
+          <div className='bg-base-content/10 mb-4 rounded-full p-3'>
+            <BookOpenIcon className='text-base-content size-6' />
           </div>
-          <h3 className='mb-1 text-sm font-medium text-base-content'>Ask about this book</h3>
-          <p className='mb-4 text-xs text-base-content/60'>Get answers based on the book content</p>
+          <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
+          <p className='text-base-content/60 mb-4 text-xs'>Get answers based on the book content</p>
           <Composer onClear={onClear} />
         </div>
       </ThreadPrimitive.Empty>
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto pt-2 scroll-smooth'>
+        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto scroll-smooth pt-2'>
           <ThreadPrimitive.Messages
             components={{
               UserMessage,
@@ -57,7 +61,7 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear }) => {
               AssistantMessage: () => <AssistantMessage sources={sources} />,
             }}
           />
-          <p className='mx-auto w-full p-1 text-center text-[10px] text-base-content/40'>
+          <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
             AI can make mistakes. Verify with the book.
           </p>
         </ThreadPrimitive.Viewport>
@@ -77,17 +81,17 @@ const Composer: FC<ComposerProps> = ({ onClear }) => {
 
   return (
     <ComposerPrimitive.Root
-      className='group/composer mx-auto mb-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300'
+      className='group/composer animate-in fade-in slide-in-from-bottom-2 mx-auto mb-2 w-full duration-300'
       data-empty={isEmpty}
       data-running={isRunning}
     >
-      <div className='overflow-hidden rounded-2xl bg-base-200 shadow-sm ring-1 ring-base-content/10 ring-inset transition-all duration-200 focus-within:ring-base-content/20'>
+      <div className='bg-base-200 ring-base-content/10 focus-within:ring-base-content/20 overflow-hidden rounded-2xl shadow-sm ring-1 ring-inset transition-all duration-200'>
         <div className='flex items-end gap-0.5 p-1.5'>
           {onClear && (
             <button
               type='button'
               onClick={onClear}
-              className='mb-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-base-content transition-colors hover:bg-base-300'
+              className='text-base-content hover:bg-base-300 mb-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-colors'
               aria-label='Clear chat'
             >
               <Trash2Icon className='size-3.5' />
@@ -97,10 +101,10 @@ const Composer: FC<ComposerProps> = ({ onClear }) => {
           <ComposerPrimitive.Input
             placeholder='Ask about this book...'
             rows={1}
-            className='my-1 h-5 max-h-[200px] min-w-0 flex-1 resize-none bg-transparent text-sm leading-5 text-base-content outline-none placeholder:text-base-content/40'
+            className='text-base-content placeholder:text-base-content/40 my-1 h-5 max-h-[200px] min-w-0 flex-1 resize-none bg-transparent text-sm leading-5 outline-none'
           />
 
-          <div className='relative mb-0.5 size-7 shrink-0 rounded-full bg-base-content text-base-100'>
+          <div className='bg-base-content text-base-100 relative mb-0.5 size-7 shrink-0 rounded-full'>
             <ComposerPrimitive.Send className='absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out group-data-[empty=true]/composer:scale-0 group-data-[running=true]/composer:scale-0 group-data-[empty=true]/composer:opacity-0 group-data-[running=true]/composer:opacity-0'>
               <ArrowUpIcon className='size-3.5' />
             </ComposerPrimitive.Send>
@@ -126,80 +130,88 @@ interface AssistantMessageProps {
 
 const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
   return (
-    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5 animate-in fade-in slide-in-from-bottom-1 duration-200'>
+    <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
       <div className='flex flex-col items-start'>
-        {sources.length > 0 && <SourcesDisplay sources={sources} />}
-
         <div className='w-full max-w-none'>
-          <div className='prose prose-xs text-sm text-base-content [&_*]:!text-base-content [&_a]:!text-primary [&_code]:!text-base-content'>
+          <div className='prose prose-xs text-base-content [&_*]:!text-base-content [&_a]:!text-primary [&_code]:!text-base-content select-text text-sm'>
             <MessagePrimitive.Parts components={{ Text: MarkdownText }} />
           </div>
         </div>
 
-        <div className='mt-0.5 flex h-6 w-full items-center justify-start gap-0.5 opacity-0 transition-opacity group-focus-within/message:opacity-100 group-hover/message:opacity-100'>
-          <ActionBarPrimitive.Root className='-ml-1 flex items-center gap-0.5'>
-            <BranchPicker />
-            <ActionBarPrimitive.Reload className='flex size-6 items-center justify-center rounded-full text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content'>
-              <RefreshCwIcon className='size-3' />
-            </ActionBarPrimitive.Reload>
-            <ActionBarPrimitive.Copy className='flex size-6 items-center justify-center rounded-full text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content'>
-              <AssistantIf condition={({ message }) => message.isCopied}>
-                <CheckIcon className='size-3' />
-              </AssistantIf>
-              <AssistantIf condition={({ message }) => !message.isCopied}>
-                <CopyIcon className='size-3' />
-              </AssistantIf>
-            </ActionBarPrimitive.Copy>
-          </ActionBarPrimitive.Root>
-        </div>
+        <AssistantIf condition={(s) => s.message.status?.type !== 'running'}>
+          <div className='animate-in fade-in mt-0.5 flex h-6 w-full items-center justify-start gap-0.5 duration-300'>
+            <ActionBarPrimitive.Root className='-ml-1 flex items-center gap-0.5'>
+              <BranchPicker />
+              {sources.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type='button'
+                      className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'
+                      aria-label='View sources'
+                    >
+                      <BookOpenIcon className='size-3' />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align='start'
+                    className='bg-base-100 border-base-content/10 w-80 p-2'
+                  >
+                    <div className='text-base-content/60 mb-2 px-1 text-[11px] font-semibold'>
+                      Sources from book
+                    </div>
+                    <div className='flex flex-col gap-1.5'>
+                      {sources.map((source, i) => (
+                        <div
+                          key={source.id || i}
+                          className='border-base-content/10 bg-base-200/50 rounded-lg border px-2 py-1.5 text-[11px]'
+                        >
+                          <div className='text-base-content font-medium'>
+                            {source.chapterTitle || `Section ${source.sectionIndex + 1}`}
+                          </div>
+                          <div className='text-base-content/60 mt-0.5 line-clamp-3'>
+                            {source.text}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <ActionBarPrimitive.Reload className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'>
+                <RefreshCwIcon className='size-3' />
+              </ActionBarPrimitive.Reload>
+              <ActionBarPrimitive.Copy className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'>
+                <AssistantIf condition={({ message }) => message.isCopied}>
+                  <CheckIcon className='size-3' />
+                </AssistantIf>
+                <AssistantIf condition={({ message }) => !message.isCopied}>
+                  <CopyIcon className='size-3' />
+                </AssistantIf>
+              </ActionBarPrimitive.Copy>
+            </ActionBarPrimitive.Root>
+          </div>
+        </AssistantIf>
       </div>
     </MessagePrimitive.Root>
   );
 };
 
-interface SourcesDisplayProps {
-  sources: ScoredChunk[];
-}
-
-const SourcesDisplay: FC<SourcesDisplayProps> = ({ sources }) => {
-  return (
-    <Collapsible className='mb-2 w-full'>
-      <CollapsibleTrigger className='flex items-center gap-1.5 text-[11px] text-base-content/60 transition-colors hover:text-base-content'>
-        <BookOpenIcon className='size-2.5' />
-        <span>{sources.length} sources from book</span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className='mt-1.5 space-y-1'>
-        {sources.map((source, i) => (
-          <div
-            key={source.id || i}
-            className='rounded-lg border border-base-content/10 bg-base-200/50 px-2 py-1.5 text-[11px]'
-          >
-            <div className='font-medium text-base-content'>
-              {source.chapterTitle || `Section ${source.sectionIndex + 1}`}
-            </div>
-            <div className='mt-0.5 line-clamp-2 text-base-content/60'>{source.text}</div>
-          </div>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
-
 const UserMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className='group/message relative mx-auto mb-1 flex w-full flex-col pb-0.5 animate-in fade-in slide-in-from-bottom-1 duration-200'>
+    <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
       <div className='flex flex-col items-end'>
-        <div className='relative max-w-[90%] rounded-2xl rounded-br-md border border-base-content/10 bg-base-200 px-3 py-2 text-base-content'>
-          <div className='prose prose-xs text-sm text-base-content [&_*]:!text-base-content'>
+        <div className='border-base-content/10 bg-base-200 text-base-content relative max-w-[90%] rounded-2xl rounded-br-md border px-3 py-2'>
+          <div className='prose prose-xs text-base-content [&_*]:!text-base-content select-text text-sm'>
             <MessagePrimitive.Parts components={{ Text: MarkdownText }} />
           </div>
         </div>
-        <div className='mt-0.5 flex h-6 items-center justify-end gap-0.5 opacity-0 transition-opacity group-focus-within/message:opacity-100 group-hover/message:opacity-100'>
+        <div className='mt-0.5 flex h-6 items-center justify-end gap-0.5'>
           <ActionBarPrimitive.Root className='flex items-center gap-0.5'>
-            <ActionBarPrimitive.Edit className='flex size-6 items-center justify-center rounded-full text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content'>
+            <ActionBarPrimitive.Edit className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'>
               <PencilIcon className='size-3' />
             </ActionBarPrimitive.Edit>
-            <ActionBarPrimitive.Copy className='flex size-6 items-center justify-center rounded-full text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content'>
+            <ActionBarPrimitive.Copy className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'>
               <AssistantIf condition={({ message }) => message.isCopied}>
                 <CheckIcon className='size-3' />
               </AssistantIf>
@@ -217,8 +229,8 @@ const UserMessage: FC = () => {
 const EditComposer: FC = () => {
   return (
     <MessagePrimitive.Root className='mx-auto flex w-full flex-col py-2'>
-      <ComposerPrimitive.Root className='ml-auto flex w-full max-w-[90%] flex-col overflow-hidden rounded-2xl border border-base-content/10 bg-base-200'>
-        <ComposerPrimitive.Input className='min-h-10 w-full resize-none bg-transparent p-3 text-sm text-base-content outline-none' />
+      <ComposerPrimitive.Root className='border-base-content/10 bg-base-200 ml-auto flex w-full max-w-[90%] flex-col overflow-hidden rounded-2xl border'>
+        <ComposerPrimitive.Input className='text-base-content min-h-10 w-full resize-none bg-transparent p-3 text-sm outline-none' />
         <div className='mx-2 mb-2 flex items-center gap-1.5 self-end'>
           <ComposerPrimitive.Cancel asChild>
             <Button variant='ghost' size='sm' className='h-7 px-2 text-xs'>
@@ -226,7 +238,9 @@ const EditComposer: FC = () => {
             </Button>
           </ComposerPrimitive.Cancel>
           <ComposerPrimitive.Send asChild>
-            <Button size='sm' className='h-7 px-2 text-xs'>Update</Button>
+            <Button size='sm' className='h-7 px-2 text-xs'>
+              Update
+            </Button>
           </ComposerPrimitive.Send>
         </div>
       </ComposerPrimitive.Root>
@@ -238,12 +252,12 @@ const BranchPicker: FC<{ className?: string }> = ({ className }) => {
   return (
     <BranchPickerPrimitive.Root
       hideWhenSingleBranch
-      className={cn('mr-0.5 inline-flex items-center text-[10px] text-base-content/40', className)}
+      className={cn('text-base-content/40 mr-0.5 inline-flex items-center text-[10px]', className)}
     >
       <BranchPickerPrimitive.Previous asChild>
         <button
           type='button'
-          className='flex size-6 items-center justify-center rounded-full transition-colors hover:bg-base-200 hover:text-base-content'
+          className='hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'
         >
           <ChevronLeftIcon className='size-3' />
         </button>
@@ -254,7 +268,7 @@ const BranchPicker: FC<{ className?: string }> = ({ className }) => {
       <BranchPickerPrimitive.Next asChild>
         <button
           type='button'
-          className='flex size-6 items-center justify-center rounded-full transition-colors hover:bg-base-200 hover:text-base-content'
+          className='hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'
         >
           <ChevronRightIcon className='size-3' />
         </button>
