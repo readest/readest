@@ -75,7 +75,7 @@ import {
   createProgressHandler,
   batchGetDownloadUrls,
 } from '@/libs/storage';
-import { ClosableFile } from '@/utils/file.web';
+import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
