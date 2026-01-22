@@ -24,7 +24,7 @@ import {
   appLogDir,
   tempDir,
 } from '@tauri-apps/api/path';
-// osType is dynamically imported to prevent crashes in web mode
+import { type as osType } from '@tauri-apps/plugin-os';
 import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api';
 
 import {
@@ -57,13 +57,7 @@ declare global {
   }
 }
 
-// osType is dynamically fetched in NativeAppService.init() to prevent crashes in web mode
-let OS_TYPE: string | null = null;
-
-async function fetchOsType(): Promise<string> {
-  const { type } = await import('@tauri-apps/plugin-os');
-  return type();
-}
+const OS_TYPE = osType();
 
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
@@ -397,7 +391,7 @@ const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as D
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   override appPlatform = 'tauri' as AppPlatform;
-  // these are initialized in init() after osType is fetched
+  // these properties get their OS-specific values in init()
   override isAppDataSandbox = false;
   override isMobile = false;
   override isAndroidApp = false;
@@ -414,7 +408,8 @@ export class NativeAppService extends BaseAppService {
   override hasRoundedWindow = false;
   override hasSafeAreaInset = false;
   override hasHaptics = false;
-  override hasUpdater = !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
+  override hasUpdater =
+    !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
   // orientation lock is not supported on iPad
   override hasOrientationLock = false;
   override hasScreenBrightness = false;
@@ -428,9 +423,6 @@ export class NativeAppService extends BaseAppService {
   private execDir?: string = undefined;
 
   override async init() {
-    // fetch osType dynamically to prevent crashes if accidentally evaluated in web mode
-    OS_TYPE = await fetchOsType();
-
     // initialize all OS_TYPE-dependent properties now
     this.isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
     this.isMobile = ['android', 'ios'].includes(OS_TYPE);
@@ -447,8 +439,12 @@ export class NativeAppService extends BaseAppService {
     this.hasRoundedWindow = OS_TYPE === 'linux';
     this.hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
     this.hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
-    this.hasUpdater = OS_TYPE !== 'ios' && !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] && !window.__READEST_UPDATER_DISABLED;
-    this.hasOrientationLock = (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
+    this.hasUpdater =
+      OS_TYPE !== 'ios' &&
+      !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
+      !window.__READEST_UPDATER_DISABLED;
+    this.hasOrientationLock =
+      (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
     this.hasScreenBrightness = OS_TYPE === 'ios' || OS_TYPE === 'android';
     this.hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
 
