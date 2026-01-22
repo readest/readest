@@ -26,7 +26,7 @@ vi.mock('ai-sdk-ollama', () => ({
 
 import { OllamaProvider } from '@/services/ai/providers/OllamaProvider';
 import { AIGatewayProvider } from '@/services/ai/providers/AIGatewayProvider';
-import { getAIProvider, getAvailableProviders } from '@/services/ai/providers';
+import { getAIProvider } from '@/services/ai/providers';
 import type { AISettings } from '@/services/ai/types';
 import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
 
@@ -177,31 +177,5 @@ describe('getAIProvider', () => {
     } as AISettings;
 
     expect(() => getAIProvider(settings)).toThrow('Unknown provider');
-  });
-});
-
-describe('getAvailableProviders', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  test('should include ollama if available', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true });
-    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true };
-
-    const providers = await getAvailableProviders(settings);
-    expect(providers).toContain('ollama');
-  });
-
-  test('should include ai-gateway if key provided', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('No Ollama'));
-    const settings: AISettings = {
-      ...DEFAULT_AI_SETTINGS,
-      enabled: true,
-      aiGatewayApiKey: 'test-key',
-    };
-
-    const providers = await getAvailableProviders(settings);
-    expect(providers).toContain('ai-gateway');
   });
 });
