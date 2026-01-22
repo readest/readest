@@ -68,8 +68,8 @@ const AIAssistantChat = ({
 
   // create adapter ONCE and keep it stable
   const adapter = useMemo(() => {
+    // eslint-disable-next-line react-hooks/refs -- intentional: we read optionsRef inside a deferred callback, not during render
     return createTauriAdapter(() => optionsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <AIAssistantWithRuntime adapter={adapter} onResetIndex={onResetIndex} />;
