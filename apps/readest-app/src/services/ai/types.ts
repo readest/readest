@@ -2,11 +2,6 @@ import type { LanguageModel, EmbeddingModel } from 'ai';
 
 export type AIProviderName = 'ollama' | 'ai-gateway';
 
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
 export interface AIProvider {
   id: AIProviderName;
   name: string;
@@ -60,13 +55,6 @@ export interface BookIndexMeta {
   totalChunks: number;
   embeddingModel: string;
   lastUpdated: number;
-}
-
-export interface ChatSession {
-  bookKey: string;
-  bookHash: string;
-  messages: ChatMessage[];
-  abortController?: AbortController;
 }
 
 export interface IndexingState {
