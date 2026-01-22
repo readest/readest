@@ -7,7 +7,7 @@ interface ProxiedEmbeddingOptions {
 
 export function createProxiedEmbeddingModel(
   options: ProxiedEmbeddingOptions,
-): EmbeddingModel<string> {
+): EmbeddingModel {
   const modelId = options.model || 'openai/text-embedding-3-small';
 
   return {

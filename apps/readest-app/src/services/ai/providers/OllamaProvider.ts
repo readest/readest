@@ -24,8 +24,8 @@ export class OllamaProvider implements AIProvider {
     return this.ollama(this.settings.ollamaModel || 'llama3.2');
   }
 
-  getEmbeddingModel(): EmbeddingModel<string> {
-    return this.ollama.textEmbeddingModel(this.settings.ollamaEmbeddingModel || 'nomic-embed-text');
+  getEmbeddingModel(): EmbeddingModel {
+    return this.ollama.embeddingModel(this.settings.ollamaEmbeddingModel || 'nomic-embed-text');
   }
 
   async isAvailable(): Promise<boolean> {

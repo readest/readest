@@ -31,7 +31,7 @@ export class AIGatewayProvider implements AIProvider {
     return this.gateway(modelId);
   }
 
-  getEmbeddingModel(): EmbeddingModel<string> {
+  getEmbeddingModel(): EmbeddingModel {
     const embedModel = this.settings.aiGatewayEmbeddingModel || 'openai/text-embedding-3-small';
 
     if (typeof window !== 'undefined') {
@@ -41,7 +41,7 @@ export class AIGatewayProvider implements AIProvider {
       });
     }
 
-    return this.gateway.textEmbeddingModel(embedModel);
+    return this.gateway.embeddingModel(embedModel);
   }
 
   async isAvailable(): Promise<boolean> {
