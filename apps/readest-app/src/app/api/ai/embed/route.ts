@@ -17,7 +17,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const gateway = createGateway({ apiKey: gatewayApiKey });
-    const model = gateway.textEmbeddingModel(
+    const model = gateway.embeddingModel(
       process.env['AI_GATEWAY_EMBEDDING_MODEL'] || 'openai/text-embedding-3-small',
     );
 

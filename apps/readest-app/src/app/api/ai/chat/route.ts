@@ -1,5 +1,5 @@
 import { streamText, createGateway } from 'ai';
-import type { CoreMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 
 export const runtime = 'edge';
 
@@ -28,7 +28,7 @@ export async function POST(req: Request): Promise<Response> {
     const result = streamText({
       model: languageModel,
       system: system || 'You are a helpful assistant.',
-      messages: messages as CoreMessage[],
+      messages: messages as ModelMessage[],
     });
 
     return result.toTextStreamResponse();
