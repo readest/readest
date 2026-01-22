@@ -168,7 +168,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       onClose={handleClose}
       className='modal-open'
       bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
-      boxClassName={clsx('sm:min-w-[520px]', appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4')}
+      boxClassName={clsx(
+        'sm:min-w-[520px] overflow-hidden',
+        appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
+      )}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={
         <div className='flex w-full flex-col items-center'>
@@ -190,7 +193,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               ref={tabsRef}
               role='group'
               aria-label={_('Settings Panels') + ' - ' + (currentPanel?.label || '')}
-              className={clsx('dialog-tabs ms-1 flex h-10 w-full items-center gap-1 sm:ms-0')}
+              className={clsx(
+                'dialog-tabs ms-1 flex h-10 w-full items-center gap-1 overflow-x-auto sm:ms-0',
+              )}
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {tabConfig.map(({ tab, icon: Icon, label }) => (
                 <button
@@ -199,7 +205,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   tabIndex={0}
                   title={label}
                   className={clsx(
-                    'btn btn-ghost text-base-content btn-sm gap-1 px-2',
+                    'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
                     activePanel === tab ? 'btn-active' : '',
                   )}
                   onClick={() => handleSetActivePanel(tab)}
