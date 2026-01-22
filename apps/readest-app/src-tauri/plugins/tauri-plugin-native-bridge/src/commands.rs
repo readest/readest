@@ -187,6 +187,13 @@ pub(crate) async fn select_directory<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_storefront_region_code<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetStorefrontRegionCodeResponse> {
+    app.native_bridge().get_storefront_region_code()
+}
+
+#[command]
 pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {

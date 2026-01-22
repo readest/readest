@@ -38,7 +38,7 @@ import {
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
-import { copyURIToPath } from '@/utils/bridge';
+import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
 import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
@@ -421,6 +421,8 @@ export class NativeAppService extends BaseAppService {
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
+  override storefrontRegionCode: string | null = null;
+  override isOnlineCatalogsAccessible = true;
 
   private execDir?: string = undefined;
 
@@ -445,6 +447,14 @@ export class NativeAppService extends BaseAppService {
         isPortable: this.isPortableApp,
         execDir,
       });
+    }
+    if (this.isIOSApp) {
+      const res = await getStorefrontRegionCode();
+      if (res.regionCode) {
+        this.storefrontRegionCode = res.regionCode;
+        this.isOnlineCatalogsAccessible =
+          this.storefrontRegionCode.toLowerCase() !== 'chn' || this.distChannel !== 'appstore';
+      }
     }
     await this.prepareBooksDir();
     await this.runMigrations();
