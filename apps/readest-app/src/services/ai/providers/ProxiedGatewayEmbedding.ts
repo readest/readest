@@ -9,16 +9,13 @@ export function createProxiedEmbeddingModel(options: ProxiedEmbeddingOptions): E
   const modelId = options.model || 'openai/text-embedding-3-small';
 
   return {
-    specificationVersion: 'v2',
+    specificationVersion: 'v3',
     modelId,
     provider: 'ai-gateway-proxied',
     maxEmbeddingsPerCall: 100,
     supportsParallelCalls: false,
 
-    async doEmbed({ values }: { values: string[] }): Promise<{
-      embeddings: number[][];
-      usage?: { tokens: number };
-    }> {
+    async doEmbed({ values }: { values: string[] }) {
       const response = await fetch('/api/ai/embed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,10 +34,10 @@ export function createProxiedEmbeddingModel(options: ProxiedEmbeddingOptions): E
       const data = await response.json();
 
       if (values.length === 1 && data.embedding) {
-        return { embeddings: [data.embedding] };
+        return { embeddings: [data.embedding], warnings: [] as const };
       }
 
-      return { embeddings: data.embeddings };
+      return { embeddings: data.embeddings, warnings: [] as const };
     },
-  };
+  } as EmbeddingModel;
 }
