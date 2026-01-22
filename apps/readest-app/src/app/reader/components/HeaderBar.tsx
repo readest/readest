@@ -161,7 +161,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           }
         }}
       >
-        <div className='bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2'>
+        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2 max-[350px]:gap-x-2'>
           <div className='hidden sm:flex'>
             <SidebarToggler bookKey={bookKey} />
           </div>
@@ -222,7 +222,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
         </div>
 
-        <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
+        <div className='header-tools-end bg-base-100 z-20 ms-auto flex h-full items-center gap-x-4 ps-2 max-[350px]:gap-x-2'>
           <SettingsToggler bookKey={bookKey} />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
