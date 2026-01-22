@@ -111,6 +111,8 @@ export abstract class BaseAppService implements AppService {
   canCustomizeRootDir = false;
   canReadExternalDir = false;
   distChannel = 'readest' as DistChannel;
+  storefrontRegionCode: string | null = null;
+  isOnlineCatalogsAccessible = true;
 
   protected CURRENT_MIGRATION_VERSION = 20251124;
 

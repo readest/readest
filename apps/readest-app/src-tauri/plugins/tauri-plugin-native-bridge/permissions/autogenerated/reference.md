@@ -26,6 +26,7 @@ Default permissions for the plugin
 - `allow-get-external-sdcard-path`
 - `allow-open-external-url`
 - `allow-select-directory`
+- `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
 - `allow-register-listener`
 - `allow-remove-listener`
@@ -299,6 +300,32 @@ Enables the get_status_bar_height command without any pre-configured scope.
 <td>
 
 Denies the get_status_bar_height command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-storefront-region-code`
+
+</td>
+<td>
+
+Enables the get_storefront_region_code command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-storefront-region-code`
+
+</td>
+<td>
+
+Denies the get_storefront_region_code command without any pre-configured scope.
 
 </td>
 </tr>
