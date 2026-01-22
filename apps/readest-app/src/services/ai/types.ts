@@ -71,10 +71,3 @@ export interface EmbeddingProgress {
   total: number;
   phase: 'chunking' | 'embedding' | 'indexing';
 }
-
-export interface SourceCitation {
-  text: string;
-  chunkId: string;
-  sectionIndex: number;
-  chapterTitle: string;
-}
