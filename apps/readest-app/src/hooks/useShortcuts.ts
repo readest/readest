@@ -99,6 +99,10 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
         return;
       }
 
+      if (ctrlKey && key.toLowerCase() === 'f') {
+        event.preventDefault();
+      }
+
       const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
       // console.log('Key event handled:', key, handled);
       if (handled) event.preventDefault();

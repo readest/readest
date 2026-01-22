@@ -42,6 +42,10 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   if (['Backspace'].includes(event.key)) {
     event.preventDefault();
   }
+  if (event.ctrlKey && event.key.toLowerCase() === 'f') {
+    event.preventDefault();
+  }
+
   window.postMessage(
     {
       type: 'iframe-keydown',
