@@ -154,10 +154,10 @@ export class DocumentLoader {
         map.has(name) ? f(map.get(name)!, ...args) : null;
 
     const loadText = load((entry: Entry) =>
-      entry.getData ? entry.getData(new TextWriter()) : null,
+      !entry.directory ? entry.getData(new TextWriter()) : null,
     );
     const loadBlob = load((entry: Entry, type?: string) =>
-      entry.getData ? entry.getData(new BlobWriter(type!)) : null,
+      !entry.directory ? entry.getData(new BlobWriter(type!)) : null,
     );
     const getSize = (name: string) => map.get(name)?.uncompressedSize ?? 0;
 
