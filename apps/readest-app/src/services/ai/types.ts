@@ -8,7 +8,7 @@ export interface AIProvider {
   requiresAuth: boolean;
 
   getModel(): LanguageModel;
-  getEmbeddingModel(): EmbeddingModel<string>;
+  getEmbeddingModel(): EmbeddingModel;
 
   isAvailable(): Promise<boolean>;
   healthCheck(): Promise<boolean>;
