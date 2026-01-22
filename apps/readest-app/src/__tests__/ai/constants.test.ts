@@ -35,12 +35,7 @@ vi.mock('@/store/settingsStore', () => {
 });
 
 import type { AISettings } from '@/services/ai/types';
-import {
-  DEFAULT_AI_SETTINGS,
-  GATEWAY_MODELS,
-  OLLAMA_MODELS,
-  EMBEDDING_MODELS,
-} from '@/services/ai/constants';
+import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS } from '@/services/ai/constants';
 
 describe('DEFAULT_AI_SETTINGS', () => {
   test('should have enabled set to false by default', () => {
@@ -70,16 +65,6 @@ describe('Model constants', () => {
     expect(GATEWAY_MODELS.GROK_4_1_FAST).toBeDefined();
     expect(GATEWAY_MODELS.DEEPSEEK_V3_2).toBeDefined();
     expect(GATEWAY_MODELS.QWEN_3_235B).toBeDefined();
-  });
-
-  test('OLLAMA_MODELS should have local models', () => {
-    expect(OLLAMA_MODELS.LLAMA).toBe('llama3.2:3b');
-    expect(OLLAMA_MODELS.QWEN).toBe('qwen2.5:7b');
-  });
-
-  test('EMBEDDING_MODELS should have embedding options', () => {
-    expect(EMBEDDING_MODELS.OPENAI_SMALL).toBe('openai/text-embedding-3-small');
-    expect(EMBEDDING_MODELS.NOMIC).toBe('nomic-embed-text-v2');
   });
 });
 
