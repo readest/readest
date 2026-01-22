@@ -18,7 +18,7 @@ vi.mock('@/services/ai/logger', () => ({
 vi.mock('ai-sdk-ollama', () => ({
   createOllama: vi.fn(() => {
     const ollamaFn = Object.assign(vi.fn(), {
-      textEmbeddingModel: vi.fn(),
+      embeddingModel: vi.fn(),
     });
     return ollamaFn;
   }),
