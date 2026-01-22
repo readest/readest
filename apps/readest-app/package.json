@@ -55,7 +55,7 @@
     "build-check": "pnpm build && pnpm build-web && pnpm check:all"
   },
   "dependencies": {
-    "@ai-sdk/react": "^2.0.118",
+    "@ai-sdk/react": "^3.0.49",
     "@assistant-ui/react": "^0.11.58",
     "@assistant-ui/react-ai-sdk": "^1.2.0",
     "@assistant-ui/react-markdown": "^0.11.10",
@@ -94,8 +94,8 @@
     "@tauri-apps/plugin-websocket": "~2.4.2",
     "@zip.js/zip.js": "^2.7.53",
     "abortcontroller-polyfill": "^1.7.8",
-    "ai": "^5.0.116",
-    "ai-sdk-ollama": "^2.1.0",
+    "ai": "^6.0.47",
+    "ai-sdk-ollama": "^3.2.0",
     "app-store-server-api": "^0.17.1",
     "aws4fetch": "^1.0.20",
     "buffer": "^6.0.3",
