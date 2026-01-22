@@ -17,22 +17,3 @@ export function getAIProvider(settings: AISettings): AIProvider {
       throw new Error(`Unknown provider: ${settings.provider}`);
   }
 }
-
-export async function getAvailableProviders(settings: AISettings): Promise<string[]> {
-  const available: string[] = [];
-
-  try {
-    const ollama = new OllamaProvider(settings);
-    if (await ollama.isAvailable()) {
-      available.push('ollama');
-    }
-  } catch {
-    // not available
-  }
-
-  if (settings.aiGatewayApiKey) {
-    available.push('ai-gateway');
-  }
-
-  return available;
-}
