@@ -141,9 +141,8 @@ export class DocumentLoader {
       return null;
     };
 
-    const { configure, ZipReader, BlobReader, TextWriter, BlobWriter } = await import(
-      '@zip.js/zip.js'
-    );
+    const { configure, ZipReader, BlobReader, TextWriter, BlobWriter } =
+      await import('@zip.js/zip.js');
     type Entry = import('@zip.js/zip.js').Entry;
     configure({ useWebWorkers: false });
     const reader = new ZipReader(new BlobReader(this.file));
