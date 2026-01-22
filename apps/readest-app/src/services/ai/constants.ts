@@ -19,16 +19,6 @@ export const MODEL_PRICING: Record<string, { input: string; output: string }> = 
   [GATEWAY_MODELS.QWEN_3_235B]: { input: '0.07', output: '0.46' },
 };
 
-export const OLLAMA_MODELS = {
-  LLAMA: 'llama3.2:3b',
-  QWEN: 'qwen2.5:7b',
-} as const;
-
-export const EMBEDDING_MODELS = {
-  OPENAI_SMALL: 'openai/text-embedding-3-small', // $0.02/M
-  NOMIC: 'nomic-embed-text-v2',
-} as const;
-
 export const DEFAULT_AI_SETTINGS: AISettings = {
   enabled: false,
   provider: 'ollama',
