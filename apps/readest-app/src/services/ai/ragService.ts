@@ -4,14 +4,7 @@ import { chunkSection, extractTextFromDocument } from './utils/chunker';
 import { withRetryAndTimeout, AI_TIMEOUTS, AI_RETRY_CONFIGS } from './utils/retry';
 import { getAIProvider } from './providers';
 import { aiLogger } from './logger';
-import type {
-  AISettings,
-  TextChunk,
-  ScoredChunk,
-  IndexingState,
-  EmbeddingProgress,
-  BookIndexMeta,
-} from './types';
+import type { AISettings, TextChunk, ScoredChunk, EmbeddingProgress, BookIndexMeta } from './types';
 
 interface SectionItem {
   id: string;
@@ -34,18 +27,10 @@ export interface BookDocType {
 
 const indexingStates = new Map<string, IndexingState>();
 
-export function getIndexingState(bookHash: string): IndexingState | null {
-  return indexingStates.get(bookHash) || null;
-}
-
 export async function isBookIndexed(bookHash: string): Promise<boolean> {
   const indexed = await aiStore.isIndexed(bookHash);
   aiLogger.rag.isIndexed(bookHash, indexed);
   return indexed;
-}
-
-export async function getBookMeta(bookHash: string): Promise<BookIndexMeta | null> {
-  return aiStore.getMeta(bookHash);
 }
 
 function extractTitle(metadata?: BookDocType['metadata']): string {
@@ -240,26 +225,18 @@ export async function hybridSearch(
   return results;
 }
 
-export async function getRelevantContext(
-  bookHash: string,
-  query: string,
-  settings: AISettings,
-  maxPage?: number,
-): Promise<string[]> {
-  const results = await hybridSearch(
-    bookHash,
-    query,
-    settings,
-    settings.maxContextChunks || 5,
-    maxPage,
-  );
-  const texts = results.map((r) => r.text);
-  aiLogger.chat.context(results.length, texts.join('').length);
-  return texts;
-}
-
 export async function clearBookIndex(bookHash: string): Promise<void> {
   aiLogger.store.clear(bookHash);
   await aiStore.clearBook(bookHash);
   indexingStates.delete(bookHash);
+}
+
+// internal type for indexing state tracking
+interface IndexingState {
+  bookHash: string;
+  status: 'idle' | 'indexing' | 'complete' | 'error';
+  progress: number;
+  chunksProcessed: number;
+  totalChunks: number;
+  error?: string;
 }
