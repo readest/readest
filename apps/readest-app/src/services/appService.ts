@@ -128,6 +128,7 @@ export abstract class BaseAppService implements AppService {
     filepath: string,
     mimeType?: string,
   ): Promise<boolean>;
+  abstract ask(message: string): Promise<boolean>;
 
   protected async runMigrations(lastMigrationVersion: number): Promise<void> {
     if (lastMigrationVersion < 20251124) {

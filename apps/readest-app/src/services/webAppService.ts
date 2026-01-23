@@ -343,4 +343,8 @@ export class WebAppService extends BaseAppService {
       return false;
     }
   }
+
+  async ask(message: string): Promise<boolean> {
+    return window.confirm(message);
+  }
 }
