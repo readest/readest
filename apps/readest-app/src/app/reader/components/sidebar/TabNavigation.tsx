@@ -2,7 +2,8 @@ import clsx from 'clsx';
 import React from 'react';
 import { MdBookmarkBorder } from 'react-icons/md';
 import { IoIosList } from 'react-icons/io';
-import { PiNotePencil, PiRobot } from 'react-icons/pi';
+import { PiNotePencil } from 'react-icons/pi';
+import { LuMessageSquare } from 'react-icons/lu';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,7 +19,7 @@ const TabNavigation: React.FC<{
   const { settings } = useSettingsStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['ai'] : [])];
+  const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
@@ -28,8 +29,8 @@ const TabNavigation: React.FC<{
         return _('Annotate');
       case 'bookmarks':
         return _('Bookmark');
-      case 'ai':
-        return _('AI');
+      case 'history':
+        return _('Chat');
       default:
         return '';
     }
@@ -71,7 +72,7 @@ const TabNavigation: React.FC<{
                   ) : tab === 'bookmarks' ? (
                     <MdBookmarkBorder className='mx-auto' size={20} />
                   ) : (
-                    <PiRobot className='mx-auto' size={20} />
+                    <LuMessageSquare className='mx-auto' size={20} />
                   )}
                 </div>
               </div>
