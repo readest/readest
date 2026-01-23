@@ -232,7 +232,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
             'flex items-center gap-2 rounded-full px-4 py-2',
             'bg-base-300 text-base-content',
             'hover:bg-base-content/10',
-            'border border-base-content/10',
+            'border-base-content/10 border',
             'shadow-sm',
             'transition-all duration-200 ease-out',
             'active:scale-[0.97]',
