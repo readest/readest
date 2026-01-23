@@ -6,6 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
@@ -20,9 +21,11 @@ import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
 import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
+import AIAssistant from '../sidebar/AIAssistant';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
+import NotebookTabNavigation from './NotebookTabNavigation';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -33,13 +36,16 @@ const Notebook: React.FC = ({}) => {
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { notebookWidth, isNotebookVisible, isNotebookPinned } = useNotebookStore();
+  const { notebookWidth, isNotebookVisible, isNotebookPinned, notebookActiveTab } =
+    useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
   const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
-  const { setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
+  const { setNotebookNewAnnotation, setNotebookEditAnnotation, setNotebookActiveTab } =
+    useNotebookStore();
+  const { activeConversationId } = useAIChatStore();
 
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookNote[] | null>(null);
@@ -75,6 +81,9 @@ const Notebook: React.FC = ({}) => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
     setNotebookPin(settings.globalReadSettings.isNotebookPinned);
     setNotebookVisible(settings.globalReadSettings.isNotebookPinned);
+    if (settings.globalReadSettings.notebookActiveTab) {
+      setNotebookActiveTab(settings.globalReadSettings.notebookActiveTab);
+    }
 
     eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
@@ -92,6 +101,13 @@ const Notebook: React.FC = ({}) => {
     toggleNotebookPin();
     const globalReadSettings = settings.globalReadSettings;
     const newGlobalReadSettings = { ...globalReadSettings, isNotebookPinned: !isNotebookPinned };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
+  };
+
+  const handleTabChange = (tab: 'notes' | 'ai') => {
+    setNotebookActiveTab(tab);
+    const globalReadSettings = settings.globalReadSettings;
+    const newGlobalReadSettings = { ...globalReadSettings, notebookActiveTab: tab };
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
@@ -266,34 +282,42 @@ const Notebook: React.FC = ({}) => {
         <div className='flex-shrink-0'>
           <NotebookHeader
             isPinned={isNotebookPinned}
-            isSearchBarVisible={isSearchBarVisible}
+            isSearchBarVisible={isSearchBarVisible && notebookActiveTab === 'notes'}
             handleClose={() => setNotebookVisible(false)}
             handleTogglePin={handleTogglePin}
             handleToggleSearchBar={handleToggleSearchBar}
+            showSearchButton={notebookActiveTab === 'notes'}
           />
-          <div
-            className={clsx('search-bar', {
-              'search-bar-visible': isSearchBarVisible,
-            })}
-          >
-            <SearchBar
-              isVisible={isSearchBarVisible}
-              bookKey={sideBarBookKey}
-              searchTerm={searchTerm}
-              onSearchResultChange={setSearchResults}
-            />
-          </div>
-        </div>
-        <div className='flex-grow overflow-y-auto px-3'>
-          {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
-            <div className='flex h-32 items-center justify-center text-gray-500'>
-              <p className='font-size-sm text-center'>{_('No notes match your search')}</p>
+          {notebookActiveTab === 'notes' && (
+            <div
+              className={clsx('search-bar', {
+                'search-bar-visible': isSearchBarVisible,
+              })}
+            >
+              <SearchBar
+                isVisible={isSearchBarVisible}
+                bookKey={sideBarBookKey}
+                searchTerm={searchTerm}
+                onSearchResultChange={setSearchResults}
+              />
             </div>
           )}
-          <div dir='ltr'>
-            {filteredExcerptNotes.length > 0 && (
-              <p className='content font-size-base'>
-                {_('Excerpts')}
+        </div>
+        {notebookActiveTab === 'ai' ? (
+          <div className='flex min-h-0 flex-1 flex-col'>
+            <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
+          </div>
+        ) : (
+          <div className='flex-grow overflow-y-auto px-3'>
+            {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
+              <div className='flex h-32 items-center justify-center text-gray-500'>
+                <p className='font-size-sm text-center'>{_('No notes match your search')}</p>
+              </div>
+            )}
+            <div dir='ltr'>
+              {filteredExcerptNotes.length > 0 && (
+                <p className='content font-size-base'>
+                  {_('Excerpts')}
                 {isSearchBarVisible && searchResults && (
                   <span className='font-size-xs ml-2 text-gray-500'>
                     ({filteredExcerptNotes.length})
@@ -366,6 +390,18 @@ const Notebook: React.FC = ({}) => {
               <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
             ))}
           </ul>
+        </div>
+        )}
+        <div
+          className='flex-shrink-0'
+          style={{
+            paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px`,
+          }}
+        >
+          <NotebookTabNavigation
+            activeTab={notebookActiveTab}
+            onTabChange={handleTabChange}
+          />
         </div>
       </div>
     </>
