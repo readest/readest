@@ -832,7 +832,6 @@
   "Show Results": "Resultaten tonen",
   "Clear search": "Zoekopdracht wissen",
   "Clear search history": "Zoekgeschiedenis wissen",
-  "Quick action disabled": "Snelle actie uitgeschakeld",
   "Tap to Toggle Footer": "Tik om voettekst te wisselen",
   "Exported successfully": "Succesvol geëxporteerd",
   "Book exported successfully.": "Boek succesvol geëxporteerd.",
@@ -890,5 +889,8 @@
   "Select Voice": "Stem selecteren",
   "Toggle Sticky Bottom TTS Bar": "Vaste TTS-balk schakelen",
   "Display what I'm reading on Discord": "Toon wat ik lees op Discord",
-  "Show on Discord": "Toon op Discord"
+  "Show on Discord": "Toon op Discord",
+  "Instant {{action}}": "Directe {{action}}",
+  "Instant {{action}} Disabled": "Directe {{action}} uitgeschakeld",
+  "Annotation": "Annotatie"
 }

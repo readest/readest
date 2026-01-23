@@ -842,7 +842,6 @@
   "Show Results": "Afficher les résultats",
   "Clear search": "Effacer la recherche",
   "Clear search history": "Effacer l'historique de recherche",
-  "Quick action disabled": "Action rapide désactivée",
   "Tap to Toggle Footer": "Appuyez pour afficher/masquer le pied de page",
   "Exported successfully": "Exporté avec succès",
   "Book exported successfully.": "Livre exporté avec succès.",
@@ -900,5 +899,8 @@
   "Select Voice": "Sélectionner la voix",
   "Toggle Sticky Bottom TTS Bar": "Basculer la barre TTS fixée",
   "Display what I'm reading on Discord": "Afficher ce que je lis sur Discord",
-  "Show on Discord": "Afficher sur Discord"
+  "Show on Discord": "Afficher sur Discord",
+  "Instant {{action}}": "{{action}} instantané",
+  "Instant {{action}} Disabled": "{{action}} instantané désactivé",
+  "Annotation": "Annotation"
 }

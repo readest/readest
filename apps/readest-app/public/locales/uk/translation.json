@@ -852,7 +852,6 @@
   "Show Results": "Показати результати",
   "Clear search": "Очистити пошук",
   "Clear search history": "Очистити історію пошуку",
-  "Quick action disabled": "Швидку дію вимкнено",
   "Tap to Toggle Footer": "Торкніться, щоб перемкнути нижній колонтитул",
   "Exported successfully": "Успішно експортовано",
   "Book exported successfully.": "Книгу успішно експортовано.",
@@ -910,5 +909,8 @@
   "Select Voice": "Вибрати голос",
   "Toggle Sticky Bottom TTS Bar": "Перемкнути закріплену панель TTS",
   "Display what I'm reading on Discord": "Показувати книгу в Discord",
-  "Show on Discord": "Показати в Discord"
+  "Show on Discord": "Показати в Discord",
+  "Instant {{action}}": "Миттєва {{action}}",
+  "Instant {{action}} Disabled": "Миттєву {{action}} вимкнено",
+  "Annotation": "Анотація"
 }

@@ -872,7 +872,6 @@
   "Show Results": "عرض النتائج",
   "Clear search": "مسح البحث",
   "Clear search history": "مسح سجل البحث",
-  "Quick action disabled": "الإجراء السريع معطل",
   "Tap to Toggle Footer": "انقر لتبديل التذييل",
   "Exported successfully": "تم التصدير بنجاح",
   "Book exported successfully.": "تم تصدير الكتاب بنجاح.",
@@ -930,5 +929,8 @@
   "Select Voice": "اختر الصوت",
   "Toggle Sticky Bottom TTS Bar": "تبديل شريط TTS الثابت",
   "Display what I'm reading on Discord": "عرض ما أقرأه على Discord",
-  "Show on Discord": "عرض على Discord"
+  "Show on Discord": "عرض على Discord",
+  "Instant {{action}}": "{{action}} فوري",
+  "Instant {{action}} Disabled": "تم تعطيل {{action}} فوري",
+  "Annotation": "التعليق"
 }

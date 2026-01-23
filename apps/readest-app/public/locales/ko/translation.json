@@ -822,7 +822,6 @@
   "Show Results": "결과 표시",
   "Clear search": "검색 지우기",
   "Clear search history": "검색 기록 지우기",
-  "Quick action disabled": "빠른 작업 비활성화됨",
   "Tap to Toggle Footer": "탭하여 바닥글 전환",
   "Exported successfully": "내보내기 성공",
   "Book exported successfully.": "책을 성공적으로 내보냈습니다.",
@@ -880,5 +879,8 @@
   "Select Voice": "음성 선택",
   "Toggle Sticky Bottom TTS Bar": "고정 TTS 바 전환",
   "Display what I'm reading on Discord": "Discord에 읽는 책 표시",
-  "Show on Discord": "Discord에 표시"
+  "Show on Discord": "Discord에 표시",
+  "Instant {{action}}": "즉시 {{action}}",
+  "Instant {{action}} Disabled": "즉시 {{action}} 비활성화",
+  "Annotation": "주석"
 }

@@ -832,7 +832,6 @@
   "Show Results": "Sonuçları Göster",
   "Clear search": "Aramayı temizle",
   "Clear search history": "Arama geçmişini temizle",
-  "Quick action disabled": "Hızlı eylem devre dışı",
   "Tap to Toggle Footer": "Altbilgiyi değiştirmek için dokunun",
   "Exported successfully": "Başarıyla dışa aktarıldı",
   "Book exported successfully.": "Kitap başarıyla dışa aktarıldı.",
@@ -890,5 +889,8 @@
   "Select Voice": "Ses seç",
   "Toggle Sticky Bottom TTS Bar": "Sabit TTS çubuğunu değiştir",
   "Display what I'm reading on Discord": "Discord'da okuduğumu göster",
-  "Show on Discord": "Discord'da göster"
+  "Show on Discord": "Discord'da göster",
+  "Instant {{action}}": "Anında {{action}}",
+  "Instant {{action}} Disabled": "Anında {{action}} Devre Dışı",
+  "Annotation": "Açıklama"
 }

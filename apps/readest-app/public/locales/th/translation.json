@@ -822,7 +822,6 @@
   "Show Results": "แสดงผลลัพธ์",
   "Clear search": "ล้างการค้นหา",
   "Clear search history": "ล้างประวัติการค้นหา",
-  "Quick action disabled": "ปิดใช้งานการดำเนินการด่วน",
   "Tap to Toggle Footer": "แตะเพื่อสลับส่วนท้าย",
   "Exported successfully": "ส่งออกสำเร็จ",
   "Book exported successfully.": "ส่งออกหนังสือสำเร็จ",
@@ -880,5 +879,8 @@
   "Select Voice": "เลือกเสียง",
   "Toggle Sticky Bottom TTS Bar": "สลับแถบ TTS แบบติด",
   "Display what I'm reading on Discord": "แสดงหนังสือที่กำลังอ่านบน Discord",
-  "Show on Discord": "แสดงบน Discord"
+  "Show on Discord": "แสดงบน Discord",
+  "Instant {{action}}": "{{action}}ทันที",
+  "Instant {{action}} Disabled": "{{action}}ทันทีถูกปิดใช้งาน",
+  "Annotation": "คำอธิบาย"
 }

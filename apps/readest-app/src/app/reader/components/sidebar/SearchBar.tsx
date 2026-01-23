@@ -345,7 +345,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         {searchTerm && (
           <button
             onClick={handleClearInput}
-            className='absolute end-8 flex h-8 w-8 items-center justify-center bg-transparent'
+            className='absolute end-10 flex h-8 w-8 items-center justify-center bg-transparent'
             aria-label={_('Clear search')}
           >
             <IoMdCloseCircle size={iconSize16} className='text-base-content/75' />

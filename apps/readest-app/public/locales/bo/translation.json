@@ -822,7 +822,6 @@
   "Show Results": "འབྲས་བུ་སྟོན།",
   "Clear search": "འཚོལ་བཤེར་གཙང་སེལ།",
   "Clear search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་གཙང་སེལ།",
-  "Quick action disabled": "མྱུར་མགྱོགས་བྱ་འགུལ་བཀག་འགོག",
   "Tap to Toggle Footer": "ཞབས་མཇུག་སྒོ་འབྱེད་བྱེད་པར་གནོན།",
   "Exported successfully": "ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
   "Book exported successfully.": "དཔེ་དེབ་ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
@@ -880,5 +879,8 @@
   "Select Voice": "སྐད་གདངས་འདེམས།",
   "Toggle Sticky Bottom TTS Bar": "TTS སྡོམ་ཐིག་བརྗེ་བ།",
   "Display what I'm reading on Discord": "Discord ཐོག་ཀློག་བཞིན་པའི་དཔེ་ཆ་སྟོན།",
-  "Show on Discord": "Discord ཐོག་སྟོན།"
+  "Show on Discord": "Discord ཐོག་སྟོན།",
+  "Instant {{action}}": "འཕྲལ་མར་{{action}}",
+  "Instant {{action}} Disabled": "འཕྲལ་མར་{{action}}་ལྕོགས་མིན་བཟོས།",
+  "Annotation": "མཆན་འགྲེལ།"
 }

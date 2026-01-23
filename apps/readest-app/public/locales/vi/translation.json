@@ -822,7 +822,6 @@
   "Show Results": "Hiển thị kết quả",
   "Clear search": "Xóa tìm kiếm",
   "Clear search history": "Xóa lịch sử tìm kiếm",
-  "Quick action disabled": "Đã tắt thao tác nhanh",
   "Tap to Toggle Footer": "Nhấn để bật/tắt chân trang",
   "Exported successfully": "Xuất thành công",
   "Book exported successfully.": "Sách đã được xuất thành công.",
@@ -880,5 +879,8 @@
   "Select Voice": "Chọn giọng nói",
   "Toggle Sticky Bottom TTS Bar": "Bật/tắt thanh TTS cố định",
   "Display what I'm reading on Discord": "Hiển thị sách đang đọc trên Discord",
-  "Show on Discord": "Hiện trên Discord"
+  "Show on Discord": "Hiện trên Discord",
+  "Instant {{action}}": "{{action}} tức thì",
+  "Instant {{action}} Disabled": "{{action}} tức thì đã tắt",
+  "Annotation": "Chú thích"
 }
