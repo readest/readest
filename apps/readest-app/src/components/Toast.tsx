@@ -165,7 +165,9 @@ export const Toast = () => {
             onClick={handleDismiss}
             className={clsx(
               'flex-shrink-0 rounded-lg p-1 transition-colors',
-              toastType === 'info' ? 'hover:bg-base-300' : 'hover:bg-white/20 active:bg-white/30',
+              toastType === 'info'
+                ? 'hover:bg-base-300 hidden'
+                : 'hover:bg-white/20 active:bg-white/30',
             )}
             aria-label='Dismiss'
           >

@@ -822,7 +822,6 @@
   "Show Results": "Tunjukkan Hasil",
   "Clear search": "Kosongkan carian",
   "Clear search history": "Kosongkan sejarah carian",
-  "Quick action disabled": "Tindakan pantas dilumpuhkan",
   "Tap to Toggle Footer": "Ketik untuk togol pengaki",
   "Exported successfully": "Berjaya dieksport",
   "Book exported successfully.": "Buku berjaya dieksport.",
@@ -880,5 +879,8 @@
   "Select Voice": "Pilih suara",
   "Toggle Sticky Bottom TTS Bar": "Togol bar TTS melekit",
   "Display what I'm reading on Discord": "Papar buku yang sedang dibaca di Discord",
-  "Show on Discord": "Papar di Discord"
+  "Show on Discord": "Papar di Discord",
+  "Instant {{action}}": "{{action}} Segera",
+  "Instant {{action}} Disabled": "{{action}} Segera Dilumpuhkan",
+  "Annotation": "Anotasi"
 }

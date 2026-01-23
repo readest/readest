@@ -822,7 +822,6 @@
   "Show Results": "显示结果",
   "Clear search": "清除搜索",
   "Clear search history": "清除搜索历史",
-  "Quick action disabled": "快捷操作已禁用",
   "Tap to Toggle Footer": "点击切换页脚",
   "Exported successfully": "导出成功",
   "Book exported successfully.": "书籍导出成功。",
@@ -880,5 +879,8 @@
   "Select Voice": "选择语音",
   "Toggle Sticky Bottom TTS Bar": "切换固定TTS栏",
   "Display what I'm reading on Discord": "在Discord显示阅读状态",
-  "Show on Discord": "在Discord显示"
+  "Show on Discord": "在Discord显示",
+  "Instant {{action}}": "即时{{action}}",
+  "Instant {{action}} Disabled": "即时{{action}}已禁用",
+  "Annotation": "标注"
 }

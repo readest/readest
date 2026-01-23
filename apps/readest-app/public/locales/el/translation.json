@@ -832,7 +832,6 @@
   "Show Results": "Εμφάνιση αποτελεσμάτων",
   "Clear search": "Εκκαθάριση αναζήτησης",
   "Clear search history": "Εκκαθάριση ιστορικού αναζήτησης",
-  "Quick action disabled": "Η γρήγορη ενέργεια απενεργοποιήθηκε",
   "Tap to Toggle Footer": "Πατήστε για εναλλαγή υποσέλιδου",
   "Exported successfully": "Εξαγωγή επιτυχής",
   "Book exported successfully.": "Το βιβλίο εξήχθη επιτυχώς.",
@@ -890,5 +889,8 @@
   "Select Voice": "Επιλογή φωνής",
   "Toggle Sticky Bottom TTS Bar": "Εναλλαγή καρφιτσωμένης μπάρας TTS",
   "Display what I'm reading on Discord": "Εμφάνιση του βιβλίου που διαβάζω στο Discord",
-  "Show on Discord": "Εμφάνιση στο Discord"
+  "Show on Discord": "Εμφάνιση στο Discord",
+  "Instant {{action}}": "Άμεση {{action}}",
+  "Instant {{action}} Disabled": "Άμεση {{action}} απενεργοποιημένη",
+  "Annotation": "Σημείωση"
 }

@@ -832,7 +832,6 @@
   "Show Results": "परिणाम दिखाएं",
   "Clear search": "खोज साफ़ करें",
   "Clear search history": "खोज इतिहास साफ़ करें",
-  "Quick action disabled": "त्वरित क्रिया अक्षम",
   "Tap to Toggle Footer": "फुटर टॉगल करने के लिए टैप करें",
   "Exported successfully": "सफलतापूर्वक निर्यात किया गया",
   "Book exported successfully.": "पुस्तक सफलतापूर्वक निर्यात की गई।",
@@ -890,5 +889,8 @@
   "Select Voice": "आवाज़ चुनें",
   "Toggle Sticky Bottom TTS Bar": "स्थिर TTS बार टॉगल करें",
   "Display what I'm reading on Discord": "Discord पर पढ़ रही किताब दिखाएं",
-  "Show on Discord": "Discord पर दिखाएं"
+  "Show on Discord": "Discord पर दिखाएं",
+  "Instant {{action}}": "तत्काल {{action}}",
+  "Instant {{action}} Disabled": "तत्काल {{action}} अक्षम",
+  "Annotation": "टिप्पणी"
 }

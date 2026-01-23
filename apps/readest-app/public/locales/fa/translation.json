@@ -832,7 +832,6 @@
   "Show Results": "نمایش نتایج",
   "Clear search": "پاک کردن جستجو",
   "Clear search history": "پاک کردن تاریخچه جستجو",
-  "Quick action disabled": "عملکرد سریع غیرفعال است",
   "Tap to Toggle Footer": "برای تغییر پاورقی ضربه بزنید",
   "Exported successfully": "صادرات موفق",
   "Book exported successfully.": "کتاب با موفقیت صادر شد.",
@@ -890,5 +889,8 @@
   "Select Voice": "انتخاب صدا",
   "Toggle Sticky Bottom TTS Bar": "تغییر نوار TTS ثابت",
   "Display what I'm reading on Discord": "نمایش کتاب در حال خواندن در Discord",
-  "Show on Discord": "نمایش در Discord"
+  "Show on Discord": "نمایش در Discord",
+  "Instant {{action}}": "{{action}} فوری",
+  "Instant {{action}} Disabled": "{{action}} فوری غیرفعال شد",
+  "Annotation": "یادداشت"
 }

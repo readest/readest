@@ -832,7 +832,6 @@
   "Show Results": "ফলাফল দেখুন",
   "Clear search": "অনুসন্ধান সাফ করুন",
   "Clear search history": "অনুসন্ধান ইতিহাস সাফ করুন",
-  "Quick action disabled": "দ্রুত কার্যক্রম অক্ষম",
   "Tap to Toggle Footer": "ফুটার টগল করতে আলতো চাপুন",
   "Exported successfully": "সফলভাবে রপ্তানি হয়েছে",
   "Book exported successfully.": "বইটি সফলভাবে রপ্তানি হয়েছে।",
@@ -890,5 +889,8 @@
   "Select Voice": "ভয়েস নির্বাচন করুন",
   "Toggle Sticky Bottom TTS Bar": "স্থির TTS বার টগল করুন",
   "Display what I'm reading on Discord": "Discord-এ পড়ছি যা দেখান",
-  "Show on Discord": "Discord-এ দেখান"
+  "Show on Discord": "Discord-এ দেখান",
+  "Instant {{action}}": "তাৎক্ষণিক {{action}}",
+  "Instant {{action}} Disabled": "তাৎক্ষণিক {{action}} নিষ্ক্রিয়",
+  "Annotation": "টীকা"
 }

@@ -197,13 +197,15 @@ export class TTSController extends EventTarget {
         }
 
         const { plainText, marks } = parseSSMLMarks(ssml);
-        if ((!plainText || marks.length === 0) && !oneTime) {
-          resolve();
-          return await this.forward();
-        } else {
-          this.dispatchSpeakMark(marks[0]);
+        if (!oneTime) {
+          if (!plainText || marks.length === 0) {
+            resolve();
+            return await this.forward();
+          } else {
+            this.dispatchSpeakMark(marks[0]);
+          }
+          await this.preloadSSML(ssml, signal);
         }
-        await this.preloadSSML(ssml, signal);
         const iter = await this.ttsClient.speak(ssml, signal);
         let lastCode;
         for await (const { code } of iter) {
@@ -236,11 +238,19 @@ export class TTSController extends EventTarget {
     await this.#currentSpeakPromise.catch((e) => this.error(e));
   }
 
-  async speak(ssml: string | Promise<string>, oneTime = false) {
+  async speak(ssml: string | Promise<string>, oneTime = false, oneTimeCallback?: () => void) {
     await this.initViewTTS();
-    this.#speak(ssml, oneTime).catch((e) => this.error(e));
-    this.preloadNextSSML();
-    this.dispatchSpeakMark();
+    this.#speak(ssml, oneTime)
+      .then(() => {
+        if (oneTime && oneTimeCallback) {
+          oneTimeCallback();
+        }
+      })
+      .catch((e) => this.error(e));
+    if (!oneTime) {
+      this.preloadNextSSML();
+      this.dispatchSpeakMark();
+    }
   }
 
   play() {
@@ -391,7 +401,7 @@ export class TTSController extends EventTarget {
 
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
-    if (mark) {
+    if (mark && mark.name !== '-1') {
       const range = this.view.tts?.setMark(mark.name);
       this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: range }));
     }

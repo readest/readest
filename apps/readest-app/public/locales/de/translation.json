@@ -832,7 +832,6 @@
   "Show Results": "Ergebnisse anzeigen",
   "Clear search": "Suche löschen",
   "Clear search history": "Suchverlauf löschen",
-  "Quick action disabled": "Schnellaktion deaktiviert",
   "Tap to Toggle Footer": "Tippen, um Fußzeile umzuschalten",
   "Exported successfully": "Erfolgreich exportiert",
   "Book exported successfully.": "Buch erfolgreich exportiert.",
@@ -890,5 +889,8 @@
   "Select Voice": "Stimme auswählen",
   "Toggle Sticky Bottom TTS Bar": "Fixierte TTS-Leiste umschalten",
   "Display what I'm reading on Discord": "Zeige was ich auf Discord lese",
-  "Show on Discord": "Auf Discord zeigen"
+  "Show on Discord": "Auf Discord zeigen",
+  "Instant {{action}}": "Sofort {{action}}",
+  "Instant {{action}} Disabled": "Sofort {{action}} deaktiviert",
+  "Annotation": "Anmerkung"
 }

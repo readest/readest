@@ -832,7 +832,6 @@
   "Show Results": "Visa resultat",
   "Clear search": "Rensa sökning",
   "Clear search history": "Rensa sökhistorik",
-  "Quick action disabled": "Snabbåtgärd inaktiverad",
   "Tap to Toggle Footer": "Tryck för att växla sidfot",
   "Exported successfully": "Exporterad",
   "Book exported successfully.": "Boken har exporterats.",
@@ -890,5 +889,8 @@
   "Select Voice": "Välj röst",
   "Toggle Sticky Bottom TTS Bar": "Växla fast TTS-fält",
   "Display what I'm reading on Discord": "Visa vad jag läser på Discord",
-  "Show on Discord": "Visa på Discord"
+  "Show on Discord": "Visa på Discord",
+  "Instant {{action}}": "Omedelbar {{action}}",
+  "Instant {{action}} Disabled": "Omedelbar {{action}} inaktiverad",
+  "Annotation": "Anteckning"
 }
