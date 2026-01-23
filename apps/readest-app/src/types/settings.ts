@@ -4,6 +4,7 @@ import { CustomTexture } from '@/styles/textures';
 import { HighlightColor, HighlightStyle, ViewSettings } from './book';
 import { OPDSCatalog } from './opds';
 import type { AISettings } from '@/services/ai/types';
+import type { NotebookTab } from '@/store/notebookStore';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -25,6 +26,7 @@ export interface ReadSettings {
   isSideBarPinned: boolean;
   notebookWidth: string;
   isNotebookPinned: boolean;
+  notebookActiveTab: NotebookTab;
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
