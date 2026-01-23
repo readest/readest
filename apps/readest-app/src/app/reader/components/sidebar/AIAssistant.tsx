@@ -5,12 +5,15 @@ import {
   AssistantRuntimeProvider,
   useLocalRuntime,
   useAssistantRuntime,
+  type ThreadMessage,
+  type ThreadHistoryAdapter,
 } from '@assistant-ui/react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useAIChatStore } from '@/store/aiChatStore';
 import {
   indexBook,
   isBookIndexed,
@@ -20,11 +23,45 @@ import {
   getLastSources,
   clearLastSources,
 } from '@/services/ai';
-import type { EmbeddingProgress, AISettings } from '@/services/ai/types';
+import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
 
 import { Thread } from '@/components/assistant-ui/thread';
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
+
+// Helper function to convert AIMessage array to ExportedMessageRepository format
+// Each message needs to be wrapped with { message, parentId } structure
+function convertToExportedMessages(
+  aiMessages: AIMessage[],
+): { message: ThreadMessage; parentId: string | null }[] {
+  return aiMessages.map((msg, idx) => {
+    const baseMessage = {
+      id: msg.id,
+      content: [{ type: 'text' as const, text: msg.content }],
+      createdAt: new Date(msg.createdAt),
+      metadata: { custom: {} },
+    };
+
+    // Build role-specific message to satisfy ThreadMessage union type
+    const threadMessage: ThreadMessage =
+      msg.role === 'user'
+        ? ({
+            ...baseMessage,
+            role: 'user' as const,
+            attachments: [] as const,
+          } as unknown as ThreadMessage)
+        : ({
+            ...baseMessage,
+            role: 'assistant' as const,
+            status: { type: 'complete' as const, reason: 'stop' as const },
+          } as unknown as ThreadMessage);
+
+    return {
+      message: threadMessage,
+      parentId: idx > 0 ? (aiMessages[idx - 1]?.id ?? null) : null,
+    };
+  });
+}
 
 interface AIAssistantProps {
   bookKey: string;
@@ -46,6 +83,8 @@ const AIAssistantChat = ({
   currentPage: number;
   onResetIndex: () => void;
 }) => {
+  const { activeConversationId, messages: storedMessages, addMessage } = useAIChatStore();
+
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
     settings: aiSettings,
@@ -72,18 +111,64 @@ const AIAssistantChat = ({
     return createTauriAdapter(() => optionsRef.current);
   }, []);
 
-  return <AIAssistantWithRuntime adapter={adapter} onResetIndex={onResetIndex} />;
+  // Create history adapter to load/persist messages
+  const historyAdapter = useMemo<ThreadHistoryAdapter | undefined>(() => {
+    if (!activeConversationId) return undefined;
+
+    return {
+      async load() {
+        // storedMessages are already loaded by aiChatStore when conversation is selected
+        return {
+          messages: convertToExportedMessages(storedMessages),
+        };
+      },
+      async append(item) {
+        // item is ExportedMessageRepositoryItem - access the actual message via .message
+        const msg = item.message;
+        // Persist new messages to our store
+        if (activeConversationId && msg.role !== 'system') {
+          const textContent = msg.content
+            .filter(
+              (part): part is { type: 'text'; text: string } =>
+                'type' in part && part.type === 'text',
+            )
+            .map((part) => part.text)
+            .join('\n');
+
+          if (textContent) {
+            await addMessage({
+              conversationId: activeConversationId,
+              role: msg.role as 'user' | 'assistant',
+              content: textContent,
+            });
+          }
+        }
+      },
+    };
+  }, [activeConversationId, storedMessages, addMessage]);
+
+  return (
+    <AIAssistantWithRuntime
+      adapter={adapter}
+      historyAdapter={historyAdapter}
+      onResetIndex={onResetIndex}
+    />
+  );
 };
 
 // separate component to ensure useLocalRuntime is always called with a valid adapter
 const AIAssistantWithRuntime = ({
   adapter,
+  historyAdapter,
   onResetIndex,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
+  historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
 }) => {
-  const runtime = useLocalRuntime(adapter);
+  const runtime = useLocalRuntime(adapter, {
+    adapters: historyAdapter ? { history: historyAdapter } : undefined,
+  });
 
   // ensure runtime is available before providing it
   if (!runtime) return null;
