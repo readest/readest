@@ -68,7 +68,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
         await deleteConversation(id);
       }
     },
-    [deleteConversation, _],
+    [deleteConversation, _, appService],
   );
 
   const handleStartRename = useCallback((e: React.MouseEvent, conversation: AIConversation) => {
