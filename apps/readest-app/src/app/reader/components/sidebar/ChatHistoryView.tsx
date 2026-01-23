@@ -113,20 +113,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   }
 
   return (
-    <div className='flex h-full flex-col'>
-      {/* Header with New Chat button */}
-      <div className='border-base-300/50 flex items-center justify-between border-b px-3 py-2'>
-        <h3 className='text-base-content text-sm font-medium'>{_('AI Chat History')}</h3>
-        <button
-          onClick={handleNewConversation}
-          className={clsx('btn btn-ghost btn-xs gap-1', 'text-primary hover:bg-primary/10')}
-          aria-label={_('New Chat')}
-        >
-          <LuPlus size={14} />
-          {_('New')}
-        </button>
-      </div>
-
+    <div className='relative flex h-full flex-col'>
       {/* Conversation list */}
       <div className='flex-1 overflow-y-auto'>
         {conversations.length === 0 ? (
@@ -142,7 +129,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
             </div>
           </div>
         ) : (
-          <ul className='divide-base-300/30 divide-y'>
+          <ul className='divide-base-300/30 divide-y pb-16'>
             {conversations.map((conversation) => (
               <li
                 key={conversation.id}
@@ -235,6 +222,26 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Floating New Chat button at bottom right */}
+      <div className='absolute bottom-4 right-4'>
+        <button
+          onClick={handleNewConversation}
+          className={clsx(
+            'flex items-center gap-2 rounded-full px-4 py-2',
+            'bg-base-300 text-base-content',
+            'hover:bg-base-content/10',
+            'border border-base-content/10',
+            'shadow-sm',
+            'transition-all duration-200 ease-out',
+            'active:scale-[0.97]',
+          )}
+          aria-label={_('New Chat')}
+        >
+          <LuPlus size={16} />
+          <span className='text-sm font-medium'>{_('New Chat')}</span>
+        </button>
       </div>
     </div>
   );
