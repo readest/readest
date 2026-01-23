@@ -6,7 +6,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { NotebookTab } from '@/store/notebookStore';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NotebookTabNavigationProps {
   activeTab: NotebookTab;
@@ -47,41 +46,36 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   };
 
   return (
-    <TooltipProvider>
-      <div
-        className={clsx(
-          'bottom-tab border-base-300/50 bg-base-200/20 flex w-full border-t',
-          appService?.hasRoundedWindow && 'rounded-window-bottom-right',
-        )}
-        dir='ltr'
-      >
-        {tabs.map((tab) => (
-          <Tooltip key={tab}>
-            <TooltipTrigger asChild>
-              <div
-                tabIndex={0}
-                role='button'
-                className={clsx(
-                  'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
-                  activeTab === tab && 'bg-base-300/85',
-                )}
-                onClick={() => onTabChange(tab)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onTabChange(tab);
-                  }
-                }}
-                aria-label={getTabLabel(tab)}
-              >
-                <div className='m-0 flex h-6 items-center p-0'>{getTabIcon(tab)}</div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side='top'>{getTabLabel(tab)}</TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </TooltipProvider>
+    <div
+      className={clsx(
+        'bottom-tab border-base-300/50 bg-base-200/20 flex w-full border-t',
+        appService?.hasRoundedWindow && 'rounded-window-bottom-right',
+      )}
+      dir='ltr'
+    >
+      {tabs.map((tab) => (
+        <div
+          key={tab}
+          tabIndex={0}
+          role='button'
+          className={clsx(
+            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
+            activeTab === tab && 'bg-base-300/85',
+          )}
+          onClick={() => onTabChange(tab)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onTabChange(tab);
+            }
+          }}
+          title={getTabLabel(tab)}
+          aria-label={getTabLabel(tab)}
+        >
+          <div className='m-0 flex h-6 items-center p-0'>{getTabIcon(tab)}</div>
+        </div>
+      ))}
+    </div>
   );
 };
 
