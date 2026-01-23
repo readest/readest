@@ -71,3 +71,21 @@ export interface EmbeddingProgress {
   total: number;
   phase: 'chunking' | 'embedding' | 'indexing';
 }
+
+// chat history persistence types
+export interface AIConversation {
+  id: string;
+  bookHash: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface AIMessage {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: number;
+}
+
