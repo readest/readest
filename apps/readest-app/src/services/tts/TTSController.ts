@@ -53,7 +53,7 @@ export class TTSController extends EventTarget {
   ) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
-    this.ttsEdgeClient = new EdgeTTSClient(this);
+    this.ttsEdgeClient = new EdgeTTSClient(this, appService);
     // TODO: implement native TTS client for iOS and PC
     if (appService?.isAndroidApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
