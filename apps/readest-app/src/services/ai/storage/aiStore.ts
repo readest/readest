@@ -1,14 +1,16 @@
-import { TextChunk, ScoredChunk, BookIndexMeta } from '../types';
+import { TextChunk, ScoredChunk, BookIndexMeta, AIConversation, AIMessage } from '../types';
 import { aiLogger } from '../logger';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const lunr = require('lunr') as typeof import('lunr');
 
 const DB_NAME = 'readest-ai';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const CHUNKS_STORE = 'chunks';
 const META_STORE = 'bookMeta';
 const BM25_STORE = 'bm25Indices';
+const CONVERSATIONS_STORE = 'conversations';
+const MESSAGES_STORE = 'messages';
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
@@ -29,10 +31,8 @@ class AIStore {
   private chunkCache = new Map<string, TextChunk[]>();
   private indexCache = new Map<string, lunr.Index>();
   private metaCache = new Map<string, BookIndexMeta>();
+  private conversationCache = new Map<string, AIConversation[]>();
 
-  /**
-   * recovers from DB errors by closing and reopening connection
-   */
   async recoverFromError(): Promise<void> {
     if (this.db) {
       try {
@@ -45,6 +45,7 @@ class AIStore {
     this.chunkCache.clear();
     this.indexCache.clear();
     this.metaCache.clear();
+    this.conversationCache.clear();
     await this.openDB();
   }
 
@@ -64,7 +65,7 @@ class AIStore {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
 
-        // Force re-indexing on schema changes
+        // force re-indexing on schema changes
         if (oldVersion > 0 && oldVersion < 2) {
           if (db.objectStoreNames.contains(CHUNKS_STORE)) db.deleteObjectStore(CHUNKS_STORE);
           if (db.objectStoreNames.contains(META_STORE)) db.deleteObjectStore(META_STORE);
@@ -80,6 +81,16 @@ class AIStore {
           db.createObjectStore(META_STORE, { keyPath: 'bookHash' });
         if (!db.objectStoreNames.contains(BM25_STORE))
           db.createObjectStore(BM25_STORE, { keyPath: 'bookHash' });
+
+        // v3: conversation history stores
+        if (!db.objectStoreNames.contains(CONVERSATIONS_STORE)) {
+          const convStore = db.createObjectStore(CONVERSATIONS_STORE, { keyPath: 'id' });
+          convStore.createIndex('bookHash', 'bookHash', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(MESSAGES_STORE)) {
+          const msgStore = db.createObjectStore(MESSAGES_STORE, { keyPath: 'id' });
+          msgStore.createIndex('conversationId', 'conversationId', { unique: false });
+        }
       };
     });
   }
@@ -313,6 +324,129 @@ class AIStore {
         resolve();
       };
       tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // conversation persistence methods
+
+  async saveConversation(conversation: AIConversation): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+      tx.objectStore(CONVERSATIONS_STORE).put(conversation);
+      tx.oncomplete = () => {
+        this.conversationCache.delete(conversation.bookHash);
+        resolve();
+      };
+      tx.onerror = () => {
+        aiLogger.store.error('saveConversation', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
+  }
+
+  async getConversations(bookHash: string): Promise<AIConversation[]> {
+    if (this.conversationCache.has(bookHash)) {
+      return this.conversationCache.get(bookHash)!;
+    }
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const req = db
+        .transaction(CONVERSATIONS_STORE, 'readonly')
+        .objectStore(CONVERSATIONS_STORE)
+        .index('bookHash')
+        .getAll(bookHash);
+      req.onsuccess = () => {
+        const conversations = (req.result as AIConversation[]).sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        );
+        this.conversationCache.set(bookHash, conversations);
+        resolve(conversations);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([CONVERSATIONS_STORE, MESSAGES_STORE], 'readwrite');
+
+      // delete conversation
+      tx.objectStore(CONVERSATIONS_STORE).delete(id);
+
+      // delete all messages for this conversation
+      const cursor = tx.objectStore(MESSAGES_STORE).index('conversationId').openCursor(id);
+      cursor.onsuccess = (e) => {
+        const c = (e.target as IDBRequest<IDBCursorWithValue>).result;
+        if (c) {
+          c.delete();
+          c.continue();
+        }
+      };
+
+      tx.oncomplete = () => {
+        this.conversationCache.clear();
+        resolve();
+      };
+      tx.onerror = () => {
+        aiLogger.store.error('deleteConversation', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
+  }
+
+  async updateConversationTitle(id: string, title: string): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+      const store = tx.objectStore(CONVERSATIONS_STORE);
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const conversation = req.result as AIConversation | undefined;
+        if (conversation) {
+          conversation.title = title;
+          conversation.updatedAt = Date.now();
+          store.put(conversation);
+        }
+      };
+      tx.oncomplete = () => {
+        this.conversationCache.clear();
+        resolve();
+      };
+      tx.onerror = () => {
+        aiLogger.store.error('updateConversationTitle', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
+  }
+
+  async saveMessage(message: AIMessage): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(MESSAGES_STORE, 'readwrite');
+      tx.objectStore(MESSAGES_STORE).put(message);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => {
+        aiLogger.store.error('saveMessage', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
+  }
+
+  async getMessages(conversationId: string): Promise<AIMessage[]> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const req = db
+        .transaction(MESSAGES_STORE, 'readonly')
+        .objectStore(MESSAGES_STORE)
+        .index('conversationId')
+        .getAll(conversationId);
+      req.onsuccess = () => {
+        const messages = (req.result as AIMessage[]).sort((a, b) => a.createdAt - b.createdAt);
+        resolve(messages);
+      };
+      req.onerror = () => reject(req.error);
     });
   }
 }
