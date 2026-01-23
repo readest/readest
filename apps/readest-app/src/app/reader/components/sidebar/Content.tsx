@@ -13,7 +13,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
-import AIAssistant from './AIAssistant';
+import ChatHistoryView from './ChatHistoryView';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
@@ -38,9 +38,9 @@ const SidebarContent: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
-  // reset to toc if AI tab was active but AI is now disabled
+  // reset to toc if history tab was active but AI is now disabled
   useEffect(() => {
-    if ((activeTab === 'ai' || targetTab === 'ai') && !aiEnabled) {
+    if ((activeTab === 'history' || targetTab === 'history') && !aiEnabled) {
       setActiveTab('toc');
       setTargetTab('toc');
     }
@@ -73,8 +73,8 @@ const SidebarContent: React.FC<{
           'font-sans text-base font-normal sm:text-sm',
         )}
       >
-        {targetTab === 'ai' ? (
-          <AIAssistant bookKey={sideBarBookKey} />
+        {targetTab === 'history' ? (
+          <ChatHistoryView bookKey={sideBarBookKey} />
         ) : (
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'
