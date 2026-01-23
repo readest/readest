@@ -10,6 +10,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import type { AIConversation } from '@/services/ai/types';
+import { useEnv } from '@/context/EnvContext';
 
 interface ChatHistoryViewProps {
   bookKey: string;
@@ -17,6 +18,7 @@ interface ChatHistoryViewProps {
 
 const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { getBookData } = useBookDataStore();
   const {
     conversations,
@@ -61,7 +63,8 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   const handleDeleteConversation = useCallback(
     async (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
-      if (window.confirm(_('Delete this conversation?'))) {
+      if (!appService) return;
+      if (await appService.ask(_('Delete this conversation?'))) {
         await deleteConversation(id);
       }
     },

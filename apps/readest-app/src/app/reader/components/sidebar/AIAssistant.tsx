@@ -24,6 +24,7 @@ import {
   clearLastSources,
 } from '@/services/ai';
 import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
+import { useEnv } from '@/context/EnvContext';
 
 import { Thread } from '@/components/assistant-ui/thread';
 import { Button } from '@/components/ui/button';
@@ -184,6 +185,7 @@ const AIAssistantWithRuntime = ({
 const ThreadWrapper = ({ onResetIndex }: { onResetIndex: () => void }) => {
   const [sources, setSources] = useState(getLastSources());
   const assistantRuntime = useAssistantRuntime();
+  const { setActiveConversation } = useAIChatStore();
 
   // poll for sources updates (adapter stores them)
   useEffect(() => {
@@ -196,14 +198,16 @@ const ThreadWrapper = ({ onResetIndex }: { onResetIndex: () => void }) => {
   const handleClear = useCallback(() => {
     clearLastSources();
     setSources([]);
+    setActiveConversation(null);
     assistantRuntime.switchToNewThread();
-  }, [assistantRuntime]);
+  }, [assistantRuntime, setActiveConversation]);
 
   return <Thread sources={sources} onClear={handleClear} onResetIndex={onResetIndex} />;
 };
 
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { getProgress } = useReaderStore();
@@ -253,10 +257,11 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   }, [bookData?.bookDoc, bookHash, aiSettings]);
 
   const handleResetIndex = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to re-index this book?')) return;
+    if (!appService) return;
+    if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
     await aiStore.clearBook(bookHash);
     setIndexed(false);
-  }, [bookHash]);
+  }, [bookHash, appService, _]);
 
   if (!aiSettings?.enabled) {
     return (
