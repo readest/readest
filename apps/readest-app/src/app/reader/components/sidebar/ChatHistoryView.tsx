@@ -68,14 +68,11 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
     [deleteConversation, _],
   );
 
-  const handleStartRename = useCallback(
-    (e: React.MouseEvent, conversation: AIConversation) => {
-      e.stopPropagation();
-      setEditingId(conversation.id);
-      setEditTitle(conversation.title);
-    },
-    [],
-  );
+  const handleStartRename = useCallback((e: React.MouseEvent, conversation: AIConversation) => {
+    e.stopPropagation();
+    setEditingId(conversation.id);
+    setEditTitle(conversation.title);
+  }, []);
 
   const handleSaveRename = useCallback(
     async (e: React.MouseEvent | React.KeyboardEvent) => {
@@ -122,10 +119,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
         <h3 className='text-base-content text-sm font-medium'>{_('AI Chat History')}</h3>
         <button
           onClick={handleNewConversation}
-          className={clsx(
-            'btn btn-ghost btn-xs gap-1',
-            'text-primary hover:bg-primary/10',
-          )}
+          className={clsx('btn btn-ghost btn-xs gap-1', 'text-primary hover:bg-primary/10')}
           aria-label={_('New Chat')}
         >
           <LuPlus size={14} />

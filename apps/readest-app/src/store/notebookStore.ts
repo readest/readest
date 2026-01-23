@@ -51,4 +51,3 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
     })),
   getNotebookAnnotationDraft: (key: string) => get().notebookAnnotationDrafts[key],
 }));
-
