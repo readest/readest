@@ -30,7 +30,6 @@
       "@babel/helpers": ">=7.26.10"
     },
     "patchedDependencies": {
-      "@assistant-ui/react": "patches/@assistant-ui__react.patch",
       "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",
       "@ai-sdk/provider-utils@4.0.8": "patches/@ai-sdk__provider-utils@4.0.8.patch"
     }
