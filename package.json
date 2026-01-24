@@ -27,7 +27,9 @@
       "vite": ">=7.0.8",
       "body-parser": ">=2.2.1",
       "@babel/runtime": ">=7.26.10",
-      "@babel/helpers": ">=7.26.10"
+      "@babel/helpers": ">=7.26.10",
+      "mdast-util-gfm-autolink-literal": "2.0.1",
+      "@ai-sdk/provider-utils": "4.0.8"
     },
     "patchedDependencies": {
       "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",
