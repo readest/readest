@@ -42,9 +42,13 @@ interface ThreadProps {
   onResetIndex?: () => void;
 }
 
-// Scroll to bottom button - matches "New Chat" button styling
 const ScrollToBottomButton: FC = () => {
   const isAtBottom = useThreadViewport((v) => v.isAtBottom);
+  const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
+  const isRunning = useThread((t) => t.isRunning);
+
+  // Don't show button if last message is user with no AI response yet
+  if (lastMessageRole === 'user' && !isRunning) return null;
 
   return (
     <ThreadPrimitive.ScrollToBottom
@@ -80,25 +84,35 @@ const ScrollToBottomButton: FC = () => {
 
 export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
   const messageCount = useThread((t) => t.messages.length);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
 
-  // Scroll user's message to top of viewport when they send a message
   useEffect(() => {
-    if (lastMessageRole === 'user' && viewportRef.current) {
-      // Small delay to ensure DOM has updated
+    if (isInitialMount.current && messageCount > 0 && viewportRef.current) {
+      isInitialMount.current = false;
+      requestAnimationFrame(() => {
+        const viewport = viewportRef.current;
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      });
+    }
+  }, [messageCount]);
+
+  useEffect(() => {
+    if (lastMessageRole === 'user' && viewportRef.current && !isInitialMount.current) {
       requestAnimationFrame(() => {
         const viewport = viewportRef.current;
         if (!viewport) return;
 
-        // Find the last user message and scroll it into view at the top
         const messages = viewport.querySelectorAll('[data-message-role="user"]');
         const lastUserMessage = messages[messages.length - 1];
         if (lastUserMessage) {
           lastUserMessage.scrollIntoView({
             behavior: 'smooth',
-            block: 'start',
+            block: 'nearest',
           });
         }
       });
@@ -107,16 +121,16 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex })
 
   // Calculate dynamic spacer height based on AI response state
   const getSpacerHeight = () => {
+    if (lastMessageRole === 'user' && !isRunning) {
+      return 'min-h-8';
+    }
     if (isRunning) {
-      // AI is generating - moderate spacer
       return 'min-h-[50vh]';
     }
     if (lastMessageRole === 'assistant') {
-      // AI finished - minimal spacer
       return 'min-h-4';
     }
-    // User just sent message - large spacer to allow scroll-to-top
-    return 'min-h-[70vh]';
+    return 'min-h-4';
   };
 
   return (
