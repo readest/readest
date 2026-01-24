@@ -1,13 +1,14 @@
 import clsx from 'clsx';
 import React, { useState, useMemo, useEffect } from 'react';
 import { marked } from 'marked';
-import { BookNote, BooknoteGroup, NoteExportConfig } from '@/types/book';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import Dialog from '@/components/Dialog';
 import { useReaderStore } from '@/store/readerStore';
+import { BookNote, BooknoteGroup, NoteExportConfig } from '@/types/book';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
-import { useEnv } from '@/context/EnvContext';
+import { renderNoteTemplate } from '@/utils/note';
+import Dialog from '@/components/Dialog';
 
 interface ExportMarkdownDialogProps {
   bookKey: string;
@@ -19,135 +20,6 @@ interface ExportMarkdownDialogProps {
   onCancel: () => void;
   onExport: (markdown: string) => void;
 }
-
-type TemplateData = {
-  title: string;
-  author: string;
-  exportDate: string;
-  chapters: {
-    title: string;
-    annotations: {
-      text: string;
-      note?: string;
-      timestamp?: number;
-    }[];
-  }[];
-};
-
-type TemplateVariable = { [key: string]: number | string | TemplateVariable | TemplateVariable[] };
-
-const renderTemplate = (template: string, data: TemplateData): string => {
-  const applyFilter = (
-    value: TemplateVariable,
-    filter: string,
-    filterArg?: string,
-  ): TemplateVariable | string => {
-    if (filter === 'date') {
-      if (typeof value === 'number') {
-        const date = new Date(value);
-        if (filterArg) {
-          const format = filterArg;
-          return format
-            .replace('%Y', date.getFullYear().toString())
-            .replace('%m', String(date.getMonth() + 1).padStart(2, '0'))
-            .replace('%d', String(date.getDate()).padStart(2, '0'))
-            .replace('%H', String(date.getHours()).padStart(2, '0'))
-            .replace('%M', String(date.getMinutes()).padStart(2, '0'))
-            .replace('%S', String(date.getSeconds()).padStart(2, '0'));
-        }
-        return date.toLocaleString();
-      }
-      return value;
-    }
-    return value;
-  };
-
-  const getValue = (path: string, context: TemplateData) => {
-    const keys = path.trim().split('.');
-    let value = context as TemplateVariable;
-    for (const key of keys) {
-      value = value?.[key] as TemplateVariable;
-    }
-    return value;
-  };
-
-  let result = template;
-
-  // Process {% for %} loops - find first occurrence and recurse
-  const forMatch = result.match(/\{%\s*for\s+(\w+)\s+in\s+(\w+(?:\.\w+)*)\s*%\}/);
-  if (forMatch) {
-    const itemName = forMatch[1]!;
-    const collectionPath = forMatch[2]!;
-
-    // Find matching {% endfor %} by counting nesting
-    let depth = 0;
-    let endPos = -1;
-    const startPos = forMatch.index! + forMatch[0].length;
-
-    for (let i = startPos; i < result.length; i++) {
-      const remaining = result.slice(i);
-      if (remaining.startsWith('{% for ')) {
-        depth++;
-        i += 6; // skip past "{% for"
-      } else if (remaining.startsWith('{% endfor %}')) {
-        if (depth === 0) {
-          endPos = i;
-          break;
-        }
-        depth--;
-        i += 11; // skip past "{% endfor %}"
-      }
-    }
-
-    if (endPos !== -1) {
-      const beforeLoop = result.slice(0, forMatch.index);
-      const loopContent = result.slice(startPos, endPos);
-      const afterLoop = result.slice(endPos + 13); // 13 = length of "{% endfor %}"
-
-      const collection = getValue(collectionPath, data);
-
-      if (Array.isArray(collection)) {
-        const renderedItems = collection
-          .map((item) => {
-            const loopData = { ...data, [itemName]: item };
-            return renderTemplate(loopContent, loopData);
-          })
-          .join('');
-
-        result = beforeLoop + renderedItems + afterLoop;
-        return renderTemplate(result, data);
-      } else {
-        // Collection not found or not an array, remove the loop
-        result = beforeLoop + afterLoop;
-        return renderTemplate(result, data);
-      }
-    }
-  }
-
-  // Process {% if condition %}...{% endif %}
-  result = result.replace(
-    /\{%\s*if\s+([^%]+?)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
-    (_match, condition, content) => {
-      const value = getValue(condition, data);
-      return value ? renderTemplate(content, data) : '';
-    },
-  );
-
-  // Replace {{ variable }}, {{ variable | filter }}, and {{ variable | filter('arg') }}
-  result = result.replace(
-    /\{\{\s*([^}|]+?)(?:\s*\|\s*(\w+)(?:\s*\((['"]?)([^)'"]*)\3\))?)?\s*\}\}/g,
-    (_match, path, filter, _quote, filterArg) => {
-      const value = getValue(path, data);
-      if (value === undefined || value === null) return '';
-      if (filter) {
-        return applyFilter(value, filter, filterArg) as string;
-      }
-      return String(value);
-    },
-  );
-
-  return result;
-};
 
 const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   bookKey,
@@ -167,7 +39,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   const defaultTemplate = `## {{ title }}
 **${_('Author')}**: {{ author }}
 
-**${_('Exported from Readest')}**: {{ exportDate }}
+**${_('Exported from Readest')}**: {{ exportDate | date('%Y-%m-%d') }}
 
 ---
 
@@ -176,7 +48,19 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 {% for chapter in chapters %}
 #### {{ chapter.title }}
 {% for annotation in chapter.annotations %}
-> {{ annotation.text }}
+{% if annotation.color == 'yellow' %}
+- {{ annotation.text }}
+{% elif annotation.color == 'red' %}
+- ❗ {{ annotation.text }}
+{% elif annotation.color == 'green' %}
+- ✅ {{ annotation.text }}
+{% elif annotation.color == 'blue' %}
+- 💡 {{ annotation.text }}
+{% elif annotation.color == 'violet' %}
+- ✨ {{ annotation.text }}
+{% else %}
+- {{ annotation.text }}
+{% endif %}
 {% if annotation.note %}
 **${_('Note:')}** {{ annotation.note }}
 {% endif %}
@@ -219,7 +103,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       const templateData = {
         title: bookTitle,
         author: bookAuthor,
-        exportDate: new Date().toISOString().slice(0, 10),
+        exportDate: new Date().getTime(),
         chapters: sortedGroups.map((group) => ({
           title: group.label || _('Untitled'),
           annotations: group.booknotes.map((note) => ({
@@ -232,7 +116,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         })),
       };
 
-      return renderTemplate(exportConfig.customTemplate, templateData);
+      return renderNoteTemplate(exportConfig.customTemplate, templateData);
     }
 
     // Default formatting (non-template mode)
@@ -456,7 +340,17 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               {exportConfig.useCustomTemplate && (
                 <>
                   <div className='space-y-2'>
-                    <label className='text-sm font-medium'>{_('Export Template')}</label>
+                    <div className='flex items-center justify-between'>
+                      <label className='text-sm font-medium'>{_('Export Template')}</label>
+                      <button
+                        onClick={() =>
+                          setExportConfig({ ...exportConfig, customTemplate: defaultTemplate })
+                        }
+                        className='text-sm text-blue-500 hover:underline'
+                      >
+                        {_('Reset Template')}
+                      </button>
+                    </div>
                     <textarea
                       value={exportConfig.customTemplate}
                       onChange={(e) =>
@@ -538,8 +432,16 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                           {_('Annotation note')}
                         </li>
                         <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.style</code> -{' '}
+                          {_('Annotation style')}: underline | highlight | squiggly
+                        </li>
+                        <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.color</code> -{' '}
+                          {_('Annotation color')}: yellow | red | green | blue | violet
+                        </li>
+                        <li className='ml-8'>
                           <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
-                          {_('Update time')}
+                          {_('Annotation time')}
                         </li>
                       </ul>
                     </div>
