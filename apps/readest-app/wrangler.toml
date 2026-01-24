@@ -2,10 +2,32 @@ name = "readest-web"
 main = ".open-next/worker.js"
 compatibility_date = "2025-11-17"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
+
+[[routes]]
+pattern = "web-cf.readest.com"
+zone_name = "readest.com"
+custom_domain = true
+
+[[routes]]
+pattern = "api-cf.readest.com"
+zone_name = "readest.com"
+custom_domain = true
+
+[[routes]]
+pattern = "web.readest.com"
+zone_name = "readest.com"
+custom_domain = true
+
+[vars]
+PNPM_VERSION = "10.28.1"
 
 [observability]
 enabled = true
 head_sampling_rate = 0.01
+logs = { head_sampling_rate = 0.01 }
+traces = { head_sampling_rate = 0.01 }
 
 [assets]
 directory = ".open-next/assets"
@@ -13,7 +35,7 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "TRANSLATIONS_KV"
-id = "${TRANSLATIONS_KV_ID}"
+id = "fa6e3eb1988a424bbf3c952e01650ced"
 
 [[r2_buckets]]
 binding = "NEXT_INC_CACHE_R2_BUCKET"
