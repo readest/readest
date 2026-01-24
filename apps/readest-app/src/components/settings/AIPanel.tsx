@@ -505,18 +505,20 @@ const AIPanel: React.FC = () => {
               >
                 {_('Test Connection')}
               </button>
-              {connectionStatus === 'success' && (
-                <span className='text-success flex items-center gap-1 text-sm'>
-                  <PiCheckCircle />
-                  {_('Connected')}
-                </span>
-              )}
-              {connectionStatus === 'error' && (
-                <span className='text-error flex items-center gap-1 text-sm'>
-                  <PiWarningCircle />
-                  {errorMessage || _('Failed')}
-                </span>
-              )}
+              <div>
+                {connectionStatus === 'success' && (
+                  <span className='text-success flex items-center gap-1 text-sm'>
+                    <PiCheckCircle className='size-4 shrink-0' />
+                    {_('Connected')}
+                  </span>
+                )}
+                {connectionStatus === 'error' && (
+                  <span className='text-error flex items-center gap-1 text-sm'>
+                    <PiWarningCircle className='size-4 shrink-0' />
+                    {errorMessage || _('Failed')}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

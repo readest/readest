@@ -153,8 +153,6 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                     }
                   }}
                 >
-                  <LuMessageSquare className='text-base-content/40 mt-0.5 size-4 flex-shrink-0' />
-
                   <div className='min-w-0 flex-1'>
                     {editingId === conversation.id ? (
                       <div
