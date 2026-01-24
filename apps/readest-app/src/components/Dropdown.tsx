@@ -19,6 +19,10 @@ interface DropdownProps {
   showTooltip?: boolean;
 }
 
+type MenuItemProps = {
+  setIsDropdownOpen?: (open: boolean) => void;
+};
+
 const enhanceMenuItems = (
   children: ReactNode,
   setIsDropdownOpen: (isOpen: boolean) => void,
@@ -28,7 +32,7 @@ const enhanceMenuItems = (
       return node;
     }
 
-    const element = node as ReactElement;
+    const element = node as React.ReactElement<React.PropsWithChildren<MenuItemProps>>;
     const isMenuItem =
       element.type === MenuItem ||
       (typeof element.type === 'function' && element.type.name === 'MenuItem');

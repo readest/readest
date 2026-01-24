@@ -40,6 +40,7 @@ type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
   label: string;
+  disabled?: boolean;
 };
 
 const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -81,6 +82,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tab: 'AI',
       icon: PiRobot,
       label: _('AI Assistant'),
+      disabled: process.env.NODE_ENV === 'production',
     },
     {
       tab: 'Custom',
@@ -206,29 +208,31 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               aria-label={_('Settings Panels') + ' - ' + (currentPanel?.label || '')}
               className={clsx('dialog-tabs ms-1 flex h-10 w-full items-center gap-1 sm:ms-0')}
             >
-              {tabConfig.map(({ tab, icon: Icon, label }) => (
-                <button
-                  key={tab}
-                  data-tab={tab}
-                  tabIndex={0}
-                  title={label}
-                  className={clsx(
-                    'btn btn-ghost text-base-content btn-sm gap-1 px-2',
-                    activePanel === tab ? 'btn-active' : '',
-                  )}
-                  onClick={() => handleSetActivePanel(tab)}
-                >
-                  <Icon className='mr-0' />
-                  <span
+              {tabConfig
+                .filter((t) => !t.disabled)
+                .map(({ tab, icon: Icon, label }) => (
+                  <button
+                    key={tab}
+                    data-tab={tab}
+                    tabIndex={0}
+                    title={label}
                     className={clsx(
-                      window.innerWidth < 640 && 'hidden',
-                      !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      'btn btn-ghost text-base-content btn-sm gap-1 px-2',
+                      activePanel === tab ? 'btn-active' : '',
                     )}
+                    onClick={() => handleSetActivePanel(tab)}
                   >
-                    {label}
-                  </span>
-                </button>
-              ))}
+                    <Icon className='mr-0' />
+                    <span
+                      className={clsx(
+                        window.innerWidth < 640 && 'hidden',
+                        !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                ))}
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
               <Dropdown

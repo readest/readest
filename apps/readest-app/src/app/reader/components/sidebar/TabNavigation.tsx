@@ -64,13 +64,13 @@ const TabNavigation: React.FC<{
         >
           <div className='m-0 flex h-6 items-center p-0'>
             {tab === 'toc' ? (
-              <IoIosList className='mx-auto' size={20} />
+              <IoIosList className='mx-auto' />
             ) : tab === 'annotations' ? (
-              <PiNotePencil className='mx-auto' size={20} />
+              <PiNotePencil className='mx-auto' />
             ) : tab === 'bookmarks' ? (
-              <MdBookmarkBorder className='mx-auto' size={20} />
+              <MdBookmarkBorder className='mx-auto' />
             ) : (
-              <LuMessageSquare className='mx-auto' size={20} />
+              <LuMessageSquare className='mx-auto' />
             )}
           </div>
         </div>

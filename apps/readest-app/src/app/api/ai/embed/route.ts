@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { embed, embedMany, createGateway } from 'ai';
-
-export const runtime = 'edge';
+import { validateUserAndToken } from '@/utils/access';
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+    if (!user || !token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
+    }
+
     const { texts, single, apiKey } = await req.json();
 
     if (!texts || !Array.isArray(texts) || texts.length === 0) {

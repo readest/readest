@@ -1,10 +1,14 @@
+import { validateUserAndToken } from '@/utils/access';
 import { streamText, createGateway } from 'ai';
 import type { ModelMessage } from 'ai';
 
-export const runtime = 'edge';
-
 export async function POST(req: Request): Promise<Response> {
   try {
+    const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+    if (!user || !token) {
+      return Response.json({ error: 'Not authenticated' }, { status: 403 });
+    }
+
     const { messages, system, apiKey, model } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
