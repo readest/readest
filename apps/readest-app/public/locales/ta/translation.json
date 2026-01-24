@@ -832,7 +832,6 @@
   "Show Results": "முடிவுகளைக் காட்டு",
   "Clear search": "தேடலை அழி",
   "Clear search history": "தேடல் வரலாற்றை அழி",
-  "Quick action disabled": "விரைவு செயல் முடக்கப்பட்டது",
   "Tap to Toggle Footer": "அடிக்குறிப்பை மாற்ற தட்டவும்",
   "Exported successfully": "ஏற்றுமதி வெற்றி",
   "Book exported successfully.": "புத்தகம் வெற்றிகரமாக ஏற்றுமதி செய்யப்பட்டது.",
@@ -890,5 +889,8 @@
   "Select Voice": "குரலைத் தேர்ந்தெடுக்கவும்",
   "Toggle Sticky Bottom TTS Bar": "நிலையான TTS பட்டியை மாற்றவும்",
   "Display what I'm reading on Discord": "Discord இல் படிக்கும் புத்தகத்தை காட்டு",
-  "Show on Discord": "Discord இல் காட்டு"
+  "Show on Discord": "Discord இல் காட்டு",
+  "Instant {{action}}": "உடனடி {{action}}",
+  "Instant {{action}} Disabled": "உடனடி {{action}} முடக்கப்பட்டது",
+  "Annotation": "குறிப்பு"
 }

@@ -23,6 +23,7 @@ permissions = [
   "allow-get-external-sdcard-path",
   "allow-open-external-url",
   "allow-select-directory",
+  "allow-get-storefront-region-code",
   "allow-request-manage-storage-permission",
   "allow-register-listener",
   "allow-remove-listener",

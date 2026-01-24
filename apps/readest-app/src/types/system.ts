@@ -89,6 +89,8 @@ export interface AppService {
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
   distChannel: DistChannel;
+  storefrontRegionCode: string | null;
+  isOnlineCatalogsAccessible: boolean;
 
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;

@@ -822,7 +822,6 @@
   "Show Results": "結果を表示",
   "Clear search": "検索をクリア",
   "Clear search history": "検索履歴をクリア",
-  "Quick action disabled": "クイックアクション無効",
   "Tap to Toggle Footer": "タップでフッターを切り替え",
   "Exported successfully": "エクスポート成功",
   "Book exported successfully.": "書籍のエクスポートに成功しました。",
@@ -880,5 +879,8 @@
   "Select Voice": "音声選択",
   "Toggle Sticky Bottom TTS Bar": "TTSバー固定切替",
   "Display what I'm reading on Discord": "読書中の本をDiscordに表示",
-  "Show on Discord": "Discordに表示"
+  "Show on Discord": "Discordに表示",
+  "Instant {{action}}": "インスタント{{action}}",
+  "Instant {{action}} Disabled": "インスタント{{action}}を無効化",
+  "Annotation": "注釈"
 }

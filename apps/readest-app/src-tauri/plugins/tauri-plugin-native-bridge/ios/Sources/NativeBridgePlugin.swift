@@ -879,6 +879,16 @@ class NativeBridgePlugin: Plugin {
       invoke.reject("Failed to copy file: \(error.localizedDescription)")
     }
   }
+
+  @objc public func get_storefront_region_code(_ invoke: Invoke) {
+    Task {
+      if let storefront = await Storefront.current {
+        invoke.resolve(["regionCode": storefront.countryCode])
+      } else {
+        invoke.reject("Failed to get region code")
+      }
+    }
+  }
 }
 
 @_cdecl("init_plugin_native_bridge")

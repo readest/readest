@@ -852,7 +852,6 @@
   "Show Results": "Показать результаты",
   "Clear search": "Очистить поиск",
   "Clear search history": "Очистить историю поиска",
-  "Quick action disabled": "Быстрое действие отключено",
   "Tap to Toggle Footer": "Нажмите для переключения нижнего колонтитула",
   "Exported successfully": "Успешно экспортировано",
   "Book exported successfully.": "Книга успешно экспортирована.",
@@ -910,5 +909,8 @@
   "Select Voice": "Выбрать голос",
   "Toggle Sticky Bottom TTS Bar": "Переключить закреплённую панель TTS",
   "Display what I'm reading on Discord": "Показывать книгу в Discord",
-  "Show on Discord": "Показать в Discord"
+  "Show on Discord": "Показать в Discord",
+  "Instant {{action}}": "Мгновенное {{action}}",
+  "Instant {{action}} Disabled": "Мгновенное {{action}} отключено",
+  "Annotation": "Аннотация"
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
@@ -89,6 +89,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [selectedColor, setSelectedColor] = useState<HighlightColor>(
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
+  const androidTouchEndRef = useRef(false);
 
   const showingPopup =
     showAnnotPopup ||
@@ -239,8 +240,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const handleNativeTouch = (event: CustomEvent) => {
       const ev = event.detail as NativeTouchEventType;
       if (ev.type === 'touchstart') {
+        androidTouchEndRef.current = false;
         handleTouchStart();
       } else if (ev.type === 'touchend') {
+        androidTouchEndRef.current = true;
         handleTouchEnd();
         handlePointerUp(doc, index);
       }
@@ -414,6 +417,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleQuickAction = () => {
     const action = viewSettings.annotationQuickAction;
+    if (appService?.isAndroidApp && !androidTouchEndRef.current) return;
     switch (action) {
       case 'copy':
         handleCopy(false);

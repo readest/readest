@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import { useEnv } from '@/context/EnvContext';
 import { CatalogManager } from '@/app/opds/components/CatelogManager';
 import { useTranslation } from '@/hooks/useTranslation';
 import Dialog from '@/components/Dialog';
@@ -9,10 +10,11 @@ interface CatalogDialogProps {
 
 export function CatalogDialog({ onClose }: CatalogDialogProps) {
   const _ = useTranslation();
+  const { appService } = useEnv();
   return (
     <Dialog
       isOpen={true}
-      title={_('Online Library')}
+      title={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
       onClose={onClose}
       bgClassName={'sm:!bg-black/75'}
       boxClassName='sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:!max-w-screen-sm'

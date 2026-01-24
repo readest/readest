@@ -822,7 +822,6 @@
   "Show Results": "Tampilkan Hasil",
   "Clear search": "Hapus pencarian",
   "Clear search history": "Hapus riwayat pencarian",
-  "Quick action disabled": "Tindakan cepat dinonaktifkan",
   "Tap to Toggle Footer": "Ketuk untuk beralih footer",
   "Exported successfully": "Berhasil diekspor",
   "Book exported successfully.": "Buku berhasil diekspor.",
@@ -880,5 +879,8 @@
   "Select Voice": "Pilih suara",
   "Toggle Sticky Bottom TTS Bar": "Alihkan bilah TTS tetap",
   "Display what I'm reading on Discord": "Tampilkan buku yang sedang dibaca di Discord",
-  "Show on Discord": "Tampilkan di Discord"
+  "Show on Discord": "Tampilkan di Discord",
+  "Instant {{action}}": "{{action}} Instan",
+  "Instant {{action}} Disabled": "{{action}} Instan Dinonaktifkan",
+  "Annotation": "Anotasi"
 }

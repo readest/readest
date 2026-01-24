@@ -822,7 +822,6 @@
   "Show Results": "顯示結果",
   "Clear search": "清除搜尋",
   "Clear search history": "清除搜尋歷史",
-  "Quick action disabled": "快捷操作已停用",
   "Tap to Toggle Footer": "點擊切換頁尾",
   "Exported successfully": "匯出成功",
   "Book exported successfully.": "書籍匯出成功。",
@@ -880,5 +879,8 @@
   "Select Voice": "選擇語音",
   "Toggle Sticky Bottom TTS Bar": "切換固定TTS欄",
   "Display what I'm reading on Discord": "在Discord顯示閱讀狀態",
-  "Show on Discord": "在Discord顯示"
+  "Show on Discord": "在Discord顯示",
+  "Instant {{action}}": "即時{{action}}",
+  "Instant {{action}} Disabled": "即時{{action}}已停用",
+  "Annotation": "註解"
 }

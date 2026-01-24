@@ -1,15 +1,17 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
+import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
+import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
-import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
 
 export class EdgeTTSClient implements TTSClient {
   name = 'edge-tts';
   initialized = false;
   controller?: TTSController;
+  appService?: AppService | null;
 
   #voices: TTSVoice[] = [];
   #primaryLang = 'en';
@@ -25,8 +27,9 @@ export class EdgeTTSClient implements TTSClient {
   #startedAt = 0;
   #fadeCompensation: number | null = null;
 
-  constructor(controller?: TTSController) {
+  constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
+    this.appService = appService;
   }
 
   async init(protocol: EDGE_TTS_PROTOCOL = 'wss') {
@@ -143,11 +146,24 @@ export class EdgeTTSClient implements TTSClient {
         } as TTSMessageEvent;
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
+          let safetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
           const cleanUp = () => {
+            if (safetyTimeoutId) {
+              clearTimeout(safetyTimeoutId);
+              safetyTimeoutId = null;
+            }
             audio.onended = null;
             audio.onerror = null;
             audio.src = '';
           };
+          let resolved = false;
+          const handleEnded = () => {
+            if (resolved) return;
+            resolved = true;
+            cleanUp();
+            resolve({ code: 'end', message: `Chunk finished: ${mark.name}` });
+          };
+
           abortHandler = () => {
             cleanUp();
             resolve({ code: 'error', message: 'Aborted' });
@@ -158,9 +174,13 @@ export class EdgeTTSClient implements TTSClient {
           } else {
             signal.addEventListener('abort', abortHandler);
           }
-          audio.onended = () => {
-            cleanUp();
-            resolve({ code: 'end', message: `Chunk finished: ${mark.name}` });
+          audio.onended = handleEnded;
+          audio.ontimeupdate = () => {
+            if (!safetyTimeoutId && audio.duration && isFinite(audio.duration)) {
+              const remainingTime = (audio.duration - audio.currentTime) / this.#rate;
+              const safetyMargin = 0.5;
+              safetyTimeoutId = setTimeout(handleEnded, (remainingTime + safetyMargin) * 1000);
+            }
           };
           audio.onerror = (e) => {
             cleanUp();
@@ -169,9 +189,16 @@ export class EdgeTTSClient implements TTSClient {
           };
           this.#isPlaying = true;
           audio.src = audioUrl || '';
+          if (!this.appService?.isLinuxApp) {
+            audio.playbackRate = this.#rate;
+          }
           audio
             .play()
-            .then(() => (audio.playbackRate = this.#rate))
+            .then(() => {
+              if (this.appService?.isLinuxApp) {
+                audio.playbackRate = this.#rate;
+              }
+            })
             .catch((err) => {
               cleanUp();
               console.error('Failed to play audio:', err);

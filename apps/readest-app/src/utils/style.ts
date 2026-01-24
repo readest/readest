@@ -166,7 +166,6 @@ const getColorStyles = (
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     table {
-      max-width: calc(var(--available-width));
       overflow: auto;
       table-layout: fixed;
     }
@@ -827,8 +826,6 @@ export const applyTableStyle = (document: Document) => {
 
           if (widthUnit === 'px' || !widthUnit) {
             rowWidth += widthValue;
-          } else if (widthUnit === '%') {
-            rowWidth += (window.innerWidth * widthValue) / 100;
           }
         }
       });
@@ -838,6 +835,10 @@ export const applyTableStyle = (document: Document) => {
       }
     }
 
+    const inlineWidth = table.style.width;
+    if (inlineWidth) {
+      table.style.width = `calc(min(${inlineWidth}, var(--available-width)))`;
+    }
     if (totalTableWidth > 0) {
       const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
       table.style.transformOrigin = 'left top';
