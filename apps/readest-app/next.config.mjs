@@ -26,6 +26,9 @@ const nextConfig = {
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,
+  experimental: {
+    cpus: 2,
+  },
   serverExternalPackages: ['isows'],
   turbopack: {
     resolveAlias: {
