@@ -27,10 +27,16 @@ const nextConfig = {
   assetPrefix: '',
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      nunjucks: 'nunjucks/browser/nunjucks.js',
+    };
+    return config;
+  },
   turbopack: {
     resolveAlias: {
-      // polyfill buffer for @supabase/storage-js which requires it in browser
-      buffer: 'buffer',
+      nunjucks: 'nunjucks/browser/nunjucks.js',
     },
   },
   transpilePackages: [
