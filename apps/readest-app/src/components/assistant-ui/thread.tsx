@@ -1,6 +1,6 @@
 'use client';
 
-import type { FC } from 'react';
+import { useEffect, useRef, type FC } from 'react';
 import {
   ActionBarPrimitive,
   AssistantIf,
@@ -9,11 +9,14 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
   useAssistantState,
+  useThreadViewport,
+  useThread,
 } from '@assistant-ui/react';
 import {
   ArrowUpIcon,
   BookOpenIcon,
   CheckIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CopyIcon,
@@ -39,7 +42,83 @@ interface ThreadProps {
   onResetIndex?: () => void;
 }
 
+// Scroll to bottom button - matches "New Chat" button styling
+const ScrollToBottomButton: FC = () => {
+  const isAtBottom = useThreadViewport((v) => v.isAtBottom);
+
+  return (
+    <ThreadPrimitive.ScrollToBottom
+      className={cn(
+        'absolute bottom-4 left-1/2 z-10',
+        'flex items-center justify-center rounded-full p-2',
+        'bg-base-300 text-base-content',
+        'hover:bg-base-200',
+        'border-base-content/10 border',
+        'shadow-sm',
+        'active:scale-[0.97]',
+        'transition-[opacity,filter,transform] duration-150 ease-out',
+        isAtBottom
+          ? 'pointer-events-none -translate-x-1/2 scale-90 opacity-0 blur-sm'
+          : '-translate-x-1/2 scale-100 opacity-100 blur-0',
+      )}
+      style={{
+        animation: isAtBottom ? 'none' : 'subtleBounce 2.5s ease-in-out infinite',
+      }}
+      aria-hidden={isAtBottom}
+      aria-label='Scroll to bottom'
+    >
+      <ChevronDownIcon className='size-4' />
+      <style>{`
+        @keyframes subtleBounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(1px); }
+        }
+      `}</style>
+    </ThreadPrimitive.ScrollToBottom>
+  );
+};
+
 export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex }) => {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const messageCount = useThread((t) => t.messages.length);
+  const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
+  const isRunning = useThread((t) => t.isRunning);
+
+  // Scroll user's message to top of viewport when they send a message
+  useEffect(() => {
+    if (lastMessageRole === 'user' && viewportRef.current) {
+      // Small delay to ensure DOM has updated
+      requestAnimationFrame(() => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+
+        // Find the last user message and scroll it into view at the top
+        const messages = viewport.querySelectorAll('[data-message-role="user"]');
+        const lastUserMessage = messages[messages.length - 1];
+        if (lastUserMessage) {
+          lastUserMessage.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      });
+    }
+  }, [messageCount, lastMessageRole]);
+
+  // Calculate dynamic spacer height based on AI response state
+  const getSpacerHeight = () => {
+    if (isRunning) {
+      // AI is generating - moderate spacer
+      return 'min-h-[50vh]';
+    }
+    if (lastMessageRole === 'assistant') {
+      // AI finished - minimal spacer
+      return 'min-h-4';
+    }
+    // User just sent message - large spacer to allow scroll-to-top
+    return 'min-h-[70vh]';
+  };
+
   return (
     <ThreadPrimitive.Root className='bg-base-100 flex h-full w-full flex-col items-stretch px-3'>
       <ThreadPrimitive.Empty>
@@ -54,18 +133,32 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex })
       </ThreadPrimitive.Empty>
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto scroll-smooth pt-2'>
-          <ThreadPrimitive.Messages
-            components={{
-              UserMessage,
-              EditComposer,
-              AssistantMessage: () => <AssistantMessage sources={sources} />,
-            }}
-          />
-          <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
-            AI can make mistakes. Verify with the book.
-          </p>
-        </ThreadPrimitive.Viewport>
+        {/* Viewport wrapper - enables relative positioning for ScrollToBottomButton */}
+        <div className='relative min-h-0 flex-1'>
+          <ThreadPrimitive.Viewport
+            ref={viewportRef}
+            autoScroll={false}
+            className='absolute inset-0 flex flex-col overflow-y-auto scroll-smooth pt-2'
+          >
+            <ThreadPrimitive.Messages
+              components={{
+                UserMessage,
+                EditComposer,
+                AssistantMessage: () => <AssistantMessage sources={sources} />,
+              }}
+            />
+            <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
+              AI can make mistakes. Verify with the book.
+            </p>
+            <div
+              className={cn('flex-shrink transition-all duration-300', getSpacerHeight())}
+              aria-hidden='true'
+            />
+          </ThreadPrimitive.Viewport>
+
+          <ScrollToBottomButton />
+        </div>
+
         <Composer onClear={onClear} onResetIndex={onResetIndex} />
       </AssistantIf>
     </ThreadPrimitive.Root>
@@ -213,7 +306,10 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
 
 const UserMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
+    <MessagePrimitive.Root
+      className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'
+      data-message-role='user'
+    >
       <div className='flex flex-col items-end'>
         <div className='border-base-content/10 bg-base-200 text-base-content relative max-w-[90%] rounded-2xl rounded-br-md border px-3 py-2'>
           <div className='prose prose-xs text-base-content [&_*]:!text-base-content select-text text-sm'>
