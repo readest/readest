@@ -40,7 +40,24 @@ interface ThreadProps {
   sources?: ScoredChunk[];
   onClear?: () => void;
   onResetIndex?: () => void;
+  isLoadingHistory?: boolean;
+  hasActiveConversation?: boolean;
 }
+
+const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
+  return (
+    <div
+      className={cn(
+        'absolute inset-0 z-20 flex items-center justify-center',
+        'bg-base-100/60 backdrop-blur-sm',
+        'transition-all duration-300 ease-out',
+        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+      )}
+    >
+      <div className='bg-base-content/10 size-8 animate-pulse rounded-full' />
+    </div>
+  );
+};
 
 const ScrollToBottomButton: FC = () => {
   const isAtBottom = useThreadViewport((v) => v.isAtBottom);
@@ -82,12 +99,20 @@ const ScrollToBottomButton: FC = () => {
   );
 };
 
-export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex }) => {
+export const Thread: FC<ThreadProps> = ({
+  sources = [],
+  onClear,
+  onResetIndex,
+  isLoadingHistory = false,
+  hasActiveConversation = false,
+}) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const messageCount = useThread((t) => t.messages.length);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
+
+  const showLoading = isLoadingHistory && hasActiveConversation;
 
   useEffect(() => {
     if (isInitialMount.current && messageCount > 0 && viewportRef.current) {
@@ -119,7 +144,6 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex })
     }
   }, [messageCount, lastMessageRole]);
 
-  // Calculate dynamic spacer height based on AI response state
   const getSpacerHeight = () => {
     if (lastMessageRole === 'user' && !isRunning) {
       return 'min-h-8';
@@ -134,21 +158,31 @@ export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex })
   };
 
   return (
-    <ThreadPrimitive.Root className='bg-base-100 flex h-full w-full flex-col items-stretch px-3'>
-      <ThreadPrimitive.Empty>
-        <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
-          <div className='bg-base-content/10 mb-4 rounded-full p-3'>
-            <BookOpenIcon className='text-base-content size-6' />
+    <ThreadPrimitive.Root className='bg-base-100 relative flex h-full w-full flex-col items-stretch px-3'>
+      <LoadingOverlay isVisible={showLoading} />
+
+      {!hasActiveConversation && (
+        <ThreadPrimitive.Empty>
+          <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
+            <div className='bg-base-content/10 mb-4 rounded-full p-3'>
+              <BookOpenIcon className='text-base-content size-6' />
+            </div>
+            <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
+            <p className='text-base-content/60 mb-4 text-xs'>
+              Get answers based on the book content
+            </p>
+            <Composer onClear={onClear} onResetIndex={onResetIndex} />
           </div>
-          <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
-          <p className='text-base-content/60 mb-4 text-xs'>Get answers based on the book content</p>
-          <Composer onClear={onClear} onResetIndex={onResetIndex} />
-        </div>
-      </ThreadPrimitive.Empty>
+        </ThreadPrimitive.Empty>
+      )}
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        {/* Viewport wrapper - enables relative positioning for ScrollToBottomButton */}
-        <div className='relative min-h-0 flex-1'>
+        <div
+          className={cn(
+            'relative min-h-0 flex-1 transition-opacity duration-300',
+            showLoading ? 'opacity-0' : 'opacity-100',
+          )}
+        >
           <ThreadPrimitive.Viewport
             ref={viewportRef}
             autoScroll={false}
