@@ -28,6 +28,10 @@
       "body-parser": ">=2.2.1",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10"
+    },
+    "patchedDependencies": {
+      "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",
+      "@ai-sdk/provider-utils@4.0.8": "patches/@ai-sdk__provider-utils@4.0.8.patch"
     }
   }
 }

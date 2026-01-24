@@ -265,7 +265,8 @@ export interface ProofreadRulesConfig {
 }
 
 export interface ViewSettings
-  extends BookLayout,
+  extends
+    BookLayout,
     BookStyle,
     BookFont,
     BookLanguage,

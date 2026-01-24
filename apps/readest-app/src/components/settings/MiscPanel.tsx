@@ -123,7 +123,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     e.nativeEvent.stopImmediatePropagation();
   };
 
-  const handleInputFocus = (textareaRef: React.RefObject<HTMLTextAreaElement>) => {
+  const handleInputFocus = (textareaRef: React.RefObject<HTMLTextAreaElement | null>) => {
     if (appService?.isAndroidApp) {
       setInputFocusInAndroid(true);
     }
@@ -150,7 +150,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     value: string,
     error: string | null,
     saved: boolean,
-    textareaRef: React.RefObject<HTMLTextAreaElement>,
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>,
   ) => (
     <div className='w-full'>
       <h2 className='mb-2 font-medium' aria-label={_(title)}>

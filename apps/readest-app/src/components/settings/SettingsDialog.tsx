@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
-import { PiDotsThreeVerticalBold } from 'react-icons/pi';
+import { PiDotsThreeVerticalBold, PiRobot } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
@@ -21,8 +21,16 @@ import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
+import AIPanel from './AIPanel';
 
-export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType =
+  | 'Font'
+  | 'Layout'
+  | 'Color'
+  | 'Control'
+  | 'Language'
+  | 'AI'
+  | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -32,6 +40,7 @@ type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
   label: string;
+  disabled?: boolean;
 };
 
 const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -70,6 +79,12 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Language'),
     },
     {
+      tab: 'AI',
+      icon: PiRobot,
+      label: _('AI Assistant'),
+      disabled: process.env.NODE_ENV === 'production',
+    },
+    {
       tab: 'Custom',
       icon: IoAccessibilityOutline,
       label: _('Custom'),
@@ -98,6 +113,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Color: null,
     Control: null,
     Language: null,
+    AI: null,
     Custom: null,
   });
 
@@ -198,29 +214,31 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               )}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {tabConfig.map(({ tab, icon: Icon, label }) => (
-                <button
-                  key={tab}
-                  data-tab={tab}
-                  tabIndex={0}
-                  title={label}
-                  className={clsx(
-                    'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
-                    activePanel === tab ? 'btn-active' : '',
-                  )}
-                  onClick={() => handleSetActivePanel(tab)}
-                >
-                  <Icon className='mr-0' />
-                  <span
+              {tabConfig
+                .filter((t) => !t.disabled)
+                .map(({ tab, icon: Icon, label }) => (
+                  <button
+                    key={tab}
+                    data-tab={tab}
+                    tabIndex={0}
+                    title={label}
                     className={clsx(
-                      window.innerWidth < 640 && 'hidden',
-                      !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
+                      activePanel === tab ? 'btn-active' : '',
                     )}
+                    onClick={() => handleSetActivePanel(tab)}
                   >
-                    {label}
-                  </span>
-                </button>
-              ))}
+                    <Icon className='mr-0' />
+                    <span
+                      className={clsx(
+                        window.innerWidth < 640 && 'hidden',
+                        !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                ))}
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
               <Dropdown
@@ -284,6 +302,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Language', fn)}
           />
         )}
+        {activePanel === 'AI' && <AIPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

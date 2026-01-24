@@ -10,7 +10,7 @@ interface MenuProps {
 }
 
 const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useKeyDownActions({ onCancel, elementRef: menuRef });
 

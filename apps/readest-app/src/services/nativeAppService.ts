@@ -14,7 +14,7 @@ import {
   DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, save as saveDialog, ask } from '@tauri-apps/plugin-dialog';
 import {
   join,
   basename,
@@ -546,6 +546,10 @@ export class NativeAppService extends BaseAppService {
       console.error('Failed to save file:', error);
       return false;
     }
+  }
+
+  async ask(message: string): Promise<boolean> {
+    return await ask(message);
   }
 
   async migrate20251029() {

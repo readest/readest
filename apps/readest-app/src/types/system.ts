@@ -156,4 +156,5 @@ export interface AppService {
   getCoverImageBlobUrl(book: Book): Promise<string>;
   generateCoverImageUrl(book: Book): Promise<string>;
   updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void>;
+  ask(message: string): Promise<boolean>;
 }

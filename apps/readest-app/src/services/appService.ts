@@ -57,6 +57,7 @@ import {
   DEFAULT_ANNOTATOR_CONFIG,
   DEFAULT_EINK_VIEW_SETTINGS,
 } from './constants';
+import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import {
   getOSPlatform,
@@ -129,6 +130,7 @@ export abstract class BaseAppService implements AppService {
     filepath: string,
     mimeType?: string,
   ): Promise<boolean>;
+  abstract ask(message: string): Promise<boolean>;
 
   protected async runMigrations(lastMigrationVersion: number): Promise<void> {
     if (lastMigrationVersion < 20251124) {
@@ -264,6 +266,10 @@ export abstract class BaseAppService implements AppService {
     settings.globalViewSettings = {
       ...this.getDefaultViewSettings(),
       ...settings.globalViewSettings,
+    };
+    settings.aiSettings = {
+      ...DEFAULT_AI_SETTINGS,
+      ...settings.aiSettings,
     };
 
     settings.localBooksDir = await this.fs.getPrefix('Books');

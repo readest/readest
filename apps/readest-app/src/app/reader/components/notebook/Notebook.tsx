@@ -6,6 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
@@ -20,9 +21,11 @@ import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
 import useShortcuts from '@/hooks/useShortcuts';
 import BooknoteItem from '../sidebar/BooknoteItem';
+import AIAssistant from '../sidebar/AIAssistant';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
+import NotebookTabNavigation from './NotebookTabNavigation';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -33,13 +36,16 @@ const Notebook: React.FC = ({}) => {
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { notebookWidth, isNotebookVisible, isNotebookPinned } = useNotebookStore();
+  const { notebookWidth, isNotebookVisible, isNotebookPinned, notebookActiveTab } =
+    useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
   const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
-  const { setNotebookNewAnnotation, setNotebookEditAnnotation } = useNotebookStore();
+  const { setNotebookNewAnnotation, setNotebookEditAnnotation, setNotebookActiveTab } =
+    useNotebookStore();
+  const { activeConversationId } = useAIChatStore();
 
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookNote[] | null>(null);
@@ -75,6 +81,9 @@ const Notebook: React.FC = ({}) => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
     setNotebookPin(settings.globalReadSettings.isNotebookPinned);
     setNotebookVisible(settings.globalReadSettings.isNotebookPinned);
+    if (settings.globalReadSettings.notebookActiveTab) {
+      setNotebookActiveTab(settings.globalReadSettings.notebookActiveTab);
+    }
 
     eventDispatcher.on('navigate', onNavigateEvent);
     return () => {
@@ -92,6 +101,13 @@ const Notebook: React.FC = ({}) => {
     toggleNotebookPin();
     const globalReadSettings = settings.globalReadSettings;
     const newGlobalReadSettings = { ...globalReadSettings, isNotebookPinned: !isNotebookPinned };
+    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
+  };
+
+  const handleTabChange = (tab: 'notes' | 'ai') => {
+    setNotebookActiveTab(tab);
+    const globalReadSettings = settings.globalReadSettings;
+    const newGlobalReadSettings = { ...globalReadSettings, notebookActiveTab: tab };
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
@@ -266,106 +282,123 @@ const Notebook: React.FC = ({}) => {
         <div className='flex-shrink-0'>
           <NotebookHeader
             isPinned={isNotebookPinned}
-            isSearchBarVisible={isSearchBarVisible}
+            isSearchBarVisible={isSearchBarVisible && notebookActiveTab === 'notes'}
             handleClose={() => setNotebookVisible(false)}
             handleTogglePin={handleTogglePin}
             handleToggleSearchBar={handleToggleSearchBar}
+            showSearchButton={notebookActiveTab === 'notes'}
           />
-          <div
-            className={clsx('search-bar', {
-              'search-bar-visible': isSearchBarVisible,
-            })}
-          >
-            <SearchBar
-              isVisible={isSearchBarVisible}
-              bookKey={sideBarBookKey}
-              searchTerm={searchTerm}
-              onSearchResultChange={setSearchResults}
-            />
-          </div>
-        </div>
-        <div className='flex-grow overflow-y-auto px-3'>
-          {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
-            <div className='flex h-32 items-center justify-center text-gray-500'>
-              <p className='font-size-sm text-center'>{_('No notes match your search')}</p>
+          {notebookActiveTab === 'notes' && (
+            <div
+              className={clsx('search-bar', {
+                'search-bar-visible': isSearchBarVisible,
+              })}
+            >
+              <SearchBar
+                isVisible={isSearchBarVisible}
+                bookKey={sideBarBookKey}
+                searchTerm={searchTerm}
+                onSearchResultChange={setSearchResults}
+              />
             </div>
           )}
-          <div dir='ltr'>
-            {filteredExcerptNotes.length > 0 && (
-              <p className='content font-size-base'>
-                {_('Excerpts')}
-                {isSearchBarVisible && searchResults && (
-                  <span className='font-size-xs ml-2 text-gray-500'>
-                    ({filteredExcerptNotes.length})
-                  </span>
-                )}
-              </p>
-            )}
+        </div>
+        {notebookActiveTab === 'ai' ? (
+          <div className='flex min-h-0 flex-1 flex-col'>
+            <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
-          <ul className=''>
-            {filteredExcerptNotes.map((item, index) => (
-              <li key={`${index}-${item.id}`} className='my-2'>
-                <div
-                  role='button'
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Backspace' || e.key === 'Delete') {
-                      handleEditNote(item, true);
-                    }
-                  }}
-                  className='booknote-item collapse-arrow border-base-300 bg-base-100 collapse border'
-                >
+        ) : (
+          <div className='flex-grow overflow-y-auto px-3'>
+            {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
+              <div className='flex h-32 items-center justify-center text-gray-500'>
+                <p className='font-size-sm text-center'>{_('No notes match your search')}</p>
+              </div>
+            )}
+            <div dir='ltr'>
+              {filteredExcerptNotes.length > 0 && (
+                <p className='content font-size-base'>
+                  {_('Excerpts')}
+                  {isSearchBarVisible && searchResults && (
+                    <span className='font-size-xs ml-2 text-gray-500'>
+                      ({filteredExcerptNotes.length})
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+            <ul className=''>
+              {filteredExcerptNotes.map((item, index) => (
+                <li key={`${index}-${item.id}`} className='my-2'>
                   <div
-                    className={clsx(
-                      'collapse-title pe-8 text-sm font-medium',
-                      'h-[2.5rem] min-h-[2.5rem] p-[0.6rem]',
-                    )}
-                    style={
-                      {
-                        '--top-override': '1.25rem',
-                        '--end-override': '0.7rem',
-                      } as React.CSSProperties
-                    }
+                    role='button'
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' || e.key === 'Delete') {
+                        handleEditNote(item, true);
+                      }
+                    }}
+                    className='booknote-item collapse-arrow border-base-300 bg-base-100 collapse border'
                   >
-                    <p className='line-clamp-1'>{item.text || `Excerpt ${index + 1}`}</p>
-                  </div>
-                  <div className='collapse-content font-size-xs select-text px-3 pb-0'>
-                    <p className='hyphens-auto text-justify'>{item.text}</p>
-                    <div className='flex justify-end' dir='ltr'>
-                      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions*/}
-                      <div
-                        className='font-size-xs cursor-pointer align-bottom text-red-500 hover:text-red-600'
-                        onClick={handleEditNote.bind(null, item, true)}
-                        aria-label={_('Delete')}
-                      >
-                        {_('Delete')}
+                    <div
+                      className={clsx(
+                        'collapse-title pe-8 text-sm font-medium',
+                        'h-[2.5rem] min-h-[2.5rem] p-[0.6rem]',
+                      )}
+                      style={
+                        {
+                          '--top-override': '1.25rem',
+                          '--end-override': '0.7rem',
+                        } as React.CSSProperties
+                      }
+                    >
+                      <p className='line-clamp-1'>{item.text || `Excerpt ${index + 1}`}</p>
+                    </div>
+                    <div className='collapse-content font-size-xs select-text px-3 pb-0'>
+                      <p className='hyphens-auto text-justify'>{item.text}</p>
+                      <div className='flex justify-end' dir='ltr'>
+                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions*/}
+                        <div
+                          className='font-size-xs cursor-pointer align-bottom text-red-500 hover:text-red-600'
+                          onClick={handleEditNote.bind(null, item, true)}
+                          aria-label={_('Delete')}
+                        >
+                          {_('Delete')}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div dir='ltr'>
-            {(notebookNewAnnotation || filteredAnnotationNotes.length > 0) && (
-              <p className='content font-size-base'>
-                {_('Notes')}
-                {isSearchBarVisible && searchResults && filteredAnnotationNotes.length > 0 && (
-                  <span className='font-size-xs ml-2 text-gray-500'>
-                    ({filteredAnnotationNotes.length})
-                  </span>
-                )}
-              </p>
+                </li>
+              ))}
+            </ul>
+            <div dir='ltr'>
+              {(notebookNewAnnotation || filteredAnnotationNotes.length > 0) && (
+                <p className='content font-size-base'>
+                  {_('Notes')}
+                  {isSearchBarVisible && searchResults && filteredAnnotationNotes.length > 0 && (
+                    <span className='font-size-xs ml-2 text-gray-500'>
+                      ({filteredAnnotationNotes.length})
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+            {(notebookNewAnnotation || notebookEditAnnotation) && !isSearchBarVisible && (
+              <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
             )}
+            <ul>
+              {filteredAnnotationNotes.map((item, index) => (
+                <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
+              ))}
+            </ul>
           </div>
-          {(notebookNewAnnotation || notebookEditAnnotation) && !isSearchBarVisible && (
-            <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
-          )}
-          <ul>
-            {filteredAnnotationNotes.map((item, index) => (
-              <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
-            ))}
-          </ul>
+        )}
+        <div
+          className='flex-shrink-0'
+          style={{
+            paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px`,
+          }}
+        >
+          <NotebookTabNavigation activeTab={notebookActiveTab} onTabChange={handleTabChange} />
         </div>
       </div>
     </>

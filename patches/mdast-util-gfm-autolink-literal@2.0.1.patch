@@ -1,0 +1,52 @@
+diff --git a/lib/index.js b/lib/index.js
+index c5ca771c24dd914e342f791716a822431ee32b3a..10279f146a893211cd94e97107bcd50c1352d068 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -132,7 +132,8 @@ function transformGfmAutolinkLiterals(tree) {
+     tree,
+     [
+       [/(https?:\/\/|www(?=\.))([-.\w]+)([^ \t\r\n]*)/gi, findUrl],
+-      [/(?<=^|\s|\p{P}|\p{S})([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
++      // Changed from lookbehind (?<=^|\s|\p{P}|\p{S}) to capture group to support older iOS Safari
++      [/(^|[\s\p{P}\p{S}])([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
+     ],
+     {ignore: ['link', 'linkReference']}
+   )
+@@ -189,12 +190,13 @@ function findUrl(_, protocol, domain, path, match) {
+ /**
+  * @type {ReplaceFunction}
+  * @param {string} _
++ * @param {string} prefix
+  * @param {string} atext
+  * @param {string} label
+  * @param {RegExpMatchObject} match
+- * @returns {Link | false}
++ * @returns {Array<PhrasingContent> | Link | false}
+  */
+-function findEmail(_, atext, label, match) {
++function findEmail(_, prefix, atext, label, match) {
+   if (
+     // Not an expected previous character.
+     !previous(match, true) ||
+@@ -204,12 +206,20 @@ function findEmail(_, atext, label, match) {
+     return false
+   }
+ 
+-  return {
++  /** @type {Link} */
++  const result = {
+     type: 'link',
+     title: null,
+     url: 'mailto:' + atext + '@' + label,
+     children: [{type: 'text', value: atext + '@' + label}]
+   }
++
++  // If there was a prefix character (not start of string), preserve it
++  if (prefix && prefix !== '') {
++    return [{type: 'text', value: prefix}, result]
++  }
++
++  return result
+ }
+ 
+ /**
