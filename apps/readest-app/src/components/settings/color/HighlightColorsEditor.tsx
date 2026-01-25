@@ -4,7 +4,7 @@ import { HighlightColor } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import ColorInput from './ColorInput';
 
-const MAX_USER_HIGHLIGHT_COLORS = 4;
+const MAX_USER_HIGHLIGHT_COLORS = 10;
 
 interface HighlightColorsEditorProps {
   customHighlightColors: Record<HighlightColor, string>;
@@ -63,7 +63,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                     />
                     <ColorInput
                       label=''
-                      value={customHighlightColors[color]}
+                      value={customHighlightColors[color]!}
                       compact={true}
                       pickerPosition={position}
                       onChange={(value: string) => handleColorChange(color, value)}
@@ -106,7 +106,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
               </div>
 
               {userHighlightColors.length > 0 && (
-                <div className='flex flex-wrap gap-3'>
+                <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
                   {userHighlightColors.map((hex, index) => (
                     <div key={hex} className='group relative flex flex-col items-center gap-2'>
                       <div

@@ -127,7 +127,7 @@ interface AnnotationRangeEditorProps {
   isVertical: boolean;
   annotation: BookNote;
   selection: TextSelection;
-  handleColor: HighlightColor | string;
+  handleColor: HighlightColor;
   getAnnotationText: (range: Range) => Promise<string>;
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>;
   onStartEdit: () => void;

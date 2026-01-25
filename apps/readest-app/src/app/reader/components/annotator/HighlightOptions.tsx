@@ -1,8 +1,6 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect } from 'react';
-import { FaCheckCircle, FaPlus } from 'react-icons/fa';
-import { MdClose } from 'react-icons/md';
-import { SketchPicker } from 'react-color';
+import React, { useState } from 'react';
+import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -12,11 +10,10 @@ import { saveSysSettings } from '@/helpers/settings';
 
 const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
 const defaultColors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
-const MAX_USER_HIGHLIGHT_COLORS = 4;
 
 const getColorHex = (
   customColors: Record<HighlightColor, string>,
-  color: HighlightColor | string,
+  color: HighlightColor,
 ): string => {
   if (color.startsWith('#')) return color;
   return customColors[color as HighlightColor] ?? color;
@@ -28,7 +25,7 @@ interface HighlightOptionsProps {
   popupHeight: number;
   triangleDir: 'up' | 'down' | 'left' | 'right';
   selectedStyle: HighlightStyle;
-  selectedColor: HighlightColor | string;
+  selectedColor: HighlightColor;
   onHandleHighlight: (update: boolean) => void;
 }
 
@@ -45,7 +42,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   onHandleHighlight,
 }) => {
   const { envConfig } = useEnv();
-  const { settings, saveSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
   const globalReadSettings = settings.globalReadSettings;
   const isEink = settings.globalViewSettings.isEink;
@@ -54,26 +51,11 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const customColors = globalReadSettings.customHighlightColors;
   const userColors = globalReadSettings.userHighlightColors ?? [];
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(_selectedStyle);
-  const [selectedColor, setSelectedColor] = useState<HighlightColor | string>(_selectedColor);
-  const [showPicker, setShowPicker] = useState(false);
-  const [pickerColor, setPickerColor] = useState('#808080');
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const [selectedColor, setSelectedColor] = useState<HighlightColor>(_selectedColor);
   const size16 = useResponsiveSize(16);
   const size28 = useResponsiveSize(28);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        setShowPicker(false);
-      }
-    };
-    if (showPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showPicker]);
 
   const handleSelectStyle = (style: HighlightStyle) => {
     const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
@@ -83,7 +65,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     onHandleHighlight(true);
   };
 
-  const handleSelectColor = (color: HighlightColor | string) => {
+  const handleSelectColor = (color: HighlightColor) => {
     const newGlobalReadSettings = {
       ...globalReadSettings,
       highlightStyle: selectedStyle,
@@ -94,37 +76,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     onHandleHighlight(true);
   };
 
-  const handleAddUserColor = () => {
-    if (userColors.length >= MAX_USER_HIGHLIGHT_COLORS) {
-      setShowPicker(false);
-      return;
-    }
-    if (!userColors.includes(pickerColor)) {
-      const updatedColors = [...userColors, pickerColor];
-      const newGlobalReadSettings = {
-        ...globalReadSettings,
-        userHighlightColors: updatedColors,
-        highlightStyles: { ...globalReadSettings.highlightStyles, [selectedStyle]: pickerColor },
-      };
-      saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
-      saveSettings(envConfig, settings);
-      setSelectedColor(pickerColor);
-      onHandleHighlight(true);
-    }
-    setShowPicker(false);
-  };
-
-  const handleDeleteUserColor = (hex: string) => {
-    const updatedColors = userColors.filter((c) => c !== hex);
-    const newGlobalReadSettings = { ...globalReadSettings, userHighlightColors: updatedColors };
-    saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
-    saveSettings(envConfig, settings);
-  };
-
   return (
     <div
       className={clsx(
-        'highlight-options absolute flex items-center justify-between',
+        'highlight-options absolute flex items-center justify-between gap-4',
         isVertical ? 'flex-col' : 'flex-row',
       )}
       style={{
@@ -196,82 +151,40 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 
       <div
         className={clsx(
-          'not-eink:bg-gray-700 eink-bordered flex items-center justify-center gap-2 rounded-3xl',
-          isVertical ? 'flex-col py-2' : 'flex-row px-2',
+          'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
+          isVertical ? 'flex-col overflow-y-auto py-2' : 'flex-row overflow-x-auto px-2',
         )}
-        style={isVertical ? { width: size28 } : { height: size28 }}
+        style={{
+          ...(isVertical ? { width: size28 } : { height: size28 }),
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
       >
         {defaultColors
+          .concat(userColors)
           .filter((c) => (isEink ? selectedColor === c : true))
           .map((color) => (
-            <button
-              key={color}
-              onClick={() => handleSelectColor(color)}
-              style={{
-                width: size16,
-                height: size16,
-                backgroundColor: selectedColor !== color ? customColors[color] : 'transparent',
-              }}
-              className='rounded-full p-0'
-            >
-              {selectedColor === color && (
-                <FaCheckCircle
-                  size={size16}
-                  style={{ fill: isEink ? einkFgColor : customColors[color] }}
-                />
-              )}
-            </button>
-          ))}
-
-        {!isEink &&
-          userColors.map((hex) => (
-            <div key={hex} className='group relative flex items-center'>
+            <div key={color} className='flex items-center justify-center'>
               <button
-                onClick={() => handleSelectColor(hex)}
-                style={{ width: size16, height: size16, backgroundColor: hex }}
+                key={color}
+                onClick={() => handleSelectColor(color)}
+                style={{
+                  width: size16,
+                  height: size16,
+                  backgroundColor:
+                    selectedColor !== color ? customColors[color] || color : 'transparent',
+                }}
                 className='rounded-full p-0'
               >
-                {selectedColor === hex && <FaCheckCircle size={size16} style={{ fill: hex }} />}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteUserColor(hex);
-                }}
-                className='absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100'
-              >
-                <MdClose size={8} />
+                {selectedColor === color && (
+                  <FaCheckCircle
+                    size={size16}
+                    style={{ fill: isEink ? einkFgColor : customColors[color] || color }}
+                  />
+                )}
               </button>
             </div>
           ))}
-
-        {!isEink && userColors.length < MAX_USER_HIGHLIGHT_COLORS && (
-          <div className='relative flex items-center' ref={pickerRef}>
-            <button
-              onClick={() => setShowPicker(!showPicker)}
-              style={{ width: size16, height: size16 }}
-              className='flex items-center justify-center rounded-full border border-dashed border-gray-400 p-0'
-            >
-              <FaPlus size={8} className='text-gray-400' />
-            </button>
-            {showPicker && (
-              <div className='absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2'>
-                <SketchPicker
-                  color={pickerColor}
-                  onChange={(c) => setPickerColor(c.hex)}
-                  disableAlpha={true}
-                  width='180px'
-                />
-                <button
-                  onClick={handleAddUserColor}
-                  className='btn btn-xs mt-1 w-full bg-gray-600 text-white'
-                >
-                  Add
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
