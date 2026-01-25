@@ -11,6 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
@@ -45,6 +46,7 @@ const BookItem: React.FC<BookItemProps> = ({
   const router = useRouter();
   const { user } = useAuth();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const iconSize15 = useResponsiveSize(15);
 
   return (
@@ -169,7 +171,9 @@ const BookItem: React.FC<BookItemProps> = ({
                     }
                   }}
                 >
-                  {!book.uploadedAt && <LiaCloudUploadAltSolid size={iconSize15} />}
+                  {!book.uploadedAt && settings.autoUpload && (
+                    <LiaCloudUploadAltSolid size={iconSize15} />
+                  )}
                   {book.uploadedAt && !book.downloadedAt && (
                     <LiaCloudDownloadAltSolid size={iconSize15} />
                   )}
