@@ -936,5 +936,11 @@
   "Model available": "මාදිලිය ලබා ගත හැකිය",
   "Connection": "සම්බන්ධතාවය",
   "Test Connection": "සම්බන්ධතාවය පරීක්ෂා කරන්න",
-  "Connected": "සම්බන්ධ විය"
+  "Connected": "සම්බන්ධ විය",
+  "Custom Colors": "අභිමත වර්ණ",
+  "Color E-Ink Mode": "වර්ණ E-Ink මාදිලිය",
+  "Reading Ruler": "කියවීමේ රූල",
+  "Enable Reading Ruler": "කියවීමේ රූල සක්‍රීය කරන්න",
+  "Lines to Highlight": "මතුකර පෙන්විය යුතු පේළි",
+  "Ruler Color": "රූලේ වර්ණය"
 }

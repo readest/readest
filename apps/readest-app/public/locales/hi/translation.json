@@ -936,5 +936,11 @@
   "Model available": "मॉडल उपलब्ध",
   "Connection": "कनेक्शन",
   "Test Connection": "कनेक्शन परीक्षण",
-  "Connected": "कनेक्टेड"
+  "Connected": "कनेक्टेड",
+  "Custom Colors": "कस्टम रंग",
+  "Color E-Ink Mode": "कलर ई-इंक मोड",
+  "Reading Ruler": "पठन रूलर",
+  "Enable Reading Ruler": "पठन रूलर सक्षम करें",
+  "Lines to Highlight": "हाइलाइट करने के लिए पंक्तियाँ",
+  "Ruler Color": "रूलर का रंग"
 }

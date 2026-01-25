@@ -936,5 +936,11 @@
   "Model available": "Το μοντέλο είναι διαθέσιμο",
   "Connection": "Σύνδεση",
   "Test Connection": "Δοκιμή σύνδεσης",
-  "Connected": "Συνδεδεμένο"
+  "Connected": "Συνδεδεμένο",
+  "Custom Colors": "Προσαρμοσμένα χρώματα",
+  "Color E-Ink Mode": "Λειτουργία έγχρωμου E-Ink",
+  "Reading Ruler": "Χάρακας ανάγνωσης",
+  "Enable Reading Ruler": "Ενεργοποίηση χάρακα ανάγνωσης",
+  "Lines to Highlight": "Γραμμές για επισήμανση",
+  "Ruler Color": "Χρώμα χάρακα"
 }

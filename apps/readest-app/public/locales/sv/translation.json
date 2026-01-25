@@ -936,5 +936,11 @@
   "Model available": "Modell tillgänglig",
   "Connection": "Anslutning",
   "Test Connection": "Testa anslutning",
-  "Connected": "Ansluten"
+  "Connected": "Ansluten",
+  "Custom Colors": "Anpassade färger",
+  "Color E-Ink Mode": "Färg-E-Ink-läge",
+  "Reading Ruler": "Läs-linjal",
+  "Enable Reading Ruler": "Aktivera läs-linjal",
+  "Lines to Highlight": "Rader att markera",
+  "Ruler Color": "Linjalens färg"
 }

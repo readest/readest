@@ -926,5 +926,11 @@
   "Model available": "โมเดลพร้อมใช้งาน",
   "Connection": "การเชื่อมต่อ",
   "Test Connection": "ทดสอบการเชื่อมต่อ",
-  "Connected": "เชื่อมต่อแล้ว"
+  "Connected": "เชื่อมต่อแล้ว",
+  "Custom Colors": "สีที่กำหนดเอง",
+  "Color E-Ink Mode": "โหมด E-Ink สี",
+  "Reading Ruler": "ไม้บรรทัดการอ่าน",
+  "Enable Reading Ruler": "เปิดใช้งานไม้บรรทัดการอ่าน",
+  "Lines to Highlight": "บรรทัดที่ต้องการเน้น",
+  "Ruler Color": "สีไม้บรรทัด"
 }

@@ -956,5 +956,11 @@
   "Model available": "Модель доступна",
   "Connection": "З'єднання",
   "Test Connection": "Перевірити з'єднання",
-  "Connected": "Підключено"
+  "Connected": "Підключено",
+  "Custom Colors": "Спеціальні кольори",
+  "Color E-Ink Mode": "Кольоровий режим E-Ink",
+  "Reading Ruler": "Лінійка для читання",
+  "Enable Reading Ruler": "Увімкнути лінійку для читання",
+  "Lines to Highlight": "Рядки для виділення",
+  "Ruler Color": "Коліර් лінійки"
 }

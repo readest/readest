@@ -926,5 +926,11 @@
   "Model available": "Model tersedia",
   "Connection": "Sambungan",
   "Test Connection": "Uji Sambungan",
-  "Connected": "Disambung"
+  "Connected": "Disambung",
+  "Custom Colors": "Warna Tersuai",
+  "Color E-Ink Mode": "Mod E-Ink Warna",
+  "Reading Ruler": "Pembaris Membaca",
+  "Enable Reading Ruler": "Dayakan Pembaris Membaca",
+  "Lines to Highlight": "Baris untuk Diserlahkan",
+  "Ruler Color": "Warna Pembaris"
 }

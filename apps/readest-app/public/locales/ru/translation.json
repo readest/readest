@@ -956,5 +956,11 @@
   "Model available": "Модель доступна",
   "Connection": "Соединение",
   "Test Connection": "Проверить соединение",
-  "Connected": "Подключено"
+  "Connected": "Подключено",
+  "Custom Colors": "Пользовательские цвета",
+  "Color E-Ink Mode": "Режим цветных электронных чернил",
+  "Reading Ruler": "Линейка для чтения",
+  "Enable Reading Ruler": "Включить линейку для чтения",
+  "Lines to Highlight": "Строк для выделения",
+  "Ruler Color": "Цвет линейки"
 }

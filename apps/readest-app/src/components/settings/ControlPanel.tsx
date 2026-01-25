@@ -43,6 +43,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [animated, setAnimated] = useState(viewSettings.animated);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
+  const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
@@ -146,6 +147,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     applyEinkMode(isEink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEink]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'isColorEink', isColorEink);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isColorEink]);
 
   useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
@@ -366,6 +372,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                     className='toggle'
                     checked={isEink}
                     onChange={() => setIsEink(!isEink)}
+                  />
+                </div>
+              )}
+              {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
+                <div className='config-item'>
+                  <span className=''>{_('Color E-Ink Mode')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle'
+                    disabled={!isEink}
+                    checked={isColorEink}
+                    onChange={() => setIsColorEink(!isColorEink)}
                   />
                 </div>
               )}

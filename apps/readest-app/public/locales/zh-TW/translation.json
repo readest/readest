@@ -926,5 +926,11 @@
   "Model available": "模型可用",
   "Connection": "連線",
   "Test Connection": "測試連線",
-  "Connected": "已連線"
+  "Connected": "已連線",
+  "Custom Colors": "自定義顏色",
+  "Color E-Ink Mode": "彩色墨水屏模式",
+  "Reading Ruler": "閱讀尺",
+  "Enable Reading Ruler": "啟用閱讀尺",
+  "Lines to Highlight": "突出顯示行數",
+  "Ruler Color": "尺子顏色"
 }

@@ -119,8 +119,6 @@ export interface BookLayout {
   maxColumnCount: number;
   maxInlineSize: number;
   maxBlockSize: number;
-  animated: boolean;
-  isEink: boolean;
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
@@ -201,6 +199,10 @@ export interface ViewConfig {
   showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
+
+  animated: boolean;
+  isEink: boolean;
+  isColorEink: boolean;
 
   readingRulerEnabled: boolean;
   readingRulerLines: number;

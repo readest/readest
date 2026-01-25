@@ -936,5 +936,11 @@
   "Model available": "مدل در دسترس است",
   "Connection": "اتصال",
   "Test Connection": "تست اتصال",
-  "Connected": "متصل"
+  "Connected": "متصل",
+  "Custom Colors": "رنگ‌های سفارشی",
+  "Color E-Ink Mode": "حالت جوهر الکترونیک رنگی",
+  "Reading Ruler": "خط‌کش مطالعه",
+  "Enable Reading Ruler": "فعال‌سازی خط‌کش مطالعه",
+  "Lines to Highlight": "خطوط برای تمایز",
+  "Ruler Color": "رنگ خط‌کش"
 }

@@ -976,5 +976,11 @@
   "Model available": "النموذج متاح",
   "Connection": "الاتصال",
   "Test Connection": "اختبار الاتصال",
-  "Connected": "متصل"
+  "Connected": "متصل",
+  "Custom Colors": "ألوان مخصصة",
+  "Color E-Ink Mode": "وضع الحبر الإلكتروني الملون",
+  "Reading Ruler": "مسطرة القراءة",
+  "Enable Reading Ruler": "تفعيل مسطرة القراءة",
+  "Lines to Highlight": "الأسطر المراد تمييزها",
+  "Ruler Color": "لون المسطرة"
 }

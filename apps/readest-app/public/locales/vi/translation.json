@@ -926,5 +926,11 @@
   "Model available": "Mô hình khả dụng",
   "Connection": "Kết nối",
   "Test Connection": "Kiểm tra kết nối",
-  "Connected": "Đã kết nối"
+  "Connected": "Đã kết nối",
+  "Custom Colors": "Màu tùy chỉnh",
+  "Color E-Ink Mode": "Chế độ E-Ink màu",
+  "Reading Ruler": "Thước đọc",
+  "Enable Reading Ruler": "Bật thước đọc",
+  "Lines to Highlight": "Số dòng cần làm nổi bật",
+  "Ruler Color": "Màu thước"
 }
