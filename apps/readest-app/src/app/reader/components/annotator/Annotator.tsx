@@ -86,7 +86,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
   );
-  const [selectedColor, setSelectedColor] = useState<HighlightColor>(
+  const [selectedColor, setSelectedColor] = useState<HighlightColor | string>(
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
   const androidTouchEndRef = useRef(false);

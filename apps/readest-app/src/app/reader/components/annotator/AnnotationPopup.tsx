@@ -23,7 +23,7 @@ interface AnnotationPopupProps {
   trianglePosition: Position;
   highlightOptionsVisible: boolean;
   selectedStyle: HighlightStyle;
-  selectedColor: HighlightColor;
+  selectedColor: HighlightColor | string;
   popupWidth: number;
   popupHeight: number;
   onHighlight: (update?: boolean) => void;
