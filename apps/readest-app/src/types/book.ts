@@ -15,7 +15,8 @@ export type BookFormat =
   | 'MD';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
-export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet';
+// Predefined highlight colors, can be extended with custom hex colors
+export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
 
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 

@@ -61,6 +61,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [customTtsHighlightColors, setCustomTtsHighlightColors] = useState(
     settings.globalReadSettings.customTtsHighlightColors || [],
   );
+  const [userHighlightColors, setUserHighlightColors] = useState(
+    settings.globalReadSettings.userHighlightColors || [],
+  );
 
   const {
     textures: customTextures,
@@ -87,6 +90,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setBackgroundOpacity(0.6);
     setBackgroundSize('cover');
     setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
+    setUserHighlightColors([]);
   };
 
   useEffect(() => {
@@ -253,6 +257,13 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveSettings(envConfig, settings);
   };
 
+  const handleUserHighlightColorsChange = (colors: string[]) => {
+    setUserHighlightColors(colors);
+    settings.globalReadSettings.userHighlightColors = colors;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+  };
+
   return (
     <div className='my-4 w-full space-y-6'>
       {showCustomThemeEditor ? (
@@ -311,7 +322,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
 
           <HighlightColorsEditor
             customHighlightColors={customHighlightColors}
+            userHighlightColors={userHighlightColors}
             onChange={handleHighlightColorsChange}
+            onUserColorsChange={handleUserHighlightColorsChange}
           />
 
           <TTSHighlightStyleEditor
