@@ -26,9 +26,9 @@ import {
 import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
 import { useEnv } from '@/context/EnvContext';
 
-import { Thread } from '@/components/assistant-ui/thread';
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
+import { Thread } from '@/components/assistant/Thread';
 
 // Helper function to convert AIMessage array to ExportedMessageRepository format
 // Each message needs to be wrapped with { message, parentId } structure

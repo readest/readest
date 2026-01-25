@@ -26,14 +26,14 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 
-import { MarkdownText } from '@/components/assistant-ui/markdown-text';
+import { MarkdownText } from './MarkdownText';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/tailwind';
 import type { ScoredChunk } from '@/services/ai/types';
 
 interface ThreadProps {
