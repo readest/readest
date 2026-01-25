@@ -27,6 +27,7 @@ import BackgroundTextureSelector from './color/BackgroundTextureSelector';
 import HighlightColorsEditor from './color/HighlightColorsEditor';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
 import CodeHighlightingSettings from './color/CodeHighlightingSettings';
+import ReadingRulerSettings from './color/ReadingRulerSettings';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -65,6 +66,11 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     settings.globalReadSettings.userHighlightColors || [],
   );
 
+  const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
+  const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
+  const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
+  const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
+
   const {
     textures: customTextures,
     addTexture,
@@ -83,6 +89,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       invertImgColorInDark: setInvertImgColorInDark,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
+      readingRulerEnabled: setReadingRulerEnabled,
+      readingRulerLines: setReadingRulerLines,
+      readingRulerOpacity: setReadingRulerOpacity,
     });
     setThemeColor('default');
     setThemeMode('auto');
@@ -152,6 +161,26 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     applyBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundSize]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerEnabled', readingRulerEnabled, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerEnabled]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerLines', readingRulerLines, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLines]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerOpacity', readingRulerOpacity, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerOpacity]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerColor', readingRulerColor, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerColor]);
 
   const applyBackgroundTexture = () => {
     applyTexture(envConfig, selectedTextureId);
@@ -334,6 +363,17 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onStyleChange={handleTTSStyleChange}
             onColorChange={handleTTSColorChange}
             onCustomColorsChange={handleCustomTtsColorsChange}
+          />
+
+          <ReadingRulerSettings
+            enabled={readingRulerEnabled}
+            lines={readingRulerLines}
+            opacity={readingRulerOpacity}
+            color={readingRulerColor}
+            onEnabledChange={setReadingRulerEnabled}
+            onLinesChange={setReadingRulerLines}
+            onOpacityChange={setReadingRulerOpacity}
+            onColorChange={setReadingRulerColor}
           />
 
           <CodeHighlightingSettings

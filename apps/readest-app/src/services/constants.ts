@@ -7,6 +7,7 @@ import {
   BookStyle,
   HighlightColor,
   NoteExportConfig,
+  ReadingRulerColor,
   ScreenConfig,
   TranslatorConfig,
   TTSConfig,
@@ -99,11 +100,11 @@ export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
   violet: '#a78bfa', // violet-400
 };
 
-export const READING_RULER_COLORS: Record<string, string> = {
+export const READING_RULER_COLORS: Record<ReadingRulerColor, string> = {
+  transparent: '#00000000',
   yellow: '#facc15',
   green: '#4ade80',
   blue: '#60a5fa',
-  violet: '#a78bfa',
   rose: '#fb7185',
 };
 
@@ -256,8 +257,8 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   readingRulerEnabled: false,
   readingRulerLines: 2,
   readingRulerPosition: 33,
-  readingRulerOpacity: 0.3,
-  readingRulerColor: 'yellow',
+  readingRulerOpacity: 0.5,
+  readingRulerColor: 'transparent',
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {

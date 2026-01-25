@@ -74,11 +74,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
 
-  const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
-  const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
-  const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
-  const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
-
   const resetToDefaults = useResetViewSettings();
 
   const handleReset = () => {
@@ -113,9 +108,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showProgressInfo: setShowProgressInfo,
       tapToToggleFooter: setTapToToggleFooter,
       showMarginsOnScroll: setShowMarginsOnScroll,
-      readingRulerEnabled: setReadingRulerEnabled,
-      readingRulerLines: setReadingRulerLines,
-      readingRulerOpacity: setReadingRulerOpacity,
     });
   };
 
@@ -390,26 +382,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenOrientation]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingRulerEnabled', readingRulerEnabled, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readingRulerEnabled]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingRulerLines', readingRulerLines, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readingRulerLines]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingRulerOpacity', readingRulerOpacity, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readingRulerOpacity]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'readingRulerColor', readingRulerColor, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readingRulerColor]);
 
   const langCode = getBookLangCode(bookData?.bookDoc?.metadata?.language);
   const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
@@ -753,71 +725,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 onChange={() => setShowBarsOnScroll(!showBarsOnScroll)}
               />
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Reading Ruler')}</h2>
-        <div className='card bg-base-100 border-base-200 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Enable Reading Ruler')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={readingRulerEnabled}
-                onChange={() => setReadingRulerEnabled(!readingRulerEnabled)}
-              />
-            </div>
-            <NumberInput
-              label={_('Lines to Highlight')}
-              value={readingRulerLines}
-              onChange={setReadingRulerLines}
-              disabled={!readingRulerEnabled}
-              min={1}
-              max={6}
-              step={1}
-            />
-            <div className='config-item'>
-              <span className=''>{_('Ruler Color')}</span>
-              <div className='flex gap-2'>
-                <button
-                  disabled={!readingRulerEnabled}
-                  className={`btn btn-circle btn-sm bg-yellow-400 hover:bg-yellow-500 ${readingRulerColor === 'yellow' ? 'ring-base-content ring-2 ring-offset-1' : ''} ${!readingRulerEnabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => setReadingRulerColor('yellow')}
-                />
-                <button
-                  disabled={!readingRulerEnabled}
-                  className={`btn btn-circle btn-sm bg-green-400 hover:bg-green-500 ${readingRulerColor === 'green' ? 'ring-base-content ring-2 ring-offset-1' : ''} ${!readingRulerEnabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => setReadingRulerColor('green')}
-                />
-                <button
-                  disabled={!readingRulerEnabled}
-                  className={`btn btn-circle btn-sm bg-blue-400 hover:bg-blue-500 ${readingRulerColor === 'blue' ? 'ring-base-content ring-2 ring-offset-1' : ''} ${!readingRulerEnabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => setReadingRulerColor('blue')}
-                />
-                <button
-                  disabled={!readingRulerEnabled}
-                  className={`btn btn-circle btn-sm bg-violet-400 hover:bg-violet-500 ${readingRulerColor === 'violet' ? 'ring-base-content ring-2 ring-offset-1' : ''} ${!readingRulerEnabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => setReadingRulerColor('violet')}
-                />
-                <button
-                  disabled={!readingRulerEnabled}
-                  className={`btn btn-circle btn-sm bg-rose-400 hover:bg-rose-500 ${readingRulerColor === 'rose' ? 'ring-base-content ring-2 ring-offset-1' : ''} ${!readingRulerEnabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => setReadingRulerColor('rose')}
-                />
-              </div>
-            </div>
-            <NumberInput
-              label={_('Opacity')}
-              value={readingRulerOpacity}
-              onChange={setReadingRulerOpacity}
-              disabled={!readingRulerEnabled}
-              min={0.1}
-              max={0.5}
-              step={0.1}
-            />
           </div>
         </div>
       </div>
