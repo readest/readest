@@ -200,6 +200,12 @@ export interface ViewConfig {
   showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
+
+  readingRulerEnabled: boolean;
+  readingRulerLines: number;
+  readingRulerPosition: number;
+  readingRulerOpacity: number;
+  readingRulerColor: 'yellow' | 'green' | 'blue' | 'violet' | 'rose';
 }
 
 export interface TTSConfig {
