@@ -936,5 +936,11 @@
   "Model available": "மாதிரி கிடைக்கிறது",
   "Connection": "இணைப்பு",
   "Test Connection": "இணைப்பைச் சோதிக்கவும்",
-  "Connected": "இணைக்கப்பட்டது"
+  "Connected": "இணைக்கப்பட்டது",
+  "Custom Colors": "தனிப்பயன் வண்ணங்கள்",
+  "Color E-Ink Mode": "வண்ண இ-இங்க் பயன்முறை",
+  "Reading Ruler": "வாசிப்பு அளவுகோல்",
+  "Enable Reading Ruler": "வாசிப்பு அளவுகோலை இயக்கு",
+  "Lines to Highlight": "சிறப்பித்துக் காட்ட வேண்டிய வரிகள்",
+  "Ruler Color": "அளவுகோல் வண்ணம்"
 }

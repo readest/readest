@@ -936,5 +936,11 @@
   "Model available": "Model mevcut",
   "Connection": "Bağlantı",
   "Test Connection": "Bağlantıyı Test Et",
-  "Connected": "Bağlandı"
+  "Connected": "Bağlandı",
+  "Custom Colors": "Özel Renkler",
+  "Color E-Ink Mode": "Renkli E-Ink Modu",
+  "Reading Ruler": "Okuma Cetveli",
+  "Enable Reading Ruler": "Okuma Cetvelini Etkinleştir",
+  "Lines to Highlight": "Vurgulanacak Satırlar",
+  "Ruler Color": "Cetvel Rengi"
 }

@@ -926,5 +926,11 @@
   "Model available": "モデルが利用可能",
   "Connection": "接続",
   "Test Connection": "接続をテスト",
-  "Connected": "接続済み"
+  "Connected": "接続済み",
+  "Custom Colors": "カスタムカラー",
+  "Color E-Ink Mode": "カラー電子ペーパーモード",
+  "Reading Ruler": "リーディングルーラー",
+  "Enable Reading Ruler": "リーディングルーラーを有効にする",
+  "Lines to Highlight": "ハイライトする行数",
+  "Ruler Color": "ルーラーの色"
 }

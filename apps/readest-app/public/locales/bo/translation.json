@@ -926,5 +926,11 @@
   "Model available": "དཔེ་གཞི་ཡོད།",
   "Connection": "འབྲེལ་མཐུད།",
   "Test Connection": "འབྲེལ་མཐུད་ཚོད་ལྟ།",
-  "Connected": "འབྲེལ་མཐུད་ཟིན།"
+  "Connected": "འབྲེལ་མཐུད་ཟིན།",
+  "Custom Colors": "རང་བཟོས་ཚོན་མདོག",
+  "Color E-Ink Mode": "ཚོན་ལྡན་གློག་རྡུལ་སྣག་ཚའི་རྣམ་པ།",
+  "Reading Ruler": "ལྟ་ཀློག་ཐིག་ཤིང་།",
+  "Enable Reading Ruler": "ལྟ་ཀློག་ཐིག་ཤིང་སྤྱོད་པ།",
+  "Lines to Highlight": "མངོན་གསལ་དུ་གཏོང་དགོས་པའི་ཐིག་ཕྲེང་།",
+  "Ruler Color": "ཐིག་ཤིང་ගི་ཚོན་མདོག"
 }

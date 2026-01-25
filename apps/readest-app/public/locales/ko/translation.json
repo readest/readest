@@ -926,5 +926,11 @@
   "Model available": "모델 사용 가능",
   "Connection": "연결",
   "Test Connection": "연결 테스트",
-  "Connected": "연결됨"
+  "Connected": "연결됨",
+  "Custom Colors": "사용자 정의 색상",
+  "Color E-Ink Mode": "컬러 E-Ink 모드",
+  "Reading Ruler": "읽기 자",
+  "Enable Reading Ruler": "읽기 자 활성화",
+  "Lines to Highlight": "강조할 줄 수",
+  "Ruler Color": "자 색상"
 }

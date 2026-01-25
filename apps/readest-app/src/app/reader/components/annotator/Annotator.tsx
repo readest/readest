@@ -304,7 +304,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const onDrawAnnotation = (event: Event) => {
     const viewSettings = getViewSettings(bookKey)!;
-    const isEink = viewSettings.isEink;
+    const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
@@ -318,7 +318,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { writingMode } = defaultView.getComputedStyle(el);
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
-      draw(Overlayer.highlight, { color: isEink ? einkBgColor : hexColor });
+      draw(Overlayer.highlight, { color: isBwEink ? einkBgColor : hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;
@@ -334,7 +334,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
       draw(Overlayer[style as keyof typeof Overlayer], {
         writingMode,
-        color: isEink ? einkFgColor : hexColor,
+        color: isBwEink ? einkFgColor : hexColor,
         padding,
       });
     }

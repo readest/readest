@@ -946,5 +946,11 @@
   "Model available": "Modelo disponível",
   "Connection": "Conexão",
   "Test Connection": "Testar conexão",
-  "Connected": "Conectado"
+  "Connected": "Conectado",
+  "Custom Colors": "Cores personalizadas",
+  "Color E-Ink Mode": "Modo E-Ink colorido",
+  "Reading Ruler": "Régua de leitura",
+  "Enable Reading Ruler": "Ativar régua de leitura",
+  "Lines to Highlight": "Linhas para destacar",
+  "Ruler Color": "Cor da régua"
 }

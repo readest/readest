@@ -46,6 +46,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const { isDarkMode } = useThemeStore();
   const globalReadSettings = settings.globalReadSettings;
   const isEink = settings.globalViewSettings.isEink;
+  const isColorEink = settings.globalViewSettings.isColorEink;
+  const isBwEink = isEink && !isColorEink;
   const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const customColors = globalReadSettings.customHighlightColors;
@@ -117,10 +119,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 height: size16,
                 ...(style === 'highlight' &&
                   selectedStyle === 'highlight' && {
-                    backgroundColor: isEink
+                    backgroundColor: isBwEink
                       ? einkFgColor
                       : getColorHex(customColors, selectedColor),
-                    color: isEink ? einkBgColor : '#d1d5db',
+                    color: isBwEink ? einkBgColor : '#d1d5db',
                     paddingTop: '2px',
                   }),
                 ...(style === 'highlight' &&
@@ -129,12 +131,12 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                     paddingTop: '2px',
                   }),
                 ...((style === 'underline' || style === 'squiggly') && {
-                  color: isEink ? einkFgColor : '#d1d5db',
+                  color: isBwEink ? einkFgColor : '#d1d5db',
                   textDecoration: 'underline',
                   textDecorationThickness: '2px',
                   textDecorationColor:
                     selectedStyle === style
-                      ? isEink
+                      ? isBwEink
                         ? einkFgColor
                         : getColorHex(customColors, selectedColor)
                       : '#d1d5db',
@@ -162,7 +164,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
       >
         {defaultColors
           .concat(userColors)
-          .filter((c) => (isEink ? selectedColor === c : true))
+          .filter((c) => (isBwEink ? selectedColor === c : true))
           .map((color) => (
             <div key={color} className='flex items-center justify-center'>
               <button
@@ -179,7 +181,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 {selectedColor === color && (
                   <FaCheckCircle
                     size={size16}
-                    style={{ fill: isEink ? einkFgColor : customColors[color] || color }}
+                    style={{ fill: isBwEink ? einkFgColor : customColors[color] || color }}
                   />
                 )}
               </button>

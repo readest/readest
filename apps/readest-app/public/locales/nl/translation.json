@@ -936,5 +936,11 @@
   "Model available": "Model beschikbaar",
   "Connection": "Verbinding",
   "Test Connection": "Verbinding testen",
-  "Connected": "Verbonden"
+  "Connected": "Verbonden",
+  "Custom Colors": "Aangepaste kleuren",
+  "Color E-Ink Mode": "Kleur E-Ink modus",
+  "Reading Ruler": "Leesliniaal",
+  "Enable Reading Ruler": "Leesliniaal inschakelen",
+  "Lines to Highlight": "Regels om te markeren",
+  "Ruler Color": "Kleur van liniaal"
 }

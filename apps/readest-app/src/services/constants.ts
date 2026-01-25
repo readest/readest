@@ -165,8 +165,6 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   maxColumnCount: 2,
   maxInlineSize: getDefaultMaxInlineSize(),
   maxBlockSize: getDefaultMaxBlockSize(),
-  animated: false,
-  isEink: false,
   writingMode: 'auto',
   vertical: false,
   rtl: false,
@@ -250,6 +248,10 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showMarginsOnScroll: false,
   progressStyle: 'fraction',
   progressInfoMode: 'all',
+
+  animated: false,
+  isEink: false,
+  isColorEink: false,
 
   readingRulerEnabled: false,
   readingRulerLines: 2,
