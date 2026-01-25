@@ -97,6 +97,7 @@ export abstract class BaseAppService implements AppService {
   isMobileApp = false;
   isPortableApp = false;
   isDesktopApp = false;
+  isAppImage = false;
   isEink = false;
   hasTrafficLight = false;
   hasWindow = false;
