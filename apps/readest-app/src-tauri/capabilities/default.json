@@ -159,6 +159,16 @@
           "name": "start-readest",
           "cmd": "cmd",
           "args": ["/C", "start", "", { "validator": "^.*Readest(.*)\\.exe$" }]
+        },
+        {
+          "name": "chmod-appimage",
+          "cmd": "chmod",
+          "args": ["+x", { "validator": "^.*Readest(.*)\\.AppImage$" }]
+        },
+        {
+          "name": "launch-appimage",
+          "cmd": "setsid",
+          "args": [{ "validator": "^.*Readest(.*)\\.AppImage$" }]
         }
       ]
     },
