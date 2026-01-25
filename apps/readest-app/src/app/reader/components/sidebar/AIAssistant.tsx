@@ -84,7 +84,12 @@ const AIAssistantChat = ({
   currentPage: number;
   onResetIndex: () => void;
 }) => {
-  const { activeConversationId, messages: storedMessages, addMessage } = useAIChatStore();
+  const {
+    activeConversationId,
+    messages: storedMessages,
+    addMessage,
+    isLoadingHistory,
+  } = useAIChatStore();
 
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
@@ -153,41 +158,55 @@ const AIAssistantChat = ({
       adapter={adapter}
       historyAdapter={historyAdapter}
       onResetIndex={onResetIndex}
+      isLoadingHistory={isLoadingHistory}
+      hasActiveConversation={!!activeConversationId}
     />
   );
 };
 
-// separate component to ensure useLocalRuntime is always called with a valid adapter
 const AIAssistantWithRuntime = ({
   adapter,
   historyAdapter,
   onResetIndex,
+  isLoadingHistory,
+  hasActiveConversation,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
   historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
+  isLoadingHistory: boolean;
+  hasActiveConversation: boolean;
 }) => {
   const runtime = useLocalRuntime(adapter, {
     adapters: historyAdapter ? { history: historyAdapter } : undefined,
   });
 
-  // ensure runtime is available before providing it
   if (!runtime) return null;
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <ThreadWrapper onResetIndex={onResetIndex} />
+      <ThreadWrapper
+        onResetIndex={onResetIndex}
+        isLoadingHistory={isLoadingHistory}
+        hasActiveConversation={hasActiveConversation}
+      />
     </AssistantRuntimeProvider>
   );
 };
 
-// inner component that uses useAssistantRuntime (must be inside provider)
-const ThreadWrapper = ({ onResetIndex }: { onResetIndex: () => void }) => {
+const ThreadWrapper = ({
+  onResetIndex,
+  isLoadingHistory,
+  hasActiveConversation,
+}: {
+  onResetIndex: () => void;
+  isLoadingHistory: boolean;
+  hasActiveConversation: boolean;
+}) => {
   const [sources, setSources] = useState(getLastSources());
   const assistantRuntime = useAssistantRuntime();
   const { setActiveConversation } = useAIChatStore();
 
-  // poll for sources updates (adapter stores them)
   useEffect(() => {
     const interval = setInterval(() => {
       setSources(getLastSources());
@@ -202,7 +221,15 @@ const ThreadWrapper = ({ onResetIndex }: { onResetIndex: () => void }) => {
     assistantRuntime.switchToNewThread();
   }, [assistantRuntime, setActiveConversation]);
 
-  return <Thread sources={sources} onClear={handleClear} onResetIndex={onResetIndex} />;
+  return (
+    <Thread
+      sources={sources}
+      onClear={handleClear}
+      onResetIndex={onResetIndex}
+      isLoadingHistory={isLoadingHistory}
+      hasActiveConversation={hasActiveConversation}
+    />
+  );
 };
 
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { FC } from 'react';
+import { useEffect, useRef, type FC } from 'react';
 import {
   ActionBarPrimitive,
   AssistantIf,
@@ -9,11 +9,14 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
   useAssistantState,
+  useThreadViewport,
+  useThread,
 } from '@assistant-ui/react';
 import {
   ArrowUpIcon,
   BookOpenIcon,
   CheckIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CopyIcon,
@@ -37,35 +40,173 @@ interface ThreadProps {
   sources?: ScoredChunk[];
   onClear?: () => void;
   onResetIndex?: () => void;
+  isLoadingHistory?: boolean;
+  hasActiveConversation?: boolean;
 }
 
-export const Thread: FC<ThreadProps> = ({ sources = [], onClear, onResetIndex }) => {
+const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
   return (
-    <ThreadPrimitive.Root className='bg-base-100 flex h-full w-full flex-col items-stretch px-3'>
-      <ThreadPrimitive.Empty>
-        <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
-          <div className='bg-base-content/10 mb-4 rounded-full p-3'>
-            <BookOpenIcon className='text-base-content size-6' />
+    <div
+      className={cn(
+        'absolute inset-0 z-20 flex items-center justify-center',
+        'bg-base-100/60 backdrop-blur-sm',
+        'transition-all duration-300 ease-out',
+        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+      )}
+    >
+      <div className='bg-base-content/10 size-8 animate-pulse rounded-full' />
+    </div>
+  );
+};
+
+const ScrollToBottomButton: FC = () => {
+  const isAtBottom = useThreadViewport((v) => v.isAtBottom);
+  const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
+  const isRunning = useThread((t) => t.isRunning);
+
+  // Don't show button if last message is user with no AI response yet
+  if (lastMessageRole === 'user' && !isRunning) return null;
+
+  return (
+    <ThreadPrimitive.ScrollToBottom
+      className={cn(
+        'absolute bottom-4 left-1/2 z-10',
+        'flex items-center justify-center rounded-full p-2',
+        'bg-base-300 text-base-content',
+        'hover:bg-base-200',
+        'border-base-content/10 border',
+        'shadow-sm',
+        'active:scale-[0.97]',
+        'transition-[opacity,filter,transform] duration-150 ease-out',
+        isAtBottom
+          ? 'pointer-events-none -translate-x-1/2 scale-90 opacity-0 blur-sm'
+          : '-translate-x-1/2 scale-100 opacity-100 blur-0',
+      )}
+      style={{
+        animation: isAtBottom ? 'none' : 'subtleBounce 2.5s ease-in-out infinite',
+      }}
+      aria-hidden={isAtBottom}
+      aria-label='Scroll to bottom'
+    >
+      <ChevronDownIcon className='size-4' />
+      <style>{`
+        @keyframes subtleBounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(1px); }
+        }
+      `}</style>
+    </ThreadPrimitive.ScrollToBottom>
+  );
+};
+
+export const Thread: FC<ThreadProps> = ({
+  sources = [],
+  onClear,
+  onResetIndex,
+  isLoadingHistory = false,
+  hasActiveConversation = false,
+}) => {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
+  const messageCount = useThread((t) => t.messages.length);
+  const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
+  const isRunning = useThread((t) => t.isRunning);
+
+  const showLoading = isLoadingHistory && hasActiveConversation;
+
+  useEffect(() => {
+    if (isInitialMount.current && messageCount > 0 && viewportRef.current) {
+      isInitialMount.current = false;
+      requestAnimationFrame(() => {
+        const viewport = viewportRef.current;
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      });
+    }
+  }, [messageCount]);
+
+  useEffect(() => {
+    if (lastMessageRole === 'user' && viewportRef.current && !isInitialMount.current) {
+      requestAnimationFrame(() => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+
+        const messages = viewport.querySelectorAll('[data-message-role="user"]');
+        const lastUserMessage = messages[messages.length - 1];
+        if (lastUserMessage) {
+          lastUserMessage.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+          });
+        }
+      });
+    }
+  }, [messageCount, lastMessageRole]);
+
+  const getSpacerHeight = () => {
+    if (lastMessageRole === 'user' && !isRunning) {
+      return 'min-h-8';
+    }
+    if (isRunning) {
+      return 'min-h-[50vh]';
+    }
+    if (lastMessageRole === 'assistant') {
+      return 'min-h-4';
+    }
+    return 'min-h-4';
+  };
+
+  return (
+    <ThreadPrimitive.Root className='bg-base-100 relative flex h-full w-full flex-col items-stretch px-3'>
+      <LoadingOverlay isVisible={showLoading} />
+
+      {!hasActiveConversation && (
+        <ThreadPrimitive.Empty>
+          <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
+            <div className='bg-base-content/10 mb-4 rounded-full p-3'>
+              <BookOpenIcon className='text-base-content size-6' />
+            </div>
+            <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
+            <p className='text-base-content/60 mb-4 text-xs'>
+              Get answers based on the book content
+            </p>
+            <Composer onClear={onClear} onResetIndex={onResetIndex} />
           </div>
-          <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
-          <p className='text-base-content/60 mb-4 text-xs'>Get answers based on the book content</p>
-          <Composer onClear={onClear} onResetIndex={onResetIndex} />
-        </div>
-      </ThreadPrimitive.Empty>
+        </ThreadPrimitive.Empty>
+      )}
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <ThreadPrimitive.Viewport className='flex grow flex-col overflow-y-auto scroll-smooth pt-2'>
-          <ThreadPrimitive.Messages
-            components={{
-              UserMessage,
-              EditComposer,
-              AssistantMessage: () => <AssistantMessage sources={sources} />,
-            }}
-          />
-          <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
-            AI can make mistakes. Verify with the book.
-          </p>
-        </ThreadPrimitive.Viewport>
+        <div
+          className={cn(
+            'relative min-h-0 flex-1 transition-opacity duration-300',
+            showLoading ? 'opacity-0' : 'opacity-100',
+          )}
+        >
+          <ThreadPrimitive.Viewport
+            ref={viewportRef}
+            autoScroll={false}
+            className='absolute inset-0 flex flex-col overflow-y-auto scroll-smooth pt-2'
+          >
+            <ThreadPrimitive.Messages
+              components={{
+                UserMessage,
+                EditComposer,
+                AssistantMessage: () => <AssistantMessage sources={sources} />,
+              }}
+            />
+            <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
+              AI can make mistakes. Verify with the book.
+            </p>
+            <div
+              className={cn('flex-shrink transition-all duration-300', getSpacerHeight())}
+              aria-hidden='true'
+            />
+          </ThreadPrimitive.Viewport>
+
+          <ScrollToBottomButton />
+        </div>
+
         <Composer onClear={onClear} onResetIndex={onResetIndex} />
       </AssistantIf>
     </ThreadPrimitive.Root>
@@ -213,7 +354,10 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
 
 const UserMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
+    <MessagePrimitive.Root
+      className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'
+      data-message-role='user'
+    >
       <div className='flex flex-col items-end'>
         <div className='border-base-content/10 bg-base-200 text-base-content relative max-w-[90%] rounded-2xl rounded-br-md border px-3 py-2'>
           <div className='prose prose-xs text-base-content [&_*]:!text-base-content select-text text-sm'>
