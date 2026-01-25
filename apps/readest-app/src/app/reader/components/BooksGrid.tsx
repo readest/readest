@@ -20,6 +20,7 @@ import Ribbon from './Ribbon';
 import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
+import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
 
 interface BooksGridProps {
@@ -185,6 +186,18 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               contentInsets={contentInsets}
               gridInsets={gridInsets}
             />
+            {viewSettings.readingRulerEnabled && !viewState?.loading && (
+              <ReadingRuler
+                bookKey={bookKey}
+                lines={viewSettings.readingRulerLines}
+                position={viewSettings.readingRulerPosition}
+                opacity={viewSettings.readingRulerOpacity}
+                color={viewSettings.readingRulerColor}
+                bookFormat={book.format}
+                viewSettings={viewSettings}
+                gridInsets={gridInsets}
+              />
+            )}
             {showFooter && (
               <ProgressInfoView
                 bookKey={bookKey}
