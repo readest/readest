@@ -79,7 +79,7 @@ export interface BookNote {
   cfi: string;
   text?: string;
   style?: HighlightStyle;
-  color?: HighlightColor;
+  color?: HighlightColor | string;
   note: string;
 
   createdAt: number;

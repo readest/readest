@@ -32,8 +32,9 @@ export interface ReadSettings {
   translateTargetLang: string;
 
   highlightStyle: HighlightStyle;
-  highlightStyles: Record<HighlightStyle, HighlightColor>;
+  highlightStyles: Record<HighlightStyle, HighlightColor | string>;
   customHighlightColors: Record<HighlightColor, string>;
+  userHighlightColors: string[];
   customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
 }

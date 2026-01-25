@@ -117,6 +117,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
     squiggly: 'blue',
   },
   customHighlightColors: HIGHLIGHT_COLOR_HEX,
+  userHighlightColors: [],
   customTtsHighlightColors: [],
 };
 
