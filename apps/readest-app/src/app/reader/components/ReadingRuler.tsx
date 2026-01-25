@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Insets } from '@/types/misc';
 import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
@@ -7,6 +8,7 @@ import { READING_RULER_COLORS } from '@/services/constants';
 
 interface ReadingRulerProps {
   bookKey: string;
+  isVertical: boolean;
   lines: number;
   position: number;
   opacity: number;
@@ -18,7 +20,7 @@ interface ReadingRulerProps {
 
 const FIXED_LAYOUT_LINE_HEIGHT = 28;
 
-const calculateRulerHeight = (
+const calculateRulerSize = (
   lines: number,
   viewSettings: ViewSettings,
   bookFormat: BookFormat,
@@ -33,6 +35,7 @@ const calculateRulerHeight = (
 
 const ReadingRuler: React.FC<ReadingRulerProps> = ({
   bookKey,
+  isVertical,
   lines,
   position,
   opacity,
@@ -44,14 +47,36 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const { envConfig } = useEnv();
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentPosition, setCurrentPosition] = useState(position);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   const isDragging = useRef(false);
 
-  const height = calculateRulerHeight(lines, viewSettings, bookFormat);
+  const rulerSize = calculateRulerSize(lines, viewSettings, bookFormat);
   const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
 
   useEffect(() => {
     setCurrentPosition(position);
   }, [position]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
+        });
+      }
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -60,16 +85,26 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current || !containerRef.current) return;
-    e.preventDefault();
-    e.stopPropagation();
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const relativeY = e.clientY - rect.top;
-    const newPosition = Math.max(0, Math.min(100, (relativeY / rect.height) * 100));
-    setCurrentPosition(newPosition);
-  }, []);
+      const rect = containerRef.current.getBoundingClientRect();
+      let newPosition: number;
+
+      if (isVertical) {
+        const relativeX = e.clientX - rect.left;
+        newPosition = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
+      } else {
+        const relativeY = e.clientY - rect.top;
+        newPosition = Math.max(0, Math.min(100, (relativeY / rect.height) * 100));
+      }
+      setCurrentPosition(newPosition);
+    },
+    [isVertical],
+  );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
@@ -81,33 +116,136 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     [envConfig, bookKey, currentPosition],
   );
 
-  const topOffset = gridInsets.top;
-  const bottomOffset = gridInsets.bottom;
+  const fadeOpacity = Math.min(0.9, opacity);
 
+  // Calculate dimensions based on orientation
+  const containerDimension = isVertical ? containerSize.width : containerSize.height;
+  const rulerCenterPx = (currentPosition / 100) * containerDimension;
+  const rulerStartPx = Math.max(0, rulerCenterPx - rulerSize / 2);
+  const rulerEndPx = Math.min(containerDimension, rulerCenterPx + rulerSize / 2);
+
+  // Map color names to CSS filter values (compatible with iOS Safari)
+  // Uses sepia as base, then hue-rotate to target color
+  const colorToFilter: Record<string, string> = {
+    yellow: `sepia(${opacity}) saturate(2) hue-rotate(0deg) brightness(1)`,
+    green: `sepia(${opacity}) saturate(2) hue-rotate(70deg) brightness(1)`,
+    blue: `sepia(${opacity}) saturate(2) hue-rotate(135deg) brightness(1)`,
+    rose: `sepia(${opacity}) saturate(2) hue-rotate(225deg) brightness(1)`,
+  };
+
+  const cssFilter = colorToFilter[color] || colorToFilter['yellow'];
+
+  // Insets based on orientation
+  const containerStyle = isVertical
+    ? { left: `${gridInsets.left}px`, right: `${gridInsets.right}px` }
+    : { top: `${gridInsets.top}px`, bottom: `${gridInsets.bottom}px` };
+
+  const backdropFilterStyle = {
+    backdropFilter: cssFilter,
+    WebkitBackdropFilter: cssFilter,
+  };
+
+  if (isVertical) {
+    // Vertical ruler (for vertical writing mode - moves left/right)
+    return (
+      <div
+        ref={containerRef}
+        className='pointer-events-none absolute inset-0 z-[5]'
+        style={containerStyle}
+      >
+        {/* Left overlay */}
+        <div
+          className='bg-base-100 pointer-events-none absolute bottom-0 left-0 top-0'
+          style={{
+            width: `${rulerStartPx}px`,
+            opacity: fadeOpacity,
+          }}
+        />
+
+        {/* Right overlay */}
+        <div
+          className='bg-base-100 pointer-events-none absolute bottom-0 right-0 top-0'
+          style={{
+            width: `${containerSize.width - rulerEndPx}px`,
+            opacity: fadeOpacity,
+          }}
+        />
+
+        {/* Vertical ruler */}
+        <div
+          className={clsx(
+            'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize rounded-2xl',
+            color === 'transparent' ? 'border-base-content/55 border' : '',
+          )}
+          style={{
+            left: `${currentPosition}%`,
+            width: `${rulerSize}px`,
+            transform: 'translateX(-50%)',
+            ...(color === 'transparent'
+              ? {
+                  backgroundColor: baseColor,
+                }
+              : backdropFilterStyle),
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          {/* extended touch area */}
+          <div className='absolute inset-y-0 -left-2 -right-2' />
+        </div>
+      </div>
+    );
+  }
+
+  // Horizontal ruler (default - moves up/down)
   return (
     <div
       ref={containerRef}
       className='pointer-events-none absolute inset-0 z-[5]'
-      style={{
-        top: `${topOffset}px`,
-        bottom: `${bottomOffset}px`,
-      }}
+      style={containerStyle}
     >
+      {/* Top overlay */}
       <div
-        className='pointer-events-auto absolute left-0 right-0 cursor-row-resize transition-shadow active:shadow-lg'
+        className='bg-base-100 pointer-events-none absolute left-0 right-0 top-0'
+        style={{
+          height: `${rulerStartPx}px`,
+          opacity: fadeOpacity,
+        }}
+      />
+
+      {/* Bottom overlay */}
+      <div
+        className='bg-base-100 pointer-events-none absolute bottom-0 left-0 right-0'
+        style={{
+          height: `${containerSize.height - rulerEndPx}px`,
+          opacity: fadeOpacity,
+        }}
+      />
+
+      {/* Horizontal ruler */}
+      <div
+        className={clsx(
+          'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize rounded-2xl',
+          color === 'transparent' ? 'border-base-content/55 border' : '',
+        )}
         style={{
           top: `${currentPosition}%`,
-          height: `${height}px`,
-          backgroundColor: baseColor,
-          opacity: opacity,
+          height: `${rulerSize}px`,
           transform: 'translateY(-50%)',
+          ...(color === 'transparent'
+            ? {
+                backgroundColor: baseColor,
+              }
+            : backdropFilterStyle),
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* extended touch area */}
+        {/* Extended touch area */}
         <div className='absolute inset-x-0 -bottom-2 -top-2' />
       </div>
     </div>
