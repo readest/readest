@@ -99,6 +99,14 @@ export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
   violet: '#a78bfa', // violet-400
 };
 
+export const READING_RULER_COLORS: Record<string, string> = {
+  yellow: '#facc15',
+  green: '#4ade80',
+  blue: '#60a5fa',
+  violet: '#a78bfa',
+  rose: '#fb7185',
+};
+
 export const DEFAULT_READSETTINGS: ReadSettings = {
   sideBarWidth: '15%',
   isSideBarPinned: true,
@@ -241,6 +249,12 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showMarginsOnScroll: false,
   progressStyle: 'fraction',
   progressInfoMode: 'all',
+
+  readingRulerEnabled: false,
+  readingRulerLines: 2,
+  readingRulerPosition: 33,
+  readingRulerOpacity: 0.3,
+  readingRulerColor: 'yellow',
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
