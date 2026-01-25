@@ -3,7 +3,9 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Insets } from '@/types/misc';
 import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
+import { useReaderStore } from '@/store/readerStore';
 import { saveViewSettings } from '@/helpers/settings';
+import { eventDispatcher } from '@/utils/event';
 import { READING_RULER_COLORS } from '@/services/constants';
 
 interface ReadingRulerProps {
@@ -45,19 +47,27 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   gridInsets,
 }) => {
   const { envConfig } = useEnv();
+  const { getView } = useReaderStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentPosition, setCurrentPosition] = useState(position);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+  // States for visibility animation (fade in/out)
+  const [isVisible, setIsVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // State for smooth auto-position animation
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
   const isDragging = useRef(false);
+  const lastPageRef = useRef<number | null>(null);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentPositionRef = useRef(position);
 
   const rulerSize = calculateRulerSize(lines, viewSettings, bookFormat);
   const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
 
-  useEffect(() => {
-    setCurrentPosition(position);
-  }, [position]);
-
+  // Track container size for overlay calculations
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -78,10 +88,150 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     return () => resizeObserver.disconnect();
   }, []);
 
+  // Fade in on mount (delayed to prevent flash before content loads)
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 30);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Save position and fade out when reader closes
+  useEffect(() => {
+    const handleClosing = () => {
+      // Save current position before closing
+      saveViewSettings(
+        envConfig,
+        bookKey,
+        'readingRulerPosition',
+        currentPositionRef.current,
+        false,
+        false,
+      );
+      setIsClosing(true);
+    };
+    eventDispatcher.on('reader-closing', handleClosing);
+    return () => eventDispatcher.off('reader-closing', handleClosing);
+  }, [envConfig, bookKey]);
+
+  // Auto-move ruler to first visible text on page change
+  useEffect(() => {
+    const view = getView(bookKey);
+    if (!view?.renderer) return;
+
+    /**
+     * Get the position of the first visible text element.
+     * For horizontal mode: returns top offset
+     * For vertical mode: returns left offset (from right edge, since vertical text flows right-to-left)
+     */
+    const getFirstVisibleTextPosition = (range: Range | null): number | null => {
+      if (!range) return null;
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (!containerRect) return null;
+
+      try {
+        const rects = range.getClientRects();
+        if (rects.length === 0) return null;
+
+        if (isVertical) {
+          // Vertical writing mode: text flows top-to-bottom, columns flow right-to-left
+          // Find the rightmost (first) column's text position
+          const viewportMidY = containerRect.top + containerRect.height / 2;
+          for (let i = 0; i < rects.length; i++) {
+            const rect = rects.item(i);
+            if (!rect || rect.height <= 0 || rect.width <= 0) continue;
+            // Check if this rect is in the upper half of the viewport (first visible line)
+            if (rect.top + rect.height / 2 < viewportMidY) {
+              // Return distance from right edge (since vertical text starts from right)
+              return containerRect.right - rect.right;
+            }
+          }
+          const firstRect = rects.item(0);
+          if (firstRect && firstRect.width > 0) {
+            return containerRect.right - firstRect.right;
+          }
+        } else {
+          // Horizontal writing mode: find first line's top position
+          const viewportMidX = containerRect.left + containerRect.width / 2;
+          for (let i = 0; i < rects.length; i++) {
+            const rect = rects.item(i);
+            if (!rect || rect.height <= 0 || rect.width <= 0) continue;
+            if (rect.left + rect.width / 2 < viewportMidX) {
+              return rect.top - containerRect.top;
+            }
+          }
+          const firstRect = rects.item(0);
+          if (firstRect && firstRect.height > 0) {
+            return firstRect.top - containerRect.top;
+          }
+        }
+      } catch {
+        /* ignore errors from invalid ranges */
+      }
+      return null;
+    };
+
+    const performAutoMove = (range: Range | null) => {
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (!containerRect) return;
+
+      const containerDimension = isVertical ? containerRect.width : containerRect.height;
+      if (containerDimension <= 0) return;
+
+      const textPosition = getFirstVisibleTextPosition(range);
+      const defaultOffset = isVertical
+        ? (viewSettings.marginRightPx ?? 44)
+        : (viewSettings.marginTopPx ?? 44);
+
+      const offset = textPosition ?? defaultOffset;
+      const targetPosition = Math.max(
+        5,
+        Math.min(95, ((offset + rulerSize / 2) / containerDimension) * 100),
+      );
+
+      // Clear any existing animation timeout
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+
+      // Enable animation, update position, then disable animation after transition
+      setShouldAnimate(true);
+      setCurrentPosition(targetPosition);
+      currentPositionRef.current = targetPosition;
+      animationTimeoutRef.current = setTimeout(() => setShouldAnimate(false), 650);
+    };
+
+    const handleRelocate = (e: Event) => {
+      const { range } = (e as CustomEvent).detail ?? {};
+      const currentPage = view.renderer.page;
+
+      // Only auto-move if page actually changed (not on initial load)
+      if (lastPageRef.current !== null && lastPageRef.current !== currentPage) {
+        requestAnimationFrame(() => performAutoMove(range as Range | null));
+      }
+      lastPageRef.current = currentPage;
+    };
+
+    view.renderer.addEventListener('relocate', handleRelocate);
+    return () => {
+      view.renderer.removeEventListener('relocate', handleRelocate);
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, [
+    bookKey,
+    getView,
+    isVertical,
+    viewSettings.marginTopPx,
+    viewSettings.marginRightPx,
+    rulerSize,
+  ]);
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     isDragging.current = true;
+    // Disable animation during manual drag for immediate feedback
+    setShouldAnimate(false);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
@@ -102,6 +252,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         newPosition = Math.max(0, Math.min(100, (relativeY / rect.height) * 100));
       }
       setCurrentPosition(newPosition);
+      currentPositionRef.current = newPosition;
     },
     [isVertical],
   );
@@ -145,12 +296,19 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     WebkitBackdropFilter: cssFilter,
   };
 
+  // Animation transition for smooth auto-positioning
+  const getTransitionStyle = (property: 'left' | 'top') =>
+    shouldAnimate ? `${property} 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none';
+
   if (isVertical) {
     // Vertical ruler (for vertical writing mode - moves left/right)
     return (
       <div
         ref={containerRef}
-        className='pointer-events-none absolute inset-0 z-[5]'
+        className={clsx(
+          'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
+          isVisible && !isClosing ? 'opacity-100' : 'opacity-0',
+        )}
         style={containerStyle}
       >
         {/* Left overlay */}
@@ -181,6 +339,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
             left: `${currentPosition}%`,
             width: `${rulerSize}px`,
             transform: 'translateX(-50%)',
+            transition: getTransitionStyle('left'),
             ...(color === 'transparent'
               ? {
                   backgroundColor: baseColor,
@@ -203,7 +362,10 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   return (
     <div
       ref={containerRef}
-      className='pointer-events-none absolute inset-0 z-[5]'
+      className={clsx(
+        'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
+        isVisible && !isClosing ? 'opacity-100' : 'opacity-0',
+      )}
       style={containerStyle}
     >
       {/* Top overlay */}
@@ -234,6 +396,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           top: `${currentPosition}%`,
           height: `${rulerSize}px`,
           transform: 'translateY(-50%)',
+          transition: getTransitionStyle('top'),
           ...(color === 'transparent'
             ? {
                 backgroundColor: baseColor,
