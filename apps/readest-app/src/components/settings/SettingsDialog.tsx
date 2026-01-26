@@ -13,6 +13,7 @@ import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
@@ -299,7 +300,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               <button
                 onClick={openCommandPalette}
                 aria-label={_('Search Settings')}
-                title={_('Search Settings') + ' (Ctrl+K)'}
+                title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
                 className='btn btn-ghost hidden h-8 min-h-8 w-8 items-center justify-center p-0 sm:flex'
               >
                 <FiSearch size={16} />
