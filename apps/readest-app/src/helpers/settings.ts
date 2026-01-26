@@ -17,7 +17,7 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
   const { settings, isSettingsGlobal, setSettings, saveSettings } = useSettingsStore.getState();
   const { bookKeys, getView, getViewState, getViewSettings, setViewSettings } =
     useReaderStore.getState();
-  const { saveConfig } = useBookDataStore.getState();
+  const { getConfig, saveConfig } = useBookDataStore.getState();
 
   const applyViewSettings = async (bookKey: string) => {
     const viewSettings = getViewSettings(bookKey);
@@ -29,9 +29,9 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
         const view = getView(bookKey);
         view?.renderer.setStyles?.(getStyles(viewSettings));
       }
-      const updatedConfig = useBookDataStore.getState().getConfig(bookKey);
-      if (viewState?.isPrimary && updatedConfig) {
-        await saveConfig(envConfig, bookKey, updatedConfig, settings);
+      const config = getConfig(bookKey);
+      if (viewState?.isPrimary && config) {
+        await saveConfig(envConfig, bookKey, config, settings);
       }
     }
   };
