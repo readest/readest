@@ -304,9 +304,16 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
         />
       ) : (
         <>
-          <ThemeModeSelector themeMode={themeMode} onThemeModeChange={setThemeMode} />
+          <ThemeModeSelector
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            data-setting-id='settings.color.themeMode'
+          />
 
-          <div className='flex items-center justify-between'>
+          <div
+            data-setting-id='settings.color.invertImageInDarkMode'
+            className='flex items-center justify-between'
+          >
             <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
             <input
               type='checkbox'
@@ -317,7 +324,10 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             />
           </div>
 
-          <div className='flex items-center justify-between'>
+          <div
+            data-setting-id='settings.color.overrideBookColor'
+            className='flex items-center justify-between'
+          >
             <h2 className='font-medium'>{_('Override Book Color')}</h2>
             <input
               type='checkbox'
@@ -334,6 +344,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onThemeColorChange={setThemeColor}
             onEditTheme={handleEditTheme}
             onCreateTheme={() => setShowCustomThemeEditor(true)}
+            data-setting-id='settings.color.themeColor'
           />
 
           <BackgroundTextureSelector
@@ -347,6 +358,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onSizeChange={setBackgroundSize}
             onImportImage={handleImportImage}
             onDeleteTexture={handleDeleteCustomTexture}
+            data-setting-id='settings.color.backgroundTexture'
           />
 
           <HighlightColorsEditor
@@ -354,6 +366,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             userHighlightColors={userHighlightColors}
             onChange={handleHighlightColorsChange}
             onUserColorsChange={handleUserHighlightColorsChange}
+            data-setting-id='settings.color.highlightColors'
           />
 
           <TTSHighlightStyleEditor
@@ -363,6 +376,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onStyleChange={handleTTSStyleChange}
             onColorChange={handleTTSColorChange}
             onCustomColorsChange={handleCustomTtsColorsChange}
+            data-setting-id='settings.color.ttsHighlightStyle'
           />
 
           <ReadingRulerSettings
@@ -374,6 +388,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onLinesChange={setReadingRulerLines}
             onOpacityChange={setReadingRulerOpacity}
             onColorChange={setReadingRulerColor}
+            data-setting-id='settings.color.readingRuler'
           />
 
           <CodeHighlightingSettings
@@ -381,6 +396,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             codeLanguage={codeLanguage}
             onToggle={setcodeHighlighting}
             onLanguageChange={setCodeLanguage}
+            data-setting-id='settings.color.codeHighlighting'
           />
         </>
       )}

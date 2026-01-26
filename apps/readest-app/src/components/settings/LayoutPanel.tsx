@@ -389,7 +389,10 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='flex items-center justify-between'>
+      <div
+        data-setting-id='settings.layout.overrideBookLayout'
+        className='flex items-center justify-between'
+      >
         <h2 className='font-medium'>{_('Override Book Layout')}</h2>
         <input
           type='checkbox'
@@ -399,7 +402,10 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         />
       </div>
       {mightBeRTLBook && (
-        <div className='flex items-center justify-between'>
+        <div
+          data-setting-id='settings.layout.writingMode'
+          className='flex items-center justify-between'
+        >
           <h2 className='font-medium'>{_('Writing Mode')}</h2>
           <div className='flex gap-4'>
             <button
@@ -438,7 +444,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       )}
 
       {viewSettings.vertical && (
-        <div className='w-full'>
+        <div className='w-full' data-setting-id='settings.layout.borderFrame'>
           <h2 className='mb-2 font-medium'>{_('Border Frame')}</h2>
           <div className='card bg-base-100 border-base-200 border shadow'>
             <div className='divide-base-200 divide-y'>
@@ -482,6 +488,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={0}
               max={4}
               step={0.1}
+              data-setting-id='settings.layout.paragraphMargin'
             />
             <NumberInput
               label={_('Line Spacing')}
@@ -490,6 +497,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={1.0}
               max={3.0}
               step={0.1}
+              data-setting-id='settings.layout.lineSpacing'
             />
             {langCode !== 'zh' && (
               <NumberInput
@@ -499,6 +507,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 min={-4}
                 max={8}
                 step={0.5}
+                data-setting-id='settings.layout.wordSpacing'
               />
             )}
             <NumberInput
@@ -508,6 +517,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={-2}
               max={4}
               step={0.5}
+              data-setting-id='settings.layout.letterSpacing'
             />
             <NumberInput
               label={_('Text Indent')}
@@ -516,8 +526,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={-2}
               max={4}
               step={1}
+              data-setting-id='settings.layout.paragraphIndent'
             />
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.layout.fullJustification'>
               <span className=''>{_('Full Justification')}</span>
               <input
                 type='checkbox'
@@ -526,7 +537,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 onChange={() => setFullJustification(!fullJustification)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.layout.hyphenation'>
               <span className=''>{_('Hyphenation')}</span>
               <input
                 type='checkbox'
@@ -539,7 +550,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.layout.pageMargins'>
         <h2 className='mb-2 font-medium'>{_('Page')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -589,6 +600,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               onChange={setGapPercent}
               min={0}
               max={30}
+              data-setting-id='settings.layout.pageGap'
             />
             <NumberInput
               label={_('Maximum Number of Columns')}
@@ -596,6 +608,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               onChange={setMaxColumnCount}
               min={1}
               max={4}
+              data-setting-id='settings.layout.maxColumnCount'
             />
             <NumberInput
               label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
@@ -605,6 +618,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={200}
               max={9999}
               step={50}
+              data-setting-id='settings.layout.maxInlineSize'
             />
             <NumberInput
               label={viewSettings.vertical ? _('Maximum Column Width') : _('Maximum Column Height')}
@@ -614,6 +628,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               min={400}
               max={9999}
               step={50}
+              data-setting-id='settings.layout.maxBlockSize'
             />
             <div className='config-item'>
               <span className=''>{_('Apply also in Scrolled Mode')}</span>
@@ -628,7 +643,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.layout.showHeader'>
         <h2 className='mb-2 font-medium'>{_('Header & Footer')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -641,7 +656,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 onChange={() => setShowHeader(!showHeader)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.layout.showFooter'>
               <span className=''>{_('Show Footer')}</span>
               <input
                 type='checkbox'
@@ -694,7 +709,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 onChange={() => setShowProgressInfo(!showProgressInfo)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.layout.progressDisplay'>
               <span className=''>{_('Reading Progress Style')}</span>
               <Select
                 value={progressStyle}
