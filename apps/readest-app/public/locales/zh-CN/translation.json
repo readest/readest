@@ -932,5 +932,21 @@
   "Reading Ruler": "阅读尺",
   "Enable Reading Ruler": "启用阅读尺",
   "Lines to Highlight": "突出显示行数",
-  "Ruler Color": "尺子颜色"
+  "Ruler Color": "尺子颜色",
+  "Command Palette": "命令面板",
+  "Search settings and actions...": "搜索设置和操作...",
+  "No results found for": "未找到结果：",
+  "Type to search settings and actions": "输入以搜索设置和操作",
+  "Recent": "最近",
+  "navigate": "导航",
+  "select": "选择",
+  "close": "关闭",
+  "Search Settings": "搜索设置",
+  "Page Margins": "页边距",
+  "AI Provider": "AI 服务商",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama 模型",
+  "AI Gateway Model": "AI Gateway 模型",
+  "Actions": "操作",
+  "Navigation": "导航"
 }

@@ -622,3 +622,20 @@ foliate-fxl {
 .no-transitions * {
   transition: none !important;
 }
+
+/* settings highlight animation for command palette */
+@keyframes settings-highlight-pulse {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: theme('colors.primary/0.15');
+  }
+}
+
+.settings-highlight {
+  animation: settings-highlight-pulse 0.5s ease-in-out 2;
+  border-radius: 8px;
+}

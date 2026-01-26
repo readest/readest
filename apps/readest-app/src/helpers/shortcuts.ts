@@ -18,6 +18,7 @@ const DEFAULT_SHORTCUTS = {
   onReadAloudSelection: ['ctrl+r', 'cmd+r'],
   onProofreadSelection: ['ctrl+p', 'cmd+p'],
   onOpenFontLayoutSettings: ['shift+f', 'ctrl+,', 'cmd+,'],
+  onOpenCommandPalette: ['ctrl+Shift+p', 'cmd+Shift+p'],
   onOpenBooks: ['ctrl+o'],
   onReloadPage: ['shift+r'],
   onToggleFullscreen: ['F11'],

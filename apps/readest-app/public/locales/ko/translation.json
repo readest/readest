@@ -932,5 +932,21 @@
   "Reading Ruler": "읽기 자",
   "Enable Reading Ruler": "읽기 자 활성화",
   "Lines to Highlight": "강조할 줄 수",
-  "Ruler Color": "자 색상"
+  "Ruler Color": "자 색상",
+  "Command Palette": "명령 팔레트",
+  "Search settings and actions...": "설정 및 작업 검색...",
+  "No results found for": "에 대한 결과를 찾을 수 없음",
+  "Type to search settings and actions": "입력하여 설정 및 작업 검색",
+  "Recent": "최근",
+  "navigate": "탐색",
+  "select": "선택",
+  "close": "닫기",
+  "Search Settings": "설정 검색",
+  "Page Margins": "페이지 여백",
+  "AI Provider": "AI 제공처",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama 모델",
+  "AI Gateway Model": "AI 게이트웨이 모델",
+  "Actions": "작업",
+  "Navigation": "탐색"
 }

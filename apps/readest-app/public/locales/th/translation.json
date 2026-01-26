@@ -932,5 +932,21 @@
   "Reading Ruler": "ไม้บรรทัดการอ่าน",
   "Enable Reading Ruler": "เปิดใช้งานไม้บรรทัดการอ่าน",
   "Lines to Highlight": "บรรทัดที่ต้องการเน้น",
-  "Ruler Color": "สีไม้บรรทัด"
+  "Ruler Color": "สีไม้บรรทัด",
+  "Command Palette": "พาเลทคำสั่ง",
+  "Search settings and actions...": "ค้นหาการตั้งค่าและคำสั่ง...",
+  "No results found for": "ไม่พบผลลัพธ์สำหรับ",
+  "Type to search settings and actions": "พิมพ์เพื่อค้นหาการตั้งค่าและคำสั่ง",
+  "Recent": "ล่าสุด",
+  "navigate": "นำทาง",
+  "select": "เลือก",
+  "close": "ปิด",
+  "Search Settings": "ค้นหาการตั้งค่า",
+  "Page Margins": "ระยะขอบหน้า",
+  "AI Provider": "ผู้ให้บริการ AI",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "โมเดล Ollama",
+  "AI Gateway Model": "โมเดล AI Gateway",
+  "Actions": "การกระทำ",
+  "Navigation": "การนำทาง"
 }

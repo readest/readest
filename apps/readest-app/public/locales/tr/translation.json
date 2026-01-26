@@ -942,5 +942,21 @@
   "Reading Ruler": "Okuma Cetveli",
   "Enable Reading Ruler": "Okuma Cetvelini Etkinleştir",
   "Lines to Highlight": "Vurgulanacak Satırlar",
-  "Ruler Color": "Cetvel Rengi"
+  "Ruler Color": "Cetvel Rengi",
+  "Command Palette": "Komut Paleti",
+  "Search settings and actions...": "Ayarları ve eylemleri ara...",
+  "No results found for": "Şunun için sonuç bulunamadı",
+  "Type to search settings and actions": "Ayarları ve eylemleri aramak için yazın",
+  "Recent": "Son kullanılanlar",
+  "navigate": "gezin",
+  "select": "seç",
+  "close": "kapat",
+  "Search Settings": "Ayarları Ara",
+  "Page Margins": "Sayfa Kenar Boşlukları",
+  "AI Provider": "Yapay Zeka Sağlayıcısı",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama Modeli",
+  "AI Gateway Model": "AI Gateway Modeli",
+  "Actions": "Eylemler",
+  "Navigation": "Gezين"
 }

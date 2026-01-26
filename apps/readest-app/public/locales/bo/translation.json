@@ -932,5 +932,21 @@
   "Reading Ruler": "ལྟ་ཀློག་ཐིག་ཤིང་།",
   "Enable Reading Ruler": "ལྟ་ཀློག་ཐིག་ཤིང་སྤྱོད་པ།",
   "Lines to Highlight": "མངོན་གསལ་དུ་གཏོང་དགོས་པའི་ཐིག་ཕྲེང་།",
-  "Ruler Color": "ཐིག་ཤིང་ගི་ཚོན་མདོག"
+  "Ruler Color": "ཐིག་ཤིང་ගི་ཚོན་མདོག",
+  "Command Palette": "བཀོད་འདོམས་པང་ལེབ།",
+  "Search settings and actions...": "སྒྲིག་བཀོད་དང་བྱ་འགུལ་འཚོལ་བ།...",
+  "No results found for": "འབྲས་བུ་མ་རྙེད་པ།",
+  "Type to search settings and actions": "ཡིག་གཟུགས་ནང་འཇུག་བྱས་ཏེ་སྒྲིག་བཀོད་དང་བྱ་འགུལ་འཚོལ་བ།",
+  "Recent": "ཉེ་ཆར།",
+  "navigate": "འགྲུལ་བཞུད།",
+  "select": "འདེམས་པ།",
+  "close": "ཁ་རྒྱག་པ།",
+  "Search Settings": "སྒྲིག་བཀོད་འཚོལ་བ།",
+  "Page Margins": "ཤོག་ངོས་མཐའ་འགྲམ།",
+  "AI Provider": "ནུས་པའི་རིག་རྩལ་མཁོ་སྤྲོད་པ།",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama དཔེ་གཞི།",
+  "AI Gateway Model": "AI Gateway དཔེ་གཞི།",
+  "Actions": "བྱ་འགུལ།",
+  "Navigation": "འགྲུལ་བཞུད།"
 }

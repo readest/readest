@@ -11,7 +11,9 @@ import { PiDotsThreeVerticalBold, PiRobot } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
+import { FiSearch } from 'react-icons/fi';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
@@ -22,6 +24,7 @@ import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
+import { useCommandPalette } from '@/components/command-palette';
 
 export type SettingsPanelType =
   | 'Font'
@@ -49,8 +52,16 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const closeIconSize = useResponsiveSize(16);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const tabsRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontPanelView, setSettingsDialogOpen } = useSettingsStore();
+  const { setFontPanelView, setSettingsDialogOpen, activeSettingsItemId, setActiveSettingsItemId } =
+    useSettingsStore();
+  const { open: openCommandPalette } = useCommandPalette();
+
+  const handleOpenCommandPalette = () => {
+    openCommandPalette();
+    setSettingsDialogOpen(false);
+  };
 
   const tabConfig = [
     {
@@ -105,6 +116,16 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     localStorage.setItem('lastConfigPanel', tab);
   };
 
+  // sync localStorage and fontPanelView when activePanel changes
+  const activePanelRef = useRef(activePanel);
+  useEffect(() => {
+    if (activePanelRef.current !== activePanel) {
+      activePanelRef.current = activePanel;
+      setFontPanelView('main-fonts');
+      localStorage.setItem('lastConfigPanel', activePanel);
+    }
+  }, [activePanel, setFontPanelView]);
+
   const [resetFunctions, setResetFunctions] = useState<
     Record<SettingsPanelType, (() => void) | null>
   >({
@@ -131,6 +152,46 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleClose = () => {
     setSettingsDialogOpen(false);
   };
+
+  // handle activeSettingsItemId: switch to correct panel and scroll to item
+  useEffect(() => {
+    if (!activeSettingsItemId) return;
+
+    // parse panel from item id (format: settings.panel.itemName)
+    const parts = activeSettingsItemId.split('.');
+    if (parts.length >= 2) {
+      const panelMap: Record<string, SettingsPanelType> = {
+        font: 'Font',
+        layout: 'Layout',
+        color: 'Color',
+        control: 'Control',
+        language: 'Language',
+        ai: 'AI',
+        custom: 'Custom',
+      };
+      const panelKey = parts[1]?.toLowerCase();
+      const targetPanel = panelMap[panelKey || ''];
+      if (targetPanel && targetPanel !== activePanel) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- panel switch based on external navigation is intended
+        setActivePanel(targetPanel);
+      }
+    }
+
+    // scroll to item after panel renders
+    const timeoutId = setTimeout(() => {
+      const element = panelRef.current?.querySelector(
+        `[data-setting-id="${activeSettingsItemId}"]`,
+      );
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('settings-highlight');
+        setTimeout(() => element.classList.remove('settings-highlight'), 2000);
+      }
+      setActiveSettingsItemId(null);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeSettingsItemId, activePanel, setActiveSettingsItemId]);
 
   useEffect(() => {
     setFontPanelView('main-fonts');
@@ -241,6 +302,14 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 ))}
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
+              <button
+                onClick={handleOpenCommandPalette}
+                aria-label={_('Search Settings')}
+                title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
+                className='btn btn-ghost hidden h-8 min-h-8 w-8 items-center justify-center p-0 sm:flex'
+              >
+                <FiSearch />
+              </button>
               <Dropdown
                 label={_('Settings Menu')}
                 className='dropdown-bottom dropdown-end'
@@ -271,7 +340,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         </div>
       }
     >
-      <div role='group' aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}>
+      <div
+        ref={panelRef}
+        role='group'
+        aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}
+      >
         {activePanel === 'Font' && (
           <FontPanel
             bookKey={bookKey}

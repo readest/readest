@@ -942,5 +942,21 @@
   "Reading Ruler": "রিডিং রুলার",
   "Enable Reading Ruler": "রিডিং রুলার সক্ষম করুন",
   "Lines to Highlight": "হাইলাইট করার জন্য লাইন",
-  "Ruler Color": "রুলারের রঙ"
+  "Ruler Color": "রুলারের রঙ",
+  "Command Palette": "কমান্ড প্যালেট",
+  "Search settings and actions...": "সেটিংস এবং অ্যাকশন খুঁজুন...",
+  "No results found for": "এর জন্য কোনো ফলাফল পাওয়া যায়নি",
+  "Type to search settings and actions": "সেটিংস এবং অ্যাকশন খুঁজতে টাইপ করুন",
+  "Recent": "সাম্প্রতিক",
+  "navigate": "নেভিগেট",
+  "select": "নির্বাচন করুন",
+  "close": "বন্ধ করুন",
+  "Search Settings": "সেটিংস খুঁজুন",
+  "Page Margins": "পৃষ্ঠার মার্জিন",
+  "AI Provider": "AI প্রদানকারী",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama মডেল",
+  "AI Gateway Model": "AI গেটওয়ে মডেল",
+  "Actions": "অ্যাকশন",
+  "Navigation": "নেভিগেশন"
 }
