@@ -186,10 +186,11 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               contentInsets={contentInsets}
               gridInsets={gridInsets}
             />
-            {viewSettings.readingRulerEnabled && !viewState?.loading && (
+            {viewSettings.readingRulerEnabled && viewState?.inited && (
               <ReadingRuler
                 bookKey={bookKey}
                 isVertical={viewSettings.vertical}
+                rtl={viewSettings.rtl}
                 lines={viewSettings.readingRulerLines}
                 position={viewSettings.readingRulerPosition}
                 opacity={viewSettings.readingRulerOpacity}
