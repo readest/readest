@@ -11,6 +11,7 @@ import { READING_RULER_COLORS } from '@/services/constants';
 interface ReadingRulerProps {
   bookKey: string;
   isVertical: boolean;
+  rtl: boolean;
   lines: number;
   position: number;
   opacity: number;
@@ -38,6 +39,7 @@ const calculateRulerSize = (
 const ReadingRuler: React.FC<ReadingRulerProps> = ({
   bookKey,
   isVertical,
+  rtl,
   lines,
   position,
   opacity,
@@ -119,8 +121,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
     /**
      * Get the position of the first visible text element.
-     * For horizontal mode: returns top offset
-     * For vertical mode: returns left offset (from right edge, since vertical text flows right-to-left)
+     * For horizontal mode: returns top offset (same for both LTR and RTL)
+     * For vertical-rl mode (Japanese/Chinese): returns distance from right edge
+     * For vertical-lr mode (Mongolian): returns distance from left edge
      */
     const getFirstVisibleTextPosition = (range: Range | null): number | null => {
       if (!range) return null;
@@ -132,21 +135,31 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         if (rects.length === 0) return null;
 
         if (isVertical) {
-          // Vertical writing mode: text flows top-to-bottom, columns flow right-to-left
-          // Find the rightmost (first) column's text position
+          // Vertical writing mode: text flows top-to-bottom
+          // For vertical-rl (rtl=true): columns flow right-to-left, first column is on right
+          // For vertical-lr (rtl=false): columns flow left-to-right, first column is on left
           const viewportMidY = containerRect.top + containerRect.height / 2;
           for (let i = 0; i < rects.length; i++) {
             const rect = rects.item(i);
             if (!rect || rect.height <= 0 || rect.width <= 0) continue;
             // Check if this rect is in the upper half of the viewport (first visible line)
             if (rect.top + rect.height / 2 < viewportMidY) {
-              // Return distance from right edge (since vertical text starts from right)
-              return containerRect.right - rect.right;
+              if (rtl) {
+                // vertical-rl: return distance from right edge
+                return containerRect.right - rect.right;
+              } else {
+                // vertical-lr: return distance from left edge
+                return rect.left - containerRect.left;
+              }
             }
           }
           const firstRect = rects.item(0);
           if (firstRect && firstRect.width > 0) {
-            return containerRect.right - firstRect.right;
+            if (rtl) {
+              return containerRect.right - firstRect.right;
+            } else {
+              return firstRect.left - containerRect.left;
+            }
           }
         } else {
           // Horizontal writing mode: find first line's top position
@@ -177,8 +190,11 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       if (containerDimension <= 0) return;
 
       const textPosition = getFirstVisibleTextPosition(range);
+      // For vertical mode: use marginRight for vertical-rl, marginLeft for vertical-lr
       const defaultOffset = isVertical
-        ? (viewSettings.marginRightPx ?? 44)
+        ? rtl
+          ? (viewSettings.marginRightPx ?? 44)
+          : (viewSettings.marginLeftPx ?? 44)
         : (viewSettings.marginTopPx ?? 44);
 
       const offset = textPosition ?? defaultOffset;
@@ -221,7 +237,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     bookKey,
     getView,
     isVertical,
+    rtl,
     viewSettings.marginTopPx,
+    viewSettings.marginLeftPx,
     viewSettings.marginRightPx,
     rulerSize,
   ]);
