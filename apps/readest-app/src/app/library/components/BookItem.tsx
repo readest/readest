@@ -17,6 +17,7 @@ import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
 import { formatAuthors, formatDescription } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
+import StatusBadge from './StatusBadge';
 import BookCover from '@/components/BookCover';
 
 interface BookItemProps {
@@ -79,6 +80,7 @@ const BookItem: React.FC<BookItemProps> = ({
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
+        <StatusBadge status={book.readingStatus} />
         {isSelectMode && (
           <div className='absolute bottom-1 right-1'>
             {bookSelected ? (
