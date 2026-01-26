@@ -285,16 +285,17 @@ const CommandResultItem: React.FC<CommandResultItemProps> = ({
       {!Icon && <div className='w-8 shrink-0' />}
       <div className='min-w-0 flex-1'>
         <div className='truncate text-sm'>
-          <HighlightChars str={item.localizedLabel} indices={highlightIndices} />
+          <HighlightChars str={_(item.labelKey)} indices={highlightIndices} />
         </div>
         {(item.section || matchContext) && (
           <div className='text-base-content/50 truncate text-xs'>
-            {item.panel && <span>{_(item.panel)}</span>}
+            {item.panel && <span>{_(item.panelLabel ?? item.panel)}</span>}
             {item.panel && item.section && <span> › </span>}
             {item.section && <span>{_(item.section)}</span>}
-            {matchContext && matchContext !== item.section && (
-              <span className='ml-2 italic'>({matchContext})</span>
-            )}
+            {matchContext &&
+              matchContext !== item.section &&
+              matchContext !== item.panelLabel &&
+              matchContext !== item.panel && <span className='ml-2 italic'>({matchContext})</span>}
           </div>
         )}
       </div>

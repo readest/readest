@@ -962,5 +962,21 @@
   "Reading Ruler": "Linijka do czytania",
   "Enable Reading Ruler": "Włącz linijkę do czytania",
   "Lines to Highlight": "Linie do wyróżnienia",
-  "Ruler Color": "Kolor linijki"
+  "Ruler Color": "Kolor linijki",
+  "Command Palette": "Paleta poleceń",
+  "Search settings and actions...": "Szukaj ustawień i akcji...",
+  "No results found for": "Brak wyników dla",
+  "Type to search settings and actions": "Wpisz, aby szukać ustawień i akcji",
+  "Recent": "Ostatnie",
+  "navigate": "nawiguj",
+  "select": "wybierz",
+  "close": "zamknij",
+  "Search Settings": "Szukaj ustawień",
+  "Page Margins": "Marginesy strony",
+  "AI Provider": "Dostawca AI",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Model Ollama",
+  "AI Gateway Model": "Model AI Gateway",
+  "Actions": "Akcje",
+  "Navigation": "Nawigacja"
 }

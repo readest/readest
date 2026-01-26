@@ -195,13 +195,14 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
       if (isCmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         e.stopPropagation();
+        setSettingsDialogOpen(false);
         toggle();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [toggle]);
+  }, [toggle, setSettingsDialogOpen]);
 
   const value = useMemo(
     () => ({

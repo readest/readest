@@ -962,5 +962,21 @@
   "Reading Ruler": "Лінійка для читання",
   "Enable Reading Ruler": "Увімкнути лінійку для читання",
   "Lines to Highlight": "Рядки для виділення",
-  "Ruler Color": "Коліර් лінійки"
+  "Ruler Color": "Коліර් лінійки",
+  "Command Palette": "Палітра команд",
+  "Search settings and actions...": "Пошук налаштувань та дій...",
+  "No results found for": "Результатів не знайдено для",
+  "Type to search settings and actions": "Введіть для пошуку налаштувань та дій",
+  "Recent": "Нещодавні",
+  "navigate": "навігація",
+  "select": "вибрати",
+  "close": "закрити",
+  "Search Settings": "Пошук налаштувань",
+  "Page Margins": "Поля сторінки",
+  "AI Provider": "Провайдер ШІ",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Модель Ollama",
+  "AI Gateway Model": "Модель AI Gateway",
+  "Actions": "Дії",
+  "Navigation": "Навігація"
 }

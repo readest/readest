@@ -58,6 +58,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     useSettingsStore();
   const { open: openCommandPalette } = useCommandPalette();
 
+  const handleOpenCommandPalette = () => {
+    openCommandPalette();
+    setSettingsDialogOpen(false);
+  };
+
   const tabConfig = [
     {
       tab: 'Font',
@@ -298,12 +303,12 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
               <button
-                onClick={openCommandPalette}
+                onClick={handleOpenCommandPalette}
                 aria-label={_('Search Settings')}
                 title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
                 className='btn btn-ghost hidden h-8 min-h-8 w-8 items-center justify-center p-0 sm:flex'
               >
-                <FiSearch size={16} />
+                <FiSearch />
               </button>
               <Dropdown
                 label={_('Settings Menu')}

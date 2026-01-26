@@ -932,5 +932,21 @@
   "Reading Ruler": "Pembaris Membaca",
   "Enable Reading Ruler": "Dayakan Pembaris Membaca",
   "Lines to Highlight": "Baris untuk Diserlahkan",
-  "Ruler Color": "Warna Pembaris"
+  "Ruler Color": "Warna Pembaris",
+  "Command Palette": "Palet Perintah",
+  "Search settings and actions...": "Cari tetapan dan tindakan...",
+  "No results found for": "Tiada hasil dijumpai untuk",
+  "Type to search settings and actions": "Taip untuk mencari tetapan dan tindakan",
+  "Recent": "Baru-baru ini",
+  "navigate": "navigasi",
+  "select": "pilih",
+  "close": "tutup",
+  "Search Settings": "Cari Tetapan",
+  "Page Margins": "Margin Halaman",
+  "AI Provider": "Penyedia AI",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Model Ollama",
+  "AI Gateway Model": "Model AI Gateway",
+  "Actions": "Tindakan",
+  "Navigation": "Navigasi"
 }

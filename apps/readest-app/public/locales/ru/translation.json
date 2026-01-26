@@ -962,5 +962,21 @@
   "Reading Ruler": "Линейка для чтения",
   "Enable Reading Ruler": "Включить линейку для чтения",
   "Lines to Highlight": "Строк для выделения",
-  "Ruler Color": "Цвет линейки"
+  "Ruler Color": "Цвет линейки",
+  "Command Palette": "Палитра команд",
+  "Search settings and actions...": "Поиск настроек и действий...",
+  "No results found for": "Результатов не найдено для",
+  "Type to search settings and actions": "Введите для поиска настроек и действий",
+  "Recent": "Недавние",
+  "navigate": "навигация",
+  "select": "выбрать",
+  "close": "закрыть",
+  "Search Settings": "Поиск настроек",
+  "Page Margins": "Поля страницы",
+  "AI Provider": "Провайдер ИИ",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Модель Ollama",
+  "AI Gateway Model": "Модель AI Gateway",
+  "Actions": "Действия",
+  "Navigation": "Навигация"
 }

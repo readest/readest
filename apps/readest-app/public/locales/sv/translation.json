@@ -942,5 +942,21 @@
   "Reading Ruler": "Läs-linjal",
   "Enable Reading Ruler": "Aktivera läs-linjal",
   "Lines to Highlight": "Rader att markera",
-  "Ruler Color": "Linjalens färg"
+  "Ruler Color": "Linjalens färg",
+  "Command Palette": "Kommandopalett",
+  "Search settings and actions...": "Sök inställningar och åtgärder...",
+  "No results found for": "Inga resultat hittades för",
+  "Type to search settings and actions": "Skriv för att söka inställningar och åtgärder",
+  "Recent": "Senaste",
+  "navigate": "navigera",
+  "select": "välj",
+  "close": "stäng",
+  "Search Settings": "Sök inställningar",
+  "Page Margins": "Sidmarginaler",
+  "AI Provider": "AI-leverantör",
+  "Ollama URL": "Ollama-URL",
+  "Ollama Model": "Ollama-modell",
+  "AI Gateway Model": "AI Gateway-modell",
+  "Actions": "Åtgärder",
+  "Navigation": "Navigering"
 }

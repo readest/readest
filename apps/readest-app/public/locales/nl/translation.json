@@ -942,5 +942,21 @@
   "Reading Ruler": "Leesliniaal",
   "Enable Reading Ruler": "Leesliniaal inschakelen",
   "Lines to Highlight": "Regels om te markeren",
-  "Ruler Color": "Kleur van liniaal"
+  "Ruler Color": "Kleur van liniaal",
+  "Command Palette": "Opdrachtenpalet",
+  "Search settings and actions...": "Zoek instellingen en acties...",
+  "No results found for": "Geen resultaten gevonden voor",
+  "Type to search settings and actions": "Typ om instellingen en acties te zoeken",
+  "Recent": "Recent",
+  "navigate": "navigeren",
+  "select": "selecteren",
+  "close": "sluiten",
+  "Search Settings": "Instellingen zoeken",
+  "Page Margins": "Paginamarges",
+  "AI Provider": "AI-provider",
+  "Ollama URL": "Ollama-URL",
+  "Ollama Model": "Ollama-model",
+  "AI Gateway Model": "AI Gateway-model",
+  "Actions": "Acties",
+  "Navigation": "Navigatie"
 }

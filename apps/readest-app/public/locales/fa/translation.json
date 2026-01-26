@@ -942,5 +942,21 @@
   "Reading Ruler": "خط‌کش مطالعه",
   "Enable Reading Ruler": "فعال‌سازی خط‌کش مطالعه",
   "Lines to Highlight": "خطوط برای تمایز",
-  "Ruler Color": "رنگ خط‌کش"
+  "Ruler Color": "رنگ خط‌کش",
+  "Command Palette": "پالت فرمان",
+  "Search settings and actions...": "جستجوی تنظیمات و عملیات...",
+  "No results found for": "نتیجه‌ای برای این مورد یافت نشد",
+  "Type to search settings and actions": "برای جستجوی تنظیمات و عملیات تایپ کنید",
+  "Recent": "اخیر",
+  "navigate": "ناوبری",
+  "select": "انتخاب",
+  "close": "بستن",
+  "Search Settings": "جستجوی تنظیمات",
+  "Page Margins": "حاشیه‌های صفحه",
+  "AI Provider": "ارائه دهنده هوش مصنوعی",
+  "Ollama URL": "آدرس Ollama",
+  "Ollama Model": "مدل Ollama",
+  "AI Gateway Model": "مدل AI Gateway",
+  "Actions": "عملیات",
+  "Navigation": "ناوبری"
 }

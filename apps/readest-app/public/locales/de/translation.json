@@ -942,5 +942,21 @@
   "Reading Ruler": "Lese-Lineal",
   "Enable Reading Ruler": "Lese-Lineal aktivieren",
   "Lines to Highlight": "Hervorzuhebende Zeilen",
-  "Ruler Color": "Linealfarbe"
+  "Ruler Color": "Linealfarbe",
+  "Command Palette": "Befehlspalette",
+  "Search settings and actions...": "Einstellungen und Aktionen suchen...",
+  "No results found for": "Keine Ergebnisse gefunden für",
+  "Type to search settings and actions": "Tippen, um Einstellungen und Aktionen zu suchen",
+  "Recent": "Zuletzt verwendet",
+  "navigate": "navigieren",
+  "select": "auswählen",
+  "close": "schließen",
+  "Search Settings": "Einstellungen suchen",
+  "Page Margins": "Seitenränder",
+  "AI Provider": "KI-Anbieter",
+  "Ollama URL": "Ollama-URL",
+  "Ollama Model": "Ollama-Modell",
+  "AI Gateway Model": "AI Gateway-Modell",
+  "Actions": "Aktionen",
+  "Navigation": "Navigation"
 }

@@ -952,5 +952,21 @@
   "Reading Ruler": "Righello di lettura",
   "Enable Reading Ruler": "Abilita righello di lettura",
   "Lines to Highlight": "Righe da evidenziare",
-  "Ruler Color": "Colore del righello"
+  "Ruler Color": "Colore del righello",
+  "Command Palette": "Tavolozza dei comandi",
+  "Search settings and actions...": "Cerca impostazioni e azioni...",
+  "No results found for": "Nessun risultato trovato per",
+  "Type to search settings and actions": "Digita per cercare impostazioni e azioni",
+  "Recent": "Recenti",
+  "navigate": "naviga",
+  "select": "seleziona",
+  "close": "chiudi",
+  "Search Settings": "Cerca impostazioni",
+  "Page Margins": "Margini della pagina",
+  "AI Provider": "Fornitore AI",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Modello Ollama",
+  "AI Gateway Model": "Modello AI Gateway",
+  "Actions": "Azioni",
+  "Navigation": "Navigazione"
 }

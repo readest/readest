@@ -8,6 +8,7 @@ import { PiRobot, PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdRefresh } from 'react-icons/md';
 import { IconType } from 'react-icons';
+import { stubTranslation as _ } from '@/utils/misc';
 
 export type CommandCategory = 'settings' | 'actions' | 'navigation';
 
@@ -18,6 +19,7 @@ export interface CommandItem {
   keywords: string[];
   category: CommandCategory;
   panel?: SettingsPanelType;
+  panelLabel?: string;
   section?: string;
   icon?: IconType;
   shortcut?: string[];
@@ -41,6 +43,7 @@ const getSearchableText = (item: CommandItem): string => {
     item.localizedLabel,
     item.labelKey,
     item.panel ?? '',
+    item.panelLabel ?? '',
     item.section ?? '',
     ...item.keywords,
   ]
@@ -79,7 +82,11 @@ const findMatchContext = (entry: FzfResultItem<CommandItem>): string | undefined
   for (const pos of entry.positions) {
     if (pos < labelStart || pos >= labelEnd) {
       // match is in keywords/section/panel area
-      const parts = [entry.item.panel, entry.item.section, ...entry.item.keywords].filter(Boolean);
+      const parts = [
+        entry.item.panelLabel ?? entry.item.panel,
+        entry.item.section,
+        ...entry.item.keywords,
+      ].filter(Boolean);
       for (const part of parts) {
         if (part && searchText.includes(part)) {
           const partStart = searchText.indexOf(part, labelEnd);
@@ -153,55 +160,55 @@ const panelIcons: Record<SettingsPanelType, IconType> = {
 const fontPanelItems = [
   {
     id: 'settings.font.overrideBookFont',
-    labelKey: 'Override Book Font',
+    labelKey: _('Override Book Font'),
     keywords: ['font', 'override', 'book', 'custom'],
     section: 'Font',
   },
   {
     id: 'settings.font.defaultFontSize',
-    labelKey: 'Default Font Size',
+    labelKey: _('Default Font Size'),
     keywords: ['font', 'size', 'default', 'px', 'pixels', 'text'],
     section: 'Font Size',
   },
   {
     id: 'settings.font.minimumFontSize',
-    labelKey: 'Minimum Font Size',
+    labelKey: _('Minimum Font Size'),
     keywords: ['font', 'size', 'minimum', 'min', 'small'],
     section: 'Font Size',
   },
   {
     id: 'settings.font.fontWeight',
-    labelKey: 'Font Weight',
+    labelKey: _('Font Weight'),
     keywords: ['font', 'weight', 'bold', 'light', 'thickness'],
     section: 'Font Weight',
   },
   {
     id: 'settings.font.defaultFont',
-    labelKey: 'Default Font',
+    labelKey: _('Default Font'),
     keywords: ['font', 'family', 'serif', 'sans', 'default'],
     section: 'Font Family',
   },
   {
     id: 'settings.font.cjkFont',
-    labelKey: 'CJK Font',
+    labelKey: _('CJK Font'),
     keywords: ['font', 'cjk', 'chinese', 'japanese', 'korean', 'asian'],
     section: 'Font Family',
   },
   {
     id: 'settings.font.serifFont',
-    labelKey: 'Serif Font',
+    labelKey: _('Serif Font'),
     keywords: ['font', 'serif', 'family', 'typeface'],
     section: 'Font Face',
   },
   {
     id: 'settings.font.sansSerifFont',
-    labelKey: 'Sans-Serif Font',
+    labelKey: _('Sans-Serif Font'),
     keywords: ['font', 'sans', 'serif', 'family', 'typeface'],
     section: 'Font Face',
   },
   {
     id: 'settings.font.monospaceFont',
-    labelKey: 'Monospace Font',
+    labelKey: _('Monospace Font'),
     keywords: ['font', 'monospace', 'mono', 'code', 'fixed', 'width'],
     section: 'Font Face',
   },
@@ -211,109 +218,109 @@ const fontPanelItems = [
 const layoutPanelItems = [
   {
     id: 'settings.layout.overrideBookLayout',
-    labelKey: 'Override Book Layout',
+    labelKey: _('Override Book Layout'),
     keywords: ['layout', 'override', 'book', 'custom'],
     section: 'Layout',
   },
   {
     id: 'settings.layout.writingMode',
-    labelKey: 'Writing Mode',
+    labelKey: _('Writing Mode'),
     keywords: ['writing', 'mode', 'vertical', 'horizontal', 'direction', 'rtl', 'ltr'],
     section: 'Layout',
   },
   {
     id: 'settings.layout.borderFrame',
-    labelKey: 'Border Frame',
+    labelKey: _('Border Frame'),
     keywords: ['border', 'frame', 'vertical', 'mode'],
     section: 'Layout',
   },
   {
     id: 'settings.layout.paragraphMargin',
-    labelKey: 'Paragraph Margin',
+    labelKey: _('Paragraph Margin'),
     keywords: ['paragraph', 'margin', 'spacing', 'gap'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.lineSpacing',
-    labelKey: 'Line Spacing',
+    labelKey: _('Line Spacing'),
     keywords: ['line', 'spacing', 'height', 'leading'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.wordSpacing',
-    labelKey: 'Word Spacing',
+    labelKey: _('Word Spacing'),
     keywords: ['word', 'spacing', 'gap'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.letterSpacing',
-    labelKey: 'Letter Spacing',
+    labelKey: _('Letter Spacing'),
     keywords: ['letter', 'spacing', 'tracking', 'character'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.paragraphIndent',
-    labelKey: 'Paragraph Indent',
+    labelKey: _('Text Indent'),
     keywords: ['paragraph', 'indent', 'first', 'line'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.fullJustification',
-    labelKey: 'Full Justification',
+    labelKey: _('Full Justification'),
     keywords: ['justify', 'justification', 'alignment', 'text', 'full'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.hyphenation',
-    labelKey: 'Hyphenation',
+    labelKey: _('Hyphenation'),
     keywords: ['hyphen', 'hyphenation', 'break', 'word'],
     section: 'Paragraph',
   },
   {
     id: 'settings.layout.pageMargins',
-    labelKey: 'Page Margins',
+    labelKey: _('Page Margins'),
     keywords: ['page', 'margin', 'edge', 'border'],
     section: 'Page',
   },
   {
     id: 'settings.layout.pageGap',
-    labelKey: 'Page Gap',
+    labelKey: _('Column Gap (%)'),
     keywords: ['page', 'gap', 'spacing', 'gutter'],
     section: 'Page',
   },
   {
     id: 'settings.layout.maxColumnCount',
-    labelKey: 'Max Column Count',
+    labelKey: _('Maximum Number of Columns'),
     keywords: ['column', 'columns', 'max', 'count', 'multi'],
     section: 'Page',
   },
   {
     id: 'settings.layout.maxInlineSize',
-    labelKey: 'Max Inline Size',
+    labelKey: _('Maximum Column Width'),
     keywords: ['width', 'max', 'inline', 'size', 'column'],
     section: 'Page',
   },
   {
     id: 'settings.layout.maxBlockSize',
-    labelKey: 'Max Block Size',
+    labelKey: _('Maximum Column Height'),
     keywords: ['height', 'max', 'block', 'size'],
     section: 'Page',
   },
   {
     id: 'settings.layout.showHeader',
-    labelKey: 'Show Header',
+    labelKey: _('Show Header'),
     keywords: ['header', 'show', 'top', 'bar', 'title'],
     section: 'Header & Footer',
   },
   {
     id: 'settings.layout.showFooter',
-    labelKey: 'Show Footer',
+    labelKey: _('Show Footer'),
     keywords: ['footer', 'show', 'bottom', 'bar', 'page', 'number'],
     section: 'Header & Footer',
   },
   {
     id: 'settings.layout.progressDisplay',
-    labelKey: 'Progress Display',
+    labelKey: _('Reading Progress Style'),
     keywords: ['progress', 'display', 'page', 'number', 'percentage'],
     section: 'Header & Footer',
   },
@@ -323,55 +330,55 @@ const layoutPanelItems = [
 const colorPanelItems = [
   {
     id: 'settings.color.themeMode',
-    labelKey: 'Theme Mode',
+    labelKey: _('Theme Mode'),
     keywords: ['theme', 'mode', 'dark', 'light', 'auto', 'system'],
     section: 'Theme',
   },
   {
     id: 'settings.color.invertImageInDarkMode',
-    labelKey: 'Invert Image In Dark Mode',
+    labelKey: _('Invert Image In Dark Mode'),
     keywords: ['invert', 'image', 'dark', 'mode', 'photo'],
     section: 'Theme',
   },
   {
     id: 'settings.color.overrideBookColor',
-    labelKey: 'Override Book Color',
+    labelKey: _('Override Book Color'),
     keywords: ['override', 'book', 'color', 'custom'],
     section: 'Theme',
   },
   {
     id: 'settings.color.themeColor',
-    labelKey: 'Theme Color',
+    labelKey: _('Theme Color'),
     keywords: ['theme', 'color', 'palette', 'accent'],
     section: 'Theme',
   },
   {
     id: 'settings.color.backgroundTexture',
-    labelKey: 'Background Texture',
-    keywords: ['background', 'texture', 'paper', 'pattern'],
+    labelKey: _('Background Image'),
+    keywords: ['background', 'texture', 'image', 'paper', 'pattern'],
     section: 'Theme',
   },
   {
     id: 'settings.color.highlightColors',
-    labelKey: 'Highlight Colors',
+    labelKey: _('Highlight Colors'),
     keywords: ['highlight', 'color', 'annotation', 'marker'],
     section: 'Highlight',
   },
   {
     id: 'settings.color.ttsHighlightStyle',
-    labelKey: 'TTS Highlight Style',
+    labelKey: _('TTS Highlighting'),
     keywords: ['tts', 'highlight', 'style', 'speech', 'read', 'aloud'],
     section: 'Highlight',
   },
   {
     id: 'settings.color.readingRuler',
-    labelKey: 'Reading Ruler',
+    labelKey: _('Reading Ruler'),
     keywords: ['reading', 'ruler', 'line', 'guide', 'focus'],
     section: 'Reading',
   },
   {
     id: 'settings.color.codeHighlighting',
-    labelKey: 'Code Highlighting',
+    labelKey: _('Code Highlighting'),
     keywords: ['code', 'highlighting', 'syntax', 'programming'],
     section: 'Code',
   },
@@ -381,85 +388,85 @@ const colorPanelItems = [
 const controlPanelItems = [
   {
     id: 'settings.control.scrolledMode',
-    labelKey: 'Scrolled Mode',
+    labelKey: _('Scrolled Mode'),
     keywords: ['scroll', 'scrolled', 'mode', 'paginate', 'continuous'],
     section: 'Scroll',
   },
   {
     id: 'settings.control.continuousScroll',
-    labelKey: 'Continuous Scroll',
+    labelKey: _('Continuous Scroll'),
     keywords: ['continuous', 'scroll', 'endless', 'infinite'],
     section: 'Scroll',
   },
   {
     id: 'settings.control.overlapPixels',
-    labelKey: 'Overlap Pixels',
+    labelKey: _('Overlap Pixels'),
     keywords: ['overlap', 'pixels', 'scroll', 'offset'],
     section: 'Scroll',
   },
   {
     id: 'settings.control.clickToPaginate',
-    labelKey: 'Click to Paginate',
+    labelKey: _('Click to Paginate'),
     keywords: ['click', 'tap', 'paginate', 'page', 'turn'],
     section: 'Pagination',
   },
   {
     id: 'settings.control.clickBothSides',
-    labelKey: 'Click Both Sides',
+    labelKey: _('Click Both Sides'),
     keywords: ['click', 'tap', 'both', 'sides', 'fullscreen'],
     section: 'Pagination',
   },
   {
     id: 'settings.control.swapClickSides',
-    labelKey: 'Swap Click Sides',
+    labelKey: _('Swap Click Sides'),
     keywords: ['swap', 'click', 'tap', 'sides', 'reverse'],
     section: 'Pagination',
   },
   {
     id: 'settings.control.disableDoubleClick',
-    labelKey: 'Disable Double Click',
+    labelKey: _('Disable Double Click'),
     keywords: ['disable', 'double', 'click', 'tap'],
     section: 'Pagination',
   },
   {
     id: 'settings.control.enableQuickActions',
-    labelKey: 'Enable Quick Actions',
+    labelKey: _('Enable Quick Actions'),
     keywords: ['quick', 'actions', 'annotation', 'enable'],
     section: 'Annotation Tools',
   },
   {
     id: 'settings.control.quickAction',
-    labelKey: 'Quick Action',
+    labelKey: _('Quick Action'),
     keywords: ['quick', 'action', 'annotation', 'highlight', 'copy'],
     section: 'Annotation Tools',
   },
   {
     id: 'settings.control.copyToNotebook',
-    labelKey: 'Copy to Notebook',
+    labelKey: _('Copy to Notebook'),
     keywords: ['copy', 'notebook', 'annotation', 'excerpt'],
     section: 'Annotation Tools',
   },
   {
     id: 'settings.control.pagingAnimation',
-    labelKey: 'Paging Animation',
+    labelKey: _('Paging Animation'),
     keywords: ['paging', 'animation', 'transition', 'effect'],
     section: 'Animation',
   },
   {
     id: 'settings.control.einkMode',
-    labelKey: 'E-Ink Mode',
+    labelKey: _('E-Ink Mode'),
     keywords: ['eink', 'e-ink', 'kindle', 'e-reader', 'epaper'],
     section: 'Device',
   },
   {
     id: 'settings.control.colorEinkMode',
-    labelKey: 'Color E-Ink Mode',
+    labelKey: _('Color E-Ink Mode'),
     keywords: ['color', 'eink', 'e-ink', 'kaleido'],
     section: 'Device',
   },
   {
     id: 'settings.control.allowJavascript',
-    labelKey: 'Allow JavaScript',
+    labelKey: _('Allow JavaScript'),
     keywords: ['javascript', 'js', 'script', 'security', 'allow'],
     section: 'Security',
   },
@@ -469,43 +476,43 @@ const controlPanelItems = [
 const languagePanelItems = [
   {
     id: 'settings.language.interfaceLanguage',
-    labelKey: 'Interface Language',
+    labelKey: _('Interface Language'),
     keywords: ['interface', 'language', 'locale', 'ui', 'translation'],
     section: 'Language',
   },
   {
     id: 'settings.language.translationEnabled',
-    labelKey: 'Enable Translation',
+    labelKey: _('Enable Translation'),
     keywords: ['translation', 'translate', 'enable', 'language'],
     section: 'Translation',
   },
   {
     id: 'settings.language.translationProvider',
-    labelKey: 'Translation Provider',
+    labelKey: _('Translation Service'),
     keywords: ['translation', 'provider', 'google', 'deepl', 'service'],
     section: 'Translation',
   },
   {
     id: 'settings.language.targetLanguage',
-    labelKey: 'Target Language',
+    labelKey: _('Translate To'),
     keywords: ['target', 'language', 'translation', 'destination'],
     section: 'Translation',
   },
   {
     id: 'settings.language.ttsTextTranslation',
-    labelKey: 'TTS Text Translation',
+    labelKey: _('TTS Text'),
     keywords: ['tts', 'text', 'translation', 'speech', 'read'],
     section: 'Translation',
   },
   {
     id: 'settings.language.quotationMarks',
-    labelKey: 'Quotation Marks',
+    labelKey: _('Replace Quotation Marks'),
     keywords: ['quotation', 'marks', 'quotes', 'punctuation', 'cjk'],
     section: 'Punctuation',
   },
   {
     id: 'settings.language.chineseConversion',
-    labelKey: 'Chinese Conversion',
+    labelKey: _('Convert Simplified and Traditional Chinese'),
     keywords: ['chinese', 'conversion', 'simplified', 'traditional', 'cjk'],
     section: 'Chinese',
   },
@@ -515,37 +522,37 @@ const languagePanelItems = [
 const aiPanelItems = [
   {
     id: 'settings.ai.enableAssistant',
-    labelKey: 'Enable AI Assistant',
+    labelKey: _('Enable AI Assistant'),
     keywords: ['ai', 'assistant', 'enable', 'chatbot', 'llm'],
     section: 'AI',
   },
   {
     id: 'settings.ai.provider',
-    labelKey: 'AI Provider',
+    labelKey: _('AI Provider'),
     keywords: ['ai', 'provider', 'ollama', 'gateway', 'service'],
     section: 'AI',
   },
   {
     id: 'settings.ai.ollamaUrl',
-    labelKey: 'Ollama URL',
+    labelKey: _('Ollama URL'),
     keywords: ['ollama', 'url', 'server', 'endpoint', 'api'],
     section: 'Ollama',
   },
   {
     id: 'settings.ai.ollamaModel',
-    labelKey: 'Ollama Model',
+    labelKey: _('Ollama Model'),
     keywords: ['ollama', 'model', 'llama', 'mistral', 'gemma'],
     section: 'Ollama',
   },
   {
     id: 'settings.ai.gatewayApiKey',
-    labelKey: 'API Key',
+    labelKey: _('API Key'),
     keywords: ['api', 'key', 'gateway', 'token', 'secret'],
     section: 'AI Gateway',
   },
   {
     id: 'settings.ai.gatewayModel',
-    labelKey: 'AI Gateway Model',
+    labelKey: _('AI Gateway Model'),
     keywords: ['gateway', 'model', 'openai', 'gpt', 'claude'],
     section: 'AI Gateway',
   },
@@ -555,15 +562,63 @@ const aiPanelItems = [
 const customPanelItems = [
   {
     id: 'settings.custom.contentCss',
-    labelKey: 'Custom Content CSS',
+    labelKey: _('Custom Content CSS'),
     keywords: ['custom', 'css', 'content', 'style', 'book'],
     section: 'Custom CSS',
   },
   {
     id: 'settings.custom.readerUiCss',
-    labelKey: 'Custom Reader UI CSS',
+    labelKey: _('Custom Reader UI CSS'),
     keywords: ['custom', 'css', 'reader', 'ui', 'interface'],
     section: 'Custom CSS',
+  },
+];
+
+const actionItems = [
+  {
+    id: 'action.toggleTheme',
+    labelKey: _('Theme Mode'),
+    keywords: ['theme', 'dark', 'light', 'auto', 'mode', 'toggle'],
+  },
+  {
+    id: 'action.fullscreen',
+    labelKey: _('Fullscreen'),
+    keywords: ['fullscreen', 'full', 'screen', 'maximize', 'window'],
+  },
+  {
+    id: 'action.alwaysOnTop',
+    labelKey: _('Always on Top'),
+    keywords: ['always', 'top', 'pin', 'window', 'float'],
+  },
+  {
+    id: 'action.screenWakeLock',
+    labelKey: _('Keep Screen Awake'),
+    keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
+  },
+  {
+    id: 'action.autoUpload',
+    labelKey: _('Auto Upload Books to Cloud'),
+    keywords: ['auto', 'upload', 'cloud', 'sync', 'backup'],
+  },
+  {
+    id: 'action.reload',
+    labelKey: _('Reload Page'),
+    keywords: ['reload', 'refresh', 'page'],
+  },
+  {
+    id: 'action.openLastBooks',
+    labelKey: _('Open Last Book on Start'),
+    keywords: ['open', 'last', 'book', 'start', 'resume'],
+  },
+  {
+    id: 'action.about',
+    labelKey: _('About Readest'),
+    keywords: ['about', 'readest', 'version', 'info'],
+  },
+  {
+    id: 'action.telemetry',
+    labelKey: _('Help improve Readest'),
+    keywords: ['telemetry', 'analytics', 'improve', 'statistics'],
   },
 ];
 
@@ -591,6 +646,7 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
   const createSettingsItem = (
     def: { id: string; labelKey: string; keywords: string[]; section?: string },
     panel: SettingsPanelType,
+    panelLabel?: string,
   ): CommandItem => ({
     id: def.id,
     labelKey: def.labelKey,
@@ -598,6 +654,7 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     keywords: def.keywords,
     category: 'settings',
     panel,
+    panelLabel: _(panelLabel ?? panel),
     section: def.section,
     icon: panelIcons[panel],
     action: () => openSettingsPanel(panel, def.id),
@@ -620,7 +677,7 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
 
   // add control panel items
   for (const def of controlPanelItems) {
-    items.push(createSettingsItem(def, 'Control'));
+    items.push(createSettingsItem(def, 'Control', 'Behavior'));
   }
 
   // add language panel items
@@ -647,91 +704,92 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     return themeMode === 'dark' ? PiMoon : themeMode === 'light' ? PiSun : TbSunMoon;
   };
 
-  items.push({
-    id: 'action.toggleTheme',
-    labelKey: 'Toggle Theme Mode',
-    localizedLabel: _('Toggle Theme Mode'),
-    keywords: ['theme', 'dark', 'light', 'auto', 'mode', 'toggle'],
-    category: 'actions',
-    icon: getThemeIcon(),
-    action: options.toggleTheme,
-  });
+  const createActionItem = (def: {
+    id: string;
+    action: () => void;
+    icon?: IconType;
+    isAvailable?: () => boolean;
+  }): CommandItem => {
+    const item = actionItems.find((item) => item.id === def.id);
+    if (!item) throw new Error(`Action item definition not found for id: ${def.id}`);
+    return {
+      id: def.id,
+      labelKey: item.labelKey,
+      localizedLabel: _(item.labelKey),
+      keywords: item.keywords,
+      icon: def.icon ?? getThemeIcon(),
+      category: 'actions',
+      action: def.action,
+      isAvailable: def.isAvailable,
+    };
+  };
 
-  items.push({
-    id: 'action.fullscreen',
-    labelKey: 'Fullscreen',
-    localizedLabel: _('Fullscreen'),
-    keywords: ['fullscreen', 'full', 'screen', 'maximize', 'window'],
-    category: 'actions',
-    action: options.toggleFullscreen,
-    isAvailable: () => isDesktop,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.toggleTheme',
+      action: options.toggleTheme,
+    }),
+  );
 
-  items.push({
-    id: 'action.alwaysOnTop',
-    labelKey: 'Always on Top',
-    localizedLabel: _('Always on Top'),
-    keywords: ['always', 'top', 'pin', 'window', 'float'],
-    category: 'actions',
-    action: options.toggleAlwaysOnTop,
-    isAvailable: () => isDesktop,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.fullscreen',
+      action: options.toggleFullscreen,
+      isAvailable: () => isDesktop,
+    }),
+  );
 
-  items.push({
-    id: 'action.screenWakeLock',
-    labelKey: 'Keep Screen Awake',
-    localizedLabel: _('Keep Screen Awake'),
-    keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
-    category: 'actions',
-    action: options.toggleScreenWakeLock,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.alwaysOnTop',
+      action: options.toggleAlwaysOnTop,
+      isAvailable: () => isDesktop,
+    }),
+  );
 
-  items.push({
-    id: 'action.autoUpload',
-    labelKey: 'Auto Upload Books to Cloud',
-    localizedLabel: _('Auto Upload Books to Cloud'),
-    keywords: ['auto', 'upload', 'cloud', 'sync', 'backup'],
-    category: 'actions',
-    action: options.toggleAutoUpload,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.screenWakeLock',
+      action: options.toggleScreenWakeLock,
+    }),
+  );
 
-  items.push({
-    id: 'action.reload',
-    labelKey: 'Reload Page',
-    localizedLabel: _('Reload Page'),
-    keywords: ['reload', 'refresh', 'page'],
-    category: 'actions',
-    icon: MdRefresh,
-    action: options.reloadPage,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.autoUpload',
+      action: options.toggleAutoUpload,
+    }),
+  );
 
-  items.push({
-    id: 'action.openLastBooks',
-    labelKey: 'Open Last Book on Start',
-    localizedLabel: _('Open Last Book on Start'),
-    keywords: ['open', 'last', 'book', 'start', 'resume'],
-    category: 'actions',
-    action: options.toggleOpenLastBooks,
-    isAvailable: () => isDesktop,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.reload',
+      icon: MdRefresh,
+      action: options.reloadPage,
+    }),
+  );
 
-  items.push({
-    id: 'action.about',
-    labelKey: 'About Readest',
-    localizedLabel: _('About Readest'),
-    keywords: ['about', 'readest', 'version', 'info'],
-    category: 'actions',
-    action: options.showAbout,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.openLastBooks',
+      action: options.toggleOpenLastBooks,
+      isAvailable: () => isDesktop,
+    }),
+  );
 
-  items.push({
-    id: 'action.telemetry',
-    labelKey: 'Help improve Readest',
-    localizedLabel: _('Help improve Readest'),
-    keywords: ['telemetry', 'analytics', 'improve', 'statistics'],
-    category: 'actions',
-    action: options.toggleTelemetry,
-  });
+  items.push(
+    createActionItem({
+      id: 'action.about',
+      action: options.showAbout,
+    }),
+  );
+
+  items.push(
+    createActionItem({
+      id: 'action.telemetry',
+      action: options.toggleTelemetry,
+    }),
+  );
 
   return items;
 };
