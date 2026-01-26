@@ -63,7 +63,7 @@
     "@aws-sdk/s3-request-presigner": "^3.735.0",
     "@choochmeque/tauri-plugin-sharekit-api": "^0.3.0",
     "@fabianlars/tauri-plugin-oauth": "2",
-    "@opennextjs/cloudflare": "^1.14.7",
+    "@opennextjs/cloudflare": "^1.15.1",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -192,6 +192,6 @@
     "typescript": "^5.7.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.15",
-    "wrangler": "^4.56.0"
+    "wrangler": "^4.60.0"
   }
 }
