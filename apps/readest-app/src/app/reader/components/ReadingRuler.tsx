@@ -5,8 +5,8 @@ import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { saveViewSettings } from '@/helpers/settings';
-import { eventDispatcher } from '@/utils/event';
 import { READING_RULER_COLORS } from '@/services/constants';
+import { throttle } from '@/utils/throttle';
 
 interface ReadingRulerProps {
   bookKey: string;
@@ -49,25 +49,33 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   gridInsets,
 }) => {
   const { envConfig } = useEnv();
-  const { getView } = useReaderStore();
+  const { getProgress } = useReaderStore();
+  const progress = getProgress(bookKey);
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentPosition, setCurrentPosition] = useState(position);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // States for visibility animation (fade in/out)
+  // State for visibility animation (fade in)
   const [isVisible, setIsVisible] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
 
   // State for smooth auto-position animation
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const isDragging = useRef(false);
   const lastPageRef = useRef<number | null>(null);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPositionRef = useRef(position);
 
   const rulerSize = calculateRulerSize(lines, viewSettings, bookFormat);
   const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const throttledSave = useCallback(
+    throttle((pos: number) => {
+      saveViewSettings(envConfig, bookKey, 'readingRulerPosition', pos, false, false);
+    }, 10000),
+    [envConfig, bookKey],
+  );
 
   // Track container size for overlay calculations
   useEffect(() => {
@@ -96,28 +104,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Save position and fade out when reader closes
-  useEffect(() => {
-    const handleClosing = () => {
-      // Save current position before closing
-      saveViewSettings(
-        envConfig,
-        bookKey,
-        'readingRulerPosition',
-        currentPositionRef.current,
-        false,
-        false,
-      );
-      setIsClosing(true);
-    };
-    eventDispatcher.on('reader-closing', handleClosing);
-    return () => eventDispatcher.off('reader-closing', handleClosing);
-  }, [envConfig, bookKey]);
-
   // Auto-move ruler to first visible text on page change
   useEffect(() => {
-    const view = getView(bookKey);
-    if (!view?.renderer) return;
+    if (!progress?.pageinfo) return;
 
     /**
      * Get the position of the first visible text element.
@@ -212,36 +201,34 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       setShouldAnimate(true);
       setCurrentPosition(targetPosition);
       currentPositionRef.current = targetPosition;
+      throttledSave(targetPosition);
       animationTimeoutRef.current = setTimeout(() => setShouldAnimate(false), 650);
     };
 
-    const handleRelocate = (e: Event) => {
-      const { range } = (e as CustomEvent).detail ?? {};
-      const currentPage = view.renderer.page;
+    const currentPage = progress.pageinfo.current;
+    const range = progress.range;
 
-      // Only auto-move if page actually changed (not on initial load)
-      if (lastPageRef.current !== null && lastPageRef.current !== currentPage) {
-        requestAnimationFrame(() => performAutoMove(range as Range | null));
-      }
-      lastPageRef.current = currentPage;
-    };
+    // Only auto-move if page actually changed (not on initial load)
+    if (lastPageRef.current !== null && lastPageRef.current !== currentPage) {
+      requestAnimationFrame(() => performAutoMove(range));
+    }
+    lastPageRef.current = currentPage;
 
-    view.renderer.addEventListener('relocate', handleRelocate);
     return () => {
-      view.renderer.removeEventListener('relocate', handleRelocate);
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    bookKey,
-    getView,
+    progress?.pageinfo?.current,
     isVertical,
     rtl,
     viewSettings.marginTopPx,
     viewSettings.marginLeftPx,
     viewSettings.marginRightPx,
     rulerSize,
+    throttledSave,
   ]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -280,9 +267,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       if (!isDragging.current) return;
       isDragging.current = false;
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      saveViewSettings(envConfig, bookKey, 'readingRulerPosition', currentPosition, false, false);
+      throttledSave(currentPosition);
     },
-    [envConfig, bookKey, currentPosition],
+    [currentPosition, throttledSave],
   );
 
   const fadeOpacity = Math.min(0.9, opacity);
@@ -325,7 +312,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         ref={containerRef}
         className={clsx(
           'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
-          isVisible && !isClosing ? 'opacity-100' : 'opacity-0',
+          isVisible ? 'opacity-100' : 'opacity-0',
         )}
         style={containerStyle}
       >
@@ -382,7 +369,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       ref={containerRef}
       className={clsx(
         'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
-        isVisible && !isClosing ? 'opacity-100' : 'opacity-0',
+        isVisible ? 'opacity-100' : 'opacity-0',
       )}
       style={containerStyle}
     >
