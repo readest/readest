@@ -982,5 +982,21 @@
   "Reading Ruler": "مسطرة القراءة",
   "Enable Reading Ruler": "تفعيل مسطرة القراءة",
   "Lines to Highlight": "الأسطر المراد تمييزها",
-  "Ruler Color": "لون المسطرة"
+  "Ruler Color": "لون المسطرة",
+  "Command Palette": "لوحة الأوامر",
+  "Search settings and actions...": "البحث في الإعدادات والإجراءات...",
+  "No results found for": "لم يتم العثور على نتائج لـ",
+  "Type to search settings and actions": "اكتب للبحث في الإعدادات والإجراءات",
+  "Recent": "الأخير",
+  "navigate": "التنقل",
+  "select": "اختيار",
+  "close": "إغلاق",
+  "Search Settings": "البحث في الإعدادات",
+  "Page Margins": "هوامش الصفحة",
+  "AI Provider": "مزود الذكاء الاصطناعي",
+  "Ollama URL": "رابط Ollama",
+  "Ollama Model": "نموذج Ollama",
+  "AI Gateway Model": "نموذج بوابة الذكاء الاصطناعي",
+  "Actions": "الإجراءات",
+  "Navigation": "التنقل"
 }

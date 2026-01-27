@@ -65,9 +65,15 @@ describe('OllamaProvider', () => {
   test('healthCheck should verify model exists', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ models: [{ name: 'llama3.2:latest' }] }),
+      json: () =>
+        Promise.resolve({ models: [{ name: 'llama3.2:latest' }, { name: 'nomic-embed:latest' }] }),
     });
-    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, ollamaModel: 'llama3.2' };
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      ollamaModel: 'llama3.2',
+      ollamaEmbeddingModel: 'nomic-embed',
+    };
     const provider = new OllamaProvider(settings);
 
     const result = await provider.healthCheck();
@@ -77,9 +83,15 @@ describe('OllamaProvider', () => {
   test('healthCheck should return false if model not found', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ models: [{ name: 'other-model' }] }),
+      json: () =>
+        Promise.resolve({ models: [{ name: 'other-model' }, { name: 'nomic-embed:latest' }] }),
     });
-    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, ollamaModel: 'llama3.2' };
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      ollamaModel: 'llama3.2',
+      ollamaEmbeddingModel: 'nomic-embed',
+    };
     const provider = new OllamaProvider(settings);
 
     const result = await provider.healthCheck();

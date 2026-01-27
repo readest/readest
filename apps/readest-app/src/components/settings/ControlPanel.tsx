@@ -205,7 +205,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.control.scrolledMode'>
         <h2 className='mb-2 font-medium'>{_('Scroll')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -219,7 +219,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setScrolledMode(!isScrolledMode)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.continuousScroll'>
               <span className=''>{_('Continuous Scroll')}</span>
               <input
                 type='checkbox'
@@ -237,12 +237,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
               min={0}
               max={200}
               step={10}
+              data-setting-id='settings.control.overlapPixels'
             />
           </div>
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.control.clickToPaginate'>
         <h2 className='mb-2 font-medium'>{_('Pagination')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200'>
@@ -257,7 +258,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setIsDisableClick(!isDisableClick)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.clickBothSides'>
               <span className=''>
                 {appService?.isMobileApp ? _('Tap Both Sides') : _('Click Both Sides')}
               </span>
@@ -269,7 +270,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setFullscreenClickArea(!fullscreenClickArea)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.swapClickSides'>
               <span className=''>
                 {appService?.isMobileApp ? _('Swap Tap Sides') : _('Swap Click Sides')}
               </span>
@@ -281,7 +282,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setSwapClickArea(!swapClickArea)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.disableDoubleClick'>
               <span className=''>
                 {appService?.isMobileApp ? _('Disable Double Tap') : _('Disable Double Click')}
               </span>
@@ -307,7 +308,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.control.enableQuickActions'>
         <h2 className='mb-2 font-medium'>{_('Annotation Tools')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -320,7 +321,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setEnableAnnotationQuickActions(!enableAnnotationQuickActions)}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.quickAction'>
               <span className=''>{_('Quick Action')}</span>
               <Select
                 value={annotationQuickAction || ''}
@@ -329,7 +330,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 disabled={!enableAnnotationQuickActions}
               />
             </div>
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.control.copyToNotebook'>
               <span className=''>{_('Copy to Notebook')}</span>
               <input
                 type='checkbox'
@@ -342,7 +343,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.control.pagingAnimation'>
         <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -360,7 +361,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       </div>
 
       {(appService?.isMobileApp || appService?.appPlatform === 'web') && (
-        <div className='w-full'>
+        <div className='w-full' data-setting-id='settings.control.einkMode'>
           <h2 className='mb-2 font-medium'>{_('Device')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200 divide-y'>
@@ -376,7 +377,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 </div>
               )}
               {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-                <div className='config-item'>
+                <div className='config-item' data-setting-id='settings.control.colorEinkMode'>
                   <span className=''>{_('Color E-Ink Mode')}</span>
                   <input
                     type='checkbox'
@@ -403,7 +404,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       )}
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.control.allowJavascript'>
         <h2 className='mb-2 font-medium'>{_('Security')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>

@@ -932,5 +932,21 @@
   "Reading Ruler": "リーディングルーラー",
   "Enable Reading Ruler": "リーディングルーラーを有効にする",
   "Lines to Highlight": "ハイライトする行数",
-  "Ruler Color": "ルーラーの色"
+  "Ruler Color": "ルーラーの色",
+  "Command Palette": "コマンドパレット",
+  "Search settings and actions...": "設定とアクションを検索...",
+  "No results found for": "の結果が見つかりませんでした",
+  "Type to search settings and actions": "入力して設定とアクションを検索",
+  "Recent": "最近使った項目",
+  "navigate": "ナビゲート",
+  "select": "選択",
+  "close": "閉じる",
+  "Search Settings": "設定を検索",
+  "Page Margins": "ページ余白",
+  "AI Provider": "AIプロバイダー",
+  "Ollama URL": "OllamaのURL",
+  "Ollama Model": "Ollamaモデル",
+  "AI Gateway Model": "AI Gatewayモデル",
+  "Actions": "アクション",
+  "Navigation": "ナビゲーション"
 }

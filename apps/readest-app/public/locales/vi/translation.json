@@ -932,5 +932,21 @@
   "Reading Ruler": "Thước đọc",
   "Enable Reading Ruler": "Bật thước đọc",
   "Lines to Highlight": "Số dòng cần làm nổi bật",
-  "Ruler Color": "Màu thước"
+  "Ruler Color": "Màu thước",
+  "Command Palette": "Bảng lệnh",
+  "Search settings and actions...": "Tìm kiếm cài đặt và hành động...",
+  "No results found for": "Không tìm thấy kết quả cho",
+  "Type to search settings and actions": "Nhập để tìm kiếm cài đặt và hành động",
+  "Recent": "Gần đây",
+  "navigate": "điều hướng",
+  "select": "chọn",
+  "close": "đóng",
+  "Search Settings": "Tìm kiếm cài đặt",
+  "Page Margins": "Lề trang",
+  "AI Provider": "Nhà cung cấp AI",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Mô hình Ollama",
+  "AI Gateway Model": "Mô hình AI Gateway",
+  "Actions": "Hành động",
+  "Navigation": "Điều hướng"
 }

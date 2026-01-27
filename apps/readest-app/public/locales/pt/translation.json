@@ -952,5 +952,21 @@
   "Reading Ruler": "Régua de leitura",
   "Enable Reading Ruler": "Ativar régua de leitura",
   "Lines to Highlight": "Linhas para destacar",
-  "Ruler Color": "Cor da régua"
+  "Ruler Color": "Cor da régua",
+  "Command Palette": "Paleta de Comandos",
+  "Search settings and actions...": "Pesquisar definições e ações...",
+  "No results found for": "Nenhum resultado encontrado para",
+  "Type to search settings and actions": "Digite para pesquisar definições e ações",
+  "Recent": "Recente",
+  "navigate": "navegar",
+  "select": "selecionar",
+  "close": "fechar",
+  "Search Settings": "Pesquisar Definições",
+  "Page Margins": "Margens da Página",
+  "AI Provider": "Fornecedor de IA",
+  "Ollama URL": "URL do Ollama",
+  "Ollama Model": "Modelo do Ollama",
+  "AI Gateway Model": "Modelo de AI Gateway",
+  "Actions": "Ações",
+  "Navigation": "Navegação"
 }

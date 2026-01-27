@@ -942,5 +942,21 @@
   "Reading Ruler": "Χάρακας ανάγνωσης",
   "Enable Reading Ruler": "Ενεργοποίηση χάρακα ανάγνωσης",
   "Lines to Highlight": "Γραμμές για επισήμανση",
-  "Ruler Color": "Χρώμα χάρακα"
+  "Ruler Color": "Χρώμα χάρακα",
+  "Command Palette": "Παλέτα εντολών",
+  "Search settings and actions...": "Αναζήτηση ρυθμίσεων και ενεργειών...",
+  "No results found for": "Δεν βρέθηκαν αποτελέσματα για",
+  "Type to search settings and actions": "Πληκτρολογήστε για αναζήτηση ρυθμίσεων και ενεργειών",
+  "Recent": "Πρόσφατα",
+  "navigate": "πλοήγηση",
+  "select": "επιλογή",
+  "close": "κλείσιμο",
+  "Search Settings": "Αναζήτηση ρυθμίσεων",
+  "Page Margins": "Περιθώρια σελίδας",
+  "AI Provider": "Πάροχος AI",
+  "Ollama URL": "URL Ollama",
+  "Ollama Model": "Μοντέλο Ollama",
+  "AI Gateway Model": "Μοντέλο AI Gateway",
+  "Actions": "Ενέργειες",
+  "Navigation": "Πλοήγηση"
 }

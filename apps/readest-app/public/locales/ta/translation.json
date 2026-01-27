@@ -942,5 +942,21 @@
   "Reading Ruler": "வாசிப்பு அளவுகோல்",
   "Enable Reading Ruler": "வாசிப்பு அளவுகோலை இயக்கு",
   "Lines to Highlight": "சிறப்பித்துக் காட்ட வேண்டிய வரிகள்",
-  "Ruler Color": "அளவுகோல் வண்ணம்"
+  "Ruler Color": "அளவுகோல் வண்ணம்",
+  "Command Palette": "கட்டளை தட்டு",
+  "Search settings and actions...": "அமைப்புகள் மற்றும் செயல்களைத் தேடுங்கள்...",
+  "No results found for": "இதற்கு முடிவுகள் எதுவும் கிடைக்கவில்லை",
+  "Type to search settings and actions": "அமைப்புகள் மற்றும் செயல்களைத் தேட தட்டச்சு செய்க",
+  "Recent": "சமீபத்திய",
+  "navigate": "வழிசெலுத்து",
+  "select": "தேர்ந்தெடு",
+  "close": "மூடு",
+  "Search Settings": "அமைப்புகளைத் தேடு",
+  "Page Margins": "பக்க விளிம்புகள்",
+  "AI Provider": "AI வழங்குநர்",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama மாதிரி",
+  "AI Gateway Model": "AI கேட்வே மாதிரி",
+  "Actions": "செயல்கள்",
+  "Navigation": "வழிசெலுத்தல்"
 }

@@ -932,5 +932,21 @@
   "Reading Ruler": "閱讀尺",
   "Enable Reading Ruler": "啟用閱讀尺",
   "Lines to Highlight": "突出顯示行數",
-  "Ruler Color": "尺子顏色"
+  "Ruler Color": "尺子顏色",
+  "Command Palette": "命令面板",
+  "Search settings and actions...": "搜尋設定和操作...",
+  "No results found for": "未找到結果：",
+  "Type to search settings and actions": "輸入以搜尋設定和操作",
+  "Recent": "最近",
+  "navigate": "導覽",
+  "select": "選擇",
+  "close": "關閉",
+  "Search Settings": "搜尋設定",
+  "Page Margins": "頁邊距",
+  "AI Provider": "AI 服務商",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama 模型",
+  "AI Gateway Model": "AI Gateway 模型",
+  "Actions": "操作",
+  "Navigation": "導覽"
 }

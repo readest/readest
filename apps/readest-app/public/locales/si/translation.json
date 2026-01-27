@@ -942,5 +942,21 @@
   "Reading Ruler": "කියවීමේ රූල",
   "Enable Reading Ruler": "කියවීමේ රූල සක්‍රීය කරන්න",
   "Lines to Highlight": "මතුකර පෙන්විය යුතු පේළි",
-  "Ruler Color": "රූලේ වර්ණය"
+  "Ruler Color": "රූලේ වර්ණය",
+  "Command Palette": "විධාන පුවරුව",
+  "Search settings and actions...": "සැකසුම් සහ ක්‍රියා සොයන්න...",
+  "No results found for": "සඳහා ප්‍රතිඵල හමු නොවීය",
+  "Type to search settings and actions": "සැකසුම් සහ ක්‍රියා සෙවීමට ටයිප් කරන්න",
+  "Recent": "මෑත කාලීන",
+  "navigate": "සංචාලනය",
+  "select": "තෝරන්න",
+  "close": "වසා දමන්න",
+  "Search Settings": "සැකසුම් සොයන්න",
+  "Page Margins": "පිටු මායිම්",
+  "AI Provider": "AI සපයන්නා",
+  "Ollama URL": "Ollama URL",
+  "Ollama Model": "Ollama ආකෘතිය",
+  "AI Gateway Model": "AI ਗੇਟਵੇ ਆਕෘතිය",
+  "Actions": "ක්‍රියා",
+  "Navigation": "සංචාලනය"
 }
