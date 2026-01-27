@@ -25,5 +25,7 @@
   "Mark as Finished": "Mark as Finished",
   "Mark as Unread": "Mark as Unread",
   "Finished": "Finished",
+  "Unread": "Unread",
+  "Clear Status": "Clear Status",
   "Status": "Status"
 }

@@ -954,5 +954,7 @@
   "Mark as Unread": "མ་ཀློག་པར་རྟགས་རྒྱག",
   "Mark as Finished": "ཚར་བར་རྟགས་རྒྱག",
   "Finished": "ཚར་སོང་།",
+  "Unread": "མ་ཀློག་པ།",
+  "Clear Status": "གནས་སྟངས་གཙང་མ།",
   "Status": "གནས་སྟངས།"
 }

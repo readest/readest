@@ -954,5 +954,7 @@
   "Mark as Unread": "未読にする",
   "Mark as Finished": "読了にする",
   "Finished": "読了",
+  "Unread": "未読",
+  "Clear Status": "ステータスをクリア",
   "Status": "ステータス"
 }

@@ -964,5 +964,7 @@
   "Mark as Unread": "Okunmadı olarak işaretle",
   "Mark as Finished": "Bitirildi olarak işaretle",
   "Finished": "Bitirildi",
+  "Unread": "Okunmadı",
+  "Clear Status": "Durumu Temizle",
   "Status": "Durum"
 }

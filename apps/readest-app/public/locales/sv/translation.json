@@ -964,5 +964,7 @@
   "Mark as Unread": "Markera som oläst",
   "Mark as Finished": "Markera som läst",
   "Finished": "Läst",
+  "Unread": "Oläst",
+  "Clear Status": "Rensa status",
   "Status": "Status"
 }

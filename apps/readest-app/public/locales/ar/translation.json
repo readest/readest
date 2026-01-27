@@ -1004,5 +1004,7 @@
   "Mark as Unread": "تحديد كغير مقروء",
   "Mark as Finished": "تحديد كمنتهى",
   "Finished": "منتهى",
+  "Unread": "غير مقروء",
+  "Clear Status": "مسح الحالة",
   "Status": "الحالة"
 }

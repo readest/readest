@@ -954,5 +954,7 @@
   "Mark as Unread": "標示為未讀",
   "Mark as Finished": "標示為已讀",
   "Finished": "已讀",
+  "Unread": "未讀",
+  "Clear Status": "清除狀態",
   "Status": "狀態"
 }

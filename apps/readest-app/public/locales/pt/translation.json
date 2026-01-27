@@ -974,5 +974,7 @@
   "Mark as Unread": "Marcar como não lido",
   "Mark as Finished": "Marcar como concluído",
   "Finished": "Concluído",
+  "Unread": "Não lido",
+  "Clear Status": "Limpar estado",
   "Status": "Estado"
 }
