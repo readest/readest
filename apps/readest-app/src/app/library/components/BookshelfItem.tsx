@@ -15,7 +15,7 @@ import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
-import { Book, BooksGroup } from '@/types/book';
+import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import { md5Fingerprint } from '@/utils/md5';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
@@ -99,6 +99,7 @@ interface BookshelfItemProps {
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handleUpdateReadingStatus: (book: Book, status: ReadingStatus) => void;
 }
 
 const BookshelfItem: React.FC<BookshelfItemProps> = ({
@@ -115,6 +116,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleBookDownload,
   handleSetSelectMode,
   handleShowDetailsBook,
+  handleUpdateReadingStatus,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -210,6 +212,18 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         handleGroupBooks();
       },
     });
+    const markAsFinishedMenuItem = await MenuItem.new({
+      text: _('Mark as Finished'),
+      action: async () => {
+        handleUpdateReadingStatus(book, 'finished');
+      },
+    });
+    const markAsUnreadMenuItem = await MenuItem.new({
+      text: _('Mark as Unread'),
+      action: async () => {
+        handleUpdateReadingStatus(book, 'unread');
+      },
+    });
     const showBookInFinderMenuItem = await MenuItem.new({
       text: _(fileRevealLabel),
       action: async () => {
@@ -244,6 +258,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const menu = await Menu.new();
     menu.append(selectBookMenuItem);
     menu.append(groupBooksMenuItem);
+    if (book.readingStatus === 'finished') {
+      menu.append(markAsUnreadMenuItem);
+    } else {
+      menu.append(markAsFinishedMenuItem);
+    }
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
     if (book.uploadedAt && !book.downloadedAt) {

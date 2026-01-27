@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
-import { Book } from '@/types/book';
+import { Book, ReadingStatus } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -59,7 +59,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { safeAreaInsets } = useThemeStore();
 
@@ -74,6 +74,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
   const [bookIdsToDelete, setBookIdsToDelete] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showStatusAlert, setShowStatusAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
@@ -82,7 +83,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const iconSize15 = useResponsiveSize(15);
   const autofocusRef = useAutoFocus<HTMLDivElement>();
 
-  const { setCurrentBookshelf, setLibrary } = useLibraryStore();
+  const { setCurrentBookshelf, setLibrary, updateBooks } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
   const { getGroupName } = useLibraryStore();
 
@@ -247,6 +248,39 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowGroupingModal(true);
   };
 
+  const showStatusSelection = () => {
+    setShowSelectModeActions(false);
+    setShowStatusAlert(true);
+  };
+
+  const updateBooksStatus = async (status: ReadingStatus) => {
+    const selectedIds = getSelectedBooks();
+    const booksToUpdate: Book[] = [];
+
+    for (const id of selectedIds) {
+      const book = filteredBooks.find((b) => b.hash === id);
+      if (book) {
+        booksToUpdate.push({ ...book, readingStatus: status, updatedAt: Date.now() });
+      }
+    }
+
+    if (booksToUpdate.length > 0) {
+      await updateBooks(envConfig, booksToUpdate);
+    }
+
+    setSelectedBooks([]);
+    setShowStatusAlert(false);
+    setShowSelectModeActions(true);
+  };
+
+  const handleUpdateReadingStatus = useCallback(
+    async (book: Book, status: ReadingStatus) => {
+      const updatedBook = { ...book, readingStatus: status, updatedAt: Date.now() };
+      await updateBooks(envConfig, [updatedBook]);
+    },
+    [envConfig, updateBooks],
+  );
+
   const handleDeleteBooksIntent = (event: CustomEvent) => {
     const { ids } = event.detail;
     setBookIdsToDelete(ids);
@@ -318,6 +352,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             handleBookDelete={handleBookDelete}
             handleSetSelectMode={handleSetSelectMode}
             handleShowDetailsBook={handleShowDetailsBook}
+            handleUpdateReadingStatus={handleUpdateReadingStatus}
             transferProgress={
               'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
             }
@@ -363,6 +398,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
           onDetails={openBookDetails}
+          onStatus={showStatusSelection}
           onDelete={deleteSelectedBooks}
           onCancel={() => handleSetSelectMode(false)}
         />
@@ -403,6 +439,76 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             }}
             onConfirm={confirmDelete}
           />
+        </div>
+      )}
+      {showStatusAlert && (
+        <div
+          className={clsx('status-alert fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
+          style={{
+            paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
+          }}
+        >
+          <div
+            className={clsx(
+              'flex items-center justify-between',
+              'bg-base-200/95 rounded-2xl p-4 backdrop-blur-sm',
+              'border-base-content/10 border',
+              'shadow-lg',
+              'w-auto max-w-[90vw]',
+              'flex-col gap-4 sm:flex-row',
+            )}
+          >
+            <div className='text-sm font-medium'>
+              {_('Set status for {{count}} book(s)', { count: getSelectedBooks().length })}
+            </div>
+            <div className='flex flex-wrap items-center justify-end gap-2'>
+              <button
+                className={clsx(
+                  'flex items-center gap-2 rounded-full px-4 py-2',
+                  'bg-base-300 text-base-content',
+                  'hover:bg-base-content/10',
+                  'border-base-content/10 border',
+                  'shadow-sm',
+                  'transition-all duration-200 ease-out',
+                  'active:scale-[0.97]',
+                )}
+                onClick={() => {
+                  setShowStatusAlert(false);
+                  setShowSelectModeActions(true);
+                }}
+              >
+                <span className='text-sm font-medium'>{_('Cancel')}</span>
+              </button>
+              <button
+                className={clsx(
+                  'flex items-center gap-2 rounded-full px-4 py-2',
+                  'bg-base-300 text-base-content',
+                  'hover:bg-base-content/10',
+                  'border-base-content/10 border',
+                  'shadow-sm',
+                  'transition-all duration-200 ease-out',
+                  'active:scale-[0.97]',
+                )}
+                onClick={() => updateBooksStatus('unread')}
+              >
+                <span className='text-sm font-medium'>{_('Mark as Unread')}</span>
+              </button>
+              <button
+                className={clsx(
+                  'flex items-center gap-2 rounded-full px-4 py-2',
+                  'bg-success/15 text-success',
+                  'hover:bg-success/25',
+                  'border-success/20 border',
+                  'shadow-sm',
+                  'transition-all duration-200 ease-out',
+                  'active:scale-[0.97]',
+                )}
+                onClick={() => updateBooksStatus('finished')}
+              >
+                <span className='text-sm font-medium'>{_('Mark as Finished')}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
