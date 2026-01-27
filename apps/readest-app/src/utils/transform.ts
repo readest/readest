@@ -6,6 +6,7 @@ import {
   BookNoteType,
   HighlightColor,
   HighlightStyle,
+  ReadingStatus,
 } from '@/types/book';
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
 import { sanitizeString } from './sanitize';
@@ -70,6 +71,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     groupName,
     tags,
     progress,
+    readingStatus,
     metadata,
     createdAt,
     updatedAt,
@@ -88,6 +90,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     group_name: sanitizeString(groupName),
     tags: tags,
     progress: progress,
+    reading_status: readingStatus,
     source_title: sanitizeString(sourceTitle),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
@@ -108,6 +111,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     group_name,
     tags,
     progress,
+    reading_status,
     source_title,
     metadata,
     created_at,
@@ -126,6 +130,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     groupName: group_name,
     tags: tags,
     progress: progress,
+    readingStatus: reading_status as ReadingStatus,
     sourceTitle: source_title,
     metadata: metadata ? JSON.parse(metadata) : null,
     createdAt: new Date(created_at!).getTime(),
