@@ -53,7 +53,9 @@ export class OllamaProvider implements AIProvider {
       if (!response.ok) return false;
       const data = await response.json();
       const modelName = this.settings.ollamaModel?.split(':')[0] ?? '';
-      return data.models?.some((m: { name: string }) => m.name.includes(modelName));
+      const embeddingModelName = this.settings.ollamaEmbeddingModel?.split(':')[0] ?? '';
+      return data.models?.some((m: { name: string }) => m.name.includes(modelName)) &&
+           data.models?.some((m: { name: string }) => m.name.includes(embeddingModelName));
     } catch (e) {
       aiLogger.provider.error('ollama', (e as Error).message);
       return false;
