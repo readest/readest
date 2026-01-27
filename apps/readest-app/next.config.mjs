@@ -27,18 +27,38 @@ const nextConfig = {
   assetPrefix: '',
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
-  turbopack: {},
-  transpilePackages: !isDev
-    ? [
-        'i18next-browser-languagedetector',
-        'react-i18next',
-        'i18next',
-        '@tauri-apps',
-        'highlight.js',
-        'foliate-js',
-        'marked',
-      ]
-    : [],
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      nunjucks: 'nunjucks/browser/nunjucks.js',
+    };
+    return config;
+  },
+  turbopack: {
+    resolveAlias: {
+      nunjucks: 'nunjucks/browser/nunjucks.js',
+    },
+  },
+  transpilePackages: [
+    'ai',
+    'ai-sdk-ollama',
+    '@ai-sdk/react',
+    '@assistant-ui/react',
+    '@assistant-ui/react-ai-sdk',
+    '@assistant-ui/react-markdown',
+    'streamdown',
+    ...(isDev
+      ? []
+      : [
+          'i18next-browser-languagedetector',
+          'react-i18next',
+          'i18next',
+          '@tauri-apps',
+          'highlight.js',
+          'foliate-js',
+          'marked',
+        ]),
+  ],
   async headers() {
     return [
       {

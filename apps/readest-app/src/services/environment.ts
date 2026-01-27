@@ -15,6 +15,11 @@ export const getBaseUrl = () => process.env['NEXT_PUBLIC_API_BASE_URL'] ?? READE
 export const getNodeBaseUrl = () =>
   process.env['NEXT_PUBLIC_NODE_BASE_URL'] ?? READEST_NODE_BASE_URL;
 
+export const isMacPlatform = () =>
+  typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+export const getCommandPaletteShortcut = () => (isMacPlatform() ? '⌘⇧P' : 'Ctrl+Shift+P');
+
 const isWebDevMode = () => process.env['NODE_ENV'] === 'development' && isWebAppPlatform();
 
 // Dev API only in development mode and web platform

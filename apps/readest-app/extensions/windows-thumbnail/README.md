@@ -12,28 +12,31 @@ This crate provides Windows Explorer thumbnail support for eBook files when Read
 
 ## Supported Formats
 
-| Format | Extension | Cover Source |
-|--------|-----------|--------------|
-| EPUB | `.epub` | OPF manifest cover reference |
-| MOBI/AZW | `.mobi`, `.azw`, `.prc` | EXTH cover offset |
-| AZW3/KF8 | `.azw3`, `.kf8` | KF8 format cover |
-| FB2 | `.fb2` | `<binary>` coverpage element |
-| Comic Book | `.cbz`, `.cbr` | First image in archive |
-| Plain Text | `.txt` | Generated placeholder |
+| Format     | Extension               | Cover Source                 |
+| ---------- | ----------------------- | ---------------------------- |
+| EPUB       | `.epub`                 | OPF manifest cover reference |
+| MOBI/AZW   | `.mobi`, `.azw`, `.prc` | EXTH cover offset            |
+| AZW3/KF8   | `.azw3`, `.kf8`         | KF8 format cover             |
+| FB2        | `.fb2`                  | `<binary>` coverpage element |
+| Comic Book | `.cbz`, `.cbr`          | First image in archive       |
+| Plain Text | `.txt`                  | Generated placeholder        |
 
 ## Building
 
 ### Library Only
+
 ```bash
 cargo build --release
 ```
 
 ### COM DLL (for Windows Explorer integration)
+
 ```bash
 cargo build --release --features com
 ```
 
 ### CLI Tool
+
 ```bash
 cargo build --release --features cli
 ```

@@ -15,7 +15,7 @@ import { TTSController, SILENCE_DATA, TTSMark, TTSHighlightOptions } from '@/ser
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { getPopupPosition, Position } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
-import { parseSSMLLang } from '@/utils/ssml';
+import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { Insets } from '@/types/misc';
 import { Overlay } from '@/components/Overlay';
@@ -75,6 +75,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const mediaSessionRef = useRef<TauriMediaSession | MediaSession | null>(null);
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
+  const ttsOnRef = useRef(false);
 
   // this enables WebAudio to play even when the mute toggle switch is ON
   const unblockAudio = () => {
@@ -347,6 +348,8 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey, range, oneTime = false } = event.detail;
     if (bookKey !== ttsBookKey) return;
+    if (ttsOnRef.current) return;
+    ttsOnRef.current = true;
 
     const view = getView(bookKey);
     const progress = getProgress(bookKey);
@@ -361,7 +364,8 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       return;
     }
 
-    let ttsFromRange = range;
+    const ttsSpeakRange = range as Range | null;
+    let ttsFromRange = ttsSpeakRange;
     if (!ttsFromRange && viewSettings.ttsLocation) {
       const { location } = progress;
       const ttsCfi = viewSettings.ttsLocation;
@@ -394,9 +398,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       await initMediaSession();
       setTtsClientsInitialized(false);
 
-      if (!oneTime) {
-        setShowIndicator(true);
-      }
+      setShowIndicator(true);
       const ttsController = new TTSController(appService, view, !!user?.id, preprocessSSMLForTTS);
       ttsControllerRef.current = ttsController;
       setTtsController(ttsController);
@@ -405,7 +407,10 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       await ttsController.initViewTTS(
         getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
       );
-      const ssml = view.tts?.from(ttsFromRange);
+      const ssml =
+        oneTime && ttsSpeakRange
+          ? genSSMLRaw(ttsSpeakRange.toString().trim())
+          : view.tts?.from(ttsFromRange);
       if (ssml) {
         const lang = parseSSMLLang(ssml, primaryLang) || 'en';
         setIsPlaying(true);
@@ -413,7 +418,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
-        ttsController.speak(ssml, oneTime);
+        ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
         ttsController.setTargetLang(getTTSTargetLang() || '');
       }
       setTtsClientsInitialized(true);
@@ -507,6 +512,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       }
       await deinitMediaSession();
       setTTSEnabled(bookKey, false);
+      ttsOnRef.current = false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],

@@ -7,11 +7,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
-import { PiDotsThreeVerticalBold } from 'react-icons/pi';
+import { PiDotsThreeVerticalBold, PiRobot } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
+import { FiSearch } from 'react-icons/fi';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
@@ -21,8 +23,17 @@ import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
+import AIPanel from './AIPanel';
+import { useCommandPalette } from '@/components/command-palette';
 
-export type SettingsPanelType = 'Font' | 'Layout' | 'Color' | 'Control' | 'Language' | 'Custom';
+export type SettingsPanelType =
+  | 'Font'
+  | 'Layout'
+  | 'Color'
+  | 'Control'
+  | 'Language'
+  | 'AI'
+  | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -32,6 +43,7 @@ type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
   label: string;
+  disabled?: boolean;
 };
 
 const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -40,8 +52,16 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const closeIconSize = useResponsiveSize(16);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const tabsRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontPanelView, setSettingsDialogOpen } = useSettingsStore();
+  const { setFontPanelView, setSettingsDialogOpen, activeSettingsItemId, setActiveSettingsItemId } =
+    useSettingsStore();
+  const { open: openCommandPalette } = useCommandPalette();
+
+  const handleOpenCommandPalette = () => {
+    openCommandPalette();
+    setSettingsDialogOpen(false);
+  };
 
   const tabConfig = [
     {
@@ -70,6 +90,12 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Language'),
     },
     {
+      tab: 'AI',
+      icon: PiRobot,
+      label: _('AI Assistant'),
+      disabled: process.env.NODE_ENV === 'production',
+    },
+    {
       tab: 'Custom',
       icon: IoAccessibilityOutline,
       label: _('Custom'),
@@ -90,6 +116,16 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     localStorage.setItem('lastConfigPanel', tab);
   };
 
+  // sync localStorage and fontPanelView when activePanel changes
+  const activePanelRef = useRef(activePanel);
+  useEffect(() => {
+    if (activePanelRef.current !== activePanel) {
+      activePanelRef.current = activePanel;
+      setFontPanelView('main-fonts');
+      localStorage.setItem('lastConfigPanel', activePanel);
+    }
+  }, [activePanel, setFontPanelView]);
+
   const [resetFunctions, setResetFunctions] = useState<
     Record<SettingsPanelType, (() => void) | null>
   >({
@@ -98,6 +134,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Color: null,
     Control: null,
     Language: null,
+    AI: null,
     Custom: null,
   });
 
@@ -115,6 +152,46 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleClose = () => {
     setSettingsDialogOpen(false);
   };
+
+  // handle activeSettingsItemId: switch to correct panel and scroll to item
+  useEffect(() => {
+    if (!activeSettingsItemId) return;
+
+    // parse panel from item id (format: settings.panel.itemName)
+    const parts = activeSettingsItemId.split('.');
+    if (parts.length >= 2) {
+      const panelMap: Record<string, SettingsPanelType> = {
+        font: 'Font',
+        layout: 'Layout',
+        color: 'Color',
+        control: 'Control',
+        language: 'Language',
+        ai: 'AI',
+        custom: 'Custom',
+      };
+      const panelKey = parts[1]?.toLowerCase();
+      const targetPanel = panelMap[panelKey || ''];
+      if (targetPanel && targetPanel !== activePanel) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- panel switch based on external navigation is intended
+        setActivePanel(targetPanel);
+      }
+    }
+
+    // scroll to item after panel renders
+    const timeoutId = setTimeout(() => {
+      const element = panelRef.current?.querySelector(
+        `[data-setting-id="${activeSettingsItemId}"]`,
+      );
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('settings-highlight');
+        setTimeout(() => element.classList.remove('settings-highlight'), 2000);
+      }
+      setActiveSettingsItemId(null);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeSettingsItemId, activePanel, setActiveSettingsItemId]);
 
   useEffect(() => {
     setFontPanelView('main-fonts');
@@ -168,7 +245,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       onClose={handleClose}
       className='modal-open'
       bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
-      boxClassName={clsx('sm:min-w-[520px]', appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4')}
+      boxClassName={clsx(
+        'sm:min-w-[520px] overflow-hidden',
+        appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
+      )}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={
         <div className='flex w-full flex-col items-center'>
@@ -190,33 +270,46 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               ref={tabsRef}
               role='group'
               aria-label={_('Settings Panels') + ' - ' + (currentPanel?.label || '')}
-              className={clsx('dialog-tabs ms-1 flex h-10 w-full items-center gap-1 sm:ms-0')}
+              className={clsx(
+                'dialog-tabs ms-1 flex h-10 w-full items-center gap-1 overflow-x-auto sm:ms-0',
+              )}
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {tabConfig.map(({ tab, icon: Icon, label }) => (
-                <button
-                  key={tab}
-                  data-tab={tab}
-                  tabIndex={0}
-                  title={label}
-                  className={clsx(
-                    'btn btn-ghost text-base-content btn-sm gap-1 px-2',
-                    activePanel === tab ? 'btn-active' : '',
-                  )}
-                  onClick={() => handleSetActivePanel(tab)}
-                >
-                  <Icon className='mr-0' />
-                  <span
+              {tabConfig
+                .filter((t) => !t.disabled)
+                .map(({ tab, icon: Icon, label }) => (
+                  <button
+                    key={tab}
+                    data-tab={tab}
+                    tabIndex={0}
+                    title={label}
                     className={clsx(
-                      window.innerWidth < 640 && 'hidden',
-                      !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
+                      activePanel === tab ? 'btn-active' : '',
                     )}
+                    onClick={() => handleSetActivePanel(tab)}
                   >
-                    {label}
-                  </span>
-                </button>
-              ))}
+                    <Icon className='mr-0' />
+                    <span
+                      className={clsx(
+                        window.innerWidth < 640 && 'hidden',
+                        !(showAllTabLabels || activePanel === tab) && 'hidden',
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                ))}
             </div>
             <div className='flex h-full items-center justify-end gap-x-2'>
+              <button
+                onClick={handleOpenCommandPalette}
+                aria-label={_('Search Settings')}
+                title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
+                className='btn btn-ghost hidden h-8 min-h-8 w-8 items-center justify-center p-0 sm:flex'
+              >
+                <FiSearch />
+              </button>
               <Dropdown
                 label={_('Settings Menu')}
                 className='dropdown-bottom dropdown-end'
@@ -247,7 +340,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         </div>
       }
     >
-      <div role='group' aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}>
+      <div
+        ref={panelRef}
+        role='group'
+        aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}
+      >
         {activePanel === 'Font' && (
           <FontPanel
             bookKey={bookKey}
@@ -278,6 +375,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Language', fn)}
           />
         )}
+        {activePanel === 'AI' && <AIPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

@@ -118,6 +118,26 @@ export async function GET(req: NextRequest) {
 
     if (!typeParam || typeParam === 'books') {
       await queryTables('books').catch((err) => (errors['books'] = err));
+      // TODO: Remove this hotfix for the initial race condition for books sync
+      if (results.books?.length === 0 && since.getTime() < 1000) {
+        const dummyHash = '00000000000000000000000000000000';
+        const now = new Date().getTime();
+        results.books.push({
+          user_id: user.id,
+          id: dummyHash,
+          book_hash: dummyHash,
+          deleted_at: now,
+          updated_at: now,
+
+          hash: dummyHash,
+          title: 'Dummy Book',
+          format: 'EPUB',
+          author: '',
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: now,
+        });
+      }
     }
     if (!typeParam || typeParam === 'configs') {
       await queryTables('book_configs').catch((err) => (errors['book_configs'] = err));

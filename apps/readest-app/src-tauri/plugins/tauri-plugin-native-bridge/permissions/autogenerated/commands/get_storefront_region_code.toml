@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-get-storefront-region-code"
+description = "Enables the get_storefront_region_code command without any pre-configured scope."
+commands.allow = ["get_storefront_region_code"]
+
+[[permission]]
+identifier = "deny-get-storefront-region-code"
+description = "Denies the get_storefront_region_code command without any pre-configured scope."
+commands.deny = ["get_storefront_region_code"]

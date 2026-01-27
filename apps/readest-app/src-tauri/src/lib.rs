@@ -253,37 +253,15 @@ pub fn run() {
                 allow_dir_in_scopes(app, path);
             });
 
-            #[cfg(desktop)]
-            {
-                app.handle().plugin(tauri_plugin_cli::init())?;
-
-                let app_handle = app.handle().clone();
-                app.listen("window-ready", move |_| {
-                    let webview = app_handle.get_webview_window("main").unwrap();
-                    webview
-                        .eval("window.__READEST_CLI_ACCESS = true;")
-                        .expect("Failed to set cli access config");
-
-                    #[cfg(target_os = "linux")]
-                    {
-                        let is_appimage = std::env::var("APPIMAGE").is_ok()
-                            || std::env::current_exe()
-                                .map(|path| path.to_string_lossy().contains("/tmp/.mount_"))
-                                .unwrap_or(false);
-
-                        let script =
-                            format!("window.__READEST_UPDATER_DISABLED = {};", !is_appimage);
-                        webview
-                            .eval(&script)
-                            .expect("Failed to set updater disabled config");
-                    }
-                });
-            }
-
             #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let _ = app.deep_link().register_all();
+            }
+
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_cli::init())?;
             }
 
             // Check for e-ink device on Android before building the window
@@ -292,15 +270,30 @@ pub fn run() {
             #[cfg(not(target_os = "android"))]
             let is_eink = false;
 
-            let eink_script = if is_eink {
-                "window.__READEST_IS_EINK = true;"
-            } else {
-                ""
-            };
+            #[cfg(desktop)]
+            let cli_access = true;
+            #[cfg(not(desktop))]
+            let cli_access = false;
+
+            #[cfg(target_os = "linux")]
+            let is_appimage = std::env::var("APPIMAGE").is_ok()
+                || std::env::current_exe()
+                    .map(|path| path.to_string_lossy().contains("/tmp/.mount_"))
+                    .unwrap_or(false);
+            #[cfg(not(target_os = "linux"))]
+            let is_appimage = false;
+
+            #[cfg(desktop)]
+            let updater_disabled = std::env::var("READEST_DISABLE_UPDATER").is_ok();
+            #[cfg(not(desktop))]
+            let updater_disabled = false;
 
             let init_script = format!(
                 r#"
-                    {eink_script}
+                    if ({is_eink}) window.__READEST_IS_EINK = true;
+                    if ({cli_access}) window.__READEST_CLI_ACCESS = true;
+                    if ({is_appimage}) window.__READEST_IS_APPIMAGE = true;
+                    if ({updater_disabled}) window.__READEST_UPDATER_DISABLED = true;
                     window.addEventListener('DOMContentLoaded', function() {{
                         document.documentElement.classList.add('edge-to-edge');
                         const isTauriLocal = window.location.protocol === 'tauri:' ||
@@ -322,7 +315,10 @@ pub fn run() {
                         }}
                     }});
                 "#,
-                eink_script = eink_script
+                is_eink = is_eink,
+                cli_access = cli_access,
+                is_appimage = is_appimage,
+                updater_disabled = updater_disabled
             );
 
             let app_handle = app.handle().clone();

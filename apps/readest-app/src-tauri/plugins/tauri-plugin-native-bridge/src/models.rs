@@ -230,3 +230,10 @@ pub struct SelectDirectoryResponse {
     pub path: Option<String>,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetStorefrontRegionCodeResponse {
+    pub region_code: Option<String>,
+    pub error: Option<String>,
+}

@@ -27,6 +27,7 @@ import BackgroundTextureSelector from './color/BackgroundTextureSelector';
 import HighlightColorsEditor from './color/HighlightColorsEditor';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
 import CodeHighlightingSettings from './color/CodeHighlightingSettings';
+import ReadingRulerSettings from './color/ReadingRulerSettings';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -61,6 +62,14 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [customTtsHighlightColors, setCustomTtsHighlightColors] = useState(
     settings.globalReadSettings.customTtsHighlightColors || [],
   );
+  const [userHighlightColors, setUserHighlightColors] = useState(
+    settings.globalReadSettings.userHighlightColors || [],
+  );
+
+  const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
+  const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
+  const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
+  const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
 
   const {
     textures: customTextures,
@@ -80,6 +89,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       invertImgColorInDark: setInvertImgColorInDark,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
+      readingRulerEnabled: setReadingRulerEnabled,
+      readingRulerLines: setReadingRulerLines,
+      readingRulerOpacity: setReadingRulerOpacity,
     });
     setThemeColor('default');
     setThemeMode('auto');
@@ -87,6 +99,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setBackgroundOpacity(0.6);
     setBackgroundSize('cover');
     setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
+    setUserHighlightColors([]);
   };
 
   useEffect(() => {
@@ -148,6 +161,26 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     applyBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundSize]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerEnabled', readingRulerEnabled, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerEnabled]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerLines', readingRulerLines, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLines]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerOpacity', readingRulerOpacity, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerOpacity]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerColor', readingRulerColor, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerColor]);
 
   const applyBackgroundTexture = () => {
     applyTexture(envConfig, selectedTextureId);
@@ -253,6 +286,13 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveSettings(envConfig, settings);
   };
 
+  const handleUserHighlightColorsChange = (colors: string[]) => {
+    setUserHighlightColors(colors);
+    settings.globalReadSettings.userHighlightColors = colors;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+  };
+
   return (
     <div className='my-4 w-full space-y-6'>
       {showCustomThemeEditor ? (
@@ -264,9 +304,16 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
         />
       ) : (
         <>
-          <ThemeModeSelector themeMode={themeMode} onThemeModeChange={setThemeMode} />
+          <ThemeModeSelector
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            data-setting-id='settings.color.themeMode'
+          />
 
-          <div className='flex items-center justify-between'>
+          <div
+            data-setting-id='settings.color.invertImageInDarkMode'
+            className='flex items-center justify-between'
+          >
             <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
             <input
               type='checkbox'
@@ -277,7 +324,10 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             />
           </div>
 
-          <div className='flex items-center justify-between'>
+          <div
+            data-setting-id='settings.color.overrideBookColor'
+            className='flex items-center justify-between'
+          >
             <h2 className='font-medium'>{_('Override Book Color')}</h2>
             <input
               type='checkbox'
@@ -294,6 +344,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onThemeColorChange={setThemeColor}
             onEditTheme={handleEditTheme}
             onCreateTheme={() => setShowCustomThemeEditor(true)}
+            data-setting-id='settings.color.themeColor'
           />
 
           <BackgroundTextureSelector
@@ -307,11 +358,15 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onSizeChange={setBackgroundSize}
             onImportImage={handleImportImage}
             onDeleteTexture={handleDeleteCustomTexture}
+            data-setting-id='settings.color.backgroundTexture'
           />
 
           <HighlightColorsEditor
             customHighlightColors={customHighlightColors}
+            userHighlightColors={userHighlightColors}
             onChange={handleHighlightColorsChange}
+            onUserColorsChange={handleUserHighlightColorsChange}
+            data-setting-id='settings.color.highlightColors'
           />
 
           <TTSHighlightStyleEditor
@@ -321,6 +376,19 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onStyleChange={handleTTSStyleChange}
             onColorChange={handleTTSColorChange}
             onCustomColorsChange={handleCustomTtsColorsChange}
+            data-setting-id='settings.color.ttsHighlightStyle'
+          />
+
+          <ReadingRulerSettings
+            enabled={readingRulerEnabled}
+            lines={readingRulerLines}
+            opacity={readingRulerOpacity}
+            color={readingRulerColor}
+            onEnabledChange={setReadingRulerEnabled}
+            onLinesChange={setReadingRulerLines}
+            onOpacityChange={setReadingRulerOpacity}
+            onColorChange={setReadingRulerColor}
+            data-setting-id='settings.color.readingRuler'
           />
 
           <CodeHighlightingSettings
@@ -328,6 +396,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             codeLanguage={codeLanguage}
             onToggle={setcodeHighlighting}
             onLanguageChange={setCodeLanguage}
+            data-setting-id='settings.color.codeHighlighting'
           />
         </>
       )}

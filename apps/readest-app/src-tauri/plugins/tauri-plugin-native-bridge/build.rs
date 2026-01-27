@@ -21,6 +21,7 @@ const COMMANDS: &[&str] = &[
     "get_external_sdcard_path",
     "open_external_url",
     "select_directory",
+    "get_storefront_region_code",
     "register_listener",
     "remove_listener",
     "request_manage_storage_permission",

@@ -45,8 +45,6 @@ jobs:
 
       - name: setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
 
       - name: setup node
         uses: actions/setup-node@v6
@@ -67,6 +65,10 @@ jobs:
         working-directory: apps/readest-app
         run: |
           pnpm install && pnpm setup-vendors
+
+      - name: run format check
+        run: |
+          pnpm format:check || (pnpm format && git diff && exit 1)
 
       - name: run tests
         working-directory: apps/readest-app

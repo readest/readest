@@ -85,10 +85,13 @@ export interface AppService {
   isLinuxApp: boolean;
   isPortableApp: boolean;
   isDesktopApp: boolean;
+  isAppImage: boolean;
   isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
   distChannel: DistChannel;
+  storefrontRegionCode: string | null;
+  isOnlineCatalogsAccessible: boolean;
 
   init(): Promise<void>;
   openFile(path: string, base: BaseDir): Promise<File>;
@@ -154,4 +157,5 @@ export interface AppService {
   getCoverImageBlobUrl(book: Book): Promise<string>;
   generateCoverImageUrl(book: Book): Promise<string>;
   updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void>;
+  ask(message: string): Promise<boolean>;
 }

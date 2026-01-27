@@ -322,7 +322,11 @@ export class WebAppService extends BaseAppService {
     throw new Error('selectFiles is not supported in browser');
   }
 
-  async saveFile(filename: string, content: string | ArrayBuffer, mimeType?: string): Promise<boolean> {
+  async saveFile(
+    filename: string,
+    content: string | ArrayBuffer,
+    mimeType?: string,
+  ): Promise<boolean> {
     try {
       const blob = new Blob([content], { type: mimeType || 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
@@ -338,5 +342,9 @@ export class WebAppService extends BaseAppService {
       console.error('Failed to save file:', error);
       return false;
     }
+  }
+
+  async ask(message: string): Promise<boolean> {
+    return window.confirm(message);
   }
 }

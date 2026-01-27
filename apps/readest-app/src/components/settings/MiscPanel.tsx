@@ -123,7 +123,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     e.nativeEvent.stopImmediatePropagation();
   };
 
-  const handleInputFocus = (textareaRef: React.RefObject<HTMLTextAreaElement>) => {
+  const handleInputFocus = (textareaRef: React.RefObject<HTMLTextAreaElement | null>) => {
     if (appService?.isAndroidApp) {
       setInputFocusInAndroid(true);
     }
@@ -150,9 +150,10 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     value: string,
     error: string | null,
     saved: boolean,
-    textareaRef: React.RefObject<HTMLTextAreaElement>,
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+    settingId?: string,
   ) => (
-    <div className='w-full'>
+    <div className='w-full' data-setting-id={settingId}>
       <h2 className='mb-2 font-medium' aria-label={_(title)}>
         {_(title)}
       </h2>
@@ -208,6 +209,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         contentError,
         draftContentStylesheetSaved,
         contentTextareaRef,
+        'settings.custom.contentCss',
       )}
 
       {renderCSSEditor(
@@ -218,6 +220,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         uiError,
         draftUIStylesheetSaved,
         uiTextareaRef,
+        'settings.custom.readerUiCss',
       )}
     </div>
   );

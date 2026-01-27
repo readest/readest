@@ -78,7 +78,7 @@ export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent)
   if (selection.rangeCount === 0) return false;
   const range = selection.getRangeAt(0);
   const rects = range.getClientRects();
-  const padding = 80;
+  const padding = 50;
   for (let i = 0; i < rects.length; i++) {
     const rect = rects[i]!;
     if (

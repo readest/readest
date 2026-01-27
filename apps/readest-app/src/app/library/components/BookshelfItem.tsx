@@ -24,51 +24,60 @@ export const generateBookshelfItems = (
   books: Book[],
   parentGroupName: string,
 ): (Book | BooksGroup)[] => {
-  const groups: BooksGroup[] = books.reduce((acc: BooksGroup[], book: Book) => {
-    if (book.deletedAt) return acc;
-    if (parentGroupName && (!book.groupName || !book.groupName.startsWith(parentGroupName)))
-      return acc;
-    book.groupId = book.groupId || BOOK_UNGROUPED_ID;
-    book.groupName = book.groupName || BOOK_UNGROUPED_NAME;
-    const slashIndex = book.groupName.indexOf('/', parentGroupName.length + 1);
-    const leafGroupName = book.groupName.substring(
-      parentGroupName ? parentGroupName.length + 1 : 0,
-      slashIndex > 0 ? slashIndex : undefined,
-    );
-    const fullGroupName = parentGroupName
-      ? `${parentGroupName}${leafGroupName ? `/${leafGroupName}` : ''}`
-      : leafGroupName;
-    const groupIndex = acc.findIndex(
-      (group) =>
-        group.name === fullGroupName ||
-        (parentGroupName && group.name === parentGroupName) ||
-        (leafGroupName === BOOK_UNGROUPED_NAME && group.name === BOOK_UNGROUPED_NAME),
-    );
-    const booksGroup = acc[groupIndex];
-    if (booksGroup) {
-      booksGroup.books.push(book);
-      booksGroup.updatedAt = Math.max(booksGroup.updatedAt, book.updatedAt);
+  const groupsMap = new Map<string, BooksGroup>();
+
+  for (const book of books) {
+    if (book.deletedAt) continue;
+
+    const groupName = book.groupName || BOOK_UNGROUPED_NAME;
+    if (
+      parentGroupName &&
+      groupName !== parentGroupName &&
+      !groupName.startsWith(parentGroupName + '/')
+    ) {
+      continue;
+    }
+
+    const relativePath = parentGroupName ? groupName.slice(parentGroupName.length + 1) : groupName;
+    // Get the immediate child group name (or empty if book is directly in parent)
+    const slashIndex = relativePath.indexOf('/');
+    const immediateChild = slashIndex > 0 ? relativePath.slice(0, slashIndex) : relativePath;
+    // Determine if this book belongs directly to the parent group
+    const isDirectChild =
+      groupName === parentGroupName || (groupName === BOOK_UNGROUPED_NAME && !parentGroupName);
+    // Build the full group name for this level
+    const fullGroupName = isDirectChild
+      ? BOOK_UNGROUPED_NAME
+      : parentGroupName
+        ? `${parentGroupName}/${immediateChild}`
+        : immediateChild;
+
+    const mapKey = fullGroupName;
+    const existingGroup = groupsMap.get(mapKey);
+    if (existingGroup) {
+      existingGroup.books.push(book);
+      existingGroup.updatedAt = Math.max(existingGroup.updatedAt, book.updatedAt);
     } else {
-      const groupName = fullGroupName;
-      acc.push({
-        id: groupName === parentGroupName ? BOOK_UNGROUPED_ID : md5Fingerprint(groupName),
-        name: groupName === parentGroupName ? BOOK_UNGROUPED_NAME : groupName,
-        displayName: leafGroupName,
+      groupsMap.set(mapKey, {
+        id: isDirectChild ? BOOK_UNGROUPED_ID : md5Fingerprint(fullGroupName),
+        name: fullGroupName,
+        displayName: isDirectChild ? BOOK_UNGROUPED_NAME : immediateChild,
         books: [book],
         updatedAt: book.updatedAt,
       });
     }
-    return acc;
-  }, []);
-  groups.forEach((group) => {
+  }
+
+  for (const group of groupsMap.values()) {
     group.books.sort((a, b) => b.updatedAt - a.updatedAt);
-  });
-  const ungroupedBooks: Book[] =
-    groups.find((group) => group.name === BOOK_UNGROUPED_NAME || group.name === parentGroupName)
-      ?.books || [];
-  const groupedBooks: BooksGroup[] = groups.filter(
-    (group) => group.name !== BOOK_UNGROUPED_NAME && group.name !== parentGroupName,
+  }
+
+  const ungroupedGroup = groupsMap.get(BOOK_UNGROUPED_NAME);
+  const ungroupedBooks = ungroupedGroup?.books || [];
+  const groupedBooks = Array.from(groupsMap.values()).filter(
+    (group) => group.name !== BOOK_UNGROUPED_NAME,
   );
+
   return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
 };
 

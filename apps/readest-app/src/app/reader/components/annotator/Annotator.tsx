@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
@@ -89,6 +89,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [selectedColor, setSelectedColor] = useState<HighlightColor>(
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
+  const androidTouchEndRef = useRef(false);
 
   const showingPopup =
     showAnnotPopup ||
@@ -239,8 +240,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const handleNativeTouch = (event: CustomEvent) => {
       const ev = event.detail as NativeTouchEventType;
       if (ev.type === 'touchstart') {
+        androidTouchEndRef.current = false;
         handleTouchStart();
       } else if (ev.type === 'touchend') {
+        androidTouchEndRef.current = true;
         handleTouchEnd();
         handlePointerUp(doc, index);
       }
@@ -301,7 +304,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const onDrawAnnotation = (event: Event) => {
     const viewSettings = getViewSettings(bookKey)!;
-    const isEink = viewSettings.isEink;
+    const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
@@ -315,7 +318,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { writingMode } = defaultView.getComputedStyle(el);
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
-      draw(Overlayer.highlight, { color: isEink ? einkBgColor : hexColor });
+      draw(Overlayer.highlight, { color: isBwEink ? einkBgColor : hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;
@@ -331,7 +334,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
       draw(Overlayer[style as keyof typeof Overlayer], {
         writingMode,
-        color: isEink ? einkFgColor : hexColor,
+        color: isBwEink ? einkFgColor : hexColor,
         padding,
       });
     }
@@ -414,6 +417,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const handleQuickAction = () => {
     const action = viewSettings.annotationQuickAction;
+    if (appService?.isAndroidApp && !androidTouchEndRef.current) return;
     switch (action) {
       case 'copy':
         handleCopy(false);

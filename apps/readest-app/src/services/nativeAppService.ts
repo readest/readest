@@ -14,7 +14,7 @@ import {
   DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, save as saveDialog, ask } from '@tauri-apps/plugin-dialog';
 import {
   join,
   basename,
@@ -38,7 +38,7 @@ import {
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
-import { copyURIToPath } from '@/utils/bridge';
+import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
 import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
@@ -52,8 +52,9 @@ import {
 
 declare global {
   interface Window {
-    __READEST_UPDATER_DISABLED?: boolean;
     __READEST_IS_EINK?: boolean;
+    __READEST_IS_APPIMAGE?: boolean;
+    __READEST_UPDATER_DISABLED?: boolean;
   }
 }
 
@@ -399,6 +400,7 @@ export class NativeAppService extends BaseAppService {
   override isLinuxApp = OS_TYPE === 'linux';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
   override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
+  override isAppImage = Boolean(window.__READEST_IS_APPIMAGE);
   override isEink = Boolean(window.__READEST_IS_EINK);
   override hasTrafficLight = OS_TYPE === 'macos';
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
@@ -421,6 +423,8 @@ export class NativeAppService extends BaseAppService {
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override distChannel = DIST_CHANNEL;
+  override storefrontRegionCode: string | null = null;
+  override isOnlineCatalogsAccessible = true;
 
   private execDir?: string = undefined;
 
@@ -445,6 +449,14 @@ export class NativeAppService extends BaseAppService {
         isPortable: this.isPortableApp,
         execDir,
       });
+    }
+    if (this.isIOSApp) {
+      const res = await getStorefrontRegionCode();
+      if (res.regionCode) {
+        this.storefrontRegionCode = res.regionCode;
+        this.isOnlineCatalogsAccessible =
+          this.storefrontRegionCode.toLowerCase() !== 'chn' || this.distChannel !== 'appstore';
+      }
     }
     await this.prepareBooksDir();
     await this.runMigrations();
@@ -536,6 +548,10 @@ export class NativeAppService extends BaseAppService {
       console.error('Failed to save file:', error);
       return false;
     }
+  }
+
+  async ask(message: string): Promise<boolean> {
+    return await ask(message);
   }
 
   async migrate20251029() {

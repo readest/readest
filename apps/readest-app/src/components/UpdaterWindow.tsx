@@ -9,6 +9,7 @@ import { relaunch, exit } from '@tauri-apps/plugin-process';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { Command } from '@tauri-apps/plugin-shell';
 import { invoke } from '@tauri-apps/api/core';
+import { desktopDir } from '@tauri-apps/api/path';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -170,6 +171,41 @@ export const UpdaterContent = ({
         } as GenericUpdate);
       }
     };
+    const downloadWithProgress = (
+      downloadUrl: string,
+      filePath: string,
+      onEvent?: (progress: DownloadEvent) => void,
+    ): Promise<void> => {
+      return new Promise<void>(async (resolve, reject) => {
+        let downloaded = 0;
+        let total = 0;
+        await tauriDownload(downloadUrl, filePath, (progress) => {
+          if (!onEvent) return;
+          if (!total && progress.total) {
+            total = progress.total;
+            onEvent({
+              event: 'Started',
+              data: { contentLength: total },
+            });
+          } else if (downloaded > 0 && progress.progress === progress.total) {
+            console.log('File downloaded to', filePath);
+            onEvent?.({ event: 'Finished' });
+            setTimeout(() => {
+              resolve();
+            }, 1000);
+          }
+
+          onEvent({
+            event: 'Progress',
+            data: { chunkLength: progress.progress - downloaded },
+          });
+          downloaded = progress.progress;
+        }).catch((error) => {
+          console.error('Download failed:', error);
+          reject(error);
+        });
+      });
+    };
     const checkWindowsPortableUpdate = async () => {
       if (!appService) return;
       const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
@@ -190,36 +226,7 @@ export const UpdaterContent = ({
           date: data.pub_date,
           body: data.notes,
           downloadAndInstall: async (onEvent) => {
-            await new Promise<void>(async (resolve, reject) => {
-              let downloaded = 0;
-              let total = 0;
-              await tauriDownload(downloadUrl, exeFilePath, (progress) => {
-                if (!onEvent) return;
-                if (!total && progress.total) {
-                  total = progress.total;
-                  onEvent({
-                    event: 'Started',
-                    data: { contentLength: total },
-                  });
-                } else if (downloaded > 0 && progress.progress === progress.total) {
-                  console.log('Portable EXE downloaded to', exeFilePath);
-                  onEvent?.({ event: 'Finished' });
-                  setTimeout(() => {
-                    resolve();
-                  }, 1000);
-                }
-
-                onEvent({
-                  event: 'Progress',
-                  data: { chunkLength: progress.progress - downloaded },
-                });
-                downloaded = progress.progress;
-              }).catch((error) => {
-                console.error('Download failed:', error);
-                reject(error);
-              });
-            });
-
+            await downloadWithProgress(downloadUrl, exeFilePath, onEvent);
             try {
               console.log('Launching new executable:', exeFilePath);
               const command = Command.create('start-readest', ['/C', 'start', '', exeFilePath]);
@@ -235,10 +242,53 @@ export const UpdaterContent = ({
         } as GenericUpdate);
       }
     };
+    const checkAppImageUpdate = async () => {
+      if (!appService) return;
+      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+      const response = await fetch(READEST_UPDATER_FILE);
+      const data = await response.json();
+      if (semver.gt(data.version, currentVersion)) {
+        const OS_ARCH = osArch();
+        const platformKey =
+          OS_ARCH === 'x86_64' ? 'linux-x86_64-appimage' : 'linux-aarch64-appimage';
+        const arch = OS_ARCH === 'x86_64' ? 'x86_64' : 'aarch64';
+        const downloadUrl = data.platforms[platformKey]?.url as string;
+        const appImageFileName = `Readest_${data.version}_${arch}.AppImage`;
+        const appImageFilePath = await join(await desktopDir(), appImageFileName);
+        setUpdate({
+          currentVersion,
+          version: data.version,
+          date: data.pub_date,
+          body: data.notes,
+          downloadAndInstall: async (onEvent) => {
+            await downloadWithProgress(downloadUrl, appImageFilePath, onEvent);
+            try {
+              // Make the AppImage executable
+              const chmodCommand = Command.create('chmod-appimage', ['+x', appImageFilePath]);
+              await chmodCommand.execute();
+              console.log('AppImage made executable:', appImageFilePath);
+
+              // Launch the new AppImage
+              console.log('Launching new AppImage:', appImageFilePath);
+              const launchCommand = Command.create('launch-appimage', [appImageFilePath]);
+              await launchCommand.spawn();
+              console.log('New AppImage launched, exiting current app...');
+              setTimeout(async () => {
+                await exit(0);
+              }, 500);
+            } catch (error) {
+              console.error('Failed to launch new AppImage:', error);
+            }
+          },
+        } as GenericUpdate);
+      }
+    };
     const checkForUpdates = async () => {
       const OS_TYPE = osType();
       if (appService?.isPortableApp && OS_TYPE === 'windows') {
         checkWindowsPortableUpdate();
+      } else if (appService?.isAppImage) {
+        checkAppImageUpdate();
       } else if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
         checkDesktopUpdate();
       } else if (OS_TYPE === 'android') {

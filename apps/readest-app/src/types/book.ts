@@ -15,7 +15,9 @@ export type BookFormat =
   | 'MD';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
-export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet';
+// Predefined highlight colors, can be extended with custom hex colors
+export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
+export type ReadingRulerColor = 'transparent' | 'yellow' | 'green' | 'blue' | 'rose';
 
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
@@ -118,8 +120,6 @@ export interface BookLayout {
   maxColumnCount: number;
   maxInlineSize: number;
   maxBlockSize: number;
-  animated: boolean;
-  isEink: boolean;
   writingMode: WritingMode;
   vertical: boolean;
   rtl: boolean;
@@ -200,6 +200,16 @@ export interface ViewConfig {
   showMarginsOnScroll: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
+
+  animated: boolean;
+  isEink: boolean;
+  isColorEink: boolean;
+
+  readingRulerEnabled: boolean;
+  readingRulerLines: number;
+  readingRulerPosition: number;
+  readingRulerOpacity: number;
+  readingRulerColor: ReadingRulerColor;
 }
 
 export interface TTSConfig {
@@ -265,7 +275,8 @@ export interface ProofreadRulesConfig {
 }
 
 export interface ViewSettings
-  extends BookLayout,
+  extends
+    BookLayout,
     BookStyle,
     BookFont,
     BookLanguage,

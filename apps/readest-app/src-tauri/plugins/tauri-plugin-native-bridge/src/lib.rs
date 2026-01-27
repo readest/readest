@@ -77,6 +77,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_external_sdcard_path,
             commands::open_external_url,
             commands::select_directory,
+            commands::get_storefront_region_code,
             commands::request_manage_storage_permission,
         ])
         .setup(|app, api| {

@@ -16,7 +16,12 @@ interface DropdownProps {
   }>;
   disabled?: boolean;
   onToggle?: (isOpen: boolean) => void;
+  showTooltip?: boolean;
 }
+
+type MenuItemProps = {
+  setIsDropdownOpen?: (open: boolean) => void;
+};
 
 const enhanceMenuItems = (
   children: ReactNode,
@@ -27,7 +32,7 @@ const enhanceMenuItems = (
       return node;
     }
 
-    const element = node as ReactElement;
+    const element = node as React.ReactElement<React.PropsWithChildren<MenuItemProps>>;
     const isMenuItem =
       element.type === MenuItem ||
       (typeof element.type === 'function' && element.type.name === 'MenuItem');
@@ -61,6 +66,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   children,
   disabled,
   onToggle,
+  showTooltip = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -137,7 +143,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           aria-haspopup='menu'
           aria-expanded={isOpen}
           aria-label={label}
-          title={label}
+          title={showTooltip ? label : undefined}
           className={clsx(
             'dropdown-toggle touch-target',
             isFocused && isOpen && 'bg-base-300/50',

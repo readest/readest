@@ -13,7 +13,15 @@ const NotebookHeader: React.FC<{
   handleClose: () => void;
   handleTogglePin: () => void;
   handleToggleSearchBar: () => void;
-}> = ({ isPinned, isSearchBarVisible, handleClose, handleTogglePin, handleToggleSearchBar }) => {
+  showSearchButton?: boolean;
+}> = ({
+  isPinned,
+  isSearchBarVisible,
+  handleClose,
+  handleTogglePin,
+  handleToggleSearchBar,
+  showSearchButton = true,
+}) => {
   const _ = useTranslation();
   const iconSize14 = useResponsiveSize(14);
   const iconSize18 = useResponsiveSize(18);
@@ -42,15 +50,20 @@ const NotebookHeader: React.FC<{
           <MdArrowBackIosNew />
         </button>
       </div>
-      <div className='flex items-center justify-end gap-x-4'>
-        <button
-          title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
-          onClick={handleToggleSearchBar}
-          className={clsx('btn btn-ghost h-8 min-h-8 w-8 p-0', isSearchBarVisible && 'bg-base-300')}
-        >
-          <FiSearch size={iconSize18} />
-        </button>
-      </div>
+      {showSearchButton && (
+        <div className='flex items-center justify-end gap-x-4'>
+          <button
+            title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
+            onClick={handleToggleSearchBar}
+            className={clsx(
+              'btn btn-ghost h-8 min-h-8 w-8 p-0',
+              isSearchBarVisible && 'bg-base-300',
+            )}
+          >
+            <FiSearch size={iconSize18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

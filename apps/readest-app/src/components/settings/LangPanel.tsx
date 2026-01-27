@@ -242,7 +242,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   return (
     <div className={clsx('my-4 w-full space-y-6')}>
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.language.interfaceLanguage'>
         <h2 className='mb-2 font-medium'>{_('Language')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -258,7 +258,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         </div>
       </div>
 
-      <div className='w-full'>
+      <div className='w-full' data-setting-id='settings.language.translationEnabled'>
         <h2 className='mb-2 font-medium'>{_('Translation')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200'>
@@ -283,7 +283,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               />
             </div>
 
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.language.ttsTextTranslation'>
               <span className=''>{_('TTS Text')}</span>
               <Select
                 value={ttsReadAloudText}
@@ -292,7 +292,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               />
             </div>
 
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.language.translationProvider'>
               <span className=''>{_('Translation Service')}</span>
               <Select
                 value={getCurrentTranslationProviderOption().value}
@@ -301,7 +301,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               />
             </div>
 
-            <div className='config-item'>
+            <div className='config-item' data-setting-id='settings.language.targetLanguage'>
               <span className=''>{_('Translate To')}</span>
               <Select
                 value={getCurrentTargetLangOption().value}
@@ -314,7 +314,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       </div>
 
       {(isCJKEnv() || view?.language.isCJK) && (
-        <div className='w-full'>
+        <div className='w-full' data-setting-id='settings.language.quotationMarks'>
           <h2 className='mb-2 font-medium'>{_('Punctuation')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200'>
@@ -336,7 +336,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       )}
 
       {(isCJKEnv() || view?.language.isCJK) && (
-        <div className='w-full'>
+        <div className='w-full' data-setting-id='settings.language.chineseConversion'>
           <h2 className='mb-2 font-medium'>{_('Convert Simplified and Traditional Chinese')}</h2>
           <div className='card border-base-200 bg-base-100 border shadow'>
             <div className='divide-base-200'>

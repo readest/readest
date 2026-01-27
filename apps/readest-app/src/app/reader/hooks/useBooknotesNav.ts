@@ -103,14 +103,7 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
         getView(bookKey)?.goTo(sorted[0]!.cfi);
       }
     },
-    [
-      allBooknotes,
-      bookKey,
-      setActiveBooknoteType,
-      setBooknoteResults,
-      setBooknoteIndex,
-      getView,
-    ],
+    [allBooknotes, bookKey, setActiveBooknoteType, setBooknoteResults, setBooknoteIndex, getView],
   );
 
   const handleShowResults = useCallback(() => {

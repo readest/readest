@@ -9,7 +9,10 @@ function appr(x: number) {
   return MAX * (1 - Math.exp((-k * x) / MAX));
 }
 
-export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, onTrigger: () => void) => {
+export const usePullToRefresh = (
+  ref: React.RefObject<HTMLDivElement | null>,
+  onTrigger: () => void,
+) => {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

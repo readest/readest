@@ -15,18 +15,18 @@ export const r2Storage = {
     return `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
   },
 
-  getDownloadSignedUrl: async (
-    bucketName: string,
-    fileKey: string,
-    expiresIn: number,
-  ) => {
+  getDownloadSignedUrl: async (bucketName: string, fileKey: string, expiresIn: number) => {
     return (
-      await r2Storage.getR2Client().sign(
-        new Request(`${r2Storage.getR2Url()}/${bucketName}/${fileKey}?X-Amz-Expires=${expiresIn}`),
-        {
-          aws: { signQuery: true },
-        },
-      )
+      await r2Storage
+        .getR2Client()
+        .sign(
+          new Request(
+            `${r2Storage.getR2Url()}/${bucketName}/${fileKey}?X-Amz-Expires=${expiresIn}`,
+          ),
+          {
+            aws: { signQuery: true },
+          },
+        )
     ).url.toString();
   },
 

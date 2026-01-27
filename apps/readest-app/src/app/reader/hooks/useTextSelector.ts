@@ -145,6 +145,9 @@ export const useTextSelector = (
       } else if (isPointerInside) {
         isUpToPopup.current = true;
         makeSelection(sel, index, true);
+      } else if (appService?.isAndroidApp) {
+        isUpToPopup.current = false;
+        makeSelection(sel, index, true);
       }
     }
   };

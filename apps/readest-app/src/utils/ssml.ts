@@ -17,6 +17,12 @@ export const genSSML = (lang: string, text: string, voice: string, rate: number)
   `;
 };
 
+export const genSSMLRaw = (text: string) => {
+  return `
+    <speak xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en"><mark name="-1"/>${text}</speak>
+  `;
+};
+
 export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   let lang = 'en';
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);

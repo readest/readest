@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import { useState } from 'react';
 import { IoAdd, IoTrash, IoOpenOutline, IoBook, IoEyeOff, IoEye } from 'react-icons/io5';
 import { useRouter } from 'next/navigation';
@@ -56,7 +57,7 @@ async function validateOPDSCatalog(
 export function CatalogManager() {
   const _ = useTranslation();
   const router = useRouter();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() => settings.opdsCatalogs || []);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -70,6 +71,7 @@ export function CatalogManager() {
   const [showPassword, setShowPassword] = useState(false);
   const [urlError, setUrlError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const popularCatalogs = appService?.isOnlineCatalogsAccessible ? POPULAR_CATALOGS : [];
 
   const saveCatalogs = (updatedCatalogs: OPDSCatalog[]) => {
     setCatalogs(updatedCatalogs);
@@ -233,48 +235,50 @@ export function CatalogManager() {
       </section>
 
       {/* Popular Catalogs */}
-      <section className='text-base'>
+      <section className={clsx('text-base', popularCatalogs.length === 0 && 'hidden')}>
         <h2 className='mb-4 font-semibold'>{_('Popular Catalogs')}</h2>
         <div className='grid gap-4 sm:grid-cols-2'>
-          {POPULAR_CATALOGS.filter((catalog) => !catalog.disabled).map((catalog) => {
-            const isAdded = catalogs.some((c) => c.url === catalog.url);
-            return (
-              <div
-                key={catalog.id}
-                className='card bg-base-100 border-base-300 border shadow-sm transition-shadow hover:shadow-md'
-              >
-                <div className='card-body p-4'>
-                  <h3 className='card-title mb-1 text-sm'>
-                    {catalog.icon && <span className=''>{catalog.icon}</span>}
-                    {catalog.name}
-                  </h3>
-                  {catalog.description && (
-                    <p className='text-base-content/70 line-clamp-2 text-sm'>
-                      {catalog.description}
-                    </p>
-                  )}
-                  <div className='card-actions mt-4 justify-end gap-2'>
-                    {!isAdded && (
-                      <button
-                        onClick={() => handleAddPopularCatalog(catalog)}
-                        className='btn btn-sm'
-                      >
-                        <IoAdd className='h-4 w-4' />
-                        {_('Add')}
-                      </button>
+          {popularCatalogs
+            .filter((catalog) => !catalog.disabled)
+            .map((catalog) => {
+              const isAdded = catalogs.some((c) => c.url === catalog.url);
+              return (
+                <div
+                  key={catalog.id}
+                  className='card bg-base-100 border-base-300 border shadow-sm transition-shadow hover:shadow-md'
+                >
+                  <div className='card-body p-4'>
+                    <h3 className='card-title mb-1 text-sm'>
+                      {catalog.icon && <span className=''>{catalog.icon}</span>}
+                      {catalog.name}
+                    </h3>
+                    {catalog.description && (
+                      <p className='text-base-content/70 line-clamp-2 text-sm'>
+                        {catalog.description}
+                      </p>
                     )}
-                    <button
-                      onClick={() => handleOpenCatalog(catalog)}
-                      className='btn btn-sm btn-primary'
-                    >
-                      <IoOpenOutline className='h-4 w-4' />
-                      {_('Browse')}
-                    </button>
+                    <div className='card-actions mt-4 justify-end gap-2'>
+                      {!isAdded && (
+                        <button
+                          onClick={() => handleAddPopularCatalog(catalog)}
+                          className='btn btn-sm'
+                        >
+                          <IoAdd className='h-4 w-4' />
+                          {_('Add')}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleOpenCatalog(catalog)}
+                        className='btn btn-sm btn-primary'
+                      >
+                        <IoOpenOutline className='h-4 w-4' />
+                        {_('Browse')}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </section>
 

@@ -34,11 +34,11 @@ export const useLongPress = (
   deps: React.DependencyList,
 ): UseLongPressResult => {
   const [pressing, setPressing] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const pointerId = useRef<number | null>(null);
   const hasPointerEventsRef = useRef(false);
-  const pointerEventTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const pointerEventTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isLongPressTriggered = useRef(false);
 
   const reset = useCallback(() => {
@@ -46,7 +46,9 @@ export const useLongPress = (
     isLongPressTriggered.current = false;
     startPosRef.current = null;
     pointerId.current = null;
-    clearTimeout(timerRef.current);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
   }, []);
 
   const handlePointerDown = useCallback(
@@ -56,7 +58,9 @@ export const useLongPress = (
       }
 
       hasPointerEventsRef.current = true;
-      clearTimeout(pointerEventTimeoutRef.current);
+      if (pointerEventTimeoutRef.current) {
+        clearTimeout(pointerEventTimeoutRef.current);
+      }
 
       pointerId.current = e.pointerId;
       startPosRef.current = { x: e.clientX, y: e.clientY };
@@ -145,7 +149,9 @@ export const useLongPress = (
 
   useEffect(() => {
     return () => {
-      clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
