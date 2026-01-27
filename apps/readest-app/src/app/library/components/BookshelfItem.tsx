@@ -99,7 +99,7 @@ interface BookshelfItemProps {
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
-  handleUpdateReadingStatus: (book: Book, status: ReadingStatus) => void;
+  handleUpdateReadingStatus: (book: Book, status: ReadingStatus | undefined) => void;
 }
 
 const BookshelfItem: React.FC<BookshelfItemProps> = ({
@@ -224,6 +224,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         handleUpdateReadingStatus(book, 'unread');
       },
     });
+    const clearStatusMenuItem = await MenuItem.new({
+      text: _('Clear Status'),
+      action: async () => {
+        handleUpdateReadingStatus(book, undefined);
+      },
+    });
     const showBookInFinderMenuItem = await MenuItem.new({
       text: _(fileRevealLabel),
       action: async () => {
@@ -262,6 +268,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       menu.append(markAsUnreadMenuItem);
     } else {
       menu.append(markAsFinishedMenuItem);
+    }
+    // show "Clear Status" option when book has an explicit status set
+    if (book.readingStatus === 'finished' || book.readingStatus === 'unread') {
+      menu.append(clearStatusMenuItem);
     }
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);

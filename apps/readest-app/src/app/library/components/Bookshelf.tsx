@@ -253,7 +253,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowStatusAlert(true);
   };
 
-  const updateBooksStatus = async (status: ReadingStatus) => {
+  const updateBooksStatus = async (status: ReadingStatus | undefined) => {
     const selectedIds = getSelectedBooks();
     const booksToUpdate: Book[] = [];
 
@@ -274,7 +274,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const handleUpdateReadingStatus = useCallback(
-    async (book: Book, status: ReadingStatus) => {
+    async (book: Book, status: ReadingStatus | undefined) => {
       const updatedBook = { ...book, readingStatus: status, updatedAt: Date.now() };
       await updateBooks(envConfig, [updatedBook]);
     },
@@ -482,9 +482,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               <button
                 className={clsx(
                   'flex items-center gap-2 rounded-full px-4 py-2',
-                  'bg-base-300 text-base-content',
-                  'hover:bg-base-content/10',
-                  'border-base-content/10 border',
+                  'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                  'hover:bg-amber-500/25',
+                  'border border-amber-500/20',
                   'shadow-sm',
                   'transition-all duration-200 ease-out',
                   'active:scale-[0.97]',
@@ -506,6 +506,20 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                 onClick={() => updateBooksStatus('finished')}
               >
                 <span className='text-sm font-medium'>{_('Mark as Finished')}</span>
+              </button>
+              <button
+                className={clsx(
+                  'flex items-center gap-2 rounded-full px-4 py-2',
+                  'bg-base-300 text-base-content',
+                  'hover:bg-base-content/10',
+                  'border-base-content/10 border',
+                  'shadow-sm',
+                  'transition-all duration-200 ease-out',
+                  'active:scale-[0.97]',
+                )}
+                onClick={() => updateBooksStatus(undefined)}
+              >
+                <span className='text-sm font-medium'>{_('Clear Status')}</span>
               </button>
             </div>
           </div>

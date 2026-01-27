@@ -32,6 +32,14 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
       );
     }
 
+    if (book.readingStatus === 'unread') {
+      return (
+        <div className='flex justify-start'>
+          <StatusBadge status={book.readingStatus}>{_('Unread')}</StatusBadge>
+        </div>
+      );
+    }
+
     if (progressPercentage === null || Number.isNaN(progressPercentage)) {
       return null;
     }
