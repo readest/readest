@@ -958,5 +958,11 @@
   "Ollama Model": "Ollama ආකෘතිය",
   "AI Gateway Model": "AI ਗੇਟਵੇ ਆਕෘතිය",
   "Actions": "ක්‍රියා",
-  "Navigation": "සංචාලනය"
+  "Navigation": "සංචාලනය",
+  "Set status for {{count}} book(s)_one": "{{count}} පොත සඳහා තත්ත්වය සකසන්න",
+  "Set status for {{count}} book(s)_other": "{{count}} පොත් සඳහා තත්ත්වය සකසන්න",
+  "Mark as Unread": "නොකියවූ ලෙස සලකුණු කරන්න",
+  "Mark as Finished": "අවසන් වූ ලෙස සලකුණු කරන්න",
+  "Finished": "අවසන්",
+  "Status": "තත්ත්වය"
 }

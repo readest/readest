@@ -978,5 +978,11 @@
   "Ollama Model": "Модель Ollama",
   "AI Gateway Model": "Модель AI Gateway",
   "Actions": "Действия",
-  "Navigation": "Навигация"
+  "Navigation": "Навигация",
+  "Set status for {{count}} book(s)_one": "Установить статус для {{count}} книги",
+  "Set status for {{count}} book(s)_other": "Установить статус для {{count}} книг",
+  "Mark as Unread": "Отметить как непрочитанное",
+  "Mark as Finished": "Отметить как прочитанное",
+  "Finished": "Прочитано",
+  "Status": "Статус"
 }

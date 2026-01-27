@@ -19,5 +19,11 @@
   "Are you sure to delete {{count}} selected file(s)?_one": "Are you sure to delete {{count}} selected file?",
   "Are you sure to delete {{count}} selected file(s)?_other": "Are you sure to delete {{count}} selected files?",
   "Successfully imported {{count}} book(s)_one": "Successfully imported {{count}} book",
-  "Successfully imported {{count}} book(s)_other": "Successfully imported {{count}} books"
+  "Successfully imported {{count}} book(s)_other": "Successfully imported {{count}} books",
+  "Set status for {{count}} book(s)_one": "Set status for {{count}} book",
+  "Set status for {{count}} book(s)_other": "Set status for {{count}} books",
+  "Mark as Finished": "Mark as Finished",
+  "Mark as Unread": "Mark as Unread",
+  "Finished": "Finished",
+  "Status": "Status"
 }

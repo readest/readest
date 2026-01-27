@@ -958,5 +958,11 @@
   "Ollama Model": "Ollama-modell",
   "AI Gateway Model": "AI Gateway-modell",
   "Actions": "Åtgärder",
-  "Navigation": "Navigering"
+  "Navigation": "Navigering",
+  "Set status for {{count}} book(s)_one": "Ange status för {{count}} bok",
+  "Set status for {{count}} book(s)_other": "Ange status för {{count}} böcker",
+  "Mark as Unread": "Markera som oläst",
+  "Mark as Finished": "Markera som läst",
+  "Finished": "Läst",
+  "Status": "Status"
 }

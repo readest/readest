@@ -958,5 +958,11 @@
   "Ollama Model": "Ollama मॉडल",
   "AI Gateway Model": "AI गेटवे मॉडल",
   "Actions": "क्रियाएं",
-  "Navigation": "नेविगेशन"
+  "Navigation": "नेविगेशन",
+  "Set status for {{count}} book(s)_one": "{{count}} किताब की स्थिति सेट करें",
+  "Set status for {{count}} book(s)_other": "{{count}} किताबों की स्थिति सेट करें",
+  "Mark as Unread": "अपठित के रूप में चिह्नित करें",
+  "Mark as Finished": "समाप्त के रूप में चिह्नित करें",
+  "Finished": "समाप्त",
+  "Status": "स्थिति"
 }

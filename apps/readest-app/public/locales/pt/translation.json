@@ -968,5 +968,11 @@
   "Ollama Model": "Modelo do Ollama",
   "AI Gateway Model": "Modelo de AI Gateway",
   "Actions": "Ações",
-  "Navigation": "Navegação"
+  "Navigation": "Navegação",
+  "Set status for {{count}} book(s)_one": "Definir estado para {{count}} livro",
+  "Set status for {{count}} book(s)_other": "Definir estado para {{count}} livros",
+  "Mark as Unread": "Marcar como não lido",
+  "Mark as Finished": "Marcar como concluído",
+  "Finished": "Concluído",
+  "Status": "Estado"
 }

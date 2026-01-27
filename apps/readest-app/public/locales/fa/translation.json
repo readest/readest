@@ -958,5 +958,11 @@
   "Ollama Model": "مدل Ollama",
   "AI Gateway Model": "مدل AI Gateway",
   "Actions": "عملیات",
-  "Navigation": "ناوبری"
+  "Navigation": "ناوبری",
+  "Set status for {{count}} book(s)_one": "تعیین وضعیت برای {{count}} کتاب",
+  "Set status for {{count}} book(s)_other": "تعیین وضعیت برای {{count}} کتاب",
+  "Mark as Unread": "علامت‌گذاری به‌عنوان خوانده‌نشده",
+  "Mark as Finished": "علامت‌گذاری به‌عنوان تمام‌شده",
+  "Finished": "تمام‌شده",
+  "Status": "وضعیت"
 }

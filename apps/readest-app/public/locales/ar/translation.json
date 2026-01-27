@@ -998,5 +998,11 @@
   "Ollama Model": "نموذج Ollama",
   "AI Gateway Model": "نموذج بوابة الذكاء الاصطناعي",
   "Actions": "الإجراءات",
-  "Navigation": "التنقل"
+  "Navigation": "التنقل",
+  "Set status for {{count}} book(s)_one": "تعيين الحالة لـ {{count}} كتاب",
+  "Set status for {{count}} book(s)_other": "تعيين الحالة لـ {{count}} كتب",
+  "Mark as Unread": "تحديد كغير مقروء",
+  "Mark as Finished": "تحديد كمنتهى",
+  "Finished": "منتهى",
+  "Status": "الحالة"
 }
