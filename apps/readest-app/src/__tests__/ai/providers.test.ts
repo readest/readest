@@ -83,9 +83,15 @@ describe('OllamaProvider', () => {
   test('healthCheck should return false if model not found', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ models: [{ name: 'other-model' }, { name: 'nomic-embed:latest' }] }),
+      json: () =>
+        Promise.resolve({ models: [{ name: 'other-model' }, { name: 'nomic-embed:latest' }] }),
     });
-    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, ollamaModel: 'llama3.2', ollamaEmbeddingModel: 'nomic-embed' };
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      ollamaModel: 'llama3.2',
+      ollamaEmbeddingModel: 'nomic-embed',
+    };
     const provider = new OllamaProvider(settings);
 
     const result = await provider.healthCheck();
