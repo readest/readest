@@ -48,17 +48,32 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const goLeft = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    // If paragraph mode is enabled, navigate to previous paragraph instead
+    if (viewSettings?.paragraphMode?.enabled && sideBarBookKey) {
+      eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
+      return;
+    }
     viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance);
   };
 
   const goRight = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    // If paragraph mode is enabled, navigate to next paragraph instead
+    if (viewSettings?.paragraphMode?.enabled && sideBarBookKey) {
+      eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
+      return;
+    }
     viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance);
   };
 
   const goUp = (event?: KeyboardEvent | MessageEvent) => {
     const view = getView(sideBarBookKey);
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    // If paragraph mode is enabled, navigate to previous paragraph instead
+    if (viewSettings?.paragraphMode?.enabled && sideBarBookKey) {
+      eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
+      return;
+    }
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'up', 'pan', distance);
   };
@@ -66,6 +81,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const goDown = (event?: KeyboardEvent | MessageEvent) => {
     const view = getView(sideBarBookKey);
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
+    // If paragraph mode is enabled, navigate to next paragraph instead
+    if (viewSettings?.paragraphMode?.enabled && sideBarBookKey) {
+      eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
+      return;
+    }
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'down', 'pan', distance);
   };
@@ -213,6 +233,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
   };
 
+  const toggleParagraphMode = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey: sideBarBookKey });
+  };
+
   useEffect(() => {
     eventDispatcher.on('zoom-in', handleZoomIn);
     eventDispatcher.on('zoom-out', handleZoomOut);
@@ -232,6 +257,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
+      onToggleParagraphMode: toggleParagraphMode,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onShowSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
