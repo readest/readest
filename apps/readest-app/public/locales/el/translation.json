@@ -958,5 +958,13 @@
   "Ollama Model": "Μοντέλο Ollama",
   "AI Gateway Model": "Μοντέλο AI Gateway",
   "Actions": "Ενέργειες",
-  "Navigation": "Πλοήγηση"
+  "Navigation": "Πλοήγηση",
+  "Set status for {{count}} book(s)_one": "Ορισμός κατάστασης για {{count}} βιβλίο",
+  "Set status for {{count}} book(s)_other": "Ορισμός κατάστασης για {{count}} βιβλία",
+  "Mark as Unread": "Σήμανση ως μη αναγνωσμένο",
+  "Mark as Finished": "Σήμανση ως ολοκληρωμένο",
+  "Finished": "Ολοκληρώθηκε",
+  "Unread": "Μη αναγνωσμένο",
+  "Clear Status": "Εκκαθάριση κατάστασης",
+  "Status": "Κατάσταση"
 }

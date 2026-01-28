@@ -948,5 +948,13 @@
   "Ollama Model": "Model Ollama",
   "AI Gateway Model": "Model AI Gateway",
   "Actions": "Tindakan",
-  "Navigation": "Navigasi"
+  "Navigation": "Navigasi",
+  "Set status for {{count}} book(s)_one": "Atur status untuk {{count}} buku",
+  "Set status for {{count}} book(s)_other": "Atur status untuk {{count}} buku",
+  "Mark as Unread": "Tandai sebagai Belum Dibaca",
+  "Mark as Finished": "Tandai sebagai Selesai",
+  "Finished": "Selesai",
+  "Unread": "Belum Dibaca",
+  "Clear Status": "Hapus Status",
+  "Status": "Status"
 }

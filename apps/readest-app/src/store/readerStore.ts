@@ -291,15 +291,33 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const pagePressInfo = bookData.isFixedLayout ? section : pageinfo;
       const progress: [number, number] = [pagePressInfo.current + 1, pagePressInfo.total];
 
-      // Update library book progress
+      // calculate progress percentage
+      const progressPercentage = Math.round((progress[0] / progress[1]) * 100);
+
+      // update library book progress
       const { library, setLibrary } = useLibraryStore.getState();
       const bookIndex = library.findIndex((b) => b.hash === id);
       if (bookIndex !== -1) {
         const updatedLibrary = [...library];
         const existingBook = updatedLibrary[bookIndex]!;
+
+        // determine new reading status
+        let newReadingStatus = existingBook.readingStatus;
+
+        // auto-clear 'unread' status when user starts reading (progress changes)
+        if (existingBook.readingStatus === 'unread') {
+          newReadingStatus = undefined;
+        }
+
+        // auto mark as 'finished' when progress reaches 100%
+        if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
+          newReadingStatus = 'finished';
+        }
+
         updatedLibrary[bookIndex] = {
           ...existingBook,
           progress,
+          readingStatus: newReadingStatus,
           updatedAt: Date.now(),
         };
         setLibrary(updatedLibrary);

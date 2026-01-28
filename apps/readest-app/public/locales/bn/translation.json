@@ -958,5 +958,13 @@
   "Ollama Model": "Ollama মডেল",
   "AI Gateway Model": "AI গেটওয়ে মডেল",
   "Actions": "অ্যাকশন",
-  "Navigation": "নেভিগেশন"
+  "Navigation": "নেভিগেশন",
+  "Set status for {{count}} book(s)_one": "{{count}} টি বইয়ের স্ট্যাটাস সেট করুন",
+  "Set status for {{count}} book(s)_other": "{{count}} টি বইয়ের স্ট্যাটাস সেট করুন",
+  "Mark as Unread": "পড়া হয়নি হিসেবে চিহ্নিত করুন",
+  "Mark as Finished": "পড়া শেষ হিসেবে চিহ্নিত করুন",
+  "Finished": "শেষ হয়েছে",
+  "Unread": "অপঠিত",
+  "Clear Status": "স্থিতি মুছুন",
+  "Status": "অবস্থা"
 }

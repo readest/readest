@@ -948,5 +948,13 @@
   "Ollama Model": "Ollama དཔེ་གཞི།",
   "AI Gateway Model": "AI Gateway དཔེ་གཞི།",
   "Actions": "བྱ་འགུལ།",
-  "Navigation": "འགྲུལ་བཞུད།"
+  "Navigation": "འགྲུལ་བཞུད།",
+  "Set status for {{count}} book(s)_one": "དེབ་ {{count}} གི་གནས་སྟངས་གཏན་འཁེལ་བྱེད།",
+  "Set status for {{count}} book(s)_other": "དེབ་ {{count}} གི་གནས་སྟངས་གཏན་འཁེལ་བྱེད།",
+  "Mark as Unread": "མ་ཀློག་པར་རྟགས་རྒྱག",
+  "Mark as Finished": "ཚར་བར་རྟགས་རྒྱག",
+  "Finished": "ཚར་སོང་།",
+  "Unread": "མ་ཀློག་པ།",
+  "Clear Status": "གནས་སྟངས་གཙང་མ།",
+  "Status": "གནས་སྟངས།"
 }

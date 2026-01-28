@@ -948,5 +948,13 @@
   "Ollama Model": "Ollama 模型",
   "AI Gateway Model": "AI Gateway 模型",
   "Actions": "操作",
-  "Navigation": "導覽"
+  "Navigation": "導覽",
+  "Set status for {{count}} book(s)_one": "設定 {{count}} 本書的狀態",
+  "Set status for {{count}} book(s)_other": "設定 {{count}} 本書的狀態",
+  "Mark as Unread": "標示為未讀",
+  "Mark as Finished": "標示為已讀",
+  "Finished": "已讀",
+  "Unread": "未讀",
+  "Clear Status": "清除狀態",
+  "Status": "狀態"
 }

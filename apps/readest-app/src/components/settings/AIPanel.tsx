@@ -71,6 +71,7 @@ const AIPanel: React.FC = () => {
   const [provider, setProvider] = useState<AIProviderName>(aiSettings.provider);
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaBaseUrl);
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaModel);
+  const [ollamaEmbeddingModel, setOllamaEmbeddingModel] = useState(aiSettings.ollamaEmbeddingModel);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [gatewayKey, setGatewayKey] = useState(aiSettings.aiGatewayApiKey ?? '');
@@ -183,6 +184,14 @@ const AIPanel: React.FC = () => {
 
   useEffect(() => {
     if (!isMounted.current) return;
+    if (ollamaEmbeddingModel !== aiSettings.ollamaEmbeddingModel) {
+      saveAiSetting('ollamaEmbeddingModel', ollamaEmbeddingModel);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ollamaEmbeddingModel]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
     if (gatewayKey !== (aiSettings.aiGatewayApiKey ?? '')) {
       saveAiSetting('aiGatewayApiKey', gatewayKey);
     }
@@ -276,6 +285,7 @@ const AIPanel: React.FC = () => {
         provider,
         ollamaBaseUrl: ollamaUrl,
         ollamaModel,
+        ollamaEmbeddingModel,
         aiGatewayApiKey: gatewayKey,
         aiGatewayModel: effectiveModel,
       };
@@ -375,21 +385,38 @@ const AIPanel: React.FC = () => {
                 />
               </div>
               {ollamaModels.length > 0 ? (
-                <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                  <span>{_('AI Model')}</span>
-                  <select
-                    className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                    value={ollamaModel}
-                    onChange={(e) => setOllamaModel(e.target.value)}
-                    disabled={!enabled}
-                  >
-                    {ollamaModels.map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+                    <span>{_('AI Model')}</span>
+                    <select
+                      className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                      value={ollamaModel}
+                      onChange={(e) => setOllamaModel(e.target.value)}
+                      disabled={!enabled}
+                    >
+                      {ollamaModels.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+                    <span>{_('Embedding Model')}</span>
+                    <select
+                      className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                      value={ollamaEmbeddingModel}
+                      onChange={(e) => setOllamaEmbeddingModel(e.target.value)}
+                      disabled={!enabled}
+                    >
+                      {ollamaModels.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
               ) : !fetchingModels ? (
                 <div className='config-item'>
                   <span className='text-warning text-sm'>{_('No models detected')}</span>
