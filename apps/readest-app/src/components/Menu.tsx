@@ -1,6 +1,7 @@
 import clsx from 'clsx';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
+import { RovingTabindexProvider } from 'react-roving-tabindex-2';
 
 interface MenuProps {
   children: React.ReactNode;
@@ -14,6 +15,17 @@ const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => 
 
   useKeyDownActions({ onCancel, elementRef: menuRef });
 
+  useEffect(() => {
+    setTimeout(() => {
+      if (menuRef.current) {
+        const firstItem = menuRef.current.querySelector('[role="menuitem"], [role="menuitemcheckbox"]');
+        if (firstItem) {
+          (firstItem as HTMLElement).focus();
+        }
+      }
+    }, 200);
+  }, []);
+
   return (
     <div
       ref={menuRef}
@@ -24,7 +36,13 @@ const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => 
       )}
       style={style}
     >
-      {children}
+      <RovingTabindexProvider
+        wrapperElementRef={menuRef}
+        classNameOfTargetElements='roving-tabindex'
+        direction='vertical' // Optional
+      >
+        {children}
+      </RovingTabindexProvider>
     </div>
   );
 };
