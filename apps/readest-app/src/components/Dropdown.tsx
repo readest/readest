@@ -4,6 +4,8 @@ import { useDropdownContext } from '@/context/DropdownContext';
 import { Overlay } from './Overlay';
 import MenuItem from './MenuItem';
 
+import RovingTabIndexButton from '@/components/RovingTabIndexButton';
+
 interface DropdownProps {
   label: string;
   className?: string;
@@ -94,16 +96,6 @@ const Dropdown: React.FC<DropdownProps> = ({
     setIsDropdownOpen(!isOpen);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      if (!isOpen) setIsDropdownOpen(true);
-      e.stopPropagation();
-    } else if (e.key === 'Escape') {
-      setIsDropdownOpen(false);
-      e.stopPropagation();
-    }
-  };
-
   const childrenWithToggle = isValidElement(children)
     ? React.cloneElement(children, {
         ...(typeof children.type !== 'string' && {
@@ -118,7 +110,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     <div ref={containerRef} className={clsx('dropdown-container flex', containerClassName)}>
       {isOpen && <Overlay onDismiss={() => setIsDropdownOpen(false)} />}
       <div className={clsx('relative', isOpen && 'z-50')}>
-        <button
+        <RovingTabIndexButton
           aria-haspopup='menu'
           aria-expanded={isOpen}
           aria-label={label}
@@ -129,16 +121,15 @@ const Dropdown: React.FC<DropdownProps> = ({
             buttonClassName,
           )}
           onClick={toggleDropdown}
-          onKeyDown={handleKeyDown}
         >
           {toggleButton}
-        </button>
+        </RovingTabIndexButton>
         <details
           open={isOpen}
           role='none'
           className={clsx('dropdown flex items-center justify-center', className)}
         >
-          <summary aria-hidden='true' className='list-none' />
+          <summary tabIndex='-1' aria-hidden='true' className='list-none' />
           {isOpen && childrenWithToggle}
         </details>
       </div>
