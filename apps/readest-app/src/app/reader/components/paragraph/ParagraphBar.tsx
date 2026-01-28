@@ -9,7 +9,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 
-// auto hide timing constants
 const INITIAL_SHOW_DURATION = 2500;
 const HIDE_DELAY = 2000;
 const TRIGGER_ZONE_HEIGHT = 100;
@@ -18,10 +17,8 @@ interface ParagraphBarProps {
   bookKey: string;
   currentIndex: number;
   totalParagraphs: number;
-  isAutoAdvance: boolean;
   onPrev: () => void;
   onNext: () => void;
-  onToggleAutoAdvance: () => void;
   onClose: () => void;
   gridInsets: Insets;
 }
@@ -85,7 +82,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
     [startHideTimer, clearHideTimer],
   );
 
-  // handle mouse position to check trigger zone
   const checkTriggerZone = useCallback(
     (clientY: number) => {
       const viewportHeight = window.innerHeight;
@@ -106,7 +102,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
 
   useEffect(() => {
     isMountedRef.current = true;
-    // start with bar visible (default state), begin hide timer
     startHideTimer(INITIAL_SHOW_DURATION);
 
     return () => {
@@ -115,7 +110,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
     };
   }, [startHideTimer, clearHideTimer]);
 
-  // global mouse movement tracking
   useEffect(() => {
     let rafId: number | null = null;
     let lastMoveTime = 0;
@@ -131,7 +125,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
       rafId = requestAnimationFrame(() => {
         checkTriggerZone(e.clientY);
 
-        // if not in trigger zone, show bar and reset timer
         if (!isInTriggerZoneRef.current) {
           showBar(true);
         }
@@ -150,9 +143,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   const isVisible = isBarVisible && !isHiddenByHover;
   const progress =
     totalParagraphs > 0 ? Math.round(((currentIndex + 1) / totalParagraphs) * 100) : 0;
-
-  const isAtStart = currentIndex <= 0;
-  const isAtEnd = currentIndex >= totalParagraphs - 1;
 
   return (
     <>
@@ -179,7 +169,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
         style={{
           paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
         }}
-        // keep bar visible when mouse is over it
         onMouseEnter={() => {
           isInTriggerZoneRef.current = true;
           showBar(false);
@@ -200,12 +189,10 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
         >
           <button
             onClick={onPrev}
-            disabled={isAtStart}
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
               'hover:bg-base-content/10 active:scale-90',
-              isAtStart && 'cursor-not-allowed opacity-30',
             )}
             title={_('Previous Paragraph')}
             aria-label={_('Previous Paragraph')}
@@ -234,12 +221,10 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
 
           <button
             onClick={onNext}
-            disabled={isAtEnd}
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
               'hover:bg-base-content/10 active:scale-90',
-              isAtEnd && 'cursor-not-allowed opacity-30',
             )}
             title={_('Next Paragraph')}
             aria-label={_('Next Paragraph')}
@@ -247,7 +232,6 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             <MdChevronRight size={iconSize} />
           </button>
 
-          {/* Close button */}
           <button
             onClick={onClose}
             className={clsx(
