@@ -127,11 +127,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
   return (
     <div className='flex'>
       <button
-        role={disabled ? 'none' : 'menuitem'}
-        aria-label={
-          toggled !== undefined ? `${label} - ${toggled ? _('ON') : _('OFF')}` : undefined
-        }
-        aria-live={toggled === undefined ? 'polite' : 'off'}
+        role={toggled !== undefined ? 'menuitemcheckbox' : 'menuitem'}
+        aria-checked={toggled !== undefined ? toggled : undefined}
         tabIndex={disabled ? -1 : 0}
         className={clsx(
           'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
