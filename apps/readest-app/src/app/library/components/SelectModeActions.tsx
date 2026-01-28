@@ -1,5 +1,11 @@
 import clsx from 'clsx';
-import { MdDelete, MdOpenInNew, MdOutlineCancel, MdInfoOutline } from 'react-icons/md';
+import {
+  MdDelete,
+  MdOpenInNew,
+  MdOutlineCancel,
+  MdInfoOutline,
+  MdCheckCircleOutline,
+} from 'react-icons/md';
 import { LuFolderPlus } from 'react-icons/lu';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -11,6 +17,7 @@ interface SelectModeActionsProps {
   onOpen: () => void;
   onGroup: () => void;
   onDetails: () => void;
+  onStatus: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
@@ -21,6 +28,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
   onOpen,
   onGroup,
   onDetails,
+  onStatus,
   onDelete,
   onCancel,
 }) => {
@@ -65,6 +73,16 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
         >
           <LuFolderPlus />
           <div>{_('Group')}</div>
+        </button>
+        <button
+          onClick={onStatus}
+          className={clsx(
+            'flex flex-col items-center justify-center gap-1',
+            (!hasSelection || !hasValidBooks) && 'btn-disabled opacity-50',
+          )}
+        >
+          <MdCheckCircleOutline />
+          <div>{_('Status')}</div>
         </button>
         <button
           onClick={onDetails}

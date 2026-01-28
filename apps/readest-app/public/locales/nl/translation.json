@@ -958,5 +958,13 @@
   "Ollama Model": "Ollama-model",
   "AI Gateway Model": "AI Gateway-model",
   "Actions": "Acties",
-  "Navigation": "Navigatie"
+  "Navigation": "Navigatie",
+  "Set status for {{count}} book(s)_one": "Stel status in voor {{count}} boek",
+  "Set status for {{count}} book(s)_other": "Stel status in voor {{count}} boeken",
+  "Mark as Unread": "Markeren als ongelezen",
+  "Mark as Finished": "Markeren als voltooid",
+  "Finished": "Voltooid",
+  "Unread": "Ongelezen",
+  "Clear Status": "Status wissen",
+  "Status": "Status"
 }

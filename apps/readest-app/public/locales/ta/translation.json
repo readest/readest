@@ -958,5 +958,13 @@
   "Ollama Model": "Ollama மாதிரி",
   "AI Gateway Model": "AI கேட்வே மாதிரி",
   "Actions": "செயல்கள்",
-  "Navigation": "வழிசெலுத்தல்"
+  "Navigation": "வழிசெலுத்தல்",
+  "Set status for {{count}} book(s)_one": "{{count}} புத்தகத்திற்கான நிலையை அமைக்கவும்",
+  "Set status for {{count}} book(s)_other": "{{count}} புத்தகங்களுக்கான நிலையை அமைக்கவும்",
+  "Mark as Unread": "படிக்காததாகக் குறிக்கவும்",
+  "Mark as Finished": "முடித்ததாகக் குறிக்கவும்",
+  "Finished": "முடிந்தது",
+  "Unread": "படிக்கவில்லை",
+  "Clear Status": "நிலையை அழி",
+  "Status": "நிலை"
 }

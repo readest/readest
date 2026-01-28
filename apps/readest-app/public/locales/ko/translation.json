@@ -948,5 +948,13 @@
   "Ollama Model": "Ollama 모델",
   "AI Gateway Model": "AI 게이트웨이 모델",
   "Actions": "작업",
-  "Navigation": "탐색"
+  "Navigation": "탐색",
+  "Set status for {{count}} book(s)_one": "책 {{count}}권 상태 설정",
+  "Set status for {{count}} book(s)_other": "책 {{count}}권 상태 설정",
+  "Mark as Unread": "읽지 않음으로 표시",
+  "Mark as Finished": "완료로 표시",
+  "Finished": "완료",
+  "Unread": "읽지 않음",
+  "Clear Status": "상태 지우기",
+  "Status": "상태"
 }
