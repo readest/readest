@@ -14,6 +14,7 @@ export type BookFormat =
   | 'TXT'
   | 'MD';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
+export type ReadingStatus = 'unread' | 'reading' | 'finished';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 // Predefined highlight colors, can be extended with custom hex colors
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
@@ -56,6 +57,7 @@ export interface Book {
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  readingStatus?: ReadingStatus;
   primaryLanguage?: string;
 
   metadata?: BookMetadata;

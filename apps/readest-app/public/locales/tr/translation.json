@@ -958,5 +958,13 @@
   "Ollama Model": "Ollama Modeli",
   "AI Gateway Model": "AI Gateway Modeli",
   "Actions": "Eylemler",
-  "Navigation": "Gezين"
+  "Navigation": "Gezinme",
+  "Set status for {{count}} book(s)_one": "{{count}} kitap için durumu ayarla",
+  "Set status for {{count}} book(s)_other": "{{count}} kitap için durumu ayarla",
+  "Mark as Unread": "Okunmadı olarak işaretle",
+  "Mark as Finished": "Bitirildi olarak işaretle",
+  "Finished": "Bitirildi",
+  "Unread": "Okunmadı",
+  "Clear Status": "Durumu Temizle",
+  "Status": "Durum"
 }
