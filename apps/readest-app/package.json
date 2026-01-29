@@ -125,7 +125,7 @@
     "lunr": "^2.3.9",
     "marked": "^15.0.12",
     "nanoid": "^5.1.6",
-    "next": "16.0.10",
+    "next": "16.1.6",
     "nunjucks": "^3.2.4",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
