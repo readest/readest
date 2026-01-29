@@ -682,6 +682,8 @@ export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
 
+export const SHOW_UNREAD_STATUS_BADGE = false;
+
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
   plus: 5 * 1024 * 1024 * 1024,

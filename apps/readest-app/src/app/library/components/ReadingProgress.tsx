@@ -2,6 +2,7 @@ import type React from 'react';
 import { memo, useMemo } from 'react';
 import type { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
+import { SHOW_UNREAD_STATUS_BADGE } from '@/services/constants';
 import StatusBadge from './StatusBadge';
 
 interface ReadingProgressProps {
@@ -33,11 +34,15 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     }
 
     if (book.readingStatus === 'unread') {
-      return (
-        <div className='flex justify-start'>
-          <StatusBadge status={book.readingStatus}>{_('Unread')}</StatusBadge>
-        </div>
-      );
+      if (SHOW_UNREAD_STATUS_BADGE) {
+        return (
+          <div className='flex justify-start'>
+            <StatusBadge status={book.readingStatus}>{_('Unread')}</StatusBadge>
+          </div>
+        );
+      } else {
+        return null;
+      }
     }
 
     if (progressPercentage === null || Number.isNaN(progressPercentage)) {
