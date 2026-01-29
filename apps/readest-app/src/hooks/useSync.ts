@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -36,7 +37,8 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 export function useSync(bookKey?: string) {
   const router = useRouter();
-  const { settings, setSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
   const { setIsSyncing } = useReaderStore();
   const config = bookKey ? getConfig(bookKey) : null;
@@ -152,6 +154,7 @@ export function useSync(bookKey?: string) {
       }
     } finally {
       setSyncing(false);
+      saveSettings(envConfig, settings);
     }
   };
 
@@ -175,13 +178,18 @@ export function useSync(bookKey?: string) {
   };
 
   const syncBooks = useCallback(
-    async (books?: Book[], op: SyncOp = 'both') => {
+    async (books?: Book[], op: SyncOp = 'both', since?: number) => {
       if (!lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && books?.length) {
         await pushChanges({ books });
       }
       if (op === 'pull' || op === 'both') {
-        await pullChanges('books', lastSyncedAtBooks + 1, setLastSyncedAtBooks, setSyncingBooks);
+        await pullChanges(
+          'books',
+          since ?? lastSyncedAtBooks + 1,
+          setLastSyncedAtBooks,
+          setSyncingBooks,
+        );
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

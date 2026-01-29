@@ -6,6 +6,7 @@ import { md5Fingerprint } from '@/utils/md5';
 
 interface LibraryState {
   library: Book[]; // might contain deleted books
+  libraryLoaded: boolean;
   isSyncing: boolean;
   syncProgress: number;
   checkOpenWithBooks: boolean;
@@ -36,6 +37,7 @@ interface LibraryState {
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
+  libraryLoaded: false,
   isSyncing: false,
   syncProgress: 0,
   currentBookshelf: [],
@@ -56,7 +58,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setCheckLastOpenBooks: (check) => set({ checkLastOpenBooks: check }),
   setLibrary: (books) => {
     const { refreshGroups } = get();
-    set({ library: books });
+    set({ library: books, libraryLoaded: true });
     refreshGroups();
   },
   updateBook: async (envConfig: EnvConfigType, book: Book) => {
