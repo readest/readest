@@ -29,82 +29,119 @@ const blockTags = new Set([
   'tr',
 ]);
 
-const rangeIsEmpty = (range: Range): boolean => {
+const MAX_BLOCKS = 5000;
+
+const rangeHasContent = (range: Range): boolean => {
   try {
-    return !range.toString().trim();
-  } catch {
+    const container = range.commonAncestorContainer;
+    if (container.nodeType === Node.TEXT_NODE) {
+      return (container.textContent?.trim().length ?? 0) > 0;
+    }
+    if (container.nodeType === Node.ELEMENT_NODE) {
+      return (container as Element).textContent?.trim().length !== 0;
+    }
     return true;
+  } catch {
+    return false;
   }
 };
 
-const MAX_BLOCKS = 5000;
+const hasDirectText = (node: Element): boolean =>
+  Array.from(node.childNodes).some(
+    (child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
+  );
 
-export function* getBlocks(doc: Document): Generator<Range> {
-  if (!doc?.body) return;
+const hasBlockChild = (node: Element): boolean =>
+  Array.from(node.children).some((child) => blockTags.has(child.tagName.toLowerCase()));
 
-  let last: Range | null = null;
-  let count = 0;
-  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
-
-  for (let node = walker.nextNode(); node && count < MAX_BLOCKS; node = walker.nextNode()) {
-    const name = (node as Element).tagName?.toLowerCase();
-    if (name && blockTags.has(name)) {
-      if (last) {
-        try {
-          last.setEndBefore(node);
-          if (!rangeIsEmpty(last)) {
-            yield last;
-            count++;
-          }
-        } catch {}
-      }
-      try {
-        last = doc.createRange();
-        last.setStart(node, 0);
-      } catch {
-        last = null;
-      }
+const yieldToMain = (): Promise<void> =>
+  new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => resolve());
+    } else {
+      setTimeout(resolve, 0);
     }
-  }
-
-  if (count >= MAX_BLOCKS) {
-    console.warn('ParagraphIterator: Maximum block limit reached');
-    return;
-  }
-
-  if (!last) {
-    try {
-      last = doc.createRange();
-      const startNode = doc.body.firstChild ?? doc.body;
-      last.setStart(startNode, 0);
-    } catch {
-      return;
-    }
-  }
-
-  try {
-    const endNode = doc.body.lastChild ?? doc.body;
-    last.setEndAfter(endNode);
-    if (!rangeIsEmpty(last)) yield last;
-  } catch {}
-}
+  });
 
 export class ParagraphIterator {
   #blocks: Range[] = [];
   #index = -1;
 
-  constructor(doc: Document) {
-    try {
-      // convert generator to array with timeout protection
-      const blocks: Range[] = [];
-      for (const block of getBlocks(doc)) {
-        blocks.push(block);
-      }
-      this.#blocks = blocks;
-    } catch (e) {
-      console.error('ParagraphIterator: Failed to get blocks', e);
-      this.#blocks = [];
+  private constructor(blocks: Range[]) {
+    this.#blocks = blocks;
+  }
+
+  static async createAsync(doc: Document, batchSize = 50): Promise<ParagraphIterator> {
+    if (!doc?.body) {
+      return new ParagraphIterator([]);
     }
+
+    const blocks: Range[] = [];
+    let last: Range | null = null;
+    let count = 0;
+    let processed = 0;
+
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
+
+    for (let node = walker.nextNode(); node && count < MAX_BLOCKS; node = walker.nextNode()) {
+      processed++;
+
+      if (processed % batchSize === 0) {
+        await yieldToMain();
+      }
+
+      const element = node as Element;
+      const name = element.tagName?.toLowerCase();
+      if (name && blockTags.has(name)) {
+        if (hasBlockChild(element) && !hasDirectText(element)) {
+          continue;
+        }
+        if (last) {
+          try {
+            last.setEndBefore(node);
+            if (rangeHasContent(last)) {
+              blocks.push(last);
+              count++;
+            }
+          } catch {
+            // ignore invalid ranges
+          }
+        }
+        try {
+          last = doc.createRange();
+          last.setStart(node, 0);
+        } catch {
+          last = null;
+        }
+      }
+    }
+
+    if (count >= MAX_BLOCKS) {
+      console.warn('ParagraphIterator: Maximum block limit reached');
+      return new ParagraphIterator(blocks);
+    }
+
+    if (!last) {
+      try {
+        last = doc.createRange();
+        const startNode = doc.body.firstChild ?? doc.body;
+        last.setStart(startNode, 0);
+      } catch {
+        return new ParagraphIterator(blocks);
+      }
+    }
+
+    try {
+      const endNode = doc.body.lastChild ?? doc.body;
+      last.setEndAfter(endNode);
+      if (rangeHasContent(last)) {
+        blocks.push(last);
+      }
+    } catch {
+      // ignore
+    }
+
+    return new ParagraphIterator(blocks);
   }
 
   get length(): number {
@@ -171,18 +208,21 @@ export class ParagraphIterator {
         continue;
       }
     }
-    // fallback to first
     return this.first();
   }
 
-  findByRange(targetRange: Range | null): Range | null {
+  async findByRangeAsync(targetRange: Range | null, batchSize = 50): Promise<Range | null> {
     if (!targetRange) return this.first();
 
     for (let i = 0; i < this.#blocks.length; i++) {
+      if (i > 0 && i % batchSize === 0) {
+        await yieldToMain();
+      }
+
       const block = this.#blocks[i];
       if (!block) continue;
+
       try {
-        // check if ranges overlap
         const startToEnd = block.compareBoundaryPoints(Range.START_TO_END, targetRange);
         const endToStart = block.compareBoundaryPoints(Range.END_TO_START, targetRange);
         if (startToEnd >= 0 && endToStart <= 0) {
@@ -190,43 +230,14 @@ export class ParagraphIterator {
           return block;
         }
       } catch {
-        // ranges might be in different documents
         continue;
       }
     }
-    return this.findClosestToRange(targetRange);
-  }
 
-  findClosestToRange(targetRange: Range | null): Range | null {
-    if (this.#blocks.length === 0) return null;
-    if (!targetRange) return this.first();
-
-    let targetRect: DOMRect;
     try {
-      targetRect = targetRange.getBoundingClientRect();
+      return this.findByNode(targetRange.startContainer);
     } catch {
       return this.first();
     }
-
-    let closestIndex = 0;
-    let closestDistance = Infinity;
-
-    for (let i = 0; i < this.#blocks.length; i++) {
-      const block = this.#blocks[i];
-      if (!block) continue;
-      try {
-        const blockRect = block.getBoundingClientRect();
-        const distance = Math.abs(blockRect.top - targetRect.top);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestIndex = i;
-        }
-      } catch {
-        continue;
-      }
-    }
-
-    this.#index = closestIndex;
-    return this.#blocks[closestIndex] ?? null;
   }
 }

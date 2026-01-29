@@ -44,6 +44,7 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
         bookKey={bookKey}
         currentIndex={paragraphState.currentIndex}
         totalParagraphs={paragraphState.totalParagraphs}
+        isLoading={paragraphState.isLoading}
         onPrev={goToPrevParagraph}
         onNext={goToNextParagraph}
         onClose={toggleParagraphMode}

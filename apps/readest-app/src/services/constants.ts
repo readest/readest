@@ -305,7 +305,6 @@ export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
 
 export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
   enabled: false,
-  paragraphLocation: undefined,
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {

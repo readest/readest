@@ -17,6 +17,7 @@ interface ParagraphBarProps {
   bookKey: string;
   currentIndex: number;
   totalParagraphs: number;
+  isLoading?: boolean;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
@@ -36,6 +37,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   bookKey,
   currentIndex,
   totalParagraphs,
+  isLoading,
   onPrev,
   onNext,
   onClose,
@@ -189,10 +191,12 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
         >
           <button
             onClick={onPrev}
+            disabled={isLoading}
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
               'hover:bg-base-content/10 active:scale-90',
+              isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Previous Paragraph')}
             aria-label={_('Previous Paragraph')}
@@ -203,28 +207,39 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
           <div className='bg-base-content/10 mx-1 h-4 w-px' />
 
           <div className='flex items-center gap-2 px-1'>
-            <div className='flex min-w-[3rem] items-center justify-center gap-1'>
-              <AnimatedNumber value={currentIndex + 1} />
-              <span className='text-base-content/30 text-sm'>/</span>
-              <span className='text-sm font-medium tabular-nums'>{totalParagraphs}</span>
-            </div>
+            {isLoading ? (
+              <div className='flex min-w-[3rem] items-center justify-center gap-2'>
+                <span className='loading loading-dots loading-sm text-base-content/50' />
+                <span className='text-base-content/50 text-sm'>{_('Loading')}</span>
+              </div>
+            ) : (
+              <>
+                <div className='flex min-w-[3rem] items-center justify-center gap-1'>
+                  <AnimatedNumber value={currentIndex + 1} />
+                  <span className='text-base-content/30 text-sm'>/</span>
+                  <span className='text-sm font-medium tabular-nums'>{totalParagraphs}</span>
+                </div>
 
-            <span className='text-base-content/40 text-sm'>•</span>
+                <span className='text-base-content/40 text-sm'>•</span>
 
-            <div className='flex min-w-[2.5rem] items-center justify-center gap-0.5'>
-              <AnimatedNumber value={progress} />
-              <span className='text-sm font-medium'>%</span>
-            </div>
+                <div className='flex min-w-[2.5rem] items-center justify-center gap-0.5'>
+                  <AnimatedNumber value={progress} />
+                  <span className='text-sm font-medium'>%</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className='bg-base-content/10 mx-1 h-4 w-px' />
 
           <button
             onClick={onNext}
+            disabled={isLoading}
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
               'hover:bg-base-content/10 active:scale-90',
+              isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Next Paragraph')}
             aria-label={_('Next Paragraph')}
@@ -234,10 +249,12 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
 
           <button
             onClick={onClose}
+            disabled={isLoading}
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
               'hover:bg-base-content/10 active:scale-90',
+              isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Exit Paragraph Mode')}
             aria-label={_('Exit Paragraph Mode')}

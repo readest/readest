@@ -22,7 +22,6 @@ export type ReadingRulerColor = 'transparent' | 'yellow' | 'green' | 'blue' | 'r
 
 export interface ParagraphModeConfig {
   enabled: boolean;
-  paragraphLocation?: string;
 }
 
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
