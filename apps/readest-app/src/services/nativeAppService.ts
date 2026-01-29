@@ -451,11 +451,10 @@ export class NativeAppService extends BaseAppService {
       });
     }
     if (this.isIOSApp) {
+      this.isOnlineCatalogsAccessible = this.distChannel !== 'appstore';
       const res = await getStorefrontRegionCode();
       if (res.regionCode) {
         this.storefrontRegionCode = res.regionCode;
-        this.isOnlineCatalogsAccessible =
-          this.storefrontRegionCode.toLowerCase() !== 'chn' || this.distChannel !== 'appstore';
       }
     }
     await this.prepareBooksDir();
