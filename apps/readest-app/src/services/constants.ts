@@ -7,6 +7,7 @@ import {
   BookStyle,
   HighlightColor,
   NoteExportConfig,
+  ParagraphModeConfig,
   ReadingRulerColor,
   ScreenConfig,
   TranslatorConfig,
@@ -300,6 +301,10 @@ export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
   screenOrientation: 'auto',
+};
+
+export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
+  enabled: false,
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {

@@ -20,6 +20,10 @@ export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
 export type ReadingRulerColor = 'transparent' | 'yellow' | 'green' | 'blue' | 'rose';
 
+export interface ParagraphModeConfig {
+  enabled: boolean;
+}
+
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
 export interface Book {
@@ -287,7 +291,9 @@ export interface ViewSettings
     TranslatorConfig,
     ScreenConfig,
     ProofreadRulesConfig,
-    AnnotatorConfig {}
+    AnnotatorConfig {
+  paragraphMode?: ParagraphModeConfig;
+}
 
 export interface BookProgress {
   location: string;
