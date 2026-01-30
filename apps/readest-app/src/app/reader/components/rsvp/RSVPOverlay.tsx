@@ -267,10 +267,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   if (!state.active) return null;
 
-  // Use theme colors with fallbacks for solid backgrounds
-  const bgColor = themeCode.palette.base100 || (isDarkMode ? '#1a1a2e' : '#ffffff');
-  const fgColor = themeCode.palette.baseContent || (isDarkMode ? '#e0e0e0' : '#1a1a1a');
-  const accentColor = themeCode.palette.primary || '#3b82f6';
+  // Use theme colors directly from themeCode (bg, fg, primary are already resolved from palette)
+  const bgColor = themeCode.bg;
+  const fgColor = themeCode.fg;
+  const accentColor = themeCode.primary;
 
   return (
     <div

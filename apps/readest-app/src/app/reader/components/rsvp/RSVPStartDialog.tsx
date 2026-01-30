@@ -16,10 +16,11 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
   const _ = useTranslation();
   const { themeCode, isDarkMode } = useThemeStore();
 
-  // Use fallback colors to ensure solid opaque backgrounds
-  const bgColor = themeCode.palette.base200 || (isDarkMode ? '#252538' : '#f5f5f5');
-  const fgColor = themeCode.palette.baseContent || (isDarkMode ? '#e0e0e0' : '#1a1a1a');
-  const accentColor = themeCode.palette.primary || '#3b82f6';
+  // Use theme colors directly from themeCode (bg, fg, primary are already resolved from palette)
+  // For dialog, use a slightly different background using palette['base-200'] or darken/lighten the bg
+  const bgColor = themeCode.palette['base-200'] || themeCode.bg;
+  const fgColor = themeCode.fg;
+  const accentColor = themeCode.primary;
   const backdropColor = isDarkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.6)';
 
   return (
