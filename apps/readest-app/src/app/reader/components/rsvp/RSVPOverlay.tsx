@@ -274,6 +274,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   return (
     <div
+      data-testid="rsvp-overlay"
+      aria-label="RSVP Speed Reading Overlay"
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
         backgroundColor: bgColor,
@@ -291,6 +293,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       {/* Header */}
       <div className='rsvp-header flex shrink-0 items-center justify-between p-4'>
         <button
+          aria-label="Close RSVP"
           className='flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20'
           onClick={onClose}
           title='Close (Esc)'
@@ -473,6 +476,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           {/* Playback controls */}
           <div className='flex items-center justify-center gap-4'>
             <button
+              aria-label="Skip back 15 words"
               className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.skipBackward(15)}
               title='Back 15 words (Shift+Left)'
@@ -482,6 +486,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             </button>
 
             <button
+              aria-label={state.playing ? 'Pause' : 'Play'}
               className='flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95'
               onClick={() => controller.togglePlayPause()}
               title={state.playing ? 'Pause (Space)' : 'Play (Space)'}
@@ -490,6 +495,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             </button>
 
             <button
+              aria-label="Skip forward 15 words"
               className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.skipForward(15)}
               title='Forward 15 words (Shift+Right)'
@@ -502,14 +508,16 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           {/* Speed controls */}
           <div className='flex min-w-[120px] flex-1 items-center justify-end gap-2'>
             <button
+              aria-label="Decrease speed"
               className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.decreaseSpeed()}
               title='Slower (Left/Down)'
             >
               <IoRemove size={20} />
             </button>
-            <span className='min-w-12 text-center text-sm font-medium'>{state.wpm}</span>
+            <span aria-label="Current speed" className='min-w-12 text-center text-sm font-medium'>{state.wpm}</span>
             <button
+              aria-label="Increase speed"
               className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.increaseSpeed()}
               title='Faster (Right/Up)'
