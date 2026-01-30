@@ -162,7 +162,10 @@ const getColorStyles = (
       mix-blend-mode: multiply;
     }
     /* inline images */
-    p img, span img, sup img {
+    *:has(> img.has-text-siblings):not(body) {
+      background-color: ${bg};
+    }
+    p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     table {
