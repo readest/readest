@@ -109,7 +109,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
   const controllerRef = useRef<RSVPController | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tempHighlightIdRef = useRef<string | null>(null);
+  const tempHighlightRef = useRef<BookNote | null>(null);
 
   // Clean up controller and highlight on unmount
   useEffect(() => {
@@ -121,18 +121,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
       if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
       }
-      // Remove any temporary highlight
-      if (tempHighlightIdRef.current) {
-        const view = getView(bookKey);
-        if (view) {
-          try {
-            view.addAnnotation({ id: tempHighlightIdRef.current } as BookNote, true);
-          } catch {
-            // Ignore errors when removing
-          }
-        }
-        tempHighlightIdRef.current = null;
-      }
+      // Note: temporary highlights are removed via timeout, no action needed on unmount
+      tempHighlightRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -281,20 +271,17 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
 
                 if (sentenceCfi) {
                   // Remove any previous temporary highlight
-                  if (tempHighlightIdRef.current) {
+                  if (tempHighlightRef.current) {
                     try {
-                      view.addAnnotation({ id: tempHighlightIdRef.current } as BookNote, true);
+                      view.addAnnotation(tempHighlightRef.current, true);
                     } catch {
                       // Ignore
                     }
                   }
 
                   // Create a temporary highlight for the sentence
-                  const tempHighlightId = `rsvp-temp-${Date.now()}`;
-                  tempHighlightIdRef.current = tempHighlightId;
-
                   const highlight: BookNote = {
-                    id: tempHighlightId,
+                    id: `rsvp-temp-${Date.now()}`,
                     type: 'annotation',
                     cfi: sentenceCfi,
                     text: sentenceRange.toString(),
@@ -305,6 +292,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
                     updatedAt: Date.now(),
                   };
 
+                  tempHighlightRef.current = highlight;
                   view.addAnnotation(highlight);
 
                   // Clear any previous timeout
@@ -314,13 +302,13 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
 
                   // Remove the highlight after 5 seconds
                   highlightTimeoutRef.current = setTimeout(() => {
-                    if (tempHighlightIdRef.current === tempHighlightId) {
+                    if (tempHighlightRef.current?.id === highlight.id) {
                       try {
-                        view.addAnnotation({ id: tempHighlightId } as BookNote, true);
+                        view.addAnnotation(highlight, true);
                       } catch {
                         // Ignore errors when removing
                       }
-                      tempHighlightIdRef.current = null;
+                      tempHighlightRef.current = null;
                     }
                   }, 5000);
                 }
