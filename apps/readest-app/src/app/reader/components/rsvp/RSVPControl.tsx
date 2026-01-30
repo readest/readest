@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useThemeStore } from '@/store/themeStore';
 import { RSVPController, RsvpStartChoice, RsvpStopPosition } from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -103,13 +104,26 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { getView, getProgress, getViewSettings, setProgress } = useReaderStore();
   const { getBookData } = useBookDataStore();
+  const { themeCode } = useThemeStore();
 
   const [isActive, setIsActive] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
   const controllerRef = useRef<RSVPController | null>(null);
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tempHighlightRef = useRef<BookNote | null>(null);
+
+  // Helper to remove any existing RSVP highlight
+  const removeRsvpHighlight = useCallback(() => {
+    const view = getView(bookKey);
+    if (tempHighlightRef.current && view) {
+      try {
+        view.addAnnotation(tempHighlightRef.current, true);
+      } catch {
+        // Ignore errors when removing
+      }
+    }
+    tempHighlightRef.current = null;
+  }, [bookKey, getView]);
 
   // Clean up controller and highlight on unmount
   useEffect(() => {
@@ -118,11 +132,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
         controllerRef.current.shutdown();
         controllerRef.current = null;
       }
-      if (highlightTimeoutRef.current) {
-        clearTimeout(highlightTimeoutRef.current);
-      }
-      // Note: temporary highlights are removed via timeout, no action needed on unmount
-      tempHighlightRef.current = null;
+      // Remove any existing RSVP highlight when component unmounts
+      removeRsvpHighlight();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -164,6 +175,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
         });
         return;
       }
+
+      // Remove any existing RSVP highlight when starting new session
+      removeRsvpHighlight();
 
       // Check if format is supported (not PDF)
       if (bookData.book.format === 'PDF') {
@@ -209,7 +223,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
         controller.removeEventListener('rsvp-start-choice', handleStartChoice);
       }, 100);
     },
-    [_, bookKey, getBookData, getProgress, getView],
+    [_, bookKey, getBookData, getProgress, getView, removeRsvpHighlight],
   );
 
   const handleStartDialogSelect = useCallback(
@@ -270,23 +284,17 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
                 const sentenceCfi = view.getCFI(stopPosition.docIndex, sentenceRange);
 
                 if (sentenceCfi) {
-                  // Remove any previous temporary highlight
-                  if (tempHighlightRef.current) {
-                    try {
-                      view.addAnnotation(tempHighlightRef.current, true);
-                    } catch {
-                      // Ignore
-                    }
-                  }
+                  // Remove any previous RSVP highlight
+                  removeRsvpHighlight();
 
-                  // Create a temporary highlight for the sentence
+                  // Create a persistent highlight for the sentence using theme accent color
                   const highlight: BookNote = {
                     id: `rsvp-temp-${Date.now()}`,
                     type: 'annotation',
                     cfi: sentenceCfi,
                     text: sentenceRange.toString(),
                     style: 'underline',
-                    color: '#22c55e', // Bright green for visibility
+                    color: themeCode.primary, // Use theme accent color (same as ORP focal point)
                     note: '',
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -294,23 +302,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
 
                   tempHighlightRef.current = highlight;
                   view.addAnnotation(highlight);
-
-                  // Clear any previous timeout
-                  if (highlightTimeoutRef.current) {
-                    clearTimeout(highlightTimeoutRef.current);
-                  }
-
-                  // Remove the highlight after 5 seconds
-                  highlightTimeoutRef.current = setTimeout(() => {
-                    if (tempHighlightRef.current?.id === highlight.id) {
-                      try {
-                        view.addAnnotation(highlight, true);
-                      } catch {
-                        // Ignore errors when removing
-                      }
-                      tempHighlightRef.current = null;
-                    }
-                  }, 5000);
+                  // Note: highlight persists until next page, reader close, or new RSVP session
                 }
               }
             }
@@ -329,7 +321,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
 
     setIsActive(false);
     setShowStartDialog(false);
-  }, [bookKey, getView]);
+  }, [bookKey, getView, removeRsvpHighlight, themeCode.primary]);
 
   const handleChapterSelect = useCallback(
     (href: string) => {
@@ -358,6 +350,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
     const view = getView(bookKey);
     if (!view) return;
 
+    // Remove RSVP highlight when moving to next page
+    removeRsvpHighlight();
+
     // Go to next page
     view.next();
 
@@ -372,7 +367,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
         controller.loadNextPageContent();
       }
     }, 500);
-  }, [bookKey, getProgress, getView]);
+  }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
   // Get current chapter info
   const progress = getProgress(bookKey);
