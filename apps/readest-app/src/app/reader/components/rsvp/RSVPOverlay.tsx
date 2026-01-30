@@ -267,9 +267,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   if (!state.active) return null;
 
-  const bgColor = themeCode.palette.base100;
-  const fgColor = themeCode.palette.baseContent;
-  const accentColor = themeCode.palette.primary;
+  // Use theme colors with fallbacks for solid backgrounds
+  const bgColor = themeCode.palette.base100 || (isDarkMode ? '#1a1a2e' : '#ffffff');
+  const fgColor = themeCode.palette.baseContent || (isDarkMode ? '#e0e0e0' : '#1a1a1a');
+  const accentColor = themeCode.palette.primary || '#3b82f6';
 
   return (
     <div
@@ -277,6 +278,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       style={{
         backgroundColor: bgColor,
         color: fgColor,
+        // Ensure solid background - no transparency
+        backdropFilter: 'none',
         // @ts-expect-error CSS custom properties
         '--rsvp-accent': accentColor,
         '--rsvp-fg': fgColor,

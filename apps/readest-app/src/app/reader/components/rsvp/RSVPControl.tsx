@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { RSVPController, RsvpStartChoice } from '@/services/rsvp';
@@ -203,28 +204,35 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   const chapters = bookData?.bookDoc?.toc || [];
   const currentChapterHref = progress?.sectionHref || null;
 
+  // Use portal to render overlay at body level to avoid stacking context issues
+  const portalContainer = typeof document !== 'undefined' ? document.body : null;
+
   return (
     <>
-      {/* Start dialog */}
-      {showStartDialog && startChoice && (
-        <RSVPStartDialog
-          startChoice={startChoice}
-          onSelect={handleStartDialogSelect}
-          onClose={() => setShowStartDialog(false)}
-        />
-      )}
+      {/* Start dialog - render via portal */}
+      {showStartDialog && startChoice && portalContainer &&
+        createPortal(
+          <RSVPStartDialog
+            startChoice={startChoice}
+            onSelect={handleStartDialogSelect}
+            onClose={() => setShowStartDialog(false)}
+          />,
+          portalContainer
+        )}
 
-      {/* RSVP Overlay */}
-      {isActive && controllerRef.current && (
-        <RSVPOverlay
-          controller={controllerRef.current}
-          chapters={chapters}
-          currentChapterHref={currentChapterHref}
-          onClose={handleClose}
-          onChapterSelect={handleChapterSelect}
-          onRequestNextPage={handleRequestNextPage}
-        />
-      )}
+      {/* RSVP Overlay - render via portal */}
+      {isActive && controllerRef.current && portalContainer &&
+        createPortal(
+          <RSVPOverlay
+            controller={controllerRef.current}
+            chapters={chapters}
+            currentChapterHref={currentChapterHref}
+            onClose={handleClose}
+            onChapterSelect={handleChapterSelect}
+            onRequestNextPage={handleRequestNextPage}
+          />,
+          portalContainer
+        )}
     </>
   );
 };
