@@ -67,7 +67,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
 
   return (
     <div
-      className='absolute hidden h-8 w-full items-center gap-x-4 px-4 sm:flex'
+      className='hidden h-8 w-full items-center gap-x-4 px-4 sm:flex'
       style={{ bottom: isMobile ? `${gridInsets.bottom * 0.33}px` : '0px' }}
     >
       <Button

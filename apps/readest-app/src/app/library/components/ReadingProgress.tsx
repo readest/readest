@@ -41,12 +41,12 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
           </div>
         );
       } else {
-        return null;
+        return <div className='flex justify-start'></div>;
       }
     }
 
     if (progressPercentage === null || Number.isNaN(progressPercentage)) {
-      return null;
+      return <div className='flex justify-start'></div>;
     }
 
     return (
