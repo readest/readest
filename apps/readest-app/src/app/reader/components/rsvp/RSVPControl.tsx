@@ -346,17 +346,19 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
     [bookKey, getProgress, getView],
   );
 
-  const handleRequestNextPage = useCallback(() => {
+  const handleRequestNextPage = useCallback(async () => {
     const view = getView(bookKey);
     if (!view) return;
 
     // Remove RSVP highlight when moving to next page
     removeRsvpHighlight();
 
-    // Go to next page
-    view.next();
+    // RSVP extracts ALL words from the current section via renderer.getContents().
+    // When RSVP runs out of words and calls this function, it means the entire
+    // chapter/section has been read, so we need to go to the next section.
+    await view.renderer.nextSection?.();
 
-    // Wait for page change, then load new content
+    // Wait for section change, then load new content
     setTimeout(() => {
       const controller = controllerRef.current;
       if (controller) {
