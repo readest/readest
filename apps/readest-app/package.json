@@ -13,9 +13,6 @@
     "i18n:extract": "i18next-scanner",
     "lint": "eslint .",
     "test": "dotenv -e .env -e .env.test.local vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
     "tauri": "tauri",
     "clippy": "cargo clippy -p Readest --no-deps -- -D warnings",
     "format": "pnpm -w format",
@@ -155,7 +152,6 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.2",
-    "@playwright/test": "^1.58.1",
     "@tailwindcss/typography": "^0.5.16",
     "@tauri-apps/cli": "2.9.6",
     "@testing-library/dom": "^10.4.0",
