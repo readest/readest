@@ -50,8 +50,8 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
               <IoPlayCircle size={24} />
             </div>
             <div>
-              <div className='font-semibold'>{_('From Beginning')}</div>
-              <div className='text-sm opacity-60'>{_('Start reading from the beginning of the current page')}</div>
+              <div className='font-semibold'>{_('From Chapter Start')}</div>
+              <div className='text-sm opacity-60'>{_('Start reading from the beginning of the chapter')}</div>
             </div>
           </button>
 
@@ -88,8 +88,8 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
               <IoLocation size={24} />
             </div>
             <div>
-              <div className='font-semibold'>{_('From Current Position')}</div>
-              <div className='text-sm opacity-60'>{_('Start from the first visible word on screen')}</div>
+              <div className='font-semibold'>{_('From Current Page')}</div>
+              <div className='text-sm opacity-60'>{_('Start from where you are currently reading')}</div>
             </div>
           </button>
 
