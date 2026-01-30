@@ -6,6 +6,7 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
+import { IoSpeedometer } from 'react-icons/io5';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
@@ -91,6 +92,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     } else {
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
     }
+  };
+
+  const handleStartRSVP = () => {
+    setIsDropdownOpen?.(false);
+    eventDispatcher.dispatch('rsvp-start', { bookKey });
   };
 
   useEffect(() => {
@@ -275,6 +281,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         shortcut='Shift+P'
         Icon={isParagraphMode ? MdCheck : undefined}
         onClick={toggleParagraphMode}
+        disabled={bookData.isFixedLayout}
+      />
+
+      <MenuItem
+        label={_('RSVP Speed Reading')}
+        Icon={IoSpeedometer}
+        onClick={handleStartRSVP}
         disabled={bookData.isFixedLayout}
       />
 
