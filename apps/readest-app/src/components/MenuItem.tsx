@@ -141,7 +141,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         )}
         title={tooltip ? tooltip : ''}
         onClick={handleClick}
-        onKeyUp={rovingTabindex.onKeydown}
+        onKeyDown={rovingTabindex.onKeydown}
         onFocus={rovingTabindex.setAsActiveElement}
         disabled={disabled}
       >
