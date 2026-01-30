@@ -4,15 +4,100 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { RSVPController, RsvpStartChoice } from '@/services/rsvp';
+import { RSVPController, RsvpStartChoice, RsvpStopPosition } from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
 import { useTranslation } from '@/hooks/useTranslation';
+import { BookNote } from '@/types/book';
 import RSVPOverlay from './RSVPOverlay';
 import RSVPStartDialog from './RSVPStartDialog';
 
 interface RSVPControlProps {
   bookKey: string;
 }
+
+// Helper to expand a range to include the full sentence
+const expandRangeToSentence = (range: Range, doc: Document): Range => {
+  const sentenceRange = doc.createRange();
+
+  // Get the text content around the range
+  const container = range.commonAncestorContainer;
+  const parentElement = container.nodeType === Node.TEXT_NODE
+    ? container.parentElement
+    : container as Element;
+
+  if (!parentElement) return range;
+
+  // Get the full text of the parent paragraph/element
+  const fullText = parentElement.textContent || '';
+  const rangeText = range.toString();
+
+  // Find the position of our word in the parent text
+  const wordStart = fullText.indexOf(rangeText);
+  if (wordStart === -1) return range;
+
+  // Find sentence boundaries (. ! ? or start/end of text)
+  const sentenceEnders = /[.!?]/g;
+  let sentenceStart = 0;
+  let sentenceEnd = fullText.length;
+
+  // Find the sentence start (look backwards for sentence ender)
+  for (let i = wordStart - 1; i >= 0; i--) {
+    if (sentenceEnders.test(fullText[i]!)) {
+      sentenceStart = i + 1;
+      // Skip any whitespace after the sentence ender
+      while (sentenceStart < fullText.length && /\s/.test(fullText[sentenceStart]!)) {
+        sentenceStart++;
+      }
+      break;
+    }
+  }
+
+  // Find the sentence end (look forward for sentence ender)
+  for (let i = wordStart; i < fullText.length; i++) {
+    if (sentenceEnders.test(fullText[i]!)) {
+      sentenceEnd = i + 1;
+      break;
+    }
+  }
+
+  // Create a tree walker to find the text nodes
+  const walker = doc.createTreeWalker(parentElement, NodeFilter.SHOW_TEXT, null);
+  let currentOffset = 0;
+  let startNode: Text | null = null;
+  let startOffset = 0;
+  let endNode: Text | null = null;
+  let endOffset = 0;
+
+  let node: Text | null;
+  while ((node = walker.nextNode() as Text | null)) {
+    const nodeLength = node.textContent?.length || 0;
+
+    if (!startNode && currentOffset + nodeLength > sentenceStart) {
+      startNode = node;
+      startOffset = sentenceStart - currentOffset;
+    }
+
+    if (currentOffset + nodeLength >= sentenceEnd) {
+      endNode = node;
+      endOffset = sentenceEnd - currentOffset;
+      break;
+    }
+
+    currentOffset += nodeLength;
+  }
+
+  if (startNode && endNode) {
+    try {
+      sentenceRange.setStart(startNode, Math.max(0, startOffset));
+      sentenceRange.setEnd(endNode, Math.min(endOffset, endNode.textContent?.length || 0));
+      return sentenceRange;
+    } catch {
+      return range;
+    }
+  }
+
+  return range;
+};
 
 const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -23,15 +108,33 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
   const controllerRef = useRef<RSVPController | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tempHighlightIdRef = useRef<string | null>(null);
 
-  // Clean up controller on unmount
+  // Clean up controller and highlight on unmount
   useEffect(() => {
     return () => {
       if (controllerRef.current) {
         controllerRef.current.shutdown();
         controllerRef.current = null;
       }
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      // Remove any temporary highlight
+      if (tempHighlightIdRef.current) {
+        const view = getView(bookKey);
+        if (view) {
+          try {
+            view.addAnnotation({ id: tempHighlightIdRef.current } as BookNote, true);
+          } catch {
+            // Ignore errors when removing
+          }
+        }
+        tempHighlightIdRef.current = null;
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listen for RSVP start events
@@ -148,12 +251,97 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
 
   const handleClose = useCallback(() => {
     const controller = controllerRef.current;
-    if (controller) {
+    const view = getView(bookKey);
+
+    if (controller && view) {
+      // Listen for the stop event to get the position
+      const handleRsvpStop = (e: Event) => {
+        const stopPosition = (e as CustomEvent<RsvpStopPosition | null>).detail;
+
+        if (stopPosition?.range && typeof stopPosition.docIndex === 'number') {
+          try {
+            // Get the document from the renderer
+            const contents = view.renderer.getContents?.();
+            const content = contents?.find((c) => c.index === stopPosition.docIndex);
+            const doc = content?.doc;
+
+            if (doc && stopPosition.range) {
+              // Expand the range to include the full sentence
+              const sentenceRange = expandRangeToSentence(stopPosition.range, doc);
+
+              // Get CFI for navigation
+              const cfi = view.getCFI(stopPosition.docIndex, stopPosition.range);
+
+              if (cfi) {
+                // Navigate to the position
+                view.goTo(cfi);
+
+                // Get CFI for the sentence highlight
+                const sentenceCfi = view.getCFI(stopPosition.docIndex, sentenceRange);
+
+                if (sentenceCfi) {
+                  // Remove any previous temporary highlight
+                  if (tempHighlightIdRef.current) {
+                    try {
+                      view.addAnnotation({ id: tempHighlightIdRef.current } as BookNote, true);
+                    } catch {
+                      // Ignore
+                    }
+                  }
+
+                  // Create a temporary highlight for the sentence
+                  const tempHighlightId = `rsvp-temp-${Date.now()}`;
+                  tempHighlightIdRef.current = tempHighlightId;
+
+                  const highlight: BookNote = {
+                    id: tempHighlightId,
+                    type: 'annotation',
+                    cfi: sentenceCfi,
+                    text: sentenceRange.toString(),
+                    style: 'underline',
+                    color: '#22c55e', // Bright green for visibility
+                    note: '',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                  };
+
+                  view.addAnnotation(highlight);
+
+                  // Clear any previous timeout
+                  if (highlightTimeoutRef.current) {
+                    clearTimeout(highlightTimeoutRef.current);
+                  }
+
+                  // Remove the highlight after 5 seconds
+                  highlightTimeoutRef.current = setTimeout(() => {
+                    if (tempHighlightIdRef.current === tempHighlightId) {
+                      try {
+                        view.addAnnotation({ id: tempHighlightId } as BookNote, true);
+                      } catch {
+                        // Ignore errors when removing
+                      }
+                      tempHighlightIdRef.current = null;
+                    }
+                  }, 5000);
+                }
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to sync RSVP position:', err);
+          }
+        }
+      };
+
+      controller.addEventListener('rsvp-stop', handleRsvpStop);
+      controller.stop();
+      controller.removeEventListener('rsvp-stop', handleRsvpStop);
+    } else if (controller) {
       controller.stop();
     }
+
     setIsActive(false);
     setShowStartDialog(false);
-  }, []);
+  }, [bookKey, getView]);
 
   const handleChapterSelect = useCallback(
     (href: string) => {

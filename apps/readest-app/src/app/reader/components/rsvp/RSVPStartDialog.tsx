@@ -14,20 +14,23 @@ interface RSVPStartDialogProps {
 
 const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect, onClose }) => {
   const _ = useTranslation();
-  const { themeCode } = useThemeStore();
+  const { themeCode, isDarkMode } = useThemeStore();
 
-  const bgColor = themeCode.palette.base200;
-  const fgColor = themeCode.palette.baseContent;
-  const accentColor = themeCode.palette.primary;
+  // Use fallback colors to ensure solid opaque backgrounds
+  const bgColor = themeCode.palette.base200 || (isDarkMode ? '#252538' : '#f5f5f5');
+  const fgColor = themeCode.palette.baseContent || (isDarkMode ? '#e0e0e0' : '#1a1a1a');
+  const accentColor = themeCode.palette.primary || '#3b82f6';
+  const backdropColor = isDarkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.6)';
 
   return (
     <div
-      className='fixed inset-0 z-[10001] flex items-center justify-center bg-black/50'
+      className='fixed inset-0 z-[10001] flex items-center justify-center'
+      style={{ backgroundColor: backdropColor }}
       onClick={onClose}
     >
       <div
         className='mx-4 w-full max-w-md rounded-2xl p-6 shadow-2xl'
-        style={{ backgroundColor: bgColor, color: fgColor }}
+        style={{ backgroundColor: bgColor, color: fgColor, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className='mb-2 text-xl font-bold'>{_('Start RSVP Reading')}</h2>
