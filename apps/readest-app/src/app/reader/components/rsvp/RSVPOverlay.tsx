@@ -155,10 +155,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Context text helpers
+  // Context text helpers - show 100 words before and after
   const getContextBefore = useCallback((): string => {
     if (!state || state.words.length === 0) return '';
-    const startIndex = Math.max(0, state.currentIndex - 50);
+    const startIndex = Math.max(0, state.currentIndex - 100);
     return state.words
       .slice(startIndex, state.currentIndex)
       .map((w) => w.text)
@@ -167,7 +167,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   const getContextAfter = useCallback((): string => {
     if (!state || state.words.length === 0) return '';
-    const endIndex = Math.min(state.words.length, state.currentIndex + 51);
+    const endIndex = Math.min(state.words.length, state.currentIndex + 101);
     return state.words
       .slice(state.currentIndex + 1, endIndex)
       .map((w) => w.text)
