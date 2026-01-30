@@ -34,7 +34,6 @@ const AnimatedParagraph: React.FC<{
   const showContent = state === 'active' && isReady;
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       ref={contentRef}
       className={clsx(
@@ -359,6 +358,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const exitingParagraph = paragraphs.find((p) => p.state === 'exiting');
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       ref={containerRef}
       role='dialog'
