@@ -108,7 +108,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             <span className='text-base-content/50 absolute ps-3'>
-              <FaSearch className='h-4 w-4' />
+              <FaSearch role="presentation" className='h-4 w-4' />
             </span>
             <input
               type='text'
