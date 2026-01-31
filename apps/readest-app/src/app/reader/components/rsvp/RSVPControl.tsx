@@ -273,15 +273,17 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
               // Expand the range to include the full sentence
               const sentenceRange = expandRangeToSentence(stopPosition.range, doc);
 
-              // Get CFI for navigation
+              // Get CFI for navigation - MUST get this BEFORE navigating
               const cfi = view.getCFI(stopPosition.docIndex, stopPosition.range);
+
+              // Get CFI for the sentence highlight - MUST get this BEFORE navigating
+              // because goTo() may re-render the document, invalidating the Range objects
+              const sentenceCfi = cfi ? view.getCFI(stopPosition.docIndex, sentenceRange) : null;
+              const sentenceText = sentenceRange.toString();
 
               if (cfi) {
                 // Navigate to the position
                 view.goTo(cfi);
-
-                // Get CFI for the sentence highlight
-                const sentenceCfi = view.getCFI(stopPosition.docIndex, sentenceRange);
 
                 if (sentenceCfi) {
                   // Remove any previous RSVP highlight
@@ -292,7 +294,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
                     id: `rsvp-temp-${Date.now()}`,
                     type: 'annotation',
                     cfi: sentenceCfi,
-                    text: sentenceRange.toString(),
+                    text: sentenceText,
                     style: 'underline',
                     color: themeCode.primary, // Use theme accent color (same as ORP focal point)
                     note: '',
