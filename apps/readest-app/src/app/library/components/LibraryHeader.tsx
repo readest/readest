@@ -7,6 +7,7 @@ import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
 import { MdOutlineMenu } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
+import { RovingTabindexProvider } from 'react-roving-tabindex-2';
 
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -21,6 +22,7 @@ import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import ViewMenu from './ViewMenu';
+import RovingTabIndexButton from '@/components/RovingTabIndexButton';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -93,6 +95,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   return (
     <div
       ref={headerRef}
+      role='toolbar'
       className={clsx(
         'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
@@ -104,6 +107,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           : '0px',
       }}
     >
+      <RovingTabindexProvider
+        wrapperElementRef={headerRef}
+        classNameOfTargetElements='roving-tabindex'
+        direction='horizontal'
+      >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
@@ -161,20 +169,20 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               />
             </Dropdown>
             {isMobile ? null : (
-              <button
+              <RovingTabIndexButton
                 onClick={onToggleSelectMode}
                 aria-label={_('Select Books')}
                 aria-pressed={isSelectMode}
                 role="button"
                 title={_('Select Books')}
-                className='h-6'
+                className={'h-6'}
               >
                 {isSelectMode ? (
                   <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
                 ) : (
                   <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
                 )}
-              </button>
+              </RovingTabIndexButton>
             )}
           </div>
         </div>
@@ -185,7 +193,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               'w-max-[72px] w-min-[72px] sm:w-max-[80px] sm:w-min-[80px]',
             )}
           >
-            <button
+            <RovingTabIndexButton
               onClick={isSelectAll ? onDeselectAll : onSelectAll}
               className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 sm:w-[80px]'
               aria-label={isSelectAll ? _('Deselect') : _('Select All')}
@@ -193,7 +201,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               <span className='font-sans text-base font-normal sm:text-sm'>
                 {isSelectAll ? _('Deselect') : _('Select All')}
               </span>
-            </button>
+            </RovingTabIndexButton>
           </div>
         ) : (
           <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
@@ -224,6 +232,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </div>
         )}
       </div>
+      </RovingTabindexProvider>
     </div>
   );
 };
