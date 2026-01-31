@@ -729,6 +729,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   return (
     <div
       ref={pageRef}
+      role='group'
       aria-label='Your Library'
       className={clsx(
         'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
@@ -738,7 +739,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     >
       <div
         className='relative top-0 z-40 w-full'
-        role='banner'
+        role='toolbar'
         tabIndex={-1}
         aria-label={_('Library Header')}
       >

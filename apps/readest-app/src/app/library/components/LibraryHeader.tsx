@@ -95,7 +95,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   return (
     <div
       ref={headerRef}
-      role='toolbar'
+      aria-label={_('Library Header')}
       className={clsx(
         'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
@@ -116,7 +116,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             <span className='text-base-content/50 absolute ps-3'>
-              <FaSearch role="presentation" className='h-4 w-4' />
+              <FaSearch role="none" className='h-4 w-4' />
             </span>
             <input
               type='text'
