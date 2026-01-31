@@ -203,8 +203,7 @@ foliate-fxl {
   transform: translateX(0);
 }
 
-.dropdown-center::before,
-.dropdown-center::after {
+.dropdown-center {
   left: 50%;
   transform: translateX(-50%);
 }
