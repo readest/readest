@@ -164,6 +164,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               <button
                 onClick={onToggleSelectMode}
                 aria-label={_('Select Books')}
+                aria-pressed={isSelectMode}
+                role="button"
                 title={_('Select Books')}
                 className='h-6'
               >
