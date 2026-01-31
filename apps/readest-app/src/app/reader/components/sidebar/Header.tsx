@@ -68,6 +68,7 @@ const SidebarHeader: React.FC<{
           )}
           menuClassName={window.innerWidth < 640 ? 'no-triangle mt-1' : 'dropdown-center mt-3'}
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+          containerClassName='h-8'
           toggleButton={<MdOutlineMenu className='fill-base-content' />}
         >
           <BookMenu />

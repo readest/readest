@@ -327,7 +327,7 @@ export const MigrateDataWindow = () => {
               >
                 <div
                   className={clsx(
-                    'folder-menu dropdown-content dropdown-center no-triangle',
+                    'folder-menu dropdown-content no-triangle left-0',
                     'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >
