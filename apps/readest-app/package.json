@@ -136,7 +136,7 @@
     "react-i18next": "^15.2.0",
     "react-icons": "^5.4.0",
     "react-responsive": "^10.0.0",
-    "react-roving-tabindex-2": "^1.0.1",
+    "react-roving-tabindex-2": "github:pvagner/react-roving-tabindex-2",
     "react-virtuoso": "^4.17.0",
     "react-window": "^1.8.11",
     "remark-gfm": "^4.0.1",
