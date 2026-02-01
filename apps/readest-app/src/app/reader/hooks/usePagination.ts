@@ -182,11 +182,15 @@ export const usePagination = (
           !isPanningView(viewRef.current, viewSettings)
         ) {
           // The wheel event is handled by the iframe itself in scrolled mode.
-          const { deltaY } = msg.data;
+          const { deltaY, deltaX } = msg.data;
           if (deltaY > 0) {
-            viewRef.current?.next(1);
+            viewPagination(viewRef.current, viewSettings, 'down');
           } else if (deltaY < 0) {
-            viewRef.current?.prev(1);
+            viewPagination(viewRef.current, viewSettings, 'up');
+          } else if (deltaX > 0) {
+            viewPagination(viewRef.current, viewSettings, 'left');
+          } else if (deltaX < 0) {
+            viewPagination(viewRef.current, viewSettings, 'right');
           }
         } else if (msg.data.type === 'iframe-mouseup') {
           if (msg.data.button === 3) {
