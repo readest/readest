@@ -26,6 +26,8 @@ import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
+import XRayView from './XRayView';
+import type { NotebookTab } from '@/store/notebookStore';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -104,7 +106,7 @@ const Notebook: React.FC = ({}) => {
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
-  const handleTabChange = (tab: 'notes' | 'ai') => {
+  const handleTabChange = (tab: NotebookTab) => {
     setNotebookActiveTab(tab);
     const globalReadSettings = settings.globalReadSettings;
     const newGlobalReadSettings = { ...globalReadSettings, notebookActiveTab: tab };
@@ -306,6 +308,10 @@ const Notebook: React.FC = ({}) => {
         {notebookActiveTab === 'ai' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
+          </div>
+        ) : notebookActiveTab === 'xray' ? (
+          <div className='flex min-h-0 flex-1 flex-col'>
+            <XRayView bookKey={sideBarBookKey} />
           </div>
         ) : (
           <div className='flex-grow overflow-y-auto px-3'>

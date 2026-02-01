@@ -22,6 +22,7 @@ import {
   createTauriAdapter,
   getLastSources,
   clearLastSources,
+  updateXRayForProgress,
 } from '@/services/ai';
 import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
 import { useEnv } from '@/context/EnvContext';
@@ -275,6 +276,14 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         setIndexProgress,
       );
       setIndexed(true);
+      await updateXRayForProgress({
+        bookHash,
+        currentPage,
+        settings: aiSettings,
+        bookTitle,
+        appService,
+        force: true,
+      });
     } catch (e) {
       aiLogger.rag.indexError(bookHash, (e as Error).message);
     } finally {
@@ -287,6 +296,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     if (!appService) return;
     if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
     await aiStore.clearBook(bookHash);
+    await aiStore.clearXRayBook(bookHash);
     setIndexed(false);
   }, [bookHash, appService, _]);
 
