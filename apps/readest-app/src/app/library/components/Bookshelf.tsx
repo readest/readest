@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
+import { RovingTabindexProvider } from 'react-roving-tabindex-2';
 import { Book, ReadingStatus } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
@@ -316,7 +317,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const selectedBooks = getSelectedBooks();
 
   return (
-    <div className='bookshelf'>
+    <div className='bookshelf' role='main'>
       <div
         ref={autofocusRef}
         tabIndex={-1}
@@ -332,9 +333,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               ? `repeat(${settings.libraryColumns}, minmax(0, 1fr))`
               : undefined,
         }}
-        role='main'
+        role={viewMode === 'grid' ? 'grid' : 'listbox'}
+        aria-multiselectable={isSelectMode}
         aria-label={_('Bookshelf')}
       >
+        <RovingTabindexProvider
+          wrapperElementRef={autofocusRef}
+          classNameOfTargetElements='book-shelf-roving-tabindex'
+          direction={viewMode === 'grid' ? 'both' : 'vertical'}
+        >
         {sortedBookshelfItems.map((item) => (
           <BookshelfItem
             key={`library-item-${'hash' in item ? item.hash : item.id}`}
@@ -386,6 +393,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             </button>
           </div>
         )}
+        </RovingTabindexProvider>
       </div>
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>

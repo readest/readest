@@ -12,9 +12,10 @@ interface GroupItemProps {
   group: BooksGroup;
   isSelectMode: boolean;
   groupSelected: boolean;
+  controlTabIndex: number;
 }
 
-const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupSelected }) => {
+const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupSelected, controlTabIndex=0}) => {
   const { appService } = useEnv();
   const iconSize15 = useResponsiveSize(15);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
             <div className='absolute left-[-0.5px] top-0 h-full w-12'>
               <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-gradient-to-r to-transparent'></div>
               <button
+                tabIndex={controlTabIndex}
                 onClick={handleLeftArrowClick}
                 onPointerDown={(e) => stopEvent(e)}
                 onPointerUp={(e) => stopEvent(e)}
@@ -168,6 +170,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
             <div className='absolute right-[-0.5px] top-0 h-full w-12'>
               <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-gradient-to-l to-transparent'></div>
               <button
+                tabIndex={controlTabIndex}
                 onClick={handleRightArrowClick}
                 onPointerDown={(e) => stopEvent(e)}
                 onPointerUp={(e) => stopEvent(e)}
