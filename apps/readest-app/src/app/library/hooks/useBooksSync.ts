@@ -4,11 +4,14 @@ import { useSync } from '@/hooks/useSync';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
+import { eventDispatcher } from '@/utils/event';
 
 export const useBooksSync = () => {
+  const _ = useTranslation();
   const { user } = useAuth();
   const { appService } = useEnv();
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
@@ -31,20 +34,33 @@ export const useBooksSync = () => {
     };
   }, [user, lastSyncedAtBooks]);
 
-  const pullLibrary = useCallback(async () => {
-    if (!user) return;
-    if (isPullingRef.current) {
-      console.log('Pull already in progress, skipping...');
-      return;
-    }
-    try {
-      isPullingRef.current = true;
-      const library = useLibraryStore.getState().library;
-      await syncBooks([], 'pull', libraryLoaded && library.length === 0 ? 0 : undefined);
-    } finally {
-      isPullingRef.current = false;
-    }
-  }, [user, libraryLoaded, syncBooks]);
+  const pullLibrary = useCallback(
+    async (fullRefresh = false, verbose = false) => {
+      if (!user) return;
+      if (isPullingRef.current) {
+        console.log('Pull already in progress, skipping...');
+        return;
+      }
+      try {
+        isPullingRef.current = true;
+        const library = useLibraryStore.getState().library;
+        const syncedBooksCount = await syncBooks(
+          [],
+          'pull',
+          (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined,
+        );
+        if (verbose) {
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            message: _('{{count}} book(s) synced', { count: syncedBooksCount }),
+          });
+        }
+      } finally {
+        isPullingRef.current = false;
+      }
+    },
+    [_, user, libraryLoaded, syncBooks],
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(

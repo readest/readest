@@ -13,6 +13,7 @@ import { viewPagination } from '../../hooks/usePagination';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
+import { RSVPControl } from '../rsvp';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -249,6 +250,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
+      <RSVPControl bookKey={bookKey} />
     </>
   );
 };

@@ -110,7 +110,7 @@ export function useSync(bookKey?: string) {
       const result = await syncClient.pullChanges(since, type, bookId, metaHash);
       setSyncResult({ ...syncResult, [type]: result[type] });
       const records = result[type];
-      if (since > 1000 && !records?.length) return;
+      if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
       setLastSyncedAt(maxTime);
@@ -140,6 +140,7 @@ export function useSync(bookKey?: string) {
           }
           break;
       }
+      return records?.filter((rec) => !rec.deleted_at).length || 0;
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -152,6 +153,7 @@ export function useSync(bookKey?: string) {
       } else {
         setSyncError(`Error pulling ${type}`);
       }
+      return 0;
     } finally {
       setSyncing(false);
       saveSettings(envConfig, settings);
@@ -184,13 +186,14 @@ export function useSync(bookKey?: string) {
         await pushChanges({ books });
       }
       if (op === 'pull' || op === 'both') {
-        await pullChanges(
+        return await pullChanges(
           'books',
           since ?? lastSyncedAtBooks + 1,
           setLastSyncedAtBooks,
           setSyncingBooks,
         );
       }
+      return;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastSyncedAtInited, lastSyncedAtBooks],
