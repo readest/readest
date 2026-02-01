@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useRef } from 'react';
+import React from 'react';
 import { IconType } from 'react-icons';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
