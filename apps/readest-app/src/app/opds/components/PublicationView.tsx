@@ -56,9 +56,12 @@ export function PublicationView({
   const imageUrl = coverImage ? resolveURL(coverImage.href, baseURL) : null;
 
   const authors = useMemo(() => {
-    return publication.metadata?.author?.map((author) =>
-      typeof author === 'string' ? author : author.name,
-    );
+    const author = publication.metadata?.author;
+    if (!author) return undefined;
+
+    const authorList = Array.isArray(author) ? author : [author];
+
+    return authorList.map((a) => (typeof a === 'string' ? a : a?.name)).filter(Boolean);
   }, [publication.metadata?.author]);
 
   const acquisitionLinks = useMemo(() => {
@@ -162,9 +165,9 @@ export function PublicationView({
                   ) : (
                     <Dropdown
                       label={_('Download')}
-                      className='dropdown-bottom flex justify-center'
+                      className='dropdown-bottom dropdown-center flex justify-center'
                       buttonClassName={clsx(
-                        'btn btn-ghost btn-primary min-w-20 rounded-3xl p-0 hover:bg-transparent',
+                        'btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary',
                         downloadedBook && 'btn-success',
                       )}
                       disabled={downloading}
@@ -174,7 +177,7 @@ export function PublicationView({
                     >
                       <div
                         className={clsx(
-                          'delete-menu dropdown-content dropdown-center no-triangle',
+                          'delete-menu dropdown-content no-triangle !relative',
                           'border-base-300 !bg-base-200 z-20 mt-2 max-w-[80vw] shadow-2xl',
                         )}
                       >
