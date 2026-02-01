@@ -342,57 +342,57 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           classNameOfTargetElements='book-shelf-roving-tabindex'
           direction={viewMode === 'grid' ? 'both' : 'vertical'}
         >
-        {sortedBookshelfItems.map((item) => (
-          <BookshelfItem
-            key={`library-item-${'hash' in item ? item.hash : item.id}`}
-            item={item}
-            mode={viewMode as LibraryViewModeType}
-            coverFit={coverFit as LibraryCoverFitType}
-            isSelectMode={isSelectMode}
-            itemSelected={
-              'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id)
-            }
-            setLoading={setLoading}
-            toggleSelection={toggleSelection}
-            handleGroupBooks={groupSelectedBooks}
-            handleBookUpload={handleBookUpload}
-            handleBookDownload={handleBookDownload}
-            handleBookDelete={handleBookDelete}
-            handleSetSelectMode={handleSetSelectMode}
-            handleShowDetailsBook={handleShowDetailsBook}
-            handleUpdateReadingStatus={handleUpdateReadingStatus}
-            transferProgress={
-              'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
-            }
-          />
-        ))}
-        {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
-          <div
-            className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}
-            style={
-              coverFit === 'fit' && viewMode === 'grid'
-                ? {
-                    display: 'flex',
-                    paddingBottom: `${iconSize15 + 24}px`,
-                  }
-                : undefined
-            }
-          >
-            <button
-              aria-label={_('Import Books')}
-              className={clsx(
-                'bookitem-main bg-base-100 hover:bg-base-300/50',
-                'flex items-center justify-center',
-                'aspect-[28/41] w-full',
-              )}
-              onClick={handleImportBooks}
+          {sortedBookshelfItems.map((item) => (
+            <BookshelfItem
+              key={`library-item-${'hash' in item ? item.hash : item.id}`}
+              item={item}
+              mode={viewMode as LibraryViewModeType}
+              coverFit={coverFit as LibraryCoverFitType}
+              isSelectMode={isSelectMode}
+              itemSelected={
+                'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id)
+              }
+              setLoading={setLoading}
+              toggleSelection={toggleSelection}
+              handleGroupBooks={groupSelectedBooks}
+              handleBookUpload={handleBookUpload}
+              handleBookDownload={handleBookDownload}
+              handleBookDelete={handleBookDelete}
+              handleSetSelectMode={handleSetSelectMode}
+              handleShowDetailsBook={handleShowDetailsBook}
+              handleUpdateReadingStatus={handleUpdateReadingStatus}
+              transferProgress={
+                'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
+              }
+            />
+          ))}
+          {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
+            <div
+              className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}
+              style={
+                coverFit === 'fit' && viewMode === 'grid'
+                  ? {
+                      display: 'flex',
+                      paddingBottom: `${iconSize15 + 24}px`,
+                    }
+                  : undefined
+              }
             >
-              <div className='flex items-center justify-center'>
-                <PiPlus className='size-10' color='gray' />
-              </div>
-            </button>
-          </div>
-        )}
+              <button
+                aria-label={_('Import Books')}
+                className={clsx(
+                  'bookitem-main bg-base-100 hover:bg-base-300/50',
+                  'flex items-center justify-center',
+                  'aspect-[28/41] w-full',
+                )}
+                onClick={handleImportBooks}
+              >
+                <div className='flex items-center justify-center'>
+                  <PiPlus className='size-10' color='gray' />
+                </div>
+              </button>
+            </div>
+          )}
         </RovingTabindexProvider>
       </div>
       {loading && (
