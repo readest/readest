@@ -21,6 +21,9 @@ patchedDependencies:
   mdast-util-gfm-autolink-literal@2.0.1:
     hash: a119b196bac546b8f07e1a9600ced6f526b0676e2b959914868e393ecffbaff8
     path: patches/mdast-util-gfm-autolink-literal@2.0.1.patch
+  react-roving-tabindex-2:
+    hash: f087c6b652f81b99cd5d4cb1ab317a33ec8a1e6261bac1ce8ecae261c5d890d9
+    path: patches/react-roving-tabindex-2.patch
 
 importers:
 
@@ -301,7 +304,7 @@ importers:
         version: 10.0.1(react@19.2.0)
       react-roving-tabindex-2:
         specifier: ^1.0.1
-        version: 1.0.1(react@19.2.0)
+        version: 1.0.1(patch_hash=f087c6b652f81b99cd5d4cb1ab317a33ec8a1e6261bac1ce8ecae261c5d890d9)(react@19.2.0)
       react-virtuoso:
         specifier: ^4.17.0
         version: 4.18.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -15794,7 +15797,7 @@ snapshots:
       react: 19.2.0
       shallow-equal: 3.1.0
 
-  react-roving-tabindex-2@1.0.1(react@19.2.0):
+  react-roving-tabindex-2@1.0.1(patch_hash=f087c6b652f81b99cd5d4cb1ab317a33ec8a1e6261bac1ce8ecae261c5d890d9)(react@19.2.0):
     dependencies:
       react: 19.2.0
 
