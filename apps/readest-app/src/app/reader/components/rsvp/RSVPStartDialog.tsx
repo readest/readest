@@ -52,7 +52,9 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
             </div>
             <div>
               <div className='font-semibold'>{_('From Chapter Start')}</div>
-              <div className='text-sm opacity-60'>{_('Start reading from the beginning of the chapter')}</div>
+              <div className='text-sm opacity-60'>
+                {_('Start reading from the beginning of the chapter')}
+              </div>
             </div>
           </button>
 
@@ -90,7 +92,9 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
             </div>
             <div>
               <div className='font-semibold'>{_('From Current Page')}</div>
-              <div className='text-sm opacity-60'>{_('Start from where you are currently reading')}</div>
+              <div className='text-sm opacity-60'>
+                {_('Start from where you are currently reading')}
+              </div>
             </div>
           </button>
 

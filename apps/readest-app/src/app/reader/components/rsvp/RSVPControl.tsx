@@ -22,9 +22,8 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
 
   // Get the text content around the range
   const container = range.commonAncestorContainer;
-  const parentElement = container.nodeType === Node.TEXT_NODE
-    ? container.parentElement
-    : container as Element;
+  const parentElement =
+    container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
 
   if (!parentElement) return range;
 
@@ -385,18 +384,22 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   return (
     <>
       {/* Start dialog - render via portal */}
-      {showStartDialog && startChoice && portalContainer &&
+      {showStartDialog &&
+        startChoice &&
+        portalContainer &&
         createPortal(
           <RSVPStartDialog
             startChoice={startChoice}
             onSelect={handleStartDialogSelect}
             onClose={() => setShowStartDialog(false)}
           />,
-          portalContainer
+          portalContainer,
         )}
 
       {/* RSVP Overlay - render via portal */}
-      {isActive && controllerRef.current && portalContainer &&
+      {isActive &&
+        controllerRef.current &&
+        portalContainer &&
         createPortal(
           <RSVPOverlay
             controller={controllerRef.current}
@@ -406,7 +409,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
             onChapterSelect={handleChapterSelect}
             onRequestNextPage={handleRequestNextPage}
           />,
-          portalContainer
+          portalContainer,
         )}
     </>
   );

@@ -5,7 +5,15 @@ import clsx from 'clsx';
 import { RsvpState, RsvpWord, RSVPController } from '@/services/rsvp';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
-import { IoClose, IoPlay, IoPause, IoPlaySkipBack, IoPlaySkipForward, IoRemove, IoAdd } from 'react-icons/io5';
+import {
+  IoClose,
+  IoPlay,
+  IoPause,
+  IoPlaySkipBack,
+  IoPlaySkipForward,
+  IoRemove,
+  IoAdd,
+} from 'react-icons/io5';
 
 interface FlatChapter {
   label: string;
@@ -274,8 +282,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   return (
     <div
-      data-testid="rsvp-overlay"
-      aria-label="RSVP Speed Reading Overlay"
+      data-testid='rsvp-overlay'
+      aria-label='RSVP Speed Reading Overlay'
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
         backgroundColor: bgColor,
@@ -293,7 +301,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       {/* Header */}
       <div className='rsvp-header flex shrink-0 items-center justify-between p-4'>
         <button
-          aria-label="Close RSVP"
+          aria-label='Close RSVP'
           className='flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20'
           onClick={onClose}
           title='Close (Esc)'
@@ -332,7 +340,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                   key={`${chapter.href}-${idx}`}
                   className={clsx(
                     'block w-full cursor-pointer border-none bg-transparent px-3 py-2.5 text-left text-sm transition-colors hover:bg-gray-500/20',
-                    isChapterActive(chapter.href) && 'bg-[color-mix(in_srgb,var(--rsvp-accent)_20%,transparent)] font-semibold',
+                    isChapterActive(chapter.href) &&
+                      'bg-[color-mix(in_srgb,var(--rsvp-accent)_20%,transparent)] font-semibold',
                   )}
                   style={{ paddingLeft: `${0.75 + chapter.level * 1}rem` }}
                   onClick={() => handleChapterSelect(chapter.href)}
@@ -378,7 +387,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         <div className='flex h-full w-full flex-col items-center justify-center'>
           <div className='flex h-full w-full flex-col items-center'>
             {/* Top guide line */}
-            <div className='flex-1 w-px bg-current opacity-30' />
+            <div className='w-px flex-1 bg-current opacity-30' />
 
             {/* Word section */}
             <div className='flex flex-col items-center justify-center'>
@@ -415,7 +424,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             </div>
 
             {/* Bottom guide line */}
-            <div className='flex-1 w-px bg-current opacity-30' />
+            <div className='w-px flex-1 bg-current opacity-30' />
           </div>
         </div>
       </div>
@@ -476,7 +485,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           {/* Playback controls */}
           <div className='flex items-center justify-center gap-4'>
             <button
-              aria-label="Skip back 15 words"
+              aria-label='Skip back 15 words'
               className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.skipBackward(15)}
               title='Back 15 words (Shift+Left)'
@@ -495,7 +504,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             </button>
 
             <button
-              aria-label="Skip forward 15 words"
+              aria-label='Skip forward 15 words'
               className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.skipForward(15)}
               title='Forward 15 words (Shift+Right)'
@@ -508,16 +517,18 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           {/* Speed controls */}
           <div className='flex min-w-[120px] flex-1 items-center justify-end gap-2'>
             <button
-              aria-label="Decrease speed"
+              aria-label='Decrease speed'
               className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.decreaseSpeed()}
               title='Slower (Left/Down)'
             >
               <IoRemove size={20} />
             </button>
-            <span aria-label="Current speed" className='min-w-12 text-center text-sm font-medium'>{state.wpm}</span>
+            <span aria-label='Current speed' className='min-w-12 text-center text-sm font-medium'>
+              {state.wpm}
+            </span>
             <button
-              aria-label="Increase speed"
+              aria-label='Increase speed'
               className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
               onClick={() => controller.increaseSpeed()}
               title='Faster (Right/Up)'
