@@ -140,7 +140,7 @@ export function useSync(bookKey?: string) {
           }
           break;
       }
-      return records?.length || 0;
+      return records?.filter((rec) => !rec.deleted_at).length || 0;
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
