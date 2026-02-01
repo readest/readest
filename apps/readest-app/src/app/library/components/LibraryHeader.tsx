@@ -178,9 +178,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 className={'h-6'}
               >
                 {isSelectMode ? (
-                  <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
+                  <PiSelectionAllFill className='text-base-content/60 h-6 w-6' />
                 ) : (
-                  <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
+                  <PiSelectionAll className='text-base-content/60 h-6 w-6' />
                 )}
               </RovingTabIndexButton>
             )}
