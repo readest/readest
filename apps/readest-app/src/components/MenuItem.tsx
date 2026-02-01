@@ -4,7 +4,7 @@ import { IconType } from 'react-icons';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useRovingTabindex } from 'react-roving-tabindex-2';
+import RovingTabIndexButton from '@/components/RovingTabIndexButton';
 
 interface MenuItemProps {
   label: string;
@@ -43,8 +43,6 @@ const MenuItem: React.FC<MenuItemProps> = ({
   onClick,
   setIsDropdownOpen,
 }) => {
-  const ref = useRef(null);
-  const rovingTabindex = useRovingTabindex(ref);
   const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
   const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
@@ -129,24 +127,20 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   return (
     <div className='flex'>
-      <button
-        ref={ref}
+      <RovingTabIndexButton
         role={toggled !== undefined ? 'menuitemcheckbox' : 'menuitem'}
         aria-checked={toggled !== undefined ? toggled : undefined}
-        tabIndex={disabled ? -1 : rovingTabindex.tabIndex}
-        className={rovingTabindex.className + ' ' + clsx(
+        className={clsx(
           'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
           disabled && 'btn-disabled text-gray-400',
           buttonClass,
         )}
         title={tooltip ? tooltip : ''}
         onClick={handleClick}
-        onKeyDown={rovingTabindex.onKeydown}
-        onFocus={rovingTabindex.setAsActiveElement}
         disabled={disabled}
       >
         {buttonContent}
-      </button>
+      </RovingTabIndexButton>
       {siblings}
     </div>
   );
