@@ -10,7 +10,9 @@ interface RovingTabIndexButtonProps {
   type?: 'button' | 'submit' | 'reset';
 }
 
-const RovingTabIndexButton: React.FC<RovingTabIndexButtonProps & Record<string, string | number | boolean | React.ReactNode>> = (props) => {
+const RovingTabIndexButton: React.FC<
+  RovingTabIndexButtonProps & Record<string, string | number | boolean | React.ReactNode>
+> = (props) => {
   const { children, onClick, disabled, className, type, ...rest } = props;
   const ref = useRef(null);
   const rovingTabindex = useRovingTabindex(ref);
