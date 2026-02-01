@@ -986,5 +986,15 @@
   "Finished": "Завершено",
   "Unread": "Непрочитане",
   "Clear Status": "Очистити статус",
-  "Status": "Статус"
+  "Status": "Статус",
+  "Set status for {{count}} book(s)_few": "Встановити статус для {{count}} книг",
+  "Set status for {{count}} book(s)_many": "Встановити статус для {{count}} книг",
+  "Loading": "Завантаження...",
+  "Exit Paragraph Mode": "Вийти з режиму абзацу",
+  "Paragraph Mode": "Режим абзацу",
+  "Embedding Model": "Модель вбудовування",
+  "{{count}} book(s) synced_one": "{{count}} книга синхронізована",
+  "{{count}} book(s) synced_few": "{{count}} книги синхронізовані",
+  "{{count}} book(s) synced_many": "{{count}} книг синхронізовано",
+  "{{count}} book(s) synced_other": "{{count}} книг синхронізовано"
 }

@@ -966,5 +966,11 @@
   "Finished": "Ολοκληρώθηκε",
   "Unread": "Μη αναγνωσμένο",
   "Clear Status": "Εκκαθάριση κατάστασης",
-  "Status": "Κατάσταση"
+  "Status": "Κατάσταση",
+  "Loading": "Φόρτωση...",
+  "Exit Paragraph Mode": "Έξοδος από τη λειτουργία παραγράφου",
+  "Paragraph Mode": "Λειτουργία παραγράφου",
+  "Embedding Model": "Μοντέλο ενσωμάτωσης",
+  "{{count}} book(s) synced_one": "{{count}} βιβλίο συγχρονίστηκε",
+  "{{count}} book(s) synced_other": "{{count}} βιβλία συγχρονίστηκαν"
 }

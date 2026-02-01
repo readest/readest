@@ -966,5 +966,11 @@
   "Finished": "முடிந்தது",
   "Unread": "படிக்கவில்லை",
   "Clear Status": "நிலையை அழி",
-  "Status": "நிலை"
+  "Status": "நிலை",
+  "Loading": "ஏற்றுகிறது...",
+  "Exit Paragraph Mode": "பத்தி பயன்முறையிலிருந்து வெளியேறு",
+  "Paragraph Mode": "பத்தி பயன்முறை",
+  "Embedding Model": "உட்பொதி மாதிரி",
+  "{{count}} book(s) synced_one": "{{count}} புத்தகம் ஒத்திசைக்கப்பட்டது",
+  "{{count}} book(s) synced_other": "{{count}} புத்தகங்கள் ஒத்திசைக்கப்பட்டன"
 }

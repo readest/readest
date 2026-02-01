@@ -949,12 +949,16 @@
   "AI Gateway Model": "AI 게이트웨이 모델",
   "Actions": "작업",
   "Navigation": "탐색",
-  "Set status for {{count}} book(s)_one": "책 {{count}}권 상태 설정",
   "Set status for {{count}} book(s)_other": "책 {{count}}권 상태 설정",
   "Mark as Unread": "읽지 않음으로 표시",
   "Mark as Finished": "완료로 표시",
   "Finished": "완료",
   "Unread": "읽지 않음",
   "Clear Status": "상태 지우기",
-  "Status": "상태"
+  "Status": "상태",
+  "Loading": "로드 중...",
+  "Exit Paragraph Mode": "단락 모드 종료",
+  "Paragraph Mode": "단락 모드",
+  "Embedding Model": "임베딩 모델",
+  "{{count}} book(s) synced_other": "{{count}}권의 책이 동기화되었습니다"
 }

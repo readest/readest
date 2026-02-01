@@ -966,5 +966,11 @@
   "Finished": "تمام‌شده",
   "Unread": "خوانده‌نشده",
   "Clear Status": "پاک کردن وضعیت",
-  "Status": "وضعیت"
+  "Status": "وضعیت",
+  "Loading": "در حال بارگذاری...",
+  "Exit Paragraph Mode": "خروج از حالت بند",
+  "Paragraph Mode": "حالت بند",
+  "Embedding Model": "مدل جاسازی",
+  "{{count}} book(s) synced_one": "{{count}} کتاب همگام شد",
+  "{{count}} book(s) synced_other": "{{count}} کتاب همگام شدند"
 }

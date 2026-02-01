@@ -949,12 +949,16 @@
   "AI Gateway Model": "AI Gateway 模型",
   "Actions": "操作",
   "Navigation": "導覽",
-  "Set status for {{count}} book(s)_one": "設定 {{count}} 本書的狀態",
   "Set status for {{count}} book(s)_other": "設定 {{count}} 本書的狀態",
   "Mark as Unread": "標示為未讀",
   "Mark as Finished": "標示為已讀",
   "Finished": "已讀",
   "Unread": "未讀",
   "Clear Status": "清除狀態",
-  "Status": "狀態"
+  "Status": "狀態",
+  "Loading": "正在載入",
+  "Exit Paragraph Mode": "退出段落模式",
+  "Paragraph Mode": "段落模式",
+  "Embedding Model": "嵌入模型",
+  "{{count}} book(s) synced_other": "{{count}} 本書已同步"
 }

@@ -966,5 +966,11 @@
   "Finished": "শেষ হয়েছে",
   "Unread": "অপঠিত",
   "Clear Status": "স্থিতি মুছুন",
-  "Status": "অবস্থা"
+  "Status": "অবস্থা",
+  "Loading": "লোড হচ্ছে...",
+  "Exit Paragraph Mode": "অনুচ্ছেদ মোড থেকে প্রস্থান করুন",
+  "Paragraph Mode": "অনুচ্ছেদ মোড",
+  "Embedding Model": "এম্বেডিং মডেল",
+  "{{count}} book(s) synced_one": "{{count}}টি বই সিঙ্ক করা হয়েছে",
+  "{{count}} book(s) synced_other": "{{count}}টি বই সিঙ্ক করা হয়েছে"
 }

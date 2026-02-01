@@ -986,5 +986,15 @@
   "Finished": "Ukończone",
   "Unread": "Nieprzeczytane",
   "Clear Status": "Wyczyść status",
-  "Status": "Status"
+  "Status": "Status",
+  "Set status for {{count}} book(s)_few": "Ustaw status dla {{count}} książek",
+  "Set status for {{count}} book(s)_many": "Ustaw status dla {{count}} książek",
+  "Loading": "Ładowanie...",
+  "Exit Paragraph Mode": "Wyjdź z trybu akapitu",
+  "Paragraph Mode": "Tryb akapitu",
+  "Embedding Model": "Model osadzania",
+  "{{count}} book(s) synced_one": "{{count}} książka zsynchronizowana",
+  "{{count}} book(s) synced_few": "{{count}} książki zsynchronizowane",
+  "{{count}} book(s) synced_many": "{{count}} książek zsynchronizowanych",
+  "{{count}} book(s) synced_other": "{{count}} książek zsynchronizowanych"
 }
