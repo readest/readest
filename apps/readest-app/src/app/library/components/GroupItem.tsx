@@ -15,7 +15,13 @@ interface GroupItemProps {
   controlTabIndex: number;
 }
 
-const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupSelected, controlTabIndex=0}) => {
+const GroupItem: React.FC<GroupItemProps> = ({
+  mode,
+  group,
+  isSelectMode,
+  groupSelected,
+  controlTabIndex = 0,
+}) => {
   const { appService } = useEnv();
   const iconSize15 = useResponsiveSize(15);
   const scrollContainerRef = useRef<HTMLDivElement>(null);

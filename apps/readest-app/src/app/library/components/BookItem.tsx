@@ -42,7 +42,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
-  controlTabIndex=0,
+  controlTabIndex = 0,
 }) => {
   const _ = useTranslation();
   const router = useRouter();

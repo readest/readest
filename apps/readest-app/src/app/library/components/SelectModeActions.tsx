@@ -113,7 +113,10 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
             <MdDelete className='text-red-500' />
             <div className='text-red-500'>{_('Delete')}</div>
           </RovingTabIndexButton>
-          <RovingTabIndexButton onClick={onCancel} className='flex flex-col items-center justify-center gap-1'>
+          <RovingTabIndexButton
+            onClick={onCancel}
+            className='flex flex-col items-center justify-center gap-1'
+          >
             <MdOutlineCancel />
             <div>{_('Cancel')}</div>
           </RovingTabIndexButton>

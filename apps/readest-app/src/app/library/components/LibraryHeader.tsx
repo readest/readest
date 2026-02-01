@@ -116,7 +116,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
             <div className='relative flex h-9 w-full items-center sm:h-7'>
               <span className='text-base-content/50 absolute ps-3'>
-                <FaSearch role="none" className='h-4 w-4' />
+                <FaSearch role='none' className='h-4 w-4' />
               </span>
               <input
                 type='text'
@@ -173,7 +173,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   onClick={onToggleSelectMode}
                   aria-label={_('Select Books')}
                   aria-pressed={isSelectMode}
-                  role="button"
+                  role='button'
                   title={_('Select Books')}
                   className={'h-6'}
                 >

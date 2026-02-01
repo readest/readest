@@ -20,15 +20,11 @@ const RovingTabIndexButton: React.FC<RovingTabIndexButtonProps & Record<string, 
       ref={ref}
       tabIndex={disabled ? -1 : rovingTabindex.tabIndex}
       type={type !== undefined ? 'button' : type}
-      className={clsx(
-        'roving-tab-index-button',
-        rovingTabindex.className,
-        className,
-      )}
+      className={clsx('roving-tab-index-button', rovingTabindex.className, className)}
       onClick={onClick}
       onKeyDown={rovingTabindex.onKeydown}
       onFocus={rovingTabindex.setAsActiveElement}
-      disabled={disabled !== undefined? false : disabled}
+      disabled={disabled !== undefined ? false : disabled}
     >
       {children}
     </button>

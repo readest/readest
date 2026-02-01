@@ -58,7 +58,9 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
   useEffect(() => {
     setTimeout(() => {
       if (menuRef.current) {
-        const firstItem = menuRef.current.querySelector('[role="menuitem"], [role="menuitemcheckbox"]');
+        const firstItem = menuRef.current.querySelector(
+          '[role="menuitem"], [role="menuitemcheckbox"]',
+        );
         if (firstItem) {
           (firstItem as HTMLElement).focus();
         }

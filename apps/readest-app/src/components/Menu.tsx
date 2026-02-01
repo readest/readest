@@ -18,7 +18,9 @@ const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => 
   useEffect(() => {
     setTimeout(() => {
       if (menuRef.current) {
-        const firstItem = menuRef.current.querySelector('[role="menuitem"], [role="menuitemcheckbox"]');
+        const firstItem = menuRef.current.querySelector(
+          '[role="menuitem"], [role="menuitemcheckbox"]',
+        );
         if (firstItem) {
           (firstItem as HTMLElement).focus();
         }
