@@ -14,6 +14,7 @@ import {
   IoRemove,
   IoAdd,
 } from 'react-icons/io5';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FlatChapter {
   label: string;
@@ -38,6 +39,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   onChapterSelect,
   onRequestNextPage,
 }) => {
+  const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
   const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
@@ -297,33 +299,34 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
-      <div className='rsvp-header flex shrink-0 items-center justify-between p-4'>
+      <div className='rsvp-header flex shrink-0 items-center justify-between gap-2 p-3 md:gap-4 md:p-4'>
         <button
-          aria-label='Close RSVP'
-          className='flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20'
+          aria-label={_('Close RSVP')}
+          className='flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 md:h-11 md:w-11'
           onClick={onClose}
-          title='Close (Esc)'
+          title={_('Close')}
         >
-          <IoClose size={24} />
+          <IoClose className='h-5 w-5 md:h-6 md:w-6' />
         </button>
 
         {/* Chapter selector */}
-        <div className='relative mx-4 max-w-[300px] flex-1'>
+        <div className='relative mx-2 min-w-0 max-w-[200px] flex-1 md:mx-4 md:max-w-[400px]'>
           <button
-            className='flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-gray-500/30 bg-gray-500/15 px-3 py-2 text-sm transition-colors hover:bg-gray-500/25'
+            className='flex w-full cursor-pointer items-center justify-between gap-1 rounded-lg border border-gray-500/30 bg-gray-500/15 px-2 py-1.5 text-xs transition-colors hover:bg-gray-500/25 md:gap-2 md:px-3 md:py-2 md:text-sm'
             onClick={() => setShowChapterDropdown(!showChapterDropdown)}
-            title='Select Chapter'
+            title={_('Select Chapter')}
           >
             <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
               {getCurrentChapterLabel()}
             </span>
             <svg
-              width='16'
-              height='16'
+              width='14'
+              height='14'
               viewBox='0 0 24 24'
               fill='none'
               stroke='currentColor'
               strokeWidth='2'
+              className='shrink-0 md:h-4 md:w-4'
             >
               <path d='M6 9l6 6 6-6' />
             </svg>
@@ -351,26 +354,29 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           )}
         </div>
 
-        <div className='text-base font-medium opacity-70'>{state.wpm} WPM</div>
+        <div className='shrink-0 text-sm font-medium opacity-70 md:text-base'>
+          {_('{{number}} WPM', { number: state.wpm })}
+        </div>
       </div>
 
       {/* Context panel (shown when paused) */}
       {!state.playing && countdown === null && (
-        <div className='mx-4 max-h-[30vh] overflow-y-auto rounded-xl border border-gray-500/20 bg-gray-500/10 p-4'>
-          <div className='mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide opacity-60'>
+        <div className='mx-3 max-h-[25vh] overflow-y-auto rounded-lg border border-gray-500/20 bg-gray-500/10 p-3 md:mx-4 md:max-h-[30vh] md:rounded-xl md:p-4'>
+          <div className='mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide opacity-60 md:mb-3'>
             <svg
-              width='16'
-              height='16'
+              width='14'
+              height='14'
               viewBox='0 0 24 24'
               fill='none'
               stroke='currentColor'
               strokeWidth='2'
+              className='md:h-4 md:w-4'
             >
               <path d='M4 6h16M4 12h16M4 18h10' />
             </svg>
-            <span>Context</span>
+            <span>{_('Context')}</span>
           </div>
-          <div className='text-left text-lg leading-relaxed'>
+          <div className='text-left text-base leading-relaxed md:text-lg'>
             <span className='opacity-70'>{getContextBefore()} </span>
             <span className='font-semibold' style={{ color: accentColor }}>
               {currentWord?.text || ''}
@@ -381,7 +387,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       )}
 
       {/* Main content area */}
-      <div className='flex flex-1 flex-col items-center justify-center p-8'>
+      <div className='flex flex-1 flex-col items-center justify-center p-4 md:p-8'>
         <div className='flex h-full w-full flex-col items-center justify-center'>
           <div className='flex h-full w-full flex-col items-center'>
             {/* Top guide line */}
@@ -393,7 +399,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               {countdown !== null && (
                 <div className='mb-2 flex items-center justify-center'>
                   <span
-                    className='animate-pulse text-6xl font-bold sm:text-7xl'
+                    className='animate-pulse text-5xl font-bold sm:text-6xl md:text-7xl'
                     style={{ color: accentColor }}
                   >
                     {countdown}
@@ -402,7 +408,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               )}
 
               {/* Word display */}
-              <div className='relative flex min-h-20 w-full items-center justify-center whitespace-nowrap px-4 py-6 font-mono text-3xl font-medium tracking-wide sm:text-4xl md:text-5xl'>
+              <div className='relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-4 font-mono text-2xl font-medium tracking-wide sm:min-h-20 sm:px-4 sm:py-6 sm:text-3xl md:text-4xl lg:text-5xl'>
                 {currentWord ? (
                   <>
                     <span className='absolute right-[calc(50%+0.3em)] text-right opacity-60'>
@@ -416,7 +422,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                     </span>
                   </>
                 ) : (
-                  <span className='italic opacity-30'>Ready</span>
+                  <span className='italic opacity-30'>{_('Ready')}</span>
                 )}
               </div>
             </div>
@@ -428,25 +434,28 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       </div>
 
       {/* Footer */}
-      <div className='rsvp-controls shrink-0 px-4 pb-8 pt-4'>
+      <div className='rsvp-controls shrink-0 px-3 pb-6 pt-3 md:px-4 md:pb-8 md:pt-4'>
         {/* Progress section */}
-        <div className='mb-4 flex flex-col gap-2'>
-          <div className='flex items-center justify-between text-xs'>
+        <div className='mb-3 flex flex-col gap-1.5 md:mb-4 md:gap-2'>
+          <div className='flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between'>
             <span className='font-semibold uppercase tracking-wide opacity-70'>
-              Chapter Progress
+              {_('Chapter Progress')}
             </span>
             <span className='tabular-nums opacity-60'>
               {(state.currentIndex + 1).toLocaleString()} / {state.words.length.toLocaleString()}{' '}
-              words
+              {_('words')}
               {getTimeRemaining() && (
-                <span className='opacity-80'> · {getTimeRemaining()} left</span>
+                <span className='opacity-80'>
+                  {' '}
+                  · {_('{{time}} left', { time: getTimeRemaining() })}
+                </span>
               )}
             </span>
           </div>
           <div
             role='slider'
             tabIndex={0}
-            aria-label='Reading progress'
+            aria-label={_('Reading progress')}
             aria-valuenow={Math.round(state.progress)}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -456,7 +465,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               if (e.key === 'ArrowLeft') controller.skipBackward();
               else if (e.key === 'ArrowRight') controller.skipForward();
             }}
-            title='Click to seek'
+            title={_('Click to seek')}
           >
             <div
               className='absolute left-0 top-0 h-full rounded transition-[width] duration-100'
@@ -470,79 +479,93 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         </div>
 
         {/* Controls */}
-        <div className='flex items-center justify-between'>
-          {/* Punctuation pause */}
-          <div className='flex min-w-[120px] flex-1 items-center'>
-            <label className='flex cursor-pointer items-center gap-2 text-xs font-medium opacity-80'>
-              Pause:
-              <select
-                className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-2 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
-                style={{ color: 'inherit' }}
-                value={state.punctuationPauseMs}
-                onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
-              >
-                {controller.getPunctuationPauseOptions().map((option) => (
-                  <option key={option} value={option}>
-                    {option}ms
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {/* Playback controls */}
-          <div className='flex items-center justify-center gap-4'>
+        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4'>
+          {/* Playback controls - centered on mobile, middle on desktop */}
+          <div className='flex items-center justify-center gap-2 md:order-2 md:gap-4'>
             <button
-              aria-label='Skip back 15 words'
-              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
+              aria-label={_('Skip back 15 words')}
+              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-3 md:py-2'
               onClick={() => controller.skipBackward(15)}
-              title='Back 15 words (Shift+Left)'
+              title={_('Back 15 words (Shift+Left)')}
             >
               <span className='text-xs font-semibold opacity-80'>15</span>
-              <IoPlaySkipBack size={24} />
+              <IoPlaySkipBack className='h-5 w-5 md:h-6 md:w-6' />
             </button>
 
             <button
-              aria-label={state.playing ? 'Pause' : 'Play'}
-              className='flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95'
+              aria-label={state.playing ? _('Pause') : _('Play')}
+              className={clsx(
+                'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
+                state.playing ? '' : 'ps-1',
+              )}
               onClick={() => controller.togglePlayPause()}
-              title={state.playing ? 'Pause (Space)' : 'Play (Space)'}
+              title={state.playing ? _('Pause (Space)') : _('Play (Space)')}
             >
-              {state.playing ? <IoPause size={32} /> : <IoPlay size={32} />}
+              {state.playing ? (
+                <IoPause className='h-7 w-7 md:h-8 md:w-8' />
+              ) : (
+                <IoPlay className='h-7 w-7 md:h-8 md:w-8' />
+              )}
             </button>
 
             <button
-              aria-label='Skip forward 15 words'
-              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-3 py-2 transition-colors hover:bg-gray-500/20 active:scale-95'
+              aria-label={_('Skip forward 15 words')}
+              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-3 md:py-2'
               onClick={() => controller.skipForward(15)}
-              title='Forward 15 words (Shift+Right)'
+              title={_('Forward 15 words (Shift+Right)')}
             >
-              <IoPlaySkipForward size={24} />
+              <IoPlaySkipForward className='h-5 w-5 md:h-6 md:w-6' />
               <span className='text-xs font-semibold opacity-80'>15</span>
             </button>
           </div>
 
-          {/* Speed controls */}
-          <div className='flex min-w-[120px] flex-1 items-center justify-end gap-2'>
-            <button
-              aria-label='Decrease speed'
-              className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
-              onClick={() => controller.decreaseSpeed()}
-              title='Slower (Left/Down)'
-            >
-              <IoRemove size={20} />
-            </button>
-            <span aria-label='Current speed' className='min-w-12 text-center text-sm font-medium'>
-              {state.wpm}
-            </span>
-            <button
-              aria-label='Increase speed'
-              className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
-              onClick={() => controller.increaseSpeed()}
-              title='Faster (Right/Up)'
-            >
-              <IoAdd size={20} />
-            </button>
+          {/* Secondary controls row on mobile, split on desktop */}
+          <div className='flex items-center justify-between gap-4 md:contents'>
+            {/* Punctuation pause - left on desktop */}
+            <div className='flex items-center md:order-1 md:min-w-[140px] md:flex-1'>
+              <label className='flex cursor-pointer items-center gap-1.5 text-xs font-medium opacity-80 md:gap-2'>
+                <span className='hidden sm:inline'>{_('Pause:')}</span>
+                <span className='sm:hidden'>{_('Pause:')}</span>
+                <select
+                  className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30 md:px-2'
+                  style={{ color: 'inherit' }}
+                  value={state.punctuationPauseMs}
+                  onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
+                >
+                  {controller.getPunctuationPauseOptions().map((option) => (
+                    <option key={option} value={option}>
+                      {option}ms
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {/* Speed controls - right on desktop */}
+            <div className='flex items-center justify-end gap-1.5 md:order-3 md:min-w-[140px] md:flex-1 md:gap-2'>
+              <button
+                aria-label={_('Decrease speed')}
+                className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-10 md:w-10'
+                onClick={() => controller.decreaseSpeed()}
+                title={_('Slower (Left/Down)')}
+              >
+                <IoRemove className='h-4 w-4 md:h-5 md:w-5' />
+              </button>
+              <span
+                aria-label={_('Current speed')}
+                className='min-w-10 text-center text-sm font-medium md:min-w-12'
+              >
+                {state.wpm}
+              </span>
+              <button
+                aria-label={_('Increase speed')}
+                className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-10 md:w-10'
+                onClick={() => controller.increaseSpeed()}
+                title={_('Faster (Right/Up)')}
+              >
+                <IoAdd className='h-4 w-4 md:h-5 md:w-5' />
+              </button>
+            </div>
           </div>
         </div>
       </div>

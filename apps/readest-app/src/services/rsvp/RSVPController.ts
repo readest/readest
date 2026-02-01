@@ -1,5 +1,6 @@
 import { FoliateView } from '@/types/view';
 import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } from './types';
+import { containsCJK, splitTextIntoWords } from './utils';
 
 const DEFAULT_WPM = 300;
 const MIN_WPM = 100;
@@ -374,10 +375,38 @@ export class RSVPController extends EventTarget {
   private findWordIndexBySelection(words: RsvpWord[], selectionText: string): number {
     if (!selectionText || words.length === 0) return -1;
 
-    const cleanSelection = selectionText.trim().toLowerCase();
+    const cleanSelection = selectionText.trim();
     if (!cleanSelection) return -1;
 
-    const selectionWords = cleanSelection.split(/\s+/);
+    const hasCJK = containsCJK(cleanSelection);
+
+    if (hasCJK) {
+      const selectionLower = cleanSelection.toLowerCase();
+
+      // Build a continuous text from words for matching
+      for (let i = 0; i < words.length; i++) {
+        let continuousText = '';
+        for (let j = i; j < Math.min(i + 20, words.length); j++) {
+          continuousText += words[j]!.text;
+          if (continuousText.toLowerCase().includes(selectionLower)) {
+            return i;
+          }
+        }
+      }
+
+      // Fallback: try to match first few characters
+      const firstChars = cleanSelection.slice(0, Math.min(3, cleanSelection.length)).toLowerCase();
+      for (let i = 0; i < words.length; i++) {
+        if (words[i]!.text.toLowerCase().includes(firstChars)) {
+          return i;
+        }
+      }
+
+      return -1;
+    }
+
+    const cleanSelectionLower = cleanSelection.toLowerCase();
+    const selectionWords = cleanSelectionLower.split(/\s+/);
     if (selectionWords.length === 0) return -1;
 
     const firstSelectionWord = selectionWords[0]!;
@@ -558,7 +587,8 @@ export class RSVPController extends EventTarget {
     const walk = (node: Node): void => {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
-        const nodeWords = text.split(/(\s+)/).filter((w) => w.trim().length > 0);
+        const nodeWords = splitTextIntoWords(text);
+        console.log('Extracted words from text node:', nodeWords);
 
         let offset = 0;
         for (const word of nodeWords) {
@@ -616,6 +646,14 @@ export class RSVPController extends EventTarget {
   }
 
   private calculateORP(word: string): number {
+    const hasCJK = containsCJK(word);
+
+    if (hasCJK) {
+      // For CJK characters, center the ORP since each character is more balanced
+      const len = word.length;
+      return Math.floor(len / 2);
+    }
+
     const cleanWord = word.replace(/[^\w]/g, '');
     const len = cleanWord.length;
 
@@ -627,6 +665,19 @@ export class RSVPController extends EventTarget {
   }
 
   private getPauseMultiplier(word: string): number {
+    const hasCJK = containsCJK(word);
+
+    if (hasCJK) {
+      // CJK characters are information-dense, adjust pause based on character count
+      // With semantic segmentation, words can vary in length
+      const len = word.length;
+      if (len >= 5) return 1.4; // Longer compound words
+      if (len >= 4) return 1.3;
+      if (len >= 3) return 1.2;
+      if (len >= 2) return 1.0;
+      return 0.9; // Single characters
+    }
+
     if (word.length > 12) return 1.3;
     if (word.length > 8) return 1.1;
     return 1.0;
