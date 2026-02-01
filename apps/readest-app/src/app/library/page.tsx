@@ -132,7 +132,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { pullLibrary, pushLibrary } = useBooksSync();
   const { isDragging } = useDragDropImport();
 
-  usePullToRefresh(containerRef, pullLibrary);
+  usePullToRefresh(
+    containerRef,
+    pullLibrary.bind(null, false, true),
+    pullLibrary.bind(null, true, true),
+  );
   useScreenWakeLock(settings.screenWakeLock);
 
   useShortcuts({

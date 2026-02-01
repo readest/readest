@@ -966,5 +966,11 @@
   "Finished": "අවසන්",
   "Unread": "නොකියවූ",
   "Clear Status": "තත්ත්වය හිස් කරන්න",
-  "Status": "තත්ත්වය"
+  "Status": "තත්ත්වය",
+  "Loading": "පූරණය වෙමින් පවතී...",
+  "Exit Paragraph Mode": "ඡේද ප්‍රකාරයෙන් ඉවත් වන්න",
+  "Paragraph Mode": "ඡේද ප්‍රකාරය",
+  "Embedding Model": "එබ්බවීමේ ආකෘතිය",
+  "{{count}} book(s) synced_one": "{{count}} පොතක් සමමුහුර්ත කරන ලදී",
+  "{{count}} book(s) synced_other": "{{count}} පොත් සමමුහුර්ත කරන ලදී"
 }

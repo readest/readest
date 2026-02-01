@@ -966,5 +966,11 @@
   "Finished": "Bitirildi",
   "Unread": "Okunmadı",
   "Clear Status": "Durumu Temizle",
-  "Status": "Durum"
+  "Status": "Durum",
+  "Loading": "Yükleniyor...",
+  "Exit Paragraph Mode": "Paragraf modundan çık",
+  "Paragraph Mode": "Paragraf modu",
+  "Embedding Model": "Gömme Modeli",
+  "{{count}} book(s) synced_one": "{{count}} kitap senkronize edildi",
+  "{{count}} book(s) synced_other": "{{count}} kitap senkronize edildi"
 }

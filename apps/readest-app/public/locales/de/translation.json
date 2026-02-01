@@ -966,5 +966,11 @@
   "Finished": "Beendet",
   "Unread": "Ungelesen",
   "Clear Status": "Status löschen",
-  "Status": "Status"
+  "Status": "Status",
+  "Loading": "Laden...",
+  "Exit Paragraph Mode": "Absatzmodus verlassen",
+  "Paragraph Mode": "Absatzmodus",
+  "Embedding Model": "Einbettungsmodell",
+  "{{count}} book(s) synced_one": "{{count}} Buch synchronisiert",
+  "{{count}} book(s) synced_other": "{{count}} Bücher synchronisiert"
 }

@@ -966,5 +966,11 @@
   "Finished": "Läst",
   "Unread": "Oläst",
   "Clear Status": "Rensa status",
-  "Status": "Status"
+  "Status": "Status",
+  "Loading": "Laddar...",
+  "Exit Paragraph Mode": "Avsluta styckeläge",
+  "Paragraph Mode": "Styckeläge",
+  "Embedding Model": "Inbäddningsmodell",
+  "{{count}} book(s) synced_one": "{{count}} bok synkroniserad",
+  "{{count}} book(s) synced_other": "{{count}} böcker synkroniserade"
 }

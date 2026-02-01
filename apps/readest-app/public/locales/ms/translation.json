@@ -949,12 +949,16 @@
   "AI Gateway Model": "Model AI Gateway",
   "Actions": "Tindakan",
   "Navigation": "Navigasi",
-  "Set status for {{count}} book(s)_one": "Tetapkan status untuk {{count}} buku",
   "Set status for {{count}} book(s)_other": "Tetapkan status untuk {{count}} buku",
   "Mark as Unread": "Tandakan sebagai Belum Dibaca",
   "Mark as Finished": "Tandakan sebagai Selesai",
   "Finished": "Selesai",
   "Unread": "Belum Dibaca",
   "Clear Status": "Kosongkan Status",
-  "Status": "Status"
+  "Status": "Status",
+  "Loading": "Memuatkan...",
+  "Exit Paragraph Mode": "Keluar dari Mod Perenggan",
+  "Paragraph Mode": "Mod Perenggan",
+  "Embedding Model": "Model Benaman",
+  "{{count}} book(s) synced_other": "{{count}} buku telah disegerakkan"
 }

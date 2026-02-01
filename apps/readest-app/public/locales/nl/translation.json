@@ -966,5 +966,11 @@
   "Finished": "Voltooid",
   "Unread": "Ongelezen",
   "Clear Status": "Status wissen",
-  "Status": "Status"
+  "Status": "Status",
+  "Loading": "Laden...",
+  "Exit Paragraph Mode": "Alineamodus verlaten",
+  "Paragraph Mode": "Alineamodus",
+  "Embedding Model": "Insluitmodel",
+  "{{count}} book(s) synced_one": "{{count}} boek gesynchroniseerd",
+  "{{count}} book(s) synced_other": "{{count}} boeken gesynchroniseerd"
 }

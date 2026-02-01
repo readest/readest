@@ -1006,5 +1006,19 @@
   "Finished": "منتهى",
   "Unread": "غير مقروء",
   "Clear Status": "مسح الحالة",
-  "Status": "الحالة"
+  "Status": "الحالة",
+  "Set status for {{count}} book(s)_zero": "تعيين الحالة للكتب",
+  "Set status for {{count}} book(s)_two": "تعيين الحالة للكتابين",
+  "Set status for {{count}} book(s)_few": "تعيين الحالة لـ {{count}} كتب",
+  "Set status for {{count}} book(s)_many": "تعيين الحالة لـ {{count}} كتاباً",
+  "Loading": "جارٍ التحميل...",
+  "Exit Paragraph Mode": "الخروج من وضع الفقرة",
+  "Paragraph Mode": "وضع الفقرة",
+  "Embedding Model": "نموذج التضمين",
+  "{{count}} book(s) synced_zero": "لم تتم مزامنة أي كتب",
+  "{{count}} book(s) synced_one": "تمت مزامنة كتاب واحد",
+  "{{count}} book(s) synced_two": "تمت مزامنة كتابين",
+  "{{count}} book(s) synced_few": "تمت مزامنة {{count}} كتب",
+  "{{count}} book(s) synced_many": "تمت مزامنة {{count}} كتاباً",
+  "{{count}} book(s) synced_other": "تمت مزامنة {{count}} كتاب"
 }

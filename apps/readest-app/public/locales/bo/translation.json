@@ -949,12 +949,16 @@
   "AI Gateway Model": "AI Gateway དཔེ་གཞི།",
   "Actions": "བྱ་འགུལ།",
   "Navigation": "འགྲུལ་བཞུད།",
-  "Set status for {{count}} book(s)_one": "དེབ་ {{count}} གི་གནས་སྟངས་གཏན་འཁེལ་བྱེད།",
   "Set status for {{count}} book(s)_other": "དེབ་ {{count}} གི་གནས་སྟངས་གཏན་འཁེལ་བྱེད།",
   "Mark as Unread": "མ་ཀློག་པར་རྟགས་རྒྱག",
   "Mark as Finished": "ཚར་བར་རྟགས་རྒྱག",
   "Finished": "ཚར་སོང་།",
   "Unread": "མ་ཀློག་པ།",
   "Clear Status": "གནས་སྟངས་གཙང་མ།",
-  "Status": "གནས་སྟངས།"
+  "Status": "གནས་སྟངས།",
+  "Loading": "ལེན་བཞིན་པ།...",
+  "Exit Paragraph Mode": "དུམ་མཚམས་རྣམ་པ་ནས་ཕྱིར་ཐོན།",
+  "Paragraph Mode": "དུམ་མཚམས་རྣམ་པ།",
+  "Embedding Model": "གནས་སྒྲིག་དཔེ་གཞི།",
+  "{{count}} book(s) synced_other": "དེབ་ {{count}} མཉམ་འགྲིག་བྱས་ཟིན།"
 }

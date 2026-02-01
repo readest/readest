@@ -966,5 +966,11 @@
   "Finished": "समाप्त",
   "Unread": "अपठित",
   "Clear Status": "स्थिति साफ़ करें",
-  "Status": "स्थिति"
+  "Status": "स्थिति",
+  "Loading": "लोड हो रहा है...",
+  "Exit Paragraph Mode": "पैराग्राफ मोड से बाहर निकलें",
+  "Paragraph Mode": "पैराग्राफ मोड",
+  "Embedding Model": "एंबेडिंग मॉडल",
+  "{{count}} book(s) synced_one": "{{count}} पुस्तक सिंक की गई",
+  "{{count}} book(s) synced_other": "{{count}} पुस्तकें सिंक की गईं"
 }

@@ -976,5 +976,13 @@
   "Finished": "Terminé",
   "Unread": "Non lu",
   "Clear Status": "Effacer le statut",
-  "Status": "Statut"
+  "Status": "Statut",
+  "Set status for {{count}} book(s)_many": "Définir le statut pour {{count}} livres",
+  "Loading": "Chargement...",
+  "Exit Paragraph Mode": "Quitter le mode paragraphe",
+  "Paragraph Mode": "Mode paragraphe",
+  "Embedding Model": "Modèle d'incorporation",
+  "{{count}} book(s) synced_one": "{{count}} livre synchronisé",
+  "{{count}} book(s) synced_many": "{{count}} livres synchronisés",
+  "{{count}} book(s) synced_other": "{{count}} livres synchronisés"
 }

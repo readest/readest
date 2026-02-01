@@ -949,12 +949,16 @@
   "AI Gateway Model": "Mô hình AI Gateway",
   "Actions": "Hành động",
   "Navigation": "Điều hướng",
-  "Set status for {{count}} book(s)_one": "Đặt trạng thái cho {{count}} cuốn sách",
   "Set status for {{count}} book(s)_other": "Đặt trạng thái cho {{count}} cuốn sách",
   "Mark as Unread": "Đánh dấu là chưa đọc",
   "Mark as Finished": "Đánh dấu là đã hoàn thành",
   "Finished": "Đã hoàn thành",
   "Unread": "Chưa đọc",
   "Clear Status": "Xóa trạng thái",
-  "Status": "Trạng thái"
+  "Status": "Trạng thái",
+  "Loading": "Đang tải...",
+  "Exit Paragraph Mode": "Thoát chế độ đoạn văn",
+  "Paragraph Mode": "Chế độ đoạn văn",
+  "Embedding Model": "Mô hình nhúng",
+  "{{count}} book(s) synced_other": "Đã đồng bộ {{count}} cuốn sách"
 }
