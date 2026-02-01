@@ -1,0 +1,205 @@
+'use client';
+
+import React, { useEffect, useRef, useCallback } from 'react';
+import { XRayGraphBuilder } from '@/services/ai/xray/graphBuilder';
+import { useThemeStore } from '@/store/themeStore';
+import type { XRayEntity, XRayRelationship, XRayTimelineEvent } from '@/services/ai/types';
+
+interface SigmaInstance {
+  on: (event: string, callback: (data: { node?: string; edge?: string }) => void) => void;
+  kill: () => void;
+  refresh: () => void;
+  getGraph: () => GraphInstance;
+}
+
+interface GraphInstance {
+  hasNode: (node: string) => boolean;
+  hasEdge: (edge: string) => boolean;
+  source: (edge: string) => string;
+  target: (edge: string) => string;
+  neighbors: (node: string) => string[];
+  edges: (node: string) => string[];
+  getNodeAttributes: (node: string) => NodeData;
+  getEdgeAttributes: (edge: string) => EdgeData;
+}
+
+interface NodeData {
+  label: string;
+  color?: string;
+  size?: number;
+  entityType?: string;
+  entity: XRayEntity;
+}
+
+interface EdgeData {
+  label: string;
+  color?: string;
+  inferred?: boolean;
+  relationship: XRayRelationship;
+}
+
+interface XRayGraphProps {
+  entities: XRayEntity[];
+  relationships: XRayRelationship[];
+  events: XRayTimelineEvent[];
+  onNodeClick?: (entity: XRayEntity) => void;
+  onEdgeClick?: (relationship: XRayRelationship) => void;
+}
+
+const getThemeColors = (isDarkMode: boolean) => ({
+  label: isDarkMode ? '#e5e7eb' : '#374151',
+  edge: isDarkMode ? '#4b5563' : '#9ca3af',
+  edgeInferred: isDarkMode ? '#374151' : '#d1d5db',
+  background: isDarkMode ? '#1f2937' : '#ffffff',
+});
+
+const XRayGraph: React.FC<XRayGraphProps> = ({
+  entities,
+  relationships,
+  events,
+  onNodeClick,
+  onEdgeClick,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sigmaRef = useRef<SigmaInstance | null>(null);
+  const hoveredNodeRef = useRef<string | null>(null);
+  const { isDarkMode } = useThemeStore();
+
+  const themeColors = getThemeColors(isDarkMode);
+
+  const refreshGraph = useCallback(() => {
+    if (sigmaRef.current) {
+      sigmaRef.current.refresh();
+    }
+  }, []);
+
+  const initGraph = useCallback(async () => {
+    if (!containerRef.current || entities.length === 0) return;
+
+    try {
+      if (sigmaRef.current) {
+        sigmaRef.current.kill();
+        sigmaRef.current = null;
+      }
+
+      const builder = new XRayGraphBuilder();
+      builder.buildFromSnapshot(entities, relationships, events);
+      const graph = builder.getGraph();
+
+      const { circular } = await import('graphology-layout');
+      circular.assign(graph, { scale: 100 });
+      const SigmaClass = await import('sigma').then((mod) => mod.default);
+      const sigma = new SigmaClass(graph, containerRef.current, {
+        renderLabels: true,
+        labelSize: 11,
+        labelWeight: '500',
+        labelColor: { color: themeColors.label },
+        defaultNodeColor: '#6b7280',
+        defaultEdgeColor: themeColors.edge,
+        nodeReducer: (_node: string, data: NodeData) => {
+          const isHighlighted = hoveredNodeRef.current === _node;
+          const isConnected = hoveredNodeRef.current
+            ? graph.neighbors(hoveredNodeRef.current).includes(_node)
+            : false;
+          const isDimmed = hoveredNodeRef.current && !isHighlighted && !isConnected;
+
+          return {
+            ...data,
+            label: data.label,
+            color: data.color,
+            size: isHighlighted ? 12 : isConnected ? 9 : 7,
+            zIndex: isHighlighted ? 2 : isConnected ? 1 : 0,
+            opacity: isDimmed ? 0.3 : 1,
+          };
+        },
+        edgeReducer: (_edge: string, data: EdgeData) => {
+          const source = graph.source(_edge);
+          const target = graph.target(_edge);
+          const isConnected =
+            hoveredNodeRef.current &&
+            (source === hoveredNodeRef.current || target === hoveredNodeRef.current);
+          const isDimmed = hoveredNodeRef.current && !isConnected;
+
+          return {
+            ...data,
+            color: data.inferred ? themeColors.edgeInferred : themeColors.edge,
+            size: isConnected ? 3 : data.inferred ? 1 : 2,
+            zIndex: isConnected ? 1 : 0,
+            opacity: isDimmed ? 0.15 : data.inferred ? 0.5 : 0.8,
+          };
+        },
+      });
+
+      sigma.on('clickNode', ({ node }: { node: string }) => {
+        const data = graph.getNodeAttributes(node) as NodeData;
+        if (data.entity && onNodeClick) {
+          onNodeClick(data.entity);
+        }
+      });
+
+      sigma.on('clickEdge', ({ edge }: { edge: string }) => {
+        const data = graph.getEdgeAttributes(edge) as EdgeData;
+        if (data.relationship && onEdgeClick) {
+          onEdgeClick(data.relationship);
+        }
+      });
+
+      sigma.on('enterNode', ({ node }: { node: string }) => {
+        hoveredNodeRef.current = node;
+        refreshGraph();
+      });
+
+      sigma.on('leaveNode', () => {
+        hoveredNodeRef.current = null;
+        refreshGraph();
+      });
+
+      sigmaRef.current = sigma as unknown as SigmaInstance;
+    } catch (error) {
+      console.error('failed to initialize graph:', error);
+    }
+  }, [entities, relationships, events, onNodeClick, onEdgeClick, themeColors, refreshGraph]);
+
+  useEffect(() => {
+    initGraph();
+
+    return () => {
+      if (sigmaRef.current) {
+        sigmaRef.current.kill();
+        sigmaRef.current = null;
+      }
+    };
+  }, [initGraph]);
+
+  useEffect(() => {
+    refreshGraph();
+  }, [isDarkMode, refreshGraph]);
+
+  if (entities.length === 0) {
+    return (
+      <div className='flex h-full items-center justify-center p-4'>
+        <p className='text-base-content/60 text-sm'>No entities to display</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className='relative h-full w-full overflow-hidden'
+      ref={containerRef}
+      style={{ background: themeColors.background }}
+    >
+      <style jsx>{`
+        .sigma-container {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        .sigma-container canvas {
+          display: block !important;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default XRayGraph;
