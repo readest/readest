@@ -53,9 +53,15 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const currentWindow = getCurrentWindow();
 
-      const unlistenEnterFullScreen = await currentWindow.listen('will-enter-fullscreen', () => {
-        set({ isTrafficLightVisible: false, trafficLightInFullscreen: true });
-      });
+      const unlistenEnterFullScreen = await currentWindow.listen(
+        'will-enter-fullscreen',
+        async () => {
+          const fullscreen = await currentWindow.isFullscreen();
+          if (fullscreen) {
+            set({ isTrafficLightVisible: false, trafficLightInFullscreen: true });
+          }
+        },
+      );
 
       const unlistenExitFullScreen = await currentWindow.listen('will-exit-fullscreen', () => {
         const { shouldShowTrafficLight } = get();
