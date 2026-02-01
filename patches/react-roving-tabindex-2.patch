@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index d27940681d7fe57a0241e039165d40b997c74d1e..f9163a371a93a4d640b860db3b03e47f57500cf8 100644
+--- a/package.json
++++ b/package.json
+@@ -20,6 +20,7 @@
+     "focus",
+     "widget"
+   ],
++  "main": "./dist/src.js",
+   "module": "./dist/src.js",
+   "types": "./dist/src.d.ts",
+   "peerDependencies": {

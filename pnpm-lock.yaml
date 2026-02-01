@@ -300,8 +300,8 @@ importers:
         specifier: ^10.0.0
         version: 10.0.1(react@19.2.0)
       react-roving-tabindex-2:
-        specifier: github:pvagner/react-roving-tabindex-2
-        version: https://codeload.github.com/pvagner/react-roving-tabindex-2/tar.gz/831333d070b1672b590bf5dd76ce29b8cb77b812(react@19.2.0)
+        specifier: ^1.0.1
+        version: 1.0.1(react@19.2.0)
       react-virtuoso:
         specifier: ^4.17.0
         version: 4.18.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -6871,9 +6871,8 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  react-roving-tabindex-2@https://codeload.github.com/pvagner/react-roving-tabindex-2/tar.gz/831333d070b1672b590bf5dd76ce29b8cb77b812:
-    resolution: {tarball: https://codeload.github.com/pvagner/react-roving-tabindex-2/tar.gz/831333d070b1672b590bf5dd76ce29b8cb77b812}
-    version: 1.0.1
+  react-roving-tabindex-2@1.0.1:
+    resolution: {integrity: sha512-4D/CmVS07ftNFf+qLIFdX3ceXYnrK+JBy9z/0JXL2DRm/BY6pMh5Tfqt+2PI/bkSvTE7M8RfQqK3pagWeArsGQ==}
     peerDependencies:
       react: '>=16'
 
@@ -15795,7 +15794,7 @@ snapshots:
       react: 19.2.0
       shallow-equal: 3.1.0
 
-  react-roving-tabindex-2@https://codeload.github.com/pvagner/react-roving-tabindex-2/tar.gz/831333d070b1672b590bf5dd76ce29b8cb77b812(react@19.2.0):
+  react-roving-tabindex-2@1.0.1(react@19.2.0):
     dependencies:
       react: 19.2.0
 
