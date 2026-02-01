@@ -147,7 +147,7 @@ export class RSVPController extends EventTarget {
   }
 
   private extractBaseCfi(cfi: string): string {
-    let inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
+    const inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
     const parts = inner.split(',');
     let basePath = parts[0]!;
     const match = basePath.match(/^(.*\][^\/]*)/);

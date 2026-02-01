@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import clsx from 'clsx';
 import { RsvpState, RsvpWord, RSVPController } from '@/services/rsvp';
 import { useThemeStore } from '@/store/themeStore';
@@ -38,13 +38,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   onChapterSelect,
   onRequestNextPage,
 }) => {
-  const { themeCode, isDarkMode } = useThemeStore();
+  const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
   const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
-  const [flatChapters, setFlatChapters] = useState<FlatChapter[]>([]);
-
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -52,7 +50,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const TAP_THRESHOLD = 10;
 
   // Flatten chapters for dropdown
-  useEffect(() => {
+  const flatChapters = useMemo(() => {
     const flatten = (items: TOCItem[], level = 0): FlatChapter[] => {
       const result: FlatChapter[] = [];
       for (const item of items) {
@@ -63,7 +61,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       }
       return result;
     };
-    setFlatChapters(flatten(chapters));
+    return flatten(chapters);
   }, [chapters]);
 
   // Subscribe to controller events
@@ -446,8 +444,18 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             </span>
           </div>
           <div
+            role='slider'
+            tabIndex={0}
+            aria-label='Reading progress'
+            aria-valuenow={Math.round(state.progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
             onClick={handleProgressBarClick}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') controller.skipBackward();
+              else if (e.key === 'ArrowRight') controller.skipForward();
+            }}
             title='Click to seek'
           >
             <div

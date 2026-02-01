@@ -25,16 +25,24 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
 
   return (
     <div
+      role='presentation'
       className='fixed inset-0 z-[10001] flex items-center justify-center'
       style={{ backgroundColor: backdropColor }}
       onClick={onClose}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className='mx-4 w-full max-w-md rounded-2xl p-6 shadow-2xl'
         style={{ backgroundColor: bgColor, color: fgColor, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby='rsvp-dialog-title'
       >
-        <h2 className='mb-2 text-xl font-bold'>{_('Start RSVP Reading')}</h2>
+        <h2 id='rsvp-dialog-title' className='mb-2 text-xl font-bold'>
+          {_('Start RSVP Reading')}
+        </h2>
         <p className='mb-6 text-sm opacity-70'>{_('Choose where to start reading')}</p>
 
         <div className='flex flex-col gap-3'>
