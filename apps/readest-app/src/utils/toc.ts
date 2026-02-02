@@ -1,6 +1,7 @@
 import { ConvertChineseVariant } from '@/types/book';
 import { SectionItem, TOCItem, CFI, BookDoc } from '@/libs/document';
 import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
+import { SIZE_PER_LOC } from '@/services/constants';
 
 export const findParentPath = (toc: TOCItem[], href: string): TOCItem[] => {
   for (const item of toc) {
@@ -69,17 +70,38 @@ export const updateToc = async (
     return acc;
   }, []);
   const totalSize = cumulativeSizes[cumulativeSizes.length - 1] || 0;
-  const sizePerLoc = 1500;
+  const totalLocations = Math.floor(totalSize / SIZE_PER_LOC);
   sections.forEach((section, index) => {
     section.location = {
-      current: Math.floor(cumulativeSizes[index]! / sizePerLoc),
-      next: Math.floor((cumulativeSizes[index]! + sizes[index]!) / sizePerLoc),
-      total: Math.floor(totalSize / sizePerLoc),
+      current: Math.floor(cumulativeSizes[index]! / SIZE_PER_LOC),
+      next: Math.floor((cumulativeSizes[index]! + sizes[index]!) / SIZE_PER_LOC),
+      total: totalLocations,
     };
+    const subitems = section.subitems || [];
+    subitems.forEach((subitem, subitemIndex) => {
+      subitem.location = {
+        current: Math.floor(
+          (cumulativeSizes[index]! +
+            subitems.slice(0, subitemIndex).reduce((sum, t) => sum + (t.size || 0), 0)) /
+            SIZE_PER_LOC,
+        ),
+        next: Math.floor(
+          (cumulativeSizes[index]! +
+            subitems.slice(0, subitemIndex + 1).reduce((sum, t) => sum + (t.size || 0), 0)) /
+            SIZE_PER_LOC,
+        ),
+        total: totalLocations,
+      };
+    });
   });
 
   const sectionsMap = sections.reduce((map: Record<string, SectionItem>, section) => {
     map[section.id] = section;
+    section.subitems?.forEach((subitem) => {
+      if (subitem.href) {
+        map[subitem.href] = subitem;
+      }
+    });
     return map;
   }, {});
 
@@ -112,12 +134,10 @@ const updateTocData = (
     item.id ??= index++;
     if (item.href) {
       const id = bookDoc.splitTOCHref(item.href)[0]!;
-      const section = sectionsMap[id];
+      const section = sectionsMap[item.href] || sectionsMap[id];
       if (section) {
         item.cfi = section.cfi;
-        // Add location only when toc item is at the same level as the section
-        // otherwise the location will not be accurate
-        if (id === item.href || items.length <= sections.length) {
+        if (id === item.href || items.length <= sections.length || item.href === section.href) {
           item.location = section.location;
         }
       }
