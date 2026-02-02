@@ -3,7 +3,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { LibraryCoverFitType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
+import {
+  LibraryCoverFitType,
+  LibraryGroupByType,
+  LibrarySortByType,
+  LibraryViewModeType,
+} from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import NumberInput from '@/components/settings/NumberInput';
@@ -24,6 +29,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const viewMode = settings.libraryViewMode;
   const sortBy = settings.librarySortBy;
   const isAscending = settings.librarySortAscending;
+  const groupBy = settings.libraryGroupBy;
   const coverFit = settings.libraryCoverFit;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
@@ -50,6 +56,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const sortingOptions = [
     { label: _('Ascending'), value: true },
     { label: _('Descending'), value: false },
+  ];
+
+  const groupByOptions = [
+    { label: _('None'), value: 'none' },
+    { label: _('Manual'), value: 'manual' },
+    { label: _('Series'), value: 'series' },
+    { label: _('Author'), value: 'author' },
   ];
 
   const handleSetViewMode = async (value: LibraryViewModeType) => {
@@ -95,6 +108,21 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
     const params = new URLSearchParams(searchParams?.toString());
     params.set('order', value ? 'asc' : 'desc');
+    navigateToLibrary(router, `${params.toString()}`);
+  };
+
+  const handleSetGroupBy = async (value: LibraryGroupByType) => {
+    await saveSysSettings(envConfig, 'libraryGroupBy', value);
+    setIsDropdownOpen?.(false);
+
+    const params = new URLSearchParams(searchParams?.toString());
+    if (value === 'manual') {
+      params.delete('groupBy');
+    } else {
+      params.set('groupBy', value);
+    }
+    // Clear group navigation when changing groupBy mode
+    params.delete('group');
     navigateToLibrary(router, `${params.toString()}`);
   };
 
@@ -147,6 +175,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           buttonClass='h-8'
           toggled={coverFit === option.value}
           onClick={() => handleToggleCropCovers(option.value as LibraryCoverFitType)}
+        />
+      ))}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem
+        label={_('Group by...')}
+        buttonClass='h-8'
+        labelClass='text-sm sm:text-xs'
+        disabled
+      />
+      {groupByOptions.map((option) => (
+        <MenuItem
+          key={option.value}
+          label={option.label}
+          buttonClass='h-8'
+          toggled={groupBy === option.value}
+          onClick={() => handleSetGroupBy(option.value as LibraryGroupByType)}
         />
       ))}
       <hr aria-hidden='true' className='border-base-200 my-1' />

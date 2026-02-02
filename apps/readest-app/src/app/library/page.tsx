@@ -59,10 +59,16 @@ import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { Toast } from '@/components/Toast';
-import { getBreadcrumbs } from './utils/libraryUtils';
+import {
+  createBookGroups,
+  ensureLibraryGroupByType,
+  findGroupById,
+  getBreadcrumbs,
+} from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
+import GroupHeader from './components/GroupHeader';
 import useShortcuts from '@/hooks/useShortcuts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
@@ -110,6 +116,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectNone, setIsSelectNone] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
+  const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
+    groupBy: 'series' | 'author';
+    groupName: string;
+  } | null>(null);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
     [key: string]: number | null;
   }>({});
@@ -378,6 +388,33 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const groupName = getGroupName(group);
     setCurrentGroupPath(groupName);
   }, [libraryBooks, searchParams, getGroupName]);
+
+  // Track current series/author group for navigation header
+  useEffect(() => {
+    const groupId = searchParams?.get('group') || '';
+    const groupByParam = searchParams?.get('groupBy');
+    const groupBy = ensureLibraryGroupByType(groupByParam, settings.libraryGroupBy);
+
+    if (groupId && (groupBy === 'series' || groupBy === 'author')) {
+      // Find the group to get its name
+      const allGroups = createBookGroups(
+        libraryBooks.filter((b) => !b.deletedAt),
+        groupBy,
+      );
+      const targetGroup = findGroupById(allGroups, groupId);
+
+      if (targetGroup) {
+        setCurrentSeriesAuthorGroup({
+          groupBy,
+          groupName: targetGroup.displayName || targetGroup.name,
+        });
+      } else {
+        setCurrentSeriesAuthorGroup(null);
+      }
+    } else {
+      setCurrentSeriesAuthorGroup(null);
+    }
+  }, [libraryBooks, searchParams, settings.libraryGroupBy]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -803,6 +840,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             })}
           </div>
         </div>
+      )}
+      {currentSeriesAuthorGroup && (
+        <GroupHeader
+          groupBy={currentSeriesAuthorGroup.groupBy}
+          groupName={currentSeriesAuthorGroup.groupName}
+        />
       )}
       {showBookshelf &&
         (libraryBooks.some((book) => !book.deletedAt) ? (

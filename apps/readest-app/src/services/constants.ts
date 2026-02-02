@@ -77,6 +77,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryViewMode: 'grid',
   librarySortBy: 'updated',
   librarySortAscending: false,
+  libraryGroupBy: 'manual',
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,

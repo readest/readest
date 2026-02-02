@@ -17,6 +17,7 @@ export type LibrarySortByType =
   | 'format'
   | 'published';
 export type LibraryCoverFitType = 'crop' | 'fit';
+export type LibraryGroupByType = 'none' | 'manual' | 'series' | 'author';
 
 export type KOSyncChecksumMethod = 'binary' | 'filename';
 export type KOSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive';
@@ -75,6 +76,7 @@ export interface SystemSettings {
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
+  libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;
