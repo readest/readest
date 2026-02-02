@@ -13,9 +13,12 @@ import {
 } from '../../app/library/utils/libraryUtils';
 import { Book, BooksGroup } from '../../types/book';
 import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
+import { BookMetadata } from '@/libs/document';
 
 // Helper to create mock books with minimal required fields
-const createMockBook = (overrides: Partial<Book> = {}): Book => ({
+const createMockBook = (
+  overrides: Partial<Omit<Book, 'metadata'> & { metadata?: Partial<BookMetadata> }> = {},
+): Book => ({
   hash: `hash-${Math.random().toString(36).substr(2, 9)}`,
   format: 'EPUB',
   title: 'Test Book',
@@ -23,6 +26,7 @@ const createMockBook = (overrides: Partial<Book> = {}): Book => ({
   createdAt: Date.now(),
   updatedAt: Date.now(),
   ...overrides,
+  metadata: { ...overrides.metadata } as BookMetadata,
 });
 
 describe('parseAuthors', () => {
@@ -104,9 +108,9 @@ describe('createBookGroups', () => {
   describe('groupBy: series', () => {
     it('should group books by series name', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: 'Series A' } as any }),
-        createMockBook({ hash: '2', title: 'Book 2', metadata: { series: 'Series A' } as any }),
-        createMockBook({ hash: '3', title: 'Book 3', metadata: { series: 'Series B' } as any }),
+        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: 'Series A' } }),
+        createMockBook({ hash: '2', title: 'Book 2', metadata: { series: 'Series A' } }),
+        createMockBook({ hash: '3', title: 'Book 3', metadata: { series: 'Series B' } }),
       ];
 
       const result = createBookGroups(books, LibraryGroupByType.Series);
@@ -123,9 +127,9 @@ describe('createBookGroups', () => {
 
     it('should leave books without series as ungrouped items', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: 'Series A' } as any }),
+        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: 'Series A' } }),
         createMockBook({ hash: '2', title: 'Book 2' }), // No series
-        createMockBook({ hash: '3', title: 'Book 3', metadata: {} as any }), // Empty metadata
+        createMockBook({ hash: '3', title: 'Book 3', metadata: {} }), // Empty metadata
       ];
 
       const result = createBookGroups(books, LibraryGroupByType.Series);
@@ -139,8 +143,8 @@ describe('createBookGroups', () => {
 
     it('should handle empty series string as ungrouped', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: '' } as any }),
-        createMockBook({ hash: '2', title: 'Book 2', metadata: { series: '  ' } as any }),
+        createMockBook({ hash: '1', title: 'Book 1', metadata: { series: '' } }),
+        createMockBook({ hash: '2', title: 'Book 2', metadata: { series: '  ' } }),
       ];
 
       const result = createBookGroups(books, LibraryGroupByType.Series);
@@ -157,13 +161,13 @@ describe('createBookGroups', () => {
         createMockBook({
           hash: '1',
           title: 'Book 1',
-          metadata: { series: 'Series A' } as any,
+          metadata: { series: 'Series A' },
           updatedAt: 1000,
         }),
         createMockBook({
           hash: '2',
           title: 'Book 2',
-          metadata: { series: 'Series A' } as any,
+          metadata: { series: 'Series A' },
           updatedAt: 2000,
         }),
       ];
@@ -249,17 +253,17 @@ describe('createWithinGroupSorter', () => {
         createMockBook({
           hash: '1',
           title: 'Book 3',
-          metadata: { seriesIndex: 3 } as any,
+          metadata: { seriesIndex: 3 },
         }),
         createMockBook({
           hash: '2',
           title: 'Book 1',
-          metadata: { seriesIndex: 1 } as any,
+          metadata: { seriesIndex: 1 },
         }),
         createMockBook({
           hash: '3',
           title: 'Book 2',
-          metadata: { seriesIndex: 2 } as any,
+          metadata: { seriesIndex: 2 },
         }),
       ];
 
@@ -277,8 +281,8 @@ describe('createWithinGroupSorter', () => {
 
     it('should place books without seriesIndex after those with index', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Book A', metadata: {} as any }),
-        createMockBook({ hash: '2', title: 'Book B', metadata: { seriesIndex: 1 } as any }),
+        createMockBook({ hash: '1', title: 'Book A', metadata: {} }),
+        createMockBook({ hash: '2', title: 'Book B', metadata: { seriesIndex: 1 } }),
       ];
 
       const sorter = createWithinGroupSorter(
@@ -294,8 +298,8 @@ describe('createWithinGroupSorter', () => {
 
     it('should sort books without seriesIndex by global sort criteria', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Zebra', metadata: {} as any }),
-        createMockBook({ hash: '2', title: 'Apple', metadata: {} as any }),
+        createMockBook({ hash: '1', title: 'Zebra', metadata: {} }),
+        createMockBook({ hash: '2', title: 'Apple', metadata: {} }),
       ];
 
       const sorter = createWithinGroupSorter(
@@ -311,9 +315,9 @@ describe('createWithinGroupSorter', () => {
 
     it('should handle decimal seriesIndex values', () => {
       const books = [
-        createMockBook({ hash: '1', title: 'Book 2', metadata: { seriesIndex: 2 } as any }),
-        createMockBook({ hash: '2', title: 'Book 1.5', metadata: { seriesIndex: 1.5 } as any }),
-        createMockBook({ hash: '3', title: 'Book 1', metadata: { seriesIndex: 1 } as any }),
+        createMockBook({ hash: '1', title: 'Book 2', metadata: { seriesIndex: 2 } }),
+        createMockBook({ hash: '2', title: 'Book 1.5', metadata: { seriesIndex: 1.5 } }),
+        createMockBook({ hash: '3', title: 'Book 1', metadata: { seriesIndex: 1 } }),
       ];
 
       const sorter = createWithinGroupSorter(
@@ -418,9 +422,9 @@ describe('getGroupSortValue', () => {
   it('should return max published date for published sort', () => {
     const group = createMockGroup({
       books: [
-        createMockBook({ metadata: { published: '2020-01-01' } as any }),
-        createMockBook({ metadata: { published: '2023-06-15' } as any }),
-        createMockBook({ metadata: { published: '2021-12-31' } as any }),
+        createMockBook({ metadata: { published: '2020-01-01' } }),
+        createMockBook({ metadata: { published: '2023-06-15' } }),
+        createMockBook({ metadata: { published: '2021-12-31' } }),
       ],
     });
 
@@ -430,7 +434,7 @@ describe('getGroupSortValue', () => {
 
   it('should handle missing published dates', () => {
     const group = createMockGroup({
-      books: [createMockBook({ metadata: {} as any }), createMockBook({})],
+      books: [createMockBook({ metadata: {} }), createMockBook({})],
     });
 
     expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(0);
@@ -572,19 +576,19 @@ describe('grouping and sorting integration', () => {
       createMockBook({
         hash: '1',
         title: 'Old Series Book',
-        metadata: { series: 'Old Series', seriesIndex: 1 } as any,
+        metadata: { series: 'Old Series', seriesIndex: 1 },
         updatedAt: 1000,
       }),
       createMockBook({
         hash: '2',
         title: 'New Series Book 1',
-        metadata: { series: 'New Series', seriesIndex: 1 } as any,
+        metadata: { series: 'New Series', seriesIndex: 1 },
         updatedAt: 3000,
       }),
       createMockBook({
         hash: '3',
         title: 'New Series Book 2',
-        metadata: { series: 'New Series', seriesIndex: 2 } as any,
+        metadata: { series: 'New Series', seriesIndex: 2 },
         updatedAt: 2000,
       }),
     ];
@@ -647,13 +651,13 @@ describe('grouping and sorting integration', () => {
       createMockBook({
         hash: '1',
         title: 'Series A Book',
-        metadata: { series: 'Series A' } as any,
+        metadata: { series: 'Series A' },
         updatedAt: 1000,
       }),
       createMockBook({
         hash: '2',
         title: 'Series B Book',
-        metadata: { series: 'Series B' } as any,
+        metadata: { series: 'Series B' },
         updatedAt: 2000,
       }),
     ];
