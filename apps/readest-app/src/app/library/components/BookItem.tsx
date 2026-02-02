@@ -165,6 +165,15 @@ const BookItem: React.FC<BookItemProps> = ({
                 <button
                   className='show-cloud-button -m-2 p-2'
                   tabIndex={controlTabIndex}
+                  aria-label={
+                    !user
+                      ? _('Login')
+                      : !book.uploadedAt
+                        ? _('Upload')
+                        : !book.downloadedAt
+                          ? _('Download')
+                          : undefined
+                  }
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => {
                     if (!user) {
