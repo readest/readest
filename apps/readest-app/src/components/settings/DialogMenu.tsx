@@ -72,6 +72,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
     <div
       ref={menuRef}
       role='menu'
+      aria-label={_('Settings Menu')}
       className={clsx(
         'dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl',
         'text-base sm:text-sm',

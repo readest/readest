@@ -8,9 +8,10 @@ interface MenuProps {
   className?: string;
   style?: React.CSSProperties;
   onCancel?: () => void;
+  label: string;
 }
 
-const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => {
+const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel, label }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useKeyDownActions({ onCancel, elementRef: menuRef });
@@ -31,6 +32,7 @@ const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => 
   return (
     <div
       ref={menuRef}
+      aria-label={label}
       role='menu'
       className={clsx(
         'menu-container max-h-[calc(100vh-96px)] overflow-y-auto border-0',

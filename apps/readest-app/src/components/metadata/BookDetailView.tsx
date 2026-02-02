@@ -88,6 +88,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     'delete-menu dropdown-content dropdown-center no-triangle',
                     'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
+                  label={_('Delete Book Options')}
                 >
                   <MenuItem
                     noIcon
