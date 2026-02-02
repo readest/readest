@@ -707,6 +707,9 @@ export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;
 export const LONG_HOLD_THRESHOLD = 500;
 
+export const SIZE_PER_LOC = 1500;
+export const SIZE_PER_TIME_UNIT = 1600;
+
 export const CUSTOM_THEME_TEMPLATES = [
   {
     light: {
