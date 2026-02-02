@@ -1033,5 +1033,10 @@
   "Speed Reading Mode": "Режим быстрого чтения",
   "Scroll left": "Прокрутить влево",
   "Scroll right": "Прокрутить вправо",
-  "Library Sync Progress": "Прогресс синхронизации библиотеки"
+  "Library Sync Progress": "Прогресс синхронизации библиотеки",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

@@ -30,9 +30,9 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
   // Get localized label for the group type
   const getGroupTypeLabel = (): string => {
     switch (groupBy) {
-      case 'series':
+      case LibraryGroupByType.Series:
         return _('Series');
-      case 'author':
+      case LibraryGroupByType.Author:
         return _('Author');
       default:
         return _('Group');

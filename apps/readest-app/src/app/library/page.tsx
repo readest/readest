@@ -50,6 +50,7 @@ import {
   tauriQuitApp,
 } from '@/utils/window';
 
+import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import { BookDetailModal } from '@/components/metadata';
@@ -69,6 +70,8 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import GroupHeader from './components/GroupHeader';
+import GroupMenu from './components/GroupMenu';
+import SortMenu from './components/SortMenu';
 import useShortcuts from '@/hooks/useShortcuts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
@@ -117,7 +120,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
-    groupBy: 'series' | 'author';
+    groupBy: typeof LibraryGroupByType.Series | typeof LibraryGroupByType.Author;
     groupName: string;
   } | null>(null);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
@@ -395,7 +398,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const groupByParam = searchParams?.get('groupBy');
     const groupBy = ensureLibraryGroupByType(groupByParam, settings.libraryGroupBy);
 
-    if (groupId && (groupBy === 'series' || groupBy === 'author')) {
+    if (groupId && (groupBy === LibraryGroupByType.Series || groupBy === LibraryGroupByType.Author)) {
       // Find the group to get its name
       const allGroups = createBookGroups(
         libraryBooks.filter((b) => !b.deletedAt),
@@ -839,6 +842,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               );
             })}
           </div>
+        </div>
+      )}
+      {!isSelectMode && (
+        <div className='flex items-center gap-2 px-4 py-2 lg:hidden'>
+          <GroupMenu
+            className='dropdown-bottom dropdown-start'
+            buttonClassName='btn btn-sm btn-ghost bg-base-300/50 h-9 rounded-lg px-2'
+          />
+          <SortMenu
+            className='dropdown-bottom dropdown-start'
+            buttonClassName='btn btn-sm btn-ghost bg-base-300/50 h-9 rounded-lg px-2'
+          />
         </div>
       )}
       {currentSeriesAuthorGroup && (

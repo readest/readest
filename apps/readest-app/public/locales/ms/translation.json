@@ -997,5 +997,10 @@
   "Speed Reading Mode": "Mod Bacaan Pantas",
   "Scroll left": "Tatal ke kiri",
   "Scroll right": "Tatal ke kanan",
-  "Library Sync Progress": "Kemajuan Segerak Perpustakaan"
+  "Library Sync Progress": "Kemajuan Segerak Perpustakaan",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

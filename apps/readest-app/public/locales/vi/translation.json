@@ -997,5 +997,10 @@
   "Speed Reading Mode": "Chế độ đọc nhanh",
   "Scroll left": "Cuộn sang trái",
   "Scroll right": "Cuộn sang phải",
-  "Library Sync Progress": "Tiến trình đồng bộ hóa thư viện"
+  "Library Sync Progress": "Tiến trình đồng bộ hóa thư viện",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

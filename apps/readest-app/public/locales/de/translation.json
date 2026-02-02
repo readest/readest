@@ -1009,5 +1009,10 @@
   "Speed Reading Mode": "Schnelllesemodus",
   "Scroll left": "Nach links scrollen",
   "Scroll right": "Nach rechts scrollen",
-  "Library Sync Progress": "Bibliotheks-Synchronisierungsfortschritt"
+  "Library Sync Progress": "Bibliotheks-Synchronisierungsfortschritt",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

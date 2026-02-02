@@ -1009,5 +1009,10 @@
   "Speed Reading Mode": "Hızlı Okuma Modu",
   "Scroll left": "Sola kaydır",
   "Scroll right": "Sağa kaydır",
-  "Library Sync Progress": "Kütüphane Senkronizasyon İlerlemesi"
+  "Library Sync Progress": "Kütüphane Senkronizasyon İlerlemesi",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

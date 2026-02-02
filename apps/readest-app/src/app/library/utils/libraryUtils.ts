@@ -4,18 +4,10 @@ import { formatAuthors, formatTitle } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 
 /** Valid sort types for the library */
-const VALID_SORT_TYPES: LibrarySortByType[] = [
-  'title',
-  'author',
-  'updated',
-  'created',
-  'size',
-  'format',
-  'published',
-];
+const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
 
 /** Valid group by types for the library */
-const VALID_GROUP_BY_TYPES: LibraryGroupByType[] = ['none', 'manual', 'series', 'author'];
+const VALID_GROUP_BY_TYPES: LibraryGroupByType[] = Object.values(LibraryGroupByType);
 
 /**
  * Safely cast a query parameter to LibrarySortByType with fallback.
@@ -99,21 +91,21 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
 
 export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book, b: Book) => {
   switch (sortBy) {
-    case 'title':
+    case LibrarySortByType.Title:
       const aTitle = formatTitle(a.title);
       const bTitle = formatTitle(b.title);
       return aTitle.localeCompare(bTitle, uiLanguage || navigator.language);
-    case 'author':
+    case LibrarySortByType.Author:
       const aAuthors = formatAuthors(a.author, a?.primaryLanguage || 'en', true);
       const bAuthors = formatAuthors(b.author, b?.primaryLanguage || 'en', true);
       return aAuthors.localeCompare(bAuthors, uiLanguage || navigator.language);
-    case 'updated':
+    case LibrarySortByType.Updated:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-    case 'created':
+    case LibrarySortByType.Created:
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    case 'format':
+    case LibrarySortByType.Format:
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
-    case 'published':
+    case LibrarySortByType.Published:
       const aPublished = a.metadata?.published || '0001-01-01';
       const bPublished = b.metadata?.published || '0001-01-01';
 
@@ -178,15 +170,15 @@ export const createBookGroups = (
   // Filter out deleted books
   const activeBooks = books.filter((book) => !book.deletedAt);
 
-  if (groupBy === 'none') {
+  if (groupBy === LibraryGroupByType.None) {
     return activeBooks;
   }
 
-  if (groupBy === 'series') {
+  if (groupBy === LibraryGroupByType.Series) {
     return createSeriesGroups(activeBooks);
   }
 
-  if (groupBy === 'author') {
+  if (groupBy === LibraryGroupByType.Author) {
     return createAuthorGroups(activeBooks);
   }
 
@@ -282,7 +274,7 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 export const createWithinGroupSorter =
   (groupBy: LibraryGroupByType, sortBy: LibrarySortByType, uiLanguage: string) =>
   (a: Book, b: Book): number => {
-    if (groupBy === 'series') {
+    if (groupBy === LibraryGroupByType.Series) {
       const aIndex = a.metadata?.seriesIndex;
       const bIndex = b.metadata?.seriesIndex;
 
@@ -310,26 +302,30 @@ export const getGroupSortValue = (group: BooksGroup, sortBy: LibrarySortByType):
   const books = group.books;
 
   if (books.length === 0) {
-    return sortBy === 'title' || sortBy === 'author' || sortBy === 'format' ? group.name : 0;
+    return sortBy === LibrarySortByType.Title ||
+      sortBy === LibrarySortByType.Author ||
+      sortBy === LibrarySortByType.Format
+      ? group.name
+      : 0;
   }
 
   switch (sortBy) {
-    case 'title':
-    case 'author':
-    case 'format':
+    case LibrarySortByType.Title:
+    case LibrarySortByType.Author:
+    case LibrarySortByType.Format:
       // For text-based sorts, use the group name
       // This isn't perfect, especially with the 
       return group.name;
 
-    case 'updated':
+    case LibrarySortByType.Updated:
       // Return the most recent updatedAt
       return Math.max(...books.map((b) => b.updatedAt));
 
-    case 'created':
+    case LibrarySortByType.Created:
       // Return the most recent createdAt
       return Math.max(...books.map((b) => b.createdAt));
 
-    case 'published': {
+    case LibrarySortByType.Published: {
       // Return the most recent published date
       const publishedDates = books
         .map((b) => b.metadata?.published)

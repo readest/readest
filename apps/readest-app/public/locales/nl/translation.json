@@ -1009,5 +1009,10 @@
   "Speed Reading Mode": "Snelle leesmodus",
   "Scroll left": "Naar links scrollen",
   "Scroll right": "Naar rechts scrollen",
-  "Library Sync Progress": "Voortgang bibliotheeksynchronisatie"
+  "Library Sync Progress": "Voortgang bibliotheeksynchronisatie",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

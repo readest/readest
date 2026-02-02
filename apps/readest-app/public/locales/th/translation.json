@@ -997,5 +997,10 @@
   "Speed Reading Mode": "โหมดการอ่านเร็ว",
   "Scroll left": "เลื่อนไปทางซ้าย",
   "Scroll right": "เลื่อนไปทางขวา",
-  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด"
+  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

@@ -12,6 +12,7 @@ import {
   getGroupDisplayName,
 } from '../../app/library/utils/libraryUtils';
 import { Book, BooksGroup } from '../../types/book';
+import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
 
 // Helper to create mock books with minimal required fields
 const createMockBook = (overrides: Partial<Book> = {}): Book => ({
@@ -82,7 +83,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '2', title: 'Book 2' }),
       ];
 
-      const result = createBookGroups(books, 'none');
+      const result = createBookGroups(books, LibraryGroupByType.None);
 
       expect(result).toHaveLength(2);
       expect(result.every((item) => 'format' in item)).toBe(true);
@@ -94,7 +95,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '2', title: 'Book 2', deletedAt: Date.now() }),
       ];
 
-      const result = createBookGroups(books, 'none');
+      const result = createBookGroups(books, LibraryGroupByType.None);
 
       expect(result).toHaveLength(1);
     });
@@ -108,7 +109,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '3', title: 'Book 3', metadata: { series: 'Series B' } as any }),
       ];
 
-      const result = createBookGroups(books, 'series');
+      const result = createBookGroups(books, LibraryGroupByType.Series);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       expect(groups).toHaveLength(2);
@@ -127,7 +128,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '3', title: 'Book 3', metadata: {} as any }), // Empty metadata
       ];
 
-      const result = createBookGroups(books, 'series');
+      const result = createBookGroups(books, LibraryGroupByType.Series);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       const ungrouped = result.filter((item): item is Book => 'format' in item);
@@ -142,7 +143,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '2', title: 'Book 2', metadata: { series: '  ' } as any }),
       ];
 
-      const result = createBookGroups(books, 'series');
+      const result = createBookGroups(books, LibraryGroupByType.Series);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       const ungrouped = result.filter((item): item is Book => 'format' in item);
@@ -167,7 +168,7 @@ describe('createBookGroups', () => {
         }),
       ];
 
-      const result = createBookGroups(books, 'series');
+      const result = createBookGroups(books, LibraryGroupByType.Series);
       const group = result.find((item): item is BooksGroup => 'books' in item);
 
       expect(group?.updatedAt).toBe(2000);
@@ -182,7 +183,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '3', title: 'Book 3', author: 'Author B' }),
       ];
 
-      const result = createBookGroups(books, 'author');
+      const result = createBookGroups(books, LibraryGroupByType.Author);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       expect(groups).toHaveLength(2);
@@ -194,7 +195,7 @@ describe('createBookGroups', () => {
     it('should place book in multiple groups for multiple authors', () => {
       const books = [createMockBook({ hash: '1', title: 'Book 1', author: 'John Smith, Jane Doe' })];
 
-      const result = createBookGroups(books, 'author');
+      const result = createBookGroups(books, LibraryGroupByType.Author);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       expect(groups).toHaveLength(2);
@@ -214,7 +215,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '3', title: 'Book 3', author: '   ' }),
       ];
 
-      const result = createBookGroups(books, 'author');
+      const result = createBookGroups(books, LibraryGroupByType.Author);
 
       const groups = result.filter((item): item is BooksGroup => 'books' in item);
       const ungrouped = result.filter((item): item is Book => 'format' in item);
@@ -231,7 +232,7 @@ describe('createBookGroups', () => {
         createMockBook({ hash: '2', title: 'Book 2' }),
       ];
 
-      const result = createBookGroups(books, 'manual');
+      const result = createBookGroups(books, LibraryGroupByType.Manual);
 
       // Manual mode just returns filtered books - actual grouping is in generateBookshelfItems
       expect(result).toHaveLength(2);
@@ -260,7 +261,7 @@ describe('createWithinGroupSorter', () => {
         }),
       ];
 
-      const sorter = createWithinGroupSorter('series', 'title', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Series, LibrarySortByType.Title, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.metadata?.seriesIndex).toBe(1);
@@ -274,7 +275,7 @@ describe('createWithinGroupSorter', () => {
         createMockBook({ hash: '2', title: 'Book B', metadata: { seriesIndex: 1 } as any }),
       ];
 
-      const sorter = createWithinGroupSorter('series', 'title', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Series, LibrarySortByType.Title, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.hash).toBe('2'); // Has index
@@ -287,7 +288,7 @@ describe('createWithinGroupSorter', () => {
         createMockBook({ hash: '2', title: 'Apple', metadata: {} as any }),
       ];
 
-      const sorter = createWithinGroupSorter('series', 'title', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Series, LibrarySortByType.Title, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.title).toBe('Apple');
@@ -301,7 +302,7 @@ describe('createWithinGroupSorter', () => {
         createMockBook({ hash: '3', title: 'Book 1', metadata: { seriesIndex: 1 } as any }),
       ];
 
-      const sorter = createWithinGroupSorter('series', 'title', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Series, LibrarySortByType.Title, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.metadata?.seriesIndex).toBe(1);
@@ -317,7 +318,7 @@ describe('createWithinGroupSorter', () => {
         createMockBook({ hash: '2', title: 'Apple' }),
       ];
 
-      const sorter = createWithinGroupSorter('author', 'title', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Author, LibrarySortByType.Title, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.title).toBe('Apple');
@@ -330,7 +331,7 @@ describe('createWithinGroupSorter', () => {
         createMockBook({ hash: '2', title: 'Book 2', updatedAt: 1000 }),
       ];
 
-      const sorter = createWithinGroupSorter('author', 'updated', 'en');
+      const sorter = createWithinGroupSorter(LibraryGroupByType.Author, LibrarySortByType.Updated, 'en');
       const sorted = [...books].sort(sorter);
 
       expect(sorted[0]!.updatedAt).toBe(1000);
@@ -351,17 +352,17 @@ describe('getGroupSortValue', () => {
 
   it('should return group name for title sort', () => {
     const group = createMockGroup({ name: 'My Series' });
-    expect(getGroupSortValue(group, 'title')).toBe('My Series');
+    expect(getGroupSortValue(group, LibrarySortByType.Title)).toBe('My Series');
   });
 
   it('should return group name for author sort', () => {
     const group = createMockGroup({ name: 'John Smith' });
-    expect(getGroupSortValue(group, 'author')).toBe('John Smith');
+    expect(getGroupSortValue(group, LibrarySortByType.Author)).toBe('John Smith');
   });
 
   it('should return group name for format sort', () => {
     const group = createMockGroup({ name: 'Test Group' });
-    expect(getGroupSortValue(group, 'format')).toBe('Test Group');
+    expect(getGroupSortValue(group, LibrarySortByType.Format)).toBe('Test Group');
   });
 
   it('should return max updatedAt for date read sort', () => {
@@ -373,7 +374,7 @@ describe('getGroupSortValue', () => {
       ],
     });
 
-    expect(getGroupSortValue(group, 'updated')).toBe(3000);
+    expect(getGroupSortValue(group, LibrarySortByType.Updated)).toBe(3000);
   });
 
   it('should return max createdAt for date added sort', () => {
@@ -385,7 +386,7 @@ describe('getGroupSortValue', () => {
       ],
     });
 
-    expect(getGroupSortValue(group, 'created')).toBe(3000);
+    expect(getGroupSortValue(group, LibrarySortByType.Created)).toBe(3000);
   });
 
   it('should return max published date for published sort', () => {
@@ -397,7 +398,7 @@ describe('getGroupSortValue', () => {
       ],
     });
 
-    const result = getGroupSortValue(group, 'published');
+    const result = getGroupSortValue(group, LibrarySortByType.Published);
     expect(result).toBe(new Date('2023-06-15').getTime());
   });
 
@@ -406,16 +407,16 @@ describe('getGroupSortValue', () => {
       books: [createMockBook({ metadata: {} as any }), createMockBook({})],
     });
 
-    expect(getGroupSortValue(group, 'published')).toBe(0);
+    expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(0);
   });
 
   it('should handle empty groups gracefully', () => {
     const group = createMockGroup({ books: [] });
 
     // Text-based sorts return group name
-    expect(getGroupSortValue(group, 'title')).toBe('Test Group');
+    expect(getGroupSortValue(group, LibrarySortByType.Title)).toBe('Test Group');
     // Numeric sorts return 0 for empty groups
-    expect(getGroupSortValue(group, 'updated')).toBe(0);
+    expect(getGroupSortValue(group, LibrarySortByType.Updated)).toBe(0);
   });
 });
 
@@ -436,7 +437,7 @@ describe('createGroupSorter', () => {
       createMockGroup({ name: 'Mango Series' }),
     ];
 
-    const sorter = createGroupSorter('title', 'en');
+    const sorter = createGroupSorter(LibrarySortByType.Title, 'en');
     const sorted = [...groups].sort(sorter);
 
     expect(sorted[0]!.name).toBe('Apple Series');
@@ -460,7 +461,7 @@ describe('createGroupSorter', () => {
       }),
     ];
 
-    const sorter = createGroupSorter('updated', 'en');
+    const sorter = createGroupSorter(LibrarySortByType.Updated, 'en');
     const sorted = [...groups].sort(sorter);
 
     expect(sorted[0]!.name).toBe('Group A');
@@ -480,7 +481,7 @@ describe('createGroupSorter', () => {
       }),
     ];
 
-    const sorter = createGroupSorter('created', 'en');
+    const sorter = createGroupSorter(LibrarySortByType.Created, 'en');
     const sorted = [...groups].sort(sorter);
 
     expect(sorted[0]!.name).toBe('Group B');
@@ -499,7 +500,7 @@ describe('createGroupSorter', () => {
       }),
     ];
 
-    const sorter = createGroupSorter('updated', 'en');
+    const sorter = createGroupSorter(LibrarySortByType.Updated, 'en');
     const sorted = [...groups].sort(sorter);
 
     expect(sorted[0]!.name).toBe('Group A');
@@ -515,7 +516,7 @@ describe('createBookSorter', () => {
       createMockBook({ title: 'Mango' }),
     ];
 
-    const sorter = createBookSorter('title', 'en');
+    const sorter = createBookSorter(LibrarySortByType.Title, 'en');
     const sorted = [...books].sort(sorter);
 
     expect(sorted[0]!.title).toBe('Apple');
@@ -530,7 +531,7 @@ describe('createBookSorter', () => {
       createMockBook({ title: 'Book C', updatedAt: 3000 }),
     ];
 
-    const sorter = createBookSorter('updated', 'en');
+    const sorter = createBookSorter(LibrarySortByType.Updated, 'en');
     const sorted = [...books].sort(sorter);
 
     expect(sorted[0]!.title).toBe('Book B');
@@ -563,18 +564,18 @@ describe('grouping and sorting integration', () => {
     ];
 
     // Create groups
-    const items = createBookGroups(books, 'series');
+    const items = createBookGroups(books, LibraryGroupByType.Series);
     const groups = items.filter((item): item is BooksGroup => 'books' in item);
 
     // Sort groups by updated (descending - most recent first)
-    const groupSorter = createGroupSorter('updated', 'en');
+    const groupSorter = createGroupSorter(LibrarySortByType.Updated, 'en');
     groups.sort((a, b) => groupSorter(a, b) * -1); // Descending
 
     expect(groups[0]!.name).toBe('New Series'); // Most recent book at 3000
     expect(groups[1]!.name).toBe('Old Series'); // Most recent book at 1000
 
     // Sort within groups by seriesIndex
-    const withinSorter = createWithinGroupSorter('series', 'updated', 'en');
+    const withinSorter = createWithinGroupSorter(LibraryGroupByType.Series, LibrarySortByType.Updated, 'en');
     groups.forEach((group) => group.books.sort(withinSorter));
 
     expect(groups[0]!.books[0]!.metadata?.seriesIndex).toBe(1);
@@ -589,18 +590,18 @@ describe('grouping and sorting integration', () => {
     ];
 
     // Create groups
-    const items = createBookGroups(books, 'author');
+    const items = createBookGroups(books, LibraryGroupByType.Author);
     const groups = items.filter((item): item is BooksGroup => 'books' in item);
 
     // Sort groups alphabetically
-    const groupSorter = createGroupSorter('title', 'en');
+    const groupSorter = createGroupSorter(LibrarySortByType.Title, 'en');
     groups.sort(groupSorter);
 
     expect(groups[0]!.name).toBe('Author A');
     expect(groups[1]!.name).toBe('Author B');
 
     // Sort within groups by title
-    const withinSorter = createWithinGroupSorter('author', 'title', 'en');
+    const withinSorter = createWithinGroupSorter(LibraryGroupByType.Author, LibrarySortByType.Title, 'en');
     groups.forEach((group) => group.books.sort(withinSorter));
 
     expect(groups[0]!.books[0]!.title).toBe('Apple');
@@ -623,9 +624,9 @@ describe('grouping and sorting integration', () => {
       }),
     ];
 
-    const items = createBookGroups(books, 'series');
+    const items = createBookGroups(books, LibraryGroupByType.Series);
     const groups = items.filter((item): item is BooksGroup => 'books' in item);
-    const groupSorter = createGroupSorter('updated', 'en');
+    const groupSorter = createGroupSorter(LibrarySortByType.Updated, 'en');
 
     // Ascending (oldest first)
     const ascending = [...groups].sort((a, b) => groupSorter(a, b) * 1);
@@ -639,55 +640,55 @@ describe('grouping and sorting integration', () => {
 
 describe('ensureLibrarySortByType', () => {
   it('should return valid sort type when value is valid', () => {
-    expect(ensureLibrarySortByType('title', 'updated')).toBe('title');
-    expect(ensureLibrarySortByType('author', 'updated')).toBe('author');
-    expect(ensureLibrarySortByType('updated', 'title')).toBe('updated');
-    expect(ensureLibrarySortByType('created', 'updated')).toBe('created');
-    expect(ensureLibrarySortByType('format', 'updated')).toBe('format');
-    expect(ensureLibrarySortByType('published', 'updated')).toBe('published');
+    expect(ensureLibrarySortByType('title', LibrarySortByType.Updated)).toBe(LibrarySortByType.Title);
+    expect(ensureLibrarySortByType('author', LibrarySortByType.Updated)).toBe(LibrarySortByType.Author);
+    expect(ensureLibrarySortByType('updated', LibrarySortByType.Title)).toBe(LibrarySortByType.Updated);
+    expect(ensureLibrarySortByType('created', LibrarySortByType.Updated)).toBe(LibrarySortByType.Created);
+    expect(ensureLibrarySortByType('format', LibrarySortByType.Updated)).toBe(LibrarySortByType.Format);
+    expect(ensureLibrarySortByType('published', LibrarySortByType.Updated)).toBe(LibrarySortByType.Published);
   });
 
   it('should return fallback when value is null', () => {
-    expect(ensureLibrarySortByType(null, 'updated')).toBe('updated');
+    expect(ensureLibrarySortByType(null, LibrarySortByType.Updated)).toBe(LibrarySortByType.Updated);
   });
 
   it('should return fallback when value is undefined', () => {
-    expect(ensureLibrarySortByType(undefined, 'title')).toBe('title');
+    expect(ensureLibrarySortByType(undefined, LibrarySortByType.Title)).toBe(LibrarySortByType.Title);
   });
 
   it('should return fallback when value is invalid', () => {
-    expect(ensureLibrarySortByType('invalid', 'updated')).toBe('updated');
-    expect(ensureLibrarySortByType('random', 'title')).toBe('title');
+    expect(ensureLibrarySortByType('invalid', LibrarySortByType.Updated)).toBe(LibrarySortByType.Updated);
+    expect(ensureLibrarySortByType('random', LibrarySortByType.Title)).toBe(LibrarySortByType.Title);
   });
 
   it('should return fallback when value is empty string', () => {
-    expect(ensureLibrarySortByType('', 'updated')).toBe('updated');
+    expect(ensureLibrarySortByType('', LibrarySortByType.Updated)).toBe(LibrarySortByType.Updated);
   });
 });
 
 describe('ensureLibraryGroupByType', () => {
   it('should return valid group type when value is valid', () => {
-    expect(ensureLibraryGroupByType('none', 'manual')).toBe('none');
-    expect(ensureLibraryGroupByType('manual', 'none')).toBe('manual');
-    expect(ensureLibraryGroupByType('series', 'manual')).toBe('series');
-    expect(ensureLibraryGroupByType('author', 'manual')).toBe('author');
+    expect(ensureLibraryGroupByType('none', LibraryGroupByType.Manual)).toBe(LibraryGroupByType.None);
+    expect(ensureLibraryGroupByType('manual', LibraryGroupByType.None)).toBe(LibraryGroupByType.Manual);
+    expect(ensureLibraryGroupByType('series', LibraryGroupByType.Manual)).toBe(LibraryGroupByType.Series);
+    expect(ensureLibraryGroupByType('author', LibraryGroupByType.Manual)).toBe(LibraryGroupByType.Author);
   });
 
   it('should return fallback when value is null', () => {
-    expect(ensureLibraryGroupByType(null, 'manual')).toBe('manual');
+    expect(ensureLibraryGroupByType(null, LibraryGroupByType.Manual)).toBe(LibraryGroupByType.Manual);
   });
 
   it('should return fallback when value is undefined', () => {
-    expect(ensureLibraryGroupByType(undefined, 'series')).toBe('series');
+    expect(ensureLibraryGroupByType(undefined, LibraryGroupByType.Series)).toBe(LibraryGroupByType.Series);
   });
 
   it('should return fallback when value is invalid', () => {
-    expect(ensureLibraryGroupByType('invalid', 'manual')).toBe('manual');
-    expect(ensureLibraryGroupByType('random', 'author')).toBe('author');
+    expect(ensureLibraryGroupByType('invalid', LibraryGroupByType.Manual)).toBe(LibraryGroupByType.Manual);
+    expect(ensureLibraryGroupByType('random', LibraryGroupByType.Author)).toBe(LibraryGroupByType.Author);
   });
 
   it('should return fallback when value is empty string', () => {
-    expect(ensureLibraryGroupByType('', 'manual')).toBe('manual');
+    expect(ensureLibraryGroupByType('', LibraryGroupByType.Manual)).toBe(LibraryGroupByType.Manual);
   });
 });
 

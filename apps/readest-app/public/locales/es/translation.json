@@ -1021,5 +1021,10 @@
   "Speed Reading Mode": "Modo de lectura rápida",
   "Scroll left": "Desplazar a la izquierda",
   "Scroll right": "Desplazar a la derecha",
-  "Library Sync Progress": "Progreso de sincronización de la biblioteca"
+  "Library Sync Progress": "Progreso de sincronización de la biblioteca",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }

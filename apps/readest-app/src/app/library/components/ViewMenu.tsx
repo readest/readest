@@ -5,8 +5,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   LibraryCoverFitType,
-  LibraryGroupByType,
-  LibrarySortByType,
   LibraryViewModeType,
 } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
@@ -27,9 +25,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const { settings } = useSettingsStore();
 
   const viewMode = settings.libraryViewMode;
-  const sortBy = settings.librarySortBy;
-  const isAscending = settings.librarySortAscending;
-  const groupBy = settings.libraryGroupBy;
   const coverFit = settings.libraryCoverFit;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
@@ -44,30 +39,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Fit'), value: 'fit' },
   ];
 
-  const sortByOptions = [
-    { label: _('Title'), value: 'title' },
-    { label: _('Author'), value: 'author' },
-    { label: _('Format'), value: 'format' },
-    { label: _('Date Read'), value: 'updated' },
-    { label: _('Date Added'), value: 'created' },
-    { label: _('Date Published'), value: 'published' },
-  ];
-
-  const sortingOptions = [
-    { label: _('Ascending'), value: true },
-    { label: _('Descending'), value: false },
-  ];
-
-  const groupByOptions = [
-    { label: _('None'), value: 'none' },
-    { label: _('Manual'), value: 'manual' },
-    { label: _('Series'), value: 'series' },
-    { label: _('Author'), value: 'author' },
-  ];
-
   const handleSetViewMode = async (value: LibraryViewModeType) => {
     await saveSysSettings(envConfig, 'libraryViewMode', value);
-    setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
     params.set('view', value);
@@ -76,7 +49,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
   const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
     await saveSysSettings(envConfig, 'libraryCoverFit', value);
-    setIsDropdownOpen?.(false);
 
     const params = new URLSearchParams(searchParams?.toString());
     params.set('cover', value);
@@ -93,39 +65,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     await saveSysSettings(envConfig, 'libraryAutoColumns', false);
   };
 
-  const handleSetSortBy = async (value: LibrarySortByType) => {
-    await saveSysSettings(envConfig, 'librarySortBy', value);
-    setIsDropdownOpen?.(false);
-
-    const params = new URLSearchParams(searchParams?.toString());
-    params.set('sort', value);
-    navigateToLibrary(router, `${params.toString()}`);
-  };
-
-  const handleSetSortAscending = async (value: boolean) => {
-    await saveSysSettings(envConfig, 'librarySortAscending', value);
-    setIsDropdownOpen?.(false);
-
-    const params = new URLSearchParams(searchParams?.toString());
-    params.set('order', value ? 'asc' : 'desc');
-    navigateToLibrary(router, `${params.toString()}`);
-  };
-
-  const handleSetGroupBy = async (value: LibraryGroupByType) => {
-    await saveSysSettings(envConfig, 'libraryGroupBy', value);
-    setIsDropdownOpen?.(false);
-
-    const params = new URLSearchParams(searchParams?.toString());
-    if (value === 'manual') {
-      params.delete('groupBy');
-    } else {
-      params.set('groupBy', value);
-    }
-    // Clear group navigation when changing groupBy mode
-    params.delete('group');
-    navigateToLibrary(router, `${params.toString()}`);
-  };
-
   return (
     <Menu
       className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
@@ -138,6 +77,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           buttonClass='h-8'
           toggled={viewMode === option.value}
           onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
+          transient
         />
       ))}
       <hr aria-hidden='true' className='border-base-200 my-1' />
@@ -175,48 +115,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           buttonClass='h-8'
           toggled={coverFit === option.value}
           onClick={() => handleToggleCropCovers(option.value as LibraryCoverFitType)}
-        />
-      ))}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Group by...')}
-        buttonClass='h-8'
-        labelClass='text-sm sm:text-xs'
-        disabled
-      />
-      {groupByOptions.map((option) => (
-        <MenuItem
-          key={option.value}
-          label={option.label}
-          buttonClass='h-8'
-          toggled={groupBy === option.value}
-          onClick={() => handleSetGroupBy(option.value as LibraryGroupByType)}
-        />
-      ))}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Sort by...')}
-        buttonClass='h-8'
-        labelClass='text-sm sm:text-xs'
-        disabled
-      />
-      {sortByOptions.map((option) => (
-        <MenuItem
-          key={option.value}
-          label={option.label}
-          buttonClass='h-8'
-          toggled={sortBy === option.value}
-          onClick={() => handleSetSortBy(option.value as LibrarySortByType)}
-        />
-      ))}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      {sortingOptions.map((option) => (
-        <MenuItem
-          key={option.value.toString()}
-          label={option.label}
-          buttonClass='h-8'
-          toggled={isAscending === option.value}
-          onClick={() => handleSetSortAscending(option.value)}
+          transient
         />
       ))}
     </Menu>

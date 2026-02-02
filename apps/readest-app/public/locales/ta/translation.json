@@ -1009,5 +1009,10 @@
   "Speed Reading Mode": "வேக வாசிப்பு முறை",
   "Scroll left": "இடதுபுறம் உருட்டவும்",
   "Scroll right": "வலதுபுறம் உருட்டவும்",
-  "Library Sync Progress": "நூலக ஒத்திசைவு நிலை"
+  "Library Sync Progress": "நூலக ஒத்திசைவு நிலை",
+  "Back to library": "__STRING_NOT_TRANSLATED__",
+  "Manual": "__STRING_NOT_TRANSLATED__",
+  "Group by...": "__STRING_NOT_TRANSLATED__",
+  "Group By": "__STRING_NOT_TRANSLATED__",
+  "Sort": "__STRING_NOT_TRANSLATED__"
 }
