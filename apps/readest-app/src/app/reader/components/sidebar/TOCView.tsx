@@ -77,20 +77,12 @@ const TOCView: React.FC<{
 
   const isInCooldown = useCallback(() => {
     if (!hasInteractedWithTOCRef.current) return false;
-    const now = Date.now();
-    const timeSinceInteraction = now - lastInteractionTimeRef.current;
-    if (timeSinceInteraction >= interactionCooldownMs) {
-      hasInteractedWithTOCRef.current = false;
-      return false;
-    }
-    return true;
+    return Date.now() - lastInteractionTimeRef.current < interactionCooldownMs;
   }, []);
 
   const handleInteraction = useCallback(() => {
-    setTimeout(() => {
-      hasInteractedWithTOCRef.current = true;
-      lastInteractionTimeRef.current = Date.now();
-    }, 500);
+    hasInteractedWithTOCRef.current = true;
+    lastInteractionTimeRef.current = Date.now();
   }, []);
 
   useEffect(() => {
@@ -252,6 +244,7 @@ const TOCView: React.FC<{
     if (!isSideBarVisible) return;
     if (sideBarBookKey !== bookKey) return;
     if (isInCooldown()) return;
+    hasInteractedWithTOCRef.current = false;
 
     const { sectionHref: currentHref } = progress;
     if (currentHref) {
@@ -261,6 +254,7 @@ const TOCView: React.FC<{
 
   useEffect(() => {
     if (isInCooldown()) return;
+    hasInteractedWithTOCRef.current = false;
 
     if (flatItems.length > 0) {
       setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 100);
@@ -268,7 +262,9 @@ const TOCView: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, scrollToActiveItem, isInCooldown]);
 
-  return sections && sections.length > 256 ? (
+  const useVirtualization = sections && sections.length > 256;
+
+  return useVirtualization ? (
     <div
       className='virtual-list mt-2 rounded'
       data-overlayscrollbars-initialize=''
