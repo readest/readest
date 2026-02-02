@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React from 'react';
 import { IconType } from 'react-icons';
 import { MdCheck } from 'react-icons/md';
-import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import RovingTabIndexButton from '@/components/RovingTabIndexButton';
 
@@ -43,7 +42,6 @@ const MenuItem: React.FC<MenuItemProps> = ({
   onClick,
   setIsDropdownOpen,
 }) => {
-  const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
   const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
 

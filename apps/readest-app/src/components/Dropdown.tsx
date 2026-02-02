@@ -129,7 +129,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           role='none'
           className={clsx('dropdown flex items-center justify-center', className)}
         >
-          <summary tabIndex='-1' aria-hidden='true' className='list-none' />
+          <summary tabIndex={-1} aria-hidden='true' className='list-none' />
           {isOpen && childrenWithToggle}
         </details>
       </div>

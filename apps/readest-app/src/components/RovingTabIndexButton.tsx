@@ -2,6 +2,8 @@ import clsx from 'clsx';
 import React, { useRef } from 'react';
 import { useRovingTabindex } from 'react-roving-tabindex-2';
 
+type CallbackFunction = () => void;
+
 interface RovingTabIndexButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
@@ -11,7 +13,7 @@ interface RovingTabIndexButtonProps {
 }
 
 const RovingTabIndexButton: React.FC<
-  RovingTabIndexButtonProps & Record<string, string | number | boolean | React.ReactNode>
+  RovingTabIndexButtonProps & Record<string, string | number | boolean | React.ReactNode | CallbackFunction>
 > = (props) => {
   const { children, onClick, disabled, className, type, ...rest } = props;
   const ref = useRef(null);
