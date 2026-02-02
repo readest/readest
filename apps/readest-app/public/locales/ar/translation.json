@@ -1058,9 +1058,9 @@
   "Scroll left": "تمرير لليسار",
   "Scroll right": "تمرير لليمين",
   "Library Sync Progress": "تقدم تزامن المكتبة",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "العودة إلى المكتبة",
+  "Manual": "يدوي",
+  "Group by...": "تجميع حسب...",
+  "Group By": "تجميع حسب",
+  "Sort": "فرز"
 }

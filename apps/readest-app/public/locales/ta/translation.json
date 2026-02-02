@@ -1010,9 +1010,9 @@
   "Scroll left": "இடதுபுறம் உருட்டவும்",
   "Scroll right": "வலதுபுறம் உருட்டவும்",
   "Library Sync Progress": "நூலக ஒத்திசைவு நிலை",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "நூலகத்திற்குத் திரும்பு",
+  "Manual": "கையேடு",
+  "Group by...": "இதன் படி குழுவாக்கு...",
+  "Group By": "இதன் படி குழுவாக்கு",
+  "Sort": "வரிசைப்படுத்து"
 }

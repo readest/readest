@@ -1010,9 +1010,9 @@
   "Scroll left": "Sola kaydır",
   "Scroll right": "Sağa kaydır",
   "Library Sync Progress": "Kütüphane Senkronizasyon İlerlemesi",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Kütüphaneye dön",
+  "Manual": "Manuel",
+  "Group by...": "Şuna göre grupla...",
+  "Group By": "Şuna göre grupla",
+  "Sort": "Sırala"
 }

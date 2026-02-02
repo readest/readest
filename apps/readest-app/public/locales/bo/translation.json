@@ -998,9 +998,9 @@
   "Scroll left": "གཡོན་ལ་བཤུད་དགོས།",
   "Scroll right": "གཡས་ལ་བཤུད་དགོས།",
   "Library Sync Progress": "དཔེ་མཛོད་མཉམ་འབྱུང་གི་རིམ་པ།",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "དཔེ་མཛོད་ལ་ལོག་པ།",
+  "Manual": "ལག་བཟོས།",
+  "Group by...": "དབྱེ་བ་འབྱེད་སྟངས།...",
+  "Group By": "དབྱེ་བ་འབྱེད་སྟངས།",
+  "Sort": "རིམ་སྒྲིག་བྱེད་པ།"
 }

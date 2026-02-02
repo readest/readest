@@ -998,9 +998,9 @@
   "Scroll left": "เลื่อนไปทางซ้าย",
   "Scroll right": "เลื่อนไปทางขวา",
   "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "กลับไปที่ห้องสมุด",
+  "Manual": "ทำเอง",
+  "Group by...": "จัดกลุ่มตาม...",
+  "Group By": "จัดกลุ่มตาม",
+  "Sort": "เรียงลำดับ"
 }

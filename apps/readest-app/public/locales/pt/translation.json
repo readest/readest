@@ -1022,9 +1022,9 @@
   "Scroll left": "Rolar para a esquerda",
   "Scroll right": "Rolar para a direita",
   "Library Sync Progress": "Progresso de sincronização da biblioteca",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Voltar à biblioteca",
+  "Manual": "Manual",
+  "Group by...": "Agrupar por...",
+  "Group By": "Agrupar por",
+  "Sort": "Ordenar"
 }

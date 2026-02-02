@@ -998,9 +998,9 @@
   "Scroll left": "Gulir ke kiri",
   "Scroll right": "Gulir ke kanan",
   "Library Sync Progress": "Kemajuan Sinkronisasi Pustaka",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Kembali ke perpustakaan",
+  "Manual": "Manual",
+  "Group by...": "Kelompokkan menurut...",
+  "Group By": "Kelompokkan menurut",
+  "Sort": "Urutkan"
 }

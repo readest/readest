@@ -998,9 +998,9 @@
   "Scroll left": "左にスクロール",
   "Scroll right": "右にスクロール",
   "Library Sync Progress": "ライブラリ同期の進捗",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "ライブラリに戻る",
+  "Manual": "手動",
+  "Group by...": "グループ化...",
+  "Group By": "グループ化",
+  "Sort": "並べ替え"
 }

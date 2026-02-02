@@ -1010,9 +1010,9 @@
   "Scroll left": "Naar links scrollen",
   "Scroll right": "Naar rechts scrollen",
   "Library Sync Progress": "Voortgang bibliotheeksynchronisatie",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Terug naar bibliotheek",
+  "Manual": "Handmatig",
+  "Group by...": "Groeperen op...",
+  "Group By": "Groeperen op",
+  "Sort": "Sorteren"
 }

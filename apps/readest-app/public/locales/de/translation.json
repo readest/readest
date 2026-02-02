@@ -1007,6 +1007,7 @@
   "Start from where you are currently reading": "Dort beginnen, wo Sie gerade lesen",
   "From Selection": "Von der Auswahl",
   "Speed Reading Mode": "Schnelllesemodus",
+<<<<<<< HEAD
   "Scroll left": "Nach links scrollen",
   "Scroll right": "Nach rechts scrollen",
   "Library Sync Progress": "Bibliotheks-Synchronisierungsfortschritt",
@@ -1015,4 +1016,11 @@
   "Group by...": "__STRING_NOT_TRANSLATED__",
   "Group By": "__STRING_NOT_TRANSLATED__",
   "Sort": "__STRING_NOT_TRANSLATED__"
+=======
+  "Back to library": "Zurück zur Bibliothek",
+  "Manual": "Manuell",
+  "Group by...": "Gruppieren nach...",
+  "Group By": "Gruppieren nach",
+  "Sort": "Sortieren"
+>>>>>>> 6be6ab41 (Translate missing strings)
 }

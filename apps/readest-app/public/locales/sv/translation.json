@@ -1010,9 +1010,9 @@
   "Scroll left": "Scrolla åt vänster",
   "Scroll right": "Scrolla åt höger",
   "Library Sync Progress": "Synkroniseringsframsteg för bibliotek",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Tillbaka till biblioteket",
+  "Manual": "Manuellt",
+  "Group by...": "Gruppera efter...",
+  "Group By": "Gruppera efter",
+  "Sort": "Sortera"
 }

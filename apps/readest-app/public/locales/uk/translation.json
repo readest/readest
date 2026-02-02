@@ -1034,9 +1034,9 @@
   "Scroll left": "Прокрутити вліво",
   "Scroll right": "Прокрутити вправо",
   "Library Sync Progress": "Прогрес синхронізації бібліотеки",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Назад до бібліотеки",
+  "Manual": "Вручну",
+  "Group by...": "Групувати за...",
+  "Group By": "Групувати за",
+  "Sort": "Сортувати"
 }

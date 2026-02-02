@@ -1010,9 +1010,9 @@
   "Scroll left": "اسکرول به چپ",
   "Scroll right": "اسکرول به راست",
   "Library Sync Progress": "پیشرفت همگام‌سازی کتابخانه",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "بازگشت به کتابخانه",
+  "Manual": "دستی",
+  "Group by...": "گروه‌بندی بر اساس...",
+  "Group By": "گروه‌بندی بر اساس",
+  "Sort": "مرتب‌سازی"
 }

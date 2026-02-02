@@ -998,9 +998,9 @@
   "Scroll left": "Tatal ke kiri",
   "Scroll right": "Tatal ke kanan",
   "Library Sync Progress": "Kemajuan Segerak Perpustakaan",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Kembali ke perpustakaan",
+  "Manual": "Manual",
+  "Group by...": "Kumpulan mengikut...",
+  "Group By": "Kumpulan mengikut",
+  "Sort": "Susun"
 }

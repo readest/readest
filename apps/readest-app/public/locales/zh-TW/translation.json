@@ -998,9 +998,9 @@
   "Scroll left": "向左捲動",
   "Scroll right": "向右捲動",
   "Library Sync Progress": "資料庫同步進度",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "返回書庫",
+  "Manual": "手動",
+  "Group by...": "分組方式...",
+  "Group By": "分組方式",
+  "Sort": "排序"
 }

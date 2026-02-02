@@ -1010,9 +1010,9 @@
   "Scroll left": "Κύλιση αριστερά",
   "Scroll right": "Κύλιση δεξιά",
   "Library Sync Progress": "Πρόοδος συγχρονισμού βιβλιοθήκης",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "Επιστροφή στη βιβλιοθήκη",
+  "Manual": "Χειροκίνητα",
+  "Group by...": "Ομαδοποίηση κατά...",
+  "Group By": "Ομαδοποίηση κατά",
+  "Sort": "Ταξινόμηση"
 }

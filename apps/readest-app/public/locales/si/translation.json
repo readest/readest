@@ -1010,9 +1010,9 @@
   "Scroll left": "වමට අනුචලනය කරන්න",
   "Scroll right": "දකුණට අනුචලනය කරන්න",
   "Library Sync Progress": "පුස්තකාල සමමුහුර්ත කිරීමේ ප්‍රගතිය",
-  "Back to library": "__STRING_NOT_TRANSLATED__",
-  "Manual": "__STRING_NOT_TRANSLATED__",
-  "Group by...": "__STRING_NOT_TRANSLATED__",
-  "Group By": "__STRING_NOT_TRANSLATED__",
-  "Sort": "__STRING_NOT_TRANSLATED__"
+  "Back to library": "පුස්තකාලයට ආපසු",
+  "Manual": "අත්පොත",
+  "Group by...": "මගින් සමූහනය කරන්න...",
+  "Group By": "මගින් සමූහනය කරන්න",
+  "Sort": "වර්ග කරන්න"
 }
