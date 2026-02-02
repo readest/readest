@@ -398,7 +398,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const groupByParam = searchParams?.get('groupBy');
     const groupBy = ensureLibraryGroupByType(groupByParam, settings.libraryGroupBy);
 
-    if (groupId && (groupBy === LibraryGroupByType.Series || groupBy === LibraryGroupByType.Author)) {
+    if (
+      groupId &&
+      (groupBy === LibraryGroupByType.Series || groupBy === LibraryGroupByType.Author)
+    ) {
       // Find the group to get its name
       const allGroups = createBookGroups(
         libraryBooks.filter((b) => !b.deletedAt),

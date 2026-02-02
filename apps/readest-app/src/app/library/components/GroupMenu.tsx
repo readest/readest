@@ -60,7 +60,12 @@ const GroupMenu: React.FC<GroupMenuProps> = ({ className, buttonClassName }) => 
       }
     >
       <Menu className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'>
-        <MenuItem label={_('Group by...')} buttonClass='h-8' labelClass='text-sm sm:text-xs' disabled />
+        <MenuItem
+          label={_('Group by...')}
+          buttonClass='h-8'
+          labelClass='text-sm sm:text-xs'
+          disabled
+        />
         {groupByOptions.map((option) => (
           <MenuItem
             key={option.value}

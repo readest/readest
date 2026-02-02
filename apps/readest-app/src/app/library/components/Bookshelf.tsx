@@ -177,12 +177,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
 
     // Separate into ungrouped books and groups
-    const ungroupedBooks = currentBookshelfItems.filter(
-      (item): item is Book => 'format' in item,
-    );
-    const groups = currentBookshelfItems.filter(
-      (item): item is BooksGroup => 'books' in item,
-    );
+    const ungroupedBooks = currentBookshelfItems.filter((item): item is Book => 'format' in item);
+    const groups = currentBookshelfItems.filter((item): item is BooksGroup => 'books' in item);
 
     // Sort groups by aggregate value
     const groupSorter = createGroupSorter(sortBy, uiLanguage);

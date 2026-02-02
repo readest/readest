@@ -72,7 +72,12 @@ const SortMenu: React.FC<SortMenuProps> = ({ className, buttonClassName }) => {
       }
     >
       <Menu className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'>
-        <MenuItem label={_('Sort by...')} buttonClass='h-8' labelClass='text-sm sm:text-xs' disabled />
+        <MenuItem
+          label={_('Sort by...')}
+          buttonClass='h-8'
+          labelClass='text-sm sm:text-xs'
+          disabled
+        />
         {sortByOptions.map((option) => (
           <MenuItem
             key={option.value}

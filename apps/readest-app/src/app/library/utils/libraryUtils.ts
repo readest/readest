@@ -298,7 +298,10 @@ export const createWithinGroupSorter =
 /**
  * Get the aggregate sort value from a group for sorting groups.
  */
-export const getGroupSortValue = (group: BooksGroup, sortBy: LibrarySortByType): number | string => {
+export const getGroupSortValue = (
+  group: BooksGroup,
+  sortBy: LibrarySortByType,
+): number | string => {
   const books = group.books;
 
   if (books.length === 0) {
@@ -314,7 +317,7 @@ export const getGroupSortValue = (group: BooksGroup, sortBy: LibrarySortByType):
     case LibrarySortByType.Author:
     case LibrarySortByType.Format:
       // For text-based sorts, use the group name
-      // This isn't perfect, especially with the 
+      // This isn't perfect, especially with the
       return group.name;
 
     case LibrarySortByType.Updated:

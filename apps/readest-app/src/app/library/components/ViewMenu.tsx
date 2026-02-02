@@ -3,10 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  LibraryCoverFitType,
-  LibraryViewModeType,
-} from '@/types/settings';
+import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import NumberInput from '@/components/settings/NumberInput';
