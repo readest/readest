@@ -13,7 +13,8 @@ interface RovingTabIndexButtonProps {
 }
 
 const RovingTabIndexButton: React.FC<
-  RovingTabIndexButtonProps & Record<string, string | number | boolean | React.ReactNode | CallbackFunction>
+  RovingTabIndexButtonProps &
+    Record<string, string | number | boolean | React.ReactNode | CallbackFunction>
 > = (props) => {
   const { children, onClick, disabled, className, type, ...rest } = props;
   const ref = useRef(null);
