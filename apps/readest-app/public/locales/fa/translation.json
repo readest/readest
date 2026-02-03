@@ -1088,5 +1088,11 @@
   "p.": "ص.",
   "Look up text in X-Ray after selection": "پس از انتخاب، متن را در X-Ray جستجو کنید",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "اسکرول به چپ",
+  "Scroll right": "اسکرول به راست",
+  "Library Sync Progress": "پیشرفت همگام‌سازی کتابخانه",
+  "Back to library": "بازگشت به کتابخانه",
+  "Manual": "دستی",
+  "Group by...": "گروه‌بندی بر اساس..."
 }

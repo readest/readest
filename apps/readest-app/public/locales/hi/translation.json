@@ -1088,5 +1088,11 @@
   "p.": "पृ.",
   "Look up text in X-Ray after selection": "चयन के बाद X-Ray में पाठ खोजें",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "बाएं स्क्रॉल करें",
+  "Scroll right": "दाएं स्क्रॉल करें",
+  "Library Sync Progress": "पुस्तकालय सिंक प्रगति",
+  "Back to library": "लाइब्रेरी पर वापस जाएं",
+  "Manual": "मैनुअल",
+  "Group by...": "इसके द्वारा समूहबद्ध करें..."
 }

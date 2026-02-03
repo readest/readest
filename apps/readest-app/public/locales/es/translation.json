@@ -1100,5 +1100,11 @@
   "p.": "p.",
   "Look up text in X-Ray after selection": "Consultar texto en X-Ray después de seleccionar",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Desplazar a la izquierda",
+  "Scroll right": "Desplazar a la derecha",
+  "Library Sync Progress": "Progreso de sincronización de la biblioteca",
+  "Back to library": "Volver a la biblioteca",
+  "Manual": "Manual",
+  "Group by...": "Agrupar por..."
 }

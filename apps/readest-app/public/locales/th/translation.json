@@ -1076,5 +1076,11 @@
   "p.": "น.",
   "Look up text in X-Ray after selection": "ค้นหาข้อความใน X-Ray หลังเลือก",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "เลื่อนไปทางซ้าย",
+  "Scroll right": "เลื่อนไปทางขวา",
+  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด",
+  "Back to library": "กลับไปที่ห้องสมุด",
+  "Manual": "ทำเอง",
+  "Group by...": "จัดกลุ่มตาม..."
 }

@@ -1112,5 +1112,11 @@
   "p.": "с.",
   "Look up text in X-Ray after selection": "Шукати текст у X-Ray після виділення",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Прокрутити вліво",
+  "Scroll right": "Прокрутити вправо",
+  "Library Sync Progress": "Прогрес синхронізації бібліотеки",
+  "Back to library": "Назад до бібліотеки",
+  "Manual": "Вручну",
+  "Group by...": "Групувати за..."
 }

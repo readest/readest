@@ -1076,5 +1076,11 @@
   "p.": "hlm.",
   "Look up text in X-Ray after selection": "Cari teks di X-Ray setelah dipilih",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Gulir ke kiri",
+  "Scroll right": "Gulir ke kanan",
+  "Library Sync Progress": "Kemajuan Sinkronisasi Pustaka",
+  "Back to library": "Kembali ke perpustakaan",
+  "Manual": "Manual",
+  "Group by...": "Kelompokkan menurut..."
 }

@@ -1088,5 +1088,11 @@
   "p.": "s.",
   "Look up text in X-Ray after selection": "Slå upp text i X-Ray efter markering",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Scrolla åt vänster",
+  "Scroll right": "Scrolla åt höger",
+  "Library Sync Progress": "Synkroniseringsframsteg för bibliotek",
+  "Back to library": "Tillbaka till biblioteket",
+  "Manual": "Manuellt",
+  "Group by...": "Gruppera efter..."
 }

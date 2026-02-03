@@ -1136,5 +1136,11 @@
   "p.": "ص.",
   "Look up text in X-Ray after selection": "ابحث عن النص في X-Ray بعد التحديد",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "تمرير لليسار",
+  "Scroll right": "تمرير لليمين",
+  "Library Sync Progress": "تقدم تزامن المكتبة",
+  "Back to library": "العودة إلى المكتبة",
+  "Manual": "يدوي",
+  "Group by...": "تجميع حسب..."
 }

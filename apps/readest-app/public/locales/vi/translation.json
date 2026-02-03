@@ -1076,5 +1076,11 @@
   "p.": "tr.",
   "Look up text in X-Ray after selection": "Tra cứu văn bản trong X-Ray sau khi chọn",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Cuộn sang trái",
+  "Scroll right": "Cuộn sang phải",
+  "Library Sync Progress": "Tiến trình đồng bộ hóa thư viện",
+  "Back to library": "Quay lại thư viện",
+  "Manual": "Thủ công",
+  "Group by...": "Nhóm theo..."
 }

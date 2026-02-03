@@ -1088,5 +1088,11 @@
   "p.": "s.",
   "Look up text in X-Ray after selection": "Seçimden sonra X-Ray'de metni ara",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "Sola kaydır",
+  "Scroll right": "Sağa kaydır",
+  "Library Sync Progress": "Kütüphane Senkronizasyon İlerlemesi",
+  "Back to library": "Kütüphaneye dön",
+  "Manual": "Manuel",
+  "Group by...": "Şuna göre grupla..."
 }

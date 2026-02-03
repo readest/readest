@@ -1076,5 +1076,11 @@
   "p.": "頁",
   "Look up text in X-Ray after selection": "選取後在 X-Ray 中查找文字",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "向左捲動",
+  "Scroll right": "向右捲動",
+  "Library Sync Progress": "資料庫同步進度",
+  "Back to library": "返回書庫",
+  "Manual": "手動",
+  "Group by...": "分組方式..."
 }

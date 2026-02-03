@@ -416,7 +416,7 @@ export default function AuthPage() {
             Icon={FaDiscord}
             label={_('Sign in with {{provider}}', { provider: 'Discord' })}
           />
-          <hr className='border-base-300 my-3 mt-6 w-64 border-t' />
+          <hr aria-hidden='true' className='border-base-300 my-3 mt-6 w-64 border-t' />
           <div className='w-full'>
             <Auth
               supabaseClient={supabase}

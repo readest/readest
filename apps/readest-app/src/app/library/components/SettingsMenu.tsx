@@ -254,7 +254,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
             )
           }
         >
-          <ul className='flex flex-col'>
+          <ul
+            className='ms-0 flex flex-col before:hidden'
+            style={{
+              paddingInlineStart: `${iconSize}px`,
+            }}
+          >
             <button onClick={handleUserProfile} className='w-full'>
               <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
             </button>
@@ -349,7 +354,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         <>
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <MenuItem label={_('Advanced Settings')}>
-            <ul className='flex flex-col'>
+            <ul
+              className='ms-0 flex flex-col before:hidden'
+              style={{
+                paddingInlineStart: `${iconSize}px`,
+              }}
+            >
               <MenuItem
                 label={_('Change Data Location')}
                 noIcon={!appService?.isAndroidApp}

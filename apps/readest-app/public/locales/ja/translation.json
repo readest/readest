@@ -1076,5 +1076,11 @@
   "p.": "p.",
   "Look up text in X-Ray after selection": "選択後に X-Ray でテキストを調べる",
   "→": "→",
-  "←": "←"
+  "←": "←",
+  "Scroll left": "左にスクロール",
+  "Scroll right": "右にスクロール",
+  "Library Sync Progress": "ライブラリ同期の進捗",
+  "Back to library": "ライブラリに戻る",
+  "Manual": "手動",
+  "Group by...": "グループ化..."
 }
