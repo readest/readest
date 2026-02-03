@@ -92,7 +92,7 @@ describe('AISettings Type', () => {
       enabled: true,
       provider: 'ai-gateway',
       aiGatewayApiKey: 'test-key',
-      aiGatewayModel: 'openai/gpt-5.2',
+      aiGatewayModel: 'openai/gpt-5-nano',
       aiGatewayEmbeddingModel: 'openai/text-embedding-3-small',
     };
 
