@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
 import { DailyReadingSummary } from '@/types/statistics';
+import { getLocalDateString } from '@/utils/format';
 
 interface TrendChartProps {
   dailySummaries: Record<string, DailyReadingSummary>;
@@ -38,7 +39,7 @@ const getDateRangeData = (
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0]!;
+      const dateStr = getLocalDateString(date);
       const summary = dailySummaries[dateStr];
 
       data.push({
@@ -59,13 +60,13 @@ const getDateRangeData = (
       for (let j = 0; j < 7; j++) {
         const date = new Date(weekStart);
         date.setDate(date.getDate() + j);
-        const dateStr = date.toISOString().split('T')[0]!;
+        const dateStr = getLocalDateString(date);
         const summary = dailySummaries[dateStr];
         totalDuration += summary?.totalDuration || 0;
       }
 
       data.push({
-        date: weekStart.toISOString().split('T')[0]!,
+        date: getLocalDateString(weekStart),
         label: `${weekStart.getMonth() + 1}/${weekStart.getDate()}`,
         value: totalDuration,
       });
@@ -79,14 +80,14 @@ const getDateRangeData = (
       let totalDuration = 0;
       const currentDate = new Date(monthDate);
       while (currentDate <= monthEnd) {
-        const dateStr = currentDate.toISOString().split('T')[0]!;
+        const dateStr = getLocalDateString(currentDate);
         const summary = dailySummaries[dateStr];
         totalDuration += summary?.totalDuration || 0;
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
       data.push({
-        date: monthDate.toISOString().split('T')[0]!,
+        date: getLocalDateString(monthDate),
         label: monthDate.toLocaleDateString('en-US', { month: 'short' }),
         value: totalDuration,
       });

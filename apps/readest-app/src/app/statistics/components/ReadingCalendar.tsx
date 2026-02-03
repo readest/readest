@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { DailyReadingSummary } from '@/types/statistics';
+import { getLocalDateString } from '@/utils/format';
 
 interface ReadingCalendarProps {
   year: number;
@@ -47,7 +48,7 @@ const generateCalendarData = (
   dailySummaries: Record<string, DailyReadingSummary>,
 ): DayCell[][] => {
   const weeks: DayCell[][] = [];
-  const today = new Date().toISOString().split('T')[0]!;
+  const today = getLocalDateString();
 
   // Start from the first day of the year
   const startDate = new Date(year, 0, 1);
@@ -65,7 +66,7 @@ const generateCalendarData = (
   const currentDate = new Date(startDate);
 
   while (currentDate <= endDate) {
-    const dateStr = currentDate.toISOString().split('T')[0]!;
+    const dateStr = getLocalDateString(currentDate);
     const summary = dailySummaries[dateStr];
     const isCurrentYear = currentDate.getFullYear() === year;
 

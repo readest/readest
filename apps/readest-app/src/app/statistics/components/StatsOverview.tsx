@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { PiClock, PiBooks, PiFlame, PiFileText } from 'react-icons/pi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { UserStatistics, DailyReadingSummary } from '@/types/statistics';
+import { getLocalDateString } from '@/utils/format';
 
 interface StatsOverviewProps {
   stats: UserStatistics;
@@ -48,8 +49,8 @@ const getMonthDateRange = (): { start: string; end: string } => {
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   return {
-    start: start.toISOString().split('T')[0]!,
-    end: end.toISOString().split('T')[0]!,
+    start: getLocalDateString(start),
+    end: getLocalDateString(end),
   };
 };
 

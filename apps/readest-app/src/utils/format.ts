@@ -1,4 +1,18 @@
 /**
+ * Get date string in YYYY-MM-DD format using LOCAL timezone.
+ * This matches the format used in statisticsStore for session dates.
+ * DO NOT use toISOString() as it returns UTC which causes timezone mismatches.
+ * @param date - Date object (defaults to now)
+ * @returns Date string in YYYY-MM-DD format
+ */
+export const getLocalDateString = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Format a duration in seconds to a human-readable string.
  * @param seconds - Duration in seconds
  * @returns Formatted string like "2h 30m" or "45m"
