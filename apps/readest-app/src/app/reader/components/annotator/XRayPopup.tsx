@@ -8,6 +8,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import { lookupTerm } from '@/services/ai/xrayService';
+import { isBookIndexed } from '@/services/ai/ragService';
 import type { XRayLookupResult } from '@/services/ai/types';
 import { eventDispatcher } from '@/utils/event';
 import type { BookSearchConfig } from '@/types/book';
@@ -40,10 +41,12 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
   const { getConfig } = useBookDataStore();
   const { getView } = useReaderStore();
   const aiSettings = settings?.aiSettings;
+  const providerUnsupported = aiSettings?.enabled && aiSettings.provider !== 'ai-gateway';
   const [result, setResult] = useState<XRayLookupResult | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [jumpingEvidenceKey, setJumpingEvidenceKey] = useState<string | null>(null);
+  const [isIndexed, setIsIndexed] = useState<boolean | null>(null);
 
   const summaryText = result?.summary?.trim()
     ? result.summary
@@ -57,6 +60,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
     async (quote: string, chunkId: string, page: number) => {
       const view = getView(bookKey);
       if (!view) return;
+      if (chunkId === 'inferred') return;
       const config = getConfig(bookKey);
       const searchConfig = (config?.searchConfig || DEFAULT_BOOK_SEARCH_CONFIG) as BookSearchConfig;
       const query = quote.length > 180 ? quote.slice(0, 180) : quote;
@@ -90,7 +94,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
   );
 
   useEffect(() => {
-    if (!term || !aiSettings?.enabled) {
+    if (!term || !aiSettings?.enabled || providerUnsupported) {
       setResult(null);
       setLoading(false);
       return;
@@ -101,6 +105,12 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
     setResult(null);
     const bookHash = bookKey.split('-')[0] || '';
     if (!bookHash) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (isIndexed === false) {
       setLoading(false);
       return () => {
         cancelled = true;
@@ -125,7 +135,26 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [term, bookKey, maxPageIncluded, aiSettings, language, _]);
+  }, [term, bookKey, maxPageIncluded, aiSettings, providerUnsupported, language, _, isIndexed]);
+
+  useEffect(() => {
+    const bookHash = bookKey.split('-')[0] || '';
+    if (!bookHash || !aiSettings?.enabled) {
+      setIsIndexed(null);
+      return;
+    }
+    let cancelled = false;
+    isBookIndexed(bookHash)
+      .then((indexed) => {
+        if (!cancelled) setIsIndexed(indexed);
+      })
+      .catch(() => {
+        if (!cancelled) setIsIndexed(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookKey, aiSettings?.enabled]);
 
   const handleSearch = () => {
     eventDispatcher.dispatch('search-term', { term, bookKey });
@@ -151,6 +180,14 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
           </div>
           {!aiSettings?.enabled ? (
             <p className='text-base-content/60 text-xs'>{_('Enable AI in Settings')}</p>
+          ) : providerUnsupported ? (
+            <p className='text-base-content/60 text-xs'>
+              {_('X-Ray extraction currently requires AI Gateway.')}
+            </p>
+          ) : isIndexed === false ? (
+            <p className='text-base-content/60 text-xs'>
+              {_('Book must be indexed first. Open AI Assistant to index.')}
+            </p>
           ) : loading ? (
             <div className='flex items-center gap-2 text-xs'>
               <div className='border-primary size-4 animate-spin rounded-full border-2 border-t-transparent' />
@@ -171,10 +208,19 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
                       onClick={() =>
                         handleEvidenceJump(evidence.quote, evidence.chunkId, evidence.page)
                       }
-                      disabled={jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`}
+                      disabled={
+                        evidence.inferred ||
+                        evidence.chunkId === 'inferred' ||
+                        jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`
+                      }
                       title={_('Jump to quote')}
                     >
                       &ldquo;{evidence.quote}&rdquo; (p.{evidence.page + 1})
+                      {evidence.inferred && (
+                        <span className='text-base-content/50 ml-1 text-[10px]'>
+                          {_('Inferred')}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

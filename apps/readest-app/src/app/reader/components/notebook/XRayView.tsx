@@ -11,13 +11,12 @@ import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import {
-  getRecapIfNeeded,
   getXRaySnapshot,
   rebuildXRayToPage,
   updateXRayForProgress,
 } from '@/services/ai/xrayService';
 import { isBookIndexed } from '@/services/ai/ragService';
-import type { XRayEntity, XRayEvidence, XRaySnapshot } from '@/services/ai/types';
+import type { XRayEntity, XRayEntityType, XRayEvidence, XRaySnapshot } from '@/services/ai/types';
 import type { BookSearchConfig } from '@/types/book';
 import XRayGraph from './XRayGraph';
 
@@ -25,9 +24,21 @@ interface XRayViewProps {
   bookKey: string;
 }
 
-type XRayTab = 'entities' | 'timeline' | 'relationships' | 'themes' | 'recap';
+type XRayTab = 'entities' | 'timeline' | 'relationships';
 
 type EntityMentionSource = 'fact' | 'relationship' | 'event';
+
+const ENTITY_TYPE_WHITELIST: XRayEntityType[] = [
+  'character',
+  'location',
+  'organization',
+  'artifact',
+  'term',
+  'event',
+  'concept',
+];
+
+const isLivingEntity = (entity?: XRayEntity | null): boolean => entity?.type === 'character';
 
 interface EntityMention {
   evidence: XRayEvidence;
@@ -56,9 +67,10 @@ interface EntityView {
   isLocked: boolean;
   onPage: boolean;
   inChapter: boolean;
-  category: 'people' | 'terms' | 'places' | 'images';
+  category: 'people' | 'places' | 'organizations' | 'artifacts' | 'concepts' | 'events';
   related: Array<{ id: string; label: string; type: string; evidence?: XRayEvidence }>;
   searchText: string;
+  isInferred: boolean;
 }
 
 const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
@@ -66,18 +78,17 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getBookData, getConfig } = useBookDataStore();
-  const { getProgress, getView } = useReaderStore();
-
-  const progress = getProgress(bookKey);
+  const progress = useReaderStore((state) => state.getProgress(bookKey));
+  const getView = useReaderStore((state) => state.getView);
   const bookData = getBookData(bookKey);
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
+  const providerUnsupported = aiSettings?.enabled && aiSettings.provider !== 'ai-gateway';
 
   const [activeTab, setActiveTab] = useState<XRayTab>('entities');
   const [snapshot, setSnapshot] = useState<XRaySnapshot | null>(null);
-  const [recap, setRecap] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRebuilding, setIsRebuilding] = useState(false);
@@ -85,7 +96,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [entitySearch, setEntitySearch] = useState('');
   const [entitySort, setEntitySort] = useState<'relevance' | 'alphabetical'>('relevance');
   const [entityCategory, setEntityCategory] = useState<
-    'all' | 'people' | 'terms' | 'places' | 'images'
+    'all' | 'people' | 'places' | 'organizations' | 'artifacts' | 'concepts' | 'events'
   >('all');
   const [entityScope, setEntityScope] = useState<'page' | 'chapter' | 'book'>('page');
   const [relationshipFilter, setRelationshipFilter] = useState('all');
@@ -95,13 +106,47 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedGraphEntity, setSelectedGraphEntity] = useState<XRayEntity | null>(null);
 
+  const lastUpdatedLabel = useMemo(() => {
+    if (!snapshot?.lastUpdated) return '';
+    return new Date(snapshot.lastUpdated).toLocaleString();
+  }, [snapshot?.lastUpdated]);
+
+  const asOfTooltip = useMemo(() => {
+    const pageLabel = `${_('As Of Page')} ${currentPage + 1}`;
+    if (!lastUpdatedLabel) return pageLabel;
+    return `${pageLabel} | ${_('Updated')} ${lastUpdatedLabel}`;
+  }, [_, currentPage, lastUpdatedLabel]);
+
+  const pendingLabel = useMemo(() => {
+    const from = snapshot?.state?.pendingFromPage;
+    const to = snapshot?.state?.pendingToPage;
+    if (typeof to !== 'number') return '';
+    const start = typeof from === 'number' ? from + 1 : to + 1;
+    return start === to + 1 ? `${start}` : `${start}-${to + 1}`;
+  }, [snapshot?.state?.pendingFromPage, snapshot?.state?.pendingToPage]);
+
+  const stateErrorMessage = useMemo(() => {
+    const error = snapshot?.state?.lastError;
+    if (!error) return '';
+    switch (error) {
+      case 'not_indexed':
+        return _('Book must be indexed first. Open AI Assistant to index.');
+      case 'missing_api_key':
+        return _('AI Gateway API key required.');
+      case 'provider_not_supported':
+        return _('X-Ray extraction currently requires AI Gateway.');
+      case 'extraction_failed':
+        return _('X-Ray extraction failed.');
+      default:
+        return error;
+    }
+  }, [snapshot?.state?.lastError, _]);
+
   const tabs = useMemo(
     () => [
       { id: 'entities', label: _('Entities') },
       { id: 'timeline', label: _('Timeline') },
       { id: 'relationships', label: _('Relationships') },
-      { id: 'themes', label: _('Themes') },
-      { id: 'recap', label: _('Recap') },
     ],
     [_],
   );
@@ -136,6 +181,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const handleUpdate = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
 
+    if (aiSettings.provider !== 'ai-gateway') {
+      setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
+      return;
+    }
+
     const indexed = await isBookIndexed(bookHash);
     if (!indexed) {
       setErrorMessage(_('Book must be indexed first. Open AI Assistant to index.'));
@@ -153,6 +203,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         bookTitle,
         appService,
         force: true,
+        bookMetadata: bookData?.book?.metadata,
       });
       await loadSnapshot();
     } catch (err) {
@@ -161,10 +212,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     } finally {
       setIsUpdating(false);
     }
-  }, [aiSettings, bookHash, currentPage, bookTitle, appService, loadSnapshot, _]);
+  }, [aiSettings, bookHash, currentPage, bookTitle, appService, bookData, loadSnapshot, _]);
 
   const handleRebuild = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
+
+    if (aiSettings.provider !== 'ai-gateway') {
+      setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
+      return;
+    }
 
     const indexed = await isBookIndexed(bookHash);
     if (!indexed) {
@@ -182,6 +238,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         settings: aiSettings,
         bookTitle,
         appService,
+        bookMetadata: bookData?.book?.metadata,
       });
       await loadSnapshot();
     } catch (err) {
@@ -190,11 +247,12 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     } finally {
       setIsRebuilding(false);
     }
-  }, [aiSettings, bookHash, currentPage, bookTitle, appService, loadSnapshot, _]);
+  }, [aiSettings, bookHash, currentPage, bookTitle, appService, bookData, loadSnapshot, _]);
 
   const handleEvidenceJump = useCallback(
     async (evidence: XRayEvidence) => {
       if (!bookKey) return;
+      if (evidence.inferred || evidence.chunkId === 'inferred') return;
       const view = getView(bookKey);
       if (!view) return;
       const config = getConfig(bookKey);
@@ -228,30 +286,36 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     [bookKey, getView, getConfig],
   );
 
-  const loadRecap = useCallback(async () => {
-    if (!bookHash || !aiSettings?.enabled) return;
-    const text = await getRecapIfNeeded({
-      bookHash,
-      bookTitle,
-      maxPageIncluded: currentPage,
-      settings: aiSettings,
-      appService,
-    });
-    setRecap(text);
-  }, [bookHash, bookTitle, currentPage, aiSettings, appService]);
-
-  const entities = useMemo(() => snapshot?.entities || [], [snapshot?.entities]);
+  const entities = useMemo(
+    () =>
+      (snapshot?.entities || []).filter((entity) => ENTITY_TYPE_WHITELIST.includes(entity.type)),
+    [snapshot?.entities],
+  );
   const relationships = useMemo(() => snapshot?.relationships || [], [snapshot?.relationships]);
   const events = useMemo(() => snapshot?.events || [], [snapshot?.events]);
-  const themes = useMemo(() => entities.filter((entity) => entity.type === 'theme'), [entities]);
+  const relationshipEntities = useMemo(
+    () => entities.filter((entity) => isLivingEntity(entity)),
+    [entities],
+  );
+  const livingEntityIds = useMemo(
+    () => new Set(relationshipEntities.map((entity) => entity.id)),
+    [relationshipEntities],
+  );
+  const livingRelationships = useMemo(
+    () =>
+      relationships.filter(
+        (rel) => livingEntityIds.has(rel.sourceId) && livingEntityIds.has(rel.targetId),
+      ),
+    [relationships, livingEntityIds],
+  );
   const filteredRelationships = useMemo(
     () =>
       relationshipFilter === 'all'
-        ? relationships
-        : relationships.filter(
+        ? livingRelationships
+        : livingRelationships.filter(
             (rel) => rel.sourceId === relationshipFilter || rel.targetId === relationshipFilter,
           ),
-    [relationshipFilter, relationships],
+    [relationshipFilter, livingRelationships],
   );
   const filteredEvents = useMemo(
     () => (timelineFilter === 'major' ? events.filter((event) => event.importance >= 7) : events),
@@ -261,8 +325,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const currentSectionIndex = progress?.section?.current ?? null;
 
   const entityById = useMemo(() => {
-    return new Map(snapshot?.entities.map((entity) => [entity.id, entity]) || []);
-  }, [snapshot?.entities]);
+    return new Map(entities.map((entity) => [entity.id, entity]));
+  }, [entities]);
 
   const parseSectionIndex = useCallback((chunkId: string): number | null => {
     const match = chunkId.match(/-(\d+)-\d+(?:-unit)?$/);
@@ -281,7 +345,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       string,
       Array<{ id: string; label: string; type: string; evidence?: XRayEvidence }>
     >();
-    for (const rel of relationships) {
+    for (const rel of livingRelationships) {
       const source = entityById.get(rel.sourceId);
       const target = entityById.get(rel.targetId);
       if (!source || !target) continue;
@@ -304,7 +368,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       map.set(target.id, targetList);
     }
     return map;
-  }, [relationships, entityById]);
+  }, [livingRelationships, entityById]);
 
   const mentionStats = useMemo(() => {
     const stats = new Map<string, EntityMentionStats>();
@@ -416,6 +480,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         entity.description || entity.facts[0]?.value || _('No details available yet'),
       );
       const related = relatedByEntity.get(entity.id) ?? [];
+      const isInferred = entity.facts.some((fact) => fact.inferred);
       const searchText = [
         entity.canonicalName,
         entity.description,
@@ -433,14 +498,16 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             return 'people';
           case 'location':
             return 'places';
+          case 'organization':
+            return 'organizations';
+          case 'artifact':
+            return 'artifacts';
+          case 'event':
+            return 'events';
           case 'term':
           case 'concept':
-          case 'theme':
-          case 'artifact':
-          case 'event':
-          case 'organization':
           default:
-            return 'terms';
+            return 'concepts';
         }
       })();
 
@@ -460,6 +527,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         related,
         searchText,
         category,
+        isInferred,
       };
     });
   }, [entities, mentionStats, relatedByEntity, currentPage, _, truncateText]);
@@ -468,15 +536,25 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     const counts = {
       all: entityViews.length,
       people: 0,
-      terms: 0,
       places: 0,
-      images: 0,
+      organizations: 0,
+      artifacts: 0,
+      concepts: 0,
+      events: 0,
     };
     for (const view of entityViews) {
-      counts[view.category as 'people' | 'terms' | 'places'] += 1;
+      counts[view.category] += 1;
     }
     return counts;
   }, [entityViews]);
+
+  const scopeAvailability = useMemo(
+    () => ({
+      page: entityViews.some((view) => view.onPage),
+      chapter: entityViews.some((view) => view.inChapter),
+    }),
+    [entityViews],
+  );
 
   const entitySearchIds = useMemo(() => {
     const query = entitySearch.trim();
@@ -508,7 +586,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const matchesCategory = useCallback(
     (view: EntityView) => {
       if (entityCategory === 'all') return true;
-      if (entityCategory === 'images') return false;
       return view.category === entityCategory;
     },
     [entityCategory],
@@ -537,11 +614,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return sortEntityViews(applyFilters(entityViews.filter(matchesScope)));
   }, [entityViews, matchesScope, applyFilters, sortEntityViews]);
 
-  const bookEntities = useMemo(() => {
-    if (entityScope === 'book') return [];
-    return sortEntityViews(applyFilters(entityViews.filter((entity) => !matchesScope(entity))));
-  }, [entityScope, entityViews, matchesScope, applyFilters, sortEntityViews]);
-
   const notableClips = useMemo(() => {
     return events
       .filter((event) => event.importance >= 7)
@@ -555,47 +627,101 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       .slice(0, 5);
   }, [events, currentPage]);
 
-  const currentSectionLabel = useMemo(() => {
-    if (entityScope === 'chapter') return _('In this chapter');
-    if (entityScope === 'book') return _('In the book');
-    return _('Current page');
-  }, [entityScope, _]);
-
-  const showSecondarySection = entityScope !== 'book';
-
   const formatQuote = (quote: string, limit = 140): string => {
     if (quote.length <= limit) return quote;
     return `${quote.slice(0, limit).trim()}…`;
   };
 
+  const getEntityTypeLabel = useCallback(
+    (type: XRayEntity['type']) => {
+      switch (type) {
+        case 'character':
+          return _('Character');
+        case 'location':
+          return _('Location');
+        case 'organization':
+          return _('Organization');
+        case 'artifact':
+          return _('Artifact');
+        case 'event':
+          return _('Event');
+        case 'concept':
+          return _('Concept');
+        case 'term':
+        default:
+          return _('Term');
+      }
+    },
+    [_],
+  );
+
+  const pillBase =
+    'inline-flex h-6 items-center justify-center rounded-full px-2.5 text-[10px] font-semibold leading-[1] tracking-wide border';
+
+  const pillVariants = {
+    mention:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    lastSeen:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    onPage:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    inChapter:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    neutral:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    success:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    danger:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+    warning:
+      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+  };
+
+  const getPillClass = (variant: keyof typeof pillVariants) =>
+    clsx(pillBase, pillVariants[variant] || pillVariants.neutral);
+
+  const renderPill = (variant: keyof typeof pillVariants, content: React.ReactNode) => (
+    <span className={getPillClass(variant)}>
+      <span className='relative top-[0.5px]'>{content}</span>
+    </span>
+  );
+
   const renderMention = (mention: EntityMention, index: number) => {
     const evidenceKey = `${mention.evidence.chunkId}:${mention.evidence.page}:${index}`;
     const evidenceId = `${mention.evidence.chunkId}:${mention.evidence.page}`;
+    const canJump = !mention.evidence.inferred && mention.evidence.chunkId !== 'inferred';
     return (
       <div key={evidenceKey} className='mt-1'>
-        <div className='flex items-start justify-between gap-2'>
+        <button
+          type='button'
+          className='hover:bg-base-200/40 flex w-full items-start justify-between gap-2 rounded-md px-1 py-1 text-left transition-colors'
+          onClick={() => handleEvidenceJump(mention.evidence)}
+          disabled={!canJump || jumpingEvidenceKey === evidenceId}
+        >
           <div className='text-base-content/70 text-[11px]'>
             {mention.context && (
               <span className='text-base-content/80 font-medium'>{mention.context}. </span>
             )}
             &ldquo;{formatQuote(mention.evidence.quote)}&rdquo;
           </div>
-          <button
-            type='button'
-            className='text-base-content/50 text-[11px] hover:underline disabled:opacity-60'
-            onClick={() => handleEvidenceJump(mention.evidence)}
-            disabled={jumpingEvidenceKey === evidenceId}
-          >
-            {_('Go to')} {_('p.')}
+          <span className='text-base-content/50 text-[11px]'>
+            {_('p.')}
             {mention.evidence.page + 1}
-          </button>
-        </div>
+            {mention.evidence.inferred && (
+              <span className='text-base-content/40 ml-1 text-[10px]'>{_('Inferred')}</span>
+            )}
+          </span>
+        </button>
       </div>
     );
   };
 
   const renderEntityCard = (item: EntityView) => {
     const previewMention = item.topMentions[0];
+    const previewJumpable =
+      previewMention &&
+      !previewMention.evidence.inferred &&
+      previewMention.evidence.chunkId !== 'inferred';
     return (
       <div key={item.entity.id} className='border-base-300/60 rounded-md border p-3'>
         <div className='flex items-start justify-between gap-2'>
@@ -603,43 +729,34 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
             <p className='text-base-content/70 mt-1 text-xs'>{item.oneLiner}</p>
           </div>
-          <div className='text-base-content/60 text-xs uppercase'>{item.entity.type}</div>
+          <div className='text-base-content/60 text-xs'>{getEntityTypeLabel(item.entity.type)}</div>
         </div>
 
-        <div className='mt-2 flex flex-wrap gap-1 text-[11px]'>
-          <span className='badge badge-xs'>
-            {_('Mentions')}: {item.mentionCount}
-          </span>
-          <span className='badge badge-xs'>
-            {_('Last seen')}: {_('p.')}
-            {item.lastSeenPage + 1}
-          </span>
-          {item.onPage && <span className='badge badge-xs'>{_('On this page')}</span>}
-          {!item.onPage && item.inChapter && (
-            <span className='badge badge-xs'>{_('In this chapter')}</span>
-          )}
+        <div className='mt-3 flex flex-wrap gap-2 text-[10px]'>
+          {renderPill('mention', `${_('Mentions')}: ${item.mentionCount}`)}
+          {renderPill('lastSeen', `${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
+          {item.isInferred && renderPill('warning', _('Inferred'))}
         </div>
 
         {previewMention ? (
-          <div className='mt-2'>
-            <div className='flex items-start justify-between gap-2'>
-              <div className='text-base-content/70 text-[11px]'>
-                &ldquo;{formatQuote(previewMention.evidence.quote)}&rdquo;
-              </div>
-              <button
-                type='button'
-                className='text-base-content/50 text-[11px] hover:underline disabled:opacity-60'
-                onClick={() => handleEvidenceJump(previewMention.evidence)}
-                disabled={
-                  jumpingEvidenceKey ===
-                  `${previewMention.evidence.chunkId}:${previewMention.evidence.page}`
-                }
-              >
-                {_('Go to')} {_('p.')}
-                {previewMention.evidence.page + 1}
-              </button>
-            </div>
-          </div>
+          <button
+            type='button'
+            className='hover:bg-base-200/40 mt-2 w-full rounded-md px-1 py-1 text-left text-[11px] transition-colors'
+            onClick={() => handleEvidenceJump(previewMention.evidence)}
+            disabled={
+              !previewJumpable ||
+              jumpingEvidenceKey ===
+                `${previewMention.evidence.chunkId}:${previewMention.evidence.page}`
+            }
+          >
+            <span className='text-base-content/70'>
+              &ldquo;{formatQuote(previewMention.evidence.quote)}&rdquo;
+            </span>
+            <span className='text-base-content/50 ml-2'>
+              {_('p.')}
+              {previewMention.evidence.page + 1}
+            </span>
+          </button>
         ) : (
           <p className='text-base-content/50 mt-2 text-[11px]'>{_('No mentions yet')}</p>
         )}
@@ -650,11 +767,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
         <details className='mt-2'>
           <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-            {_('Show more')}
+            {_('Show More')}
           </summary>
 
           <div className='mt-2'>
-            <div className='text-base-content/60 text-[11px] uppercase'>{_('Mentions')}</div>
+            <div className='text-base-content/60 text-[11px]'>{_('Mentions')}</div>
             {item.topMentions.length === 0 ? (
               <p className='text-base-content/50 text-[11px]'>{_('No mentions yet')}</p>
             ) : (
@@ -665,42 +782,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           {item.allMentions.length > item.topMentions.length && (
             <details className='mt-2'>
               <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-                {_('All mentions')} ({item.allMentions.length})
+                {_('All Mentions')} ({item.allMentions.length})
               </summary>
               <div className='mt-2'>{item.allMentions.map(renderMention)}</div>
             </details>
           )}
-
-          <details className='mt-2'>
-            <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-              {_('Advanced')}
-            </summary>
-            <div className='mt-2 space-y-1'>
-              {item.related.length === 0 ? (
-                <p className='text-base-content/50 text-[11px]'>{_('No relationships yet')}</p>
-              ) : (
-                item.related.slice(0, 5).map((rel, index) => (
-                  <div
-                    key={`${rel.id}:${index}`}
-                    className='flex items-center justify-between gap-2'
-                  >
-                    <div className='text-base-content/70 text-[11px]'>
-                      {rel.label} · {rel.type}
-                    </div>
-                    {rel.evidence && (
-                      <button
-                        type='button'
-                        className='text-base-content/50 text-[11px] hover:underline'
-                        onClick={() => handleEvidenceJump(rel.evidence!)}
-                      >
-                        {_('Go to')}
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </details>
         </details>
       </div>
     );
@@ -708,16 +794,35 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   useEffect(() => {
     loadSnapshot();
-    loadRecap();
     checkIndexed();
-  }, [loadSnapshot, loadRecap, checkIndexed]);
+  }, [loadSnapshot, checkIndexed]);
+
+  useEffect(() => {
+    loadSnapshot();
+  }, [currentPage, loadSnapshot]);
 
   useEffect(() => {
     if (relationshipFilter === 'all') return;
-    if (!entities.some((entity) => entity.id === relationshipFilter)) {
+    if (!relationshipEntities.some((entity) => entity.id === relationshipFilter)) {
       setRelationshipFilter('all');
     }
-  }, [entities, relationshipFilter]);
+  }, [relationshipEntities, relationshipFilter]);
+
+  useEffect(() => {
+    if (entityCategory === 'all') return;
+    if (categoryCounts[entityCategory] === 0) {
+      setEntityCategory('all');
+    }
+  }, [categoryCounts, entityCategory]);
+
+  useEffect(() => {
+    if (entityScope === 'page' && !scopeAvailability.page) {
+      setEntityScope('book');
+    }
+    if (entityScope === 'chapter' && !scopeAvailability.chapter) {
+      setEntityScope('book');
+    }
+  }, [entityScope, scopeAvailability]);
 
   useEffect(() => {
     const handler = (event: CustomEvent) => {
@@ -748,26 +853,63 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   return (
     <div className='flex h-full flex-col'>
-      <div className='border-base-300/50 flex items-center justify-between gap-2 border-b px-3 py-2 text-xs'>
-        <div>
-          <span className='text-base-content/70'>{_('As of page')}</span>{' '}
-          <span className='text-base-content font-medium'>{currentPage + 1}</span>
-        </div>
-        <div className='flex items-center gap-2'>
-          <button
-            className='btn btn-ghost btn-xs'
-            onClick={handleUpdate}
-            disabled={isUpdating || isRebuilding}
-          >
-            {isUpdating ? _('Loading...') : _('Update X-Ray')}
-          </button>
-          <button
-            className='btn btn-ghost btn-xs'
-            onClick={handleRebuild}
-            disabled={isUpdating || isRebuilding}
-          >
-            {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
-          </button>
+      <div className='px-3'>
+        <div className='flex items-center justify-between gap-2'>
+          <div className='dropdown dropdown-start'>
+            <div
+              tabIndex={0}
+              role='button'
+              className='content font-size-base inline-flex items-center gap-1'
+            >
+              {_('X-Ray')}
+              <svg
+                className='text-base-content/60 size-3'
+                viewBox='0 0 20 20'
+                fill='currentColor'
+                aria-hidden='true'
+              >
+                <path
+                  fillRule='evenodd'
+                  d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.293l3.71-4.06a.75.75 0 1 1 1.1 1.02l-4.25 4.65a.75.75 0 0 1-1.1 0l-4.25-4.65a.75.75 0 0 1 .02-1.06Z'
+                  clipRule='evenodd'
+                />
+              </svg>
+            </div>
+            <ul className='dropdown-content menu menu-sm border-base-300/60 xray-scrollbar rounded-box bg-base-100 z-10 mt-1 w-44 border p-1 shadow'>
+              <li>
+                <button
+                  type='button'
+                  onClick={handleUpdate}
+                  disabled={isUpdating || isRebuilding || providerUnsupported}
+                  title={_('Incremental update to current page')}
+                >
+                  {isUpdating ? _('Loading...') : _('Update X-Ray')}
+                </button>
+              </li>
+              <li>
+                <button
+                  type='button'
+                  onClick={handleRebuild}
+                  disabled={isUpdating || isRebuilding || providerUnsupported}
+                  title={_('Reprocess from scratch to current page')}
+                >
+                  {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div className='lg:tooltip lg:tooltip-bottom' title={asOfTooltip}>
+            <div className='text-base-content/70 flex items-center gap-1 whitespace-nowrap text-xs'>
+              <span>{_('As Of Page')}</span>
+              <span className='text-base-content font-medium'>{currentPage + 1}</span>
+              {pendingLabel && (
+                <span className='text-base-content/50 ml-1 text-[11px]'>
+                  {_('Pending')}: {_('p.')}
+                  {pendingLabel}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -800,8 +942,34 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         </div>
       )}
 
+      {providerUnsupported && (
+        <div className='bg-warning/10 border-warning/30 m-3 rounded-md border px-3 py-2 text-xs'>
+          <div className='text-warning flex items-start gap-2'>
+            <svg
+              className='mt-0.5 h-4 w-4 flex-shrink-0'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+              />
+            </svg>
+            <div>
+              <p className='font-medium'>{_('AI Gateway required')}</p>
+              <p className='text-warning/80 mt-1'>
+                {_('X-Ray extraction currently requires AI Gateway. Switch provider in Settings.')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error message */}
-      {errorMessage && (
+      {(errorMessage || stateErrorMessage) && (
         <div className='bg-error/10 border-error/30 m-3 rounded-md border px-3 py-2 text-xs'>
           <div className='text-error flex items-start gap-2'>
             <svg
@@ -819,7 +987,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             </svg>
             <div>
               <p className='font-medium'>{_('Error')}</p>
-              <p className='text-error/80 mt-1'>{errorMessage}</p>
+              <p className='text-error/80 mt-1'>{errorMessage || stateErrorMessage}</p>
             </div>
           </div>
         </div>
@@ -839,7 +1007,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           </button>
         ))}
       </div>
-      <div className='flex-1 space-y-3 overflow-y-auto px-3 pb-6'>
+      <div className='xray-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-6'>
         {activeTab === 'entities' && (
           <div className='space-y-3'>
             <div className='flex flex-wrap items-center gap-2 text-xs'>
@@ -847,62 +1015,87 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 className='input input-bordered input-xs h-7 w-full max-w-xs'
                 value={entitySearch}
                 onChange={(event) => setEntitySearch(event.target.value)}
-                placeholder={_('Search entities')}
+                placeholder={_('Search Entities')}
               />
             </div>
 
             <div className='flex flex-wrap items-center gap-2 text-xs'>
-              <div className='bg-base-200 flex items-center gap-1 rounded-lg p-1'>
+              <div className='bg-base-200 flex w-full min-w-0 max-w-full flex-wrap items-center gap-1 rounded-lg p-1'>
                 {(
                   [
                     { id: 'all', label: _('All'), count: categoryCounts.all },
                     { id: 'people', label: _('People'), count: categoryCounts.people },
-                    { id: 'terms', label: _('Terms'), count: categoryCounts.terms },
                     { id: 'places', label: _('Places'), count: categoryCounts.places },
-                    { id: 'images', label: _('Images'), count: categoryCounts.images },
+                    {
+                      id: 'organizations',
+                      label: _('Organizations'),
+                      count: categoryCounts.organizations,
+                    },
+                    { id: 'artifacts', label: _('Artifacts'), count: categoryCounts.artifacts },
+                    { id: 'concepts', label: _('Concepts'), count: categoryCounts.concepts },
+                    { id: 'events', label: _('Events'), count: categoryCounts.events },
                   ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    className={clsx(
-                      'btn btn-xs rounded-md border-none px-2',
-                      entityCategory === item.id
-                        ? 'bg-base-100 text-base-content shadow-sm'
-                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                      item.id === 'images' && 'btn-disabled',
-                    )}
-                    onClick={() => setEntityCategory(item.id)}
-                    disabled={item.id === 'images'}
-                  >
-                    {item.label}
-                    {item.id !== 'images' && (
-                      <span className='text-base-content/50 ml-1 text-[10px]'>{item.count}</span>
-                    )}
-                  </button>
-                ))}
+                )
+                  .filter((item) => item.id === 'all' || item.count > 0)
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      className={clsx(
+                        'inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium leading-none',
+                        entityCategory === item.id
+                          ? 'bg-base-100 text-base-content shadow-sm'
+                          : 'text-base-content/70 hover:bg-base-100/50 bg-transparent',
+                      )}
+                      onClick={() => setEntityCategory(item.id)}
+                    >
+                      <span className='leading-none'>{item.label}</span>
+                      <span className='text-base-content/70 bg-base-100/70 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] leading-none'>
+                        <span className='relative top-[0.5px]'>{item.count}</span>
+                      </span>
+                    </button>
+                  ))}
               </div>
 
               <div className='bg-base-200 flex items-center gap-1 rounded-lg p-1'>
                 {(
                   [
-                    { id: 'page', label: _('Page') },
-                    { id: 'chapter', label: _('Chapter') },
-                    { id: 'book', label: _('Book') },
+                    { id: 'page', label: _('Page'), tooltip: _('Only entities on this page') },
+                    {
+                      id: 'chapter',
+                      label: _('Chapter'),
+                      tooltip: _('Only entities in this chapter'),
+                    },
+                    { id: 'book', label: _('Book'), tooltip: _('All entities in the book') },
                   ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    className={clsx(
-                      'btn btn-xs rounded-md border-none px-2',
-                      entityScope === item.id
-                        ? 'bg-base-100 text-base-content shadow-sm'
-                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                    )}
-                    onClick={() => setEntityScope(item.id)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                ).map((item) => {
+                  const isDisabled =
+                    item.id === 'page'
+                      ? !scopeAvailability.page
+                      : item.id === 'chapter'
+                        ? !scopeAvailability.chapter
+                        : false;
+                  return (
+                    <div
+                      key={item.id}
+                      className='lg:tooltip lg:tooltip-bottom'
+                      title={item.tooltip}
+                    >
+                      <button
+                        className={clsx(
+                          'btn btn-xs rounded-md border-none px-2',
+                          entityScope === item.id && !isDisabled
+                            ? 'bg-base-100 text-base-content shadow-sm'
+                            : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                          isDisabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
+                        )}
+                        onClick={() => setEntityScope(item.id)}
+                        disabled={isDisabled}
+                      >
+                        {item.label}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className='bg-base-200 ml-auto flex items-center gap-1 rounded-lg p-1'>
@@ -941,33 +1134,17 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
               <p className='text-base-content/60 text-sm'>{_('No entities yet')}</p>
             ) : (
               <div className='space-y-4'>
-                <div>
-                  <div className='text-xs font-semibold'>{currentSectionLabel}</div>
-                  <div className='mt-2 space-y-3'>
-                    {currentEntities.length === 0 ? (
-                      <p className='text-base-content/60 text-sm'>{_('None found')}</p>
-                    ) : (
-                      currentEntities.map(renderEntityCard)
-                    )}
-                  </div>
+                <div className='space-y-3'>
+                  {currentEntities.length === 0 ? (
+                    <p className='text-base-content/60 text-sm'>{_('None found')}</p>
+                  ) : (
+                    currentEntities.map(renderEntityCard)
+                  )}
                 </div>
-
-                {showSecondarySection && (
-                  <div>
-                    <div className='text-xs font-semibold'>{_('In the book')}</div>
-                    <div className='mt-2 space-y-3'>
-                      {bookEntities.length === 0 ? (
-                        <p className='text-base-content/60 text-sm'>{_('No other entities yet')}</p>
-                      ) : (
-                        bookEntities.map(renderEntityCard)
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 {notableClips.length > 0 && (
                   <div>
-                    <div className='text-xs font-semibold'>{_('Notable clips')}</div>
+                    <div className='text-xs font-semibold'>{_('Notable Clips')}</div>
                     <div className='mt-2 space-y-3'>
                       {notableClips.map((clip) => (
                         <div key={clip.id} className='border-base-300/60 rounded-md border p-3'>
@@ -976,22 +1153,23 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                           </div>
                           <p className='text-sm'>{clip.summary}</p>
                           {clip.evidence && (
-                            <p className='text-base-content/70 mt-1 text-xs'>
+                            <button
+                              type='button'
+                              className='text-base-content/70 hover:bg-base-200/40 mt-1 w-full rounded-md px-1 py-1 text-left text-xs transition-colors'
+                              onClick={() => handleEvidenceJump(clip.evidence!)}
+                              disabled={
+                                clip.evidence.inferred ||
+                                clip.evidence.chunkId === 'inferred' ||
+                                jumpingEvidenceKey ===
+                                  `${clip.evidence.chunkId}:${clip.evidence.page}`
+                              }
+                            >
                               &ldquo;{formatQuote(clip.evidence.quote)}&rdquo;
-                            </p>
+                            </button>
                           )}
                           <p className='text-base-content/70 mt-1 text-xs'>
                             {_('Why it matters')}: {clip.summary}
                           </p>
-                          {clip.evidence && (
-                            <button
-                              type='button'
-                              className='text-base-content/50 mt-2 text-left text-[11px] hover:underline'
-                              onClick={() => handleEvidenceJump(clip.evidence!)}
-                            >
-                              {_('Go to location')}
-                            </button>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -1004,60 +1182,92 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
         {activeTab === 'timeline' && (
           <div className='space-y-3'>
-            <div className='flex items-center gap-2 text-xs'>
-              <span className='text-base-content/60'>{_('Filter by importance')}</span>
+            <div className='flex w-full flex-wrap items-center gap-2 text-xs'>
+              <span className='text-base-content/60 whitespace-nowrap'>
+                {_('Filter by Importance')}
+              </span>
               <select
-                className='select select-bordered select-xs h-7'
+                className='select select-bordered select-xs h-7 w-full min-w-0 sm:w-auto'
                 value={timelineFilter}
                 onChange={(event) => setTimelineFilter(event.target.value as 'all' | 'major')}
               >
-                <option value='all'>{_('All events')}</option>
-                <option value='major'>{_('Major events')}</option>
+                <option value='all'>{_('All Events')}</option>
+                <option value='major'>{_('Major Events')}</option>
               </select>
             </div>
             {filteredEvents.length === 0 ? (
               <p className='text-base-content/60 text-sm'>{_('No events yet')}</p>
             ) : (
-              filteredEvents
-                .slice()
-                .sort((a, b) => a.page - b.page)
-                .map((event) => (
-                  <div key={event.id} className='border-base-300/60 rounded-md border p-3'>
-                    <div className='text-base-content/60 text-xs'>
-                      {_('Page')} {event.page + 1}
-                    </div>
-                    <p className='text-sm'>{event.summary}</p>
-                    {event.evidence[0] && (
-                      <button
-                        type='button'
-                        className='text-base-content/50 mt-1 text-left text-[11px] hover:underline disabled:opacity-60'
-                        onClick={() => handleEvidenceJump(event.evidence[0]!)}
-                        disabled={
-                          jumpingEvidenceKey ===
-                          `${event.evidence[0]!.chunkId}:${event.evidence[0]!.page}`
-                        }
-                        title={_('Jump to quote')}
-                      >
-                        &ldquo;{event.evidence[0].quote}&rdquo;
-                      </button>
-                    )}
-                  </div>
-                ))
+              <div className='relative'>
+                <div className='bg-base-content/25 absolute bottom-0 left-2 top-0 z-0 w-px -translate-x-1/2' />
+                <div className='space-y-4'>
+                  {filteredEvents
+                    .slice()
+                    .sort((a, b) => a.page - b.page)
+                    .map((event) => {
+                      const isMajor = event.importance >= 7;
+                      const primaryEvidence = event.evidence[0];
+                      return (
+                        <div key={event.id} className='relative flex gap-3'>
+                          <div className='relative flex w-4 flex-none items-start justify-center'>
+                            <span
+                              className={clsx(
+                                'z-10 inline-flex rounded-full border',
+                                isMajor
+                                  ? 'bg-base-content border-base-content ring-base-content/30 size-3 ring-1'
+                                  : 'bg-base-content border-base-content/80 size-2',
+                              )}
+                            />
+                          </div>
+                          <div
+                            className={clsx(
+                              'border-base-300/60 bg-base-100/50 min-w-0 flex-1 rounded-md border p-3',
+                              isMajor && 'border-base-content/20',
+                            )}
+                          >
+                            <div className='text-base-content/60 text-xs'>
+                              {_('Page')} {event.page + 1}
+                            </div>
+                            <p className='text-sm'>{event.summary}</p>
+                            {primaryEvidence && (
+                              <button
+                                type='button'
+                                className='text-base-content/50 mt-1 text-left text-[11px] hover:underline disabled:opacity-60'
+                                onClick={() => handleEvidenceJump(primaryEvidence)}
+                                disabled={
+                                  primaryEvidence.inferred ||
+                                  primaryEvidence.chunkId === 'inferred' ||
+                                  jumpingEvidenceKey ===
+                                    `${primaryEvidence.chunkId}:${primaryEvidence.page}`
+                                }
+                                title={_('Jump to quote')}
+                              >
+                                &ldquo;{primaryEvidence.quote}&rdquo;
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
             )}
           </div>
         )}
 
         {activeTab === 'relationships' && (
           <div className='space-y-3'>
-            <div className='flex items-center gap-2 text-xs'>
-              <span className='text-base-content/60'>{_('Filter by entity')}</span>
+            <div className='flex w-full flex-wrap items-center gap-2 text-xs'>
+              <span className='text-base-content/60 whitespace-nowrap'>
+                {_('Filter by Entity')}
+              </span>
               <select
-                className='select select-bordered select-xs h-7'
+                className='select select-bordered select-xs h-7 w-full min-w-0 focus:outline-none focus:outline-offset-0 focus:ring-0 focus:ring-offset-0 sm:w-auto'
                 value={relationshipFilter}
                 onChange={(event) => setRelationshipFilter(event.target.value)}
               >
-                <option value='all'>{_('All entities')}</option>
-                {entities
+                <option value='all'>{_('All Entities')}</option>
+                {relationshipEntities
                   .slice()
                   .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
                   .map((entity) => (
@@ -1066,7 +1276,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     </option>
                   ))}
               </select>
-              <div className='bg-base-200 ml-auto flex items-center gap-1 rounded-lg p-1'>
+              <div className='bg-base-200 ml-0 flex w-full items-center justify-start gap-1 rounded-lg p-1 sm:ml-auto sm:w-auto sm:justify-end'>
                 <button
                   className={clsx(
                     'btn btn-xs rounded-md border-none px-2',
@@ -1075,7 +1285,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                       : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
                   )}
                   onClick={() => setRelationshipView('list')}
-                  title={_('List view')}
+                  title={_('List View')}
                 >
                   <svg className='size-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                     <path
@@ -1094,7 +1304,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                       : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
                   )}
                   onClick={() => setRelationshipView('graph')}
-                  title={_('Graph view')}
+                  title={_('Graph View')}
                 >
                   <PiGraph className='size-4' />
                 </button>
@@ -1102,9 +1312,9 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             </div>
             {relationshipView === 'graph' ? (
               <div className='space-y-3'>
-                <div className='border-base-300 h-[300px] rounded-md border'>
+                <div className='border-base-300 h-[300px] w-full min-w-0 overflow-hidden rounded-md border'>
                   <XRayGraph
-                    entities={entities}
+                    entities={relationshipEntities}
                     relationships={filteredRelationships}
                     events={events}
                     onNodeClick={(entity) => setSelectedGraphEntity(entity)}
@@ -1117,8 +1327,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                         <div className='text-sm font-semibold'>
                           {selectedGraphEntity.canonicalName}
                         </div>
-                        <span className='text-base-content/50 text-[10px] uppercase'>
-                          {selectedGraphEntity.type}
+                        <span className='text-base-content/50 text-[10px]'>
+                          {getEntityTypeLabel(selectedGraphEntity.type)}
                         </span>
                       </div>
                       <button
@@ -1141,9 +1351,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                       if (related.length === 0) return null;
                       return (
                         <div className='mt-3'>
-                          <div className='text-base-content/60 text-[11px] uppercase'>
-                            {_('Connections')}
-                          </div>
+                          <div className='text-base-content/60 text-[11px]'>{_('Connections')}</div>
                           <div className='mt-1 space-y-1'>
                             {related.slice(0, 5).map((rel, index) => {
                               const isSource = rel.sourceId === selectedGraphEntity.id;
@@ -1158,7 +1366,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                                   <span className='text-base-content/50 ml-1'>· {rel.type}</span>
                                   {rel.inferred && (
                                     <span className='text-base-content/40 ml-1 text-[10px]'>
-                                      ({_('inferred')})
+                                      ({_('Inferred')})
                                     </span>
                                   )}
                                 </div>
@@ -1175,9 +1383,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     })()}
                     {selectedGraphEntity.facts.length > 0 && (
                       <div className='mt-3'>
-                        <div className='text-base-content/60 text-[11px] uppercase'>
-                          {_('Facts')}
-                        </div>
+                        <div className='text-base-content/60 text-[11px]'>{_('Facts')}</div>
                         <div className='mt-1 space-y-1'>
                           {selectedGraphEntity.facts.slice(0, 3).map((fact, index) => (
                             <div key={index} className='text-base-content/70 text-xs'>
@@ -1210,7 +1416,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     <p className='text-base-content/70 mt-1 text-xs'>
                       {rel.description}
                       {rel.inferred && (
-                        <span className='text-base-content/50 ml-2 text-[10px] uppercase'>
+                        <span className='text-base-content/50 ml-2 text-[10px]'>
                           {_('Inferred')}
                         </span>
                       )}
@@ -1221,8 +1427,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                         className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
                         onClick={() => handleEvidenceJump(rel.evidence[0]!)}
                         disabled={
+                          rel.evidence[0]!.inferred ||
+                          rel.evidence[0]!.chunkId === 'inferred' ||
                           jumpingEvidenceKey ===
-                          `${rel.evidence[0]!.chunkId}:${rel.evidence[0]!.page}`
+                            `${rel.evidence[0]!.chunkId}:${rel.evidence[0]!.page}`
                         }
                         title={_('Jump to quote')}
                       >
@@ -1232,33 +1440,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   </div>
                 );
               })
-            )}
-          </div>
-        )}
-
-        {activeTab === 'themes' && (
-          <div className='space-y-3'>
-            {themes.length === 0 ? (
-              <p className='text-base-content/60 text-sm'>{_('No themes yet')}</p>
-            ) : (
-              themes.map((theme) => (
-                <div key={theme.id} className='border-base-300/60 rounded-md border p-3'>
-                  <div className='text-sm font-semibold'>{theme.canonicalName}</div>
-                  <p className='text-base-content/70 mt-1 text-xs'>
-                    {theme.description || _('No details available yet')}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === 'recap' && (
-          <div className='space-y-3'>
-            {recap ? (
-              <p className='text-base-content/80 text-sm leading-relaxed'>{recap}</p>
-            ) : (
-              <p className='text-base-content/60 text-sm'>{_('No recap available')}</p>
             )}
           </div>
         )}

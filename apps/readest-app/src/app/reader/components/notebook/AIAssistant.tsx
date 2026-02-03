@@ -283,6 +283,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         bookTitle,
         appService,
         force: true,
+        bookMetadata: bookData?.book?.metadata,
       });
     } catch (e) {
       aiLogger.rag.indexError(bookHash, (e as Error).message);
@@ -290,7 +291,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       setIsIndexing(false);
       setIndexProgress(null);
     }
-  }, [bookData?.bookDoc, bookHash, aiSettings]);
+  }, [bookData?.bookDoc, bookData?.book, bookHash, aiSettings, appService, bookTitle, currentPage]);
 
   const handleResetIndex = useCallback(async () => {
     if (!appService) return;

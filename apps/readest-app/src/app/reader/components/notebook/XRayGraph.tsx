@@ -9,6 +9,7 @@ interface SigmaInstance {
   on: (event: string, callback: (data: { node?: string; edge?: string }) => void) => void;
   kill: () => void;
   refresh: () => void;
+  resize?: () => void;
   getGraph: () => GraphInstance;
 }
 
@@ -63,6 +64,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<SigmaInstance | null>(null);
   const hoveredNodeRef = useRef<string | null>(null);
+  const renderIdRef = useRef(0);
   const { isDarkMode } = useThemeStore();
 
   const themeColors = getThemeColors(isDarkMode);
@@ -75,12 +77,15 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
 
   const initGraph = useCallback(async () => {
     if (!containerRef.current || entities.length === 0) return;
+    const renderId = (renderIdRef.current += 1);
 
     try {
       if (sigmaRef.current) {
         sigmaRef.current.kill();
         sigmaRef.current = null;
       }
+
+      containerRef.current.innerHTML = '';
 
       const builder = new XRayGraphBuilder();
       builder.buildFromSnapshot(entities, relationships, events);
@@ -154,6 +159,11 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
         refreshGraph();
       });
 
+      if (renderId !== renderIdRef.current) {
+        sigma.kill();
+        return;
+      }
+
       sigmaRef.current = sigma as unknown as SigmaInstance;
     } catch (error) {
       console.error('failed to initialize graph:', error);
@@ -162,14 +172,31 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
 
   useEffect(() => {
     initGraph();
+    const container = containerRef.current;
 
     return () => {
       if (sigmaRef.current) {
         sigmaRef.current.kill();
         sigmaRef.current = null;
       }
+      if (container) {
+        container.innerHTML = '';
+      }
     };
   }, [initGraph]);
+
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (!sigmaRef.current) return;
+      sigmaRef.current.resize?.();
+      sigmaRef.current.refresh();
+    });
+    observer.observe(containerRef.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     refreshGraph();
@@ -185,11 +212,11 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
 
   return (
     <div
-      className='relative h-full w-full overflow-hidden'
+      className='sigma-container relative h-full w-full overflow-hidden'
       ref={containerRef}
       style={{ background: themeColors.background }}
     >
-      <style jsx>{`
+      <style jsx global>{`
         .sigma-container {
           width: 100% !important;
           height: 100% !important;
