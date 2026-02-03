@@ -93,7 +93,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     };
   }, [controller, onRequestNextPage]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - use capture phase to intercept before native elements
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
       if (!state.active) return;
@@ -101,14 +101,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       switch (event.key) {
         case ' ':
           event.preventDefault();
+          event.stopPropagation();
           controller.togglePlayPause();
           break;
         case 'Escape':
           event.preventDefault();
+          event.stopPropagation();
           onClose();
           break;
         case 'ArrowLeft':
           event.preventDefault();
+          event.stopPropagation();
           if (event.shiftKey) {
             controller.skipBackward(15);
           } else {
@@ -117,6 +120,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           break;
         case 'ArrowRight':
           event.preventDefault();
+          event.stopPropagation();
           if (event.shiftKey) {
             controller.skipForward(15);
           } else {
@@ -125,17 +129,20 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           break;
         case 'ArrowUp':
           event.preventDefault();
+          event.stopPropagation();
           controller.increaseSpeed();
           break;
         case 'ArrowDown':
           event.preventDefault();
+          event.stopPropagation();
           controller.decreaseSpeed();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyboard);
-    return () => document.removeEventListener('keydown', handleKeyboard);
+    // Use capture phase to handle events before they reach dropdown/select elements
+    document.addEventListener('keydown', handleKeyboard, { capture: true });
+    return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
   }, [state.active, controller, onClose]);
 
   // Word display helpers
@@ -462,6 +469,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
             onClick={handleProgressBarClick}
             onKeyDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (e.key === 'ArrowLeft') controller.skipBackward();
               else if (e.key === 'ArrowRight') controller.skipForward();
             }}
