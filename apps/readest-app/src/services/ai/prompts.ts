@@ -73,7 +73,11 @@ export function buildXRaySystemPrompt(): string {
     'Only extract named entities or well-formed noun phrases (no pronouns, no verb phrases).',
     'Do not create entities for single-word pronouns (I, me, we, you, he, she, they).',
     'Do not include underscores in entity names.',
+    'Quotes must be exact, contiguous spans from the provided text units.',
+    'Evidence must include the exact chunkId from the text unit where the quote appears.',
+    'If you cannot find a direct quote, omit the item.',
     'Every fact must include direct evidence with a page number and quote.',
+    'Only include tone, emotions, or arc when explicitly supported by the text.',
   ].join(' ');
 }
 
@@ -106,11 +110,16 @@ export function buildXRayExtractionPrompt(params: {
     '- Keep within maxPageIncluded.',
     '- Every fact must include evidence (quote + page + chunkId).',
     '- Mark inferred relationships or facts with inferred=true.',
+    '- Relationships must be explicitly supported by a direct quote.',
+    '- Only include relationships between living characters or people.',
+    '- Events must be grounded in a specific page and quote.',
+    '- Claims should capture stated assertions, arguments, or conclusions with evidence.',
+    '- Events may include optional arc (setup, rising_action, climax, fallout), tone, or emotions when explicit.',
     '- If nothing is found, return empty arrays.',
   ];
 
   if (genreHints && genreHints.length > 0) {
-    lines.push('', 'GENRE-SPECIFIC FOCUS:');
+    lines.push('', 'CONTEXT FOCUS:');
     genreHints.forEach((hint) => lines.push(`- ${hint}`));
   }
 
@@ -132,23 +141,53 @@ export function buildXRayExtractionPrompt(params: {
   return lines.join('\n');
 }
 
-export function buildXRayRecapPrompt(params: {
+export function buildXRayRelationshipPrompt(params: {
   maxPageIncluded: number;
-  events: string[];
-  entities: string[];
+  pageStart: number;
+  pageEnd: number;
+  textUnits: XRayTextUnit[];
+  knownEntities: string[];
 }): string {
-  const { maxPageIncluded, events, entities } = params;
+  const { maxPageIncluded, pageStart, pageEnd, textUnits, knownEntities } = params;
   return [
-    'TASK: Generate a reading recap using only past events and bounded summaries.',
+    'TASK: Extract relationships among known entities from bounded text units.',
     'CONSTRAINTS:',
-    '- No outside knowledge.',
-    '- Only mention events up to current page.',
-    '- Keep spoiler-safe language.',
+    '- Use only the text below. No outside knowledge.',
+    '- Do not create new entities; use knownEntities only.',
+    '- Relationships must be explicitly supported by a direct quote.',
+    '- Every relationship must include evidence (quote + page + chunkId).',
+    '- Only include relationships between living characters or people.',
+    '- If none, return empty arrays for all keys.',
     'INPUT:',
     `- maxPageIncluded: ${maxPageIncluded}`,
-    `- events: ${JSON.stringify(events)}`,
-    `- entities: ${JSON.stringify(entities)}`,
+    `- pageRange: ${pageStart}-${pageEnd}`,
+    `- textUnits:\n${formatTextUnits(textUnits)}`,
+    `- knownEntities: ${JSON.stringify(knownEntities)}`,
     'OUTPUT:',
-    'Return a concise recap paragraph.',
+    'Return strict JSON that matches the XRayExtractionV1 schema with only relationships populated.',
+  ].join('\n');
+}
+
+export function buildXRayTimelinePrompt(params: {
+  maxPageIncluded: number;
+  pageStart: number;
+  pageEnd: number;
+  textUnits: XRayTextUnit[];
+}): string {
+  const { maxPageIncluded, pageStart, pageEnd, textUnits } = params;
+  return [
+    'TASK: Extract timeline events from bounded text units.',
+    'CONSTRAINTS:',
+    '- Use only the text below. No outside knowledge.',
+    '- Each event must include page and evidence (quote + page + chunkId).',
+    '- Keep summaries concise and spoiler-safe.',
+    '- Events may include arc (setup, rising_action, climax, fallout), tone, or emotions only when explicit.',
+    '- If none, return empty arrays for all keys.',
+    'INPUT:',
+    `- maxPageIncluded: ${maxPageIncluded}`,
+    `- pageRange: ${pageStart}-${pageEnd}`,
+    `- textUnits:\n${formatTextUnits(textUnits)}`,
+    'OUTPUT:',
+    'Return strict JSON that matches the XRayExtractionV1 schema with only events populated.',
   ].join('\n');
 }
