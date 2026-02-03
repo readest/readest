@@ -22,7 +22,7 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
   const { envConfig } = useEnv();
 
   // Extract book hash (id) from bookKey - bookDataStore uses id as key, not full bookKey
-  const bookId = bookKey.split('-')[0]!;
+  const bookId = bookKey.split('-')[0] ?? bookKey;
 
   // Subscribe to actual data values (not getter functions) so effects re-run when data changes
   const viewState = useReaderStore((state) => state.viewStates[bookKey]);

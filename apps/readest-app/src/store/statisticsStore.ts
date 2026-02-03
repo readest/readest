@@ -136,7 +136,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
     }));
   },
 
-  endSession: (bookKey, _reason) => {
+  endSession: (bookKey, reason) => {
     const { activeSessions, config, dailySummaries, bookStats } = get();
     if (!config.trackingEnabled) return null;
 
@@ -153,7 +153,12 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
         delete newActiveSessions[bookKey];
         return { activeSessions: newActiveSessions };
       });
-      console.log('[Statistics] Session too short, discarding', duration, 'seconds');
+      console.log(
+        '[Statistics] Session too short, discarding',
+        duration,
+        'seconds, reason:',
+        reason,
+      );
       return null;
     }
 
@@ -219,7 +224,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
           totalSessions: 1,
           totalPagesRead: pagesRead,
           averageSessionDuration: duration,
-          averageReadingSpeed: pagesRead / (duration / 3600) || 0,
+          averageReadingSpeed: duration > 0 ? pagesRead / (duration / 3600) : 0,
           firstReadAt: now,
           lastReadAt: now,
           completedAt: session.endProgress >= 0.99 ? now : undefined,
@@ -277,7 +282,15 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       };
     });
 
-    console.log('[Statistics] Ended session for', bookKey, 'duration:', duration, 'seconds');
+    console.log(
+      '[Statistics] Ended session for',
+      bookKey,
+      'reason:',
+      reason,
+      'duration:',
+      duration,
+      'seconds',
+    );
     return session;
   },
 
