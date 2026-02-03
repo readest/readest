@@ -26,8 +26,10 @@ export interface SectionItem {
   cfi: string;
   size: number;
   linear: string;
+  href?: string;
   location?: Location;
   pageSpread?: 'left' | 'right' | 'center' | '';
+  subitems?: Array<SectionItem>;
 
   createDocument: () => Promise<Document>;
 }
