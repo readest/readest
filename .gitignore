@@ -46,3 +46,4 @@ fastlane/report.xml
 
 # nix
 result*
+.playwright-mcp/
