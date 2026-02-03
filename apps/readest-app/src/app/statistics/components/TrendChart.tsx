@@ -123,8 +123,10 @@ const TrendChart: React.FC<TrendChartProps> = ({
   // Create smooth path using cardinal spline interpolation
   const createPath = () => {
     if (points.length < 2) return '';
+    const firstPoint = points[0];
+    if (!firstPoint) return '';
 
-    let path = `M ${points[0]!.x} ${points[0]!.y}`;
+    let path = `M ${firstPoint.x} ${firstPoint.y}`;
 
     for (let i = 0; i < points.length - 1; i++) {
       const p0 = points[Math.max(0, i - 1)]!;

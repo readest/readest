@@ -68,7 +68,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
           <div>
             <div className='text-base-content text-3xl font-bold'>{currentStreak}</div>
             <div className='text-base-content/60 text-sm'>
-              {currentStreak === 1 ? _('day streak') : _('day streak')}
+              {currentStreak === 1 ? _('day streak') : _('days streak')}
             </div>
           </div>
         </div>
