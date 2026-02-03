@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import React, { useState, isValidElement, ReactElement, ReactNode, useRef } from 'react';
+import React, { useState, isValidElement, ReactElement, ReactNode, useRef, useId } from 'react';
+import { useDropdownContext } from '@/context/DropdownContext';
 import { Overlay } from './Overlay';
 import MenuItem from './MenuItem';
 
@@ -8,6 +9,7 @@ interface DropdownProps {
   className?: string;
   menuClassName?: string;
   buttonClassName?: string;
+  containerClassName?: string;
   toggleButton: React.ReactNode;
   children: ReactElement<{
     setIsDropdownOpen: (isOpen: boolean) => void;
@@ -62,50 +64,34 @@ const Dropdown: React.FC<DropdownProps> = ({
   className,
   menuClassName,
   buttonClassName,
+  containerClassName,
   toggleButton,
   children,
   disabled,
   onToggle,
   showTooltip = true,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const lastInteractionWasTapOrClick = useRef(false);
+  const dropdownId = useId();
+  const context = useDropdownContext();
+  const isOpen = context ? context.openDropdownId === dropdownId : false;
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const setIsDropdownOpen = (open: boolean) => {
     if (disabled) return;
-    setIsOpen(open);
-    onToggle?.(open);
-  };
-
-  const handleTouchOrClick = () => {
-    lastInteractionWasTapOrClick.current = true;
-    setTimeout(() => (lastInteractionWasTapOrClick.current = false), 200);
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    // skip touch and pointer triggered focus, this is only for keyboard and aria navigation
-    if (!lastInteractionWasTapOrClick.current) {
-      setIsDropdownOpen(true);
+    if (context) {
+      if (open) {
+        context.openDropdown(dropdownId);
+      } else {
+        context.closeDropdown(dropdownId);
+      }
     }
+    onToggle?.(open);
   };
 
   const toggleDropdown = () => {
     setIsFocused(!isOpen);
     setIsDropdownOpen(!isOpen);
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (process.env.NODE_ENV === 'development') {
-      return;
-    }
-    if (!containerRef.current) return;
-    if (!containerRef.current.contains(e.relatedTarget as Node)) {
-      setIsFocused(false);
-      setIsDropdownOpen(false);
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -129,16 +115,9 @@ const Dropdown: React.FC<DropdownProps> = ({
     : children;
 
   return (
-    <div className='dropdown-container flex'>
+    <div ref={containerRef} className={clsx('dropdown-container flex', containerClassName)}>
       {isOpen && <Overlay onDismiss={() => setIsDropdownOpen(false)} />}
-      <div
-        ref={containerRef}
-        role='menu'
-        tabIndex={-1}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        className={clsx('dropdown flex flex-col', className)}
-      >
+      <div className={clsx('relative', isOpen && 'z-50')}>
         <button
           aria-haspopup='menu'
           aria-expanded={isOpen}
@@ -149,16 +128,19 @@ const Dropdown: React.FC<DropdownProps> = ({
             isFocused && isOpen && 'bg-base-300/50',
             buttonClassName,
           )}
-          onTouchStart={handleTouchOrClick}
-          onPointerDown={handleTouchOrClick}
-          onFocus={handleFocus}
           onClick={toggleDropdown}
+          onKeyDown={handleKeyDown}
         >
           {toggleButton}
         </button>
-        <div role='none' className={clsx('flex items-center justify-center')}>
+        <details
+          open={isOpen}
+          role='none'
+          className={clsx('dropdown flex items-center justify-center', className)}
+        >
+          <summary aria-hidden='true' className='list-none' />
           {isOpen && childrenWithToggle}
-        </div>
+        </details>
       </div>
     </div>
   );

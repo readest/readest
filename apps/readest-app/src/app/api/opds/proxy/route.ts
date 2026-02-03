@@ -134,11 +134,25 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       const buf = await response.arrayBuffer();
       const length = buf.byteLength;
       console.log(`[OPDS Proxy] Success: ${url} (${length} bytes)`);
+      const excludedHeaders = new Set([
+        'content-encoding',
+        'content-length',
+        'transfer-encoding',
+        'connection',
+        'keep-alive',
+      ]);
+
+      const proxyHeaders: Record<string, string> = {};
+      for (const [key, value] of response.headers.entries()) {
+        if (!excludedHeaders.has(key.toLowerCase())) {
+          proxyHeaders[key] = value;
+        }
+      }
 
       return new NextResponse(buf, {
         status: 200,
         headers: {
-          ...Object.fromEntries(response.headers.entries()),
+          ...proxyHeaders,
           'Content-Type': contentType,
           'Content-Length': length.toString(),
           'Cache-Control': 'public, max-age=300',

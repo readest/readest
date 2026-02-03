@@ -23,6 +23,7 @@ import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import GroupingModal from './GroupingModal';
+import SetStatusAlert from './SetStatusAlert';
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -442,88 +443,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         </div>
       )}
       {showStatusAlert && (
-        <div
-          className={clsx('status-alert fixed bottom-0 left-0 right-0 z-50 flex justify-center')}
-          style={{
-            paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
+        <SetStatusAlert
+          selectedCount={getSelectedBooks().length}
+          safeAreaBottom={safeAreaInsets?.bottom || 0}
+          onCancel={() => {
+            setShowStatusAlert(false);
+            setShowSelectModeActions(true);
           }}
-        >
-          <div
-            className={clsx(
-              'flex items-center justify-between',
-              'bg-base-200/95 rounded-2xl p-4 backdrop-blur-sm',
-              'border-base-content/10 border',
-              'shadow-lg',
-              'w-auto max-w-[90vw]',
-              'flex-col gap-4 sm:flex-row',
-            )}
-          >
-            <div className='text-sm font-medium'>
-              {_('Set status for {{count}} book(s)', { count: getSelectedBooks().length })}
-            </div>
-            <div className='flex flex-wrap items-center justify-end gap-2'>
-              <button
-                className={clsx(
-                  'flex items-center gap-2 rounded-full px-4 py-2',
-                  'bg-base-300 text-base-content',
-                  'hover:bg-base-content/10',
-                  'border-base-content/10 border',
-                  'shadow-sm',
-                  'transition-all duration-200 ease-out',
-                  'active:scale-[0.97]',
-                )}
-                onClick={() => {
-                  setShowStatusAlert(false);
-                  setShowSelectModeActions(true);
-                }}
-              >
-                <span className='text-sm font-medium'>{_('Cancel')}</span>
-              </button>
-              <button
-                className={clsx(
-                  'flex items-center gap-2 rounded-full px-4 py-2',
-                  'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-                  'hover:bg-amber-500/25',
-                  'border border-amber-500/20',
-                  'shadow-sm',
-                  'transition-all duration-200 ease-out',
-                  'active:scale-[0.97]',
-                )}
-                onClick={() => updateBooksStatus('unread')}
-              >
-                <span className='text-sm font-medium'>{_('Mark as Unread')}</span>
-              </button>
-              <button
-                className={clsx(
-                  'flex items-center gap-2 rounded-full px-4 py-2',
-                  'bg-success/15 text-success',
-                  'hover:bg-success/25',
-                  'border-success/20 border',
-                  'shadow-sm',
-                  'transition-all duration-200 ease-out',
-                  'active:scale-[0.97]',
-                )}
-                onClick={() => updateBooksStatus('finished')}
-              >
-                <span className='text-sm font-medium'>{_('Mark as Finished')}</span>
-              </button>
-              <button
-                className={clsx(
-                  'flex items-center gap-2 rounded-full px-4 py-2',
-                  'bg-base-300 text-base-content',
-                  'hover:bg-base-content/10',
-                  'border-base-content/10 border',
-                  'shadow-sm',
-                  'transition-all duration-200 ease-out',
-                  'active:scale-[0.97]',
-                )}
-                onClick={() => updateBooksStatus(undefined)}
-              >
-                <span className='text-sm font-medium'>{_('Clear Status')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+          onUpdateStatus={updateBooksStatus}
+        />
       )}
     </div>
   );

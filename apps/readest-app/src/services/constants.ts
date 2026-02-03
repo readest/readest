@@ -7,6 +7,7 @@ import {
   BookStyle,
   HighlightColor,
   NoteExportConfig,
+  ParagraphModeConfig,
   ReadingRulerColor,
   ScreenConfig,
   TranslatorConfig,
@@ -300,6 +301,10 @@ export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
   screenOrientation: 'auto',
+};
+
+export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
+  enabled: false,
 };
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {
@@ -682,6 +687,8 @@ export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
 
+export const SHOW_UNREAD_STATUS_BADGE = false;
+
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
   plus: 5 * 1024 * 1024 * 1024,
@@ -699,6 +706,9 @@ export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;
 export const LONG_HOLD_THRESHOLD = 500;
+
+export const SIZE_PER_LOC = 1500;
+export const SIZE_PER_TIME_UNIT = 1600;
 
 export const CUSTOM_THEME_TEMPLATES = [
   {

@@ -7,6 +7,7 @@ const DEFAULT_SHORTCUTS = {
   onToggleSelectMode: ['shift+s'],
   onToggleBookmark: ['ctrl+d', 'cmd+d'],
   onToggleTTS: ['t'],
+  onToggleParagraphMode: ['shift+p'],
   onHighlightSelection: ['ctrl+h', 'cmd+h'],
   onUnderlineSelection: ['ctrl+u', 'cmd+u'],
   onAnnotateSelection: ['ctrl+n', 'cmd+n'],

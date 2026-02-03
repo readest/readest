@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -36,7 +37,8 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 export function useSync(bookKey?: string) {
   const router = useRouter();
-  const { settings, setSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getConfig, setConfig } = useBookDataStore();
   const { setIsSyncing } = useReaderStore();
   const config = bookKey ? getConfig(bookKey) : null;
@@ -108,7 +110,7 @@ export function useSync(bookKey?: string) {
       const result = await syncClient.pullChanges(since, type, bookId, metaHash);
       setSyncResult({ ...syncResult, [type]: result[type] });
       const records = result[type];
-      if (since > 1000 && !records?.length) return;
+      if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
       setLastSyncedAt(maxTime);
@@ -138,6 +140,7 @@ export function useSync(bookKey?: string) {
           }
           break;
       }
+      return records?.filter((rec) => !rec.deleted_at).length || 0;
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -150,8 +153,10 @@ export function useSync(bookKey?: string) {
       } else {
         setSyncError(`Error pulling ${type}`);
       }
+      return 0;
     } finally {
       setSyncing(false);
+      saveSettings(envConfig, settings);
     }
   };
 
@@ -175,14 +180,20 @@ export function useSync(bookKey?: string) {
   };
 
   const syncBooks = useCallback(
-    async (books?: Book[], op: SyncOp = 'both') => {
+    async (books?: Book[], op: SyncOp = 'both', since?: number) => {
       if (!lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && books?.length) {
         await pushChanges({ books });
       }
       if (op === 'pull' || op === 'both') {
-        await pullChanges('books', lastSyncedAtBooks + 1, setLastSyncedAtBooks, setSyncingBooks);
+        return await pullChanges(
+          'books',
+          since ?? lastSyncedAtBooks + 1,
+          setLastSyncedAtBooks,
+          setSyncingBooks,
+        );
       }
+      return;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastSyncedAtInited, lastSyncedAtBooks],

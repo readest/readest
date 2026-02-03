@@ -203,8 +203,8 @@ foliate-fxl {
   transform: translateX(0);
 }
 
-.dropdown-center::before,
-.dropdown-center::after {
+.dropdown-center {
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -297,7 +297,7 @@ foliate-fxl {
   visibility: visible;
 }
 
-.pull-indicator {
+.pull-refresh-loading {
   position: fixed;
   width: 100%;
   background-color: transparent;
@@ -305,16 +305,7 @@ foliate-fxl {
   align-items: center;
   justify-content: center;
   color: var(--color-text-lighter);
-  transition: transform 0.2s ease-in-out;
   z-index: 10;
-}
-
-.pull-indicator svg {
-  transition: transform 0.2s ease-in-out;
-}
-
-.pull-indicator.flip svg {
-  transform: rotate(180deg);
 }
 
 .content {

@@ -61,6 +61,7 @@ import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
+import { ParagraphControl } from './paragraph';
 
 declare global {
   interface Window {
@@ -513,6 +514,7 @@ const FoliateViewer: React.FC<{
         {...mouseHandlers}
         {...touchHandlers}
       />
+      <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
       {!docLoaded.current && loading && <Spinner loading={true} />}
       {syncState === 'conflict' && conflictDetails && (
         <KOSyncConflictResolver

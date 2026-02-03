@@ -16,6 +16,7 @@ import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getLocale } from '@/utils/misc';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
@@ -69,10 +70,12 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       <AuthProvider>
         <IconContext.Provider value={{ size: `${iconSize}px` }}>
           <SyncProvider>
-            <CommandPaletteProvider>
-              {children}
-              <CommandPalette />
-            </CommandPaletteProvider>
+            <DropdownProvider>
+              <CommandPaletteProvider>
+                {children}
+                <CommandPalette />
+              </CommandPaletteProvider>
+            </DropdownProvider>
           </SyncProvider>
         </IconContext.Provider>
       </AuthProvider>

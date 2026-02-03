@@ -49,7 +49,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
   return (
     <div
       className={clsx(
-        'search-options dropdown-content dropdown-center border-base-200 z-20 w-56 border shadow-2xl',
+        'search-options dropdown-content border-base-200 z-20 w-56 border shadow-2xl',
         isEink ? 'bordercolor-content border-base-content !bg-base-100 border' : '',
         menuClassName,
       )}

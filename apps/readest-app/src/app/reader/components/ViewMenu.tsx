@@ -47,6 +47,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
 
   const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
+  const [isParagraphMode, setParagraphMode] = useState(
+    viewSettings?.paragraphMode?.enabled ?? false,
+  );
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
   const [zoomMode, setZoomMode] = useState(viewSettings!.zoomMode!);
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
@@ -59,6 +62,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
+  const toggleParagraphMode = () => {
+    setParagraphMode(!isParagraphMode);
+    eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey });
+    setIsDropdownOpen?.(false);
+  };
 
   const openFontLayoutMenu = () => {
     setIsDropdownOpen?.(false);
@@ -83,6 +91,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     } else {
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
     }
+  };
+
+  const handleStartRSVP = () => {
+    setIsDropdownOpen?.(false);
+    eventDispatcher.dispatch('rsvp-start', { bookKey });
   };
 
   useEffect(() => {
@@ -259,6 +272,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         shortcut='Shift+J'
         Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
+        disabled={bookData.isFixedLayout}
+      />
+
+      <hr aria-hidden='true' className='border-base-300 my-1' />
+
+      <MenuItem
+        label={_('Paragraph Mode')}
+        shortcut='Shift+P'
+        Icon={isParagraphMode ? MdCheck : undefined}
+        onClick={toggleParagraphMode}
+        disabled={bookData.isFixedLayout}
+      />
+
+      <MenuItem
+        label={_('Speed Reading Mode')}
+        onClick={handleStartRSVP}
         disabled={bookData.isFixedLayout}
       />
 

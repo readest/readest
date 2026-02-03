@@ -9,12 +9,14 @@ import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
 interface QuickActionMenuProps {
+  menuClassName?: string;
   selectedAction?: AnnotationToolType | null;
   onActionSelect: (action: AnnotationToolType) => void;
   setIsDropdownOpen?: (open: boolean) => void;
 }
 
 const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
+  menuClassName,
   selectedAction,
   onActionSelect,
   setIsDropdownOpen,
@@ -48,6 +50,7 @@ const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
       className={clsx(
         'annotation-quick-action-menu dropdown-content z-20 mt-1 border',
         'bgcolor-base-200 shadow-2xl',
+        menuClassName,
       )}
       style={{
         maxWidth: `${window.innerWidth - 40}px`,

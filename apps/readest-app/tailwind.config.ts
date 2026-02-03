@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import { themes } from './src/styles/themes';
+import { themes } from './src/styles/themes.ts';
 import daisyui from 'daisyui';
 import typography from '@tailwindcss/typography';
 import plugin from 'tailwindcss/plugin';

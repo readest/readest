@@ -193,7 +193,7 @@ describe('makeSafeFilename', () => {
     });
 
     it('should handle string with only unsafe characters', () => {
-      expect(makeSafeFilename('<>:"|?*')).toBe('_______');
+      expect(makeSafeFilename('<>:"|?*#')).toBe('________');
     });
 
     it('should handle string that becomes empty after sanitization and trimming', () => {

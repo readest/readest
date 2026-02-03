@@ -4,13 +4,18 @@ import { useSync } from '@/hooks/useSync';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
+import { debounce } from '@/utils/debounce';
+import { eventDispatcher } from '@/utils/event';
 
 export const useBooksSync = () => {
+  const _ = useTranslation();
   const { user } = useAuth();
   const { appService } = useEnv();
-  const { library, isSyncing, setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
+  const { library, isSyncing, libraryLoaded } = useLibraryStore();
+  const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
   const isPullingRef = useRef(false);
 
@@ -29,19 +34,33 @@ export const useBooksSync = () => {
     };
   }, [user, lastSyncedAtBooks]);
 
-  const pullLibrary = useCallback(async () => {
-    if (!user) return;
-    if (isPullingRef.current) {
-      console.log('Pull already in progress, skipping...');
-      return;
-    }
-    try {
-      isPullingRef.current = true;
-      await syncBooks([], 'pull');
-    } finally {
-      isPullingRef.current = false;
-    }
-  }, [user, syncBooks]);
+  const pullLibrary = useCallback(
+    async (fullRefresh = false, verbose = false) => {
+      if (!user) return;
+      if (isPullingRef.current) {
+        console.log('Pull already in progress, skipping...');
+        return;
+      }
+      try {
+        isPullingRef.current = true;
+        const library = useLibraryStore.getState().library;
+        const syncedBooksCount = await syncBooks(
+          [],
+          'pull',
+          (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined,
+        );
+        if (verbose) {
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            message: _('{{count}} book(s) synced', { count: syncedBooksCount }),
+          });
+        }
+      } finally {
+        isPullingRef.current = false;
+      }
+    },
+    [_, user, libraryLoaded, syncBooks],
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
@@ -75,12 +94,11 @@ export const useBooksSync = () => {
   }, [user, syncBooks, getNewBooks]);
 
   useEffect(() => {
-    if (!user || !useSyncInited) return;
+    if (!user || !useSyncInited || !libraryLoaded) return;
     pullLibrary();
-  }, [user, useSyncInited, pullLibrary]);
+  }, [user, useSyncInited, libraryLoaded, pullLibrary]);
 
-  const updateLibrary = async () => {
-    if (isSyncing) return;
+  const updateLibrary = useCallback(async () => {
     if (!syncedBooks?.length) return;
 
     // Process old books first so that when we update the library the order is preserved
@@ -149,12 +167,23 @@ export const useBooksSync = () => {
         setIsSyncing(false);
       }
     }
-  };
-
-  useEffect(() => {
-    updateLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedUpdateLibrary = useCallback(
+    debounce(() => updateLibrary(), 10000),
+    [updateLibrary],
+  );
+
+  useEffect(() => {
+    if (isSyncing) {
+      debouncedUpdateLibrary();
+    } else {
+      updateLibrary();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncedBooks, updateLibrary, debouncedUpdateLibrary]);
 
   return { pullLibrary, pushLibrary };
 };
