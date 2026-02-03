@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useStatisticsStore } from '@/store/statisticsStore';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 
 interface BookSessionTrackerProps {
   bookKey: string;
@@ -33,6 +35,9 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
   const { startSession, updateSessionActivity, endSession, saveStatistics } = useStatisticsStore();
 
   const IDLE_TIMEOUT_MS = (config.idleTimeoutMinutes || 5) * 60 * 1000;
+
+  // Ref to store Tauri unlisten function
+  const unlistenOnFocusChangedRef = useRef<Promise<() => void> | null>(null);
 
   // Start session when the book view is initialized
   useEffect(() => {
@@ -132,45 +137,77 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
     IDLE_TIMEOUT_MS,
   ]);
 
-  // Handle visibility change (for mobile background)
+  // Handle app losing/gaining focus (visibility change for web, focus change for Tauri)
   useEffect(() => {
     if (!config.trackingEnabled || !loaded) return;
 
-    const handleVisibilityChange = () => {
-      // Get fresh state from stores when visibility changes
+    const handleFocusLost = () => {
       const { activeSessions, loaded: statsLoaded } = useStatisticsStore.getState();
-
-      // Don't handle visibility changes if statistics aren't loaded
       if (!statsLoaded) return;
 
-      if (document.visibilityState === 'hidden') {
-        if (activeSessions[bookKey]) {
-          console.log('[BookSessionTracker] App hidden, ending session for', bookKey);
-          const session = endSession(bookKey, 'idle');
-          if (session) {
-            saveStatistics(envConfig);
-          }
-        }
-      } else if (document.visibilityState === 'visible') {
-        const currentViewState = useReaderStore.getState().viewStates[bookKey];
-        const currentBookData = useBookDataStore.getState().booksData[bookId];
-        const currentProgress = currentViewState?.progress;
-
-        if (currentViewState?.inited && currentBookData?.book && !activeSessions[bookKey]) {
-          console.log('[BookSessionTracker] App visible, restarting session for', bookKey);
-          const metaHash = currentBookData.book.metaHash;
-          const pageInfo = currentProgress?.pageinfo;
-          const currentPage = pageInfo?.current || 1;
-          const totalPages = pageInfo?.total || 1;
-          const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
-
-          startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages);
+      if (activeSessions[bookKey]) {
+        console.log('[BookSessionTracker] App lost focus, ending session for', bookKey);
+        const session = endSession(bookKey, 'idle');
+        if (session) {
+          saveStatistics(envConfig);
         }
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    const handleFocusGained = () => {
+      const { activeSessions, loaded: statsLoaded } = useStatisticsStore.getState();
+      if (!statsLoaded) return;
+
+      const currentViewState = useReaderStore.getState().viewStates[bookKey];
+      const currentBookData = useBookDataStore.getState().booksData[bookId];
+      const currentProgress = currentViewState?.progress;
+
+      if (currentViewState?.inited && currentBookData?.book && !activeSessions[bookKey]) {
+        console.log('[BookSessionTracker] App gained focus, restarting session for', bookKey);
+        const metaHash = currentBookData.book.metaHash;
+        const pageInfo = currentProgress?.pageinfo;
+        const currentPage = pageInfo?.current || 1;
+        const totalPages = pageInfo?.total || 1;
+        const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
+
+        startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages);
+      }
+    };
+
+    // Web platform: use visibilitychange (for tab switching, minimizing)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleFocusLost();
+      } else if (document.visibilityState === 'visible') {
+        handleFocusGained();
+      }
+    };
+
+    if (isWebAppPlatform()) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    // Tauri platform: use window focus change (for alt-tab, clicking other apps)
+    if (isTauriAppPlatform()) {
+      unlistenOnFocusChangedRef.current = getCurrentWindow().onFocusChanged(
+        ({ payload: focused }) => {
+          if (focused) {
+            handleFocusGained();
+          } else {
+            handleFocusLost();
+          }
+        },
+      );
+    }
+
+    return () => {
+      if (isWebAppPlatform()) {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (unlistenOnFocusChangedRef.current) {
+        unlistenOnFocusChangedRef.current.then((f) => f());
+      }
+    };
   }, [
     bookKey,
     bookId,
