@@ -322,17 +322,27 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   if (!indexed && !isIndexing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-        <div className='bg-primary/10 rounded-full p-3'>
+        <div
+          className='bg-primary/10 rounded-full p-3'
+          style={{
+            animation: 'subtleBounce 2.5s ease-in-out infinite',
+          }}
+        >
           <BookOpenIcon className='text-primary size-6' />
+          <style>{`
+            @keyframes subtleBounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(2px); }
+            }
+          `}</style>
         </div>
         <div>
           <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
           <p className='text-muted-foreground text-xs'>
-            {_('Enable AI search and chat for this book')}
+            {_('Enable AI chat and X-Ray for this book')}
           </p>
         </div>
         <Button onClick={handleIndex} size='sm' className='h-8 text-xs'>
-          <BookOpenIcon className='mr-1.5 size-3.5' />
           {_('Start Indexing')}
         </Button>
       </div>
