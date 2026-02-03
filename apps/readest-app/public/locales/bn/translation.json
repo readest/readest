@@ -1006,5 +1006,8 @@
   "From Current Page": "বর্তমান পৃষ্ঠা থেকে",
   "Start from where you are currently reading": "আপনি বর্তমানে যেখানে পড়ছেন সেখান থেকে শুরু করুন",
   "From Selection": "নির্বাচন থেকে",
-  "Speed Reading Mode": "দ্রুত পাঠ্য মোড"
+  "Speed Reading Mode": "দ্রুত পাঠ্য মোড",
+  "Scroll left": "বামে স্ক্রোল করুন",
+  "Scroll right": "ডানে স্ক্রোল করুন",
+  "Library Sync Progress": "লাইব্রেরি সিঙ্ক অগ্রগতি"
 }

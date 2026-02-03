@@ -7,6 +7,8 @@ import { getSafeAreaInsets } from '@/utils/bridge';
 export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
   const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
+  const retryCount = useRef(0);
+  const maxRetries = 3;
 
   const { updateSafeAreaInsets } = useThemeStore();
 
@@ -61,6 +63,20 @@ export const useSafeAreaInsets = () => {
         bottom: Math.round(bottom),
         left: Math.round(left),
       };
+
+      const allZero = top === 0 && right === 0 && bottom === 0 && left === 0;
+      if (appService.isIOSApp && allZero && retryCount.current < maxRetries) {
+        retryCount.current++;
+        setTimeout(() => {
+          onUpdateInsets();
+        }, 50 * retryCount.current);
+        return;
+      }
+
+      if (!allZero) {
+        retryCount.current = 0;
+      }
+
       updateInsets(insets);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,17 +84,38 @@ export const useSafeAreaInsets = () => {
 
   useEffect(() => {
     onUpdateInsets();
+
+    // Listen for orientation changes
     if (window.screen?.orientation) {
       window.screen.orientation.addEventListener('change', onUpdateInsets);
     } else {
       window.addEventListener('orientationchange', onUpdateInsets);
     }
+
+    // Listen for visibility changes (app returning from background)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        retryCount.current = 0;
+        onUpdateInsets();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Listen for window focus (additional safeguard for iOS)
+    const handleFocus = () => {
+      retryCount.current = 0;
+      onUpdateInsets();
+    };
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
       } else {
         window.removeEventListener('orientationchange', onUpdateInsets);
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [onUpdateInsets]);
 };

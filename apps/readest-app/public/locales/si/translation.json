@@ -1006,5 +1006,8 @@
   "From Current Page": "වත්මන් පිටුවේ සිට",
   "Start from where you are currently reading": "ඔබ දැනට කියවන තැනින් ආරම්භ කරන්න",
   "From Selection": "තේරීමෙන්",
-  "Speed Reading Mode": "වේගයෙන් කියවීමේ ක්‍රමය"
+  "Speed Reading Mode": "වේගයෙන් කියවීමේ ක්‍රමය",
+  "Scroll left": "වමට අනුචලනය කරන්න",
+  "Scroll right": "දකුණට අනුචලනය කරන්න",
+  "Library Sync Progress": "පුස්තකාල සමමුහුර්ත කිරීමේ ප්‍රගතිය"
 }

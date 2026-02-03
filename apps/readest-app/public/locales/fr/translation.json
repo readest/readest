@@ -1018,5 +1018,8 @@
   "From Current Page": "Depuis la page actuelle",
   "Start from where you are currently reading": "Commencer là où vous lisez actuellement",
   "From Selection": "Depuis la sélection",
-  "Speed Reading Mode": "Mode lecture rapide"
+  "Speed Reading Mode": "Mode lecture rapide",
+  "Scroll left": "Défiler vers la gauche",
+  "Scroll right": "Défiler vers la droite",
+  "Library Sync Progress": "Progression de la synchronisation de la bibliothèque"
 }

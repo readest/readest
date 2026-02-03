@@ -1006,5 +1006,8 @@
   "From Current Page": "از صفحه فعلی",
   "Start from where you are currently reading": "شروع از جایی که در حال مطالعه هستید",
   "From Selection": "از انتخاب",
-  "Speed Reading Mode": "حالت مطالعه سریع"
+  "Speed Reading Mode": "حالت مطالعه سریع",
+  "Scroll left": "اسکرول به چپ",
+  "Scroll right": "اسکرول به راست",
+  "Library Sync Progress": "پیشرفت همگام‌سازی کتابخانه"
 }

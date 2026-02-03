@@ -1006,5 +1006,8 @@
   "From Current Page": "Από την τρέχουσα σελίδα",
   "Start from where you are currently reading": "Ξεκινήστε από εκεί που διαβάζετε αυτή τη στιγμή",
   "From Selection": "Από την επιλογή",
-  "Speed Reading Mode": "Λειτουργία ταχείας ανάγνωσης"
+  "Speed Reading Mode": "Λειτουργία ταχείας ανάγνωσης",
+  "Scroll left": "Κύλιση αριστερά",
+  "Scroll right": "Κύλιση δεξιά",
+  "Library Sync Progress": "Πρόοδος συγχρονισμού βιβλιοθήκης"
 }
