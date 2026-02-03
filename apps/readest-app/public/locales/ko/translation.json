@@ -994,5 +994,8 @@
   "From Current Page": "현재 페이지부터",
   "Start from where you are currently reading": "현재 읽고 있는 위치부터 시작",
   "From Selection": "선택 범위부터",
-  "Speed Reading Mode": "속독 모드"
+  "Speed Reading Mode": "속독 모드",
+  "Scroll left": "왼쪽으로 스크롤",
+  "Scroll right": "오른쪽으로 스크롤",
+  "Library Sync Progress": "라이브러리 동기화 진행 상황"
 }

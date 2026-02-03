@@ -994,5 +994,8 @@
   "From Current Page": "从当前页",
   "Start from where you are currently reading": "从当前正在阅读的位置开始",
   "From Selection": "从选中内容",
-  "Speed Reading Mode": "快读模式"
+  "Speed Reading Mode": "快读模式",
+  "Scroll left": "向左滚动",
+  "Scroll right": "向右滚动",
+  "Library Sync Progress": "库同步进度"
 }

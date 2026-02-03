@@ -1006,5 +1006,8 @@
   "From Current Page": "Från den aktuella sidan",
   "Start from where you are currently reading": "Börja där du läser just nu",
   "From Selection": "Från markeringen",
-  "Speed Reading Mode": "Snabbläsningsläge"
+  "Speed Reading Mode": "Snabbläsningsläge",
+  "Scroll left": "Scrolla åt vänster",
+  "Scroll right": "Scrolla åt höger",
+  "Library Sync Progress": "Synkroniseringsframsteg för bibliotek"
 }

@@ -1006,5 +1006,8 @@
   "From Current Page": "वर्तमान पृष्ठ से",
   "Start from where you are currently reading": "जहाँ आप अभी पढ़ रहे हैं वहीं से शुरू करें",
   "From Selection": "चयन से",
-  "Speed Reading Mode": "त्वरित पठन मोड"
+  "Speed Reading Mode": "त्वरित पठन मोड",
+  "Scroll left": "बाएं स्क्रॉल करें",
+  "Scroll right": "दाएं स्क्रॉल करें",
+  "Library Sync Progress": "पुस्तकालय सिंक प्रगति"
 }

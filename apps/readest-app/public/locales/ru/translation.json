@@ -1030,5 +1030,8 @@
   "From Current Page": "С текущей страницы",
   "Start from where you are currently reading": "Начать с того места, где вы сейчас читаете",
   "From Selection": "Из выбранного",
-  "Speed Reading Mode": "Режим быстрого чтения"
+  "Speed Reading Mode": "Режим быстрого чтения",
+  "Scroll left": "Прокрутить влево",
+  "Scroll right": "Прокрутить вправо",
+  "Library Sync Progress": "Прогресс синхронизации библиотеки"
 }

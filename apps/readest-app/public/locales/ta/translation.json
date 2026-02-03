@@ -1006,5 +1006,8 @@
   "From Current Page": "தற்போதைய பக்கத்திலிருந்து",
   "Start from where you are currently reading": "நீங்கள் தற்போது வாசிக்கும் இடத்திலிருந்து தொடங்கு",
   "From Selection": "தேர்விலிருந்து",
-  "Speed Reading Mode": "வேக வாசிப்பு முறை"
+  "Speed Reading Mode": "வேக வாசிப்பு முறை",
+  "Scroll left": "இடதுபுறம் உருட்டவும்",
+  "Scroll right": "வலதுபுறம் உருட்டவும்",
+  "Library Sync Progress": "நூலக ஒத்திசைவு நிலை"
 }

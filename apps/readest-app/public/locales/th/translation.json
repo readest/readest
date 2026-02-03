@@ -994,5 +994,8 @@
   "From Current Page": "จากหน้าปัจจุบัน",
   "Start from where you are currently reading": "เริ่มจากจุดที่คุณกำลังอ่านอยู่ตอนนี้",
   "From Selection": "จากส่วนที่เลือก",
-  "Speed Reading Mode": "โหมดการอ่านเร็ว"
+  "Speed Reading Mode": "โหมดการอ่านเร็ว",
+  "Scroll left": "เลื่อนไปทางซ้าย",
+  "Scroll right": "เลื่อนไปทางขวา",
+  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด"
 }

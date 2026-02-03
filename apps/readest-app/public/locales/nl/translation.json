@@ -1006,5 +1006,8 @@
   "From Current Page": "Vanaf huidige pagina",
   "Start from where you are currently reading": "Begin waar u momenteel leest",
   "From Selection": "Vanaf selectie",
-  "Speed Reading Mode": "Snelle leesmodus"
+  "Speed Reading Mode": "Snelle leesmodus",
+  "Scroll left": "Naar links scrollen",
+  "Scroll right": "Naar rechts scrollen",
+  "Library Sync Progress": "Voortgang bibliotheeksynchronisatie"
 }

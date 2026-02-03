@@ -1006,5 +1006,8 @@
   "From Current Page": "Mevcut Sayfadan",
   "Start from where you are currently reading": "Şu anda okuduğunuz yerden başlayın",
   "From Selection": "Seçimden",
-  "Speed Reading Mode": "Hızlı Okuma Modu"
+  "Speed Reading Mode": "Hızlı Okuma Modu",
+  "Scroll left": "Sola kaydır",
+  "Scroll right": "Sağa kaydır",
+  "Library Sync Progress": "Kütüphane Senkronizasyon İlerlemesi"
 }
