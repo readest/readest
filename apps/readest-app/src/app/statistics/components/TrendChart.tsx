@@ -35,7 +35,7 @@ const getDateRangeData = (
   const today = new Date();
 
   if (range === 'week') {
-    // Last 7 days
+    // Daily view: Last 7 days, one point per day
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -49,7 +49,7 @@ const getDateRangeData = (
       });
     }
   } else if (range === 'month') {
-    // Last 30 days, grouped by week
+    // Weekly view: Last 5 weeks, one point per week
     for (let i = 4; i >= 0; i--) {
       const weekEnd = new Date(today);
       weekEnd.setDate(weekEnd.getDate() - i * 7);
@@ -72,7 +72,7 @@ const getDateRangeData = (
       });
     }
   } else {
-    // Last 12 months
+    // Monthly view: Last 12 months, one point per month
     for (let i = 11; i >= 0; i--) {
       const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthEnd = new Date(today.getFullYear(), today.getMonth() - i + 1, 0);
@@ -177,7 +177,7 @@ const TrendChart: React.FC<TrendChartProps> = ({
               className={clsx('btn btn-xs', dateRange === range ? 'btn-primary' : 'btn-ghost')}
               onClick={() => onDateRangeChange?.(range)}
             >
-              {range === 'week' ? _('Week') : range === 'month' ? _('Month') : _('Year')}
+              {range === 'week' ? _('Daily') : range === 'month' ? _('Weekly') : _('Monthly')}
             </button>
           ))}
         </div>
