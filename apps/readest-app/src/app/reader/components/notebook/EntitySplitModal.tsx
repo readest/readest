@@ -17,7 +17,6 @@ const ENTITY_TYPES: { value: XRayEntityType; label: string }[] = [
   { value: 'artifact', label: 'Artifact' },
   { value: 'term', label: 'Term' },
   { value: 'event', label: 'Event' },
-  { value: 'theme', label: 'Theme' },
   { value: 'concept', label: 'Concept' },
 ];
 
