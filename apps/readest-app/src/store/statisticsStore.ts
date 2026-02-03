@@ -503,8 +503,8 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       totalReadingTime += session.duration;
       totalPagesRead += session.pagesRead;
       uniqueBooks.add(session.bookHash);
-      readingByHour[hour] += session.duration;
-      readingByDayOfWeek[dayOfWeek] += session.duration;
+      readingByHour[hour] = (readingByHour[hour] ?? 0) + session.duration;
+      readingByDayOfWeek[dayOfWeek] = (readingByDayOfWeek[dayOfWeek] ?? 0) + session.duration;
     });
 
     // Calculate averages for book stats
