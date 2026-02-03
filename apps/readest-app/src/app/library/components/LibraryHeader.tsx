@@ -21,8 +21,6 @@ import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import ViewMenu from './ViewMenu';
-import GroupMenu from './GroupMenu';
-import SortMenu from './SortMenu';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -197,16 +195,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </div>
         ) : (
           <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
-            <div className='hidden items-center space-x-2 lg:flex'>
-              <GroupMenu
-                className='dropdown-bottom dropdown-end'
-                buttonClassName='btn btn-ghost h-8 min-h-8 px-2 flex items-center'
-              />
-              <SortMenu
-                className='dropdown-bottom dropdown-end'
-                buttonClassName='btn btn-ghost h-8 min-h-8 px-2 flex items-center'
-              />
-            </div>
             <Dropdown
               label={_('View Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'

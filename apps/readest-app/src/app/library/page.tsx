@@ -70,8 +70,6 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import GroupHeader from './components/GroupHeader';
-import GroupMenu from './components/GroupMenu';
-import SortMenu from './components/SortMenu';
 import useShortcuts from '@/hooks/useShortcuts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
@@ -845,18 +843,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               );
             })}
           </div>
-        </div>
-      )}
-      {!isSelectMode && (
-        <div className='flex items-center gap-2 px-4 py-2 lg:hidden'>
-          <GroupMenu
-            className='dropdown-bottom dropdown-start'
-            buttonClassName='btn btn-sm btn-ghost bg-base-300/50 h-9 rounded-lg px-2'
-          />
-          <SortMenu
-            className='dropdown-bottom dropdown-start'
-            buttonClassName='btn btn-sm btn-ghost bg-base-300/50 h-9 rounded-lg px-2'
-          />
         </div>
       )}
       {currentSeriesAuthorGroup && (

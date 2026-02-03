@@ -64,7 +64,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
         isActive={searchConfig.scope === 'section'}
         onClick={() => updateConfig('scope', 'section')}
       />
-      <hr className='border-base-200 my-1' />
+      <hr aria-hidden='true' className='border-base-200 my-1' />
       <Option
         label={_('Match Case')}
         isActive={searchConfig.matchCase}

@@ -20,6 +20,7 @@ interface MenuItemProps {
   iconClassName?: string;
   children?: React.ReactNode;
   siblings?: React.ReactNode;
+  detailsOpen?: boolean;
   onClick?: () => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
@@ -39,6 +40,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   iconClassName,
   children,
   siblings,
+  detailsOpen = false,
   onClick,
   setIsDropdownOpen,
 }) => {
@@ -106,7 +108,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
       <ul className='menu rounded-box m-0 p-0' role='menuitem' tabIndex={-1}>
         <li aria-label={label}>
-          <details>
+          <details open={detailsOpen}>
             <summary
               className={clsx(
                 'hover:bg-base-300 text-base-content cursor-pointer rounded-md p-1 py-[10px] pr-3',
