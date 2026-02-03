@@ -12,7 +12,6 @@ export type XRayEntityType =
   | 'artifact'
   | 'term'
   | 'event'
-  | 'theme'
   | 'concept';
 
 export interface XRayEvidence {
@@ -24,6 +23,7 @@ export interface XRayEvidence {
   offsetEnd?: number;
   confidence?: number;
   inferred?: boolean;
+  extractedAt?: number;
 }
 
 export interface XRayFact {
@@ -43,6 +43,7 @@ export interface XRayEntity extends BoundedArtifact {
   lastSeenPage: number;
   facts: XRayFact[];
   embedding?: number[];
+  createdAt?: number;
 }
 
 export interface XRayRelationship extends BoundedArtifact {
@@ -57,6 +58,8 @@ export interface XRayRelationship extends BoundedArtifact {
   inferenceMethod?: 'triadic' | 'cooccurrence' | 'temporal' | 'llm';
   firstSeenPage: number;
   lastSeenPage: number;
+  strength?: number;
+  createdAt?: number;
 }
 
 export interface XRayTimelineEvent extends BoundedArtifact {
@@ -66,6 +69,10 @@ export interface XRayTimelineEvent extends BoundedArtifact {
   importance: number;
   involvedEntityIds: string[];
   evidence: XRayEvidence[];
+  arc?: string;
+  tone?: string;
+  emotions?: string[];
+  createdAt?: number;
 }
 
 export interface XRayClaim extends BoundedArtifact {
@@ -76,6 +83,7 @@ export interface XRayClaim extends BoundedArtifact {
   description: string;
   status?: 'TRUE' | 'FALSE' | 'SUSPECTED';
   evidence: XRayEvidence[];
+  createdAt?: number;
 }
 
 export interface XRayTextUnit {
@@ -86,6 +94,7 @@ export interface XRayTextUnit {
   text: string;
   entityIds?: string[];
   relationshipIds?: string[];
+  extractedAt?: number;
 }
 
 export interface XRayState {
@@ -94,9 +103,11 @@ export interface XRayState {
   lastUpdated: number;
   version: number;
   lastReadAt?: number;
-  lastRecapAt?: number;
-  lastRecapPage?: number;
-  lastRecapText?: string;
+  bookTitle?: string;
+  pendingFromPage?: number;
+  pendingToPage?: number;
+  lastProvider?: string;
+  lastError?: string;
 }
 
 export interface XRayAliasEntry {
@@ -106,6 +117,7 @@ export interface XRayAliasEntry {
   normalized: string;
   entityIds: string[];
   lastUpdated: number;
+  ambiguous?: boolean;
 }
 
 export interface XRayExtractionEvidence {
@@ -142,6 +154,7 @@ export interface XRayExtractionRelationship {
   inferred?: boolean;
   first_seen_page: number;
   last_seen_page: number;
+  strength?: number;
 }
 
 export interface XRayExtractionEvent {
@@ -150,6 +163,9 @@ export interface XRayExtractionEvent {
   importance: number;
   involved_entities: string[];
   evidence: XRayExtractionEvidence[];
+  arc?: string;
+  tone?: string;
+  emotions?: string[];
 }
 
 export interface XRayExtractionClaim {
@@ -184,6 +200,7 @@ export interface XRaySnapshot {
   claims: XRayClaim[];
   maxPageIncluded: number;
   lastUpdated: number;
+  state?: XRayState | null;
 }
 
 export interface XRayExtractionCacheEntry {

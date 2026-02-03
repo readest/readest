@@ -26,16 +26,7 @@ const factSchema = z.object({
 
 const entitySchema = z.object({
   name: z.string().min(1),
-  type: z.enum([
-    'character',
-    'location',
-    'organization',
-    'artifact',
-    'term',
-    'event',
-    'theme',
-    'concept',
-  ]),
+  type: z.enum(['character', 'location', 'organization', 'artifact', 'term', 'event', 'concept']),
   aliases: z.array(z.string()).optional().default([]),
   description: z.string().optional().default(''),
   first_seen_page: z.number().int().min(0).optional().default(0),
@@ -52,6 +43,7 @@ const relationshipSchema = z.object({
   inferred: z.boolean().optional(),
   first_seen_page: z.number().int().min(0).optional().default(0),
   last_seen_page: z.number().int().min(0).optional().default(0),
+  strength: z.number().optional(),
 });
 
 const eventSchema = z.object({
@@ -60,6 +52,9 @@ const eventSchema = z.object({
   importance: z.number().int().min(1).max(10).optional().default(5),
   involved_entities: z.array(z.string()).optional().default([]),
   evidence: z.array(evidenceSchema).optional().default([]),
+  arc: z.string().optional(),
+  tone: z.string().optional(),
+  emotions: z.array(z.string()).optional().default([]),
 });
 
 const claimSchema = z.object({
@@ -103,30 +98,90 @@ const toNumber = (value: unknown): number | null => {
   return null;
 };
 
-const normalizeEntityType = (value: unknown): XRayEntityType => {
+const normalizeStrings = (value: unknown): string[] => {
+  if (typeof value === 'string') {
+    return normalizeStrings(value.split(/[,;|]/g));
+  }
+  if (!Array.isArray(value)) return [];
+  const values = value.map((item) => toString(item).trim()).filter(Boolean);
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const entry of values) {
+    const key = entry.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(entry);
+  }
+  return output;
+};
+
+const evidenceCache = new WeakMap<
+  XRayTextUnit[],
+  {
+    maxPage: number;
+    units: XRayTextUnit[];
+    normalizedUnits: Array<{ unit: XRayTextUnit; normalized: string }>;
+    textMap: Map<string, string>;
+  }
+>();
+
+const normalizeEntityType = (value: unknown): XRayEntityType | null => {
   const raw = toString(value).trim().toLowerCase();
+  if (['theme', 'motif', 'mood', 'tone', 'emotion', 'feeling', 'sentiment'].includes(raw)) {
+    return null;
+  }
   const map: Record<string, XRayEntityType> = {
     person: 'character',
     people: 'character',
     character: 'character',
     protagonist: 'character',
     narrator: 'character',
+    antagonist: 'character',
+    villain: 'character',
+    hero: 'character',
     creature: 'character',
+    animal: 'character',
+    species: 'character',
     place: 'location',
     location: 'location',
     setting: 'location',
+    landmark: 'location',
+    realm: 'location',
     organization: 'organization',
     organisation: 'organization',
     group: 'organization',
     guild: 'organization',
+    faction: 'organization',
+    clan: 'organization',
+    house: 'organization',
+    family: 'organization',
+    institution: 'organization',
     artifact: 'artifact',
     item: 'artifact',
     object: 'artifact',
+    relic: 'artifact',
+    weapon: 'artifact',
+    device: 'artifact',
+    tool: 'artifact',
+    document: 'artifact',
+    text: 'artifact',
     term: 'term',
     concept: 'concept',
     idea: 'concept',
-    theme: 'theme',
+    topic: 'concept',
+    theory: 'concept',
+    principle: 'concept',
+    method: 'concept',
+    system: 'concept',
+    technology: 'concept',
     event: 'event',
+    plot: 'concept',
+    arc: 'concept',
+    storyline: 'concept',
+    building: 'location',
+    structure: 'location',
+    castle: 'location',
+    residence: 'location',
   };
   if (map[raw]) return map[raw];
   if (raw.startsWith('person')) return 'character';
@@ -135,9 +190,80 @@ const normalizeEntityType = (value: unknown): XRayEntityType => {
   if (raw.startsWith('org') || raw.startsWith('group')) return 'organization';
   if (raw.startsWith('artifact') || raw.startsWith('item')) return 'artifact';
   if (raw.startsWith('concept')) return 'concept';
-  if (raw.startsWith('theme')) return 'theme';
+  if (raw.startsWith('theme')) return null;
   if (raw.startsWith('event')) return 'event';
   return 'term';
+};
+
+const normalizeRelationshipType = (value: unknown): string => {
+  const raw = toString(value).trim().toLowerCase();
+  if (!raw) return 'related_to';
+  const normalized = raw.replace(/\s+/g, '_');
+  const map: Record<string, string> = {
+    ally: 'ally_of',
+    ally_of: 'ally_of',
+    allies: 'ally_of',
+    friend: 'friend_of',
+    friend_of: 'friend_of',
+    friendship: 'friend_of',
+    companion: 'friend_of',
+    colleague: 'colleague_of',
+    coworker: 'colleague_of',
+    enemy: 'enemy_of',
+    enemy_of: 'enemy_of',
+    rival: 'rival_of',
+    rival_of: 'rival_of',
+    sibling: 'sibling_of',
+    sibling_of: 'sibling_of',
+    brother: 'sibling_of',
+    sister: 'sibling_of',
+    parent: 'parent_of',
+    parent_of: 'parent_of',
+    child: 'child_of',
+    child_of: 'child_of',
+    spouse: 'spouse_of',
+    spouse_of: 'spouse_of',
+    partner: 'partner_of',
+    partner_of: 'partner_of',
+    lover: 'romantic_of',
+    lovers: 'romantic_of',
+    romantic: 'romantic_of',
+    love_interest: 'romantic_of',
+    married: 'spouse_of',
+    mentor: 'mentor_of',
+    mentor_of: 'mentor_of',
+    student_of: 'student_of',
+    teacher_of: 'teacher_of',
+    employer_of: 'employer_of',
+    employed_by: 'employed_by',
+    boss_of: 'employer_of',
+    reports_to: 'employed_by',
+    member_of: 'member_of',
+    leader_of: 'leader_of',
+    founder_of: 'founder_of',
+    founded_by: 'founded_by',
+    owns: 'owns',
+    owned_by: 'owned_by',
+    created_by: 'created_by',
+    creator_of: 'creator_of',
+    located_in: 'located_in',
+    part_of: 'part_of',
+    related: 'related_to',
+    related_to: 'related_to',
+    guardian_of: 'guardian_of',
+    protected_by: 'protected_by',
+  };
+  if (map[normalized]) return map[normalized];
+  if (normalized.includes('friend')) return 'friend_of';
+  if (normalized.includes('enemy')) return 'enemy_of';
+  if (normalized.includes('ally')) return 'ally_of';
+  if (normalized.includes('mentor')) return 'mentor_of';
+  if (normalized.includes('parent')) return 'parent_of';
+  if (normalized.includes('child')) return 'child_of';
+  if (normalized.includes('sibling')) return 'sibling_of';
+  if (normalized.includes('spouse')) return 'spouse_of';
+  if (normalized.includes('member')) return 'member_of';
+  return normalized;
 };
 
 const normalizeEvidenceItem = (item: Record<string, unknown>): XRayExtractionEvidence | null => {
@@ -146,8 +272,8 @@ const normalizeEvidenceItem = (item: Record<string, unknown>): XRayExtractionEvi
   const page = toNumber(
     getValue(item, 'page') ?? getValue(item, 'pageNumber') ?? getValue(item, 'page_number'),
   );
-  if (!quote || !chunkId || page === null) return null;
-  const evidence: XRayExtractionEvidence = { quote, page, chunkId };
+  if (!quote || page === null) return null;
+  const evidence: XRayExtractionEvidence = { quote, page, chunkId: chunkId || 'unknown' };
   if (typeof getValue(item, 'confidence') === 'number')
     evidence.confidence = getValue(item, 'confidence') as number;
   if (typeof getValue(item, 'inferred') === 'boolean')
@@ -213,17 +339,19 @@ const normalizeFacts = (item: Record<string, unknown>): XRayExtractionFact[] => 
 
 const normalizeEntities = (input: unknown): XRayExtractionV1['entities'] => {
   if (!Array.isArray(input)) return [];
-  return input
+  const entities = input
     .filter(isRecord)
     .map((entity) => {
       const name = toString(
         getValue(entity, 'name') || getValue(entity, 'title') || getValue(entity, 'entity'),
       );
+      const type = normalizeEntityType(getValue(entity, 'type'));
+      if (!type) return null;
       const evidence = normalizeEvidence(getValue(entity, 'evidence'), entity);
       const pageFallback = evidence[0]?.page ?? toNumber(getValue(entity, 'page')) ?? 0;
       return {
         name,
-        type: normalizeEntityType(getValue(entity, 'type')),
+        type,
         aliases: Array.isArray(getValue(entity, 'aliases'))
           ? (getValue(entity, 'aliases') as unknown[])
               .map((alias) => toString(alias))
@@ -243,7 +371,8 @@ const normalizeEntities = (input: unknown): XRayExtractionV1['entities'] => {
         facts: normalizeFacts({ ...entity, evidence }),
       };
     })
-    .filter((entity) => entity.name.length > 0);
+    .filter((entity) => Boolean(entity && entity.name.length > 0));
+  return entities as XRayExtractionV1['entities'];
 };
 
 const normalizeRelationships = (input: unknown): XRayExtractionV1['relationships'] => {
@@ -258,18 +387,18 @@ const normalizeRelationships = (input: unknown): XRayExtractionV1['relationships
           getValue(rel, 'source') || getValue(rel, 'from') || getValue(rel, 'subject'),
         ),
         target: toString(getValue(rel, 'target') || getValue(rel, 'to') || getValue(rel, 'object')),
-        type:
-          toString(
-            getValue(rel, 'type') ||
-              getValue(rel, 'relationship') ||
-              getValue(rel, 'relation') ||
-              'related_to',
-          ) || 'related_to',
+        type: normalizeRelationshipType(
+          getValue(rel, 'type') ||
+            getValue(rel, 'relationship') ||
+            getValue(rel, 'relation') ||
+            'related_to',
+        ),
         description: toString(getValue(rel, 'description')),
         evidence,
         inferred: getValue(rel, 'inferred') === true,
         first_seen_page: toNumber(getValue(rel, 'first_seen_page') ?? pageFallback) ?? 0,
         last_seen_page: toNumber(getValue(rel, 'last_seen_page') ?? pageFallback) ?? 0,
+        strength: toNumber(getValue(rel, 'strength')) ?? undefined,
       };
     })
     .filter((rel) => rel.source.length > 0 && rel.target.length > 0 && rel.type.length > 0);
@@ -294,6 +423,13 @@ const normalizeEvents = (input: unknown): XRayExtractionV1['events'] => {
               .filter(Boolean)
           : [],
         evidence,
+        arc: (() => {
+          const raw = toString(getValue(event, 'arc')).trim();
+          if (!raw) return undefined;
+          return raw.toLowerCase().replace(/\s+/g, '_');
+        })(),
+        tone: toString(getValue(event, 'tone')) || undefined,
+        emotions: normalizeStrings(getValue(event, 'emotions')),
       };
     })
     .filter((event) => event.summary.length > 0);
@@ -446,16 +582,71 @@ export const filterEvidence = (
   maxPageIncluded: number,
 ): XRayEvidence[] => {
   if (evidence.length === 0) return [];
-  const textMap = new Map(textUnits.map((unit) => [unit.chunkId, unit.text]));
-  return evidence.filter((item) => {
-    if (item.page > maxPageIncluded) return false;
-    const text = textMap.get(item.chunkId);
-    if (!text) return false;
+  let cached = evidenceCache.get(textUnits);
+  if (!cached || cached.maxPage !== maxPageIncluded) {
+    const units = textUnits.filter((unit) => unit.page <= maxPageIncluded);
+    const normalizedUnits = units.map((unit) => ({
+      unit,
+      normalized: normalizeText(unit.text),
+    }));
+    const textMap = new Map(units.map((unit) => [unit.chunkId, unit.text]));
+    cached = { maxPage: maxPageIncluded, units, normalizedUnits, textMap };
+    evidenceCache.set(textUnits, cached);
+  }
+
+  const { normalizedUnits, textMap } = cached;
+
+  const findMatch = (item: XRayEvidence): XRayEvidence | null => {
+    if (item.page > maxPageIncluded) return null;
     const normalizedQuote = normalizeText(item.quote);
-    if (!normalizedQuote) return false;
-    const normalizedText = normalizeText(text);
-    return normalizedText.includes(normalizedQuote);
-  });
+    if (!normalizedQuote) return null;
+    const directText = textMap.get(item.chunkId);
+    if (directText) {
+      const normalizedText = normalizeText(directText);
+      if (normalizedText.includes(normalizedQuote)) return item;
+    }
+
+    if (normalizedQuote.length < 12) {
+      for (let i = 0; i < normalizedUnits.length; i += 1) {
+        const { unit, normalized } = normalizedUnits[i]!;
+        if (normalized.includes(normalizedQuote)) {
+          return { ...item, chunkId: unit.chunkId, page: unit.page };
+        }
+      }
+      return null;
+    }
+    const quoteTokens = normalizedQuote.split(' ').filter(Boolean);
+    const allowFuzzy = normalizedQuote.length >= 24 && quoteTokens.length >= 4;
+
+    for (let i = 0; i < normalizedUnits.length; i += 1) {
+      const { unit, normalized } = normalizedUnits[i]!;
+      if (normalized.includes(normalizedQuote)) {
+        return { ...item, chunkId: unit.chunkId, page: unit.page };
+      }
+      if (allowFuzzy) {
+        const matches = quoteTokens.filter((token) => normalized.includes(token)).length;
+        if (matches / quoteTokens.length >= 0.7) {
+          return { ...item, chunkId: unit.chunkId, page: unit.page };
+        }
+      }
+      const next = normalizedUnits[i + 1];
+      if (next && next.unit.page === unit.page) {
+        const combined = `${normalized} ${next.normalized}`.trim();
+        if (combined.includes(normalizedQuote)) {
+          return { ...item, chunkId: unit.chunkId, page: unit.page };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const matches: XRayEvidence[] = [];
+  for (const item of evidence) {
+    const match = findMatch(item);
+    if (match) matches.push(match);
+  }
+  return matches;
 };
 
 export const hasEvidence = (
