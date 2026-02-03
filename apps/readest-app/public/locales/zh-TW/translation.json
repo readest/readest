@@ -997,5 +997,8 @@
   "Speed Reading Mode": "快讀模式",
   "Scroll left": "向左捲動",
   "Scroll right": "向右捲動",
-  "Library Sync Progress": "資料庫同步進度"
+  "Library Sync Progress": "資料庫同步進度",
+  "Back to library": "返回書庫",
+  "Manual": "手動",
+  "Group by...": "分組方式..."
 }

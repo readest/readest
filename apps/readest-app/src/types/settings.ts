@@ -8,15 +8,28 @@ import type { NotebookTab } from '@/store/notebookStore';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
-export type LibrarySortByType =
-  | 'title'
-  | 'author'
-  | 'updated'
-  | 'created'
-  | 'size'
-  | 'format'
-  | 'published';
+export const LibrarySortByType = {
+  Title: 'title',
+  Author: 'author',
+  Updated: 'updated',
+  Created: 'created',
+  Size: 'size',
+  Format: 'format',
+  Published: 'published',
+} as const;
+
+export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibrarySortByType];
+
 export type LibraryCoverFitType = 'crop' | 'fit';
+
+export const LibraryGroupByType = {
+  None: 'none',
+  Manual: 'manual',
+  Series: 'series',
+  Author: 'author',
+} as const;
+
+export type LibraryGroupByType = (typeof LibraryGroupByType)[keyof typeof LibraryGroupByType];
 
 export type KOSyncChecksumMethod = 'binary' | 'filename';
 export type KOSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive';
@@ -75,6 +88,7 @@ export interface SystemSettings {
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
+  libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;

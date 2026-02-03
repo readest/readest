@@ -997,5 +997,8 @@
   "Speed Reading Mode": "速読モード",
   "Scroll left": "左にスクロール",
   "Scroll right": "右にスクロール",
-  "Library Sync Progress": "ライブラリ同期の進捗"
+  "Library Sync Progress": "ライブラリ同期の進捗",
+  "Back to library": "ライブラリに戻る",
+  "Manual": "手動",
+  "Group by...": "グループ化..."
 }

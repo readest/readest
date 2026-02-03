@@ -1009,5 +1009,8 @@
   "Speed Reading Mode": "Snabbläsningsläge",
   "Scroll left": "Scrolla åt vänster",
   "Scroll right": "Scrolla åt höger",
-  "Library Sync Progress": "Synkroniseringsframsteg för bibliotek"
+  "Library Sync Progress": "Synkroniseringsframsteg för bibliotek",
+  "Back to library": "Tillbaka till biblioteket",
+  "Manual": "Manuellt",
+  "Group by...": "Gruppera efter..."
 }

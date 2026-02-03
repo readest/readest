@@ -1033,5 +1033,8 @@
   "Speed Reading Mode": "Режим быстрого чтения",
   "Scroll left": "Прокрутить влево",
   "Scroll right": "Прокрутить вправо",
-  "Library Sync Progress": "Прогресс синхронизации библиотеки"
+  "Library Sync Progress": "Прогресс синхронизации библиотеки",
+  "Back to library": "Назад в библиотеку",
+  "Manual": "Вручную",
+  "Group by...": "Группировать по..."
 }

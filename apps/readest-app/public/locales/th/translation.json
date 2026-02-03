@@ -997,5 +997,8 @@
   "Speed Reading Mode": "โหมดการอ่านเร็ว",
   "Scroll left": "เลื่อนไปทางซ้าย",
   "Scroll right": "เลื่อนไปทางขวา",
-  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด"
+  "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด",
+  "Back to library": "กลับไปที่ห้องสมุด",
+  "Manual": "ทำเอง",
+  "Group by...": "จัดกลุ่มตาม..."
 }

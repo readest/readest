@@ -15,7 +15,13 @@ import {
   ViewConfig,
   ViewSettings,
 } from '@/types/book';
-import { KOSyncSettings, ReadSettings, SystemSettings } from '@/types/settings';
+import {
+  KOSyncSettings,
+  LibraryGroupByType,
+  LibrarySortByType,
+  ReadSettings,
+  SystemSettings,
+} from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -75,8 +81,9 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   telemetryEnabled: true,
   discordRichPresenceEnabled: false,
   libraryViewMode: 'grid',
-  librarySortBy: 'updated',
+  librarySortBy: LibrarySortByType.Updated,
   librarySortAscending: false,
+  libraryGroupBy: LibraryGroupByType.Manual,
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,
