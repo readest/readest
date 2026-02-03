@@ -2,8 +2,8 @@ import clsx from 'clsx';
 import React from 'react';
 import { IconType } from 'react-icons';
 import { MdCheck } from 'react-icons/md';
-import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import RovingTabIndexButton from '@/components/RovingTabIndexButton';
 
 interface MenuItemProps {
   label: string;
@@ -42,7 +42,6 @@ const MenuItem: React.FC<MenuItemProps> = ({
   onClick,
   setIsDropdownOpen,
 }) => {
-  const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
   const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
 
@@ -126,13 +125,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   return (
     <div className='flex'>
-      <button
-        role={disabled ? 'none' : 'menuitem'}
-        aria-label={
-          toggled !== undefined ? `${label} - ${toggled ? _('ON') : _('OFF')}` : undefined
-        }
-        aria-live={toggled === undefined ? 'polite' : 'off'}
-        tabIndex={disabled ? -1 : 0}
+      <RovingTabIndexButton
+        role={toggled !== undefined ? 'menuitemcheckbox' : 'menuitem'}
+        aria-checked={toggled !== undefined ? toggled : undefined}
         className={clsx(
           'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
           disabled && 'btn-disabled text-gray-400',
@@ -143,7 +138,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         disabled={disabled}
       >
         {buttonContent}
-      </button>
+      </RovingTabIndexButton>
       {siblings}
     </div>
   );

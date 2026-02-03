@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -8,6 +8,7 @@ import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { SettingsPanelType } from './SettingsDialog';
 import MenuItem from '@/components/MenuItem';
+import { RovingTabindexProvider } from 'react-roving-tabindex-2';
 
 interface DialogMenuProps {
   activePanel: SettingsPanelType;
@@ -22,6 +23,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
   onReset,
   resetLabel,
 }) => {
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const iconSize = useResponsiveSize(16);
@@ -53,27 +55,49 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
     setIsDropdownOpen?.(false);
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      if (menuRef.current) {
+        const firstItem = menuRef.current.querySelector(
+          '[role="menuitem"], [role="menuitemcheckbox"]',
+        );
+        if (firstItem) {
+          (firstItem as HTMLElement).focus();
+        }
+      }
+    }, 200);
+  }, []);
+
   return (
     <div
+      ref={menuRef}
+      role='menu'
+      aria-label={_('Settings Menu')}
       className={clsx(
         'dropdown-content dropdown-right no-triangle border-base-200 z-20 mt-1 border shadow-2xl',
         'text-base sm:text-sm',
       )}
     >
-      <MenuItem
-        label={_('Global Settings')}
-        tooltip={isSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
-        buttonClass='lg:tooltip'
-        Icon={isSettingsGlobal ? <MdCheck size={iconSize} className='text-base-content' /> : null}
-        onClick={handleToggleGlobal}
-      />
-      <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
-      {activePanel === 'Font' && (
-        <>
-          <MenuItem label={_('Clear Custom Fonts')} onClick={handleClearCustomFont} />
-          <MenuItem label={_('Manage Custom Fonts')} onClick={handleManageCustomFont} />
-        </>
-      )}
+      <RovingTabindexProvider
+        wrapperElementRef={menuRef}
+        classNameOfTargetElements='roving-tabindex'
+        direction='vertical' // Optional
+      >
+        <MenuItem
+          label={_('Global Settings')}
+          tooltip={isSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
+          buttonClass='lg:tooltip'
+          Icon={isSettingsGlobal ? <MdCheck size={iconSize} className='text-base-content' /> : null}
+          onClick={handleToggleGlobal}
+        />
+        <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
+        {activePanel === 'Font' && (
+          <>
+            <MenuItem label={_('Clear Custom Fonts')} onClick={handleClearCustomFont} />
+            <MenuItem label={_('Manage Custom Fonts')} onClick={handleManageCustomFont} />
+          </>
+        )}
+      </RovingTabindexProvider>
     </div>
   );
 };

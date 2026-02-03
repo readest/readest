@@ -22,6 +22,7 @@ import {
 import BookCover from '@/components/BookCover';
 import Dropdown from '../Dropdown';
 import MenuItem from '../MenuItem';
+import Menu from '../Menu';
 
 interface BookDetailViewProps {
   book: Book;
@@ -82,11 +83,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
                 toggleButton={<MdOutlineDelete className='fill-red-500' />}
               >
-                <div
+                <Menu
                   className={clsx(
                     'delete-menu dropdown-content dropdown-center no-triangle',
                     'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
+                  label={_('Delete Book Options')}
                 >
                   <MenuItem
                     noIcon
@@ -108,7 +110,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     onClick={onDeleteLocalCopy}
                     disabled={!book.downloadedAt}
                   />
-                </div>
+                </Menu>
               </Dropdown>
             )}
             {book.uploadedAt && onDownload && (

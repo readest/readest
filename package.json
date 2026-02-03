@@ -34,7 +34,8 @@
     },
     "patchedDependencies": {
       "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",
-      "@ai-sdk/provider-utils@4.0.8": "patches/@ai-sdk__provider-utils@4.0.8.patch"
+      "@ai-sdk/provider-utils@4.0.8": "patches/@ai-sdk__provider-utils@4.0.8.patch",
+      "react-roving-tabindex-2": "patches/react-roving-tabindex-2.patch"
     }
   }
 }

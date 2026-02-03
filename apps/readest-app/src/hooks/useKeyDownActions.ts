@@ -32,11 +32,12 @@ export const useKeyDownActions = ({
         }
       } else {
         if (event.key === 'Escape') {
+          event.stopPropagation();
           onCancel?.();
         } else if (event.key === 'Enter') {
+          event.stopPropagation();
           onConfirm?.();
         }
-        event.stopPropagation();
       }
       return false;
     };

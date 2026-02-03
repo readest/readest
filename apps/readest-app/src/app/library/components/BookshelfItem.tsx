@@ -1,6 +1,7 @@
 import clsx from 'clsx';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useRovingTabindex } from 'react-roving-tabindex-2';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -380,6 +381,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e!.target as HTMLElement)!.nodeName === 'BUTTON') return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleOpenItem();
@@ -390,10 +392,15 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
   };
 
+  const ref = useRef(null);
+  const rovingTabindex = useRovingTabindex(ref);
+
   return (
     <div className={clsx(mode === 'list' && 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
       <div
+        ref={ref}
         className={clsx(
+          rovingTabindex.className,
           'visible-focus-inset-2 group',
           mode === 'grid' &&
             'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-2 sm:px-4 sm:py-4',
@@ -401,13 +408,18 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'not-eink:scale-95' : 'scale-100',
         )}
-        role='button'
-        tabIndex={0}
+        role={mode === 'grid' ? 'gridcell' : 'option'}
+        aria-selected={isSelectMode ? itemSelected : undefined}
+        tabIndex={rovingTabindex.tabIndex}
         aria-label={'format' in item ? item.title : item.name}
         style={{
           transition: 'transform 0.2s',
         }}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(event: React.KeyboardEvent) => {
+          handleKeyDown(event);
+          rovingTabindex.onKeydown(event);
+        }}
+        onFocus={rovingTabindex.setAsActiveElement}
         {...handlers}
       >
         <div className='flex h-full flex-col justify-end'>
@@ -422,6 +434,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               handleBookUpload={handleBookUpload}
               handleBookDownload={handleBookDownload}
               showBookDetailsModal={showBookDetailsModal}
+              controlTabIndex={rovingTabindex.tabIndex}
             />
           ) : (
             <GroupItem
@@ -429,6 +442,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               group={item}
               isSelectMode={isSelectMode}
               groupSelected={itemSelected}
+              controlTabIndex={rovingTabindex.tabIndex}
             />
           )}
         </div>

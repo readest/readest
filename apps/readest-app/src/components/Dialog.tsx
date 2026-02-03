@@ -61,9 +61,9 @@ const Dialog: React.FC<DialogProps> = ({
       }
     } else {
       if (event.key === 'Escape') {
+        event.stopPropagation();
         onClose();
       }
-      event.stopPropagation();
     }
     return false;
   };

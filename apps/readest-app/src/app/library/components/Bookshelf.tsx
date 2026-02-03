@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
+import { RovingTabindexProvider } from 'react-roving-tabindex-2';
 import { Book, ReadingStatus } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
@@ -316,7 +317,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const selectedBooks = getSelectedBooks();
 
   return (
-    <div className='bookshelf'>
+    <div className='bookshelf' role='main'>
       <div
         ref={autofocusRef}
         tabIndex={-1}
@@ -332,60 +333,67 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               ? `repeat(${settings.libraryColumns}, minmax(0, 1fr))`
               : undefined,
         }}
-        role='main'
+        role={viewMode === 'grid' ? 'grid' : 'listbox'}
+        aria-multiselectable={isSelectMode}
         aria-label={_('Bookshelf')}
       >
-        {sortedBookshelfItems.map((item) => (
-          <BookshelfItem
-            key={`library-item-${'hash' in item ? item.hash : item.id}`}
-            item={item}
-            mode={viewMode as LibraryViewModeType}
-            coverFit={coverFit as LibraryCoverFitType}
-            isSelectMode={isSelectMode}
-            itemSelected={
-              'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id)
-            }
-            setLoading={setLoading}
-            toggleSelection={toggleSelection}
-            handleGroupBooks={groupSelectedBooks}
-            handleBookUpload={handleBookUpload}
-            handleBookDownload={handleBookDownload}
-            handleBookDelete={handleBookDelete}
-            handleSetSelectMode={handleSetSelectMode}
-            handleShowDetailsBook={handleShowDetailsBook}
-            handleUpdateReadingStatus={handleUpdateReadingStatus}
-            transferProgress={
-              'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
-            }
-          />
-        ))}
-        {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
-          <div
-            className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}
-            style={
-              coverFit === 'fit' && viewMode === 'grid'
-                ? {
-                    display: 'flex',
-                    paddingBottom: `${iconSize15 + 24}px`,
-                  }
-                : undefined
-            }
-          >
-            <button
-              aria-label={_('Import Books')}
-              className={clsx(
-                'bookitem-main bg-base-100 hover:bg-base-300/50',
-                'flex items-center justify-center',
-                'aspect-[28/41] w-full',
-              )}
-              onClick={handleImportBooks}
+        <RovingTabindexProvider
+          wrapperElementRef={autofocusRef}
+          classNameOfTargetElements='book-shelf-roving-tabindex'
+          direction={viewMode === 'grid' ? 'both' : 'vertical'}
+        >
+          {sortedBookshelfItems.map((item) => (
+            <BookshelfItem
+              key={`library-item-${'hash' in item ? item.hash : item.id}`}
+              item={item}
+              mode={viewMode as LibraryViewModeType}
+              coverFit={coverFit as LibraryCoverFitType}
+              isSelectMode={isSelectMode}
+              itemSelected={
+                'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id)
+              }
+              setLoading={setLoading}
+              toggleSelection={toggleSelection}
+              handleGroupBooks={groupSelectedBooks}
+              handleBookUpload={handleBookUpload}
+              handleBookDownload={handleBookDownload}
+              handleBookDelete={handleBookDelete}
+              handleSetSelectMode={handleSetSelectMode}
+              handleShowDetailsBook={handleShowDetailsBook}
+              handleUpdateReadingStatus={handleUpdateReadingStatus}
+              transferProgress={
+                'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
+              }
+            />
+          ))}
+          {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
+            <div
+              className={clsx('mx-0 my-2 sm:mx-4 sm:my-4')}
+              style={
+                coverFit === 'fit' && viewMode === 'grid'
+                  ? {
+                      display: 'flex',
+                      paddingBottom: `${iconSize15 + 24}px`,
+                    }
+                  : undefined
+              }
             >
-              <div className='flex items-center justify-center'>
-                <PiPlus className='size-10' color='gray' />
-              </div>
-            </button>
-          </div>
-        )}
+              <button
+                aria-label={_('Import Books')}
+                className={clsx(
+                  'bookitem-main bg-base-100 hover:bg-base-300/50',
+                  'flex items-center justify-center',
+                  'aspect-[28/41] w-full',
+                )}
+                onClick={handleImportBooks}
+              >
+                <div className='flex items-center justify-center'>
+                  <PiPlus className='size-10' color='gray' />
+                </div>
+              </button>
+            </div>
+          )}
+        </RovingTabindexProvider>
       </div>
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>

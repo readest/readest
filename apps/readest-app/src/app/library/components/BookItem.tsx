@@ -29,6 +29,7 @@ interface BookItemProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
+  controlTabIndex: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -41,6 +42,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
+  controlTabIndex = 0,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -133,6 +135,7 @@ const BookItem: React.FC<BookItemProps> = ({
               <button
                 aria-label={_('Show Book Details')}
                 className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
+                tabIndex={controlTabIndex}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   showBookDetailsModal(book);
@@ -161,6 +164,16 @@ const BookItem: React.FC<BookItemProps> = ({
               (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
                 <button
                   className='show-cloud-button -m-2 p-2'
+                  tabIndex={controlTabIndex}
+                  aria-label={
+                    !user
+                      ? _('Login')
+                      : !book.uploadedAt
+                        ? _('Upload')
+                        : !book.downloadedAt
+                          ? _('Download')
+                          : undefined
+                  }
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => {
                     if (!user) {

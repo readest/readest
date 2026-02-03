@@ -236,6 +236,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
       onCancel={() => setIsDropdownOpen?.(false)}
+      label={_('Settings Menu')}
     >
       {user ? (
         <MenuItem
