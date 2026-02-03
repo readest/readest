@@ -43,6 +43,13 @@ const formatDuration = (seconds: number): string => {
   return `${minutes}m`;
 };
 
+// Parse YYYY-MM-DD string as LOCAL date (not UTC)
+// new Date('2026-02-03') parses as UTC, causing timezone issues
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year!, month! - 1, day);
+};
+
 const generateCalendarData = (
   year: number,
   dailySummaries: Record<string, DailyReadingSummary>,
@@ -102,7 +109,7 @@ const getMonthLabels = (weeks: DayCell[][]): { label: string; index: number }[] 
     const dayInYear = week.find((d) => d.isCurrentMonth);
     if (!dayInYear) return;
 
-    const date = new Date(dayInYear.date);
+    const date = parseDateString(dayInYear.date);
     const month = date.getMonth();
 
     if (month !== lastMonth && dayInYear.dayOfMonth <= 7) {

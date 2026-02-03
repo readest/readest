@@ -17,6 +17,13 @@ const getDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Parse YYYY-MM-DD string as LOCAL date (not UTC)
+// new Date('2026-02-03') parses as UTC, causing timezone issues
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year!, month! - 1, day);
+};
+
 const StreakDisplay: React.FC<StreakDisplayProps> = ({
   currentStreak,
   longestStreak,
@@ -88,7 +95,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
       {/* Mini streak calendar */}
       <div className='mt-4 flex justify-center gap-2'>
         {last7Days.map((date, i) => {
-          const dayDate = new Date(date);
+          const dayDate = parseDateString(date);
           const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
           const isInStreak =
             hasActiveStreak &&
