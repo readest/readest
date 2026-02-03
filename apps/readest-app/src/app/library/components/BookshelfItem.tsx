@@ -381,7 +381,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.target.nodeName === 'BUTTON') return;
+    if ((e!.target as HTMLElement)!.nodeName === 'BUTTON') return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleOpenItem();

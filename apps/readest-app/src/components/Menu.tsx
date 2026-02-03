@@ -8,7 +8,7 @@ interface MenuProps {
   className?: string;
   style?: React.CSSProperties;
   onCancel?: () => void;
-  label: string;
+  label?: string;
 }
 
 const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel, label }) => {
