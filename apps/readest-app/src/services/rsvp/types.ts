@@ -4,6 +4,7 @@ export interface RsvpWord {
   pauseMultiplier: number;
   range?: Range;
   docIndex?: number;
+  docWordIndex?: number; // Index of this word within its document (for position recovery)
 }
 
 export interface RsvpState {
@@ -29,6 +30,8 @@ export interface RsvpStopPosition {
   text: string;
   range?: Range;
   docIndex?: number;
+  docWordIndex?: number; // Index within the specific document (for position recovery)
+  docTotalWords?: number; // Total words in the specific document
 }
 
 export interface RsvpStartChoice {

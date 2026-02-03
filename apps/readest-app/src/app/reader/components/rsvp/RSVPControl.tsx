@@ -16,6 +16,109 @@ interface RSVPControlProps {
   bookKey: string;
 }
 
+// Helper to find a word in document and create a fresh Range
+const findWordInDocument = (
+  doc: Document,
+  wordText: string,
+  docWordIndex: number | undefined,
+  docTotalWords: number | undefined,
+): Range | null => {
+  // Walk through text nodes to find the word (same logic as RSVPController.extractWordsFromElement)
+  const excludeTags = new Set(['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'ASIDE']);
+  const allWords: { text: string; node: Text; start: number }[] = [];
+
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || '';
+      const nodeWords = text.split(/(\s+)/).filter((w) => w.trim().length > 0);
+
+      let offset = 0;
+      for (const word of nodeWords) {
+        const wordStart = text.indexOf(word, offset);
+        if (wordStart === -1) continue;
+        allWords.push({ text: word, node: node as Text, start: wordStart });
+        offset = wordStart + word.length;
+      }
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const el = node as HTMLElement;
+    const tagName = el.tagName?.toUpperCase();
+    if (excludeTags.has(tagName)) return;
+
+    try {
+      const style = el.ownerDocument.defaultView?.getComputedStyle(el);
+      if (style?.display === 'none' || style?.visibility === 'hidden') return;
+    } catch {
+      // Ignore style check errors
+    }
+
+    for (const child of Array.from(el.childNodes)) {
+      walk(child);
+    }
+  };
+
+  walk(doc.body);
+
+  if (allWords.length === 0) return null;
+
+  // Use the per-document word index if available
+  let targetIndex: number;
+  if (docWordIndex !== undefined && docTotalWords !== undefined && docTotalWords > 0) {
+    // Direct index - docWordIndex is the exact position in the document's word list
+    targetIndex = docWordIndex;
+  } else if (docWordIndex !== undefined) {
+    // Fallback: use docWordIndex directly
+    targetIndex = docWordIndex;
+  } else {
+    // Last resort: start from beginning
+    targetIndex = 0;
+  }
+
+  // Search in a window around the expected position
+  const searchRadius = Math.max(50, Math.floor(allWords.length * 0.05));
+  const startSearch = Math.max(0, targetIndex - searchRadius);
+  const endSearch = Math.min(allWords.length, targetIndex + searchRadius);
+
+  // First, try exact match near expected position
+  for (let i = startSearch; i < endSearch; i++) {
+    const w = allWords[i];
+    if (w && w.text === wordText) {
+      try {
+        const range = doc.createRange();
+        range.setStart(w.node, w.start);
+        range.setEnd(w.node, w.start + w.text.length);
+        return range;
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  // If no exact match, try partial match (word might have different punctuation)
+  const cleanTarget = wordText.replace(/[^\w]/g, '').toLowerCase();
+  for (let i = startSearch; i < endSearch; i++) {
+    const w = allWords[i];
+    if (w) {
+      const cleanWord = w.text.replace(/[^\w]/g, '').toLowerCase();
+      if (cleanWord === cleanTarget) {
+        try {
+          const range = doc.createRange();
+          range.setStart(w.node, w.start);
+          range.setEnd(w.node, w.start + w.text.length);
+          return range;
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
 // Helper to expand a range to include the full sentence
 const expandRangeToSentence = (range: Range, doc: Document): Range => {
   const sentenceRange = doc.createRange();
@@ -266,19 +369,55 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
       const handleRsvpStop = (e: Event) => {
         const stopPosition = (e as CustomEvent<RsvpStopPosition | null>).detail;
 
-        if (stopPosition?.range && typeof stopPosition.docIndex === 'number') {
+        if (stopPosition && typeof stopPosition.docIndex === 'number' && stopPosition.text) {
           try {
             // Get the document from the renderer
             const contents = view.renderer.getContents?.();
             const content = contents?.find((c) => c.index === stopPosition.docIndex);
             const doc = content?.doc;
 
-            if (doc && stopPosition.range) {
+            if (doc) {
+              // Try to get a fresh Range from the current document state
+              // This is important because the original Range may be stale if the document was re-rendered
+              let wordRange = stopPosition.range;
+
+              // Check if the original range is still valid by verifying the text matches
+              let rangeIsValid = false;
+              if (wordRange) {
+                try {
+                  const rangeText = wordRange.toString();
+                  rangeIsValid = rangeText === stopPosition.text;
+                } catch {
+                  rangeIsValid = false;
+                }
+              }
+
+              // If range is invalid or missing, try to find the word in the current document
+              if (!rangeIsValid) {
+                console.log('[RSVP] Original range invalid, finding word in current document');
+                const freshRange = findWordInDocument(
+                  doc,
+                  stopPosition.text,
+                  stopPosition.docWordIndex,
+                  stopPosition.docTotalWords,
+                );
+                if (freshRange) {
+                  wordRange = freshRange;
+                } else {
+                  console.warn('[RSVP] Could not find word in document:', stopPosition.text);
+                }
+              }
+
+              if (!wordRange) {
+                console.warn('[RSVP] No valid range available for position sync');
+                return;
+              }
+
               // Expand the range to include the full sentence
-              const sentenceRange = expandRangeToSentence(stopPosition.range, doc);
+              const sentenceRange = expandRangeToSentence(wordRange, doc);
 
               // Get CFI for navigation - MUST get this BEFORE navigating
-              const cfi = view.getCFI(stopPosition.docIndex, stopPosition.range);
+              const cfi = view.getCFI(stopPosition.docIndex, wordRange);
 
               // Get CFI for the sentence highlight - MUST get this BEFORE navigating
               // because goTo() may re-render the document, invalidating the Range objects

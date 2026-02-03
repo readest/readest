@@ -265,16 +265,24 @@ export class RSVPController extends EventTarget {
   stop(): void {
     this.savePositionToStorage();
 
-    const stopPosition: RsvpStopPosition | null =
-      this.state.words.length > 0
-        ? {
-            wordIndex: this.state.currentIndex,
-            totalWords: this.state.words.length,
-            text: this.state.words[this.state.currentIndex]?.text || '',
-            range: this.state.words[this.state.currentIndex]?.range,
-            docIndex: this.state.words[this.state.currentIndex]?.docIndex,
-          }
-        : null;
+    let stopPosition: RsvpStopPosition | null = null;
+    if (this.state.words.length > 0) {
+      const currentWord = this.state.words[this.state.currentIndex];
+      const currentDocIndex = currentWord?.docIndex;
+
+      // Count total words in the same document for accurate position recovery
+      const docTotalWords = this.state.words.filter((w) => w.docIndex === currentDocIndex).length;
+
+      stopPosition = {
+        wordIndex: this.state.currentIndex,
+        totalWords: this.state.words.length,
+        text: currentWord?.text || '',
+        range: currentWord?.range,
+        docIndex: currentDocIndex,
+        docWordIndex: currentWord?.docWordIndex,
+        docTotalWords,
+      };
+    }
 
     this.dispatchEvent(new CustomEvent('rsvp-stop', { detail: stopPosition }));
 
@@ -570,6 +578,10 @@ export class RSVPController extends EventTarget {
       if (!doc?.body) continue;
 
       const words = this.extractWordsFromElement(doc.body, doc, docIndex);
+      // Assign per-document word index for position recovery
+      words.forEach((word, idx) => {
+        word.docWordIndex = idx;
+      });
       allWords.push(...words);
     }
 
