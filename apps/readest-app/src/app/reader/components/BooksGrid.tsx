@@ -23,6 +23,7 @@ import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
+import StatisticsDebug from './StatisticsDebug';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -81,6 +82,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
       role='main'
       aria-label={_('Books Content')}
     >
+      {/* TODO: Remove StatisticsDebug before production */}
+      {process.env['NODE_ENV'] === 'development' && <StatisticsDebug />}
       {bookKeys.map((bookKey, index) => {
         const bookData = getBookData(bookKey);
         const config = getConfig(bookKey);
