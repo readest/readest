@@ -44,11 +44,12 @@ export class XRayGraphBuilder {
 
     entities.forEach((entity) => {
       if (!this.graph.hasNode(entity.id)) {
+        const size = 8;
         this.graph.addNode(entity.id, {
           label: entity.canonicalName,
           type: 'circle',
           entityType: entity.type,
-          size: 8,
+          size,
           color: this.getEntityColor(entity.type),
           entity,
         });
@@ -56,6 +57,9 @@ export class XRayGraphBuilder {
     });
 
     relationships.forEach((rel) => {
+      if (rel.sourceId === rel.targetId) {
+        return;
+      }
       if (!this.graph.hasNode(rel.sourceId) || !this.graph.hasNode(rel.targetId)) {
         return;
       }
@@ -123,7 +127,6 @@ export class XRayGraphBuilder {
       artifact: '#f59e0b',
       term: '#06b6d4',
       event: '#ef4444',
-      theme: '#ec4899',
       concept: '#6366f1',
     };
     return colors[type] || '#6b7280';
