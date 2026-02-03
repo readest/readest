@@ -890,7 +890,7 @@
   "Are you sure you want to re-index this book?": "이 책을 다시 인덱싱하시겠습니까?",
   "Enable AI in Settings": "설정에서 AI 활성화",
   "Index This Book": "이 책 인덱싱",
-  "Enable AI search and chat for this book": "이 책에 대한 AI 검색 및 채팅 활성화",
+  "Enable AI chat and X-Ray for this book": "이 책에 대한 AI 채팅 및 X-Ray 활성화",
   "Start Indexing": "인덱싱 시작",
   "Indexing book...": "책 인덱싱 중...",
   "Preparing...": "준비 중...",

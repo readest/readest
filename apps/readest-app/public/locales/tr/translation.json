@@ -900,7 +900,7 @@
   "Are you sure you want to re-index this book?": "Bu kitabı yeniden dizinlemek istediğinizden emin misiniz?",
   "Enable AI in Settings": "Ayarlarda YZ'yi Etkinleştir",
   "Index This Book": "Bu Kitabı Dizinle",
-  "Enable AI search and chat for this book": "Bu kitap için YZ arama ve sohbeti etkinleştir",
+  "Enable AI chat and X-Ray for this book": "Bu kitap için YZ sohbeti ve X-Ray'i etkinleştir",
   "Start Indexing": "Dizinlemeyi Başlat",
   "Indexing book...": "Kitap dizinleniyor...",
   "Preparing...": "Hazırlanıyor...",

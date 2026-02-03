@@ -910,7 +910,7 @@
   "Are you sure you want to re-index this book?": "Voulez-vous vraiment réindexer ce livre ?",
   "Enable AI in Settings": "Activer l'IA dans les paramètres",
   "Index This Book": "Indexer ce livre",
-  "Enable AI search and chat for this book": "Activer la recherche IA et le chat pour ce livre",
+  "Enable AI chat and X-Ray for this book": "Activer le chat IA et X-Ray pour ce livre",
   "Start Indexing": "Démarrer l'indexation",
   "Indexing book...": "Indexation du livre...",
   "Preparing...": "Préparation...",

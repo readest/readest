@@ -890,7 +890,7 @@
   "Are you sure you want to re-index this book?": "ཁྱེད་ཀྱིས་དཔེ་དེབ་འདི་བསྐྱར་དུ་དཀར་ཆག་བཟོ་རྒྱུ་གཏན་འཁེལ་ཡིན་ནམ།",
   "Enable AI in Settings": "སྒྲིག་བཀོད་ནང་ AI སྤྱོད་པར་བྱོས།",
   "Index This Book": "དཔེ་དེབ་འདི་དཀར་ཆག་བཟོ་བ།",
-  "Enable AI search and chat for this book": "དཔེ་དེབ་འདིར་ AI འཚོལ་བཤེར་དང་ཁ་བརྡ་སྤྱོད་པར་བྱོས།",
+  "Enable AI chat and X-Ray for this book": "དཔེ་དེབ་འདིར་ AI ཁ་བརྡ་དང་ X-Ray སྤྱོད་པར་བྱོས།",
   "Start Indexing": "དཀར་ཆག་བཟོ་འགོ་བཙུགས་པ།",
   "Indexing book...": "དཔེ་དེབ་དཀར་ཆག་བཟོ་བཞིན་པ།...",
   "Preparing...": "གྲ་སྒྲིག་བྱེད་བཞིན་པ།...",

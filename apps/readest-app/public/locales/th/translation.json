@@ -890,7 +890,7 @@
   "Are you sure you want to re-index this book?": "คุณแน่ใจหรือไม่ว่าต้องการสร้างดัชนีหนังสือเล่มนี้ใหม่?",
   "Enable AI in Settings": "เปิดใช้งาน AI ในการตั้งค่า",
   "Index This Book": "สร้างดัชนีหนังสือเล่มนี้",
-  "Enable AI search and chat for this book": "เปิดใช้งานการค้นหา AI และแชทสำหรับหนังสือเล่มนี้",
+  "Enable AI chat and X-Ray for this book": "เปิดใช้งานแชท AI และ X-Ray สำหรับหนังสือเล่มนี้",
   "Start Indexing": "เริ่มสร้างดัชนี",
   "Indexing book...": "กำลังสร้างดัชนีหนังสือ...",
   "Preparing...": "กำลังเตรียม...",

@@ -900,7 +900,7 @@
   "Are you sure you want to re-index this book?": "আপনি কি নিশ্চিত যে আপনি এই বইটি পুনরায় ইনডেক্স করতে চান?",
   "Enable AI in Settings": "সেটিংস থেকে AI সক্রিয় করুন",
   "Index This Book": "এই বইটি ইনডেক্স করুন",
-  "Enable AI search and chat for this book": "এই বইটির জন্য AI অনুসন্ধান এবং চ্যাট সক্রিয় করুন",
+  "Enable AI chat and X-Ray for this book": "এই বইটির জন্য AI চ্যাট এবং X-Ray সক্রিয় করুন",
   "Start Indexing": "ইনডেক্সিং শুরু করুন",
   "Indexing book...": "বই ইনডেক্স করা হচ্ছে...",
   "Preparing...": "প্রস্তুত করা হচ্ছে...",

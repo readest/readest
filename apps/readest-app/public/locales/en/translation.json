@@ -86,6 +86,7 @@
   "{{count}} book(s) synced_one": "{{count}} book synced",
   "{{count}} book(s) synced_other": "{{count}} books synced",
   "Enable AI in Settings": "Enable AI in Settings",
+  "Enable AI chat and X-Ray for this book": "Enable AI chat and X-Ray for this book",
   "Loading...": "Loading...",
   "Search": "Search",
   "Close": "Close",

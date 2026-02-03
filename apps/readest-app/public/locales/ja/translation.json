@@ -890,7 +890,7 @@
   "Are you sure you want to re-index this book?": "この本を再インデックスしてもよろしいですか？",
   "Enable AI in Settings": "設定でAIを有効にする",
   "Index This Book": "この本をインデックス",
-  "Enable AI search and chat for this book": "この本のAI検索とチャットを有効にする",
+  "Enable AI chat and X-Ray for this book": "この本のAIチャットとX-Rayを有効にする",
   "Start Indexing": "インデックス開始",
   "Indexing book...": "本をインデックス中...",
   "Preparing...": "準備中...",

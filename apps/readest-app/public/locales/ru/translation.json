@@ -920,7 +920,7 @@
   "Are you sure you want to re-index this book?": "Вы уверены, что хотите переиндексировать эту книгу?",
   "Enable AI in Settings": "Включить ИИ в настройках",
   "Index This Book": "Индексировать эту книгу",
-  "Enable AI search and chat for this book": "Включить ИИ-поиск и чат для этой книги",
+  "Enable AI chat and X-Ray for this book": "Включить чат ИИ и X-Ray для этой книги",
   "Start Indexing": "Начать индексацию",
   "Indexing book...": "Индексация книги...",
   "Preparing...": "Подготовка...",

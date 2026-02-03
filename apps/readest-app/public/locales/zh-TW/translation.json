@@ -890,7 +890,7 @@
   "Are you sure you want to re-index this book?": "確定要重新索引這本書嗎？",
   "Enable AI in Settings": "在設定中啟用 AI",
   "Index This Book": "索引這本書",
-  "Enable AI search and chat for this book": "為這本書啟用 AI 搜尋和聊天",
+  "Enable AI chat and X-Ray for this book": "為這本書啟用 AI 聊天和 X-Ray",
   "Start Indexing": "開始索引",
   "Indexing book...": "正在索引書籍...",
   "Preparing...": "準備中...",
