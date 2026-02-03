@@ -160,6 +160,7 @@ const BookItem: React.FC<BookItemProps> = ({
             ) : (
               (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
                 <button
+                  aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
                   className='show-cloud-button -m-2 p-2'
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => {

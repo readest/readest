@@ -121,7 +121,7 @@ export const AboutWindow = () => {
             </div>
           </div>
 
-          <hr className='border-base-300 my-12 w-full sm:my-4' />
+          <hr aria-hidden='true' className='border-base-300 my-12 w-full sm:my-4' />
 
           <div
             className='flex flex-1 flex-col items-center justify-start gap-2 px-4 text-center'

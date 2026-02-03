@@ -119,6 +119,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && <Overlay onDismiss={() => setIsDropdownOpen(false)} />}
       <div className={clsx('relative', isOpen && 'z-50')}>
         <button
+          tabIndex={0}
           aria-haspopup='menu'
           aria-expanded={isOpen}
           aria-label={label}

@@ -182,6 +182,7 @@ const Dialog: React.FC<DialogProps> = ({
       id={id ?? 'dialog'}
       tabIndex={-1}
       open={isOpen}
+      aria-label={title}
       aria-hidden={!isOpen}
       className={clsx(
         'modal sm:min-w-90 z-50 h-full w-full !items-start !bg-transparent sm:w-full sm:!items-center',
