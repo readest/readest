@@ -1,4 +1,5 @@
 import { validateUserAndToken } from '@/utils/access';
+import { parseXRayExtraction } from '@/services/ai/xray/validators';
 
 const AI_GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions';
 const XRAY_MODEL = 'openai/gpt-5-nano';
@@ -28,7 +29,6 @@ const xrayJsonSchema = {
                 'artifact',
                 'term',
                 'event',
-                'theme',
                 'concept',
               ],
             },
@@ -80,6 +80,7 @@ const xrayJsonSchema = {
             inferred: { type: 'boolean' },
             first_seen_page: { type: 'integer' },
             last_seen_page: { type: 'integer' },
+            strength: { type: 'number' },
             evidence: {
               type: 'array',
               items: {
@@ -108,6 +109,9 @@ const xrayJsonSchema = {
             summary: { type: 'string' },
             importance: { type: 'integer' },
             involved_entities: { type: 'array', items: { type: 'string' } },
+            arc: { type: 'string' },
+            tone: { type: 'string' },
+            emotions: { type: 'array', items: { type: 'string' } },
             evidence: {
               type: 'array',
               items: {
@@ -167,7 +171,7 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    const { prompt, system, apiKey } = await req.json();
+    const { prompt, system, apiKey, model } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return Response.json({ error: 'Prompt required' }, { status: 400 });
@@ -178,7 +182,8 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ error: 'API key required' }, { status: 401 });
     }
 
-    const requestedModel = XRAY_MODEL;
+    const requestedModel =
+      typeof model === 'string' && model.trim().length > 0 ? model : XRAY_MODEL;
 
     const response = await fetch(AI_GATEWAY_URL, {
       method: 'POST',
@@ -222,15 +227,11 @@ export async function POST(req: Request): Promise<Response> {
       });
     }
 
-    try {
-      const parsed = JSON.parse(content);
+    const parsed = parseXRayExtraction(content);
+    if (parsed) {
       return Response.json(parsed);
-    } catch {
-      return new Response(JSON.stringify({ error: 'Failed to parse structured JSON response' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
     }
+    return Response.json({ entities: [], relationships: [], events: [], claims: [] });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: `X-Ray extraction failed: ${errorMessage}` }), {
