@@ -243,7 +243,7 @@ const Notebook: React.FC = ({}) => {
       )}
       <div
         className={clsx(
-          'notebook-container right-0 flex min-w-60 select-none flex-col',
+          'notebook-container right-0 flex min-w-60 select-none flex-col overflow-x-hidden',
           'full-height font-sans text-base font-normal sm:text-sm',
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
