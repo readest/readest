@@ -125,12 +125,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return start === to + 1 ? `${start}` : `${start}-${to + 1}`;
   }, [snapshot?.state?.pendingFromPage, snapshot?.state?.pendingToPage]);
 
+  const notIndexed = useMemo(
+    () => isIndexed === false || snapshot?.state?.lastError === 'not_indexed',
+    [isIndexed, snapshot?.state?.lastError],
+  );
+
   const stateErrorMessage = useMemo(() => {
     const error = snapshot?.state?.lastError;
-    if (!error) return '';
+    if (!error || error === 'not_indexed') return '';
     switch (error) {
-      case 'not_indexed':
-        return _('Book must be indexed first. Open AI Assistant to index.');
       case 'missing_api_key':
         return _('AI Gateway API key required.');
       case 'provider_not_supported':
@@ -188,7 +191,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
     const indexed = await isBookIndexed(bookHash);
     if (!indexed) {
-      setErrorMessage(_('Book must be indexed first. Open AI Assistant to index.'));
+      setIsIndexed(false);
+      setErrorMessage(null);
       return;
     }
 
@@ -224,7 +228,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
     const indexed = await isBookIndexed(bookHash);
     if (!indexed) {
-      setErrorMessage(_('Book must be indexed first. Open AI Assistant to index.'));
+      setIsIndexed(false);
+      setErrorMessage(null);
       return;
     }
 
@@ -880,7 +885,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 <button
                   type='button'
                   onClick={handleUpdate}
-                  disabled={isUpdating || isRebuilding || providerUnsupported}
+                  disabled={isUpdating || isRebuilding || providerUnsupported || notIndexed}
                   title={_('Incremental update to current page')}
                 >
                   {isUpdating ? _('Loading...') : _('Update X-Ray')}
@@ -890,7 +895,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 <button
                   type='button'
                   onClick={handleRebuild}
-                  disabled={isUpdating || isRebuilding || providerUnsupported}
+                  disabled={isUpdating || isRebuilding || providerUnsupported || notIndexed}
                   title={_('Reprocess from scratch to current page')}
                 >
                   {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
@@ -914,7 +919,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       </div>
 
       {/* Indexing warning */}
-      {isIndexed === false && (
+      {notIndexed && (
         <div className='bg-warning/10 border-warning/30 m-3 rounded-md border px-3 py-2 text-xs'>
           <div className='text-warning flex items-start gap-2'>
             <svg
@@ -933,9 +938,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             <div>
               <p className='font-medium'>{_('Book not indexed')}</p>
               <p className='text-warning/80 mt-1'>
-                {_(
-                  'Open the AI Assistant panel and click "Index Book" to enable X-Ray extraction.',
-                )}
+                {_('Book must be indexed first. Open AI Assistant to index.')}
               </p>
             </div>
           </div>
