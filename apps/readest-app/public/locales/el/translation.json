@@ -1014,5 +1014,7 @@
   "Manual": "Χειροκίνητα",
   "Group by...": "Ομαδοποίηση κατά...",
   "Export as Plain Text": "Αποστολή ως απλό κείμενο",
-  "Export as Markdown": "Αποστολή ως Markdown"
+  "Export as Markdown": "Αποστολή ως Markdown",
+  "Show Page Navigation Buttons": "Κουμπιά πλοήγησης",
+  "Page {{number}}": "Σελίδα {{number}}"
 }

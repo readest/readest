@@ -204,6 +204,7 @@ export interface ViewConfig {
   tapToToggleFooter: boolean;
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
+  showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
 

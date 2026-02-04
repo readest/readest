@@ -1002,5 +1002,7 @@
   "Manual": "Thủ công",
   "Group by...": "Nhóm theo...",
   "Export as Plain Text": "Xuất dưới dạng văn bản thuần túy",
-  "Export as Markdown": "Xuất dưới dạng Markdown"
+  "Export as Markdown": "Xuất dưới dạng Markdown",
+  "Show Page Navigation Buttons": "Nút điều hướng trang",
+  "Page {{number}}": "Trang {{number}}"
 }

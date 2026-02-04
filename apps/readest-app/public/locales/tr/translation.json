@@ -1014,5 +1014,7 @@
   "Manual": "Manuel",
   "Group by...": "Şuna göre grupla...",
   "Export as Plain Text": "Düz Metin Olarak Dışa Aktar",
-  "Export as Markdown": "Markdown Olarak Dışa Aktar"
+  "Export as Markdown": "Markdown Olarak Dışa Aktar",
+  "Show Page Navigation Buttons": "Gezinme düğmeleri",
+  "Page {{number}}": "Sayfa {{number}}"
 }

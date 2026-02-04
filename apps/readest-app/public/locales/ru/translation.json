@@ -1038,5 +1038,7 @@
   "Manual": "Вручную",
   "Group by...": "Группировать по...",
   "Export as Plain Text": "Экспортировать как обычный текст",
-  "Export as Markdown": "Экспортировать как Markdown"
+  "Export as Markdown": "Экспортировать как Markdown",
+  "Show Page Navigation Buttons": "Кнопки навигации",
+  "Page {{number}}": "Страница {{number}}"
 }

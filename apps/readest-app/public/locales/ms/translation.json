@@ -1002,5 +1002,7 @@
   "Manual": "Manual",
   "Group by...": "Kumpulan mengikut...",
   "Export as Plain Text": "Eksport sebagai Teks Biasa",
-  "Export as Markdown": "Eksport sebagai Markdown"
+  "Export as Markdown": "Eksport sebagai Markdown",
+  "Show Page Navigation Buttons": "Butang navigasi",
+  "Page {{number}}": "Halaman {{number}}"
 }

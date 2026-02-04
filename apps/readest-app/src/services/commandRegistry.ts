@@ -429,6 +429,12 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.showPaginationButtons',
+    labelKey: _('Show Page Navigation Buttons'),
+    keywords: ['show', 'pagination', 'buttons', 'navigation', 'arrows', 'chevron', 'page', 'turn'],
+    section: 'Pagination',
+  },
+  {
     id: 'settings.control.enableQuickActions',
     labelKey: _('Enable Quick Actions'),
     keywords: ['quick', 'actions', 'annotation', 'enable'],

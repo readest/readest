@@ -1014,5 +1014,7 @@
   "Manual": "Manuellt",
   "Group by...": "Gruppera efter...",
   "Export as Plain Text": "Exportera som vanlig text",
-  "Export as Markdown": "Exportera som Markdown"
+  "Export as Markdown": "Exportera som Markdown",
+  "Show Page Navigation Buttons": "Navigeringsknappar",
+  "Page {{number}}": "Sida {{number}}"
 }
