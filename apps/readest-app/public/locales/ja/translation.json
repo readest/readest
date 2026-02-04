@@ -1002,5 +1002,7 @@
   "Manual": "手動",
   "Group by...": "グループ化...",
   "Export as Plain Text": "プレーンテキストとして書き出し",
-  "Export as Markdown": "Markdownとして書き出し"
+  "Export as Markdown": "Markdownとして書き出し",
+  "Show Page Navigation Buttons": "ナビゲーションボタンを表示",
+  "Page {{number}}": "{{number}} ページ"
 }

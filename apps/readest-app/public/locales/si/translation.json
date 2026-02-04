@@ -1014,5 +1014,7 @@
   "Manual": "අත්පොත",
   "Group by...": "මගින් සමූහනය කරන්න...",
   "Export as Plain Text": "සාමාන්‍ය පෙළ ලෙස අපනයනය කරන්න",
-  "Export as Markdown": "Markdown ලෙස අපනයනය කරන්න"
+  "Export as Markdown": "Markdown ලෙස අපනයනය කරන්න",
+  "Show Page Navigation Buttons": "සංචාලන බොත්තම්",
+  "Page {{number}}": "පිටුව {{number}}"
 }

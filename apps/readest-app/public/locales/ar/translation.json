@@ -1062,5 +1062,7 @@
   "Manual": "يدوي",
   "Group by...": "تجميع حسب...",
   "Export as Plain Text": "تصدير كنص بسيط",
-  "Export as Markdown": "تصدير بصيغة Markdown"
+  "Export as Markdown": "تصدير بصيغة Markdown",
+  "Show Page Navigation Buttons": "أزرار التنقل",
+  "Page {{number}}": "صفحة {{number}}"
 }

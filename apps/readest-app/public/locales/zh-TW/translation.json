@@ -1002,5 +1002,7 @@
   "Manual": "手動",
   "Group by...": "分組方式...",
   "Export as Plain Text": "匯出為純文字",
-  "Export as Markdown": "匯出為 Markdown"
+  "Export as Markdown": "匯出為 Markdown",
+  "Show Page Navigation Buttons": "顯示翻頁按鈕",
+  "Page {{number}}": "第 {{number}} 頁"
 }

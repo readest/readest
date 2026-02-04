@@ -1014,5 +1014,7 @@
   "Manual": "ম্যানুয়াল",
   "Group by...": "গ্রুপ অনুযায়ী...",
   "Export as Plain Text": "সাধারণ টেক্সট হিসেবে এক্সপোর্ট করুন",
-  "Export as Markdown": "Markdown হিসেবে এক্সপোর্ট করুন"
+  "Export as Markdown": "Markdown হিসেবে এক্সপোর্ট করুন",
+  "Show Page Navigation Buttons": "নেভিগেশন বোতাম",
+  "Page {{number}}": "পৃষ্ঠা {{number}}"
 }

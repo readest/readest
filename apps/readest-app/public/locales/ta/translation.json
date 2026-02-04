@@ -1014,5 +1014,7 @@
   "Manual": "கையேடு",
   "Group by...": "இதன் படி குழுவாக்கு...",
   "Export as Plain Text": "எளிய உரையாக ஏற்றுமதி செய்",
-  "Export as Markdown": "Markdown ஆக ஏற்றுமதி செய்"
+  "Export as Markdown": "Markdown ஆக ஏற்றுமதி செய்",
+  "Show Page Navigation Buttons": "வழிசெலுத்தல் பொத்தான்கள்",
+  "Page {{number}}": "பக்கம் {{number}}"
 }

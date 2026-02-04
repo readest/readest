@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Insets } from '@/types/misc';
-import { PageInfo, TimeInfo } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,9 +13,6 @@ import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 interface PageInfoProps {
   bookKey: string;
   toc: TOCItem[];
-  section?: PageInfo;
-  pageinfo?: PageInfo;
-  timeinfo?: TimeInfo;
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
@@ -25,8 +21,6 @@ interface PageInfoProps {
 const ProgressInfoView: React.FC<PageInfoProps> = ({
   bookKey,
   toc,
-  section,
-  pageinfo,
   horizontalGap,
   contentInsets,
   gridInsets,
@@ -38,6 +32,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const progress = getProgress(bookKey);
+  const { section, pageinfo } = progress || {};
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
   const isScrolled = viewSettings.scrolled;

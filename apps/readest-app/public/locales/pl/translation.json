@@ -1038,5 +1038,7 @@
   "Manual": "Ręcznie",
   "Group by...": "Grupuj według...",
   "Export as Plain Text": "Eksportuj jako zwykły tekst",
-  "Export as Markdown": "Eksportuj jako Markdown"
+  "Export as Markdown": "Eksportuj jako Markdown",
+  "Show Page Navigation Buttons": "Przyciski nawigacji",
+  "Page {{number}}": "Strona {{number}}"
 }

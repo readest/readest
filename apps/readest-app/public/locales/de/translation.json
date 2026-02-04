@@ -1014,5 +1014,7 @@
   "Manual": "Manuell",
   "Group by...": "Gruppieren nach...",
   "Export as Plain Text": "Als reinen Text exportieren",
-  "Export as Markdown": "Als Markdown exportieren"
+  "Export as Markdown": "Als Markdown exportieren",
+  "Show Page Navigation Buttons": "Navigationsschaltflächen",
+  "Page {{number}}": "Seite {{number}}"
 }

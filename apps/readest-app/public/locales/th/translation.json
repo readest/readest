@@ -1002,5 +1002,7 @@
   "Manual": "ทำเอง",
   "Group by...": "จัดกลุ่มตาม...",
   "Export as Plain Text": "ส่งออกเป็นข้อความธรรมดา",
-  "Export as Markdown": "ส่งออกเป็น Markdown"
+  "Export as Markdown": "ส่งออกเป็น Markdown",
+  "Show Page Navigation Buttons": "ปุ่มนำทาง",
+  "Page {{number}}": "หน้า {{number}}"
 }
