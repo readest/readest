@@ -272,6 +272,16 @@ If Readest has been useful to you, consider supporting its development. You can 
   </a>
 </p>
 
+## Star History
+
+<a href="https://www.star-history.com/#readest/readest&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=readest/readest&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=readest/readest&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=readest/readest&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ## License
 
 Readest is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
