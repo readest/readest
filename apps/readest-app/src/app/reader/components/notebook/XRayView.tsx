@@ -861,10 +861,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       <div className='px-3'>
         <div className='flex items-center justify-between gap-2'>
           <div className='dropdown dropdown-start'>
-            <div
+            <button
+              type='button'
               tabIndex={0}
-              role='button'
-              className='content font-size-base inline-flex items-center gap-1'
+              className='btn btn-ghost btn-sm h-7 min-h-7 gap-1 px-2 normal-case'
+              onClick={(event) => event.currentTarget.focus()}
             >
               {_('X-Ray')}
               <svg
@@ -879,8 +880,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   clipRule='evenodd'
                 />
               </svg>
-            </div>
-            <ul className='dropdown-content menu menu-sm border-base-300/60 xray-scrollbar rounded-box bg-base-100 z-10 mt-1 w-44 border p-1 shadow'>
+            </button>
+            <ul className='dropdown-content bgcolor-base-200 no-triangle xray-scrollbar menu menu-sm rounded-box absolute z-[1] mt-2 w-44 p-1 shadow'>
               <li>
                 <button
                   type='button'
@@ -1015,7 +1016,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           <div className='space-y-3'>
             <div className='flex flex-wrap items-center gap-2 text-xs'>
               <input
-                className='input input-bordered input-xs h-7 w-full max-w-xs'
+                className='input input-bordered input-xs focus:border-base-300 h-7 w-full max-w-xs pt-0.5 shadow-none focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0'
                 value={entitySearch}
                 onChange={(event) => setEntitySearch(event.target.value)}
                 placeholder={_('Search Entities')}
@@ -1190,7 +1191,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 {_('Filter by Importance')}
               </span>
               <select
-                className='select select-bordered select-xs h-7 w-full min-w-0 sm:w-auto'
+                className='select select-bordered select-xs focus:border-base-300 h-7 w-full min-w-0 pt-0.5 shadow-none focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 sm:w-auto'
                 value={timelineFilter}
                 onChange={(event) => setTimelineFilter(event.target.value as 'all' | 'major')}
               >
