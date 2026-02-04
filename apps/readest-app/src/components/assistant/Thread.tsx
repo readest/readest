@@ -41,23 +41,8 @@ interface ThreadProps {
   onClear?: () => void;
   onResetIndex?: () => void;
   isLoadingHistory?: boolean;
-  hasActiveConversation?: boolean;
+  hasStoredMessages?: boolean;
 }
-
-const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
-  return (
-    <div
-      className={cn(
-        'absolute inset-0 z-20 flex items-center justify-center',
-        'bg-base-100/60 backdrop-blur-sm',
-        'transition-all duration-300 ease-out',
-        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
-      )}
-    >
-      <div className='bg-base-content/10 size-8 animate-pulse rounded-full' />
-    </div>
-  );
-};
 
 const ScrollToBottomButton: FC = () => {
   const isAtBottom = useThreadViewport((v) => v.isAtBottom);
@@ -104,15 +89,17 @@ export const Thread: FC<ThreadProps> = ({
   onClear,
   onResetIndex,
   isLoadingHistory = false,
-  hasActiveConversation = false,
+  hasStoredMessages = false,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const messageCount = useThread((t) => t.messages.length);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
+  const isThreadEmpty = useAssistantState((s) => s.thread.isEmpty);
 
-  const showLoading = isLoadingHistory && hasActiveConversation;
+  const hideEmptyState = isLoadingHistory || (hasStoredMessages && isThreadEmpty);
+  const showEmptyState = isThreadEmpty && !hideEmptyState;
 
   useEffect(() => {
     if (isInitialMount.current && messageCount > 0 && viewportRef.current) {
@@ -159,9 +146,7 @@ export const Thread: FC<ThreadProps> = ({
 
   return (
     <ThreadPrimitive.Root className='bg-base-100 relative flex h-full w-full flex-col items-stretch px-3'>
-      <LoadingOverlay isVisible={showLoading} />
-
-      {!hasActiveConversation && (
+      {showEmptyState && (
         <ThreadPrimitive.Empty>
           <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
             <div className='bg-base-content/10 mb-4 rounded-full p-3'>
@@ -177,12 +162,7 @@ export const Thread: FC<ThreadProps> = ({
       )}
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <div
-          className={cn(
-            'relative min-h-0 flex-1 transition-opacity duration-300',
-            showLoading ? 'opacity-0' : 'opacity-100',
-          )}
-        >
+        <div className='relative min-h-0 flex-1 transition-opacity duration-300'>
           <ThreadPrimitive.Viewport
             ref={viewportRef}
             autoScroll={false}
