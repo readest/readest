@@ -168,7 +168,9 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                           onKeyDown={handleKeyDown}
                           className={clsx(
                             'input input-xs input-bordered w-full',
-                            'bg-base-100 text-base-content',
+                            'bg-base-100 text-base-content shadow-none',
+                            'focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0',
+                            'focus:border-base-300',
                           )}
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
