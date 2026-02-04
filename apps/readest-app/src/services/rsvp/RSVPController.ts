@@ -243,8 +243,14 @@ export class RSVPController extends EventTarget {
    */
   private compareCfiPaths(path1: string, path2: string): number {
     // Parse paths into step arrays: "/4/2/6" -> [4, 2, 6]
-    const steps1 = path1.split('/').filter(Boolean).map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
-    const steps2 = path2.split('/').filter(Boolean).map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
+    const steps1 = path1
+      .split('/')
+      .filter(Boolean)
+      .map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
+    const steps2 = path2
+      .split('/')
+      .filter(Boolean)
+      .map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
 
     const minLen = Math.min(steps1.length, steps2.length);
     for (let i = 0; i < minLen; i++) {
@@ -454,7 +460,7 @@ export class RSVPController extends EventTarget {
     // Show Resume option if we have a saved position with a valid CFI
     // We don't require it to be in the same section - user may want to resume
     // from where they left off even if they've navigated elsewhere
-    const hasSavedPosition = !!(savedPosition?.cfi);
+    const hasSavedPosition = !!savedPosition?.cfi;
     const hasSelection = !!selectionText && selectionText.trim().length > 0;
 
     const startChoice: RsvpStartChoice = {

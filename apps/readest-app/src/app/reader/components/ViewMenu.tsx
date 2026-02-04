@@ -285,11 +285,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         onClick={toggleParagraphMode}
         disabled={bookData.isFixedLayout}
       />
- 
+
       <MenuItem
-          label={_('Speed Reading Mode')}
-          onClick={handleStartRSVP}
-          disabled={bookData.isFixedLayout}
+        label={_('Speed Reading Mode')}
+        onClick={handleStartRSVP}
+        disabled={bookData.isFixedLayout}
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
