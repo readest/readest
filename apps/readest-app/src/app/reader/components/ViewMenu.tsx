@@ -285,11 +285,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         disabled={bookData.isFixedLayout}
       />
 
-      <MenuItem
-        label={_('Speed Reading Mode')}
-        onClick={handleStartRSVP}
-        disabled={bookData.isFixedLayout}
-      />
+      {/* Temporarily disabled for production, will be ready after the merge of PR #3150 */}
+      {process.env.NODE_ENV !== 'production' && (
+        <MenuItem
+          label={_('Speed Reading Mode')}
+          onClick={handleStartRSVP}
+          disabled={bookData.isFixedLayout}
+        />
+      )}
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
