@@ -1012,5 +1012,7 @@
   "Library Sync Progress": "நூலக ஒத்திசைவு நிலை",
   "Back to library": "நூலகத்திற்குத் திரும்பு",
   "Manual": "கையேடு",
-  "Group by...": "இதன் படி குழுவாக்கு..."
+  "Group by...": "இதன் படி குழுவாக்கு...",
+  "Export as Plain Text": "எளிய உரையாக ஏற்றுமதி செய்",
+  "Export as Markdown": "Markdown ஆக ஏற்றுமதி செய்"
 }

@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "ความคืบหน้าการซิงค์ห้องสมุด",
   "Back to library": "กลับไปที่ห้องสมุด",
   "Manual": "ทำเอง",
-  "Group by...": "จัดกลุ่มตาม..."
+  "Group by...": "จัดกลุ่มตาม...",
+  "Export as Plain Text": "ส่งออกเป็นข้อความธรรมดา",
+  "Export as Markdown": "ส่งออกเป็น Markdown"
 }

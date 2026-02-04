@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "資料庫同步進度",
   "Back to library": "返回書庫",
   "Manual": "手動",
-  "Group by...": "分組方式..."
+  "Group by...": "分組方式...",
+  "Export as Plain Text": "匯出為純文字",
+  "Export as Markdown": "匯出為 Markdown"
 }

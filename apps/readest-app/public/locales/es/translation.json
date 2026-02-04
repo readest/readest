@@ -1024,5 +1024,7 @@
   "Library Sync Progress": "Progreso de sincronización de la biblioteca",
   "Back to library": "Volver a la biblioteca",
   "Manual": "Manual",
-  "Group by...": "Agrupar por..."
+  "Group by...": "Agrupar por...",
+  "Export as Plain Text": "Exportar como texto sin formato",
+  "Export as Markdown": "Exportar como Markdown"
 }

@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "ライブラリ同期の進捗",
   "Back to library": "ライブラリに戻る",
   "Manual": "手動",
-  "Group by...": "グループ化..."
+  "Group by...": "グループ化...",
+  "Export as Plain Text": "プレーンテキストとして書き出し",
+  "Export as Markdown": "Markdownとして書き出し"
 }

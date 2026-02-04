@@ -246,6 +246,7 @@ export interface NoteExportConfig {
   noteSeparator: string;
   useCustomTemplate: boolean;
   customTemplate: string;
+  exportAsPlainText: boolean;
 }
 
 export interface AnnotatorConfig {

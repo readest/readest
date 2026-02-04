@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "Kemajuan Sinkronisasi Pustaka",
   "Back to library": "Kembali ke perpustakaan",
   "Manual": "Manual",
-  "Group by...": "Kelompokkan menurut..."
+  "Group by...": "Kelompokkan menurut...",
+  "Export as Plain Text": "Ekspor sebagai Teks Biasa",
+  "Export as Markdown": "Ekspor sebagai Markdown"
 }
