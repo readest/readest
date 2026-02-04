@@ -24,8 +24,9 @@ import {
   clearLastSources,
   updateXRayForProgress,
 } from '@/services/ai';
-import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
+import type { EmbeddingProgress, AISettings, AIMessage, IndexingState } from '@/services/ai/types';
 import { useEnv } from '@/context/EnvContext';
+import { eventDispatcher } from '@/utils/event';
 
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
@@ -89,10 +90,10 @@ const AIAssistantChat = ({
     activeConversationId,
     messages: storedMessages,
     addMessage,
-    isLoadingHistory,
+    isLoadingMessages,
   } = useAIChatStore();
 
-  const showHistoryLoading = isLoadingHistory && !!activeConversationId;
+  const showHistoryLoading = isLoadingMessages && !!activeConversationId;
   const hasStoredMessages = storedMessages.length > 0;
 
   if (showHistoryLoading) {
@@ -111,7 +112,7 @@ const AIAssistantChat = ({
       storedMessages={storedMessages}
       addMessage={addMessage}
       onResetIndex={onResetIndex}
-      isLoadingHistory={isLoadingHistory}
+      isLoadingHistory={isLoadingMessages}
       hasStoredMessages={hasStoredMessages}
     />
   );
@@ -293,8 +294,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const progress = getProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isIndexing, setIsIndexing] = useState(false);
-  const [indexProgress, setIndexProgress] = useState<EmbeddingProgress | null>(null);
+  const [indexingState, setIndexingState] = useState<IndexingState | null>(null);
   const [indexed, setIndexed] = useState(false);
   const hasAutoRestored = useRef(false);
 
@@ -304,17 +304,48 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
   const { loadConversations, setActiveConversation, createConversation } = useAIChatStore();
+  const isIndexing = !indexed && indexingState?.status === 'indexing';
+  const indexProgress: EmbeddingProgress | null = indexingState?.phase
+    ? {
+        current: indexingState.current ?? 0,
+        total: indexingState.total ?? 0,
+        phase: indexingState.phase,
+      }
+    : null;
 
   // check if book is indexed on mount
   useEffect(() => {
-    if (bookHash) {
-      isBookIndexed(bookHash).then((result) => {
-        setIndexed(result);
+    let cancelled = false;
+    const loadIndexState = async () => {
+      if (!bookHash) {
         setIsLoading(false);
-      });
-    } else {
+        setIndexingState(null);
+        return;
+      }
+      const [indexedResult, storedState] = await Promise.all([
+        isBookIndexed(bookHash),
+        aiStore.getIndexingState(bookHash),
+      ]);
+      if (cancelled) return;
+      setIndexed(indexedResult);
+      setIndexingState(storedState);
       setIsLoading(false);
-    }
+    };
+    void loadIndexState();
+
+    const handleIndexingUpdate = (event: CustomEvent) => {
+      const state = event.detail as IndexingState;
+      if (state.bookHash !== bookHash) return;
+      setIndexingState(state);
+      if (state.status === 'complete') setIndexed(true);
+    };
+
+    eventDispatcher.on('rag-indexing-updated', handleIndexingUpdate);
+
+    return () => {
+      cancelled = true;
+      eventDispatcher.off('rag-indexing-updated', handleIndexingUpdate);
+    };
   }, [bookHash]);
 
   useEffect(() => {
@@ -374,24 +405,16 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
 
   const handleIndex = useCallback(async () => {
     if (!bookData?.bookDoc || !aiSettings) return;
-    setIsIndexing(true);
     let indexSucceeded = false;
     try {
-      await indexBook(
-        bookData.bookDoc as Parameters<typeof indexBook>[0],
-        bookHash,
-        aiSettings,
-        setIndexProgress,
-      );
+      await indexBook(bookData.bookDoc as Parameters<typeof indexBook>[0], bookHash, aiSettings);
       indexSucceeded = true;
     } catch (e) {
       aiLogger.rag.indexError(bookHash, (e as Error).message);
-    } finally {
-      setIsIndexing(false);
-      setIndexProgress(null);
-      if (indexSucceeded) {
-        setIndexed(true);
-      }
+    }
+
+    if (indexSucceeded) {
+      setIndexed(true);
     }
 
     if (indexSucceeded) {
@@ -414,7 +437,9 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
     await aiStore.clearBook(bookHash);
     await aiStore.clearXRayBook(bookHash);
+    await aiStore.clearIndexingState(bookHash);
     setIndexed(false);
+    setIndexingState(null);
   }, [bookHash, appService, _]);
 
   if (!aiSettings?.enabled) {
