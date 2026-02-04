@@ -302,7 +302,10 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
                           className='border-base-content/10 bg-base-200/50 rounded-lg border px-2 py-1.5 text-[11px]'
                         >
                           <div className='text-base-content font-medium'>
-                            {source.chapterTitle || `Section ${source.sectionIndex + 1}`}
+                            {source.chapterTitle ||
+                              (typeof source.chapterNumber === 'number'
+                                ? `Chapter ${source.chapterNumber}`
+                                : `Section ${source.sectionIndex + 1}`)}
                           </div>
                           <div className='text-base-content/60 mt-0.5 line-clamp-3'>
                             {source.text}
