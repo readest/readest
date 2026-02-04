@@ -6,7 +6,6 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
-import { IoSpeedometer } from 'react-icons/io5';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
