@@ -4,7 +4,7 @@ export interface RsvpWord {
   pauseMultiplier: number;
   range?: Range;
   docIndex?: number;
-  docWordIndex?: number; // Index of this word within its document (for position recovery)
+  cfi?: string; // Canonical Fragment Identifier for precise position tracking
 }
 
 export interface RsvpState {
@@ -20,8 +20,8 @@ export interface RsvpState {
 
 export interface RsvpPosition {
   cfi: string;
-  wordIndex: number;
   wordText: string;
+  wordIndex?: number; // Legacy field for backward compatibility
 }
 
 export interface RsvpStopPosition {
@@ -30,13 +30,11 @@ export interface RsvpStopPosition {
   text: string;
   range?: Range;
   docIndex?: number;
-  docWordIndex?: number; // Index within the specific document (for position recovery)
-  docTotalWords?: number; // Total words in the specific document
+  cfi?: string; // Canonical Fragment Identifier for the stop position
 }
 
 export interface RsvpStartChoice {
   hasSavedPosition: boolean;
   hasSelection: boolean;
   selectionText?: string;
-  firstVisibleWordIndex: number;
 }

@@ -16,109 +16,6 @@ interface RSVPControlProps {
   bookKey: string;
 }
 
-// Helper to find a word in document and create a fresh Range
-const findWordInDocument = (
-  doc: Document,
-  wordText: string,
-  docWordIndex: number | undefined,
-  docTotalWords: number | undefined,
-): Range | null => {
-  // Walk through text nodes to find the word (same logic as RSVPController.extractWordsFromElement)
-  const excludeTags = new Set(['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'ASIDE']);
-  const allWords: { text: string; node: Text; start: number }[] = [];
-
-  const walk = (node: Node): void => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent || '';
-      const nodeWords = text.split(/(\s+)/).filter((w) => w.trim().length > 0);
-
-      let offset = 0;
-      for (const word of nodeWords) {
-        const wordStart = text.indexOf(word, offset);
-        if (wordStart === -1) continue;
-        allWords.push({ text: word, node: node as Text, start: wordStart });
-        offset = wordStart + word.length;
-      }
-      return;
-    }
-
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-    const el = node as HTMLElement;
-    const tagName = el.tagName?.toUpperCase();
-    if (excludeTags.has(tagName)) return;
-
-    try {
-      const style = el.ownerDocument.defaultView?.getComputedStyle(el);
-      if (style?.display === 'none' || style?.visibility === 'hidden') return;
-    } catch {
-      // Ignore style check errors
-    }
-
-    for (const child of Array.from(el.childNodes)) {
-      walk(child);
-    }
-  };
-
-  walk(doc.body);
-
-  if (allWords.length === 0) return null;
-
-  // Use the per-document word index if available
-  let targetIndex: number;
-  if (docWordIndex !== undefined && docTotalWords !== undefined && docTotalWords > 0) {
-    // Direct index - docWordIndex is the exact position in the document's word list
-    targetIndex = docWordIndex;
-  } else if (docWordIndex !== undefined) {
-    // Fallback: use docWordIndex directly
-    targetIndex = docWordIndex;
-  } else {
-    // Last resort: start from beginning
-    targetIndex = 0;
-  }
-
-  // Search in a window around the expected position
-  const searchRadius = Math.max(50, Math.floor(allWords.length * 0.05));
-  const startSearch = Math.max(0, targetIndex - searchRadius);
-  const endSearch = Math.min(allWords.length, targetIndex + searchRadius);
-
-  // First, try exact match near expected position
-  for (let i = startSearch; i < endSearch; i++) {
-    const w = allWords[i];
-    if (w && w.text === wordText) {
-      try {
-        const range = doc.createRange();
-        range.setStart(w.node, w.start);
-        range.setEnd(w.node, w.start + w.text.length);
-        return range;
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  // If no exact match, try partial match (word might have different punctuation)
-  const cleanTarget = wordText.replace(/[^\w]/g, '').toLowerCase();
-  for (let i = startSearch; i < endSearch; i++) {
-    const w = allWords[i];
-    if (w) {
-      const cleanWord = w.text.replace(/[^\w]/g, '').toLowerCase();
-      if (cleanWord === cleanTarget) {
-        try {
-          const range = doc.createRange();
-          range.setStart(w.node, w.start);
-          range.setEnd(w.node, w.start + w.text.length);
-          return range;
-        } catch {
-          continue;
-        }
-      }
-    }
-  }
-
-  return null;
-};
-
 // Helper to expand a range to include the full sentence
 const expandRangeToSentence = (range: Range, doc: Document): Range => {
   const sentenceRange = doc.createRange();
@@ -236,7 +133,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
   useEffect(() => {
     return () => {
       if (controllerRef.current) {
-        controllerRef.current.shutdown();
+        // Use stop() instead of shutdown() to preserve saved position across sessions
+        // shutdown() clears localStorage which loses the user's reading progress
+        controllerRef.current.stop();
         controllerRef.current = null;
       }
       // Remove any existing RSVP highlight when component unmounts
@@ -312,13 +211,13 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
         const choice = (e as CustomEvent<RsvpStartChoice>).detail;
         setStartChoice(choice);
 
-        // If there's only one option (beginning), start directly
-        if (!choice.hasSavedPosition && !choice.hasSelection) {
-          controller.startFromBeginning();
-          setIsActive(true);
-        } else {
-          // Show dialog for user to choose
+        // If there's a saved position or selection, show dialog for user to choose
+        if (choice.hasSavedPosition || choice.hasSelection) {
           setShowStartDialog(true);
+        } else {
+          // No saved position or selection - start from current page position
+          controller.startFromCurrentPosition();
+          setIsActive(true);
         }
       };
 
@@ -337,27 +236,74 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
     (option: 'beginning' | 'saved' | 'current' | 'selection') => {
       setShowStartDialog(false);
       const controller = controllerRef.current;
+      const view = getView(bookKey);
       if (!controller) return;
+
+      // Handler for when we need to navigate to a different section for resume
+      const handleNavigateToResume = (e: Event) => {
+        const { cfi } = (e as CustomEvent<{ cfi: string }>).detail;
+        controller.removeEventListener('rsvp-navigate-to-resume', handleNavigateToResume);
+
+        if (view && cfi) {
+          // Navigate to the saved position's section
+          view.goTo(cfi);
+
+          // Wait for navigation, then reload and start RSVP
+          setTimeout(() => {
+            const progress = getProgress(bookKey);
+            if (progress?.location) {
+              controller.setCurrentCfi(progress.location);
+            }
+            controller.loadNextPageContent();
+            // Small delay to ensure content is loaded
+            setTimeout(() => {
+              controller.start();
+              setIsActive(true);
+            }, 100);
+          }, 500);
+        }
+      };
 
       switch (option) {
         case 'beginning':
           controller.startFromBeginning();
+          setIsActive(true);
           break;
         case 'saved':
+          // Listen for navigation event in case saved position is in different section
+          controller.addEventListener('rsvp-navigate-to-resume', handleNavigateToResume);
           controller.startFromSavedPosition();
+          // If startFromSavedPosition started directly (same section), setIsActive
+          // If it emitted navigate event, the handler above will setIsActive after navigation
+          if (!controller.currentState.active) {
+            // Navigation event was emitted, don't set active yet
+          } else {
+            setIsActive(true);
+          }
+          // Clean up listener after a timeout if not used
+          setTimeout(() => {
+            controller.removeEventListener('rsvp-navigate-to-resume', handleNavigateToResume);
+          }, 1000);
           break;
-        case 'current':
+        case 'current': {
+          // Refresh the CFI in case user scrolled since dialog opened
+          const currentProgress = getProgress(bookKey);
+          if (currentProgress?.location) {
+            controller.setCurrentCfi(currentProgress.location);
+          }
           controller.startFromCurrentPosition();
+          setIsActive(true);
           break;
+        }
         case 'selection':
           if (startChoice?.selectionText) {
             controller.startFromSelection(startChoice.selectionText);
           }
+          setIsActive(true);
           break;
       }
-      setIsActive(true);
     },
-    [startChoice],
+    [bookKey, getProgress, getView, startChoice],
   );
 
   const handleClose = useCallback(() => {
@@ -369,85 +315,54 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey }) => {
       const handleRsvpStop = (e: Event) => {
         const stopPosition = (e as CustomEvent<RsvpStopPosition | null>).detail;
 
-        if (stopPosition && typeof stopPosition.docIndex === 'number' && stopPosition.text) {
+        if (stopPosition && stopPosition.cfi) {
           try {
-            // Get the document from the renderer
-            const contents = view.renderer.getContents?.();
-            const content = contents?.find((c) => c.index === stopPosition.docIndex);
-            const doc = content?.doc;
+            // Navigate to the word's CFI position
+            view.goTo(stopPosition.cfi);
 
-            if (doc) {
-              // Try to get a fresh Range from the current document state
-              // This is important because the original Range may be stale if the document was re-rendered
-              let wordRange = stopPosition.range;
-
-              // Check if the original range is still valid by verifying the text matches
+            // Try to create a sentence highlight using the stored Range
+            if (typeof stopPosition.docIndex === 'number' && stopPosition.range) {
+              // Check if the original range is still valid
               let rangeIsValid = false;
-              if (wordRange) {
-                try {
-                  const rangeText = wordRange.toString();
-                  rangeIsValid = rangeText === stopPosition.text;
-                } catch {
-                  rangeIsValid = false;
-                }
+              try {
+                const rangeText = stopPosition.range.toString();
+                rangeIsValid = rangeText === stopPosition.text;
+              } catch {
+                rangeIsValid = false;
               }
 
-              // If range is invalid or missing, try to find the word in the current document
-              if (!rangeIsValid) {
-                console.log('[RSVP] Original range invalid, finding word in current document');
-                const freshRange = findWordInDocument(
-                  doc,
-                  stopPosition.text,
-                  stopPosition.docWordIndex,
-                  stopPosition.docTotalWords,
-                );
-                if (freshRange) {
-                  wordRange = freshRange;
-                } else {
-                  console.warn('[RSVP] Could not find word in document:', stopPosition.text);
-                }
-              }
+              if (rangeIsValid) {
+                // Get the document from the renderer
+                const contents = view.renderer.getContents?.();
+                const content = contents?.find((c) => c.index === stopPosition.docIndex);
+                const doc = content?.doc;
 
-              if (!wordRange) {
-                console.warn('[RSVP] No valid range available for position sync');
-                return;
-              }
+                if (doc) {
+                  // Expand the range to include the full sentence
+                  const sentenceRange = expandRangeToSentence(stopPosition.range, doc);
+                  const sentenceCfi = view.getCFI(stopPosition.docIndex, sentenceRange);
+                  const sentenceText = sentenceRange.toString();
 
-              // Expand the range to include the full sentence
-              const sentenceRange = expandRangeToSentence(wordRange, doc);
+                  if (sentenceCfi) {
+                    // Remove any previous RSVP highlight
+                    removeRsvpHighlight();
 
-              // Get CFI for navigation - MUST get this BEFORE navigating
-              const cfi = view.getCFI(stopPosition.docIndex, wordRange);
+                    // Create a persistent highlight for the sentence
+                    const highlight: BookNote = {
+                      id: `rsvp-temp-${Date.now()}`,
+                      type: 'annotation',
+                      cfi: sentenceCfi,
+                      text: sentenceText,
+                      style: 'underline',
+                      color: themeCode.primary,
+                      note: '',
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                    };
 
-              // Get CFI for the sentence highlight - MUST get this BEFORE navigating
-              // because goTo() may re-render the document, invalidating the Range objects
-              const sentenceCfi = cfi ? view.getCFI(stopPosition.docIndex, sentenceRange) : null;
-              const sentenceText = sentenceRange.toString();
-
-              if (cfi) {
-                // Navigate to the position
-                view.goTo(cfi);
-
-                if (sentenceCfi) {
-                  // Remove any previous RSVP highlight
-                  removeRsvpHighlight();
-
-                  // Create a persistent highlight for the sentence using theme accent color
-                  const highlight: BookNote = {
-                    id: `rsvp-temp-${Date.now()}`,
-                    type: 'annotation',
-                    cfi: sentenceCfi,
-                    text: sentenceText,
-                    style: 'underline',
-                    color: themeCode.primary, // Use theme accent color (same as ORP focal point)
-                    note: '',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  };
-
-                  tempHighlightRef.current = highlight;
-                  view.addAnnotation(highlight);
-                  // Note: highlight persists until next page, reader close, or new RSVP session
+                    tempHighlightRef.current = highlight;
+                    view.addAnnotation(highlight);
+                  }
                 }
               }
             }

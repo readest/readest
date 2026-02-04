@@ -15,6 +15,7 @@ const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 export class RSVPController extends EventTarget {
   private view: FoliateView;
   private bookKey: string;
+  private bookId: string; // Book hash without session suffix, for persistent storage
   private currentCfi: string | null = null;
 
   private state: RsvpState = {
@@ -37,6 +38,9 @@ export class RSVPController extends EventTarget {
     super();
     this.view = view;
     this.bookKey = bookKey;
+    // Extract book ID (hash) from bookKey format: "{hash}-{sessionId}"
+    // Use only the hash for persistent position storage across sessions
+    this.bookId = bookKey.split('-')[0] || bookKey;
     this.loadSettings();
   }
 
@@ -120,7 +124,8 @@ export class RSVPController extends EventTarget {
   }
 
   private loadPositionFromStorage(): RsvpPosition | null {
-    const stored = localStorage.getItem(`${POSITION_KEY_PREFIX}${this.bookKey}`);
+    // Use bookId (without session suffix) for persistent position across sessions
+    const stored = localStorage.getItem(`${POSITION_KEY_PREFIX}${this.bookId}`);
     if (stored) {
       try {
         return JSON.parse(stored) as RsvpPosition;
@@ -132,37 +137,170 @@ export class RSVPController extends EventTarget {
   }
 
   private savePositionToStorage(): void {
-    if (!this.currentCfi) return;
     if (this.state.words.length === 0) return;
 
+    const currentWord = this.state.words[this.state.currentIndex];
+    if (!currentWord) return;
+
+    // Use the word's CFI if available, otherwise fall back to section CFI
+    const cfi = currentWord.cfi || this.currentCfi;
+    if (!cfi) return;
+
     const position: RsvpPosition = {
-      cfi: this.currentCfi,
-      wordIndex: this.state.currentIndex,
-      wordText: this.state.words[this.state.currentIndex]?.text || '',
+      cfi: cfi,
+      wordText: currentWord.text,
     };
-    localStorage.setItem(`${POSITION_KEY_PREFIX}${this.bookKey}`, JSON.stringify(position));
+    // Use bookId (without session suffix) for persistent position across sessions
+    localStorage.setItem(`${POSITION_KEY_PREFIX}${this.bookId}`, JSON.stringify(position));
   }
 
   private clearPositionFromStorage(): void {
-    localStorage.removeItem(`${POSITION_KEY_PREFIX}${this.bookKey}`);
+    // Use bookId (without session suffix) for persistent position across sessions
+    localStorage.removeItem(`${POSITION_KEY_PREFIX}${this.bookId}`);
   }
 
-  private extractBaseCfi(cfi: string): string {
+  /**
+   * Extract the spine/section reference from a CFI.
+   * For `epubcfi(/6/6!/4/2/2/6,/1:363,/1:366)`, returns `/6/6!`
+   * This identifies which section/chapter the CFI points to.
+   */
+  private extractSpineRef(cfi: string): string {
     const inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
+    // Remove range portion (everything after first comma)
     const parts = inner.split(',');
-    let basePath = parts[0]!;
-    const match = basePath.match(/^(.*\][^\/]*)/);
-    if (match) {
-      basePath = match[1]!;
+    const path = parts[0]!;
+
+    // Extract up to and including the `!` separator (spine reference)
+    // The `!` separates the package document path from the content document path
+    const spineMatch = path.match(/^([^!]+!)/);
+    if (spineMatch) {
+      return spineMatch[1]!;
     }
-    return basePath;
+
+    // Fallback: if no `!`, try to extract up to `]` (for step assertions)
+    const bracketMatch = path.match(/^(.*\][^\/]*)/);
+    if (bracketMatch) {
+      return bracketMatch[1]!;
+    }
+
+    // Last resort: return the full path before any range
+    return path;
   }
 
   private isSameSection(cfi1: string | null, cfi2: string | null): boolean {
     if (!cfi1 || !cfi2) return false;
-    const base1 = this.extractBaseCfi(cfi1);
-    const base2 = this.extractBaseCfi(cfi2);
-    return base1 === base2;
+    const spine1 = this.extractSpineRef(cfi1);
+    const spine2 = this.extractSpineRef(cfi2);
+    return spine1 === spine2;
+  }
+
+  /**
+   * Extract the full document path from a CFI, including range start for precise positioning.
+   * For range CFIs like `epubcfi(/6/10!/4/2/2/6,/168,/214/1:171)`:
+   * - Base path: `/4/2/2/6`
+   * - Range start: `/168` (relative offset)
+   * - Returns: { path: `/4/2/2/6/168`, charOffset: 0 }
+   *
+   * For word CFIs like `epubcfi(/6/10!/4/2/2/6/6,/1:0,/1:7)`:
+   * - Base path: `/4/2/2/6/6`
+   * - Range start: `/1:0` (text node with character offset)
+   * - Returns: { path: `/4/2/2/6/6/1`, charOffset: 0 }
+   *
+   * For page CFIs like `epubcfi(/6/20!/4/2,/24/1:91,/54/1:184)`:
+   * - Base path: `/4/2`
+   * - Range start: `/24/1:91` (element /24, text node /1, char 91)
+   * - Returns: { path: `/4/2/24/1`, charOffset: 91 }
+   */
+  private extractFullDocPathWithOffset(cfi: string): { path: string; charOffset: number } {
+    const inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
+    const parts = inner.split(',');
+    const fullPath = parts[0]!;
+    const bangIndex = fullPath.indexOf('!');
+    let basePath = bangIndex >= 0 ? fullPath.substring(bangIndex + 1) : fullPath;
+    let charOffset = 0;
+
+    // If there's a range start (second comma-separated part), append it to the base path
+    // This handles CFIs like `epubcfi(/6/10!/4/2/2/6,/168,/214/1:171)` where /168 is the offset
+    if (parts.length >= 2 && parts[1]) {
+      let rangeStart = parts[1];
+      // Extract character offset (`:N`) before removing it
+      const charMatch = rangeStart.match(/:(\d+)$/);
+      if (charMatch) {
+        charOffset = parseInt(charMatch[1]!, 10);
+        rangeStart = rangeStart.replace(/:\d+$/, '');
+      }
+      if (rangeStart && rangeStart !== '/') {
+        basePath = basePath + rangeStart;
+      }
+    }
+
+    return { path: basePath, charOffset };
+  }
+
+  /**
+   * Compare two CFI document paths to determine order.
+   * Returns: negative if path1 < path2, positive if path1 > path2, 0 if equal
+   */
+  private compareCfiPaths(path1: string, path2: string): number {
+    // Parse paths into step arrays: "/4/2/6" -> [4, 2, 6]
+    const steps1 = path1.split('/').filter(Boolean).map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
+    const steps2 = path2.split('/').filter(Boolean).map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
+
+    const minLen = Math.min(steps1.length, steps2.length);
+    for (let i = 0; i < minLen; i++) {
+      const s1 = steps1[i] ?? 0;
+      const s2 = steps2[i] ?? 0;
+      if (s1 !== s2) return s1 - s2;
+    }
+
+    // If all compared steps are equal, shorter path comes first
+    return steps1.length - steps2.length;
+  }
+
+  /**
+   * Compare two CFI positions including character offsets.
+   * Returns: negative if pos1 < pos2, positive if pos1 > pos2, 0 if equal
+   */
+  private compareCfiPositions(
+    pos1: { path: string; charOffset: number },
+    pos2: { path: string; charOffset: number },
+  ): number {
+    const pathComparison = this.compareCfiPaths(pos1.path, pos2.path);
+    if (pathComparison !== 0) return pathComparison;
+    // Paths are equal, compare character offsets
+    return pos1.charOffset - pos2.charOffset;
+  }
+
+  private findWordIndexByCfi(words: RsvpWord[], targetCfi: string): number {
+    // First try exact CFI match
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (word?.cfi === targetCfi) {
+        return i;
+      }
+    }
+
+    // Check if target is in same section as any word
+    const targetSpine = this.extractSpineRef(targetCfi);
+    // Use extractFullDocPathWithOffset for accurate position including character offset
+    const targetPos = this.extractFullDocPathWithOffset(targetCfi);
+
+    // Find the first word at or after the target position (by CFI path + char offset comparison)
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (!word?.cfi) continue;
+
+      // Must be in the same section
+      if (this.extractSpineRef(word.cfi) !== targetSpine) continue;
+
+      // Compare document paths + character offsets - find first word at or after target
+      const wordPos = this.extractFullDocPathWithOffset(word.cfi);
+      if (this.compareCfiPositions(wordPos, targetPos) >= 0) {
+        return i;
+      }
+    }
+
+    return -1;
   }
 
   start(retryCount = 0): void {
@@ -183,11 +321,27 @@ export class RSVPController extends EventTarget {
       this.pendingStartWordIndex = null;
     } else {
       const savedPosition = this.loadPositionFromStorage();
-      if (savedPosition && this.isSameSection(savedPosition.cfi, this.currentCfi)) {
-        if (savedPosition.wordIndex < words.length) {
-          if (words[savedPosition.wordIndex]?.text === savedPosition.wordText) {
-            startIndex = savedPosition.wordIndex;
-            resumedFromIndex = savedPosition.wordIndex;
+      if (savedPosition) {
+        // Try CFI-based position recovery first
+        if (savedPosition.cfi) {
+          const cfiIndex = this.findWordIndexByCfi(words, savedPosition.cfi);
+          if (cfiIndex >= 0) {
+            startIndex = cfiIndex;
+            resumedFromIndex = cfiIndex;
+          } else {
+            // CFI not found, try text match as fallback
+            const textMatchIndex = words.findIndex((w) => w.text === savedPosition.wordText);
+            if (textMatchIndex >= 0) {
+              startIndex = textMatchIndex;
+              resumedFromIndex = textMatchIndex;
+            }
+          }
+        } else {
+          // Legacy position without CFI - try text match
+          const textMatchIndex = words.findIndex((w) => w.text === savedPosition.wordText);
+          if (textMatchIndex >= 0) {
+            startIndex = textMatchIndex;
+            resumedFromIndex = textMatchIndex;
           }
         }
       }
@@ -268,19 +422,14 @@ export class RSVPController extends EventTarget {
     let stopPosition: RsvpStopPosition | null = null;
     if (this.state.words.length > 0) {
       const currentWord = this.state.words[this.state.currentIndex];
-      const currentDocIndex = currentWord?.docIndex;
-
-      // Count total words in the same document for accurate position recovery
-      const docTotalWords = this.state.words.filter((w) => w.docIndex === currentDocIndex).length;
 
       stopPosition = {
         wordIndex: this.state.currentIndex,
         totalWords: this.state.words.length,
         text: currentWord?.text || '',
         range: currentWord?.range,
-        docIndex: currentDocIndex,
-        docWordIndex: currentWord?.docWordIndex,
-        docTotalWords,
+        docIndex: currentWord?.docIndex,
+        cfi: currentWord?.cfi,
       };
     }
 
@@ -301,20 +450,17 @@ export class RSVPController extends EventTarget {
   }
 
   requestStart(selectionText?: string): void {
-    const words = this.extractWordsWithRanges();
-    const firstVisibleWordIndex = this.findFirstVisibleWordIndex(words);
-
     const savedPosition = this.loadPositionFromStorage();
-    const hasSavedPosition = !!(
-      savedPosition && this.isSameSection(savedPosition.cfi, this.currentCfi)
-    );
+    // Show Resume option if we have a saved position with a valid CFI
+    // We don't require it to be in the same section - user may want to resume
+    // from where they left off even if they've navigated elsewhere
+    const hasSavedPosition = !!(savedPosition?.cfi);
     const hasSelection = !!selectionText && selectionText.trim().length > 0;
 
     const startChoice: RsvpStartChoice = {
       hasSavedPosition,
       hasSelection,
       selectionText: selectionText?.trim(),
-      firstVisibleWordIndex,
     };
 
     this.dispatchEvent(new CustomEvent('rsvp-start-choice', { detail: startChoice }));
@@ -327,6 +473,25 @@ export class RSVPController extends EventTarget {
   }
 
   startFromSavedPosition(): void {
+    const savedPosition = this.loadPositionFromStorage();
+    if (!savedPosition?.cfi) {
+      // No saved position, start from beginning
+      this.start();
+      return;
+    }
+
+    // Check if saved position is in a different section
+    if (!this.isSameSection(savedPosition.cfi, this.currentCfi)) {
+      // Need to navigate to the saved section first
+      // Emit event for React component to handle navigation
+      this.dispatchEvent(
+        new CustomEvent('rsvp-navigate-to-resume', {
+          detail: { cfi: savedPosition.cfi },
+        }),
+      );
+      return;
+    }
+
     this.pendingStartWordIndex = null;
     this.start();
   }
@@ -334,8 +499,17 @@ export class RSVPController extends EventTarget {
   startFromCurrentPosition(): void {
     this.clearPositionFromStorage();
     const words = this.extractWordsWithRanges();
-    const firstVisibleIndex = this.findFirstVisibleWordIndex(words);
-    this.pendingStartWordIndex = firstVisibleIndex > 0 ? firstVisibleIndex : null;
+
+    // Use CFI-based matching to find the first word at current page position
+    let startIndex = 0;
+    if (this.currentCfi) {
+      const cfiIndex = this.findWordIndexByCfi(words, this.currentCfi);
+      if (cfiIndex >= 0) {
+        startIndex = cfiIndex;
+      }
+    }
+
+    this.pendingStartWordIndex = startIndex > 0 ? startIndex : null;
     this.start();
   }
 
@@ -345,39 +519,6 @@ export class RSVPController extends EventTarget {
     const selectionIndex = this.findWordIndexBySelection(words, selectionText);
     this.pendingStartWordIndex = selectionIndex >= 0 ? selectionIndex : null;
     this.start();
-  }
-
-  private findFirstVisibleWordIndex(words: RsvpWord[]): number {
-    if (words.length === 0) return 0;
-
-    try {
-      const renderer = this.view.renderer;
-      const scrollStart = renderer.start ?? 0;
-      const pageSize = renderer.size ?? 0;
-
-      if (pageSize > 0) {
-        const visibleStart = scrollStart - pageSize;
-        const visibleEnd = scrollStart;
-
-        for (let i = 0; i < words.length; i++) {
-          const word = words[i];
-          if (word?.range) {
-            try {
-              const rect = word.range.getBoundingClientRect();
-              if (rect.width > 0 && rect.left >= visibleStart && rect.left < visibleEnd) {
-                return i;
-              }
-            } catch {
-              continue;
-            }
-          }
-        }
-      }
-    } catch {
-      // Fall through to return 0
-    }
-
-    return 0;
   }
 
   private findWordIndexBySelection(words: RsvpWord[], selectionText: string): number {
@@ -578,10 +719,6 @@ export class RSVPController extends EventTarget {
       if (!doc?.body) continue;
 
       const words = this.extractWordsFromElement(doc.body, doc, docIndex);
-      // Assign per-document word index for position recovery
-      words.forEach((word, idx) => {
-        word.docWordIndex = idx;
-      });
       allWords.push(...words);
     }
 
@@ -612,12 +749,22 @@ export class RSVPController extends EventTarget {
             range.setStart(node, wordStart);
             range.setEnd(node, wordStart + word.length);
 
+            // Generate CFI for this word for position tracking
+            let cfi: string | undefined;
+            try {
+              cfi = this.view.getCFI(docIndex, range);
+            } catch {
+              // CFI generation failed, will fall back to word index
+              cfi = undefined;
+            }
+
             words.push({
               text: word,
               orpIndex: this.calculateORP(word),
               pauseMultiplier: this.getPauseMultiplier(word),
               range,
               docIndex,
+              cfi,
             });
           } catch {
             words.push({

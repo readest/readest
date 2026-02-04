@@ -198,7 +198,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       return normalizedHref === normalizedCurrent;
     });
     return chapter?.label || _('Select Chapter');
-  }, [currentChapterHref, flatChapters]);
+  }, [_, currentChapterHref, flatChapters]);
 
   const isChapterActive = useCallback(
     (href: string): boolean => {
