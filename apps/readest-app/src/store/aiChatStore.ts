@@ -48,10 +48,10 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
 
   setActiveConversation: async (id: string | null) => {
     if (id === null) {
-      set({ activeConversationId: null, messages: [] });
+      set({ activeConversationId: null, messages: [], isLoadingHistory: false });
       return;
     }
-    set({ isLoadingHistory: true });
+    set({ activeConversationId: id, messages: [], isLoadingHistory: true });
     try {
       const messages = await aiStore.getMessages(id);
       set({
