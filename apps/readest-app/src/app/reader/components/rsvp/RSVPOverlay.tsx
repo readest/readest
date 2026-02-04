@@ -191,13 +191,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
-    if (!currentChapterHref) return 'Select Chapter';
+    if (!currentChapterHref) return _('Select Chapter');
     const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
     const chapter = flatChapters.find((c) => {
       const normalizedHref = c.href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     });
-    return chapter?.label || 'Select Chapter';
+    return chapter?.label || _('Select Chapter');
   }, [currentChapterHref, flatChapters]);
 
   const isChapterActive = useCallback(
@@ -290,7 +290,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   return (
     <div
       data-testid='rsvp-overlay'
-      aria-label='RSVP Speed Reading Overlay'
+      aria-label={_('RSVP Speed Reading Overlay')}
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
         backgroundColor: bgColor,
