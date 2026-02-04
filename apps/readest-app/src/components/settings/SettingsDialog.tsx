@@ -239,6 +239,40 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const currentPanel = tabConfig.find((tab) => tab.tab === activePanel);
 
+  const windowControls = (
+    <div className='flex h-full items-center justify-end gap-x-2'>
+      <button
+        onClick={handleOpenCommandPalette}
+        aria-label={_('Search Settings')}
+        title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
+        className='btn btn-ghost flex h-8 min-h-8 w-8 items-center justify-center p-0'
+      >
+        <FiSearch />
+      </button>
+      <Dropdown
+        label={_('Settings Menu')}
+        className='dropdown-bottom dropdown-end'
+        buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
+        toggleButton={<PiDotsThreeVerticalBold />}
+      >
+        <DialogMenu
+          activePanel={activePanel}
+          onReset={handleResetCurrentPanel}
+          resetLabel={
+            currentPanel ? _('Reset {{settings}}', { settings: currentPanel.label }) : undefined
+          }
+        />
+      </Dropdown>
+      <button
+        onClick={handleClose}
+        aria-label={_('Close')}
+        className={'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'}
+      >
+        <MdClose size={closeIconSize} />
+      </button>
+    </div>
+  );
+
   return (
     <Dialog
       isOpen={true}
@@ -252,20 +286,23 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={
         <div className='flex w-full flex-col items-center'>
-          <div className='tab-title flex pb-2 text-base font-semibold sm:hidden'>
-            {currentPanel?.label || ''}
-          </div>
-          <div className='flex w-full flex-row items-center justify-between'>
+          <div className='flex w-full items-center justify-center pb-2 sm:hidden'>
             <button
               tabIndex={-1}
               aria-label={_('Close')}
               onClick={handleClose}
               className={
-                'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
+                'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none'
               }
             >
               {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}
             </button>
+            <div className='tab-title flex text-base font-semibold'>
+              {currentPanel?.label || ''}
+            </div>
+            <div className='absolute right-3'>{windowControls}</div>
+          </div>
+          <div className='flex w-full flex-row items-center justify-between'>
             <div
               ref={tabsRef}
               role='group'
@@ -301,41 +338,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   </button>
                 ))}
             </div>
-            <div className='flex h-full items-center justify-end gap-x-2'>
-              <button
-                onClick={handleOpenCommandPalette}
-                aria-label={_('Search Settings')}
-                title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
-                className='btn btn-ghost hidden h-8 min-h-8 w-8 items-center justify-center p-0 sm:flex'
-              >
-                <FiSearch />
-              </button>
-              <Dropdown
-                label={_('Settings Menu')}
-                className='dropdown-bottom dropdown-end'
-                buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 flex items-center justify-center'
-                toggleButton={<PiDotsThreeVerticalBold />}
-              >
-                <DialogMenu
-                  activePanel={activePanel}
-                  onReset={handleResetCurrentPanel}
-                  resetLabel={
-                    currentPanel
-                      ? _('Reset {{settings}}', { settings: currentPanel.label })
-                      : undefined
-                  }
-                />
-              </Dropdown>
-              <button
-                onClick={handleClose}
-                aria-label={_('Close')}
-                className={
-                  'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'
-                }
-              >
-                <MdClose size={closeIconSize} />
-              </button>
-            </div>
+            <div className='hidden sm:flex'>{windowControls}</div>
           </div>
         </div>
       }
