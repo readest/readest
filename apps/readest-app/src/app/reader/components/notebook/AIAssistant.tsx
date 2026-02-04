@@ -69,7 +69,7 @@ interface AIAssistantProps {
   bookKey: string;
 }
 
-// inner component that uses the runtime hook
+// inner component that coordinates history + runtime
 const AIAssistantChat = ({
   aiSettings,
   bookHash,
@@ -92,6 +92,56 @@ const AIAssistantChat = ({
     isLoadingHistory,
   } = useAIChatStore();
 
+  const showHistoryLoading = isLoadingHistory && !!activeConversationId;
+  const hasStoredMessages = storedMessages.length > 0;
+
+  if (showHistoryLoading) {
+    return <div className='flex-1' />;
+  }
+
+  return (
+    <AIAssistantRuntime
+      key={activeConversationId ?? 'new'}
+      aiSettings={aiSettings}
+      bookHash={bookHash}
+      bookTitle={bookTitle}
+      authorName={authorName}
+      currentPage={currentPage}
+      activeConversationId={activeConversationId}
+      storedMessages={storedMessages}
+      addMessage={addMessage}
+      onResetIndex={onResetIndex}
+      isLoadingHistory={isLoadingHistory}
+      hasStoredMessages={hasStoredMessages}
+    />
+  );
+};
+
+const AIAssistantRuntime = ({
+  aiSettings,
+  bookHash,
+  bookTitle,
+  authorName,
+  currentPage,
+  activeConversationId,
+  storedMessages,
+  addMessage,
+  onResetIndex,
+  isLoadingHistory,
+  hasStoredMessages,
+}: {
+  aiSettings: AISettings;
+  bookHash: string;
+  bookTitle: string;
+  authorName: string;
+  currentPage: number;
+  activeConversationId: string | null;
+  storedMessages: AIMessage[];
+  addMessage: (message: Omit<AIMessage, 'id' | 'createdAt'>) => Promise<void>;
+  onResetIndex: () => void;
+  isLoadingHistory: boolean;
+  hasStoredMessages: boolean;
+}) => {
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
     settings: aiSettings,
@@ -160,7 +210,7 @@ const AIAssistantChat = ({
       historyAdapter={historyAdapter}
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
-      hasActiveConversation={!!activeConversationId}
+      hasStoredMessages={hasStoredMessages}
     />
   );
 };
@@ -170,13 +220,13 @@ const AIAssistantWithRuntime = ({
   historyAdapter,
   onResetIndex,
   isLoadingHistory,
-  hasActiveConversation,
+  hasStoredMessages,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
   historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasActiveConversation: boolean;
+  hasStoredMessages: boolean;
 }) => {
   const runtime = useLocalRuntime(adapter, {
     adapters: historyAdapter ? { history: historyAdapter } : undefined,
@@ -189,7 +239,7 @@ const AIAssistantWithRuntime = ({
       <ThreadWrapper
         onResetIndex={onResetIndex}
         isLoadingHistory={isLoadingHistory}
-        hasActiveConversation={hasActiveConversation}
+        hasStoredMessages={hasStoredMessages}
       />
     </AssistantRuntimeProvider>
   );
@@ -198,11 +248,11 @@ const AIAssistantWithRuntime = ({
 const ThreadWrapper = ({
   onResetIndex,
   isLoadingHistory,
-  hasActiveConversation,
+  hasStoredMessages,
 }: {
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasActiveConversation: boolean;
+  hasStoredMessages: boolean;
 }) => {
   const [sources, setSources] = useState(getLastSources());
   const assistantRuntime = useAssistantRuntime();
@@ -228,7 +278,7 @@ const ThreadWrapper = ({
       onClear={handleClear}
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
-      hasActiveConversation={hasActiveConversation}
+      hasStoredMessages={hasStoredMessages}
     />
   );
 };
@@ -246,12 +296,14 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const [isIndexing, setIsIndexing] = useState(false);
   const [indexProgress, setIndexProgress] = useState<EmbeddingProgress | null>(null);
   const [indexed, setIndexed] = useState(false);
+  const hasAutoRestored = useRef(false);
 
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
   const authorName = bookData?.book?.author || '';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
+  const { loadConversations, setActiveConversation, createConversation } = useAIChatStore();
 
   // check if book is indexed on mount
   useEffect(() => {
@@ -265,9 +317,65 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     }
   }, [bookHash]);
 
+  useEffect(() => {
+    hasAutoRestored.current = false;
+  }, [bookHash]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ensureConversation = async () => {
+      if (!bookHash || !aiSettings?.enabled) return;
+
+      await loadConversations(bookHash);
+      if (cancelled || hasAutoRestored.current) return;
+
+      const { conversations, activeConversationId, currentBookHash, messages } =
+        useAIChatStore.getState();
+
+      if (currentBookHash !== bookHash) return;
+
+      const hasValidActive =
+        !!activeConversationId && conversations.some((conv) => conv.id === activeConversationId);
+
+      if (hasValidActive) {
+        if (activeConversationId && messages.length === 0) {
+          await setActiveConversation(activeConversationId);
+        }
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      if (conversations.length > 0) {
+        const mostRecent = conversations[0];
+        if (!mostRecent) return;
+        await setActiveConversation(mostRecent.id);
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      await createConversation(bookHash, `Chat about ${bookTitle}`);
+      hasAutoRestored.current = true;
+    };
+
+    ensureConversation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    bookHash,
+    bookTitle,
+    aiSettings?.enabled,
+    loadConversations,
+    setActiveConversation,
+    createConversation,
+  ]);
+
   const handleIndex = useCallback(async () => {
     if (!bookData?.bookDoc || !aiSettings) return;
     setIsIndexing(true);
+    let indexSucceeded = false;
     try {
       await indexBook(
         bookData.bookDoc as Parameters<typeof indexBook>[0],
@@ -275,8 +383,19 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         aiSettings,
         setIndexProgress,
       );
-      setIndexed(true);
-      await updateXRayForProgress({
+      indexSucceeded = true;
+    } catch (e) {
+      aiLogger.rag.indexError(bookHash, (e as Error).message);
+    } finally {
+      setIsIndexing(false);
+      setIndexProgress(null);
+      if (indexSucceeded) {
+        setIndexed(true);
+      }
+    }
+
+    if (indexSucceeded) {
+      void updateXRayForProgress({
         bookHash,
         currentPage,
         settings: aiSettings,
@@ -284,12 +403,9 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         appService,
         force: true,
         bookMetadata: bookData?.book?.metadata,
+      }).catch((error) => {
+        aiLogger.rag.indexError(bookHash, (error as Error).message);
       });
-    } catch (e) {
-      aiLogger.rag.indexError(bookHash, (e as Error).message);
-    } finally {
-      setIsIndexing(false);
-      setIndexProgress(null);
     }
   }, [bookData?.bookDoc, bookData?.book, bookHash, aiSettings, appService, bookTitle, currentPage]);
 
