@@ -116,18 +116,20 @@ export const useKOSync = (bookKey: string) => {
     let localPreview = '';
     let remotePreview = '';
     const remotePercentage = remote.percentage || 0;
+    const conflictProgressDiffThreshold = 0.0001;
+    let showConflictDetails = false;
 
     if (FIXED_LAYOUT_FORMATS.has(book.format)) {
       const localPageInfo = local.section;
       const localPercentage =
         localPageInfo && localPageInfo.total > 0
-          ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100)
+          ? (localPageInfo.current + 1) / localPageInfo.total
           : 0;
       localPreview = localPageInfo
         ? _('Page {{page}} of {{total}} ({{percentage}}%)', {
             page: localPageInfo.current + 1,
             total: localPageInfo.total,
-            percentage: localPercentage,
+            percentage: Math.round(localPercentage * 100),
           })
         : _('Current position');
 
@@ -150,6 +152,8 @@ export const useKOSync = (bookKey: string) => {
             percentage: Math.round(remotePercentage * 100),
           });
         }
+        showConflictDetails =
+          Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
       } else {
         remotePreview = _('Approximately {{percentage}}%', {
           percentage: Math.round(remotePercentage * 100),
@@ -159,21 +163,25 @@ export const useKOSync = (bookKey: string) => {
       const localPageInfo = local.pageinfo;
       const localPercentage =
         localPageInfo && localPageInfo.total > 0
-          ? Math.round(((localPageInfo.current + 1) / localPageInfo.total) * 100)
+          ? (localPageInfo.current + 1) / localPageInfo.total
           : 0;
-      localPreview = `${local.sectionLabel} (${localPercentage}%)`;
+      localPreview = `${local.sectionLabel} (${Math.round(localPercentage * 100)}%)`;
 
       remotePreview = _('Approximately {{percentage}}%', {
         percentage: Math.round(remotePercentage * 100),
       });
+      showConflictDetails =
+        Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
     }
 
-    setConflictDetails({
-      book,
-      bookDoc,
-      local: { cfi: local.location, preview: localPreview },
-      remote: { ...remote, preview: remotePreview },
-    });
+    if (showConflictDetails) {
+      setConflictDetails({
+        book,
+        bookDoc,
+        local: { cfi: local.location, preview: localPreview },
+        remote: { ...remote, preview: remotePreview },
+      });
+    }
   };
 
   const pushProgress = useMemo(
