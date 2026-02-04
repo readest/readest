@@ -1060,5 +1060,7 @@
   "Library Sync Progress": "تقدم تزامن المكتبة",
   "Back to library": "العودة إلى المكتبة",
   "Manual": "يدوي",
-  "Group by...": "تجميع حسب..."
+  "Group by...": "تجميع حسب...",
+  "Export as Plain Text": "تصدير كنص بسيط",
+  "Export as Markdown": "تصدير بصيغة Markdown"
 }

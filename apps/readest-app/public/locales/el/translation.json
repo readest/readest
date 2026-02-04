@@ -1012,5 +1012,7 @@
   "Library Sync Progress": "Πρόοδος συγχρονισμού βιβλιοθήκης",
   "Back to library": "Επιστροφή στη βιβλιοθήκη",
   "Manual": "Χειροκίνητα",
-  "Group by...": "Ομαδοποίηση κατά..."
+  "Group by...": "Ομαδοποίηση κατά...",
+  "Export as Plain Text": "Αποστολή ως απλό κείμενο",
+  "Export as Markdown": "Αποστολή ως Markdown"
 }

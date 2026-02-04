@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "Tiến trình đồng bộ hóa thư viện",
   "Back to library": "Quay lại thư viện",
   "Manual": "Thủ công",
-  "Group by...": "Nhóm theo..."
+  "Group by...": "Nhóm theo...",
+  "Export as Plain Text": "Xuất dưới dạng văn bản thuần túy",
+  "Export as Markdown": "Xuất dưới dạng Markdown"
 }

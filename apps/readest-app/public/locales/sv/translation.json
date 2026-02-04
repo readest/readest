@@ -1012,5 +1012,7 @@
   "Library Sync Progress": "Synkroniseringsframsteg för bibliotek",
   "Back to library": "Tillbaka till biblioteket",
   "Manual": "Manuellt",
-  "Group by...": "Gruppera efter..."
+  "Group by...": "Gruppera efter...",
+  "Export as Plain Text": "Exportera som vanlig text",
+  "Export as Markdown": "Exportera som Markdown"
 }

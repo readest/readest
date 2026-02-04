@@ -1013,6 +1013,6 @@
   "Back to library": "Zurück zur Bibliothek",
   "Manual": "Manuell",
   "Group by...": "Gruppieren nach...",
-  "Group By": "Gruppieren nach",
-  "Sort": "Sortieren"
+  "Export as Plain Text": "Als reinen Text exportieren",
+  "Export as Markdown": "Als Markdown exportieren"
 }

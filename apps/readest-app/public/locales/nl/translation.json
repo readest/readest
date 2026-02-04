@@ -1012,5 +1012,7 @@
   "Library Sync Progress": "Voortgang bibliotheeksynchronisatie",
   "Back to library": "Terug naar bibliotheek",
   "Manual": "Handmatig",
-  "Group by...": "Groeperen op..."
+  "Group by...": "Groeperen op...",
+  "Export as Plain Text": "Exporteren als platte tekst",
+  "Export as Markdown": "Exporteren als Markdown"
 }

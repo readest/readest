@@ -1000,5 +1000,7 @@
   "Library Sync Progress": "라이브러리 동기화 진행 상황",
   "Back to library": "라이브러리로 돌아가기",
   "Manual": "수동",
-  "Group by...": "그룹화 기준..."
+  "Group by...": "그룹화 기준...",
+  "Export as Plain Text": "일반 텍스트로 내보내기",
+  "Export as Markdown": "Markdown으로 내보내기"
 }
