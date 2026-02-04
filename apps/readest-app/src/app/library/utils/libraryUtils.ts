@@ -296,6 +296,38 @@ export const createWithinGroupSorter =
   };
 
 /**
+ * Get the sort value from a book for comparison with groups.
+ */
+export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number | string => {
+  switch (sortBy) {
+    case LibrarySortByType.Title:
+      return formatTitle(book.title);
+
+    case LibrarySortByType.Author:
+      return formatAuthors(book.author, book?.primaryLanguage || 'en', true);
+
+    case LibrarySortByType.Updated:
+      return book.updatedAt;
+
+    case LibrarySortByType.Created:
+      return book.createdAt;
+
+    case LibrarySortByType.Format:
+      return book.format;
+
+    case LibrarySortByType.Published: {
+      const published = book.metadata?.published;
+      if (!published) return 0;
+      const publishedTime = new Date(published).getTime();
+      return isNaN(publishedTime) ? 0 : publishedTime;
+    }
+
+    default:
+      return book.updatedAt;
+  }
+};
+
+/**
  * Get the aggregate sort value from a group for sorting groups.
  */
 export const getGroupSortValue = (
@@ -342,6 +374,27 @@ export const getGroupSortValue = (
     default:
       return Math.max(...books.map((b) => b.updatedAt));
   }
+};
+
+/**
+ * Compare two sort values (string or number) for sorting.
+ */
+export const compareSortValues = (
+  aValue: number | string,
+  bValue: number | string,
+  uiLanguage: string,
+): number => {
+  // String comparison for text-based sorts
+  if (typeof aValue === 'string' && typeof bValue === 'string') {
+    return aValue.localeCompare(bValue, uiLanguage || navigator.language);
+  }
+
+  // Numeric comparison for date-based sorts
+  if (typeof aValue === 'number' && typeof bValue === 'number') {
+    return aValue - bValue;
+  }
+
+  return 0;
 };
 
 /**
