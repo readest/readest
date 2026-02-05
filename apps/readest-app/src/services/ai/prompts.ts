@@ -11,7 +11,11 @@ export function buildSystemPrompt(
     chunks.length > 0
       ? `\n\n<BOOK_PASSAGES page_limit="${currentPage}">\n${chunks
           .map((c) => {
-            const header = c.chapterTitle || `Section ${c.sectionIndex + 1}`;
+            const header =
+              c.chapterTitle ||
+              (typeof c.chapterNumber === 'number'
+                ? `Chapter ${c.chapterNumber}`
+                : `Section ${c.sectionIndex + 1}`);
             return `[${header}, Page ${c.pageNumber}]\n${c.text}`;
           })
           .join('\n\n')}\n</BOOK_PASSAGES>`
@@ -88,6 +92,9 @@ const formatTextUnits = (textUnits: XRayTextUnit[]): string => {
         id: unit.id,
         page: unit.page,
         chunkId: unit.chunkId,
+        sectionIndex: unit.sectionIndex,
+        chapterTitle: unit.chapterTitle,
+        chapterNumber: unit.chapterNumber,
         text: unit.text,
       });
     })
@@ -111,10 +118,16 @@ export function buildXRayExtractionPrompt(params: {
     '- Every fact must include evidence (quote + page + chunkId).',
     '- Mark inferred relationships or facts with inferred=true.',
     '- Relationships must be explicitly supported by a direct quote.',
-    '- Only include relationships between living characters or people.',
-    '- Events must be grounded in a specific page and quote.',
+    '- Only include relationships between living human characters or people (exclude animals, creatures, robots, vehicles, organizations).',
+    '- Events can span multiple pages; set page to the last page covered and include evidence from those pages.',
     '- Claims should capture stated assertions, arguments, or conclusions with evidence.',
     '- Events may include optional arc (setup, rising_action, climax, fallout), tone, or emotions when explicit.',
+    '- Entity descriptions must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Relationship descriptions must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Event summaries must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Claim descriptions must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Use plain language in description/summary fields; no quotes, no lists, no raw keys or underscores.',
+    '- Include all relevant details from the provided text units; do not omit items.',
     '- If nothing is found, return empty arrays.',
   ];
 
@@ -156,7 +169,10 @@ export function buildXRayRelationshipPrompt(params: {
     '- Do not create new entities; use knownEntities only.',
     '- Relationships must be explicitly supported by a direct quote.',
     '- Every relationship must include evidence (quote + page + chunkId).',
-    '- Only include relationships between living characters or people.',
+    '- Only include relationships between living human characters or people (exclude animals, creatures, robots, vehicles, organizations).',
+    '- Relationship descriptions must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Use plain language in description fields; no quotes, no lists, no raw keys or underscores.',
+    '- Include all relevant details from the provided text units; do not omit items.',
     '- If none, return empty arrays for all keys.',
     'INPUT:',
     `- maxPageIncluded: ${maxPageIncluded}`,
@@ -182,6 +198,10 @@ export function buildXRayTimelinePrompt(params: {
     '- Each event must include page and evidence (quote + page + chunkId).',
     '- Keep summaries concise and spoiler-safe.',
     '- Events may include arc (setup, rising_action, climax, fallout), tone, or emotions only when explicit.',
+    '- Events can span multiple pages; set page to the last page covered and include evidence from those pages.',
+    '- Event summaries must be 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Use plain language in summaries; no quotes, no lists, no raw keys or underscores.',
+    '- Include all relevant details from the provided text units; do not omit items.',
     '- If none, return empty arrays for all keys.',
     'INPUT:',
     `- maxPageIncluded: ${maxPageIncluded}`,
@@ -190,4 +210,68 @@ export function buildXRayTimelinePrompt(params: {
     'OUTPUT:',
     'Return strict JSON that matches the XRayExtractionV1 schema with only events populated.',
   ].join('\n');
+}
+
+export function buildXRaySummarySystemPrompt(): string {
+  return [
+    'You are a careful literary analyst.',
+    'Use only the provided facts, relationships, events, and claims.',
+    'Never use outside knowledge.',
+    'Never infer beyond the given page range.',
+    'Write in the same language as the evidence quotes.',
+    'Write plain language only. No quotes, no lists, no raw keys or underscores.',
+    'Use 1-4 sentences (max 4).',
+    'Output a single strict JSON object only.',
+    'Do not wrap JSON in markdown or code fences.',
+    'Use double quotes for all keys and strings.',
+    'Do not include trailing commas.',
+  ].join(' ');
+}
+
+export function buildXRayEntitySummaryPrompt(params: {
+  maxPageIncluded: number;
+  entity: {
+    name: string;
+    type: string;
+    aliases: string[];
+  };
+  facts: Array<{ key: string; value: string; evidence: Array<{ quote: string; page: number }> }>;
+  relationships: Array<{
+    with: string;
+    type: string;
+    description: string;
+    evidence: Array<{ quote: string; page: number }>;
+  }>;
+  events: Array<{
+    summary: string;
+    page: number;
+    evidence: Array<{ quote: string; page: number }>;
+  }>;
+  claims: Array<{ description: string; evidence: Array<{ quote: string; page: number }> }>;
+}): string {
+  const { maxPageIncluded, entity, facts, relationships, events, claims } = params;
+  const lines = [
+    'TASK: Write a concise, spoiler-safe description of the entity using only the data below.',
+    'CONSTRAINTS:',
+    '- Use only the provided facts, relationships, events, and claims.',
+    '- Do not invent details or speculate.',
+    '- Stay within maxPageIncluded.',
+    '- Write 1-4 complete sentences (max 4) with proper capitalization and punctuation.',
+    '- Use plain language only. No quotes, no lists, no raw keys or underscores.',
+    '- Follow this structure in order: identity/role, relationships/interactions, key events/actions, other facts/claims.',
+    '- If a section has no information, skip it.',
+    '- Use every provided fact, relationship, event, and claim by compressing them into the sentences.',
+    'INPUT:',
+    `- maxPageIncluded: ${maxPageIncluded}`,
+    `- entity: ${JSON.stringify(entity)}`,
+    `- facts: ${JSON.stringify(facts)}`,
+    `- relationships: ${JSON.stringify(relationships)}`,
+    `- events: ${JSON.stringify(events)}`,
+    `- claims: ${JSON.stringify(claims)}`,
+    'OUTPUT:',
+    'Return strict JSON with a single key: summary.',
+    'Example: {"summary":"..."}',
+  ];
+
+  return lines.join('\n');
 }
