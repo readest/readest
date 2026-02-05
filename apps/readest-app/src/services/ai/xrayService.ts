@@ -70,6 +70,23 @@ const XRAY_ALLOWED_ENTITY_TYPES: XRayEntityType[] = [
 const processingBooks = new Set<string>();
 const summaryInFlight = new Map<string, Promise<string>>();
 
+const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+const yieldToMainThread = async (): Promise<void> => {
+  if (typeof window === 'undefined') return;
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+};
+
+const createYieldController = (budgetMs = 12) => {
+  let lastYield = nowMs();
+  return async () => {
+    const now = nowMs();
+    if (now - lastYield < budgetMs) return;
+    lastYield = now;
+    await yieldToMainThread();
+  };
+};
+
 const normalizeName = (value: string): string => {
   return value.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
 };
@@ -1180,6 +1197,7 @@ const updateXRayEntitySummaries = async (params: {
   const startedAt = Date.now();
   let processed = 0;
   const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+  const yieldIfNeeded = createYieldController(12);
 
   for (const entity of entities) {
     if (processed >= XRAY_SUMMARY_MAX_PER_RUN) break;
@@ -1193,10 +1211,16 @@ const updateXRayEntitySummaries = async (params: {
       maxPageIncluded,
       entityById,
     });
-    if (!hasSignal) continue;
+    if (!hasSignal) {
+      await yieldIfNeeded();
+      continue;
+    }
     const summaryKey = buildSummaryKey(bookHash, entity.id, sourceHash);
     const cached = await aiStore.getXRayEntitySummary(summaryKey);
-    if (cached?.summary) continue;
+    if (cached?.summary) {
+      await yieldIfNeeded();
+      continue;
+    }
     await resolveEntitySummary({
       bookHash,
       entity,
@@ -1210,23 +1234,25 @@ const updateXRayEntitySummaries = async (params: {
       mode: 'eager',
     });
     processed += 1;
+    await yieldIfNeeded();
   }
 };
 
-const applyInferences = (
+const applyInferences = async (
   entities: XRayEntity[],
   relationships: XRayRelationship[],
   textUnits: XRayTextUnit[],
   bookHash: string,
   maxPage: number,
-): { entities: XRayEntity[]; relationships: XRayRelationship[] } => {
-  // Apply possessive parsing
+  yieldIfNeeded?: () => Promise<void>,
+): Promise<{ entities: XRayEntity[]; relationships: XRayRelationship[] }> => {
   const possessiveParser = new PossessiveParser();
   const possessiveChains: import('./xray/possessiveParser').PossessiveChain[] = [];
 
   for (const unit of textUnits) {
     const chains = possessiveParser.parsePossessiveChains(unit.text, unit.page, unit.chunkId);
     possessiveChains.push(...chains);
+    if (yieldIfNeeded) await yieldIfNeeded();
   }
 
   const possessiveResult = possessiveParser.generateImpliedEntitiesAndRelationships(
@@ -1236,14 +1262,13 @@ const applyInferences = (
     maxPage,
   );
 
-  // Merge possessive inferences
   const allEntities = [...entities, ...possessiveResult.entities];
   let allRelationships = [...relationships, ...possessiveResult.relationships];
   const entityById = new Map(allEntities.map((entity) => [entity.id, entity]));
-  allRelationships.forEach((rel) => {
+  for (const rel of allRelationships) {
     const source = entityById.get(rel.sourceId);
     const target = entityById.get(rel.targetId);
-    if (!source || !target) return;
+    if (!source || !target) continue;
     rel.description = normalizeRelationshipDescription(
       rel.description || '',
       source.canonicalName,
@@ -1251,14 +1276,13 @@ const applyInferences = (
       target.canonicalName,
       rel.evidence,
     );
-  });
+  }
   allRelationships = allRelationships.filter((rel) => isLivingRelationship(rel, entityById));
+  if (yieldIfNeeded) await yieldIfNeeded();
 
-  // Apply coreference resolution
   const coreferenceResolver = new CoreferenceResolver();
-  coreferenceResolver.resolveCoreferences(textUnits, allEntities);
+  await coreferenceResolver.resolveCoreferences(textUnits, allEntities, yieldIfNeeded);
 
-  // Apply graph inference (triadic closure, community detection)
   try {
     const graphBuilder = new XRayGraphBuilder();
     const graphRelationships = allRelationships.filter(
@@ -1268,14 +1292,14 @@ const applyInferences = (
     const graph = graphBuilder.getGraph();
 
     const graphInference = new XRayGraphInference();
-    const inferenceResult = graphInference.inferRelationships(
+    const inferenceResult = await graphInference.inferRelationships(
       graph,
       allEntities,
       bookHash,
       maxPage,
+      yieldIfNeeded,
     );
 
-    // Add inferred relationships from graph inference
     const inferred = inferenceResult.inferredRelationships.filter(
       (rel) => rel.sourceId !== rel.targetId && isLivingRelationship(rel, entityById),
     );
@@ -1849,26 +1873,44 @@ export const updateXRayForProgress = async (params: {
     bookMetadata,
   } = params;
 
-  const logDebug = async (message: string): Promise<void> => {
-    const stamp = new Date().toISOString();
-    const line = `[X-Ray][${stamp}] ${message}`;
-    console.debug(line);
+  const debugBuffer: string[] = [];
+
+  const flushDebug = async (): Promise<void> => {
+    if (debugBuffer.length === 0) return;
+    const content = debugBuffer.join('');
+    debugBuffer.length = 0;
     if (!appService && typeof window !== 'undefined') {
       try {
         const key = `xray_debug_${bookHash}`;
         const existing = window.localStorage.getItem(key) || '';
-        const next = `${existing}${line}\n`;
+        const next = `${existing}${content}`;
         const trimmed = next.length > 200000 ? next.slice(next.length - 200000) : next;
         window.localStorage.setItem(key, trimmed);
       } catch {}
       return;
     }
     if (!appService) return;
-    await appendXRayDebugLog(appService, bookTitle, bookHash, `${line}\n`);
+    await appendXRayDebugLog(appService, bookTitle, bookHash, content);
   };
+
+  const logDebug = async (message: string): Promise<void> => {
+    const stamp = new Date().toISOString();
+    const line = `[X-Ray][${stamp}] ${message}\n`;
+    console.debug(line.trimEnd());
+    debugBuffer.push(line);
+  };
+
+  const yieldIfNeeded = createYieldController(12);
 
   if (!settings.enabled) {
     await logDebug('xray_update skipped: ai disabled');
+    await flushDebug();
+    return;
+  }
+
+  if (processingBooks.has(bookHash)) {
+    await logDebug('xray_update skipped: already processing');
+    await flushDebug();
     return;
   }
 
@@ -1892,14 +1934,10 @@ export const updateXRayForProgress = async (params: {
       lastReadAt: Date.now(),
       lastUpdated: Date.now(),
     });
+    await flushDebug();
     if (force) {
       throw new Error('Book must be indexed before X-Ray extraction');
     }
-    return;
-  }
-
-  if (processingBooks.has(bookHash)) {
-    await logDebug('xray_update skipped: already processing');
     return;
   }
 
@@ -1968,6 +2006,7 @@ export const updateXRayForProgress = async (params: {
     const genreHints = buildGenreHints(bookMetadata);
     const allChunks = await aiStore.getChunks(bookHash);
     const chunksByPage = indexChunksByPage(allChunks);
+    await yieldIfNeeded();
     let existingEntities = await aiStore.getXRayEntities(bookHash);
     let existingRelationships = await aiStore.getXRayRelationships(bookHash);
     let existingEvents = await aiStore.getXRayEvents(bookHash);
@@ -2135,6 +2174,7 @@ export const updateXRayForProgress = async (params: {
         if (batchResults.some((item) => item.status === 'failed') && concurrency > 1) {
           concurrency = 1;
         }
+        await yieldIfNeeded();
       }
 
       return { results, failures, splitCount, totalWindows: windows.length };
@@ -2148,6 +2188,7 @@ export const updateXRayForProgress = async (params: {
       const windowMaxChars = typeof window !== 'undefined' ? 6000 : XRAY_WINDOW_MAX_CHARS;
       const windowMaxUnits = typeof window !== 'undefined' ? 10 : XRAY_WINDOW_MAX_UNITS;
       const windows = buildTextUnitWindows(textUnits, windowMaxChars, windowMaxUnits);
+      await yieldIfNeeded();
 
       await logDebug(
         `xray_batch start=${pageStart} end=${pageEnd} units=${textUnits.length} chars=${textChars} windows=${windows.length}`,
@@ -2222,6 +2263,7 @@ export const updateXRayForProgress = async (params: {
       let extraction = normalizeExtraction(null);
       for (const result of successful) {
         extraction = mergeExtraction(extraction, result);
+        await yieldIfNeeded();
       }
 
       await logDebug(
@@ -2290,6 +2332,7 @@ export const updateXRayForProgress = async (params: {
               keptItems += 1;
               keptEvidence += filtered.length;
             }
+            await yieldIfNeeded();
           }
           await logDebug(
             `xray_evidence ${label} items=${groups.length} withEvidence=${withEvidence} keptItems=${keptItems} totalEvidence=${totalEvidence} keptEvidence=${keptEvidence}`,
@@ -2357,12 +2400,13 @@ export const updateXRayForProgress = async (params: {
         existingClaims,
       );
 
-      const inferred = applyInferences(
+      const inferred = await applyInferences(
         Array.from(updatedEntityMap.values()),
         updatedRelationships,
         textUnits,
         bookHash,
         pageEnd,
+        yieldIfNeeded,
       );
 
       const allEntities = [...Array.from(updatedEntityMap.values()), ...inferred.entities];
@@ -2444,6 +2488,9 @@ export const updateXRayForProgress = async (params: {
     });
     throw error;
   } finally {
+    try {
+      await flushDebug();
+    } catch {}
     processingBooks.delete(bookHash);
     void eventDispatcher.dispatch('xray-processing', { bookHash, status: 'end' });
   }
