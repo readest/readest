@@ -1102,5 +1102,9 @@
   "Library Sync Progress": "Avanzamento sincronizzazione libreria",
   "Back to library": "Torna alla libreria",
   "Manual": "Manuale",
-  "Group by...": "Raggruppa per..."
+  "Group by...": "Raggruppa per...",
+  "Export as Plain Text": "Esporta come testo normale",
+  "Export as Markdown": "Esporta come Markdown",
+  "Show Page Navigation Buttons": "Tasti navigazione",
+  "Page {{number}}": "Pagina {{number}}"
 }

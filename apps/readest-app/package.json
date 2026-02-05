@@ -94,7 +94,7 @@
     "@tauri-apps/plugin-shell": "~2.3.4",
     "@tauri-apps/plugin-updater": "^2.9.0",
     "@tauri-apps/plugin-websocket": "~2.4.2",
-    "@zip.js/zip.js": "^2.7.53",
+    "@zip.js/zip.js": "^2.8.16",
     "abortcontroller-polyfill": "^1.7.8",
     "ai": "^6.0.47",
     "ai-sdk-ollama": "^3.2.0",

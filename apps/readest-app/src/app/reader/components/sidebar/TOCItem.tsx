@@ -101,9 +101,9 @@ const TOCItemView = React.memo<{
       >
         {item.label}
       </div>
-      {item.location && (
+      {(item.location || item.index !== undefined) && (
         <div className='text-base-content/50 ms-auto ps-1 text-xs sm:pe-1'>
-          {item.location.current + 1}
+          {item.location ? item.location.current + 1 : item.index + 1}
         </div>
       )}
     </div>

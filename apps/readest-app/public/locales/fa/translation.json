@@ -1090,5 +1090,9 @@
   "Library Sync Progress": "پیشرفت همگام‌سازی کتابخانه",
   "Back to library": "بازگشت به کتابخانه",
   "Manual": "دستی",
-  "Group by...": "گروه‌بندی بر اساس..."
+  "Group by...": "گروه‌بندی بر اساس...",
+  "Export as Plain Text": "خروجی به صورت متن ساده",
+  "Export as Markdown": "خروجی به صورت Markdown",
+  "Show Page Navigation Buttons": "دکمه‌های ناوبری",
+  "Page {{number}}": "صفحه {{number}}"
 }

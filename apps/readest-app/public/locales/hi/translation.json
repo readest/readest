@@ -1090,5 +1090,9 @@
   "Library Sync Progress": "पुस्तकालय सिंक प्रगति",
   "Back to library": "लाइब्रेरी पर वापस जाएं",
   "Manual": "मैनुअल",
-  "Group by...": "इसके द्वारा समूहबद्ध करें..."
+  "Group by...": "इसके द्वारा समूहबद्ध करें...",
+  "Export as Plain Text": "प्लेन टेक्स्ट के रूप में एक्सपोर्ट करें",
+  "Export as Markdown": "Markdown के रूप में एक्सपोर्ट करें",
+  "Show Page Navigation Buttons": "नेविगेशन बटन",
+  "Page {{number}}": "पृष्ठ {{number}}"
 }

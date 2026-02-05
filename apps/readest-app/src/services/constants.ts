@@ -255,6 +255,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showProgressInfo: true,
   tapToToggleFooter: false,
   showMarginsOnScroll: false,
+  showPaginationButtons: false,
   progressStyle: 'fraction',
   progressInfoMode: 'all',
 
@@ -297,6 +298,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   noteSeparator: '\n\n',
   useCustomTemplate: false,
   customTemplate: '',
+  exportAsPlainText: false,
 };
 
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {

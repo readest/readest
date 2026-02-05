@@ -1114,5 +1114,9 @@
   "Library Sync Progress": "Прогресс синхронизации библиотеки",
   "Back to library": "Назад в библиотеку",
   "Manual": "Вручную",
-  "Group by...": "Группировать по..."
+  "Group by...": "Группировать по...",
+  "Export as Plain Text": "Экспортировать как обычный текст",
+  "Export as Markdown": "Экспортировать как Markdown",
+  "Show Page Navigation Buttons": "Кнопки навигации",
+  "Page {{number}}": "Страница {{number}}"
 }
