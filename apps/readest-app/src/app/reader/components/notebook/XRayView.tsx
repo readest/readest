@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Fzf, byLengthAsc } from 'fzf';
 import { PiGraph } from 'react-icons/pi';
 
@@ -110,6 +110,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [jumpingEvidenceKey, setJumpingEvidenceKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedGraphEntity, setSelectedGraphEntity] = useState<XRayEntity | null>(null);
+  const hasLoadedRef = useRef(false);
+  const loadInFlightRef = useRef(false);
+  const pendingLoadRef = useRef<{ silent: boolean } | null>(null);
+  const snapshotRef = useRef<XRaySnapshot | null>(null);
+  const currentPageRef = useRef(currentPage);
 
   const lastUpdatedLabel = useMemo(() => {
     if (!snapshot?.lastUpdated) return '';
@@ -164,51 +169,92 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       setIsIndexed(false);
       return;
     }
+    if (!aiSettings?.enabled || providerUnsupported) {
+      setIsIndexed(null);
+      return;
+    }
     const indexed = await isBookIndexed(bookHash);
     setIsIndexed(indexed);
-  }, [bookHash]);
+  }, [bookHash, aiSettings?.enabled, providerUnsupported]);
 
   const loadSummaries = useCallback(
     async (data?: XRaySnapshot | null) => {
       if (!aiSettings?.enabled || !bookHash) return;
-      const snapshotData = data ?? snapshot;
+      const snapshotData = data ?? snapshotRef.current;
       if (!snapshotData) return;
       try {
-        const summaries = await getXRayEntitySummaries({
-          bookHash,
-          maxPageIncluded: currentPage,
-          settings: aiSettings,
-          entities: snapshotData.entities,
-          relationships: snapshotData.relationships,
-          events: snapshotData.events,
-          claims: snapshotData.claims,
-        });
-        setEntitySummaries(summaries);
+        const run = async () => {
+          const summaries = await getXRayEntitySummaries({
+            bookHash,
+            maxPageIncluded: currentPageRef.current,
+            settings: aiSettings,
+            entities: snapshotData.entities,
+            relationships: snapshotData.relationships,
+            events: snapshotData.events,
+            claims: snapshotData.claims,
+          });
+          setEntitySummaries(summaries);
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          await new Promise<void>((resolve) => {
+            window.requestIdleCallback(
+              () => {
+                void run().finally(resolve);
+              },
+              { timeout: 1500 },
+            );
+          });
+          return;
+        }
+
+        await run();
       } catch (err) {
         console.warn('Failed to load X-Ray summaries:', err);
       }
     },
-    [aiSettings, bookHash, currentPage, snapshot],
+    [aiSettings, bookHash],
   );
 
-  const loadSnapshot = useCallback(async () => {
-    if (!bookHash) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const data = await getXRaySnapshot(bookHash, currentPage);
-      setSnapshot(data);
-      void loadSummaries(data);
-    } catch (err) {
-      console.error('Failed to load X-Ray snapshot:', err);
-      setErrorMessage(_('Failed to load X-Ray data'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [bookHash, currentPage, loadSummaries, _]);
+  const loadSnapshot = useCallback(
+    async (options?: { silent?: boolean; page?: number }) => {
+      const silent = options?.silent ?? false;
+      const targetPage = options?.page ?? currentPageRef.current;
+      if (!bookHash) {
+        hasLoadedRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+      if (loadInFlightRef.current) {
+        const pending = pendingLoadRef.current;
+        pendingLoadRef.current = { silent: pending ? pending.silent && silent : silent };
+        return;
+      }
+      loadInFlightRef.current = true;
+      const shouldShowLoading = !silent && !hasLoadedRef.current;
+      if (shouldShowLoading) setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const data = await getXRaySnapshot(bookHash, targetPage);
+        snapshotRef.current = data;
+        setSnapshot(data);
+        void loadSummaries(data);
+      } catch (err) {
+        console.error('Failed to load X-Ray snapshot:', err);
+        setErrorMessage(_('Failed to load X-Ray data'));
+      } finally {
+        hasLoadedRef.current = true;
+        if (shouldShowLoading) setIsLoading(false);
+        loadInFlightRef.current = false;
+        const pending = pendingLoadRef.current;
+        if (pending) {
+          pendingLoadRef.current = null;
+          void loadSnapshot(pending);
+        }
+      }
+    },
+    [bookHash, loadSummaries, _],
+  );
 
   const handleUpdate = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
@@ -238,7 +284,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         force: true,
         bookMetadata: bookData?.book?.metadata,
       });
-      await loadSnapshot();
+      await loadSnapshot({ silent: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : _('X-Ray update failed.');
       setErrorMessage(message);
@@ -274,7 +320,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         appService,
         bookMetadata: bookData?.book?.metadata,
       });
-      await loadSnapshot();
+      await loadSnapshot({ silent: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : _('X-Ray rebuild failed.');
       setErrorMessage(message);
@@ -756,12 +802,14 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return (
       <div key={item.entity.id} className='border-base-300/60 rounded-md border p-3'>
         <div className='flex items-start justify-between gap-2'>
-          <div>
+          <div className='min-w-0'>
             <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
-            <p className='text-base-content/70 mt-1 text-xs'>{item.oneLiner}</p>
           </div>
-          <div className='text-base-content/60 text-xs'>{getEntityTypeLabel(item.entity.type)}</div>
+          <div className='text-base-content/60 shrink-0 text-xs'>
+            {getEntityTypeLabel(item.entity.type)}
+          </div>
         </div>
+        <p className='text-base-content/70 mt-1 text-xs'>{item.oneLiner}</p>
 
         <div className='mt-3 flex flex-wrap gap-2 text-[10px]'>
           {renderPill('mention', `${_('Mentions')}: ${item.mentionCount}`)}
@@ -825,12 +873,27 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   useEffect(() => {
     loadSnapshot();
-    checkIndexed();
-  }, [loadSnapshot, checkIndexed]);
+  }, [loadSnapshot]);
 
   useEffect(() => {
-    loadSnapshot();
+    checkIndexed();
+  }, [checkIndexed]);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+    if (!hasLoadedRef.current) return;
+    loadSnapshot({ silent: true, page: currentPage });
   }, [currentPage, loadSnapshot]);
+
+  useEffect(() => {
+    hasLoadedRef.current = false;
+    pendingLoadRef.current = null;
+    loadInFlightRef.current = false;
+    snapshotRef.current = null;
+    setSnapshot(null);
+    setEntitySummaries({});
+    setIsLoading(Boolean(bookHash));
+  }, [bookHash]);
 
   useEffect(() => {
     if (relationshipFilter === 'all') return;
@@ -858,7 +921,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   useEffect(() => {
     const handler = (event: CustomEvent) => {
       if (event.detail?.bookHash !== bookHash) return;
-      loadSnapshot();
+      const nextMaxPage = event.detail?.maxPageIncluded;
+      const currentMaxPage = snapshotRef.current?.state?.lastAnalyzedPage;
+      if (
+        typeof nextMaxPage === 'number' &&
+        typeof currentMaxPage === 'number' &&
+        nextMaxPage <= currentMaxPage
+      )
+        return;
+      loadSnapshot({ silent: true });
     };
     eventDispatcher.on('xray-updated', handler);
     return () => {
@@ -869,7 +940,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   useEffect(() => {
     const handler = (event: CustomEvent) => {
       if (event.detail?.bookHash !== bookHash) return;
-      void loadSummaries();
+      void loadSummaries(snapshotRef.current);
     };
     eventDispatcher.on('xray-summaries-updated', handler);
     return () => {
