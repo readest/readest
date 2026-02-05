@@ -340,8 +340,8 @@ const FoliateViewer: React.FC<{
       });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
       const viewHeight = appService?.isMobile ? screen.height : window.innerHeight;
-      const width = viewWidth;
-      const height = viewHeight;
+      const width = viewWidth - insets.left - insets.right;
+      const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
       view.renderer.setStyles?.(getStyles(viewSettings));
       applyTranslationStyle(viewSettings);

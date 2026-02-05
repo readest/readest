@@ -700,7 +700,7 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
             /}$/,
             ' width: calc(var(--_max-width) + var(--page-margin-left) + var(--page-margin-right)) !important; }',
           )
-          .replace(/}$/, ' max-width: 100vw !important; }');
+          .replace(/}$/, ' max-width: calc(var(--full-width) * 1px) !important; }');
       }
       if (
         !/height\s*:/.test(block) &&
@@ -712,7 +712,7 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
             /}$/,
             ' height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important; }',
           )
-          .replace(/}$/, ' max-height: 100vh !important; }');
+          .replace(/}$/, ' max-height: calc(var(--full-height) * 1px) !important; }');
       }
     }
     return selector + block;
@@ -838,9 +838,10 @@ export const applyTableStyle = (document: Document) => {
       }
     }
 
-    const inlineWidth = table.style.width;
-    if (inlineWidth) {
-      table.style.width = `calc(min(${inlineWidth}, var(--available-width)))`;
+    const computedTableStyle = window.getComputedStyle(table);
+    const computedWidth = computedTableStyle.width;
+    if (computedWidth && computedWidth !== 'auto' && computedWidth !== '0px') {
+      table.style.width = `calc(min(${computedWidth}, var(--available-width)))`;
     }
     if (totalTableWidth > 0) {
       const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
