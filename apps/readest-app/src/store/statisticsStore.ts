@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
   ReadingSession,
+  PageReadingStat,
   DailyReadingSummary,
   BookStatistics,
   UserStatistics,
@@ -104,6 +105,12 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       lastProgress: progress,
       lastPage: page,
       totalPages,
+      // Initialize page-level tracking
+      currentPage: {
+        page,
+        enteredAt: now,
+      },
+      pageStats: [],
     };
 
     set((state) => ({
@@ -123,17 +130,63 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
     const session = activeSessions[bookKey];
     if (!session) return;
 
-    set((state) => ({
-      activeSessions: {
-        ...state.activeSessions,
-        [bookKey]: {
-          ...session,
-          lastActivityTime: Date.now(),
-          lastProgress: progress,
-          lastPage: page,
+    const now = Date.now();
+    const currentPage = session.currentPage;
+
+    // Check if page changed
+    if (page !== currentPage.page) {
+      // Calculate time spent on the previous page
+      const timeOnPage = Math.floor((now - currentPage.enteredAt) / 1000);
+
+      // Apply KOReader-style min/max limits
+      const { minimumPageSeconds, maximumPageSeconds } = config;
+      const clampedDuration = Math.min(Math.max(timeOnPage, 0), maximumPageSeconds);
+
+      // Only record if above minimum threshold
+      const newPageStats = [...session.pageStats];
+      if (clampedDuration >= minimumPageSeconds) {
+        const pageStat: PageReadingStat = {
+          bookHash: session.bookHash,
+          page: currentPage.page,
+          startTime: currentPage.enteredAt,
+          duration: clampedDuration,
+          totalPages: session.totalPages,
+        };
+        newPageStats.push(pageStat);
+        console.log('[Statistics] Recorded', clampedDuration, 'seconds on page', currentPage.page);
+      }
+
+      // Update session with new page
+      set((state) => ({
+        activeSessions: {
+          ...state.activeSessions,
+          [bookKey]: {
+            ...session,
+            lastActivityTime: now,
+            lastProgress: progress,
+            lastPage: page,
+            currentPage: {
+              page,
+              enteredAt: now,
+            },
+            pageStats: newPageStats,
+          },
         },
-      },
-    }));
+      }));
+    } else {
+      // Same page, just update activity time
+      set((state) => ({
+        activeSessions: {
+          ...state.activeSessions,
+          [bookKey]: {
+            ...session,
+            lastActivityTime: now,
+            lastProgress: progress,
+            lastPage: page,
+          },
+        },
+      }));
+    }
   },
 
   endSession: (bookKey, reason) => {
@@ -162,7 +215,35 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       return null;
     }
 
+    // Record time on the final page
+    const finalPageStats = [...activeSession.pageStats];
+    const currentPage = activeSession.currentPage;
+    const timeOnFinalPage = Math.floor((now - currentPage.enteredAt) / 1000);
+    const { minimumPageSeconds, maximumPageSeconds } = config;
+    const clampedFinalDuration = Math.min(Math.max(timeOnFinalPage, 0), maximumPageSeconds);
+
+    if (clampedFinalDuration >= minimumPageSeconds) {
+      finalPageStats.push({
+        bookHash: activeSession.bookHash,
+        page: currentPage.page,
+        startTime: currentPage.enteredAt,
+        duration: clampedFinalDuration,
+        totalPages: activeSession.totalPages,
+      });
+      console.log(
+        '[Statistics] Recorded',
+        clampedFinalDuration,
+        'seconds on final page',
+        currentPage.page,
+      );
+    }
+
     const pagesRead = Math.max(0, activeSession.lastPage - activeSession.startPage);
+
+    // Calculate total duration from page stats (more accurate than session timing)
+    const pageStatsDuration = finalPageStats.reduce((sum, ps) => sum + ps.duration, 0);
+    // Use the larger of session duration or page stats sum (accounts for idle time)
+    const finalDuration = Math.max(duration, pageStatsDuration);
 
     const session: ReadingSession = {
       id: uuidv4(),
@@ -170,15 +251,24 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       metaHash: activeSession.metaHash,
       startTime: activeSession.startTime,
       endTime: now,
-      duration,
+      duration: finalDuration,
       startProgress: activeSession.startProgress,
       endProgress: activeSession.lastProgress,
       startPage: activeSession.startPage,
       endPage: activeSession.lastPage,
       pagesRead,
+      pageStats: finalPageStats.length > 0 ? finalPageStats : undefined,
       createdAt: now,
       updatedAt: now,
     };
+
+    console.log(
+      '[Statistics] Session ended with',
+      finalPageStats.length,
+      'page stats, total',
+      finalDuration,
+      'seconds',
+    );
 
     // Update daily summary
     const dateStr = getDateString(activeSession.startTime);

@@ -1,3 +1,12 @@
+// Page-level reading stat - time spent on a specific page (KOReader compatible)
+export interface PageReadingStat {
+  bookHash: string; // Book identifier
+  page: number; // Page number (1-based)
+  startTime: number; // When reading started (ms timestamp)
+  duration: number; // Seconds spent on this page
+  totalPages: number; // Total pages in book at time of recording
+}
+
 // Reading session - individual reading period for a book
 export interface ReadingSession {
   id: string; // UUID
@@ -13,6 +22,9 @@ export interface ReadingSession {
   startPage: number; // Page at start
   endPage: number; // Page at end
   pagesRead: number; // Pages read in session
+
+  // Page-level stats for this session (KOReader compatible)
+  pageStats?: PageReadingStat[];
 
   createdAt: number;
   updatedAt: number;
@@ -60,11 +72,28 @@ export interface UserStatistics {
   readingByDayOfWeek: number[]; // 7 elements (0=Sunday)
 }
 
+// Reading goal
+export interface ReadingGoal {
+  id: string;
+  type: 'daily_time' | 'daily_pages' | 'weekly_time' | 'weekly_pages';
+  target: number;
+  enabled: boolean;
+}
+
 // Configuration
 export interface StatisticsConfig {
   trackingEnabled: boolean;
   idleTimeoutMinutes: number; // Default: 5
   minimumSessionSeconds: number; // Default: 30
+  minimumPageSeconds: number; // Default: 5 (KOReader: min_sec)
+  maximumPageSeconds: number; // Default: 120 (KOReader: max_sec)
+  goals: ReadingGoal[];
+}
+
+// Active page tracking (for page-level stats)
+export interface ActivePageState {
+  page: number;
+  enteredAt: number; // When user entered this page (ms timestamp)
 }
 
 // Active session tracking (not persisted)
@@ -79,6 +108,9 @@ export interface ActiveSession {
   lastProgress: number;
   lastPage: number;
   totalPages: number;
+  // Page-level tracking
+  currentPage: ActivePageState;
+  pageStats: PageReadingStat[]; // Accumulated page stats for this session
 }
 
 // Storage format
@@ -97,6 +129,9 @@ export const DEFAULT_STATISTICS_CONFIG: StatisticsConfig = {
   trackingEnabled: true,
   idleTimeoutMinutes: 5,
   minimumSessionSeconds: 30,
+  minimumPageSeconds: 5, // KOReader default: 5 seconds
+  maximumPageSeconds: 120, // KOReader default: 120 seconds (2 minutes)
+  goals: [],
 };
 
 export const DEFAULT_USER_STATISTICS: UserStatistics = {
