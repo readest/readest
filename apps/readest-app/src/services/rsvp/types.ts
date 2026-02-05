@@ -21,7 +21,6 @@ export interface RsvpState {
 export interface RsvpPosition {
   cfi: string;
   wordText: string;
-  wordIndex?: number; // Legacy field for backward compatibility
 }
 
 export interface RsvpStopPosition {
