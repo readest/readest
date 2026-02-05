@@ -11,30 +11,37 @@ export interface InferenceResult {
 }
 
 export class XRayGraphInference {
-  inferRelationships(
+  async inferRelationships(
     graph: MultiDirectedGraph<GraphNodeAttributes, GraphEdgeAttributes>,
     entities: XRayEntity[],
     bookHash: string,
     maxPage: number,
-  ): InferenceResult {
+    yieldIfNeeded?: () => Promise<void>,
+  ): Promise<InferenceResult> {
     const inferredRelationships: XRayRelationship[] = [];
+    const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+    const neighborSets = new Map<string, Set<string>>();
 
-    graph.forEachNode((nodeA) => {
-      const neighborsA = new Set(graph.neighbors(nodeA));
-      neighborsA.forEach((nodeB) => {
-        const neighborsB = new Set(graph.neighbors(nodeB));
-        neighborsB.forEach((nodeC) => {
-          if (nodeA === nodeC) return;
-          if (neighborsA.has(nodeC)) return;
+    graph.forEachNode((node) => {
+      neighborSets.set(node, new Set(graph.neighbors(node)));
+    });
+
+    for (const [nodeA, neighborsA] of neighborSets) {
+      for (const nodeB of neighborsA) {
+        const neighborsB = neighborSets.get(nodeB);
+        if (!neighborsB) continue;
+        for (const nodeC of neighborsB) {
+          if (nodeA === nodeC) continue;
+          if (neighborsA.has(nodeC)) continue;
 
           const edgeExists = graph.hasEdge(nodeA, nodeC) || graph.hasEdge(nodeC, nodeA);
-          if (edgeExists) return;
+          if (edgeExists) continue;
 
-          const entityA = entities.find((e) => e.id === nodeA);
-          const entityB = entities.find((e) => e.id === nodeB);
-          const entityC = entities.find((e) => e.id === nodeC);
+          const entityA = entityById.get(nodeA);
+          const entityB = entityById.get(nodeB);
+          const entityC = entityById.get(nodeC);
 
-          if (!entityA || !entityB || !entityC) return;
+          if (!entityA || !entityB || !entityC) continue;
 
           const now = Date.now();
           inferredRelationships.push({
@@ -54,9 +61,10 @@ export class XRayGraphInference {
             lastUpdated: now,
             version: 1,
           });
-        });
-      });
-    });
+        }
+      }
+      if (yieldIfNeeded) await yieldIfNeeded();
+    }
 
     const communities = this.detectCommunities(graph);
     const centrality = this.calculateCentrality(graph);
