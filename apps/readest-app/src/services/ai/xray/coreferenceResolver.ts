@@ -15,30 +15,42 @@ export class CoreferenceResolver {
   private recentEntities: Array<{ entity: XRayEntity; page: number }> = [];
   private readonly maxRecentEntities = 5;
 
-  resolveCoreferences(
+  async resolveCoreferences(
     textUnits: XRayTextUnit[],
     knownEntities: XRayEntity[],
-  ): CoreferenceMapping[] {
+    yieldIfNeeded?: () => Promise<void>,
+  ): Promise<CoreferenceMapping[]> {
     const mappings: CoreferenceMapping[] = [];
+    const normalizedVariants = knownEntities.map((entity) => {
+      const variants = [entity.canonicalName, ...entity.aliases]
+        .map((variant) => this.normalizeName(variant))
+        .filter(Boolean);
+      return { entity, variants: Array.from(new Set(variants)) };
+    });
+    const pronounPatterns = this.pronouns.map((pronoun) => ({
+      pronoun,
+      pattern: new RegExp(`\\b${pronoun}\\b`, 'gi'),
+    }));
 
     for (const unit of textUnits) {
       const text = unit.text;
+      const textLower = text.toLowerCase();
 
-      for (const entity of knownEntities) {
-        const variants = [entity.canonicalName, ...entity.aliases];
-        for (const variant of variants) {
-          const normalizedVariant = this.normalizeName(variant);
-          if (text.toLowerCase().includes(normalizedVariant)) {
-            this.addToRecentEntities(entity, unit.page);
+      for (const entry of normalizedVariants) {
+        for (const variant of entry.variants) {
+          if (!variant) continue;
+          if (textLower.includes(variant)) {
+            this.addToRecentEntities(entry.entity, unit.page);
+            break;
           }
         }
       }
 
-      for (const pronoun of this.pronouns) {
-        const pronounPattern = new RegExp(`\\b${pronoun}\\b`, 'gi');
+      for (const { pronoun, pattern } of pronounPatterns) {
+        pattern.lastIndex = 0;
         let match;
 
-        while ((match = pronounPattern.exec(text)) !== null) {
+        while ((match = pattern.exec(text)) !== null) {
           const resolvedEntity = this.resolvePronoun(pronoun, unit.page);
           if (resolvedEntity) {
             mappings.push({
@@ -53,6 +65,8 @@ export class CoreferenceResolver {
           }
         }
       }
+
+      if (yieldIfNeeded) await yieldIfNeeded();
     }
 
     return mappings;
