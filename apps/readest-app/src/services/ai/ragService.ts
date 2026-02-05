@@ -35,6 +35,23 @@ export interface BookDocType {
 const indexingStates = new Map<string, IndexingState>();
 const indexingInFlight = new Map<string, Promise<void>>();
 
+const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+const yieldToMainThread = async (): Promise<void> => {
+  if (typeof window === 'undefined') return;
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+};
+
+const createYieldController = (budgetMs = 12) => {
+  let lastYield = nowMs();
+  return async () => {
+    const now = nowMs();
+    if (now - lastYield < budgetMs) return;
+    lastYield = now;
+    await yieldToMainThread();
+  };
+};
+
 export async function isBookIndexed(bookHash: string): Promise<boolean> {
   const indexed = await aiStore.isIndexed(bookHash);
   aiLogger.rag.isIndexed(bookHash, indexed);
@@ -77,6 +94,7 @@ export async function indexBook(
 
   const run = async () => {
     const startTime = Date.now();
+    const yieldIfNeeded = createYieldController(12);
     const title = extractTitle(bookDoc.metadata);
     const meta = await aiStore.getMeta(bookHash);
     if (meta && meta.totalChunks > 0) {
@@ -207,6 +225,7 @@ export async function indexBook(
             total: Math.max(1, sections.length),
             phase: 'chunking',
           });
+          await yieldIfNeeded();
         }
       } else {
         reportProgress({
@@ -273,6 +292,7 @@ export async function indexBook(
             { chunksProcessed: processed },
           );
           await aiStore.saveChunks(allChunks);
+          await yieldIfNeeded();
         }
         if (missingIndices.length === 0) {
           reportProgress(
