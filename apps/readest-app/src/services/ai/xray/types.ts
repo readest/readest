@@ -46,6 +46,16 @@ export interface XRayEntity extends BoundedArtifact {
   createdAt?: number;
 }
 
+export interface XRayEntitySummary {
+  key: string;
+  bookHash: string;
+  entityId: string;
+  summary: string;
+  sourceHash: string;
+  maxPageIncluded: number;
+  updatedAt: number;
+}
+
 export interface XRayRelationship extends BoundedArtifact {
   id: string;
   sourceId: string;
@@ -92,6 +102,9 @@ export interface XRayTextUnit {
   chunkId: string;
   page: number;
   text: string;
+  sectionIndex?: number;
+  chapterTitle?: string;
+  chapterNumber?: number;
   entityIds?: string[];
   relationshipIds?: string[];
   extractedAt?: number;

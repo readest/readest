@@ -73,6 +73,10 @@ export const xrayExtractionSchema = z.object({
   claims: z.array(claimSchema).optional().default([]),
 });
 
+export const xraySummarySchema = z.object({
+  summary: z.string().min(1),
+});
+
 const normalizeText = (text: string): string => {
   return text
     .toLowerCase()
@@ -139,9 +143,9 @@ const normalizeEntityType = (value: unknown): XRayEntityType | null => {
     antagonist: 'character',
     villain: 'character',
     hero: 'character',
-    creature: 'character',
-    animal: 'character',
-    species: 'character',
+    creature: 'term',
+    animal: 'term',
+    species: 'term',
     place: 'location',
     location: 'location',
     setting: 'location',
@@ -174,6 +178,10 @@ const normalizeEntityType = (value: unknown): XRayEntityType | null => {
     method: 'concept',
     system: 'concept',
     technology: 'concept',
+    robot: 'artifact',
+    android: 'artifact',
+    droid: 'artifact',
+    ai: 'concept',
     event: 'event',
     plot: 'concept',
     arc: 'concept',
@@ -190,6 +198,10 @@ const normalizeEntityType = (value: unknown): XRayEntityType | null => {
   if (raw.startsWith('org') || raw.startsWith('group')) return 'organization';
   if (raw.startsWith('artifact') || raw.startsWith('item')) return 'artifact';
   if (raw.startsWith('concept')) return 'concept';
+  if (raw.startsWith('animal') || raw.startsWith('creature') || raw.startsWith('species'))
+    return 'term';
+  if (raw.startsWith('robot') || raw.startsWith('android') || raw.startsWith('droid'))
+    return 'artifact';
   if (raw.startsWith('theme')) return null;
   if (raw.startsWith('event')) return 'event';
   return 'term';
