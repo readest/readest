@@ -1,6 +1,8 @@
 import { FoliateView } from '@/types/view';
 import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } from './types';
 import { containsCJK, splitTextIntoWords } from './utils';
+import { compare as compareCFI } from 'foliate-js/epubcfi.js';
+import { XCFI } from '@/utils/xcfi';
 
 const DEFAULT_WPM = 300;
 const MIN_WPM = 100;
@@ -159,122 +161,19 @@ export class RSVPController extends EventTarget {
     localStorage.removeItem(`${POSITION_KEY_PREFIX}${this.bookId}`);
   }
 
-  /**
-   * Extract the spine/section reference from a CFI.
-   * For `epubcfi(/6/6!/4/2/2/6,/1:363,/1:366)`, returns `/6/6!`
-   * This identifies which section/chapter the CFI points to.
-   */
-  private extractSpineRef(cfi: string): string {
-    const inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
-    // Remove range portion (everything after first comma)
-    const parts = inner.split(',');
-    const path = parts[0]!;
-
-    // Extract up to and including the `!` separator (spine reference)
-    // The `!` separates the package document path from the content document path
-    const spineMatch = path.match(/^([^!]+!)/);
-    if (spineMatch) {
-      return spineMatch[1]!;
+  private getSpineIndex(cfi: string): number {
+    try {
+      return XCFI.extractSpineIndex(cfi);
+    } catch {
+      return -1;
     }
-
-    // Fallback: if no `!`, try to extract up to `]` (for step assertions)
-    const bracketMatch = path.match(/^(.*\][^\/]*)/);
-    if (bracketMatch) {
-      return bracketMatch[1]!;
-    }
-
-    // Last resort: return the full path before any range
-    return path;
   }
 
   private isSameSection(cfi1: string | null, cfi2: string | null): boolean {
     if (!cfi1 || !cfi2) return false;
-    const spine1 = this.extractSpineRef(cfi1);
-    const spine2 = this.extractSpineRef(cfi2);
-    return spine1 === spine2;
-  }
-
-  /**
-   * Extract the full document path from a CFI, including range start for precise positioning.
-   * For range CFIs like `epubcfi(/6/10!/4/2/2/6,/168,/214/1:171)`:
-   * - Base path: `/4/2/2/6`
-   * - Range start: `/168` (relative offset)
-   * - Returns: { path: `/4/2/2/6/168`, charOffset: 0 }
-   *
-   * For word CFIs like `epubcfi(/6/10!/4/2/2/6/6,/1:0,/1:7)`:
-   * - Base path: `/4/2/2/6/6`
-   * - Range start: `/1:0` (text node with character offset)
-   * - Returns: { path: `/4/2/2/6/6/1`, charOffset: 0 }
-   *
-   * For page CFIs like `epubcfi(/6/20!/4/2,/24/1:91,/54/1:184)`:
-   * - Base path: `/4/2`
-   * - Range start: `/24/1:91` (element /24, text node /1, char 91)
-   * - Returns: { path: `/4/2/24/1`, charOffset: 91 }
-   */
-  private extractFullDocPathWithOffset(cfi: string): { path: string; charOffset: number } {
-    const inner = cfi.replace(/^epubcfi\(/, '').replace(/\)$/, '');
-    const parts = inner.split(',');
-    const fullPath = parts[0]!;
-    const bangIndex = fullPath.indexOf('!');
-    let basePath = bangIndex >= 0 ? fullPath.substring(bangIndex + 1) : fullPath;
-    let charOffset = 0;
-
-    // If there's a range start (second comma-separated part), append it to the base path
-    // This handles CFIs like `epubcfi(/6/10!/4/2/2/6,/168,/214/1:171)` where /168 is the offset
-    if (parts.length >= 2 && parts[1]) {
-      let rangeStart = parts[1];
-      // Extract character offset (`:N`) before removing it
-      const charMatch = rangeStart.match(/:(\d+)$/);
-      if (charMatch) {
-        charOffset = parseInt(charMatch[1]!, 10);
-        rangeStart = rangeStart.replace(/:\d+$/, '');
-      }
-      if (rangeStart && rangeStart !== '/') {
-        basePath = basePath + rangeStart;
-      }
-    }
-
-    return { path: basePath, charOffset };
-  }
-
-  /**
-   * Compare two CFI document paths to determine order.
-   * Returns: negative if path1 < path2, positive if path1 > path2, 0 if equal
-   */
-  private compareCfiPaths(path1: string, path2: string): number {
-    // Parse paths into step arrays: "/4/2/6" -> [4, 2, 6]
-    const steps1 = path1
-      .split('/')
-      .filter(Boolean)
-      .map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
-    const steps2 = path2
-      .split('/')
-      .filter(Boolean)
-      .map((s) => parseInt(s.replace(/\[.*\]/, ''), 10));
-
-    const minLen = Math.min(steps1.length, steps2.length);
-    for (let i = 0; i < minLen; i++) {
-      const s1 = steps1[i] ?? 0;
-      const s2 = steps2[i] ?? 0;
-      if (s1 !== s2) return s1 - s2;
-    }
-
-    // If all compared steps are equal, shorter path comes first
-    return steps1.length - steps2.length;
-  }
-
-  /**
-   * Compare two CFI positions including character offsets.
-   * Returns: negative if pos1 < pos2, positive if pos1 > pos2, 0 if equal
-   */
-  private compareCfiPositions(
-    pos1: { path: string; charOffset: number },
-    pos2: { path: string; charOffset: number },
-  ): number {
-    const pathComparison = this.compareCfiPaths(pos1.path, pos2.path);
-    if (pathComparison !== 0) return pathComparison;
-    // Paths are equal, compare character offsets
-    return pos1.charOffset - pos2.charOffset;
+    const spine1 = this.getSpineIndex(cfi1);
+    const spine2 = this.getSpineIndex(cfi2);
+    return spine1 >= 0 && spine1 === spine2;
   }
 
   private findWordIndexByCfi(words: RsvpWord[], targetCfi: string): number {
@@ -287,21 +186,19 @@ export class RSVPController extends EventTarget {
     }
 
     // Check if target is in same section as any word
-    const targetSpine = this.extractSpineRef(targetCfi);
-    // Use extractFullDocPathWithOffset for accurate position including character offset
-    const targetPos = this.extractFullDocPathWithOffset(targetCfi);
+    const targetSpineIndex = this.getSpineIndex(targetCfi);
+    if (targetSpineIndex < 0) return -1;
 
-    // Find the first word at or after the target position (by CFI path + char offset comparison)
+    // Find the first word at or after the target position using CFI compare
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
       if (!word?.cfi) continue;
 
       // Must be in the same section
-      if (this.extractSpineRef(word.cfi) !== targetSpine) continue;
+      if (this.getSpineIndex(word.cfi) !== targetSpineIndex) continue;
 
-      // Compare document paths + character offsets - find first word at or after target
-      const wordPos = this.extractFullDocPathWithOffset(word.cfi);
-      if (this.compareCfiPositions(wordPos, targetPos) >= 0) {
+      // Use compareCFI to find first word at or after target
+      if (compareCFI(word.cfi, targetCfi) >= 0) {
         return i;
       }
     }
@@ -743,7 +640,6 @@ export class RSVPController extends EventTarget {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
         const nodeWords = splitTextIntoWords(text);
-        console.log('Extracted words from text node:', nodeWords);
 
         let offset = 0;
         for (const word of nodeWords) {
