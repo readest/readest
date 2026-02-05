@@ -19,6 +19,9 @@ export const useXRayAutoUpdate = (bookKey: string) => {
   const lastUpdateRef = useRef(0);
   const lastPageRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  type IdleHandle = number | ReturnType<typeof setTimeout>;
+  const idleRef = useRef<IdleHandle | null>(null);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     latestRef.current = { progress, bookData, settings, appService, bookKey };
@@ -27,6 +30,7 @@ export const useXRayAutoUpdate = (bookKey: string) => {
   useEffect(() => {
     const attemptUpdate = async () => {
       try {
+        if (inFlightRef.current) return;
         const now = Date.now();
         const { progress, bookData, settings, appService, bookKey } = latestRef.current;
         const aiSettings = settings?.aiSettings;
@@ -46,15 +50,39 @@ export const useXRayAutoUpdate = (bookKey: string) => {
 
         lastUpdateRef.current = now;
         lastPageRef.current = currentPage;
-        void updateXRayForProgress({
-          bookHash,
-          currentPage,
-          settings: aiSettings,
-          bookTitle: bookData.book.title || 'Unknown',
-          appService,
-          bookMetadata: bookData.book.metadata,
-        });
+        inFlightRef.current = true;
+        try {
+          await updateXRayForProgress({
+            bookHash,
+            currentPage,
+            settings: aiSettings,
+            bookTitle: bookData.book.title || 'Unknown',
+            appService,
+            bookMetadata: bookData.book.metadata,
+          });
+        } finally {
+          inFlightRef.current = false;
+        }
       } catch {}
+    };
+
+    const scheduleIdleUpdate = () => {
+      if (idleRef.current) return;
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        const idleCallback = window.requestIdleCallback;
+        idleRef.current = idleCallback(
+          () => {
+            idleRef.current = null;
+            void attemptUpdate();
+          },
+          { timeout: 1500 },
+        );
+        return;
+      }
+      idleRef.current = setTimeout(() => {
+        idleRef.current = null;
+        void attemptUpdate();
+      }, 0);
     };
 
     const scheduleUpdate = () => {
@@ -62,14 +90,26 @@ export const useXRayAutoUpdate = (bookKey: string) => {
       const delay = Math.max(0, 3000 - (Date.now() - lastUpdateRef.current));
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
-        void attemptUpdate();
+        scheduleIdleUpdate();
       }, delay);
     };
 
-    void attemptUpdate();
+    scheduleIdleUpdate();
     scheduleUpdate();
 
     return () => {
+      if (idleRef.current) {
+        if (
+          typeof idleRef.current === 'number' &&
+          typeof window !== 'undefined' &&
+          'cancelIdleCallback' in window
+        ) {
+          window.cancelIdleCallback(idleRef.current);
+        } else {
+          clearTimeout(idleRef.current);
+        }
+        idleRef.current = null;
+      }
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
