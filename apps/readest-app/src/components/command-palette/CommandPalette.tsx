@@ -131,7 +131,7 @@ const CommandPalette: React.FC = () => {
     >
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
-        className='bg-base-100 w-full max-w-lg overflow-hidden rounded-xl shadow-2xl'
+        className='bg-base-100 mx-4 w-full max-w-lg overflow-hidden rounded-xl shadow-2xl'
         role='dialog'
         aria-modal='true'
         aria-label={_('Command Palette')}

@@ -7,12 +7,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
-import { TOCItem } from '@/libs/document';
+import { SectionItem } from '@/libs/document';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 
 interface PageInfoProps {
   bookKey: string;
-  toc: TOCItem[];
+  sections: SectionItem[];
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
@@ -20,7 +20,7 @@ interface PageInfoProps {
 
 const ProgressInfoView: React.FC<PageInfoProps> = ({
   bookKey,
-  toc,
+  sections,
   horizontalGap,
   contentInsets,
   gridInsets,
@@ -53,18 +53,18 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
   const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
-  const activeTOCItem = useMemo(() => {
+  const activeSection = useMemo(() => {
     if (!activeHref) return null;
-    for (const item of toc) {
-      if (item.href === activeHref) return item;
-      const subitem = item.subitems?.find((sub) => sub.href === activeHref);
-      if (subitem) return subitem;
+    for (const section of sections) {
+      if (section.id === activeHref) return section;
+      const subitem = section.subitems?.find((sub) => sub.id === activeHref);
+      if (subitem) return section;
     }
     return null;
-  }, [activeHref, toc]);
+  }, [activeHref, sections]);
 
   const current = pageInfo?.current || 0;
-  const total = activeTOCItem?.location ? activeTOCItem.location.next : pageInfo?.total || 0;
+  const total = activeSection?.location ? activeSection.location.next : pageInfo?.total || 0;
   const pages = Math.max(total - current, 0);
   const timeLeft =
     total - 1 >= current

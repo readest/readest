@@ -16,6 +16,7 @@ export interface TOCItem {
   id: number;
   label: string;
   href: string;
+  index: number; // Page index for PDF books
   cfi?: string;
   location?: Location;
   subitems?: TOCItem[];
