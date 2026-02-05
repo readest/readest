@@ -56,7 +56,7 @@ import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
-import { removeTabIndex } from '@/utils/a11y';
+import { handleAccessibilityEvents } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
 import Spinner from '@/components/Spinner';
@@ -214,7 +214,7 @@ const FoliateViewer: React.FC<{
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       keepTextAlignment(detail.doc);
-      removeTabIndex(detail.doc);
+      handleAccessibilityEvents(viewRef.current, detail.doc, detail.index);
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
