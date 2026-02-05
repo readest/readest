@@ -208,7 +208,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [bookHash, currentPage, _]);
+  }, [bookHash, currentPage, loadSummaries, _]);
 
   const handleUpdate = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
@@ -574,7 +574,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         isInferred,
       };
     });
-  }, [entities, mentionStats, relatedByEntity, currentPage, _, getEntitySummaryText]);
+  }, [entities, mentionStats, relatedByEntity, currentPage, getEntitySummaryText]);
 
   const categoryCounts = useMemo(() => {
     const counts = {

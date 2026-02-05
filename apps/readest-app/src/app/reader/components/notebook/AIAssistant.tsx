@@ -430,7 +430,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         aiLogger.rag.indexError(bookHash, (error as Error).message);
       });
     }
-  }, [bookData?.bookDoc, bookData?.book, bookHash, aiSettings, appService, bookTitle, currentPage]);
+  }, [bookData, bookHash, aiSettings, appService, bookTitle, currentPage]);
 
   const handleResetIndex = useCallback(async () => {
     if (!appService) return;
