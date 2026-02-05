@@ -37,6 +37,7 @@ export interface TextChunk {
   bookHash: string;
   sectionIndex: number;
   chapterTitle: string;
+  chapterNumber?: number;
   text: string;
   embedding?: number[];
   pageNumber: number; // page number using Readest's 1500 chars/page formula
@@ -64,6 +65,10 @@ export interface IndexingState {
   chunksProcessed: number;
   totalChunks: number;
   error?: string;
+  phase?: 'chunking' | 'embedding' | 'indexing';
+  current?: number;
+  total?: number;
+  updatedAt?: number;
 }
 
 export interface EmbeddingProgress {

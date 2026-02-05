@@ -4,7 +4,14 @@ import { chunkSection, extractTextFromDocument } from './utils/chunker';
 import { withRetryAndTimeout, AI_TIMEOUTS, AI_RETRY_CONFIGS } from './utils/retry';
 import { getAIProvider } from './providers';
 import { aiLogger } from './logger';
-import type { AISettings, TextChunk, ScoredChunk, EmbeddingProgress, BookIndexMeta } from './types';
+import type {
+  AISettings,
+  ScoredChunk,
+  EmbeddingProgress,
+  BookIndexMeta,
+  IndexingState,
+} from './types';
+import { eventDispatcher } from '@/utils/event';
 
 interface SectionItem {
   id: string;
@@ -26,6 +33,7 @@ export interface BookDocType {
 }
 
 const indexingStates = new Map<string, IndexingState>();
+const indexingInFlight = new Map<string, Promise<void>>();
 
 export async function isBookIndexed(bookHash: string): Promise<boolean> {
   const indexed = await aiStore.isIndexed(bookHash);
@@ -64,133 +72,259 @@ export async function indexBook(
   settings: AISettings,
   onProgress?: (progress: EmbeddingProgress) => void,
 ): Promise<void> {
-  const startTime = Date.now();
-  const title = extractTitle(bookDoc.metadata);
+  const inflight = indexingInFlight.get(bookHash);
+  if (inflight) return inflight;
 
-  if (await aiStore.isIndexed(bookHash)) {
-    aiLogger.rag.isIndexed(bookHash, true);
-    return;
-  }
-
-  aiLogger.rag.indexStart(bookHash, title);
-  const provider = getAIProvider(settings);
-  const sections = bookDoc.sections || [];
-  const toc = bookDoc.toc || [];
-
-  // calculate cumulative character sizes like toc.ts does
-  const sizes = sections.map((s) => (s.linear !== 'no' && s.size > 0 ? s.size : 0));
-  let cumulative = 0;
-  const cumulativeSizes = sizes.map((size) => {
-    const current = cumulative;
-    cumulative += size;
-    return current;
-  });
-
-  const state: IndexingState = {
-    bookHash,
-    status: 'indexing',
-    progress: 0,
-    chunksProcessed: 0,
-    totalChunks: 0,
-  };
-  indexingStates.set(bookHash, state);
-
-  try {
-    onProgress?.({ current: 0, total: 1, phase: 'chunking' });
-    aiLogger.rag.indexProgress('chunking', 0, sections.length);
-    const allChunks: TextChunk[] = [];
-
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i]!;
-      try {
-        const doc = await section.createDocument();
-        const text = extractTextFromDocument(doc);
-        if (text.length < 100) continue;
-        const sectionChunks = chunkSection(
-          doc,
-          i,
-          getChapterTitle(toc, i),
-          bookHash,
-          cumulativeSizes[i] ?? 0,
-        );
-        aiLogger.chunker.section(i, text.length, sectionChunks.length);
-        allChunks.push(...sectionChunks);
-      } catch (e) {
-        aiLogger.chunker.error(i, (e as Error).message);
+  const run = async () => {
+    const startTime = Date.now();
+    const title = extractTitle(bookDoc.metadata);
+    const meta = await aiStore.getMeta(bookHash);
+    if (meta && meta.totalChunks > 0) {
+      const toc = bookDoc.toc || [];
+      const chunks = await aiStore.getChunks(bookHash);
+      let updated = false;
+      const updatedChunks = chunks.map((chunk) => {
+        const chapterTitle = chunk.chapterTitle || getChapterTitle(toc, chunk.sectionIndex);
+        const chapterNumber =
+          typeof chunk.chapterNumber === 'number' ? chunk.chapterNumber : chunk.sectionIndex + 1;
+        if (chapterTitle !== chunk.chapterTitle || chapterNumber !== chunk.chapterNumber) {
+          updated = true;
+          return { ...chunk, chapterTitle, chapterNumber };
+        }
+        return chunk;
+      });
+      if (updated) {
+        await aiStore.saveChunks(updatedChunks);
+        await aiStore.saveBM25Index(bookHash, updatedChunks);
       }
-    }
-
-    aiLogger.chunker.complete(bookHash, allChunks.length);
-    state.totalChunks = allChunks.length;
-
-    if (allChunks.length === 0) {
-      state.status = 'complete';
-      state.progress = 100;
-      aiLogger.rag.indexComplete(bookHash, 0, Date.now() - startTime);
+      aiLogger.rag.isIndexed(bookHash, true);
+      const completedState: IndexingState = {
+        bookHash,
+        status: 'complete',
+        progress: 100,
+        chunksProcessed: meta.totalChunks,
+        totalChunks: meta.totalChunks,
+        phase: 'indexing',
+        current: 2,
+        total: 2,
+        updatedAt: Date.now(),
+      };
+      indexingStates.set(bookHash, completedState);
+      await aiStore.saveIndexingState(completedState);
+      void eventDispatcher.dispatch('rag-indexing-updated', completedState);
       return;
     }
 
-    onProgress?.({ current: 0, total: allChunks.length, phase: 'embedding' });
-    const embeddingModelName =
-      settings.provider === 'ollama'
-        ? settings.ollamaEmbeddingModel
-        : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
-    aiLogger.embedding.start(embeddingModelName, allChunks.length);
+    aiLogger.rag.indexStart(bookHash, title);
+    const provider = getAIProvider(settings);
+    const sections = bookDoc.sections || [];
+    const toc = bookDoc.toc || [];
 
-    const texts = allChunks.map((c) => c.text);
-    try {
-      const { embeddings } = await withRetryAndTimeout(
-        () =>
-          embedMany({
-            model: provider.getEmbeddingModel(),
-            values: texts,
-          }),
-        AI_TIMEOUTS.EMBEDDING_BATCH,
-        AI_RETRY_CONFIGS.EMBEDDING,
-      );
+    // calculate cumulative character sizes like toc.ts does
+    const sizes = sections.map((s) => (s.linear !== 'no' && s.size > 0 ? s.size : 0));
+    let cumulative = 0;
+    const cumulativeSizes = sizes.map((size) => {
+      const current = cumulative;
+      cumulative += size;
+      return current;
+    });
 
-      for (let i = 0; i < allChunks.length; i++) {
-        allChunks[i]!.embedding = embeddings[i];
-        state.chunksProcessed = i + 1;
-        state.progress = Math.round(((i + 1) / allChunks.length) * 100);
-      }
-      onProgress?.({ current: allChunks.length, total: allChunks.length, phase: 'embedding' });
-      aiLogger.embedding.complete(embeddings.length, allChunks.length, embeddings[0]?.length || 0);
-    } catch (e) {
-      aiLogger.embedding.error('batch', (e as Error).message);
-      throw e;
-    }
-
-    onProgress?.({ current: 0, total: 2, phase: 'indexing' });
-    aiLogger.store.saveChunks(bookHash, allChunks.length);
-    await aiStore.saveChunks(allChunks);
-
-    onProgress?.({ current: 1, total: 2, phase: 'indexing' });
-    aiLogger.store.saveBM25(bookHash);
-    await aiStore.saveBM25Index(bookHash, allChunks);
-
-    const meta: BookIndexMeta = {
+    let state: IndexingState = {
       bookHash,
-      bookTitle: title,
-      authorName: extractAuthor(bookDoc.metadata),
-      totalSections: sections.length,
-      totalChunks: allChunks.length,
-      embeddingModel: embeddingModelName,
-      lastUpdated: Date.now(),
+      status: 'indexing',
+      progress: 0,
+      chunksProcessed: 0,
+      totalChunks: 0,
+      phase: 'chunking',
+      current: 0,
+      total: Math.max(1, sections.length),
+      updatedAt: Date.now(),
     };
-    aiLogger.store.saveMeta(meta);
-    await aiStore.saveMeta(meta);
+    indexingStates.set(bookHash, state);
 
-    onProgress?.({ current: 2, total: 2, phase: 'indexing' });
-    state.status = 'complete';
-    state.progress = 100;
-    aiLogger.rag.indexComplete(bookHash, allChunks.length, Date.now() - startTime);
-  } catch (error) {
-    state.status = 'error';
-    state.error = (error as Error).message;
-    aiLogger.rag.indexError(bookHash, (error as Error).message);
-    throw error;
-  }
+    let lastPersisted = 0;
+    const persistState = (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastPersisted < 400) return;
+      lastPersisted = now;
+      void aiStore.saveIndexingState(state);
+      void eventDispatcher.dispatch('rag-indexing-updated', state);
+    };
+
+    const updateState = (partial: Partial<IndexingState>, force = false) => {
+      state = { ...state, ...partial, updatedAt: Date.now() };
+      indexingStates.set(bookHash, state);
+      persistState(force);
+    };
+
+    const reportProgress = (progress: EmbeddingProgress, extra?: Partial<IndexingState>) => {
+      onProgress?.(progress);
+      const nextProgress =
+        progress.phase === 'embedding' && progress.total > 0
+          ? Math.round((progress.current / progress.total) * 100)
+          : progress.phase === 'indexing'
+            ? 100
+            : state.progress;
+      updateState(
+        {
+          ...(extra || {}),
+          phase: progress.phase,
+          current: progress.current,
+          total: progress.total,
+          progress: nextProgress,
+        },
+        false,
+      );
+    };
+
+    try {
+      reportProgress({ current: 0, total: Math.max(1, sections.length), phase: 'chunking' });
+      aiLogger.rag.indexProgress('chunking', 0, sections.length);
+      let allChunks = await aiStore.getChunks(bookHash);
+
+      if (allChunks.length === 0) {
+        allChunks = [];
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i]!;
+          try {
+            const doc = await section.createDocument();
+            const text = extractTextFromDocument(doc);
+            if (text.length < 100) continue;
+            const sectionChunks = chunkSection(
+              doc,
+              i,
+              getChapterTitle(toc, i),
+              bookHash,
+              cumulativeSizes[i] ?? 0,
+            );
+            aiLogger.chunker.section(i, text.length, sectionChunks.length);
+            allChunks.push(...sectionChunks);
+          } catch (e) {
+            aiLogger.chunker.error(i, (e as Error).message);
+          }
+          reportProgress({
+            current: i + 1,
+            total: Math.max(1, sections.length),
+            phase: 'chunking',
+          });
+        }
+      } else {
+        reportProgress({
+          current: Math.max(1, sections.length),
+          total: Math.max(1, sections.length),
+          phase: 'chunking',
+        });
+      }
+
+      aiLogger.chunker.complete(bookHash, allChunks.length);
+      updateState({ totalChunks: allChunks.length });
+
+      if (allChunks.length === 0) {
+        updateState({ status: 'complete', progress: 100 }, true);
+        aiLogger.rag.indexComplete(bookHash, 0, Date.now() - startTime);
+        return;
+      }
+
+      await aiStore.saveChunks(allChunks);
+
+      const missingIndices = allChunks
+        .map((chunk, index) => ({ index, hasEmbedding: !!chunk.embedding?.length }))
+        .filter((item) => !item.hasEmbedding)
+        .map((item) => item.index);
+      const alreadyEmbedded = allChunks.length - missingIndices.length;
+      reportProgress(
+        {
+          current: alreadyEmbedded,
+          total: allChunks.length,
+          phase: 'embedding',
+        },
+        { chunksProcessed: alreadyEmbedded },
+      );
+      const embeddingModelName =
+        settings.provider === 'ollama'
+          ? settings.ollamaEmbeddingModel
+          : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
+      aiLogger.embedding.start(embeddingModelName, allChunks.length);
+
+      let processed = alreadyEmbedded;
+      try {
+        const batchSize = 64;
+        for (let offset = 0; offset < missingIndices.length; offset += batchSize) {
+          const batchIndices = missingIndices.slice(offset, offset + batchSize);
+          const texts = batchIndices.map((index) => allChunks[index]!.text);
+          const { embeddings } = await withRetryAndTimeout(
+            () =>
+              embedMany({
+                model: provider.getEmbeddingModel(),
+                values: texts,
+              }),
+            AI_TIMEOUTS.EMBEDDING_BATCH,
+            AI_RETRY_CONFIGS.EMBEDDING,
+          );
+          embeddings.forEach((embedding, idx) => {
+            const targetIndex = batchIndices[idx];
+            if (typeof targetIndex === 'number') {
+              allChunks[targetIndex]!.embedding = embedding;
+            }
+          });
+          processed += embeddings.length;
+          reportProgress(
+            { current: processed, total: allChunks.length, phase: 'embedding' },
+            { chunksProcessed: processed },
+          );
+          await aiStore.saveChunks(allChunks);
+        }
+        if (missingIndices.length === 0) {
+          reportProgress(
+            { current: allChunks.length, total: allChunks.length, phase: 'embedding' },
+            { chunksProcessed: allChunks.length },
+          );
+        }
+        aiLogger.embedding.complete(
+          processed,
+          allChunks.length,
+          allChunks[0]?.embedding?.length || 0,
+        );
+      } catch (e) {
+        aiLogger.embedding.error('batch', (e as Error).message);
+        throw e;
+      }
+
+      reportProgress({ current: 0, total: 2, phase: 'indexing' });
+      aiLogger.store.saveChunks(bookHash, allChunks.length);
+      await aiStore.saveChunks(allChunks);
+
+      reportProgress({ current: 1, total: 2, phase: 'indexing' });
+      aiLogger.store.saveBM25(bookHash);
+      await aiStore.saveBM25Index(bookHash, allChunks);
+
+      const meta: BookIndexMeta = {
+        bookHash,
+        bookTitle: title,
+        authorName: extractAuthor(bookDoc.metadata),
+        totalSections: sections.length,
+        totalChunks: allChunks.length,
+        embeddingModel: embeddingModelName,
+        lastUpdated: Date.now(),
+      };
+      aiLogger.store.saveMeta(meta);
+      await aiStore.saveMeta(meta);
+
+      reportProgress({ current: 2, total: 2, phase: 'indexing' });
+      updateState({ status: 'complete', progress: 100 }, true);
+      aiLogger.rag.indexComplete(bookHash, allChunks.length, Date.now() - startTime);
+    } catch (error) {
+      updateState({ status: 'error', error: (error as Error).message }, true);
+      aiLogger.rag.indexError(bookHash, (error as Error).message);
+      throw error;
+    }
+  };
+
+  const promise = run().finally(() => {
+    indexingInFlight.delete(bookHash);
+  });
+  indexingInFlight.set(bookHash, promise);
+  return await promise;
 }
 
 export async function hybridSearch(
@@ -228,15 +362,7 @@ export async function hybridSearch(
 export async function clearBookIndex(bookHash: string): Promise<void> {
   aiLogger.store.clear(bookHash);
   await aiStore.clearBook(bookHash);
+  await aiStore.clearIndexingState(bookHash);
   indexingStates.delete(bookHash);
-}
-
-// internal type for indexing state tracking
-interface IndexingState {
-  bookHash: string;
-  status: 'idle' | 'indexing' | 'complete' | 'error';
-  progress: number;
-  chunksProcessed: number;
-  totalChunks: number;
-  error?: string;
+  indexingInFlight.delete(bookHash);
 }
