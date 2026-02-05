@@ -9,10 +9,12 @@ import {
   XRayTimelineEvent,
   XRayClaim,
   XRayTextUnit,
+  XRayEntitySummary,
   XRayState,
   XRayAliasEntry,
   XRayExtractionCacheEntry,
   XRayUserOverride,
+  IndexingState,
 } from '../types';
 import { aiLogger } from '../logger';
 
@@ -20,7 +22,7 @@ import { aiLogger } from '../logger';
 const lunr = require('lunr') as typeof import('lunr');
 
 const DB_NAME = 'readest-ai';
-const DB_VERSION = 6;
+const DB_VERSION = 8;
 const CHUNKS_STORE = 'chunks';
 const META_STORE = 'bookMeta';
 const BM25_STORE = 'bm25Indices';
@@ -35,6 +37,8 @@ const XRAY_STATE_STORE = 'xray_state';
 const XRAY_ALIASES_STORE = 'xray_aliases';
 const XRAY_EXTRACTION_CACHE_STORE = 'xray_extraction_cache';
 const XRAY_OVERRIDES_STORE = 'xray_overrides';
+const XRAY_ENTITY_SUMMARIES_STORE = 'xray_entity_summaries';
+const INDEXING_STATE_STORE = 'rag_indexing_state';
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
@@ -65,6 +69,8 @@ class AIStore {
   private xrayAliasCache = new Map<string, XRayAliasEntry[]>();
   private xrayExtractionCache = new Map<string, XRayExtractionCacheEntry>();
   private xrayOverrideCache = new Map<string, XRayUserOverride[]>();
+  private xraySummaryCache = new Map<string, XRayEntitySummary>();
+  private ragIndexingStateCache = new Map<string, IndexingState>();
 
   async recoverFromError(): Promise<void> {
     if (this.db) {
@@ -88,6 +94,8 @@ class AIStore {
     this.xrayAliasCache.clear();
     this.xrayExtractionCache.clear();
     this.xrayOverrideCache.clear();
+    this.xraySummaryCache.clear();
+    this.ragIndexingStateCache.clear();
     await this.openDB();
   }
 
@@ -179,6 +187,14 @@ class AIStore {
           const store = db.createObjectStore(XRAY_EXTRACTION_CACHE_STORE, { keyPath: 'key' });
           store.createIndex('bookHash', 'bookHash', { unique: false });
         }
+        if (!db.objectStoreNames.contains(XRAY_ENTITY_SUMMARIES_STORE)) {
+          const store = db.createObjectStore(XRAY_ENTITY_SUMMARIES_STORE, { keyPath: 'key' });
+          store.createIndex('bookHash', 'bookHash', { unique: false });
+          store.createIndex('entityId', 'entityId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(INDEXING_STATE_STORE)) {
+          db.createObjectStore(INDEXING_STATE_STORE, { keyPath: 'bookHash' });
+        }
       };
     });
   }
@@ -216,6 +232,55 @@ class AIStore {
   async isIndexed(bookHash: string): Promise<boolean> {
     const meta = await this.getMeta(bookHash);
     return meta !== null && meta.totalChunks > 0;
+  }
+
+  async saveIndexingState(state: IndexingState): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(INDEXING_STATE_STORE, 'readwrite');
+      tx.objectStore(INDEXING_STATE_STORE).put(state);
+      tx.oncomplete = () => {
+        this.ragIndexingStateCache.set(state.bookHash, state);
+        resolve();
+      };
+      tx.onerror = () => {
+        aiLogger.store.error('saveIndexingState', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
+  }
+
+  async getIndexingState(bookHash: string): Promise<IndexingState | null> {
+    if (this.ragIndexingStateCache.has(bookHash)) return this.ragIndexingStateCache.get(bookHash)!;
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const req = db
+        .transaction(INDEXING_STATE_STORE, 'readonly')
+        .objectStore(INDEXING_STATE_STORE)
+        .get(bookHash);
+      req.onsuccess = () => {
+        const state = req.result as IndexingState | undefined;
+        if (state) this.ragIndexingStateCache.set(bookHash, state);
+        resolve(state || null);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async clearIndexingState(bookHash: string): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(INDEXING_STATE_STORE, 'readwrite');
+      tx.objectStore(INDEXING_STATE_STORE).delete(bookHash);
+      tx.oncomplete = () => {
+        this.ragIndexingStateCache.delete(bookHash);
+        resolve();
+      };
+      tx.onerror = () => {
+        aiLogger.store.error('clearIndexingState', tx.error?.message || 'TX error');
+        reject(tx.error);
+      };
+    });
   }
 
   async saveChunks(chunks: TextChunk[]): Promise<void> {
@@ -264,10 +329,16 @@ class AIStore {
       this.ref('id');
       this.field('text');
       this.field('chapterTitle');
+      this.field('chapterNumber');
       this.pipeline.remove(lunr.stemmer);
       this.searchPipeline.remove(lunr.stemmer);
       for (const chunk of chunks)
-        this.add({ id: chunk.id, text: chunk.text, chapterTitle: chunk.chapterTitle });
+        this.add({
+          id: chunk.id,
+          text: chunk.text,
+          chapterTitle: chunk.chapterTitle,
+          chapterNumber: typeof chunk.chapterNumber === 'number' ? String(chunk.chapterNumber) : '',
+        });
     });
     const db = await this.openDB();
     return new Promise((resolve, reject) => {
@@ -730,6 +801,36 @@ class AIStore {
     });
   }
 
+  async saveXRayEntitySummary(summary: XRayEntitySummary): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(XRAY_ENTITY_SUMMARIES_STORE, 'readwrite');
+      tx.objectStore(XRAY_ENTITY_SUMMARIES_STORE).put(summary);
+      tx.oncomplete = () => {
+        this.xraySummaryCache.set(summary.key, summary);
+        resolve();
+      };
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getXRayEntitySummary(key: string): Promise<XRayEntitySummary | null> {
+    if (this.xraySummaryCache.has(key)) return this.xraySummaryCache.get(key)!;
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const req = db
+        .transaction(XRAY_ENTITY_SUMMARIES_STORE, 'readonly')
+        .objectStore(XRAY_ENTITY_SUMMARIES_STORE)
+        .get(key);
+      req.onsuccess = () => {
+        const entry = req.result as XRayEntitySummary | undefined;
+        if (entry) this.xraySummaryCache.set(key, entry);
+        resolve(entry || null);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   async clearXRayBook(bookHash: string): Promise<void> {
     const db = await this.openDB();
     return new Promise((resolve, reject) => {
@@ -744,6 +845,7 @@ class AIStore {
           XRAY_STATE_STORE,
           XRAY_EXTRACTION_CACHE_STORE,
           XRAY_OVERRIDES_STORE,
+          XRAY_ENTITY_SUMMARIES_STORE,
         ],
         'readwrite',
       );
@@ -768,6 +870,7 @@ class AIStore {
       clearByIndex(XRAY_ALIASES_STORE);
       clearByIndex(XRAY_EXTRACTION_CACHE_STORE);
       clearByIndex(XRAY_OVERRIDES_STORE);
+      clearByIndex(XRAY_ENTITY_SUMMARIES_STORE);
       tx.objectStore(XRAY_STATE_STORE).delete(bookHash);
 
       tx.oncomplete = () => {
@@ -779,6 +882,11 @@ class AIStore {
         this.xrayAliasCache.delete(bookHash);
         this.xrayStateCache.delete(bookHash);
         this.xrayOverrideCache.delete(bookHash);
+        for (const [key, entry] of this.xraySummaryCache.entries()) {
+          if (entry.bookHash === bookHash) {
+            this.xraySummaryCache.delete(key);
+          }
+        }
         // Clear extraction cache entries for this book
         for (const [key, entry] of this.xrayExtractionCache.entries()) {
           if (entry.bookHash === bookHash) {
