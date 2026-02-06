@@ -44,7 +44,7 @@ import type {
 } from './types';
 
 const XRAY_VERSION = 1;
-const XRAY_PROMPT_VERSION = 4;
+const XRAY_PROMPT_VERSION = 5;
 const XRAY_MIN_PAGE_DELTA = 1;
 const XRAY_MAX_BATCH_PAGES = 10;
 const XRAY_WINDOW_MAX_CHARS = 9000;
@@ -2274,9 +2274,9 @@ export const updateXRayForProgress = async (params: {
 
       const shouldRelFallback =
         extraction.relationships.length === 0 && knownEntitiesRelations.length >= 2;
-      const shouldTimelineFallback = extraction.events.length === 0 && textUnits.length >= 4;
+      const shouldTimelinePrompt = batchComplete && textUnits.length >= 2;
 
-      if (batchComplete && (shouldRelFallback || shouldTimelineFallback)) {
+      if (batchComplete && (shouldRelFallback || shouldTimelinePrompt)) {
         const relPrompt = shouldRelFallback
           ? buildXRayRelationshipPrompt({
               maxPageIncluded: pageEnd,
@@ -2286,7 +2286,7 @@ export const updateXRayForProgress = async (params: {
               knownEntities: knownEntitiesRelations,
             })
           : null;
-        const timelinePrompt = shouldTimelineFallback
+        const timelinePrompt = shouldTimelinePrompt
           ? buildXRayTimelinePrompt({
               maxPageIncluded: pageEnd,
               pageStart,
@@ -2307,7 +2307,9 @@ export const updateXRayForProgress = async (params: {
           );
         }
         if (timelineExtraction) {
-          extraction = mergeExtraction(extraction, timelineExtraction);
+          if (timelineExtraction.events.length > 0) {
+            extraction = { ...extraction, events: timelineExtraction.events };
+          }
           await logDebug(`xray_extract timeline fallback=${timelineExtraction.events.length}`);
         }
       }
