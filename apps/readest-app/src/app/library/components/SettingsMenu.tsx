@@ -282,6 +282,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                   : _('Never synced')
               }
               Icon={user ? MdSync : MdSyncProblem}
+              labelClass='ps-2 pe-1 !mx-0'
               iconClassName={user && isSyncing ? 'animate-reverse-spin' : ''}
               onClick={onPullLibrary.bind(null, true, true)}
             />

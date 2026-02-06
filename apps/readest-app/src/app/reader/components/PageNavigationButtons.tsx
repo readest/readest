@@ -64,11 +64,12 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
       <button
         onClick={handleGoLeftPage}
         className={clsx(
-          'absolute left-2 top-1/2 z-10 -translate-y-1/2',
-          'flex h-20 w-20 items-center justify-center',
-          'transition-opacity duration-300',
-          'focus:opacity-100 focus:outline-none',
-          isPageNavigationButtonsVisible ? 'opacity-100' : 'opacity-0',
+          'absolute left-2 z-10 -translate-y-1/2',
+          'flex items-center justify-center',
+          'transition-opacity duration-300 focus:outline-none',
+          isPageNavigationButtonsVisible
+            ? 'top-1/2 h-20 w-20 opacity-100'
+            : 'bottom-12 h-10 w-10 opacity-0',
         )}
         aria-label={getLeftPageLabel()}
         tabIndex={0}
@@ -88,11 +89,12 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
       <button
         onClick={handleGoRightPage}
         className={clsx(
-          'absolute right-2 top-1/2 z-10 -translate-y-1/2',
-          'flex h-20 w-20 items-center justify-center',
-          'transition-opacity duration-300',
-          'focus:opacity-100 focus:outline-none',
-          isPageNavigationButtonsVisible ? 'opacity-100' : 'opacity-0',
+          'absolute right-2 z-10 -translate-y-1/2',
+          'flex items-center justify-center',
+          'transition-opacity duration-300 focus:outline-none',
+          isPageNavigationButtonsVisible
+            ? 'top-1/2 h-20 w-20 opacity-100'
+            : 'bottom-12 h-10 w-10 opacity-0',
         )}
         aria-label={getRightPageLabel()}
         tabIndex={0}

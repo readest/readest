@@ -8,7 +8,6 @@
 
 # testing
 /coverage
-.playwright-mcp
 
 # next.js
 /.next/
@@ -46,3 +45,4 @@ fastlane/report.xml
 
 # nix
 result*
+.playwright-mcp/
