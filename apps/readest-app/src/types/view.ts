@@ -6,6 +6,8 @@ import { LocaleWithTextInfo } from './misc';
 
 export const NOTE_PREFIX = 'foliate-note:';
 
+type RangeAnchor = (doc: Document) => Range;
+
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   close: () => void;
@@ -20,7 +22,8 @@ export interface FoliateView extends HTMLElement {
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
-  resolveCFI: (cfi: string) => { index: number; anchor: (doc: Document) => Range };
+  resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
+  resolveNavigation: (cfiOrHref: string) => { index: number; anchor?: RangeAnchor };
   addAnnotation: (
     note: BookNote & { value?: string },
     remove?: boolean,
@@ -66,7 +69,7 @@ export interface FoliateView extends HTMLElement {
     prev: () => Promise<void>;
     nextSection?: () => Promise<void>;
     prevSection?: () => Promise<void>;
-    goTo?: (params: { index: number; anchor: number }) => void;
+    goTo?: (params: { index: number; anchor?: number | RangeAnchor }) => void;
     setStyles?: (css: string) => void;
     getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
     scrollToAnchor: (anchor: number | Range) => void;

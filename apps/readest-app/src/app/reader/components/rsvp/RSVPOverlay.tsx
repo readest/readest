@@ -290,7 +290,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   return (
     <div
       data-testid='rsvp-overlay'
-      aria-label={_('RSVP Speed Reading Overlay')}
+      aria-label={_('Speed Reading')}
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
         backgroundColor: bgColor,
@@ -308,7 +308,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       {/* Header */}
       <div className='rsvp-header flex shrink-0 items-center justify-between gap-2 p-3 md:gap-4 md:p-4'>
         <button
-          aria-label={_('Close RSVP')}
+          aria-label={_('Close Speed Reading')}
           className='flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 md:h-11 md:w-11'
           onClick={onClose}
           title={_('Close')}

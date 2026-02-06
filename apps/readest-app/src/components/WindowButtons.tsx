@@ -12,6 +12,7 @@ interface WindowButtonsProps {
   showMinimize?: boolean;
   showMaximize?: boolean;
   showClose?: boolean;
+  closeButtonLabel?: string;
   onMinimize?: () => void;
   onToggleMaximize?: () => void;
   onClose?: () => void;
@@ -41,6 +42,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   showMinimize = true,
   showMaximize = true,
   showClose = true,
+  closeButtonLabel,
   onMinimize,
   onToggleMaximize,
   onClose,
@@ -218,7 +220,11 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
       )}
 
       {showClose && (appService?.hasWindowBar || onClose) && (
-        <WindowButton onClick={handleClose} label={_('Close')} id='titlebar-close'>
+        <WindowButton
+          onClick={handleClose}
+          label={closeButtonLabel || _('Close')}
+          id='titlebar-close'
+        >
           <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
             <path
               fill='currentColor'
