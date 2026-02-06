@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
+import tinycolor from 'tinycolor2';
 import { XRayGraphBuilder } from '@/services/ai/xray/graphBuilder';
 import { useThemeStore } from '@/store/themeStore';
 import type { XRayEntity, XRayRelationship, XRayTimelineEvent } from '@/services/ai/types';
@@ -45,14 +46,8 @@ interface XRayGraphProps {
   events: XRayTimelineEvent[];
   onNodeClick?: (entity: XRayEntity) => void;
   onEdgeClick?: (relationship: XRayRelationship) => void;
+  selectedEntityId?: string | null;
 }
-
-const getThemeColors = (isDarkMode: boolean) => ({
-  label: isDarkMode ? '#e5e7eb' : '#374151',
-  edge: isDarkMode ? '#4b5563' : '#9ca3af',
-  edgeInferred: isDarkMode ? '#374151' : '#d1d5db',
-  background: isDarkMode ? '#1f2937' : '#ffffff',
-});
 
 const XRayGraph: React.FC<XRayGraphProps> = ({
   entities,
@@ -60,14 +55,52 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   events,
   onNodeClick,
   onEdgeClick,
+  selectedEntityId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<SigmaInstance | null>(null);
   const hoveredNodeRef = useRef<string | null>(null);
+  const selectedNodeRef = useRef<string | null>(null);
   const renderIdRef = useRef(0);
-  const { isDarkMode } = useThemeStore();
+  const themeCode = useThemeStore((state) => state.themeCode);
 
-  const themeColors = getThemeColors(isDarkMode);
+  const themeColors = useMemo(() => {
+    const palette = themeCode.palette;
+    return {
+      label: palette['base-content'],
+      labelActive: palette['base-content'],
+      labelBackground: tinycolor(palette['base-100']).setAlpha(0.9).toRgbString(),
+      edge: tinycolor(palette['base-content']).setAlpha(0.35).toRgbString(),
+      edgeInferred: tinycolor(palette['base-content']).setAlpha(0.2).toRgbString(),
+      edgeActive: palette.primary,
+      background: palette['base-100'],
+      nodeDefault: palette.neutral,
+      nodeSelected: palette.primary,
+      nodeHighlight: palette.accent,
+    };
+  }, [themeCode]);
+
+  const entityColors = useMemo(() => {
+    const palette = themeCode.palette;
+    return {
+      character: palette.primary,
+      location: palette.secondary,
+      organization: palette.accent,
+      artifact: tinycolor(palette.primary).darken(12).toHexString(),
+      term: tinycolor(palette.secondary).darken(12).toHexString(),
+      concept: tinycolor(palette.accent).darken(12).toHexString(),
+      event: tinycolor(palette.neutral).toHexString(),
+      default: palette.neutral,
+    };
+  }, [themeCode]);
+
+  const getEntityColor = useCallback(
+    (type?: string) => {
+      const key = (type || 'default') as keyof typeof entityColors;
+      return entityColors[key] || entityColors.default;
+    },
+    [entityColors],
+  );
 
   const refreshGraph = useCallback(() => {
     if (sigmaRef.current) {
@@ -92,43 +125,72 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
       const graph = builder.getGraph();
 
       const { circular } = await import('graphology-layout');
-      circular.assign(graph, { scale: 100 });
+      circular.assign(graph, { scale: 240 });
+      const forceAtlas2 = await import('graphology-layout-forceatlas2').then((mod) =>
+        'default' in mod ? mod.default : mod,
+      );
+      forceAtlas2.assign(graph, {
+        iterations: 120,
+        settings: {
+          gravity: 0.8,
+          scalingRatio: 28,
+          slowDown: 1.5,
+          edgeWeightInfluence: 0.6,
+          linLogMode: true,
+          outboundAttractionDistribution: true,
+          adjustSizes: true,
+          barnesHutOptimize: true,
+          barnesHutTheta: 0.8,
+        },
+      });
       const SigmaClass = await import('sigma').then((mod) => mod.default);
       const sigma = new SigmaClass(graph, containerRef.current, {
         renderLabels: true,
-        labelSize: 11,
+        labelSize: 10,
         labelWeight: '500',
         labelColor: { color: themeColors.label },
-        defaultNodeColor: '#6b7280',
+        defaultNodeColor: themeColors.nodeDefault,
         defaultEdgeColor: themeColors.edge,
+        zIndex: true,
         nodeReducer: (_node: string, data: NodeData) => {
-          const isHighlighted = hoveredNodeRef.current === _node;
-          const isConnected = hoveredNodeRef.current
-            ? graph.neighbors(hoveredNodeRef.current).includes(_node)
-            : false;
-          const isDimmed = hoveredNodeRef.current && !isHighlighted && !isConnected;
+          const activeNode = hoveredNodeRef.current ?? selectedNodeRef.current ?? null;
+          const isHighlighted = activeNode === _node;
+          const isConnected = activeNode ? graph.neighbors(activeNode).includes(_node) : false;
+          const isDimmed = Boolean(activeNode && !isHighlighted && !isConnected);
+          const baseColor = getEntityColor(data.entityType) || themeColors.nodeDefault;
+          const color = isHighlighted
+            ? themeColors.nodeSelected
+            : activeNode && isConnected
+              ? themeColors.nodeHighlight
+              : baseColor;
 
           return {
             ...data,
             label: data.label,
-            color: data.color,
-            size: isHighlighted ? 12 : isConnected ? 9 : 7,
+            color,
+            size: isHighlighted ? 11 : isConnected ? 8 : 6,
             zIndex: isHighlighted ? 2 : isConnected ? 1 : 0,
-            opacity: isDimmed ? 0.3 : 1,
+            opacity: isDimmed ? 0.2 : 1,
+            labelColor: {
+              color: isHighlighted || isConnected ? themeColors.labelActive : themeColors.label,
+            },
+            labelBackgroundColor: isHighlighted ? themeColors.labelBackground : undefined,
+            labelSize: isHighlighted ? 12 : 10,
+            labelWeight: isHighlighted ? '600' : '500',
           };
         },
         edgeReducer: (_edge: string, data: EdgeData) => {
           const source = graph.source(_edge);
           const target = graph.target(_edge);
-          const isConnected =
-            hoveredNodeRef.current &&
-            (source === hoveredNodeRef.current || target === hoveredNodeRef.current);
-          const isDimmed = hoveredNodeRef.current && !isConnected;
+          const activeNode = hoveredNodeRef.current ?? selectedNodeRef.current ?? null;
+          const isConnected = activeNode && (source === activeNode || target === activeNode);
+          const isDimmed = Boolean(activeNode && !isConnected);
+          const edgeColor = data.inferred ? themeColors.edgeInferred : themeColors.edge;
 
           return {
             ...data,
-            color: data.inferred ? themeColors.edgeInferred : themeColors.edge,
-            size: isConnected ? 3 : data.inferred ? 1 : 2,
+            color: isConnected ? themeColors.edgeActive : edgeColor,
+            size: isConnected ? 2.5 : data.inferred ? 1 : 1.5,
             zIndex: isConnected ? 1 : 0,
             opacity: isDimmed ? 0.15 : data.inferred ? 0.5 : 0.8,
           };
@@ -168,7 +230,16 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
     } catch (error) {
       console.error('failed to initialize graph:', error);
     }
-  }, [entities, relationships, events, onNodeClick, onEdgeClick, themeColors, refreshGraph]);
+  }, [
+    entities,
+    relationships,
+    events,
+    onNodeClick,
+    onEdgeClick,
+    themeColors,
+    getEntityColor,
+    refreshGraph,
+  ]);
 
   useEffect(() => {
     initGraph();
@@ -199,8 +270,13 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   }, []);
 
   useEffect(() => {
+    selectedNodeRef.current = selectedEntityId ?? null;
     refreshGraph();
-  }, [isDarkMode, refreshGraph]);
+  }, [selectedEntityId, refreshGraph]);
+
+  useEffect(() => {
+    refreshGraph();
+  }, [themeCode, refreshGraph]);
 
   if (entities.length === 0) {
     return (
