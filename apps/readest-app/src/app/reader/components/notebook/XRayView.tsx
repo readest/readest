@@ -19,10 +19,15 @@ import {
   updateXRayForProgress,
 } from '@/services/ai/xrayService';
 import { isBookIndexed } from '@/services/ai/ragService';
-import type { XRayEntity, XRayEntityType, XRayEvidence, XRaySnapshot } from '@/services/ai/types';
+import type {
+  XRayEntity,
+  XRayEntityType,
+  XRayEvidence,
+  XRayRelationship,
+  XRaySnapshot,
+} from '@/services/ai/types';
 import type { BookSearchConfig } from '@/types/book';
 import XRayGraph from './XRayGraph';
-import XRayMiniGraph from './XRayMiniGraph';
 
 interface XRayViewProps {
   bookKey: string;
@@ -64,8 +69,6 @@ interface EntityView {
   mentionCount: number;
   lastSeenPage: number;
   mentions: EntityMention[];
-  topMentions: EntityMention[];
-  allMentions: EntityMention[];
   relevanceScore: number;
   isRelevantNow: boolean;
   isLocked: boolean;
@@ -76,6 +79,67 @@ interface EntityView {
   searchText: string;
   isInferred: boolean;
 }
+
+interface RelationshipPair {
+  key: string;
+  leftId: string;
+  rightId: string;
+  leftName: string;
+  rightName: string;
+  relationships: XRayRelationship[];
+  evidence: XRayEvidence[];
+  lastSeenPage: number;
+}
+
+const uniqueStrings = (values: string[]): string[] => {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(trimmed);
+  }
+  return output;
+};
+
+const ensureSentence = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/[.!?]$/.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
+};
+
+const buildRelationshipPairs = (
+  relationships: XRayRelationship[],
+  entityById: Map<string, XRayEntity>,
+): RelationshipPair[] => {
+  const map = new Map<string, RelationshipPair>();
+  for (const rel of relationships) {
+    const source = entityById.get(rel.sourceId);
+    const target = entityById.get(rel.targetId);
+    if (!source || !target) continue;
+    const [left, right] = source.id < target.id ? [source, target] : [target, source];
+    const key = `${left.id}|${right.id}`;
+    const entry = map.get(key) || {
+      key,
+      leftId: left.id,
+      rightId: right.id,
+      leftName: left.canonicalName,
+      rightName: right.canonicalName,
+      relationships: [] as XRayRelationship[],
+      evidence: [] as XRayEvidence[],
+      lastSeenPage: -1,
+    };
+    entry.relationships.push(rel);
+    entry.evidence.push(...(rel.evidence || []));
+    entry.lastSeenPage = Math.max(entry.lastSeenPage, rel.lastSeenPage ?? -1);
+    map.set(key, entry);
+  }
+  return Array.from(map.values());
+};
 
 const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -462,6 +526,111 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return map;
   }, [livingRelationships, entityById]);
 
+  const relationshipPairsAll = useMemo(
+    () => buildRelationshipPairs(livingRelationships, entityById),
+    [livingRelationships, entityById],
+  );
+
+  const relationshipPairs = useMemo(
+    () =>
+      buildRelationshipPairs(filteredRelationships, entityById).sort(
+        (a, b) => b.lastSeenPage - a.lastSeenPage,
+      ),
+    [filteredRelationships, entityById],
+  );
+
+  const buildPairSummary = useCallback((pair: RelationshipPair): string => {
+    const descriptions = uniqueStrings(
+      pair.relationships.map((rel) => rel.description || '').filter(Boolean),
+    );
+    const typeLabels = uniqueStrings(
+      pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
+    );
+    const leftToken = pair.leftName.toLowerCase();
+    const rightToken = pair.rightName.toLowerCase();
+    const namedDescriptions = descriptions.filter((text) => {
+      const lower = text.toLowerCase();
+      return lower.includes(leftToken) && lower.includes(rightToken);
+    });
+    if (namedDescriptions.length > 0) {
+      return namedDescriptions
+        .slice(0, 2)
+        .map((value) => ensureSentence(value))
+        .filter(Boolean)
+        .join(' ');
+    }
+    const lead = (() => {
+      if (typeLabels.length === 1) {
+        return ensureSentence(`${pair.leftName} is ${typeLabels[0]} ${pair.rightName}`);
+      }
+      if (typeLabels.length > 1) {
+        return ensureSentence(
+          `Relationship between ${pair.leftName} and ${pair.rightName} includes ${typeLabels.join(', ')}`,
+        );
+      }
+      return ensureSentence(`Relationship between ${pair.leftName} and ${pair.rightName} is noted`);
+    })();
+    const tail = descriptions.length > 0 ? ensureSentence(descriptions[0]!) : '';
+    return [lead, tail].filter(Boolean).join(' ');
+  }, []);
+
+  const buildEntityRelationshipSummary = useCallback(
+    (pairs: RelationshipPair[]): string => {
+      if (pairs.length === 0) return _('No relationships yet');
+      const ranked = pairs.slice().sort((a, b) => {
+        if (b.relationships.length !== a.relationships.length) {
+          return b.relationships.length - a.relationships.length;
+        }
+        return b.lastSeenPage - a.lastSeenPage;
+      });
+      const sentences = ranked
+        .slice(0, 3)
+        .map((pair) => buildPairSummary(pair))
+        .filter(Boolean);
+      return sentences.join(' ');
+    },
+    [buildPairSummary, _],
+  );
+
+  const relationshipSummaryByEntity = useMemo(() => {
+    const pairMap = new Map<string, RelationshipPair[]>();
+    for (const pair of relationshipPairsAll) {
+      const leftList = pairMap.get(pair.leftId) ?? [];
+      leftList.push(pair);
+      pairMap.set(pair.leftId, leftList);
+      const rightList = pairMap.get(pair.rightId) ?? [];
+      rightList.push(pair);
+      pairMap.set(pair.rightId, rightList);
+    }
+    const summaryMap = new Map<string, string>();
+    for (const entity of relationshipEntities) {
+      const pairs = pairMap.get(entity.id) ?? [];
+      summaryMap.set(entity.id, buildEntityRelationshipSummary(pairs));
+    }
+    return summaryMap;
+  }, [relationshipEntities, relationshipPairsAll, buildEntityRelationshipSummary]);
+
+  const getRelationshipSummaryText = useCallback(
+    (entity?: XRayEntity | null) => {
+      if (!entity) return _('No relationships yet');
+      return relationshipSummaryByEntity.get(entity.id) || _('No relationships yet');
+    },
+    [relationshipSummaryByEntity, _],
+  );
+
+  const relationshipFilterEntity = useMemo(
+    () => relationshipEntities.find((entity) => entity.id === relationshipFilter) || null,
+    [relationshipEntities, relationshipFilter],
+  );
+
+  const pickPairEvidence = useCallback((pair: RelationshipPair): XRayEvidence | null => {
+    if (pair.evidence.length === 0) return null;
+    const ordered = pair.evidence.slice().sort((a, b) => b.page - a.page);
+    return (
+      ordered.find((item) => !item.inferred && item.chunkId !== 'inferred') || ordered[0] || null
+    );
+  }, []);
+
   const mentionStats = useMemo(() => {
     const stats = new Map<string, EntityMentionStats>();
     const seenKeys = new Map<string, Set<string>>();
@@ -558,12 +727,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         inChapter: false,
       };
       const mentionsSorted = [...stats.mentions].sort((a, b) => b.evidence.page - a.evidence.page);
-      const topMentions = [...stats.mentions].sort((a, b) => {
-        const distA = Math.abs(a.evidence.page - currentPage);
-        const distB = Math.abs(b.evidence.page - currentPage);
-        if (distA !== distB) return distA - distB;
-        return b.evidence.page - a.evidence.page;
-      });
       const mentionCount = stats.mentions.length;
       const lastSeenPage = stats.lastSeenPage >= 0 ? stats.lastSeenPage : entity.lastSeenPage;
       const relevanceScore =
@@ -607,8 +770,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         mentionCount,
         lastSeenPage,
         mentions: mentionsSorted,
-        topMentions: topMentions.slice(0, 3),
-        allMentions: mentionsSorted,
         relevanceScore,
         isRelevantNow: stats.onPage || stats.inChapter,
         isLocked: stats.lockedCount > 0,
@@ -733,7 +894,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   );
 
   const pillBase =
-    'inline-flex h-6 items-center justify-center rounded-full px-2.5 text-[10px] font-semibold leading-[1] tracking-wide border';
+    'inline-flex h-5 items-center justify-center rounded-full px-2 text-[10px] font-semibold leading-[1] tracking-wide border';
 
   const pillVariants = {
     mention:
@@ -794,16 +955,18 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   };
 
   const renderEntityCard = (item: EntityView) => {
-    const previewMention = item.topMentions[0];
-    const previewJumpable =
-      previewMention &&
-      !previewMention.evidence.inferred &&
-      previewMention.evidence.chunkId !== 'inferred';
     return (
       <div key={item.entity.id} className='border-base-300/60 rounded-md border p-3'>
         <div className='flex items-start justify-between gap-2'>
           <div className='min-w-0'>
-            <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
+            <div className='flex flex-wrap items-center gap-2'>
+              <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
+              <div className='flex flex-wrap items-center gap-1.5 text-[10px]'>
+                {renderPill('mention', `${_('Mentions')}: ${item.mentionCount}`)}
+                {renderPill('lastSeen', `${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
+                {item.isInferred && renderPill('warning', _('Inferred'))}
+              </div>
+            </div>
           </div>
           <div className='text-base-content/60 shrink-0 text-xs'>
             {getEntityTypeLabel(item.entity.type)}
@@ -811,62 +974,22 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         </div>
         <p className='text-base-content/70 mt-1 text-xs'>{item.oneLiner}</p>
 
-        <div className='mt-3 flex flex-wrap gap-2 text-[10px]'>
-          {renderPill('mention', `${_('Mentions')}: ${item.mentionCount}`)}
-          {renderPill('lastSeen', `${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
-          {item.isInferred && renderPill('warning', _('Inferred'))}
-        </div>
-
-        {previewMention ? (
-          <button
-            type='button'
-            className='hover:bg-base-200/40 mt-2 w-full rounded-md px-1 py-1 text-left text-[11px] transition-colors'
-            onClick={() => handleEvidenceJump(previewMention.evidence)}
-            disabled={
-              !previewJumpable ||
-              jumpingEvidenceKey ===
-                `${previewMention.evidence.chunkId}:${previewMention.evidence.page}`
-            }
-          >
-            <span className='text-base-content/70'>
-              &ldquo;{formatQuote(previewMention.evidence.quote)}&rdquo;
-            </span>
-            <span className='text-base-content/50 ml-2'>
-              {_('p.')}
-              {previewMention.evidence.page + 1}
-            </span>
-          </button>
-        ) : (
-          <p className='text-base-content/50 mt-2 text-[11px]'>{_('No mentions yet')}</p>
-        )}
+        <details className='mt-2'>
+          <summary className='text-base-content/60 cursor-pointer text-[11px]'>
+            {_('Quotes')} ({item.mentionCount})
+          </summary>
+          <div className='mt-2'>
+            {item.mentions.length === 0 ? (
+              <p className='text-base-content/50 text-[11px]'>{_('No quotes yet')}</p>
+            ) : (
+              item.mentions.map(renderMention)
+            )}
+          </div>
+        </details>
 
         {item.isLocked && (
           <div className='text-base-content/50 mt-2 text-[11px]'>{_('Locked until later')}</div>
         )}
-
-        <details className='mt-2'>
-          <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-            {_('Show More')}
-          </summary>
-
-          <div className='mt-2'>
-            <div className='text-base-content/60 text-[11px]'>{_('Mentions')}</div>
-            {item.topMentions.length === 0 ? (
-              <p className='text-base-content/50 text-[11px]'>{_('No mentions yet')}</p>
-            ) : (
-              item.topMentions.map(renderMention)
-            )}
-          </div>
-
-          {item.allMentions.length > item.topMentions.length && (
-            <details className='mt-2'>
-              <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-                {_('All Mentions')} ({item.allMentions.length})
-              </summary>
-              <div className='mt-2'>{item.allMentions.map(renderMention)}</div>
-            </details>
-          )}
-        </details>
       </div>
     );
   };
@@ -1302,7 +1425,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                       return (
                         <div key={event.id} className='relative flex gap-3'>
                           <div className='relative flex w-4 flex-none items-start justify-center'>
-                            <span className='bg-base-content border-base-content ring-base-content/30 z-10 inline-flex size-3 rounded-full border ring-1' />
+                            <span className='bg-base-content border-base-content ring-base-content/30 z-10 inline-flex size-2 rounded-full border ring-1' />
                           </div>
                           <div className='border-base-300/60 bg-base-100/50 min-w-0 flex-1 rounded-md border p-3'>
                             <div className='text-base-content/60 text-xs'>{pageLabel}</div>
@@ -1380,6 +1503,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     relationships={filteredRelationships}
                     events={[]}
                     onNodeClick={(entity) => setSelectedGraphEntity(entity)}
+                    selectedEntityId={selectedGraphEntity?.id}
                   />
                 </div>
                 {selectedGraphEntity ? (
@@ -1389,9 +1513,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                         <div className='text-sm font-semibold'>
                           {selectedGraphEntity.canonicalName}
                         </div>
-                        <span className='text-base-content/50 text-[10px]'>
-                          {getEntityTypeLabel(selectedGraphEntity.type)}
-                        </span>
                       </div>
                       <button
                         type='button'
@@ -1402,26 +1523,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                       </button>
                     </div>
                     <p className='text-base-content/80 mt-2 text-xs leading-relaxed'>
-                      {getEntitySummaryText(selectedGraphEntity)}
+                      {getRelationshipSummaryText(selectedGraphEntity)}
                     </p>
-                    {(() => {
-                      const related = filteredRelationships.filter(
-                        (rel) =>
-                          rel.sourceId === selectedGraphEntity.id ||
-                          rel.targetId === selectedGraphEntity.id,
-                      );
-                      if (related.length === 0) return null;
-                      return (
-                        <div className='mt-3 space-y-2'>
-                          <div className='text-base-content/60 text-[11px]'>{_('Connections')}</div>
-                          <XRayMiniGraph
-                            center={selectedGraphEntity}
-                            relationships={related}
-                            entityById={entityById}
-                          />
-                        </div>
-                      );
-                    })()}
                   </div>
                 ) : (
                   <p className='text-base-content/50 text-center text-xs'>
@@ -1429,62 +1532,79 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   </p>
                 )}
               </div>
-            ) : filteredRelationships.length === 0 ? (
+            ) : relationshipPairs.length === 0 ? (
               <p className='text-base-content/60 text-sm'>{_('No relationships yet')}</p>
             ) : (
-              filteredRelationships.map((rel) => {
-                const source = entityById.get(rel.sourceId);
-                const target = entityById.get(rel.targetId);
-                const sourceName = source?.canonicalName || rel.sourceId;
-                const targetName = target?.canonicalName || rel.targetId;
-                const relationLabel = formatRelationshipLabel(rel.type);
-                const description = rel.description?.trim()
-                  ? rel.description
-                  : `${sourceName} is ${relationLabel} ${targetName}.`;
-                return (
-                  <div
-                    key={rel.id}
-                    className='border-base-300/60 hover:border-base-300 rounded-md border p-3 transition-colors'
-                  >
-                    <div className='flex flex-wrap items-center gap-2 text-xs'>
-                      <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
-                        {sourceName}
-                      </span>
-                      <span className='text-base-content/40'>→</span>
-                      <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
-                        {targetName}
-                      </span>
-                      <span className='text-base-content/60 bg-base-200/70 ml-auto rounded-full px-2 py-1 text-[10px]'>
-                        {relationLabel}
-                      </span>
+              <div className='space-y-3'>
+                {relationshipFilter !== 'all' && relationshipFilterEntity && (
+                  <div className='border-base-300/60 rounded-md border p-3'>
+                    <div className='text-sm font-semibold'>
+                      {relationshipFilterEntity.canonicalName}
                     </div>
-                    <p className='text-base-content/70 mt-2 text-xs'>
-                      {description}
-                      {rel.inferred && (
-                        <span className='text-base-content/50 ml-2 text-[10px]'>
-                          {_('Inferred')}
-                        </span>
-                      )}
+                    <p className='text-base-content/80 mt-2 text-xs leading-relaxed'>
+                      {getRelationshipSummaryText(relationshipFilterEntity)}
                     </p>
-                    {rel.evidence[0] && (
-                      <button
-                        type='button'
-                        className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
-                        onClick={() => handleEvidenceJump(rel.evidence[0]!)}
-                        disabled={
-                          rel.evidence[0]!.inferred ||
-                          rel.evidence[0]!.chunkId === 'inferred' ||
-                          jumpingEvidenceKey ===
-                            `${rel.evidence[0]!.chunkId}:${rel.evidence[0]!.page}`
-                        }
-                        title={_('Jump to quote')}
-                      >
-                        &ldquo;{rel.evidence[0].quote}&rdquo; (p.{rel.evidence[0].page + 1})
-                      </button>
-                    )}
                   </div>
-                );
-              })
+                )}
+                {relationshipPairs.map((pair) => {
+                  const typeLabels = uniqueStrings(
+                    pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
+                  );
+                  const description = buildPairSummary(pair);
+                  const evidence = pickPairEvidence(pair);
+                  const isInferred = pair.relationships.every((rel) => rel.inferred);
+                  return (
+                    <div
+                      key={pair.key}
+                      className='border-base-300/60 hover:border-base-300 rounded-md border p-3 transition-colors'
+                    >
+                      <div className='flex flex-wrap items-center gap-2 text-xs'>
+                        <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
+                          {pair.leftName}
+                        </span>
+                        <span className='text-base-content/40'>↔</span>
+                        <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
+                          {pair.rightName}
+                        </span>
+                        <div className='ml-auto flex flex-wrap gap-1'>
+                          {typeLabels.map((label) => (
+                            <span
+                              key={`${pair.key}-${label}`}
+                              className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className='text-base-content/70 mt-2 text-xs'>
+                        {description}
+                        {isInferred && (
+                          <span className='text-base-content/50 ml-2 text-[10px]'>
+                            {_('Inferred')}
+                          </span>
+                        )}
+                      </p>
+                      {evidence && (
+                        <button
+                          type='button'
+                          className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
+                          onClick={() => handleEvidenceJump(evidence)}
+                          disabled={
+                            evidence.inferred ||
+                            evidence.chunkId === 'inferred' ||
+                            jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`
+                          }
+                          title={_('Jump to quote')}
+                        >
+                          &ldquo;{formatQuote(evidence.quote, 120)}&rdquo; (p.
+                          {evidence.page + 1})
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
