@@ -204,6 +204,7 @@ export interface ViewConfig {
   tapToToggleFooter: boolean;
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
+  showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
 
@@ -246,6 +247,7 @@ export interface NoteExportConfig {
   noteSeparator: string;
   useCustomTemplate: boolean;
   customTemplate: string;
+  exportAsPlainText: boolean;
 }
 
 export interface AnnotatorConfig {

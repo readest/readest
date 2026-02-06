@@ -16,6 +16,7 @@ export interface TOCItem {
   id: number;
   label: string;
   href: string;
+  index: number; // Page index for PDF books
   cfi?: string;
   location?: Location;
   subitems?: TOCItem[];
@@ -146,7 +147,7 @@ export class DocumentLoader {
     const { configure, ZipReader, BlobReader, TextWriter, BlobWriter } =
       await import('@zip.js/zip.js');
     type Entry = import('@zip.js/zip.js').Entry;
-    configure({ useWebWorkers: false });
+    configure({ useWebWorkers: false, useCompressionStream: false });
     const reader = new ZipReader(new BlobReader(this.file));
     const entries = await reader.getEntries();
     const map = new Map(entries.map((entry) => [entry.filename, entry]));

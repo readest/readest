@@ -94,8 +94,23 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportConfig, envConfig, bookKey]);
 
+  // Helper function to strip markdown formatting
+  const stripMarkdown = (text: string): string => {
+    return text
+      .replace(/^#{1,6}\s+/gm, '') // Remove headers
+      .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.+?)\*/g, '$1') // Remove italic
+      .replace(/^>\s+/gm, '') // Remove blockquotes
+      .replace(/^---$/gm, '') // Remove horizontal rules
+      .replace(/^\s*[-*+]\s+/gm, '') // Remove list markers
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1') // Remove links
+      .trim();
+  };
+
   // Generate markdown preview based on current format settings
   const markdownPreview = useMemo(() => {
+    let output = '';
+
     if (exportConfig.useCustomTemplate) {
       // Prepare data for template rendering
       const sortedGroups = Object.values(booknoteGroups).sort((a, b) => a.id - b.id);
@@ -116,75 +131,82 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         })),
       };
 
-      return renderNoteTemplate(exportConfig.customTemplate, templateData);
-    }
+      output = renderNoteTemplate(exportConfig.customTemplate, templateData);
+    } else {
+      // Default formatting (non-template mode)
+      const sortedGroups = Object.values(booknoteGroups).sort((a, b) => a.id - b.id);
 
-    // Default formatting (non-template mode)
-    const sortedGroups = Object.values(booknoteGroups).sort((a, b) => a.id - b.id);
+      const lines: string[] = [];
 
-    const lines: string[] = [];
-
-    // Add title
-    if (exportConfig.includeTitle) {
-      lines.push(`# ${bookTitle}`);
-    }
-
-    // Add author
-    if (exportConfig.includeAuthor && bookAuthor) {
-      lines.push(`**${_('Author')}**: ${bookAuthor}`);
-      lines.push('');
-    }
-
-    // Add export date
-    if (exportConfig.includeDate) {
-      lines.push(`**${_('Exported from Readest')}**: ${new Date().toISOString().slice(0, 10)}`);
-      lines.push('');
-    }
-
-    if (exportConfig.includeTitle || exportConfig.includeAuthor || exportConfig.includeDate) {
-      lines.push('---');
-      lines.push('');
-    }
-
-    lines.push(`## ${_('Highlights & Annotations')}`);
-    lines.push('');
-
-    for (const group of sortedGroups) {
-      // Add chapter title
-      if (exportConfig.includeChapterTitles) {
-        const chapterTitle = group.label || _('Untitled');
-        lines.push(`### ${chapterTitle}`);
+      // Add title
+      if (exportConfig.includeTitle) {
+        lines.push(`# ${bookTitle}`);
       }
 
-      for (const note of group.booknotes) {
-        // Add quote
-        if (exportConfig.includeQuotes && note.text) {
-          lines.push(`> ${note.text}`);
-        }
-
-        // Add note
-        if (exportConfig.includeNotes && note.note) {
-          lines.push('');
-          lines.push(`**${_('Note')}**:: ${note.note}`);
-        }
-
-        // Add timestamp
-        if (exportConfig.includeTimestamp && note.updatedAt) {
-          const timestamp = new Date(note.updatedAt).toLocaleString();
-          lines.push('');
-          lines.push(`*${_('Time:')} ${timestamp}*`);
-        }
-
-        lines.push(exportConfig.noteSeparator);
+      // Add author
+      if (exportConfig.includeAuthor && bookAuthor) {
+        lines.push(`**${_('Author')}**: ${bookAuthor}`);
+        lines.push('');
       }
 
-      if (exportConfig.includeChapterSeparator) {
+      // Add export date
+      if (exportConfig.includeDate) {
+        lines.push(`**${_('Exported from Readest')}**: ${new Date().toISOString().slice(0, 10)}`);
+        lines.push('');
+      }
+
+      if (exportConfig.includeTitle || exportConfig.includeAuthor || exportConfig.includeDate) {
         lines.push('---');
         lines.push('');
       }
+
+      lines.push(`## ${_('Highlights & Annotations')}`);
+      lines.push('');
+
+      for (const group of sortedGroups) {
+        // Add chapter title
+        if (exportConfig.includeChapterTitles) {
+          const chapterTitle = group.label || _('Untitled');
+          lines.push(`### ${chapterTitle}`);
+        }
+
+        for (const note of group.booknotes) {
+          // Add quote
+          if (exportConfig.includeQuotes && note.text) {
+            lines.push(`> ${note.text}`);
+          }
+
+          // Add note
+          if (exportConfig.includeNotes && note.note) {
+            lines.push('');
+            lines.push(`**${_('Note')}**: ${note.note}`);
+          }
+
+          // Add timestamp
+          if (exportConfig.includeTimestamp && note.updatedAt) {
+            const timestamp = new Date(note.updatedAt).toLocaleString();
+            lines.push('');
+            lines.push(`*${_('Time:')} ${timestamp}*`);
+          }
+
+          lines.push(exportConfig.noteSeparator);
+        }
+
+        if (exportConfig.includeChapterSeparator) {
+          lines.push('---');
+          lines.push('');
+        }
+      }
+
+      output = lines.join('\n');
     }
 
-    return lines.join('\n');
+    // Strip markdown if plain text export is enabled
+    if (exportConfig.exportAsPlainText) {
+      output = stripMarkdown(output);
+    }
+
+    return output;
   }, [exportConfig, booknoteGroups, bookTitle, bookAuthor, _]);
 
   // Convert markdown to HTML for preview
@@ -493,11 +515,12 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <span className='text-sm'>{_('Show Source')}</span>
             </label>
           </div>
-          {showSource ? (
+          {showSource || exportConfig.exportAsPlainText ? (
             <div
               className={clsx(
-                'bg-base-200 max-h-[40vh] overflow-y-auto rounded-lg p-4 font-mono text-xs',
+                'bg-base-200 max-h-[40vh] overflow-y-auto rounded-lg p-4 text-xs',
                 'select-text whitespace-pre-wrap break-words',
+                showSource ? 'font-mono' : 'font-sans',
               )}
             >
               {markdownPreview || _('No content to preview')}
@@ -518,17 +541,34 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className='mt-4 flex justify-end gap-4'>
-          <button onClick={onCancel} className='btn btn-ghost btn-sm'>
-            {_('Cancel')}
-          </button>
-          <button
-            onClick={handleExport}
-            className='btn btn-primary btn-sm'
-            disabled={booknotes.length === 0}
-          >
-            {_('Export')}
-          </button>
+        <div className='mt-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+          <div className='flex items-center gap-3'>
+            <label className='flex cursor-pointer items-center gap-2'>
+              <input
+                type='checkbox'
+                checked={exportConfig.exportAsPlainText}
+                onChange={() => handleToggle('exportAsPlainText')}
+                className='toggle'
+              />
+              <span className='line-clamp-2 text-xs'>
+                {exportConfig.exportAsPlainText
+                  ? _('Export as Plain Text')
+                  : _('Export as Markdown')}
+              </span>
+            </label>
+          </div>
+          <div className='flex gap-4 self-end sm:self-auto'>
+            <button onClick={onCancel} className='btn btn-ghost btn-sm'>
+              {_('Cancel')}
+            </button>
+            <button
+              onClick={handleExport}
+              className='btn btn-primary btn-sm'
+              disabled={booknotes.length === 0}
+            >
+              {_('Export')}
+            </button>
+          </div>
         </div>
       </div>
     </Dialog>

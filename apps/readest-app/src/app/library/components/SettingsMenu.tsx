@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdCloudSync } from 'react-icons/md';
+import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
 
 import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -31,6 +32,7 @@ import Quota from '@/components/Quota';
 import Menu from '@/components/Menu';
 
 interface SettingsMenuProps {
+  onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
@@ -39,7 +41,7 @@ interface Permissions {
   manageStorage: PermissionState;
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
@@ -63,6 +65,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   );
   const iconSize = useResponsiveSize(16);
 
+  const { isSyncing } = useLibraryStore();
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -254,43 +257,57 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
             )
           }
         >
-          <ul
-            className='ms-0 flex flex-col before:hidden'
-            style={{
-              paddingInlineStart: `${iconSize}px`,
-            }}
-          >
-            <button onClick={handleUserProfile} className='w-full'>
+          <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+            <MenuItem
+              label={_('Cloud File Transfers')}
+              Icon={MdCloudSync}
+              description={
+                hasActiveTransfers
+                  ? _('{{activeCount}} active, {{pendingCount}} pending', {
+                      activeCount: stats.active,
+                      pendingCount: stats.pending,
+                    })
+                  : stats.failed > 0
+                    ? _('{{failedCount}} failed', { failedCount: stats.failed })
+                    : ''
+              }
+              onClick={openTransferQueue}
+            />
+            <MenuItem
+              label={
+                settings.lastSyncedAtBooks
+                  ? _('Synced at {{time}}', {
+                      time: new Date(settings.lastSyncedAtBooks).toLocaleString(),
+                    })
+                  : _('Never synced')
+              }
+              Icon={user ? MdSync : MdSyncProblem}
+              labelClass='ps-2 pe-1 !mx-0'
+              iconClassName={user && isSyncing ? 'animate-reverse-spin' : ''}
+              onClick={onPullLibrary.bind(null, true, true)}
+            />
+            <button
+              onClick={handleUserProfile}
+              className='hover:bg-base-300 w-full rounded-md'
+              style={{
+                paddingInlineStart: `${iconSize}px`,
+              }}
+            >
               <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
             </button>
-            <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
+            <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
-      {user && (
-        <MenuItem
-          label={_('Cloud File Transfers')}
-          Icon={MdCloudSync}
-          description={
-            hasActiveTransfers
-              ? _('{{activeCount}} active, {{pendingCount}} pending', {
-                  activeCount: stats.active,
-                  pendingCount: stats.pending,
-                })
-              : stats.failed > 0
-                ? _('{{failedCount}} failed', { failedCount: stats.failed })
-                : ''
-          }
-          onClick={openTransferQueue}
-        />
-      )}
+
       <MenuItem
         label={_('Auto Upload Books to Cloud')}
         toggled={isAutoUpload}
         onClick={toggleAutoUploadBooks}
       />
+
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}

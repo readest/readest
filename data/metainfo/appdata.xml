@@ -59,6 +59,28 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.99" date="2026-02-07">
+      <description>
+        <ul>
+          <li>Reading: Added a reading ruler (line highlight) to help guide your eyes while reading</li>
+          <li>Reading: Added paragraph-by-paragraph reading mode for more focused navigation</li>
+          <li>Reading: Added a speed reading mode to support faster reading workflows</li>
+          <li>Reading: Added support for gamepad input to turn pages</li>
+          <li>Accessibility: Improved TalkBack support in dropdown menus for smoother navigation</li>
+          <li>Accessibility: Page navigation buttons are now always visible to screen readers</li>
+          <li>Accessibility: Reading progress is now updated correctly when navigating with screen readers</li>
+          <li>Annotations: Expanded highlight customization with more color options</li>
+          <li>Annotations: Added an option to export annotations as plain text</li>
+          <li>Library: Added grouping by author and series for better library organization</li>
+          <li>Library: Added support of marking books as finished</li>
+          <li>Search: Added fuzzy search to quickly find settings even with partial keywords</li>
+          <li>Table of Contents: Added page numbers for nested TOC entries</li>
+          <li>Text-to-Speech: Added navigation controls to return to the current reading position</li>
+          <li>Linux: Added an in-app updater for AppImage builds</li>
+          <li>E-ink: Improved color support for color E-ink devices to display richer highlights</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.98" date="2026-01-21">
       <description>
         <ul>
@@ -212,17 +234,6 @@
           <li>Android: You can now store app data on an external SD card</li>
           <li>iOS: Restores your last reading page if the app was closed in the background</li>
           <li>Localization: Added Persian (Farsi) language support</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.88" date="2025-10-18">
-      <description>
-        <ul>
-          <li>TTS: Fixed issue where the read-aloud indicator disappeared too quickly</li>
-          <li>Layout: Overriding book layout no longer affects explicitly set text alignment</li>
-          <li>Reader: Added localized number display for reading progress in vertical layout</li>
-          <li>Reader: Enhanced swipe responsiveness for smoother page transitions</li>
-          <li>Settings: Added an option to disable animations when using E-Ink mode</li>
         </ul>
       </description>
     </release>

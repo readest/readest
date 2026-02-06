@@ -45,10 +45,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   ];
 
   const groupByOptions = [
-    { label: _('None'), value: LibraryGroupByType.None },
-    { label: _('Manual'), value: LibraryGroupByType.Manual },
+    { label: _('Authors'), value: LibraryGroupByType.Author },
+    { label: _('Books'), value: LibraryGroupByType.None },
+    { label: _('Groups'), value: LibraryGroupByType.Group },
     { label: _('Series'), value: LibraryGroupByType.Series },
-    { label: _('Author'), value: LibraryGroupByType.Author },
   ];
 
   const sortByOptions = [
@@ -95,7 +95,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     await saveSysSettings(envConfig, 'libraryGroupBy', value);
 
     const params = new URLSearchParams(searchParams?.toString());
-    if (value === LibraryGroupByType.Manual) {
+    if (value === LibraryGroupByType.Group) {
       params.delete('groupBy');
     } else {
       params.set('groupBy', value);

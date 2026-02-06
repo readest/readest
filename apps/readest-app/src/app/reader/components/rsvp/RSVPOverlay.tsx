@@ -93,7 +93,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     };
   }, [controller, onRequestNextPage]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - use capture phase to intercept before native elements
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
       if (!state.active) return;
@@ -101,14 +101,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       switch (event.key) {
         case ' ':
           event.preventDefault();
+          event.stopPropagation();
           controller.togglePlayPause();
           break;
         case 'Escape':
           event.preventDefault();
+          event.stopPropagation();
           onClose();
           break;
         case 'ArrowLeft':
           event.preventDefault();
+          event.stopPropagation();
           if (event.shiftKey) {
             controller.skipBackward(15);
           } else {
@@ -117,6 +120,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           break;
         case 'ArrowRight':
           event.preventDefault();
+          event.stopPropagation();
           if (event.shiftKey) {
             controller.skipForward(15);
           } else {
@@ -125,17 +129,20 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           break;
         case 'ArrowUp':
           event.preventDefault();
+          event.stopPropagation();
           controller.increaseSpeed();
           break;
         case 'ArrowDown':
           event.preventDefault();
+          event.stopPropagation();
           controller.decreaseSpeed();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyboard);
-    return () => document.removeEventListener('keydown', handleKeyboard);
+    // Use capture phase to handle events before they reach dropdown/select elements
+    document.addEventListener('keydown', handleKeyboard, { capture: true });
+    return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
   }, [state.active, controller, onClose]);
 
   // Word display helpers
@@ -184,14 +191,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
-    if (!currentChapterHref) return 'Select Chapter';
+    if (!currentChapterHref) return _('Select Chapter');
     const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
     const chapter = flatChapters.find((c) => {
       const normalizedHref = c.href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     });
-    return chapter?.label || 'Select Chapter';
-  }, [currentChapterHref, flatChapters]);
+    return chapter?.label || _('Select Chapter');
+  }, [_, currentChapterHref, flatChapters]);
 
   const isChapterActive = useCallback(
     (href: string): boolean => {
@@ -283,7 +290,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   return (
     <div
       data-testid='rsvp-overlay'
-      aria-label='RSVP Speed Reading Overlay'
+      aria-label={_('Speed Reading')}
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
         backgroundColor: bgColor,
@@ -301,7 +308,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       {/* Header */}
       <div className='rsvp-header flex shrink-0 items-center justify-between gap-2 p-3 md:gap-4 md:p-4'>
         <button
-          aria-label={_('Close RSVP')}
+          aria-label={_('Close Speed Reading')}
           className='flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 md:h-11 md:w-11'
           onClick={onClose}
           title={_('Close')}
@@ -462,6 +469,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
             onClick={handleProgressBarClick}
             onKeyDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (e.key === 'ArrowLeft') controller.skipBackward();
               else if (e.key === 'ArrowRight') controller.skipForward();
             }}

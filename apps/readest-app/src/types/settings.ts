@@ -24,7 +24,7 @@ export type LibraryCoverFitType = 'crop' | 'fit';
 
 export const LibraryGroupByType = {
   None: 'none',
-  Manual: 'manual',
+  Group: 'group',
   Series: 'series',
   Author: 'author',
 } as const;

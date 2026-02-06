@@ -4,12 +4,20 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveSysSettings } from '@/helpers/settings';
+import { stubTranslation as _ } from '@/utils/misc';
 
-const styles = ['highlight', 'underline', 'squiggly'] as HighlightStyle[];
-const defaultColors = ['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[];
+const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
+const defaultColors = [
+  _('red'),
+  _('violet'),
+  _('blue'),
+  _('green'),
+  _('yellow'),
+] as HighlightColor[];
 
 const getColorHex = (
   customColors: Record<HighlightColor, string>,
@@ -41,6 +49,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   selectedColor: _selectedColor,
   onHandleHighlight,
 }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
@@ -109,6 +118,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         {styles.map((style) => (
           <button
             key={style}
+            aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
             className='not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0'
             style={{ width: size28, height: size28, minHeight: size28 }}
@@ -169,6 +179,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             <div key={color} className='flex items-center justify-center'>
               <button
                 key={color}
+                aria-label={_('Select {{color}} color', { color: _(color) })}
                 onClick={() => handleSelectColor(color)}
                 style={{
                   width: size16,

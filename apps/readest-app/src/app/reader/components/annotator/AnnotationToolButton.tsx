@@ -28,6 +28,7 @@ const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
     >
       <button
         onClick={handleClick}
+        aria-label={tooltipText}
         className={clsx(
           'flex h-8 min-h-8 w-8 items-center justify-center p-0',
           disabled

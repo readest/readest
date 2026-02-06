@@ -695,8 +695,12 @@ export abstract class BaseAppService implements AppService {
     const { file } = await this.loadBookContent(book);
     const content = await file.arrayBuffer();
     const filename = `${makeSafeFilename(book.title)}.${book.format.toLowerCase()}`;
-    const filepath = await this.resolveFilePath(getLocalBookFilename(book), 'Books');
+    let filepath = await this.resolveFilePath(getLocalBookFilename(book), 'Books');
     const fileType = file.type || 'application/octet-stream';
+    if (getFilename(filepath) !== filename) {
+      this.copyFile(filepath, filename, 'Temp');
+      filepath = await this.resolveFilePath(filename, 'Temp');
+    }
     return await this.saveFile(filename, content, filepath, fileType);
   }
 

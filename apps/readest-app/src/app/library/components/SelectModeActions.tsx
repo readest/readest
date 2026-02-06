@@ -49,9 +49,11 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
     >
       <div
         className={clsx(
-          'text-base-content flex items-center justify-center text-xs shadow-lg',
+          'text-base-content text-xs shadow-lg',
           'not-eink:bg-base-300 eink:bg-base-100 eink:border eink:border-base-content',
-          'mx-auto w-fit space-x-6 rounded-lg p-4',
+          'mx-auto w-fit rounded-lg p-4',
+          'flex items-center justify-center space-x-6',
+          'max-[350px]:grid max-[350px]:grid-cols-3 max-[350px]:gap-x-10 max-[350px]:gap-y-2 max-[350px]:space-x-0',
         )}
       >
         <button

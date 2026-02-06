@@ -46,6 +46,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 }) => {
   const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
+  const [isDetailsOpen, setIsDetailsOpen] = React.useState(detailsOpen);
   const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
 
   const handleClick = () => {
@@ -105,11 +106,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   if (children) {
     return (
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
-      <ul className='menu rounded-box m-0 p-0' role='menuitem' tabIndex={-1}>
+      <ul className='menu rounded-box m-0 p-0'>
         <li aria-label={label}>
-          <details open={detailsOpen}>
+          <details open={detailsOpen} onToggle={(e) => setIsDetailsOpen(e.currentTarget.open)}>
             <summary
+              role='button'
+              tabIndex={-1}
+              aria-expanded={isDetailsOpen}
               className={clsx(
                 'hover:bg-base-300 text-base-content cursor-pointer rounded-md p-1 py-[10px] pr-3',
                 disabled && 'btn-disabled cursor-not-allowed text-gray-400',

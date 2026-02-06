@@ -30,6 +30,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
+  const [showPaginationButtons, setShowPaginationButtons] = useState(
+    viewSettings.showPaginationButtons,
+  );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
@@ -55,6 +58,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       continuousScroll: setIsContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       volumeKeysToFlip: setVolumeKeysToFlip,
+      showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
@@ -106,6 +110,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volumeKeysToFlip]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'showPaginationButtons',
+      showPaginationButtons,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPaginationButtons]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
@@ -304,6 +320,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 />
               </div>
             )}
+            <div className='config-item' data-setting-id='settings.control.showPaginationButtons'>
+              <span className=''>{_('Show Page Navigation Buttons')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showPaginationButtons}
+                onChange={() => setShowPaginationButtons(!showPaginationButtons)}
+              />
+            </div>
           </div>
         </div>
       </div>
