@@ -1,4 +1,6 @@
 import { FoliateView } from '@/types/view';
+import { throttle } from './throttle';
+import { debounce } from './debounce';
 
 export const handleA11yNavigation = (
   view: FoliateView | null,
@@ -13,15 +15,18 @@ export const handleA11yNavigation = (
     relocateTimer: null as ReturnType<typeof setTimeout> | null,
   };
 
+  const markRelocateEnd = debounce(() => {
+    state.hasRecentRelocate = false;
+  }, 2000);
+
   const markRelocated = () => {
     state.hasRecentRelocate = true;
-    if (state.relocateTimer) clearTimeout(state.relocateTimer);
-    state.relocateTimer = setTimeout(() => {
-      state.hasRecentRelocate = false;
-    }, 1000);
+    markRelocateEnd();
   };
 
-  view.renderer.addEventListener('relocate', markRelocated);
+  const throttledMarkRelocated = throttle(markRelocated, 1000);
+  view.renderer.addEventListener('scroll', throttledMarkRelocated, { passive: true });
+  view.renderer.addEventListener('relocate', throttledMarkRelocated);
 
   const observer = new IntersectionObserver(
     (entries) => {
