@@ -46,6 +46,17 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   return inferLangFromScript(textWithoutLangTags, lang);
 };
 
+const isValidMark = (mark: string) => {
+  const trimmed = mark.trim();
+  if (!trimmed || trimmed.length === 0) {
+    return false;
+  }
+  if (/^[\p{P}\p{S}]+$/u.test(trimmed)) {
+    return false;
+  }
+  return true;
+};
+
 export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
   const defaultLang = parseSSMLLang(ssml, primaryLang) || 'en';
   ssml = ssml.replace(/<speak[^>]*>/i, '').replace(/<\/speak>/i, '');
@@ -64,7 +75,7 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
     if (match[4]) {
       const rawText = match[4];
       const text = cleanTextContent(rawText);
-      if (text && activeMark) {
+      if (text && activeMark && isValidMark(text)) {
         const offset = plainText.length;
         plainText += text;
         marks.push({
