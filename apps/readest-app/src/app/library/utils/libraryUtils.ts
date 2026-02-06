@@ -182,7 +182,7 @@ export const createBookGroups = (
     return createAuthorGroups(activeBooks);
   }
 
-  // 'manual' mode is handled separately by generateBookshelfItems
+  // 'group' mode is handled separately by generateBookshelfItems
   return activeBooks;
 };
 
