@@ -120,7 +120,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
       if (params.get('sort') === LibrarySortByType.Updated) params.delete('sort');
       if (params.get('order') === 'desc') params.delete('order');
-      if (params.get('groupBy') === LibraryGroupByType.Manual) params.delete('groupBy');
+      if (params.get('groupBy') === LibraryGroupByType.Group) params.delete('groupBy');
       if (params.get('cover') === 'crop') params.delete('cover');
       if (params.get('view') === 'grid') params.delete('view');
 
@@ -140,8 +140,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, [libraryBooks, queryTerm]);
 
   const currentBookshelfItems = useMemo(() => {
-    if (groupBy === LibraryGroupByType.Manual) {
-      // Use existing generateBookshelfItems for manual mode
+    if (groupBy === LibraryGroupByType.Group) {
+      // Use existing generateBookshelfItems for group mode
       const groupName = getGroupName(groupId) || '';
       if (groupId && !groupName) {
         return [];
@@ -192,7 +192,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     // Sort ungrouped books - use within-group sorter if we're inside a group
     // (for series, this ensures books are sorted by series index)
     const bookSorter = createBookSorter(sortBy, uiLanguage);
-    if (groupId && groupBy !== LibraryGroupByType.Manual && groupBy !== LibraryGroupByType.None) {
+    if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
       ungroupedBooks.sort((a, b) => withinGroupSorter(a, b) * sortOrderMultiplier);
     } else {
       ungroupedBooks.sort((a, b) => bookSorter(a, b) * sortOrderMultiplier);
