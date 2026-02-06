@@ -70,7 +70,8 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
 
     const metaHash = bookData.book.metaHash;
     const pageInfo = progress?.pageinfo;
-    const currentPage = pageInfo?.current || 1;
+    // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
+    const currentPage = (pageInfo?.current ?? 0) + 1;
     const totalPages = pageInfo?.total || 1;
     const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
@@ -100,7 +101,8 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
     if (!progress?.pageinfo) return;
 
     const pageInfo = progress.pageinfo;
-    const currentPage = pageInfo.current || 1;
+    // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
+    const currentPage = (pageInfo.current ?? 0) + 1;
     const totalPages = pageInfo.total || 1;
     const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
@@ -166,7 +168,8 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
         console.log('[BookSessionTracker] App gained focus, restarting session for', bookKey);
         const metaHash = currentBookData.book.metaHash;
         const pageInfo = currentProgress?.pageinfo;
-        const currentPage = pageInfo?.current || 1;
+        // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
+        const currentPage = (pageInfo?.current ?? 0) + 1;
         const totalPages = pageInfo?.total || 1;
         const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
