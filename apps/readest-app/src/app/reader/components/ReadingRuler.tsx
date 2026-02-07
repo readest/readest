@@ -237,7 +237,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     isDragging.current = true;
     // Disable animation during manual drag for immediate feedback
     setShouldAnimate(false);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
   }, []);
 
   const handlePointerMove = useCallback(
@@ -266,7 +266,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     (e: React.PointerEvent) => {
       if (!isDragging.current) return;
       isDragging.current = false;
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      e.currentTarget.releasePointerCapture(e.pointerId);
       throttledSave(currentPosition);
     },
     [currentPosition, throttledSave],
@@ -337,7 +337,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         {/* Vertical ruler */}
         <div
           className={clsx(
-            'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize rounded-2xl',
+            'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize touch-none rounded-2xl',
             color === 'transparent' ? 'border-base-content/55 border' : '',
           )}
           style={{
@@ -357,7 +357,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           onPointerCancel={handlePointerUp}
         >
           {/* extended touch area */}
-          <div className='absolute inset-y-0 -left-2 -right-2' />
+          <div className='absolute inset-y-0 -left-2 -right-2 touch-none' />
         </div>
       </div>
     );
@@ -394,7 +394,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       {/* Horizontal ruler */}
       <div
         className={clsx(
-          'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize rounded-2xl',
+          'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize touch-none rounded-2xl',
           color === 'transparent' ? 'border-base-content/55 border' : '',
         )}
         style={{
@@ -414,7 +414,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         onPointerCancel={handlePointerUp}
       >
         {/* Extended touch area */}
-        <div className='absolute inset-x-0 -bottom-2 -top-2' />
+        <div className='absolute inset-x-0 -bottom-2 -top-2 touch-none' />
       </div>
     </div>
   );
