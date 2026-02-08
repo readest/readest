@@ -11,6 +11,7 @@ import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { ConvertChineseVariant } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
+import { getDirFromLanguage } from '@/utils/rtl';
 import { isCJKEnv } from '@/utils/misc';
 import Select from '@/components/Select';
 
@@ -142,8 +143,11 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   useEffect(() => {
     if (uiLanguage === viewSettings.uiLanguage) return;
-    saveViewSettings(envConfig, bookKey, 'uiLanguage', uiLanguage, false, false);
+    const sameDir = getDirFromLanguage(uiLanguage) === getDirFromLanguage(viewSettings.uiLanguage);
     applyUILanguage(uiLanguage);
+    saveViewSettings(envConfig, bookKey, 'uiLanguage', uiLanguage, false, false).then(() => {
+      if (!sameDir) window.location.reload();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiLanguage]);
 
