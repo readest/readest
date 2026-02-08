@@ -43,6 +43,9 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
   const mainRef = useRef<HTMLElement | null>(null);
   const footerRef = useRef<HTMLElement | null>(null);
   const lastScrollTopRef = useRef(0);
+  const lastDirectionRef = useRef<'up' | 'down' | null>(null);
+  const scrollDeltaRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
   const [isBackVisible, setIsBackVisible] = useState(false);
   const lookupWord = history.items[history.index] ?? word;
   const canGoBack = history.index > 0;
@@ -56,6 +59,8 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
     if (!canGoBack) {
       setIsBackVisible(false);
       lastScrollTopRef.current = 0;
+      lastDirectionRef.current = null;
+      scrollDeltaRef.current = 0;
       return;
     }
     setIsBackVisible(true);
@@ -67,31 +72,59 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
     if (!main) return;
 
     const handleScroll = () => {
-      const currentScrollTop = main.scrollTop;
-      const delta = currentScrollTop - lastScrollTopRef.current;
-      const threshold = 2;
+      if (rafRef.current !== null) return;
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null;
+        const currentScrollTop = main.scrollTop;
+        const delta = currentScrollTop - lastScrollTopRef.current;
+        if (delta === 0) return;
 
-      if (currentScrollTop <= 4) {
-        setIsBackVisible(true);
-      } else if (delta > threshold) {
-        setIsBackVisible(false);
-      } else if (delta < -threshold) {
-        setIsBackVisible(true);
-      }
+        if (currentScrollTop <= 4) {
+          setIsBackVisible(true);
+          lastDirectionRef.current = null;
+          scrollDeltaRef.current = 0;
+          lastScrollTopRef.current = currentScrollTop;
+          return;
+        }
 
-      lastScrollTopRef.current = currentScrollTop;
+        const direction: 'up' | 'down' = delta > 0 ? 'down' : 'up';
+        if (direction !== lastDirectionRef.current) {
+          lastDirectionRef.current = direction;
+          scrollDeltaRef.current = 0;
+        }
+
+        scrollDeltaRef.current += Math.abs(delta);
+        const hideThreshold = 14;
+        const showThreshold = 8;
+
+        if (direction === 'down' && scrollDeltaRef.current >= hideThreshold) {
+          setIsBackVisible(false);
+          scrollDeltaRef.current = 0;
+        } else if (direction === 'up' && scrollDeltaRef.current >= showThreshold) {
+          setIsBackVisible(true);
+          scrollDeltaRef.current = 0;
+        }
+
+        lastScrollTopRef.current = currentScrollTop;
+      });
     };
 
     lastScrollTopRef.current = main.scrollTop;
     main.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       main.removeEventListener('scroll', handleScroll);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [canGoBack]);
 
   useEffect(() => {
     setIsBackVisible(true);
     lastScrollTopRef.current = 0;
+    lastDirectionRef.current = null;
+    scrollDeltaRef.current = 0;
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
