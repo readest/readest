@@ -95,6 +95,9 @@ export interface SystemSettings {
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
   opdsCatalogs: OPDSCatalog[];
+  metadataSeriesCollapsed: boolean;
+  metadataOthersCollapsed: boolean;
+  metadataDescriptionCollapsed: boolean;
 
   kosync: KOSyncSettings;
 

@@ -88,6 +88,10 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryAutoColumns: true,
   libraryColumns: 6,
 
+  metadataSeriesCollapsed: false,
+  metadataOthersCollapsed: false,
+  metadataDescriptionCollapsed: false,
+
   kosync: DEFAULT_KOSYNC_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
