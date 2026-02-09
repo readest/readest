@@ -54,17 +54,6 @@
     
     DetailPrint "Thumbnail provider registered successfully."
 
-    Delete "$DESKTOP\Readest.lnk"
-    Delete "$SMPROGRAMS\Readest\Readest.lnk"
-    RMDir "$SMPROGRAMS\Readest"
-
-    ; Create new shortcuts pointing to current installation
-    CreateShortcut "$DESKTOP\Readest.lnk" "$INSTDIR\Readest.exe"
-    CreateDirectory "$SMPROGRAMS\Readest"
-    CreateShortcut "$SMPROGRAMS\Readest\Readest.lnk" "$INSTDIR\Readest.exe"
-    
-    DetailPrint "Shortcuts updated."
-
     ; Refresh shell to apply changes - SHCNE_ASSOCCHANGED
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
