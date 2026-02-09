@@ -1,7 +1,7 @@
 import { BookMetadata, EXTS } from '@/libs/document';
 import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
 import { SUPPORTED_LANGS } from '@/services/constants';
-import { getUserLang, makeSafeFilename } from './misc';
+import { getLocale, getUserLang, makeSafeFilename } from './misc';
 import { getStorageType } from './storage';
 import { getDirFromLanguage } from './rtl';
 import { code6392to6391, isValidLang, normalizedLangCode } from './lang';
@@ -179,6 +179,11 @@ export const formatDate = (date: string | number | Date | null | undefined, isUT
   } catch {
     return;
   }
+};
+
+export const formatLocaleDateTime = (date: number | Date) => {
+  const userLang = getLocale();
+  return new Date(date).toLocaleString(userLang);
 };
 
 export const formatBytes = (bytes?: number | null, locale = 'en-US') => {

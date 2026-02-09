@@ -26,6 +26,7 @@ import { setMigrateDataDirDialogVisible } from '@/app/library/components/Migrate
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
 import { selectDirectory } from '@/utils/bridge';
+import { formatLocaleDateTime } from '@/utils/book';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -277,7 +278,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               label={
                 settings.lastSyncedAtBooks
                   ? _('Synced at {{time}}', {
-                      time: new Date(settings.lastSyncedAtBooks).toLocaleString(),
+                      time: formatLocaleDateTime(settings.lastSyncedAtBooks),
                     })
                   : _('Never synced')
               }
