@@ -147,7 +147,6 @@ export const useTextSelector = (
         makeSelection(sel, index, true);
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
-        makeSelection(sel, index, true);
       }
     }
   };
