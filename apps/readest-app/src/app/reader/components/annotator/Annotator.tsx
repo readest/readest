@@ -693,6 +693,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSpeakText = async (oneTime = false) => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setEditingAnnotation(null);
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range, oneTime });
   };
 
