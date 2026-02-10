@@ -270,6 +270,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
     };
 
     fetchDefinitions(lookupWord, langCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_, lookupWord, lang]);
 
   return (
