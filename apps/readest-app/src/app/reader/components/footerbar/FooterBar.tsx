@@ -250,7 +250,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
-      <RSVPControl bookKey={bookKey} />
+      <RSVPControl bookKey={bookKey} gridInsets={gridInsets} />
     </>
   );
 };
