@@ -181,7 +181,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) =
                 item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
-                item.style === 'highlight' && `bg-${item.color}-500 bg-opacity-40`,
+                item.style === 'highlight' &&
+                  `bg-${item.color}-500 rounded-[4px] bg-opacity-40 px-[2px] py-[1px]`,
                 item.style === 'underline' && `decoration-${item.color}-400`,
                 item.style === 'squiggly' && `decoration-wavy decoration-${item.color}-400`,
               )}

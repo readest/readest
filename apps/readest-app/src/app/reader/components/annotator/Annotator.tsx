@@ -322,7 +322,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { writingMode } = defaultView.getComputedStyle(el);
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
-      draw(Overlayer.highlight, { color: isBwEink ? einkBgColor : hexColor });
+      draw(Overlayer.highlight, {
+        color: isBwEink ? einkBgColor : hexColor,
+        vertical: viewSettings.vertical,
+      });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;

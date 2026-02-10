@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import clsx from 'clsx';
+import { Insets } from '@/types/misc';
 import { RsvpState, RsvpWord, RSVPController } from '@/services/rsvp';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
@@ -15,6 +16,7 @@ import {
   IoAdd,
 } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Overlay } from '@/components/Overlay';
 
 interface FlatChapter {
   label: string;
@@ -23,6 +25,7 @@ interface FlatChapter {
 }
 
 interface RSVPOverlayProps {
+  gridInsets: Insets;
   controller: RSVPController;
   chapters: TOCItem[];
   currentChapterHref: string | null;
@@ -32,6 +35,7 @@ interface RSVPOverlayProps {
 }
 
 const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
+  gridInsets,
   controller,
   chapters,
   currentChapterHref,
@@ -293,9 +297,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       aria-label={_('Speed Reading')}
       className='fixed inset-0 z-[10000] flex select-none flex-col'
       style={{
+        paddingTop: `${gridInsets.top}px`,
+        paddingBottom: `${gridInsets.bottom * 0.33}px`,
         backgroundColor: bgColor,
         color: fgColor,
-        // Ensure solid background - no transparency
         backdropFilter: 'none',
         // @ts-expect-error CSS custom properties
         '--rsvp-accent': accentColor,
@@ -305,64 +310,66 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Header */}
-      <div className='rsvp-header flex shrink-0 items-center justify-between gap-2 p-3 md:gap-4 md:p-4'>
+      {/* ── Header ── */}
+      <div className='rsvp-header flex shrink-0 items-center gap-2 px-3 py-2 md:gap-3 md:px-5 md:py-3'>
         <button
           aria-label={_('Close Speed Reading')}
-          className='flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 md:h-11 md:w-11'
-          onClick={onClose}
           title={_('Close')}
+          className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-gray-500/20 active:scale-95'
+          onClick={onClose}
         >
-          <IoClose className='h-5 w-5 md:h-6 md:w-6' />
+          <IoClose className='h-5 w-5' />
         </button>
 
         {/* Chapter selector */}
-        <div className='relative mx-2 min-w-0 max-w-[200px] flex-1 md:mx-4 md:max-w-[400px]'>
+        <div className='relative min-w-0 flex-1'>
           <button
-            className='flex w-full cursor-pointer items-center justify-between gap-1 rounded-lg border border-gray-500/30 bg-gray-500/15 px-2 py-1.5 text-xs transition-colors hover:bg-gray-500/25 md:gap-2 md:px-3 md:py-2 md:text-sm'
+            className='flex w-full items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20 active:scale-[0.98]'
             onClick={() => setShowChapterDropdown(!showChapterDropdown)}
-            title={_('Select Chapter')}
           >
-            <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
+            <span className='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left'>
               {getCurrentChapterLabel()}
             </span>
             <svg
-              width='14'
-              height='14'
               viewBox='0 0 24 24'
               fill='none'
               stroke='currentColor'
-              strokeWidth='2'
-              className='shrink-0 md:h-4 md:w-4'
+              strokeWidth='2.5'
+              className='h-3.5 w-3.5 shrink-0 opacity-50'
             >
               <path d='M6 9l6 6 6-6' />
             </svg>
           </button>
           {showChapterDropdown && (
-            <div
-              className='absolute left-0 right-0 top-full z-[100] mt-1 max-h-[300px] overflow-y-auto rounded-lg border border-gray-500/30 shadow-lg'
-              style={{ backgroundColor: bgColor }}
-            >
-              {flatChapters.map((chapter, idx) => (
-                <button
-                  key={`${chapter.href}-${idx}`}
-                  className={clsx(
-                    'block w-full cursor-pointer border-none bg-transparent px-3 py-2.5 text-left text-sm transition-colors hover:bg-gray-500/20',
-                    isChapterActive(chapter.href) &&
-                      'bg-[color-mix(in_srgb,var(--rsvp-accent)_20%,transparent)] font-semibold',
-                  )}
-                  style={{ paddingLeft: `${0.75 + chapter.level * 1}rem` }}
-                  onClick={() => handleChapterSelect(chapter.href)}
-                >
-                  {chapter.label}
-                </button>
-              ))}
-            </div>
+            <>
+              <Overlay onDismiss={() => setShowChapterDropdown(false)} />
+              <div
+                className='absolute left-0 right-0 top-full z-[100] mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-gray-500/20 px-2 shadow-2xl'
+                style={{ backgroundColor: bgColor }}
+              >
+                {flatChapters.map((chapter, idx) => (
+                  <button
+                    key={`${chapter.href}-${idx}`}
+                    className={clsx(
+                      'block w-full rounded-md border-none bg-transparent px-4 py-2.5 text-left text-sm transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
+                      isChapterActive(chapter.href) &&
+                        'bg-[color-mix(in_srgb,var(--rsvp-accent)_15%,transparent)] font-semibold',
+                    )}
+                    style={{ paddingLeft: `${1 + chapter.level * 0.875}rem` }}
+                    onClick={() => handleChapterSelect(chapter.href)}
+                  >
+                    {chapter.label}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
-        <div className='shrink-0 text-sm font-medium opacity-70 md:text-base'>
-          {_('{{number}} WPM', { number: state.wpm })}
+        {/* WPM badge */}
+        <div className='shrink-0 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums'>
+          <span className='font-semibold'>{state.wpm}</span>
+          <span className='ml-0.5 text-xs opacity-50'>WPM</span>
         </div>
       </div>
 
