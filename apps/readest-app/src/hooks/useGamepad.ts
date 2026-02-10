@@ -174,7 +174,7 @@ export function useGamepad(config: GamepadConfig = {}) {
 
     const onDisconnect = (e: GamepadEvent) => {
       console.log('Gamepad disconnected:', e.gamepad.id);
-      const gamepads = navigator.getGamepads();
+      const gamepads = navigator.getGamepads?.() || [];
       if (!gamepads.some((g) => g?.connected)) {
         stopPolling();
       }
@@ -183,8 +183,7 @@ export function useGamepad(config: GamepadConfig = {}) {
     window.addEventListener('gamepadconnected', onConnect);
     window.addEventListener('gamepaddisconnected', onDisconnect);
 
-    // Check if gamepad already connected
-    const gamepads = navigator.getGamepads();
+    const gamepads = navigator.getGamepads?.() || [];
     if (gamepads.some((g) => g?.connected)) {
       startPolling();
     }
