@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -7,12 +7,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
-import { SectionItem } from '@/libs/document';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 
 interface PageInfoProps {
   bookKey: string;
-  sections: SectionItem[];
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
@@ -20,7 +18,6 @@ interface PageInfoProps {
 
 const ProgressInfoView: React.FC<PageInfoProps> = ({
   bookKey,
-  sections,
   horizontalGap,
   contentInsets,
   gridInsets,
@@ -28,7 +25,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getBookData } = useBookDataStore();
-  const { getProgress, getViewSettings } = useReaderStore();
+  const { getProgress, getViewSettings, getView } = useReaderStore();
+  const view = getView(bookKey);
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const progress = getProgress(bookKey);
@@ -52,38 +50,28 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
-  const activeSection = useMemo(() => {
-    if (!activeHref) return null;
-    for (const section of sections) {
-      if (section.id === activeHref) return section;
-      const subitem = section.subitems?.find((sub) => sub.id === activeHref);
-      if (subitem) return section;
-    }
-    return null;
-  }, [activeHref, sections]);
-
-  const current = pageInfo?.current || 0;
-  const total = activeSection?.location ? activeSection.location.next : pageInfo?.total || 0;
-  const pages = Math.max(total - current, 0);
-  const timeLeft =
-    total - 1 >= current
+  const { page = 0, pages = 0 } = view?.renderer || {};
+  const current = page;
+  const total = pages;
+  const pagesLeft = Math.max(total - current - 1, 0);
+  const timeLeftStr =
+    total - 1 > current
       ? _('{{time}} min left in chapter', {
           time: formatNumber(
-            Math.round((pages * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
             localize,
             lang,
           ),
         })
       : '';
-  const pageLeft =
-    total - 1 >= current
+  const pagesLeftStr =
+    total - 1 > current
       ? localize
         ? _('{{number}} pages left in chapter', {
-            number: formatNumber(pages, localize, lang),
+            number: formatNumber(pagesLeft, localize, lang),
           })
         : _('{{count}} pages left in chapter', {
-            count: pages,
+            count: pagesLeft,
           })
       : '';
 
@@ -151,8 +139,8 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
               total: total,
             })
           : '',
-        timeLeft,
-        pageLeft,
+        timeLeftStr,
+        pagesLeftStr,
       ]
         .filter(Boolean)
         .join(', ')}
@@ -183,9 +171,9 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
           <>
             {viewSettings.showRemainingTime ? (
-              <span className='text-start'>{timeLeft}</span>
+              <span className='text-start'>{timeLeftStr}</span>
             ) : viewSettings.showRemainingPages ? (
-              <span className='text-start'>{pageLeft}</span>
+              <span className='text-start'>{pagesLeftStr}</span>
             ) : null}
           </>
         )}

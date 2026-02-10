@@ -45,24 +45,24 @@
 
 <div align="left">✅ Implemented</div>
 
-| **Feature**                             | **Description**                                                                                                | **Status** |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF (experimental)                                              | ✅         |
-| **Scroll/Page View Modes**              | Switch between scrolling or paginated reading modes.                                                           | ✅         |
-| **Full-Text Search**                    | Search across the entire book to find relevant sections.                                                       | ✅         |
-| **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience.                                       | ✅         |
-| **Excerpt Text for Note-Taking**        | Easily excerpt text from books for detailed notes and analysis.                                                | ✅         |
-| **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                                | ✅         |
-| **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                                             | ✅         |
-| **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.                               | ✅         |
-| **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                                             | ✅         |
-| **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                 | ✅         |
-| **Accessibility**                       | Provides full keyboard navigation and supports for screen readers such as VoiceOver, TalkBack, NVDA, and Orca. | ✅         |
-| **Translate with DeepL and Yandex**     | From a single sentence to the entire book—translate instantly.                                                 | ✅         |
-| **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                                | ✅         |
-| **Library Management**                  | Organize, sort, and manage your entire ebook library.                                                          | ✅         |
-| **OPDS/Calibre Integration**            | Integrate OPDS/Calibre to access online libraries and catalogs.                                                | ✅         |
-| **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                                     | ✅         |
+| **Feature**                             | **Description**                                                                                                        | **Status** |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
+| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF (experimental)                                                      | ✅         |
+| **Scroll/Page View Modes**              | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
+| **Full-Text Search**                    | Search across the entire book to find relevant sections.                                                               | ✅         |
+| **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |
+| **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                                        | ✅         |
+| **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                                                     | ✅         |
+| **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.                                       | ✅         |
+| **Code Syntax Highlighting**            | Read software manuals with rich coloring of code examples.                                                             | ✅         |
+| **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                                                     | ✅         |
+| **Library Management**                  | Organize, sort, and manage your entire ebook library.                                                                  | ✅         |
+| **OPDS/Calibre Integration**            | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
+| **Translate with DeepL and Yandex**     | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
+| **Text-to-Speech (TTS) Support**        | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
+| **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
+| **Accessibility**                       | Provides full keyboard navigation and supports for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         | ✅         |
+| **Visual & Focus Aids**                 | Reading ruler, paragraph-by-paragraph reading mode, and speed reading features.                                        | ✅         |
 
 ## Planned Features
 
@@ -73,9 +73,9 @@
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices. | 🛠           |
 | **AI-Powered Summarization**               | Generate summaries of books or chapters using AI for quick insights.                       | 🛠           |
+| **Advanced Reading Stats**                 | Track reading time, pages read, and more for detailed insights.                            | 🛠           |
 | **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                        | 🔄           |
 | **Handwriting Annotations**                | Add support for handwriting annotations using a pen on compatible devices.                 | 🔄           |
-| **Advanced Reading Stats**                 | Track reading time, pages read, and more for detailed insights.                            | 🔄           |
 | **In-Library Full-Text Search**            | Search across your entire ebook library to find topics and quotes.                         | 🔄           |
 
 Stay tuned for continuous improvements and updates! Contributions and suggestions are always welcome—let's build the ultimate reading experience together. 😊
@@ -176,7 +176,9 @@ For Android:
 
 ```bash
 # Initialize the Android environment (run once)
+rm apps/readest-app/src-tauri/gen/android
 pnpm tauri android init
+git checkout apps/readest-app/src-tauri/gen/android
 
 pnpm tauri android dev
 # or if you want to dev on a real device
@@ -201,6 +203,9 @@ pnpm tauri build
 pnpm tauri android build
 pnpm tauri ios build
 ```
+
+Please refer to our release script if you experience any issues:
+https://github.com/readest/readest/blob/main/.github/workflows/release.yml
 
 ### 6. Setup dev environment with Nix
 
@@ -250,6 +255,32 @@ Please check the [wiki][link-gh-wiki] of this project for more information on de
 
 - See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
 
+### 2. AppImage Launches but Only Shows a Taskbar Icon
+
+On some Arch Linux systems—especially those using Wayland—the Readest AppImage may briefly show an icon in the taskbar and then exit without opening a window.
+
+You might see logs such as:
+
+```
+Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
+```
+
+This behavior is usually caused by compatibility issues between the bundled AppImage libraries and the system’s EGL / Wayland environment.
+
+**Workaround 1: Launch with LD_PRELOAD (recommended)**
+
+You can preload the system Wayland client library before launching the AppImage:
+
+```
+LD_PRELOAD=/usr/lib/libwayland-client.so /path/to/Readest.AppImage
+```
+
+This workaround has been confirmed to resolve the issue on affected systems.
+
+**Workaround 2: Use the Flatpak Version**
+
+If you prefer a more reliable out-of-the-box experience on Arch Linux, consider using the [Flatpak build on Flathub][link-flathub] instead. The Flatpak runtime helps avoid system library mismatches and tends to behave more consistently across different Wayland and X11 setups.
+
 ## Contributors
 
 Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
@@ -262,7 +293,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development. You can [become a sponsor on GitHub](https://github.com/sponsors/readest), [donate via Stripe](https://donate.stripe.com/4gMcN5aZdcE52kW3TFgjC01), or [contribute with crypto](https://donate.readest.com). Your contribution helps us squash bugs faster, improve performance, and keep building great features.
+If Readest has been useful to you, consider supporting its development. You can [become a sponsor on GitHub](https://github.com/sponsors/readest), [donate via Stripe](https://donate.stripe.com/4gMcN5aZdcE52kW3TFgjC01), or [donate with crypto](https://donate.readest.com). Your contribution helps us squash bugs faster, improve performance, and keep building great features.
 
 ### Sponsors
 
@@ -291,7 +322,9 @@ The following libraries and frameworks are used in this software:
 
 The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
 
-[Bitter](https://fonts.google.com/?query=Bitter), [Fira Code](https://fonts.google.com/?query=Fira+Code), [Literata](https://fonts.google.com/?query=Literata), [Merriweather](https://fonts.google.com/?query=Merriweather), [Noto Sans](https://fonts.google.com/?query=Noto+Sans), [Roboto](https://fonts.google.com/?query=Roboto), [LXGW WenKai](https://github.com/lxgw/LxgwWenKai), [MiSans](https://hyperos.mi.com/font/en/), [Source Han](https://github.com/adobe-fonts/source-han-sans/), [WenQuanYi Micro Hei](http://wenq.org/wqy2/)
+[Bitter](https://fonts.google.com/specimen/Bitter), [Fira Code](https://fonts.google.com/specimen/Fira+Code), [Inter](https://fonts.google.com/specimen/Inter), [Literata](https://fonts.google.com/specimen/Literata), [Merriweather](https://fonts.google.com/specimen/Merriweather), [Noto Sans](https://fonts.google.com/specimen/Noto+Sans), [Roboto](https://fonts.google.com/specimen/Roboto), [LXGW WenKai](https://github.com/lxgw/LxgwWenKai), [MiSans](https://hyperos.mi.com/font/en/), [Source Han](https://github.com/adobe-fonts/source-han-sans/), [WenQuanYi Micro Hei](http://wenq.org/wqy2/)
+
+We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.netlify.app) for offering open-source tools that enable the use of Chinese fonts on the web.
 
 ---
 
