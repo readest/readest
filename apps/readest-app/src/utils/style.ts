@@ -841,7 +841,8 @@ export const applyTableStyle = (document: Document) => {
     const computedTableStyle = window.getComputedStyle(table);
     const computedWidth = computedTableStyle.width;
     if (computedWidth && computedWidth !== 'auto' && computedWidth !== '0px') {
-      table.style.width = `calc(min(${computedWidth}, var(--available-width) * 1px))`;
+      // Workaround for hardcoded table layout, closes #3205
+      table.style.width = `calc(min(${computedWidth}, var(--available-width)))`;
     }
     if (totalTableWidth > 0) {
       const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
