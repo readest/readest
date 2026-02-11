@@ -13,6 +13,7 @@ export const LibrarySortByType = {
   Author: 'author',
   Updated: 'updated',
   Created: 'created',
+  Series: 'series',
   Size: 'size',
   Format: 'format',
   Published: 'published',

@@ -105,6 +105,8 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     case LibrarySortByType.Format:
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
+    case LibrarySortByType.Series:
+      return (a.metadata?.seriesIndex || 0) - (b.metadata?.seriesIndex || 0);
     case LibrarySortByType.Published:
       const aPublished = a.metadata?.published || '0001-01-01';
       const bPublished = b.metadata?.published || '0001-01-01';

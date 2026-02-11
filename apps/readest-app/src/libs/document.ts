@@ -1,5 +1,5 @@
 import { BookFormat } from '@/types/book';
-import { Contributor, Identifier, LanguageMap } from '@/utils/book';
+import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import * as epubcfi from 'foliate-js/epubcfi.js';
 
 export const CFI = epubcfi;
@@ -47,6 +47,10 @@ export type BookMetadata = {
   subject?: string | string[] | Contributor;
   identifier?: string;
   altIdentifier?: string | string[] | Identifier;
+  belongsTo?: {
+    collection?: Array<Collection> | Collection;
+    series?: Array<Collection> | Collection;
+  };
 
   subtitle?: string;
   series?: string;
