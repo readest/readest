@@ -79,6 +79,12 @@ export interface FoliateView extends HTMLElement {
       option?: AddEventListenerOptions,
     ) => void;
     removeEventListener: (type: string, listener: EventListener) => void;
+    showLoupe?: (
+      x: number,
+      y: number,
+      options: { isVertical: boolean; color: string; radius: number },
+    ) => void;
+    hideLoupe?: () => void;
   };
 }
 
