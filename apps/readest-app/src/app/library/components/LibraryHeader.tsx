@@ -103,7 +103,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       style={{
         marginTop: appService?.hasSafeAreaInset
           ? `max(${insets.top}px, ${systemUIVisible ? statusBarHeight : 0}px)`
-          : '0px',
+          : appService?.hasTrafficLight
+            ? '-2px'
+            : '0px',
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
