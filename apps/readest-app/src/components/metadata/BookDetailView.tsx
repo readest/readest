@@ -250,7 +250,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <span className='font-bold'>{_('Series')}</span>
                   <p className='text-neutral-content text-sm'>{metadata?.series || _('Unknown')}</p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='overflow-hidden pe-1 text-end'>
                   <span className='font-bold'>{_('Series Index')}</span>
                   <p className='text-neutral-content text-sm'>
                     {metadata?.seriesIndex || _('Unknown')}
