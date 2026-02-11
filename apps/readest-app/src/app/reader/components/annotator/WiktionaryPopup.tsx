@@ -162,7 +162,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
           pushHistory(title);
         });
 
-        link.className = 'text-primary underline cursor-pointer';
+        link.className = 'not-eink:text-primary underline cursor-pointer';
       }
     });
 
@@ -206,7 +206,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
 
         const p = document.createElement('p');
         p.innerText = results[0]!.language;
-        p.className = 'text-sm italic opacity-75';
+        p.className = 'text-sm italic not-eink:opacity-75';
         hgroup.append(h1, p);
         main.append(hgroup);
 
@@ -226,7 +226,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
 
             if (examples) {
               const ul = document.createElement('ul');
-              ul.className = 'pl-8 list-disc text-sm italic opacity-75';
+              ul.className = 'pl-8 list-disc text-sm italic not-eink:opacity-75';
 
               examples.forEach((example) => {
                 const exampleLi = document.createElement('li');
@@ -261,7 +261,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
         p.innerHTML = _('Unable to load the word. Try searching directly on {{link}}.', {
           link: `<a href="https://en.wiktionary.org/w/index.php?search=${encodeURIComponent(
             word,
-          )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wiktionary</a>`,
+          )}" target="_blank" rel="noopener noreferrer" class="not-eink:text-primary underline">Wiktionary</a>`,
         });
 
         div.append(h1, p);
@@ -310,7 +310,7 @@ const WiktionaryPopup: React.FC<WiktionaryPopupProps> = ({
             ref={footerRef}
             className='mt-auto hidden data-[state=loaded]:block data-[state=error]:hidden data-[state=loading]:hidden'
           >
-            <div className='flex items-center px-4 py-2 text-sm opacity-60'>
+            <div className='not-eink:opacity-60 flex items-center px-4 py-2 text-sm'>
               Source: Wiktionary (CC BY-SA)
             </div>
           </footer>
