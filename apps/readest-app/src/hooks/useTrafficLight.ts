@@ -18,7 +18,7 @@ export const useTrafficLight = () => {
 
     initializeTrafficLightStore(appService);
     initializeTrafficLightListeners();
-    setTrafficLightVisibility(true);
+    setTrafficLightVisibility(true, { x: 10, y: 20 });
     return () => {
       cleanupTrafficLightListeners();
     };

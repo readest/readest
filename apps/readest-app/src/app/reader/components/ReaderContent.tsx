@@ -224,8 +224,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   return (
     <div className='reader-content full-height flex'>
-      <SideBar onGoToLibrary={handleCloseBooksToLibrary} />
-      <BooksGrid bookKeys={bookKeys} onCloseBook={handleCloseBook} />
+      <SideBar />
+      <BooksGrid
+        bookKeys={bookKeys}
+        onCloseBook={handleCloseBook}
+        onGoToLibrary={handleCloseBooksToLibrary}
+      />
       {isSettingsDialogOpen && <SettingsDialog bookKey={settingsDialogBookKey} />}
       <Notebook />
       {showDetailsBook && (
