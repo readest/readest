@@ -148,7 +148,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
         const pageStat: PageReadingStat = {
           bookHash: session.bookHash,
           page: currentPage.page,
-          startTime: currentPage.enteredAt,
+          startTime: Math.floor(currentPage.enteredAt / 1000),
           duration: clampedDuration,
           totalPages: session.totalPages,
         };
@@ -226,7 +226,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       finalPageStats.push({
         bookHash: activeSession.bookHash,
         page: currentPage.page,
-        startTime: currentPage.enteredAt,
+        startTime: Math.floor(currentPage.enteredAt / 1000),
         duration: clampedFinalDuration,
         totalPages: activeSession.totalPages,
       });

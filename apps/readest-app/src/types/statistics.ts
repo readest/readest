@@ -2,7 +2,7 @@
 export interface PageReadingStat {
   bookHash: string; // Book identifier
   page: number; // Page number (1-based)
-  startTime: number; // When reading started (ms timestamp)
+  startTime: number; // When reading started (Unix seconds, KOReader compatible)
   duration: number; // Seconds spent on this page
   totalPages: number; // Total pages in book at time of recording
 }
