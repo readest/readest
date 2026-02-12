@@ -298,7 +298,7 @@ If Readest has been useful to you, consider supporting its development. You can 
 ### Sponsors
 
 <p align="center">
-  <a title="Browser testing via TestMu AI" href="https://www.testmu.ai?utm_source=readest&utm_medium=sponsor" target="_blank">
+  <a title="Browser testing via TestMu AI" href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=readest" target="_blank">
     <img src="https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/sponsors/testmu-ai-logo.png" style="vertical-align: middle;" width="250" />
   </a>
 </p>
