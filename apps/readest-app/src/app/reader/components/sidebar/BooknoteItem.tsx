@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 
 import { marked } from 'marked';
 import { useEnv } from '@/context/EnvContext';
-import { BookNote } from '@/types/book';
+import { BookNote, HighlightColor } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
@@ -30,6 +30,9 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) =
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
+
+  const globalReadSettings = settings.globalReadSettings;
+  const customColors = globalReadSettings.customHighlightColors;
 
   const { text, cfi, note } = item;
   const editorRef = useRef<TextEditorRef>(null);
@@ -181,11 +184,23 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, onClick }) =
                 item.note && 'content font-size-xs text-gray-500',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
-                item.style === 'highlight' &&
-                  `bg-${item.color}-500 rounded-[4px] bg-opacity-40 px-[2px] py-[1px]`,
-                item.style === 'underline' && `decoration-${item.color}-400`,
-                item.style === 'squiggly' && `decoration-wavy decoration-${item.color}-400`,
+                item.style === 'highlight' && 'rounded-[4px] px-[2px] py-[1px]',
+                item.style === 'squiggly' && 'decoration-wavy',
               )}
+              style={
+                {
+                  ...(item.style === 'highlight'
+                    ? {
+                        backgroundColor: `color-mix(in srgb, ${customColors[item.color as HighlightColor] || item.color} calc(var(--overlayer-highlight-opacity, 0.3) * 100%), transparent)`,
+                      }
+                    : {}),
+                  ...(item.style === 'underline' || item.style === 'squiggly'
+                    ? {
+                        textDecorationColor: `color-mix(in srgb, ${customColors[item.color as HighlightColor] || item.color} 80%, transparent)`,
+                      }
+                    : {}),
+                } as React.CSSProperties
+              }
             >
               {text || ''}
             </span>
