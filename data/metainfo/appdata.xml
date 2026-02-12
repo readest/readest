@@ -59,6 +59,25 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.100" date="2026-02-13">
+      <description>
+        <ul>
+          <li>Text-to-Speech: Automatically moves to the next chapter when the current chapter finishes</li>
+          <li>Reading: Fixed the reading ruler on Android</li>
+          <li>Reading: Improved RSVP layout and stability</li>
+          <li>Reading: Fixed an issue where some EPUB books could not adjust font size</li>
+          <li>Annotations: Added a magnifier (loupe) when adjusting text selection</li>
+          <li>Annotations: Text selection now snaps to word boundaries for better accuracy</li>
+          <li>Annotations: Custom highlight colors now apply correctly in the sidebar</li>
+          <li>Dictionary: Added a back button for easier navigation</li>
+          <li>Dictionary: Fixed an issue where Dictionary and Wikipedia could not open on Android</li>
+          <li>Metadata: Added collapsible sections in Book Details</li>
+          <li>Metadata: Added support for parsing series information from Calibre-exported EPUB files</li>
+          <li>Eink: Improved component layout and colors in E-ink mode</li>
+          <li>Layout: Sidebar toggle button position is now persistent</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.99" date="2026-02-07">
       <description>
         <ul>
@@ -214,26 +233,6 @@
           <li>E-Ink: Added an option to save the last book cover on Android</li>
           <li>Android: Fixed a crash that occurred when toggling 'Allow Script'</li>
           <li>Android: Adjusted launcher icon size for better compatibility across devices</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.90" date="2025-10-28">
-      <description>
-        <ul>
-          <li>Sync: Faster library syncing and support for in-app one-time purchases of extra cloud storage</li>
-          <li>TTS: You can now choose the target language for read-aloud on translated books</li>
-          <li>Reader: New keyboard shortcuts make it easier to move between sections</li>
-          <li>Reader: Smoother scrolling for a more comfortable reading experience</li>
-          <li>Reader: Footnotes in definition lists are now fully supported</li>
-          <li>Reader: Improved search accuracy and display of search results</li>
-          <li>Reader: Clearer error messages when importing books</li>
-          <li>Reader: Improved safety when loading book content</li>
-          <li>Settings: You can now choose your own highlight colors</li>
-          <li>Settings: Added option to adjust screen brightness automatically</li>
-          <li>E-Ink: Better readability and clearer progress display with underlined links</li>
-          <li>Android: You can now store app data on an external SD card</li>
-          <li>iOS: Restores your last reading page if the app was closed in the background</li>
-          <li>Localization: Added Persian (Farsi) language support</li>
         </ul>
       </description>
     </release>
