@@ -23,7 +23,7 @@ export interface FoliateView extends HTMLElement {
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
   resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
-  resolveNavigation: (cfiOrHref: string) => { index: number; anchor?: RangeAnchor };
+  resolveNavigation: (cfiOrHrefOrIndex: string | number) => { index: number; anchor?: RangeAnchor };
   addAnnotation: (
     note: BookNote & { value?: string },
     remove?: boolean,
