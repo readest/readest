@@ -20,6 +20,8 @@ out
 .idea
 .vscode
 *.swp
+.github
+AGENTS.md
 
 # OS files
 .DS_Store
