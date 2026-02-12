@@ -70,12 +70,13 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
 
     const metaHash = bookData.book.metaHash;
     const pageInfo = progress?.pageinfo;
+    const cfi = progress?.location;
     // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
     const currentPage = (pageInfo?.current ?? 0) + 1;
     const totalPages = pageInfo?.total || 1;
     const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
-    startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages);
+    startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages, cfi);
 
     console.log('[BookSessionTracker] Started session for', bookKey, 'bookId:', bookId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,12 +102,13 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
     if (!progress?.pageinfo) return;
 
     const pageInfo = progress.pageinfo;
+    const cfi = progress.location;
     // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
     const currentPage = (pageInfo.current ?? 0) + 1;
     const totalPages = pageInfo.total || 1;
     const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
-    updateSessionActivity(bookKey, progressPercent, currentPage);
+    updateSessionActivity(bookKey, progressPercent, currentPage, cfi);
   }, [bookKey, config.trackingEnabled, loaded, progress?.pageinfo, updateSessionActivity]);
 
   // Idle timeout handler - reset timer when progress changes
@@ -168,12 +170,13 @@ const BookSessionTracker: React.FC<BookSessionTrackerProps> = ({ bookKey }) => {
         console.log('[BookSessionTracker] App gained focus, restarting session for', bookKey);
         const metaHash = currentBookData.book.metaHash;
         const pageInfo = currentProgress?.pageinfo;
+        const cfi = currentProgress?.location;
         // pageinfo.current is 0-based, convert to 1-based for storage (KOReader compatible)
         const currentPage = (pageInfo?.current ?? 0) + 1;
         const totalPages = pageInfo?.total || 1;
         const progressPercent = totalPages > 0 ? currentPage / totalPages : 0;
 
-        startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages);
+        startSession(bookKey, bookId, metaHash, progressPercent, currentPage, totalPages, cfi);
       }
     };
 

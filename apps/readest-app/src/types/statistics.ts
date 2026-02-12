@@ -17,10 +17,13 @@ export interface ReadingSession {
   endTime: number; // Session end (ms timestamp)
   duration: number; // Duration in seconds
 
+  startCfi?: string; // EPUB CFI at session start
+  endCfi?: string; // EPUB CFI at session end
+
   startProgress: number; // Progress at start (0-1)
   endProgress: number; // Progress at end (0-1)
-  startPage: number; // Page at start
-  endPage: number; // Page at end
+  startPage: number; // Page at start (location counter, kept for KOReader compat)
+  endPage: number; // Page at end (location counter, kept for KOReader compat)
   pagesRead: number; // Pages read in session
 
   // Page-level stats for this session (KOReader compatible)
@@ -102,9 +105,11 @@ export interface ActiveSession {
   bookHash: string;
   metaHash?: string;
   startTime: number;
+  startCfi?: string; // EPUB CFI at session start
   startProgress: number;
   startPage: number;
   lastActivityTime: number;
+  lastCfi?: string; // Most recent EPUB CFI
   lastProgress: number;
   lastPage: number;
   totalPages: number;

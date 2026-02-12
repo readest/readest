@@ -64,8 +64,9 @@ interface StatisticsStore {
     progress: number,
     page: number,
     totalPages: number,
+    cfi?: string,
   ) => void;
-  updateSessionActivity: (bookKey: string, progress: number, page: number) => void;
+  updateSessionActivity: (bookKey: string, progress: number, page: number, cfi?: string) => void;
   endSession: (bookKey: string, reason: 'closed' | 'idle' | 'switched') => ReadingSession | null;
   endAllSessions: () => void;
 
@@ -92,7 +93,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
   activeSessions: {},
   loaded: false,
 
-  startSession: (bookKey, bookHash, metaHash, progress, page, totalPages) => {
+  startSession: (bookKey, bookHash, metaHash, progress, page, totalPages, cfi?) => {
     const { config, activeSessions } = get();
     if (!config.trackingEnabled) return;
 
@@ -107,9 +108,11 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       bookHash,
       metaHash,
       startTime: now,
+      startCfi: cfi,
       startProgress: progress,
       startPage: page,
       lastActivityTime: now,
+      lastCfi: cfi,
       lastProgress: progress,
       lastPage: page,
       totalPages,
@@ -131,7 +134,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
     console.log('[Statistics] Started session for', bookKey, 'at page', page);
   },
 
-  updateSessionActivity: (bookKey, progress, page) => {
+  updateSessionActivity: (bookKey, progress, page, cfi?) => {
     const { activeSessions, config } = get();
     if (!config.trackingEnabled) return;
 
@@ -178,6 +181,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
           [bookKey]: {
             ...session,
             lastActivityTime: now,
+            lastCfi: cfi ?? session.lastCfi,
             lastProgress: progress,
             lastPage: page,
             currentPage: {
@@ -196,6 +200,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
           [bookKey]: {
             ...session,
             lastActivityTime: now,
+            lastCfi: cfi ?? session.lastCfi,
             lastProgress: progress,
             lastPage: page,
           },
@@ -270,6 +275,8 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       startTime: activeSession.startTime,
       endTime: now,
       duration: finalDuration,
+      startCfi: activeSession.startCfi,
+      endCfi: activeSession.lastCfi,
       startProgress: activeSession.startProgress,
       endProgress: activeSession.lastProgress,
       startPage: activeSession.startPage,
