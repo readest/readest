@@ -86,7 +86,7 @@ export interface StatisticsConfig {
   idleTimeoutMinutes: number; // Default: 5
   minimumSessionSeconds: number; // Default: 30
   minimumPageSeconds: number; // Default: 5 (KOReader: min_sec)
-  maximumPageSeconds: number; // Default: 120 (KOReader: max_sec)
+  maximumPageSeconds: number; // Default: 90 (KOReader: max_sec)
   goals: ReadingGoal[];
 }
 
@@ -130,7 +130,7 @@ export const DEFAULT_STATISTICS_CONFIG: StatisticsConfig = {
   idleTimeoutMinutes: 5,
   minimumSessionSeconds: 30,
   minimumPageSeconds: 5, // KOReader default: 5 seconds
-  maximumPageSeconds: 120, // KOReader default: 120 seconds (2 minutes)
+  maximumPageSeconds: 90, // KOReader default: 90 seconds
   goals: [],
 };
 
