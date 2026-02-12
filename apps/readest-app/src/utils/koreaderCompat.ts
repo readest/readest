@@ -332,8 +332,10 @@ export function importFromKOReaderDb(db: Database.Database): StatisticsData {
   // Compute reading patterns from page stats
   for (const row of rows) {
     const d = new Date(row.start_time * 1000);
-    userStats.readingByHour[d.getUTCHours()] = (userStats.readingByHour[d.getUTCHours()] ?? 0) + row.duration;
-    userStats.readingByDayOfWeek[d.getUTCDay()] = (userStats.readingByDayOfWeek[d.getUTCDay()] ?? 0) + row.duration;
+    userStats.readingByHour[d.getUTCHours()] =
+      (userStats.readingByHour[d.getUTCHours()] ?? 0) + row.duration;
+    userStats.readingByDayOfWeek[d.getUTCDay()] =
+      (userStats.readingByDayOfWeek[d.getUTCDay()] ?? 0) + row.duration;
   }
 
   return {
