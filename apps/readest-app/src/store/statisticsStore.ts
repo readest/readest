@@ -19,6 +19,14 @@ import { EnvConfigType } from '@/services/environment';
 
 const STATISTICS_FILENAME = 'statistics.json';
 
+// Check if a page stat already exists with the same (bookHash, page, startTime) key
+// Mirrors KOReader's UNIQUE(id_book, page, start_time) constraint
+const hasPageStatDuplicate = (stats: PageReadingStat[], stat: PageReadingStat): boolean => {
+  return stats.some(
+    (s) => s.bookHash === stat.bookHash && s.page === stat.page && s.startTime === stat.startTime,
+  );
+};
+
 // Helper to get date string in YYYY-MM-DD format (local timezone)
 const getDateString = (timestamp: number = Date.now()): string => {
   const date = new Date(timestamp);
@@ -142,7 +150,7 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
       const { minimumPageSeconds, maximumPageSeconds } = config;
       const clampedDuration = Math.min(Math.max(timeOnPage, 0), maximumPageSeconds);
 
-      // Only record if above minimum threshold
+      // Only record if above minimum threshold and not a duplicate
       const newPageStats = [...session.pageStats];
       if (clampedDuration >= minimumPageSeconds) {
         const pageStat: PageReadingStat = {
@@ -152,8 +160,15 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
           duration: clampedDuration,
           totalPages: session.totalPages,
         };
-        newPageStats.push(pageStat);
-        console.log('[Statistics] Recorded', clampedDuration, 'seconds on page', currentPage.page);
+        if (!hasPageStatDuplicate(newPageStats, pageStat)) {
+          newPageStats.push(pageStat);
+          console.log(
+            '[Statistics] Recorded',
+            clampedDuration,
+            'seconds on page',
+            currentPage.page,
+          );
+        }
       }
 
       // Update session with new page
@@ -223,19 +238,22 @@ export const useStatisticsStore = create<StatisticsStore>((set, get) => ({
     const clampedFinalDuration = Math.min(Math.max(timeOnFinalPage, 0), maximumPageSeconds);
 
     if (clampedFinalDuration >= minimumPageSeconds) {
-      finalPageStats.push({
+      const finalPageStat: PageReadingStat = {
         bookHash: activeSession.bookHash,
         page: currentPage.page,
         startTime: Math.floor(currentPage.enteredAt / 1000),
         duration: clampedFinalDuration,
         totalPages: activeSession.totalPages,
-      });
-      console.log(
-        '[Statistics] Recorded',
-        clampedFinalDuration,
-        'seconds on final page',
-        currentPage.page,
-      );
+      };
+      if (!hasPageStatDuplicate(finalPageStats, finalPageStat)) {
+        finalPageStats.push(finalPageStat);
+        console.log(
+          '[Statistics] Recorded',
+          clampedFinalDuration,
+          'seconds on final page',
+          currentPage.page,
+        );
+      }
     }
 
     const pagesRead = Math.max(0, activeSession.lastPage - activeSession.startPage);
