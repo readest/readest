@@ -241,7 +241,6 @@ export function importFromKOReaderDb(db: Database.Database): StatisticsData {
 
       const minPage = Math.min(...group.map((r) => r.page));
       const maxPage = Math.max(...group.map((r) => r.page));
-      const effectiveTotalPages = pageStats[0]?.totalPages || totalPagesForBook || 1;
 
       sessionCounter++;
       const session: ReadingSession = {
