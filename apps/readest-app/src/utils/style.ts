@@ -259,9 +259,13 @@ const getLayoutStyles = (
     zoom: ${zoomLevel};
   }
   svg, img {
-    height: auto;
-    width: auto;
     background-color: transparent !important;
+  }
+  svg:where(:not([width])), img:where(:not([width])) {
+    width: auto;
+  }
+  svg:where(:not([height])), img:where(:not([height])) {
+    height: auto;
   }
   figure > div:has(img) {
     height: auto !important;

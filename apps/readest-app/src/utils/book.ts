@@ -56,6 +56,11 @@ export interface Contributor {
   name: LanguageMap;
 }
 
+export interface Collection {
+  name: string;
+  position?: string;
+}
+
 const formatLanguageMap = (x: string | LanguageMap, defaultLang = false): string => {
   const userLang = getUserLang();
   if (!x) return '';

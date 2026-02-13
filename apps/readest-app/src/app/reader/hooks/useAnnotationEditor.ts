@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { BookNote } from '@/types/book';
-import { Point, TextSelection } from '@/utils/sel';
+import { Point, TextSelection, snapRangeToWords } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -127,6 +127,8 @@ export const useAnnotationEditor = ({
           console.warn('Range is collapsed');
           return;
         }
+
+        snapRangeToWords(newRange);
       } catch (e) {
         console.warn('Failed to create range:', e);
         return;

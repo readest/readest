@@ -1,5 +1,23 @@
 {
   "releases": {
+    "0.9.100": {
+      "date": "2026-02-13",
+      "notes": [
+        "Text-to-Speech: Automatically moves to the next chapter when the current chapter finishes",
+        "Reading: Fixed the reading ruler on Android",
+        "Reading: Improved RSVP layout and stability",
+        "Reading: Fixed an issue where some EPUB books could not adjust font size",
+        "Annotations: Added a magnifier (loupe) when adjusting text selection",
+        "Annotations: Text selection now snaps to word boundaries for better accuracy",
+        "Annotations: Custom highlight colors now apply correctly in the sidebar",
+        "Dictionary: Added a back button for easier navigation",
+        "Dictionary: Fixed an issue where Dictionary and Wikipedia could not open on Android",
+        "Metadata: Added collapsible sections in Book Details",
+        "Metadata: Added support for parsing series information from Calibre-exported EPUB files",
+        "Eink: Improved component layout and colors in E-ink mode",
+        "Layout: Sidebar toggle button position is now persistent"
+      ]
+    },
     "0.9.99": {
       "date": "2026-02-07",
       "notes": [
