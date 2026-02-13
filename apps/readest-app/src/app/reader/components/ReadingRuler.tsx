@@ -106,7 +106,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
   // Auto-move ruler to first visible text on page change
   useEffect(() => {
-    if (!progress?.pageinfo) return;
+    if (!progress?.pageinfo || viewSettings.scrolled) return;
 
     /**
      * Get the position of the first visible text element.
@@ -222,6 +222,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     progress?.pageinfo?.current,
+    viewSettings.scrolled,
     isVertical,
     rtl,
     viewSettings.marginTopPx,
