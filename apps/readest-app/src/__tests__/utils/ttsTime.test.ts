@@ -22,7 +22,12 @@ const createProgress = (values: {
 
 describe('estimateTTSTime', () => {
   it('estimates chapter and book remaining time at 1x', () => {
-    const progress = createProgress({ sectionMin: 10, totalMin: 60, pageCurrent: 49, pageTotal: 100 });
+    const progress = createProgress({
+      sectionMin: 10,
+      totalMin: 60,
+      pageCurrent: 49,
+      pageTotal: 100,
+    });
 
     const result = estimateTTSTime(progress, 1, 1_700_000_000_000);
 
@@ -32,7 +37,12 @@ describe('estimateTTSTime', () => {
   });
 
   it('scales estimates by playback rate', () => {
-    const progress = createProgress({ sectionMin: 12, totalMin: 90, pageCurrent: 44, pageTotal: 90 });
+    const progress = createProgress({
+      sectionMin: 12,
+      totalMin: 90,
+      pageCurrent: 44,
+      pageTotal: 90,
+    });
 
     const result = estimateTTSTime(progress, 1.5, 1000);
 
@@ -50,7 +60,12 @@ describe('estimateTTSTime', () => {
   });
 
   it('uses book remaining to compute finish time', () => {
-    const progress = createProgress({ sectionMin: 1, totalMin: 2, pageCurrent: 99, pageTotal: 100 });
+    const progress = createProgress({
+      sectionMin: 1,
+      totalMin: 2,
+      pageCurrent: 99,
+      pageTotal: 100,
+    });
 
     const result = estimateTTSTime(progress, 1, 1000);
 
