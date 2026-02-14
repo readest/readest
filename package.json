@@ -32,6 +32,9 @@
       "mdast-util-gfm-autolink-literal": "2.0.1",
       "@ai-sdk/provider-utils": "4.0.8"
     },
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ],
     "patchedDependencies": {
       "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",
       "@ai-sdk/provider-utils@4.0.8": "patches/@ai-sdk__provider-utils@4.0.8.patch"
