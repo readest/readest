@@ -107,6 +107,19 @@ const getFontStyles = (
   return fontStyles;
 };
 
+const getEinkSelectionStyles = () => {
+  return `
+    ::selection {
+      color: var(--theme-bg-color);
+      background: var(--theme-fg-color);
+    }
+    ::-moz-selection {
+      color: var(--theme-bg-color);
+      background: var(--theme-fg-color);
+    }
+  `;
+};
+
 const getColorStyles = (
   overrideColor: boolean,
   invertImgColorInDark: boolean,
@@ -127,6 +140,7 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
+    ${isEink ? getEinkSelectionStyles() : ''}
     html[has-background], body[has-background] {
       --background-set: var(--theme-bg-color);
     }
@@ -884,6 +898,7 @@ export const applyFixedlayoutStyles = (
     themeCode = getThemeCode();
   }
   const { bg, fg, primary, isDarkMode } = themeCode;
+  const isEink = viewSettings.isEink;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
@@ -905,6 +920,7 @@ export const applyFixedlayoutStyles = (
       position: relative;
       background-color: var(--theme-bg-color);
     }
+    ${isEink ? getEinkSelectionStyles() : ''}
     #canvas {
       display: inline-block;
       width: fit-content;
