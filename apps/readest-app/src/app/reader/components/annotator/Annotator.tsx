@@ -164,12 +164,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [selection, bookKey, viewSettings.vertical]);
 
   useEffect(() => {
-    setSelectedStyle(settings.globalReadSettings.highlightStyle);
+    const highlightStyle = settings.globalReadSettings.highlightStyle;
+    setSelectedStyle(highlightStyle);
+    setSelectedColor(settings.globalReadSettings.highlightStyles[highlightStyle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.globalReadSettings.highlightStyle]);
-
-  useEffect(() => {
-    setSelectedColor(settings.globalReadSettings.highlightStyles[selectedStyle]);
-  }, [settings.globalReadSettings.highlightStyles, selectedStyle]);
 
   const transformCtx: TransformContext = useMemo(
     () => ({
@@ -377,6 +376,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setHighlightOptionsVisible(false);
       setEditingAnnotation(null);
     } else {
+      setShowAnnotPopup(false);
+      setEditingAnnotation(null);
       setShowAnnotationNotes(false);
       setAnnotationNotes([]);
       if (style && color) {
@@ -616,6 +617,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!cfi) return;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
+    setSelectedStyle(style);
+    setSelectedColor(color);
     const annotation: BookNote = {
       id: uniqueId(),
       type: 'annotation',

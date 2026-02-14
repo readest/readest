@@ -161,7 +161,6 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const { handlePositions, getHandlePositionsFromRange, handleAnnotationRangeChange } =
     useAnnotationEditor({ bookKey, annotation, getAnnotationText, setSelection });
 
-  const initializedRef = useRef(false);
   const handleColorHex = getHighlightColorHex(settings, handleColor) ?? '#FFFF00';
   const draggingRef = useRef<'start' | 'end' | null>(null);
   const dragPointerTypeRef = useRef<string>('');
@@ -173,9 +172,6 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const [loupePoint, setLoupePoint] = useState<Point | null>(null);
 
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
     const range = selection.range;
     const positions = getHandlePositionsFromRange(range, isVertical);
     if (positions) {
