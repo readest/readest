@@ -254,7 +254,7 @@ const TTSPanel = ({
           <span className='text-center'>{_('Fast')}</span>
         </div>
       </div>
-      <div className='text-base-content/80 mt-1 w-full rounded-lg border border-base-content/10 bg-base-300/40 px-2 py-1 text-xs'>
+      <div className='text-base-content/80 border-base-content/10 bg-base-300/40 mt-1 w-full rounded-lg border px-2 py-1 text-xs'>
         <div className='flex items-center justify-between'>
           <span>{_('Chapter')}</span>
           <span>{formatDuration(_, chapterRemainingSec)}</span>

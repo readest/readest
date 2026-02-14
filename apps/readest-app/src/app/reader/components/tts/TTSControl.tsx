@@ -240,6 +240,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSBar
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
+          chapterRemainingSec={tts.chapterRemainingSec}
           bookRemainingSec={tts.bookRemainingSec}
           onBackward={tts.handleBackward}
           onTogglePlay={tts.handleTogglePlay}
