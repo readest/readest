@@ -16,6 +16,7 @@ import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
+import { estimateTTSTime } from '@/utils/ttsTime';
 import { useTTSMediaSession } from './useTTSMediaSession';
 
 interface UseTTSControlProps {
@@ -226,6 +227,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   };
 
   const viewSettings = getViewSettings(bookKey);
+  const ttsTime = useMemo(() => {
+    const rate = viewSettings?.ttsRate ?? 1;
+    return estimateTTSTime(progress, rate);
+  }, [progress, viewSettings?.ttsRate]);
+
   const getTTSTargetLang = useCallback((): string | null => {
     const vs = getViewSettings(bookKey);
     const ttsReadAloudText = vs?.ttsReadAloudText;
@@ -643,6 +649,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     showBackToCurrentTTSLocation,
     timeoutOption,
     timeoutTimestamp,
+    chapterRemainingSec: ttsTime.chapterRemainingSec,
+    bookRemainingSec: ttsTime.bookRemainingSec,
+    finishAtTimestamp: ttsTime.finishAtTimestamp,
     handleTogglePlay,
     handleBackward,
     handleForward,
