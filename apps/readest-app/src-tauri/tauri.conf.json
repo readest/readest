@@ -20,7 +20,7 @@
         "style-src": "'self' 'unsafe-inline' blob: asset: http://asset.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com https://storage.readest.com",
         "font-src": "'self' blob: data: asset: http://asset.localhost tauri: https://db.onlinewebfonts.com https://cdn.jsdelivr.net https://fonts.gstatic.com https://cdnjs.cloudflare.com  https://storage.readest.com",
         "frame-src": "'self' blob: asset: http://asset.localhost https://*.stripe.com",
-        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' blob: asset: http://asset.localhost https://*.sentry.io https://*.posthog.com  https://*.stripe.com"
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' data: blob: asset: http://asset.localhost https://*.sentry.io https://*.posthog.com  https://*.stripe.com"
       },
       "assetProtocol": {
         "enable": true,

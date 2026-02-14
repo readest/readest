@@ -1,6 +1,7 @@
 import { partialMD5 } from './md5';
 import { getBaseFilename } from './path';
 import { detectLanguage } from './lang';
+import { configureZip } from './zip';
 
 interface Metadata {
   bookTitle: string;
@@ -273,6 +274,7 @@ export class TxtToEpubConverter {
   }
 
   private async createEpub(chapters: Chapter[], metadata: Metadata): Promise<Blob> {
+    await configureZip();
     const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
     const { bookTitle, author, language, identifier } = metadata;
 
