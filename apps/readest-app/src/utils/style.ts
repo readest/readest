@@ -107,16 +107,9 @@ const getFontStyles = (
   return fontStyles;
 };
 
-const getColorStyles = (
-  overrideColor: boolean,
-  invertImgColorInDark: boolean,
-  themeCode: ThemeCode,
-  backgroundTextureId: string,
-  isEink: boolean,
-) => {
-  const { bg, fg, primary, isDarkMode } = themeCode;
-  const selectionStyles = isEink
-    ? `
+const getSelectionStyles = (isEink: boolean, isDarkMode: boolean) => {
+  if (!isEink) return '';
+  return `
     ::selection {
       color: var(--theme-fg-color);
       background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
@@ -127,8 +120,18 @@ const getColorStyles = (
       background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
       background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
     }
-  `
-    : '';
+  `;
+};
+
+const getColorStyles = (
+  overrideColor: boolean,
+  invertImgColorInDark: boolean,
+  themeCode: ThemeCode,
+  backgroundTextureId: string,
+  isEink: boolean,
+) => {
+  const { bg, fg, primary, isDarkMode } = themeCode;
+  const selectionStyles = getSelectionStyles(isEink, isDarkMode);
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -903,20 +906,7 @@ export const applyFixedlayoutStyles = (
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
-  const selectionStyles = isEink
-    ? `
-      ::selection {
-        color: var(--theme-fg-color);
-        background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-        background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
-      }
-      ::-moz-selection {
-        color: var(--theme-fg-color);
-        background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-        background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
-      }
-    `
-    : '';
+  const selectionStyles = getSelectionStyles(isEink, isDarkMode);
   const existingStyleId = 'fixed-layout-styles';
   let style = document.getElementById(existingStyleId) as HTMLStyleElement;
   if (style) {
