@@ -1031,5 +1031,9 @@
   "Books": "පොත්",
   "Groups": "කණ්ඩායම්",
   "Back to TTS Location": "TTS ස්ථානයට ආපසු යන්න",
-  "Metadata": "මෙටාඩේටා"
+  "Metadata": "මෙටාඩේටා",
+  "Finish at": "අවසන් වන්නේ",
+  "{{value}} min": "{{value}} මිනි",
+  "{{value}} h": "{{value}} පැය",
+  "{{hours}} h {{minutes}} min": "{{hours}} පැය {{minutes}} මිනි"
 }

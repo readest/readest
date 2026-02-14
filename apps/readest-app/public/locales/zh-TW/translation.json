@@ -1019,5 +1019,9 @@
   "Books": "書籍",
   "Groups": "分組",
   "Back to TTS Location": "回到朗讀位置",
-  "Metadata": "元數據"
+  "Metadata": "元數據",
+  "Finish at": "完成於",
+  "{{value}} min": "{{value}} 分鐘",
+  "{{value}} h": "{{value}} 小時",
+  "{{hours}} h {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘"
 }

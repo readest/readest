@@ -1019,5 +1019,9 @@
   "Books": "དཔེ་ཆ།",
   "Groups": "ཚོགས་པ།",
   "Back to TTS Location": "TTS གནས་སར་ཕྱིར་ལོག་པ།",
-  "Metadata": "གནད་སྨིན་གོ་དོན།"
+  "Metadata": "གནད་སྨིན་གོ་དོན།",
+  "Finish at": "མཇུག་བསྡུ་དུས་ཚོད།",
+  "{{value}} min": "{{value}} སྐར་མ།",
+  "{{value}} h": "{{value}} ཆུ་ཚོད།",
+  "{{hours}} h {{minutes}} min": "{{hours}} ཆུ་ཚོད། {{minutes}} སྐར་མ།"
 }

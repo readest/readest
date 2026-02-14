@@ -1031,5 +1031,9 @@
   "Books": "Βιβλία",
   "Groups": "Ομάδες",
   "Back to TTS Location": "Επιστροφή στην τοποθεσία TTS",
-  "Metadata": "Μεταδεδομένα"
+  "Metadata": "Μεταδεδομένα",
+  "Finish at": "Ολοκλήρωση στις",
+  "{{value}} min": "{{value}} λ",
+  "{{value}} h": "{{value}} ώ",
+  "{{hours}} h {{minutes}} min": "{{hours}} ώ {{minutes}} λ"
 }

@@ -23,5 +23,12 @@
   "Set status for {{count}} book(s)_one": "Set status for {{count}} book",
   "Set status for {{count}} book(s)_other": "Set status for {{count}} books",
   "{{count}} book(s) synced_one": "{{count}} book synced",
-  "{{count}} book(s) synced_other": "{{count}} books synced"
+  "{{count}} book(s) synced_other": "{{count}} books synced",
+  "Chapter": "Chapter",
+  "Book": "Book",
+  "Finish at": "Finish at",
+  "{{value}} min": "{{value}} min",
+  "{{value}} h": "{{value}} h",
+  "{{hours}} h {{minutes}} min": "{{hours}} h {{minutes}} min",
+  "{{time}} left": "{{time}} left"
 }

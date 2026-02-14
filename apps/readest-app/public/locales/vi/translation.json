@@ -1019,5 +1019,9 @@
   "Books": "Sách",
   "Groups": "Nhóm",
   "Back to TTS Location": "Quay lại vị trí TTS",
-  "Metadata": "Siêu dữ liệu"
+  "Metadata": "Siêu dữ liệu",
+  "Finish at": "Kết thúc lúc",
+  "{{value}} min": "{{value}} phút",
+  "{{value}} h": "{{value}} giờ",
+  "{{hours}} h {{minutes}} min": "{{hours}} giờ {{minutes}} phút"
 }

@@ -1019,5 +1019,9 @@
   "Books": "Buku",
   "Groups": "Kumpulan",
   "Back to TTS Location": "Kembali ke Lokasi TTS",
-  "Metadata": "Metadata"
+  "Metadata": "Metadata",
+  "Finish at": "Tamat pada",
+  "{{value}} min": "{{value}} min",
+  "{{value}} h": "{{value}} jam",
+  "{{hours}} h {{minutes}} min": "{{hours}} jam {{minutes}} min"
 }

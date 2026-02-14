@@ -1031,5 +1031,9 @@
   "Books": "Kitaplar",
   "Groups": "Gruplar",
   "Back to TTS Location": "TTS Konumuna Geri Dön",
-  "Metadata": "Meta veriler"
+  "Metadata": "Meta veriler",
+  "Finish at": "Bitiş",
+  "{{value}} min": "{{value}} dk",
+  "{{value}} h": "{{value}} sa",
+  "{{hours}} h {{minutes}} min": "{{hours}} sa {{minutes}} dk"
 }
