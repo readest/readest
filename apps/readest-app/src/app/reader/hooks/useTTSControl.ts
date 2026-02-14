@@ -49,7 +49,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const ttsControllerRef = useRef<TTSController | null>(null);
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
-  const ttsOnRef = useRef(false);
 
   const {
     mediaSessionRef,
@@ -190,8 +189,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const { location } = progress || {};
     if (!location || !ttsLocation) return;
 
-    const ttsInCurrentLocation = isCfiInLocation(ttsLocation, location);
-    if (ttsInCurrentLocation) {
+    if (isCfiInLocation(ttsLocation, location)) {
       setShowBackToCurrentTTSLocation(false);
       const range = view?.tts?.getLastRange() as Range | null;
       if (range) {
@@ -344,7 +342,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       }
       await deinitMediaSession();
       setTTSEnabled(bookKey, false);
-      ttsOnRef.current = false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],
@@ -354,13 +351,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const handleTTSSpeak = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey, range, oneTime = false } = event.detail;
     if (bookKey !== ttsBookKey) return;
-    if (ttsOnRef.current) return;
-    ttsOnRef.current = true;
 
     const view = getView(bookKey);
     const progress = getProgress(bookKey);
     const viewSettings = getViewSettings(bookKey);
     const bookData = getBookData(bookKey);
+    const { location } = progress || {};
     if (!view || !progress || !viewSettings || !bookData || !bookData.book) return;
     if (bookData.book?.format === 'PDF') {
       eventDispatcher.dispatch('toast', {
@@ -373,7 +369,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const ttsSpeakRange = range as Range | null;
     let ttsFromRange = ttsSpeakRange;
     if (!ttsFromRange && viewSettings.ttsLocation) {
-      const { location } = progress;
       const ttsCfi = viewSettings.ttsLocation;
       if (isCfiInLocation(ttsCfi, location)) {
         const { index, anchor } = view.resolveCFI(ttsCfi);
@@ -392,6 +387,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       const ttsLocation = view.getCFI(currentSection?.index || 0, ttsFromRange);
       viewSettings.ttsLocation = ttsLocation;
       setViewSettings(bookKey, viewSettings);
+      if (isCfiInLocation(ttsLocation, location)) {
+        setShowBackToCurrentTTSLocation(false);
+      }
     }
 
     const primaryLang = bookData.book.primaryLanguage;
