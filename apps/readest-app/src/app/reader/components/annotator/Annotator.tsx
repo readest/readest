@@ -308,6 +308,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
     const hexColor = getHighlightColorHex(settings, color);
+    const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
     const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     if (annotation.note) {
       const { defaultView } = doc;
@@ -317,7 +318,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
       draw(Overlayer.highlight, {
-        color: isBwEink ? einkFgColor : hexColor,
+        color: isBwEink ? einkBgColor : hexColor,
         vertical: viewSettings.vertical,
       });
     } else if (['underline', 'squiggly'].includes(style as string)) {
