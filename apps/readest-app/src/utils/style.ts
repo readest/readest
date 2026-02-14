@@ -115,6 +115,20 @@ const getColorStyles = (
   isEink: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
+  const selectionStyles = isEink
+    ? `
+    ::selection {
+      color: var(--theme-fg-color);
+      background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+      background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
+    }
+    ::-moz-selection {
+      color: var(--theme-fg-color);
+      background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+      background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
+    }
+  `
+    : '';
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -127,6 +141,7 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
+    ${selectionStyles}
     html[has-background], body[has-background] {
       --background-set: var(--theme-bg-color);
     }
@@ -884,9 +899,24 @@ export const applyFixedlayoutStyles = (
     themeCode = getThemeCode();
   }
   const { bg, fg, primary, isDarkMode } = themeCode;
+  const isEink = viewSettings.isEink;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
+  const selectionStyles = isEink
+    ? `
+      ::selection {
+        color: var(--theme-fg-color);
+        background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+        background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
+      }
+      ::-moz-selection {
+        color: var(--theme-fg-color);
+        background-color: ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+        background: color-mix(in srgb, var(--theme-fg-color) 30%, var(--theme-bg-color));
+      }
+    `
+    : '';
   const existingStyleId = 'fixed-layout-styles';
   let style = document.getElementById(existingStyleId) as HTMLStyleElement;
   if (style) {
@@ -905,6 +935,7 @@ export const applyFixedlayoutStyles = (
       position: relative;
       background-color: var(--theme-bg-color);
     }
+    ${selectionStyles}
     #canvas {
       display: inline-block;
       width: fit-content;
