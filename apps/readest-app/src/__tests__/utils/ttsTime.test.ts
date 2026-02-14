@@ -28,7 +28,6 @@ describe('estimateTTSTime', () => {
 
     expect(result.chapterRemainingSec).toBe(600);
     expect(result.bookRemainingSec).toBe(3600);
-    expect(result.totalBookSecAtRate).toBe(7200);
     expect(result.finishAtTimestamp).toBe(1_700_003_600_000);
   });
 
@@ -39,7 +38,6 @@ describe('estimateTTSTime', () => {
 
     expect(result.chapterRemainingSec).toBe(480);
     expect(result.bookRemainingSec).toBe(3600);
-    expect(result.totalBookSecAtRate).toBe(7200);
     expect(result.finishAtTimestamp).toBe(3_601_000);
   });
 
@@ -48,16 +46,15 @@ describe('estimateTTSTime', () => {
 
     expect(result.chapterRemainingSec).toBeNull();
     expect(result.bookRemainingSec).toBeNull();
-    expect(result.totalBookSecAtRate).toBeNull();
     expect(result.finishAtTimestamp).toBeNull();
   });
 
-  it('does not divide by zero near book end', () => {
+  it('uses book remaining to compute finish time', () => {
     const progress = createProgress({ sectionMin: 1, totalMin: 2, pageCurrent: 99, pageTotal: 100 });
 
     const result = estimateTTSTime(progress, 1, 1000);
 
     expect(result.bookRemainingSec).toBe(120);
-    expect(result.totalBookSecAtRate).toBe(120);
+    expect(result.finishAtTimestamp).toBe(121000);
   });
 });
