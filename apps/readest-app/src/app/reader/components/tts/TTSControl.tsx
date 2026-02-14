@@ -15,7 +15,7 @@ import TTSIcon from './TTSIcon';
 import TTSBar from './TTSBar';
 
 const POPUP_WIDTH = 282;
-const POPUP_HEIGHT = 160;
+const POPUP_HEIGHT = 206;
 const POPUP_PADDING = 10;
 
 interface TTSControlProps {
@@ -221,6 +221,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
             isPlaying={tts.isPlaying}
             timeoutOption={tts.timeoutOption}
             timeoutTimestamp={tts.timeoutTimestamp}
+            chapterRemainingSec={tts.chapterRemainingSec}
+            bookRemainingSec={tts.bookRemainingSec}
+            finishAtTimestamp={tts.finishAtTimestamp}
             onTogglePlay={tts.handleTogglePlay}
             onBackward={tts.handleBackward}
             onForward={tts.handleForward}
@@ -237,6 +240,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSBar
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
+          bookRemainingSec={tts.bookRemainingSec}
           onBackward={tts.handleBackward}
           onTogglePlay={tts.handleTogglePlay}
           onForward={tts.handleForward}

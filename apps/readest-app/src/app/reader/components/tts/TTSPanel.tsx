@@ -18,6 +18,9 @@ type TTSPanelProps = {
   isPlaying: boolean;
   timeoutOption: number;
   timeoutTimestamp: number;
+  chapterRemainingSec: number | null;
+  bookRemainingSec: number | null;
+  finishAtTimestamp: number | null;
   onTogglePlay: () => void;
   onBackward: () => void;
   onForward: () => void;
@@ -101,12 +104,39 @@ const getCountdownTime = (timeout: number) => {
   return '';
 };
 
+const formatDuration = (_: TranslationFunc, seconds: number | null) => {
+  if (seconds === null) return '—';
+
+  const totalMinutes = Math.max(1, Math.ceil(seconds / 60));
+  if (totalMinutes < 60) {
+    return _('{{value}} min', { value: totalMinutes });
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (minutes === 0) {
+    return _('{{value}} h', { value: hours });
+  }
+  return _('{{hours}} h {{minutes}} min', { hours, minutes });
+};
+
+const formatFinishAt = (timestamp: number | null) => {
+  if (!timestamp) return '—';
+  return new Date(timestamp).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
 const TTSPanel = ({
   bookKey,
   ttsLang,
   isPlaying,
   timeoutOption,
   timeoutTimestamp,
+  chapterRemainingSec,
+  bookRemainingSec,
+  finishAtTimestamp,
   onTogglePlay,
   onBackward,
   onForward,
@@ -203,8 +233,8 @@ const TTSPanel = ({
   const timeoutOptions = getTTSTimeoutOptions(_);
 
   return (
-    <div className='flex w-full flex-col items-center justify-center gap-2 rounded-2xl px-4 pt-4 sm:gap-1'>
-      <div className='flex w-full flex-col items-center gap-0.5'>
+    <div className='flex h-full w-full flex-col rounded-2xl px-3 pb-1.5 pt-2'>
+      <div className='flex w-full flex-col items-center gap-0.5 pb-1'>
         <input
           className='range'
           type='range'
@@ -215,15 +245,6 @@ const TTSPanel = ({
           onChange={handleSetRate}
         />
         <div className='grid w-full grid-cols-7 text-xs'>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-          <span className='text-center'>|</span>
-        </div>
-        <div className='grid w-full grid-cols-7 text-xs'>
           <span className='text-center'>{_('Slow')}</span>
           <span className='text-center'></span>
           <span className='text-center'>1.0</span>
@@ -233,7 +254,21 @@ const TTSPanel = ({
           <span className='text-center'>{_('Fast')}</span>
         </div>
       </div>
-      <div className='flex items-center justify-between space-x-2'>
+      <div className='text-base-content/80 mt-1 w-full rounded-lg border border-base-content/10 bg-base-300/40 px-2 py-1 text-xs'>
+        <div className='flex items-center justify-between'>
+          <span>{_('Chapter')}</span>
+          <span>{formatDuration(_, chapterRemainingSec)}</span>
+        </div>
+        <div className='flex items-center justify-between'>
+          <span>{_('Book')}</span>
+          <span>{formatDuration(_, bookRemainingSec)}</span>
+        </div>
+        <div className='flex items-center justify-between'>
+          <span>{_('Finish at')}</span>
+          <span>{formatFinishAt(finishAtTimestamp)}</span>
+        </div>
+      </div>
+      <div className='mt-1 flex items-center justify-center gap-1'>
         <button
           onClick={() => onBackward()}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
@@ -376,17 +411,17 @@ const TTSPanel = ({
           </ul>
         </div>
       </div>
-      <div className='flex h-4 items-center justify-center opacity-60 transition-transform duration-200 hover:scale-105 hover:opacity-100'>
+      <div className='mt-0 flex h-8 w-full items-center justify-center'>
         <button
           onClick={onToogleTTSBar}
-          className='p-0'
+          className='text-base-content/70 hover:text-base-content flex h-8 items-center justify-center opacity-80 transition-transform duration-200 hover:scale-105 hover:opacity-100'
           title={_('Toggle Sticky Bottom TTS Bar')}
           aria-label={_('Toggle Sticky Bottom TTS Bar')}
         >
           {viewSettings?.showTTSBar ? (
-            <TbChevronCompactUp size={iconSize48} style={{ transform: 'scaleY(0.85)' }} />
+            <TbChevronCompactUp size={iconSize32} style={{ transform: 'scaleY(0.85)' }} />
           ) : (
-            <TbChevronCompactDown size={iconSize48} style={{ transform: 'scaleY(0.85)' }} />
+            <TbChevronCompactDown size={iconSize32} style={{ transform: 'scaleY(0.85)' }} />
           )}
         </button>
       </div>

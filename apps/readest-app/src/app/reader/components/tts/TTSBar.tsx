@@ -17,15 +17,28 @@ import { useTranslation } from '@/hooks/useTranslation';
 type TTSBarProps = {
   bookKey: string;
   isPlaying: boolean;
+  bookRemainingSec: number | null;
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
   gridInsets: Insets;
 };
 
+const formatDuration = (seconds: number | null) => {
+  if (seconds === null) return '—';
+  const totalMinutes = Math.max(1, Math.ceil(seconds / 60));
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+};
+
 const TTSBar = ({
   bookKey,
   isPlaying,
+  bookRemainingSec,
   onTogglePlay,
   onBackward,
   onForward,
@@ -52,6 +65,9 @@ const TTSBar = ({
       onTouchStart={() => !appService?.isMobile && setHoveredBookKey('')}
     >
       <div className='text-base-content flex h-[52px] items-center space-x-2 px-2'>
+        <span className='text-base-content/70 mr-1 whitespace-nowrap text-xs'>
+          {_('{{time}} left', { time: formatDuration(bookRemainingSec) })}
+        </span>
         <button
           onClick={onBackward.bind(null, false)}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
