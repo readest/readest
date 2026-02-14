@@ -1031,9 +1031,5 @@
   "Books": "کتاب‌ها",
   "Groups": "گروه‌ها",
   "Back to TTS Location": "بازگشت به مکان TTS",
-  "Metadata": "فراداده",
-  "Finish at": "پایان در",
-  "{{value}} min": "{{value}} دقیقه",
-  "{{value}} h": "{{value}} ساعت",
-  "{{hours}} h {{minutes}} min": "{{hours}} ساعت {{minutes}} دقیقه"
+  "Metadata": "فراداده"
 }

@@ -17,30 +17,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 type TTSBarProps = {
   bookKey: string;
   isPlaying: boolean;
-  chapterRemainingSec: number | null;
-  bookRemainingSec: number | null;
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
   gridInsets: Insets;
 };
 
-const formatDuration = (seconds: number | null) => {
-  if (seconds === null) return '—';
-  const totalMinutes = Math.max(1, Math.ceil(seconds / 60));
-  if (totalMinutes < 60) {
-    return `${totalMinutes}m`;
-  }
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-};
-
 const TTSBar = ({
   bookKey,
   isPlaying,
-  chapterRemainingSec,
-  bookRemainingSec,
   onTogglePlay,
   onBackward,
   onForward,
@@ -57,7 +42,7 @@ const TTSBar = ({
   return (
     <div
       className={clsx(
-        'absolute bottom-0 z-40',
+        'bg-base-100 absolute bottom-0 z-40',
         'inset-x-0 mx-auto flex w-full justify-center sm:w-fit',
         'transition-opacity duration-300',
         isVisible ? `pointer-events-auto opacity-100` : `pointer-events-none opacity-0`,
@@ -66,59 +51,47 @@ const TTSBar = ({
       onMouseEnter={() => !appService?.isMobile && setHoveredBookKey('')}
       onTouchStart={() => !appService?.isMobile && setHoveredBookKey('')}
     >
-      <div className='text-base-content flex h-[52px] items-center gap-2 px-2'>
-        <div className='text-base-content/70 min-w-[130px] whitespace-nowrap text-right text-xs'>
-          <span>
-            {_('Chapter')}: {formatDuration(chapterRemainingSec)}
-          </span>
-        </div>
-        <div className='flex items-center space-x-2'>
-          <button
-            onClick={onBackward.bind(null, false)}
-            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-            title={_('Previous Paragraph')}
-            aria-label={_('Previous Paragraph')}
-          >
-            <MdFastRewind size={iconSize32} />
-          </button>
-          <button
-            onClick={onBackward.bind(null, true)}
-            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-            title={_('Previous Sentence')}
-            aria-label={_('Previous Sentence')}
-          >
-            <MdSkipPrevious size={iconSize32} />
-          </button>
-          <button
-            onClick={onTogglePlay}
-            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-            title={isPlaying ? _('Pause') : _('Play')}
-            aria-label={isPlaying ? _('Pause') : _('Play')}
-          >
-            {isPlaying ? <MdOutlinePause size={iconSize48} /> : <MdPlayArrow size={iconSize48} />}
-          </button>
-          <button
-            onClick={onForward.bind(null, true)}
-            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-            title={_('Next Sentence')}
-            aria-label={_('Next Sentence')}
-          >
-            <MdSkipNext size={iconSize32} />
-          </button>
-          <button
-            onClick={onForward.bind(null, false)}
-            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-            title={_('Next Paragraph')}
-            aria-label={_('Next Paragraph')}
-          >
-            <MdFastForward size={iconSize32} />
-          </button>
-        </div>
-        <div className='text-base-content/70 min-w-[130px] whitespace-nowrap text-left text-xs'>
-          <span>
-            {_('Book')}: {formatDuration(bookRemainingSec)}
-          </span>
-        </div>
+      <div className='text-base-content flex h-[52px] items-center space-x-2 px-2'>
+        <button
+          onClick={onBackward.bind(null, false)}
+          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Previous Paragraph')}
+          aria-label={_('Previous Paragraph')}
+        >
+          <MdFastRewind size={iconSize32} />
+        </button>
+        <button
+          onClick={onBackward.bind(null, true)}
+          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Previous Sentence')}
+          aria-label={_('Previous Sentence')}
+        >
+          <MdSkipPrevious size={iconSize32} />
+        </button>
+        <button
+          onClick={onTogglePlay}
+          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={isPlaying ? _('Pause') : _('Play')}
+          aria-label={isPlaying ? _('Pause') : _('Play')}
+        >
+          {isPlaying ? <MdOutlinePause size={iconSize48} /> : <MdPlayArrow size={iconSize48} />}
+        </button>
+        <button
+          onClick={onForward.bind(null, true)}
+          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Next Sentence')}
+          aria-label={_('Next Sentence')}
+        >
+          <MdSkipNext size={iconSize32} />
+        </button>
+        <button
+          onClick={onForward.bind(null, false)}
+          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+          title={_('Next Paragraph')}
+          aria-label={_('Next Paragraph')}
+        >
+          <MdFastForward size={iconSize32} />
+        </button>
       </div>
     </div>
   );

@@ -1043,9 +1043,5 @@
   "Books": "Libros",
   "Groups": "Grupos",
   "Back to TTS Location": "Volver a la ubicación de TTS",
-  "Metadata": "Metadatos",
-  "Finish at": "Termina a las",
-  "{{value}} min": "{{value}} min",
-  "{{value}} h": "{{value}} h",
-  "{{hours}} h {{minutes}} min": "{{hours}} h {{minutes}} min"
+  "Metadata": "Metadatos"
 }

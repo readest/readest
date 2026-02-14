@@ -1079,9 +1079,5 @@
   "Books": "الكتب",
   "Groups": "المجموعات",
   "Back to TTS Location": "العودة إلى موقع القراءة الآلية",
-  "Metadata": "بيانات وصفية",
-  "Finish at": "ينتهي عند",
-  "{{value}} min": "{{value}} دقيقة",
-  "{{value}} h": "{{value}} ساعة",
-  "{{hours}} h {{minutes}} min": "{{hours}} ساعة {{minutes}} دقيقة"
+  "Metadata": "بيانات وصفية"
 }

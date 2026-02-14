@@ -1031,9 +1031,5 @@
   "Books": "Böcker",
   "Groups": "Grupper",
   "Back to TTS Location": "Tillbaka till TTS-plats",
-  "Metadata": "Metadata",
-  "Finish at": "Slutar",
-  "{{value}} min": "{{value}} min",
-  "{{value}} h": "{{value}} h",
-  "{{hours}} h {{minutes}} min": "{{hours}} h {{minutes}} min"
+  "Metadata": "Metadata"
 }

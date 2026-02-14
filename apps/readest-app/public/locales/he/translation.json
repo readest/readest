@@ -1043,9 +1043,5 @@
   "Reveal in Finder": "הצג ב-Finder",
   "Reveal in File Explorer": "הצג בסייר הקבצים",
   "Reveal in Folder": "הצג בתיקייה",
-  "Metadata": "מטא-נתונים",
-  "Finish at": "יסתיים ב־",
-  "{{value}} min": "{{value}} דק׳",
-  "{{value}} h": "{{value}} ש׳",
-  "{{hours}} h {{minutes}} min": "{{hours}} ש׳ {{minutes}} דק׳"
+  "Metadata": "מטא-נתונים"
 }

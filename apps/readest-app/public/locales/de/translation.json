@@ -1031,9 +1031,5 @@
   "Books": "Bücher",
   "Groups": "Gruppen",
   "Back to TTS Location": "Zurück zur TTS-Position",
-  "Metadata": "Metadaten",
-  "Finish at": "Fertig um",
-  "{{value}} min": "{{value}} Min.",
-  "{{value}} h": "{{value}} Std.",
-  "{{hours}} h {{minutes}} min": "{{hours}} Std. {{minutes}} Min."
+  "Metadata": "Metadaten"
 }

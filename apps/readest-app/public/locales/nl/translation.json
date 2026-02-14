@@ -1031,9 +1031,5 @@
   "Books": "Boeken",
   "Groups": "Groepen",
   "Back to TTS Location": "Terug naar TTS-locatie",
-  "Metadata": "Metadata",
-  "Finish at": "Klaar om",
-  "{{value}} min": "{{value}} min",
-  "{{value}} h": "{{value}} u",
-  "{{hours}} h {{minutes}} min": "{{hours}} u {{minutes}} min"
+  "Metadata": "Metadata"
 }

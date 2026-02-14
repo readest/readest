@@ -1019,9 +1019,5 @@
   "Books": "書籍",
   "Groups": "グループ",
   "Back to TTS Location": "TTSの位置に戻る",
-  "Metadata": "メタデータ",
-  "Finish at": "終了時刻",
-  "{{value}} min": "{{value}}分",
-  "{{value}} h": "{{value}}時間",
-  "{{hours}} h {{minutes}} min": "{{hours}}時間 {{minutes}}分"
+  "Metadata": "メタデータ"
 }

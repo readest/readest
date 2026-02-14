@@ -1019,9 +1019,5 @@
   "Books": "หนังสือ",
   "Groups": "กลุ่ม",
   "Back to TTS Location": "กลับไปยังตำแหน่ง TTS",
-  "Metadata": "เมทาดาตา",
-  "Finish at": "จบเวลา",
-  "{{value}} min": "{{value}} นาที",
-  "{{value}} h": "{{value}} ชม.",
-  "{{hours}} h {{minutes}} min": "{{hours}} ชม. {{minutes}} นาที"
+  "Metadata": "เมทาดาตา"
 }

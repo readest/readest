@@ -1031,9 +1031,5 @@
   "Books": "புத்தகங்கள்",
   "Groups": "குழுக்கள்",
   "Back to TTS Location": "TTS இடத்திற்குத் திரும்பு",
-  "Metadata": "மெட்டாடேட்டா",
-  "Finish at": "முடியும் நேரம்",
-  "{{value}} min": "{{value}} நிமி",
-  "{{value}} h": "{{value}} மணி",
-  "{{hours}} h {{minutes}} min": "{{hours}} மணி {{minutes}} நிமி"
+  "Metadata": "மெட்டாடேட்டா"
 }

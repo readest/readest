@@ -1055,9 +1055,5 @@
   "Books": "Книги",
   "Groups": "Групи",
   "Back to TTS Location": "Повернутися до розташування TTS",
-  "Metadata": "Метадані",
-  "Finish at": "Завершиться о",
-  "{{value}} min": "{{value}} хв",
-  "{{value}} h": "{{value}} год",
-  "{{hours}} h {{minutes}} min": "{{hours}} год {{minutes}} хв"
+  "Metadata": "Метадані"
 }
