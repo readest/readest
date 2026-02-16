@@ -6,8 +6,6 @@ services:
     image: supabase/postgres:15.8.1.085
     restart: unless-stopped
     volumes:
-      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
-      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
       - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
       - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
       - ./volumes/db/init/schema.sql:/docker-entrypoint-initdb.d/init-scripts/100-schema.sql:Z
@@ -42,7 +40,7 @@ services:
     ports:
       - "${KONG_HTTP_PORT}:8000/tcp"
     volumes:
-      - ./volumes/api/kong.sup.yml:/home/kong/temp.yml:ro,z
+      - ./volumes/api/kong.yml:/home/kong/temp.yml:ro,z
     depends_on:
       db:
         condition: service_healthy
@@ -142,19 +140,12 @@ services:
       mc mb --ignore-existing myminio/${S3_BUCKET_NAME}
       "
 
+
   client:
     container_name: readest-client
     build:
       context: .
       target: build
-      args:
-        - NEXT_PUBLIC_SUPABASE_URL=http://${HOST_IP}:${KONG_HTTP_PORT}
-        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
-        - NEXT_PUBLIC_APP_PLATFORM=web
-        - NEXT_PUBLIC_API_BASE_URL=http://${HOST_IP}:3000
-        - NEXT_PUBLIC_OBJECT_STORAGE_TYPE=s3
-        - NEXT_PUBLIC_STORAGE_FIXED_QUOTA=${STORAGE_FIXED_QUOTA}
-        - NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA=${TRANSLATION_FIXED_QUOTA}
     restart: unless-stopped
     ports:
       - "3000:3000"
