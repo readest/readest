@@ -1,0 +1,15 @@
+services:
+  client:
+    build:
+      context: .
+      target: build
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/readest-app/node_modules
+      - /app/apps/readest-app/public/vendor
+      - /app/packages/foliate-js/node_modules
+      - /app/apps/readest-app/.next
+      - /app/.next
