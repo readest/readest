@@ -142,5 +142,5 @@ services:
 
 volumes:
   db-config:
-  minio-data:
   db-data:
+  minio-data:
