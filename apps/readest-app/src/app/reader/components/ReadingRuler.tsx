@@ -310,42 +310,142 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     // Vertical ruler (for vertical writing mode - moves left/right)
     return (
       <div
-        ref={containerRef}
         className={clsx(
           'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
           isVisible ? 'opacity-100' : 'opacity-0',
         )}
+      >
+        {gridInsets.left > 0 && (
+          <div
+            className='bg-base-100 pointer-events-none absolute bottom-0 left-0 top-0'
+            style={{
+              width: `${gridInsets.left}px`,
+              opacity: fadeOpacity,
+            }}
+          />
+        )}
+        {gridInsets.right > 0 && (
+          <div
+            className='bg-base-100 pointer-events-none absolute bottom-0 right-0 top-0'
+            style={{
+              width: `${gridInsets.right}px`,
+              opacity: fadeOpacity,
+            }}
+          />
+        )}
+        <div
+          ref={containerRef}
+          className='pointer-events-none absolute inset-0'
+          style={containerStyle}
+        >
+          {/* Left overlay */}
+          <div
+            className='bg-base-100 pointer-events-none absolute bottom-0 left-0 top-0'
+            style={{
+              width: `${rulerStartPx}px`,
+              opacity: fadeOpacity,
+            }}
+          />
+
+          {/* Right overlay */}
+          <div
+            className='bg-base-100 pointer-events-none absolute bottom-0 right-0 top-0'
+            style={{
+              width: `${containerSize.width - rulerEndPx}px`,
+              opacity: fadeOpacity,
+            }}
+          />
+
+          {/* Vertical ruler */}
+          <div
+            className={clsx(
+              'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize touch-none rounded-2xl',
+              color === 'transparent' ? 'border-base-content/55 border' : '',
+            )}
+            style={{
+              left: `${currentPosition}%`,
+              width: `${rulerSize}px`,
+              transform: 'translateX(-50%)',
+              transition: getTransitionStyle('left'),
+              ...(color === 'transparent'
+                ? {
+                    backgroundColor: baseColor,
+                  }
+                : backdropFilterStyle),
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            {/* extended touch area */}
+            <div className='absolute inset-y-0 -left-2 -right-2 touch-none' />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Horizontal ruler (default - moves up/down)
+  return (
+    <div
+      className={clsx(
+        'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
+        isVisible ? 'opacity-100' : 'opacity-0',
+      )}
+    >
+      {gridInsets.top > 0 && (
+        <div
+          className='bg-base-100 pointer-events-none absolute left-0 right-0 top-0'
+          style={{
+            height: `${gridInsets.top}px`,
+            opacity: fadeOpacity,
+          }}
+        />
+      )}
+      {gridInsets.bottom > 0 && (
+        <div
+          className='bg-base-100 pointer-events-none absolute bottom-0 left-0 right-0'
+          style={{
+            height: `${gridInsets.bottom}px`,
+            opacity: fadeOpacity,
+          }}
+        />
+      )}
+      <div
+        ref={containerRef}
+        className='pointer-events-none absolute inset-0'
         style={containerStyle}
       >
-        {/* Left overlay */}
+        {/* Top overlay */}
         <div
-          className='bg-base-100 pointer-events-none absolute bottom-0 left-0 top-0'
+          className='bg-base-100 pointer-events-none absolute left-0 right-0 top-0'
           style={{
-            width: `${rulerStartPx}px`,
+            height: `${rulerStartPx}px`,
             opacity: fadeOpacity,
           }}
         />
 
-        {/* Right overlay */}
+        {/* Bottom overlay */}
         <div
-          className='bg-base-100 pointer-events-none absolute bottom-0 right-0 top-0'
+          className='bg-base-100 pointer-events-none absolute bottom-0 left-0 right-0'
           style={{
-            width: `${containerSize.width - rulerEndPx}px`,
+            height: `${containerSize.height - rulerEndPx}px`,
             opacity: fadeOpacity,
           }}
         />
 
-        {/* Vertical ruler */}
+        {/* Horizontal ruler */}
         <div
           className={clsx(
-            'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize touch-none rounded-2xl',
+            'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize touch-none rounded-2xl',
             color === 'transparent' ? 'border-base-content/55 border' : '',
           )}
           style={{
-            left: `${currentPosition}%`,
-            width: `${rulerSize}px`,
-            transform: 'translateX(-50%)',
-            transition: getTransitionStyle('left'),
+            top: `${currentPosition}%`,
+            height: `${rulerSize}px`,
+            transform: 'translateY(-50%)',
+            transition: getTransitionStyle('top'),
             ...(color === 'transparent'
               ? {
                   backgroundColor: baseColor,
@@ -358,64 +458,8 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           onPointerCancel={handlePointerUp}
         >
           {/* extended touch area */}
-          <div className='absolute inset-y-0 -left-2 -right-2 touch-none' />
+          <div className='absolute inset-x-0 -bottom-2 -top-2 touch-none' />
         </div>
-      </div>
-    );
-  }
-
-  // Horizontal ruler (default - moves up/down)
-  return (
-    <div
-      ref={containerRef}
-      className={clsx(
-        'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
-        isVisible ? 'opacity-100' : 'opacity-0',
-      )}
-      style={containerStyle}
-    >
-      {/* Top overlay */}
-      <div
-        className='bg-base-100 pointer-events-none absolute left-0 right-0 top-0'
-        style={{
-          height: `${rulerStartPx}px`,
-          opacity: fadeOpacity,
-        }}
-      />
-
-      {/* Bottom overlay */}
-      <div
-        className='bg-base-100 pointer-events-none absolute bottom-0 left-0 right-0'
-        style={{
-          height: `${containerSize.height - rulerEndPx}px`,
-          opacity: fadeOpacity,
-        }}
-      />
-
-      {/* Horizontal ruler */}
-      <div
-        className={clsx(
-          'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize touch-none rounded-2xl',
-          color === 'transparent' ? 'border-base-content/55 border' : '',
-        )}
-        style={{
-          top: `${currentPosition}%`,
-          height: `${rulerSize}px`,
-          transform: 'translateY(-50%)',
-          transition: getTransitionStyle('top'),
-          ...(color === 'transparent'
-            ? {
-                backgroundColor: baseColor,
-              }
-            : backdropFilterStyle),
-        }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        {/* Extended touch area */}
-        <div className='absolute inset-x-0 -bottom-2 -top-2 touch-none' />
       </div>
     </div>
   );
