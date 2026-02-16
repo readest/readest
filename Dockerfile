@@ -19,8 +19,18 @@ COPY --from=dependencies /app/apps/readest-app/node_modules /app/apps/readest-ap
 COPY --from=dependencies /app/apps/readest-app/public/vendor /app/apps/readest-app/public/vendor
 COPY --from=dependencies /app/packages/foliate-js/node_modules /app/packages/foliate-js/node_modules
 COPY . .
+
 WORKDIR /app/apps/readest-app
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_PLATFORM
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_OBJECT_STORAGE_TYPE
+ARG NEXT_PUBLIC_STORAGE_FIXED_QUOTA
+ARG NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA
+
 RUN pnpm build-web
+
 ENTRYPOINT ["pnpm", "start-web", "-H", "0.0.0.0"]
 EXPOSE 3000
 

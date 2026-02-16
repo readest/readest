@@ -1,4 +1,4 @@
-name: readest-selfhost
+name: readest
 
 services:
   db:
@@ -11,11 +11,6 @@ services:
       - ./volumes/db/init/schema.sql:/docker-entrypoint-initdb.d/init-scripts/100-schema.sql:Z
       - db-data:/var/lib/postgresql/data:Z
       - db-config:/etc/postgresql-custom
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
@@ -41,16 +36,11 @@ services:
       - "${KONG_HTTP_PORT}:8000/tcp"
     volumes:
       - ./volumes/api/kong.yml:/home/kong/temp.yml:ro,z
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
-      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
-      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
@@ -61,14 +51,6 @@ services:
     container_name: supabase-auth
     image: supabase/gotrue:v2.185.0
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
-      timeout: 5s
-      interval: 5s
-      retries: 3
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -97,9 +79,6 @@ services:
     container_name: supabase-rest
     image: postgrest/postgrest:v14.3
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
@@ -121,43 +100,37 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server --console-address ":9001" /data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
     volumes:
       - minio-data:/data:z
 
   minio-setup:
     image: minio/mc
-    depends_on:
-      minio:
-        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
       mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
       mc mb --ignore-existing myminio/${S3_BUCKET_NAME}
       "
 
-
   client:
     container_name: readest-client
     build:
       context: .
       target: build
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: http://localhost:7000
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+        NEXT_PUBLIC_APP_PLATFORM: web
+        NEXT_PUBLIC_API_BASE_URL: http://${HOST_IP}:3000
+        NEXT_PUBLIC_OBJECT_STORAGE_TYPE: s3
+        NEXT_PUBLIC_STORAGE_FIXED_QUOTA: ${STORAGE_FIXED_QUOTA}
+        NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA: ${TRANSLATION_FIXED_QUOTA}
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_SUPABASE_URL: http://kong:8000
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_ADMIN_KEY: ${SERVICE_ROLE_KEY}
-      NEXT_PUBLIC_APP_PLATFORM: web
-      NEXT_PUBLIC_API_BASE_URL: http://${HOST_IP}:3000
-      NEXT_PUBLIC_OBJECT_STORAGE_TYPE: s3
-      NEXT_PUBLIC_STORAGE_FIXED_QUOTA: ${STORAGE_FIXED_QUOTA}
-      NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA: ${TRANSLATION_FIXED_QUOTA}
       S3_ENDPOINT: http://localhost:9000
       S3_REGION: us-east-1
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}

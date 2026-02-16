@@ -1,3 +1,6 @@
+ALTER FUNCTION auth.uid() OWNER TO supabase_auth_admin;
+ALTER FUNCTION auth.role() OWNER TO supabase_auth_admin;
+
 CREATE TABLE public.books (
   user_id uuid NOT NULL,
   book_hash text NOT NULL,
