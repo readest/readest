@@ -114,7 +114,7 @@ services:
   client:
     container_name: readest-client
     build:
-      context: .
+      context: ..
       target: build
       args:
         NEXT_PUBLIC_SUPABASE_URL: http://localhost:7000
