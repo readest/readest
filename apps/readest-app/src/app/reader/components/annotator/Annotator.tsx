@@ -18,6 +18,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
+import { useReadwiseSync } from '../../hooks/useReadwiseSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { Position, TextSelection } from '@/utils/sel';
 import { getPopupPosition, getPosition, getTextFromRange } from '@/utils/sel';
@@ -51,6 +52,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { listenToNativeTouchEvents } = useDeviceControlStore();
 
   useNotesSync(bookKey);
+  useReadwiseSync(bookKey);
 
   const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;

@@ -2,6 +2,9 @@ import React from 'react';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
 import { TOCItem } from '@/libs/document';
 import { BooknoteGroup, BookNoteType } from '@/types/book';
@@ -12,8 +15,10 @@ const BooknoteView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ type, bookKey, toc }) => {
+  const _ = useTranslation();
   const { getConfig } = useBookDataStore();
   const { setActiveBooknoteType, setBooknoteResults } = useSidebarStore();
+  const { settings } = useSettingsStore();
   const config = getConfig(bookKey)!;
 
   const { booknotes: allNotes = [] } = config;
@@ -41,6 +46,10 @@ const BooknoteView: React.FC<{
     return a.id - b.id;
   });
 
+  const handleSendAllToReadwise = () => {
+    eventDispatcher.dispatch('readwise-push-all', { bookKey });
+  };
+
   const handleBrowseBookNotes = () => {
     if (booknotes.length === 0) return;
 
@@ -51,6 +60,13 @@ const BooknoteView: React.FC<{
 
   return (
     <div className='rounded pt-2'>
+      {settings.readwise?.enabled && booknotes.length > 0 && (
+        <div className='flex justify-end px-2 pb-1'>
+          <button className='btn btn-xs btn-outline' onClick={handleSendAllToReadwise}>
+            {_('Send All to Readwise')}
+          </button>
+        </div>
+      )}
       <ul role='tree' className='px-2'>
         {sortedGroups.map((group) => (
           <li key={group.href} className='p-2'>
