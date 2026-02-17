@@ -46,7 +46,6 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   color,
   bookFormat,
   viewSettings,
-  gridInsets,
 }) => {
   const { envConfig } = useEnv();
   const { getProgress } = useReaderStore();
@@ -292,11 +291,6 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
   const cssFilter = colorToFilter[color] || colorToFilter['yellow'];
 
-  // Insets based on orientation
-  const containerStyle = isVertical
-    ? { left: `${gridInsets.left}px`, right: `${gridInsets.right}px` }
-    : { top: `${gridInsets.top}px`, bottom: `${gridInsets.bottom}px` };
-
   const backdropFilterStyle = {
     backdropFilter: cssFilter,
     WebkitBackdropFilter: cssFilter,
@@ -315,7 +309,6 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
           isVisible ? 'opacity-100' : 'opacity-0',
         )}
-        style={containerStyle}
       >
         {/* Left overlay */}
         <div
@@ -372,7 +365,6 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-150 ease-out',
         isVisible ? 'opacity-100' : 'opacity-0',
       )}
-      style={containerStyle}
     >
       {/* Top overlay */}
       <div
