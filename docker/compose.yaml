@@ -121,7 +121,7 @@ services:
     container_name: readest-client
     build:
       context: ..
-      target: build
+      target: production-stage
       args:
         NEXT_PUBLIC_SUPABASE_URL: http://${HOST_IP}:7000
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
