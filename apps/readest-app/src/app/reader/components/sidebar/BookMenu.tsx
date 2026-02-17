@@ -19,6 +19,7 @@ import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { navigateToLogin } from '@/utils/nav';
 import { saveSysSettings } from '@/helpers/settings';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
+import { setReadwiseSettingsWindowVisible } from '@/app/reader/components/ReadwiseSettings';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import useBooksManager from '../../hooks/useBooksManager';
@@ -99,6 +100,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const showReadwiseSettingsWindow = () => {
+    setReadwiseSettingsWindowVisible(true);
+    setIsDropdownOpen?.(false);
+  };
+  const handlePushReadwise = () => {
+    eventDispatcher.dispatch('readwise-push-all', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
   const toggleDiscordPresence = () => {
     const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;
     saveSysSettings(envConfig, 'discordRichPresenceEnabled', discordRichPresenceEnabled);
@@ -166,6 +175,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
           <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
           <MenuItem label={_('Pull Progress')} onClick={handlePullKOSync} />
         </>
+      )}
+      <MenuItem label={_('Readwise Sync')} onClick={showReadwiseSettingsWindow} />
+      {settings.readwise?.enabled && (
+        <MenuItem label={_('Push Highlights to Readwise')} onClick={handlePushReadwise} />
       )}
       {appService?.isDesktopApp && (
         <>
