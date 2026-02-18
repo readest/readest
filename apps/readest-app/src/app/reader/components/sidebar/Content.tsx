@@ -38,7 +38,7 @@ const SidebarContent: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
-  // reset to toc if history tab was active but AI is now disabled
+  // reset to toc if AI tabs were active but AI is now disabled
   useEffect(() => {
     if ((activeTab === 'history' || targetTab === 'history') && !aiEnabled) {
       setActiveTab('toc');

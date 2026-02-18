@@ -6,7 +6,8 @@ interface AIChatState {
   activeConversationId: string | null;
   conversations: AIConversation[];
   messages: AIMessage[];
-  isLoadingHistory: boolean;
+  isLoadingConversations: boolean;
+  isLoadingMessages: boolean;
   currentBookHash: string | null;
 
   loadConversations: (bookHash: string) => Promise<void>;
@@ -26,41 +27,42 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
   activeConversationId: null,
   conversations: [],
   messages: [],
-  isLoadingHistory: false,
+  isLoadingConversations: false,
+  isLoadingMessages: false,
   currentBookHash: null,
 
   loadConversations: async (bookHash: string) => {
     if (get().currentBookHash === bookHash && get().conversations.length > 0) {
       return;
     }
-    set({ isLoadingHistory: true });
+    set({ isLoadingConversations: true });
     try {
       const conversations = await aiStore.getConversations(bookHash);
       set({
         conversations,
         currentBookHash: bookHash,
-        isLoadingHistory: false,
+        isLoadingConversations: false,
       });
     } catch {
-      set({ isLoadingHistory: false });
+      set({ isLoadingConversations: false });
     }
   },
 
   setActiveConversation: async (id: string | null) => {
     if (id === null) {
-      set({ activeConversationId: null, messages: [] });
+      set({ activeConversationId: null, messages: [], isLoadingMessages: false });
       return;
     }
-    set({ isLoadingHistory: true });
+    set({ activeConversationId: id, messages: [], isLoadingMessages: true });
     try {
       const messages = await aiStore.getMessages(id);
       set({
         activeConversationId: id,
         messages,
-        isLoadingHistory: false,
+        isLoadingMessages: false,
       });
     } catch {
-      set({ activeConversationId: id, messages: [], isLoadingHistory: false });
+      set({ activeConversationId: id, messages: [], isLoadingMessages: false });
     }
   },
 
