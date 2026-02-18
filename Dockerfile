@@ -13,6 +13,12 @@ FROM base AS dependencies
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm --filter @readest/readest-app setup-vendors
 
+FROM dependencies AS development-stage
+COPY . .
+WORKDIR /app/apps/readest-app
+EXPOSE 3000
+ENTRYPOINT ["pnpm", "dev-web", "-H", "0.0.0.0"]
+
 FROM base AS build
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY

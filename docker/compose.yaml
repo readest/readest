@@ -133,6 +133,14 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+#    to enable hot reload, mount the source code as a volume, and artifacts as anon volumes
+#    volumes:
+#      - ../:/app
+#      - /app/node_modules
+#      - /app/apps/readest-app/node_modules
+#      - /app/apps/readest-app/public/vendor
+#      - /app/apps/readest-app/.next
+#      - /app/packages/foliate-js/node_modules
     environment:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${ANON_KEY}
