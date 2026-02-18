@@ -3,7 +3,7 @@ name: Create and Push Docker Image
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -39,6 +39,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.REPO }}:master
+          tags: ${{ env.REGISTRY }}/${{ env.REPO }}:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
