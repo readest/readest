@@ -12,6 +12,7 @@ import { getViewInsets } from '@/utils/insets';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
+import BookSessionTracker from './BookSessionTracker';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import PageNavigationButtons from './PageNavigationButtons';
@@ -23,6 +24,7 @@ import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
+import StatisticsDebug from './StatisticsDebug';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -83,6 +85,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
       role='main'
       aria-label={_('Books Content')}
     >
+      {/* TODO: Remove StatisticsDebug before production */}
+      {process.env['NODE_ENV'] === 'development' && <StatisticsDebug />}
       {bookKeys.map((bookKey, index) => {
         const bookData = getBookData(bookKey);
         const config = getConfig(bookKey);
@@ -118,6 +122,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
               appService?.hasRoundedWindow && 'rounded-window',
             )}
           >
+            <BookSessionTracker bookKey={bookKey} />
             {isBookmarked && !hoveredBookKey && <Ribbon width={`${horizontalGapPercent}%`} />}
             <HeaderBar
               bookKey={bookKey}
