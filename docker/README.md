@@ -3,7 +3,7 @@
 ## Stack
 
 | service         | Image                       | Description                                       |
-|-----------------|-----------------------------|---------------------------------------------------|
+| --------------- | --------------------------- | ------------------------------------------------- |
 | **client**      | from `../Dockerfile`        | readest frontend                                  |
 | **db**          | `supabase/postgres`         | psql db with supabase extensions                  |
 | **kong**        | `kong:2.8.1`                | api gateway routing requests to supabase services |
@@ -15,12 +15,12 @@
 ### Exposed ports
 
 | Port   | Service          |
-|--------|------------------|
+| ------ | ---------------- |
 | `3000` | readest          |
 | `7000` | kong API gateway |
 | `9000` | MinIO S3 API     |
 | `9001` | MinIO console UI |
- 
+
 ---
 
 ## Running with Docker/Podman Compose
