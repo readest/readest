@@ -68,6 +68,18 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const rulerSize = calculateRulerSize(lines, viewSettings, bookFormat);
   const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
 
+  const clampPosition = useCallback(
+    (pos: number, dimension: number) => {
+      if (dimension <= 0) return Math.max(0, Math.min(100, pos));
+      const halfPct = (rulerSize / 2 / dimension) * 100;
+      if (halfPct >= 50) return 50;
+      const min = halfPct;
+      const max = 100 - halfPct;
+      return Math.max(min, Math.min(max, pos));
+    },
+    [rulerSize],
+  );
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const throttledSave = useCallback(
     throttle((pos: number) => {
@@ -186,9 +198,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         : (viewSettings.marginTopPx ?? 44);
 
       const offset = textPosition ?? defaultOffset;
-      const targetPosition = Math.max(
-        5,
-        Math.min(95, ((offset + rulerSize / 2) / containerDimension) * 100),
+      const targetPosition = clampPosition(
+        ((offset + rulerSize / 2) / containerDimension) * 100,
+        containerDimension,
       );
 
       // Clear any existing animation timeout
@@ -251,15 +263,15 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
       if (isVertical) {
         const relativeX = e.clientX - rect.left;
-        newPosition = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
+        newPosition = clampPosition((relativeX / rect.width) * 100, rect.width);
       } else {
         const relativeY = e.clientY - rect.top;
-        newPosition = Math.max(0, Math.min(100, (relativeY / rect.height) * 100));
+        newPosition = clampPosition((relativeY / rect.height) * 100, rect.height);
       }
       setCurrentPosition(newPosition);
       currentPositionRef.current = newPosition;
     },
-    [isVertical],
+    [isVertical, clampPosition],
   );
 
   const handlePointerUp = useCallback(
@@ -271,6 +283,17 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     },
     [currentPosition, throttledSave],
   );
+
+  useEffect(() => {
+    const dimension = isVertical ? containerSize.width : containerSize.height;
+    if (!dimension || isDragging.current) return;
+    const clamped = clampPosition(currentPositionRef.current, dimension);
+    if (clamped !== currentPositionRef.current) {
+      setCurrentPosition(clamped);
+      currentPositionRef.current = clamped;
+      throttledSave(clamped);
+    }
+  }, [containerSize.width, containerSize.height, isVertical, clampPosition, throttledSave]);
 
   const fadeOpacity = Math.min(0.9, opacity);
 
