@@ -146,10 +146,15 @@ export class TxtToEpubConverter {
     const metadata = { bookTitle, author, language, identifier };
 
     const fallbackParagraphsPerChapter = 100;
-    let chapters = await this.extractChaptersFromFileBySegments(txtFile, runtimeEncoding, metadata, {
-      linesBetweenSegments: 8,
-      fallbackParagraphsPerChapter,
-    });
+    let chapters = await this.extractChaptersFromFileBySegments(
+      txtFile,
+      runtimeEncoding,
+      metadata,
+      {
+        linesBetweenSegments: 8,
+        fallbackParagraphsPerChapter,
+      },
+    );
 
     if (chapters.length === 0) {
       throw new Error('No chapters detected.');
@@ -190,7 +195,12 @@ export class TxtToEpubConverter {
     const chapters: Chapter[] = [];
     const segments = txtContent.split(segmentRegex);
     for (const segment of segments) {
-      const segmentChapters = this.extractChaptersFromSegment(segment, metadata, option, chapters.length);
+      const segmentChapters = this.extractChaptersFromSegment(
+        segment,
+        metadata,
+        option,
+        chapters.length,
+      );
       chapters.push(...segmentChapters);
     }
 
@@ -229,7 +239,12 @@ export class TxtToEpubConverter {
       encoding,
       option.linesBetweenSegments,
     )) {
-      const segmentChapters = this.extractChaptersFromSegment(segment, metadata, option, chapters.length);
+      const segmentChapters = this.extractChaptersFromSegment(
+        segment,
+        metadata,
+        option,
+        chapters.length,
+      );
       chapters.push(...segmentChapters);
     }
     return chapters;
@@ -265,7 +280,9 @@ export class TxtToEpubConverter {
       if (file.size > headSampleSize * 2) {
         const midSampleSize = Math.min(ENCODING_MID_SAMPLE_BYTES, file.size - headSampleSize);
         const midSampleStart = Math.floor((file.size - midSampleSize) / 2);
-        const midBuffer = await file.slice(midSampleStart, midSampleStart + midSampleSize).arrayBuffer();
+        const midBuffer = await file
+          .slice(midSampleStart, midSampleStart + midSampleSize)
+          .arrayBuffer();
         this.assertStrictUtf8Sample(new Uint8Array(midBuffer));
       }
       return 'utf-8';
