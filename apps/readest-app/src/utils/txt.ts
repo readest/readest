@@ -414,7 +414,7 @@ export class TxtToEpubConverter {
     }
   }
 
-  private *iterateSegmentsFromTextChunks(
+  *iterateSegmentsFromTextChunks(
     chunks: Iterable<string>,
     linesBetweenSegments: number,
   ): Generator<string> {
