@@ -60,6 +60,14 @@ declare global {
 
 const OS_TYPE = osType();
 
+const safeDecodePath = (input: string) => {
+  try {
+    return decodeURI(input);
+  } catch {
+    return input;
+  }
+};
+
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
 // 1. If custom root dir is set, use it as base dir (baseDir = 0)
@@ -193,12 +201,13 @@ export const nativeFileSystem: FileSystem = {
     return this.getURL(path);
   },
   async openFile(path: string, base: BaseDir, name?: string) {
-    const { fp, baseDir } = this.resolvePath(path, base);
-    let fname = name || getFilename(fp);
+    const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
+    const { fp, baseDir } = this.resolvePath(normalizedPath, base);
+    let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
       return await new RemoteFile(path, fname).open();
     } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
-      fname = await basename(path);
+      fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
         // we can access it directly using the path — no need to copy.
@@ -219,9 +228,10 @@ export const nativeFileSystem: FileSystem = {
     } else if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else {
-      if (OS_TYPE === 'android') {
+      if (OS_TYPE === 'android' || OS_TYPE === 'ios') {
         // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
         // see https://issues.chromium.org/issues/40739128
+        // On iOS, importing picker Inbox files should also use NativeFile to avoid fetch/HEAD issues.
         return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       } else {
         // NOTE: RemoteFile currently performs about 2× faster than NativeFile
@@ -514,7 +524,8 @@ export class NativeAppService extends BaseAppService {
       multiple: true,
       filters: [{ name, extensions }],
     });
-    return Array.isArray(selected) ? selected : selected ? [selected] : [];
+    const files = Array.isArray(selected) ? selected : selected ? [selected] : [];
+    return OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
   }
 
   async saveFile(
