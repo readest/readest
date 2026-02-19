@@ -4,7 +4,7 @@ import {
   TxtConverterWorkerResponse,
 } from '../utils/txt-worker-protocol';
 
-const workerContext: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
+const workerContext: DedicatedWorkerGlobalScope = self as unknown as DedicatedWorkerGlobalScope;
 
 workerContext.onmessage = async (event: MessageEvent<TxtConverterWorkerRequest>) => {
   if (event.data.type !== 'convert') return;

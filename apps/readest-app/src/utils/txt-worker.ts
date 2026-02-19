@@ -1,4 +1,5 @@
 import { TxtToEpubConverter } from './txt';
+import { getOSPlatform } from './misc';
 import {
   TxtConverterWorkerRequest,
   TxtConverterWorkerResponse,
@@ -12,6 +13,7 @@ interface ConvertTxtToEpubOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
+const LARGE_TXT_WORKER_BYPASS_BYTES = 16 * 1024 * 1024;
 
 const convertTxtToEpubOnMainThread = async (options: ConvertTxtToEpubOptions) => {
   const converter = new TxtToEpubConverter();
@@ -87,6 +89,13 @@ const convertTxtToEpubInWorker = async (options: ConvertTxtToEpubOptions) => {
 };
 
 export const convertTxtToEpubWithFallback = async (options: ConvertTxtToEpubOptions) => {
+  const os = typeof navigator !== 'undefined' ? getOSPlatform() : 'unknown';
+  const shouldBypassWorker =
+    (os === 'ios' && options.file.size > LARGE_TXT_WORKER_BYPASS_BYTES) || typeof Worker === 'undefined';
+  if (shouldBypassWorker) {
+    return await convertTxtToEpubOnMainThread(options);
+  }
+
   try {
     return await convertTxtToEpubInWorker(options);
   } catch (error) {
