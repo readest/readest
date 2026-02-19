@@ -44,7 +44,6 @@ const HEADER_TEXT_MAX_CHARS = 1024;
 const HEADER_TEXT_MAX_BYTES = 128 * 1024;
 const ENCODING_HEAD_SAMPLE_BYTES = 64 * 1024;
 const ENCODING_MID_SAMPLE_BYTES = 8192;
-const LARGE_FILE_READ_CHUNK_BYTES = 512 * 1024;
 
 const escapeXml = (str: string) => {
   if (!str) return '';
@@ -375,18 +374,55 @@ export class TxtToEpubConverter {
     encoding: string,
     linesBetweenSegments: number,
   ): AsyncGenerator<string> {
+    const reader = file.stream().getReader();
     const decoder = new TextDecoder(encoding);
     const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
     let pending = '';
-    let offset = 0;
+    let completed = false;
 
-    while (offset < file.size) {
-      const nextOffset = Math.min(file.size, offset + LARGE_FILE_READ_CHUNK_BYTES);
-      const chunk = await file.slice(offset, nextOffset).arrayBuffer();
-      offset = nextOffset;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          completed = true;
+          break;
+        }
+        if (!value) continue;
+        pending += decoder.decode(value, { stream: true });
+        const consumed = this.consumeCompleteSegments(pending, segmentRegex);
+        pending = consumed.pending;
+        for (const segment of consumed.segments) {
+          yield segment;
+        }
+      }
 
-      if (chunk.byteLength === 0) break;
-      pending += decoder.decode(chunk, { stream: offset < file.size });
+      pending += decoder.decode();
+      const consumed = this.consumeCompleteSegments(pending, segmentRegex);
+      for (const segment of consumed.segments) {
+        yield segment;
+      }
+      if (consumed.pending) {
+        yield consumed.pending;
+      }
+    } finally {
+      if (!completed) {
+        try {
+          await reader.cancel();
+        } catch {}
+      }
+      reader.releaseLock();
+    }
+  }
+
+  private *iterateSegmentsFromTextChunks(
+    chunks: Iterable<string>,
+    linesBetweenSegments: number,
+  ): Generator<string> {
+    const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
+    let pending = '';
+
+    for (const chunk of chunks) {
+      pending += chunk;
       const consumed = this.consumeCompleteSegments(pending, segmentRegex);
       pending = consumed.pending;
       for (const segment of consumed.segments) {
@@ -394,13 +430,8 @@ export class TxtToEpubConverter {
       }
     }
 
-    pending += decoder.decode();
-    const consumed = this.consumeCompleteSegments(pending, segmentRegex);
-    for (const segment of consumed.segments) {
-      yield segment;
-    }
-    if (consumed.pending) {
-      yield consumed.pending;
+    if (pending) {
+      yield pending;
     }
   }
 
