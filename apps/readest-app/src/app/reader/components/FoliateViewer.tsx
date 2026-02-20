@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BookDoc, getDirection } from '@/libs/document';
+import { blobToDataURL, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
@@ -10,7 +10,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
+import { useMouseEvent, useTouchEvent, useIframeEvent } from '../hooks/useIframeEvents';
 import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
@@ -62,6 +62,7 @@ import { getLocale } from '@/utils/misc';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import { ParagraphControl } from './paragraph';
+import ImageViewer from './ImageViewer';
 
 declare global {
   interface Window {
@@ -288,6 +289,16 @@ const FoliateViewer: React.FC<{
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip, handleContinuousScroll);
   const touchHandlers = useTouchEvent(bookKey, handlePageFlip, handleContinuousScroll);
 
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  useIframeEvent(async (src: string) => {
+    try {
+      const dataUrl = await blobToDataURL(src);
+      setSelectedImage(dataUrl);
+    } catch (error) {
+      console.error('Failed to load image:', error);
+    }
+  });
+
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
     onRelocate: progressRelocateHandler,
@@ -501,6 +512,7 @@ const FoliateViewer: React.FC<{
 
   return (
     <>
+      <ImageViewer src={selectedImage} key={selectedImage} onClose={() => setSelectedImage(null)} />
       <div
         ref={containerRef}
         tabIndex={-1}

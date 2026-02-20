@@ -5,6 +5,18 @@ import { debounce } from '@/utils/debounce';
 import { ScrollSource } from './usePagination';
 import { eventDispatcher } from '@/utils/event';
 
+export const useIframeEvent = (callback: (src: string) => void) => {
+  useEffect(() => {
+    const handleMessage = (msg: MessageEvent) => {
+      if (msg.data?.type === 'imageLongPress') {
+        callback(msg.data.src);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [callback]);
+};
+
 export const useMouseEvent = (
   bookKey: string,
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
