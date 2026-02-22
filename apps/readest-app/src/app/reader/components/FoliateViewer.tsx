@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { blobToDataURL, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
@@ -10,7 +10,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent, useIframeEvent } from '../hooks/useIframeEvents';
+import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
 import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
@@ -248,6 +248,7 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
+        addImageLongPressListeners(detail.doc);
       }
     }
   };
@@ -290,14 +291,80 @@ const FoliateViewer: React.FC<{
   const touchHandlers = useTouchEvent(bookKey, handlePageFlip, handleContinuousScroll);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  useIframeEvent(async (src: string) => {
+  const handleImagePress = useCallback(async (src: string) => {
     try {
       const dataUrl = await blobToDataURL(src);
       setSelectedImage(dataUrl);
     } catch (error) {
       console.error('Failed to load image:', error);
     }
-  });
+  }, []); // No dependencies needed if blobToDataURL is static
+
+  const addImageLongPressListeners = useCallback(
+    (doc: Document) => {
+      const longPressDuration = 500;
+      const pressTimers = new Map<Element, ReturnType<typeof setTimeout>>();
+
+      const handleLongPress = (event: Event) => {
+        event.preventDefault?.();
+        const target = event.target as HTMLImageElement;
+        if (target.tagName === 'IMG') {
+          handleImagePress(target.src);
+        }
+      };
+
+      const startPress = (event: Event) => {
+        const target = event.target as HTMLImageElement;
+        if (target.tagName !== 'IMG') return;
+
+        clearTimeout(pressTimers.get(target));
+        const timer = setTimeout(() => handleLongPress(event), longPressDuration);
+        pressTimers.set(target, timer);
+      };
+
+      const cancelPress = (event: Event) => {
+        const target = event.target as HTMLImageElement;
+        if (target.tagName !== 'IMG') return;
+
+        clearTimeout(pressTimers.get(target));
+        pressTimers.delete(target);
+      };
+
+      const processImages = () => {
+        const images = doc.querySelectorAll('img');
+        images.forEach((img) => {
+          if (!img.hasAttribute('data-long-press-added')) {
+            img.setAttribute('data-long-press-added', 'true');
+            img.addEventListener('mousedown', startPress);
+            img.addEventListener('mouseup', cancelPress);
+            img.addEventListener('mouseleave', cancelPress);
+            img.addEventListener('touchstart', startPress, { passive: true });
+            img.addEventListener('touchend', cancelPress);
+            img.addEventListener('touchmove', cancelPress);
+          }
+        });
+      };
+
+      processImages();
+
+      const observer = new MutationObserver((mutations) => {
+        const hasNewImages = mutations.some(
+          (m) => m.type === 'childList' && m.addedNodes.length > 0,
+        );
+        if (hasNewImages) {
+          processImages();
+        }
+      });
+
+      observer.observe(doc.body, { childList: true, subtree: true });
+
+      return () => {
+        observer.disconnect();
+        pressTimers.forEach((timer) => clearTimeout(timer));
+      };
+    },
+    [handleImagePress],
+  );
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,

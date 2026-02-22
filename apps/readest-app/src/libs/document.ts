@@ -287,6 +287,11 @@ export const getMimeTypeFromFileExt = (ext: string): string => {
 export const blobToDataURL = async (blobUrl: string): Promise<string> => {
   try {
     const response = await fetch(blobUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch blob from "${blobUrl}": ${response.status} ${response.statusText}`,
+      );
+    }
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

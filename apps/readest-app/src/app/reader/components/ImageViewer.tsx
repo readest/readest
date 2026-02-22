@@ -99,7 +99,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
   const handleMouseUp = () => setIsDragging(false);
 
   const onTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
     const touches = e.touches;
 
     if (touches.length === 1 && scale > 1) {
@@ -125,7 +124,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
     const touches = e.touches;
 
     if (touches.length === 1 && scale > 1 && isDragging) {
@@ -229,7 +227,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
     <div
       ref={containerRef}
       tabIndex={-1}
-      role='presentation'
+      role='button'
       aria-label='Image viewer'
       className='fixed inset-0 z-50 flex items-center justify-center outline-none'
       onKeyDown={handleKeyDown}
@@ -283,7 +281,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
           alt='Zoomed'
           className='h-[90vh] max-h-[90vh] w-[90vw] max-w-[90vw] transform-gpu select-none object-contain'
           draggable={false}
-          // Image from nextJS doesnt work with widht={null}
+          // Image from nextJS doesnt work with width={null}
           width={0}
           height={0}
           sizes='100vw'
