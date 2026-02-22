@@ -1019,5 +1019,11 @@
   "Books": "書籍",
   "Groups": "グループ",
   "Back to TTS Location": "TTSの位置に戻る",
-  "Metadata": "メタデータ"
+  "Metadata": "メタデータ",
+  "Image viewer": "画像ビューア",
+  "Previous Image": "前の画像",
+  "Next Image": "次の画像",
+  "Zoomed": "ズーム済み",
+  "Zoom level": "ズームレベル",
+  "Table viewer": "テーブルビューア"
 }

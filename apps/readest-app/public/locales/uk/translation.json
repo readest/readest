@@ -1055,5 +1055,11 @@
   "Books": "Книги",
   "Groups": "Групи",
   "Back to TTS Location": "Повернутися до розташування TTS",
-  "Metadata": "Метадані"
+  "Metadata": "Метадані",
+  "Image viewer": "Переглядач зображень",
+  "Previous Image": "Попереднє зображення",
+  "Next Image": "Наступне зображення",
+  "Zoomed": "Збільшено",
+  "Zoom level": "Рівень масштабу",
+  "Table viewer": "Переглядач таблиць"
 }

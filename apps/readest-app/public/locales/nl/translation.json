@@ -1031,5 +1031,11 @@
   "Books": "Boeken",
   "Groups": "Groepen",
   "Back to TTS Location": "Terug naar TTS-locatie",
-  "Metadata": "Metadata"
+  "Metadata": "Metadata",
+  "Image viewer": "Afbeeldingenviewer",
+  "Previous Image": "Vorige afbeelding",
+  "Next Image": "Volgende afbeelding",
+  "Zoomed": "Gezoomd",
+  "Zoom level": "Zoomniveau",
+  "Table viewer": "Tabelviewer"
 }

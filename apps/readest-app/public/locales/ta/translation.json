@@ -1031,5 +1031,11 @@
   "Books": "புத்தகங்கள்",
   "Groups": "குழுக்கள்",
   "Back to TTS Location": "TTS இடத்திற்குத் திரும்பு",
-  "Metadata": "மெட்டாடேட்டா"
+  "Metadata": "மெட்டாடேட்டா",
+  "Image viewer": "படக் காட்சிப்பவர்",
+  "Previous Image": "முந்தைய படம்",
+  "Next Image": "அடுத்த படம்",
+  "Zoomed": "பெரிதாக்கப்பட்டது",
+  "Zoom level": "பெரிதாக்கும் நிலை",
+  "Table viewer": "அட்டவணை காட்சிப்பவர்"
 }

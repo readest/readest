@@ -1043,5 +1043,11 @@
   "Reveal in Finder": "הצג ב-Finder",
   "Reveal in File Explorer": "הצג בסייר הקבצים",
   "Reveal in Folder": "הצג בתיקייה",
-  "Metadata": "מטא-נתונים"
+  "Metadata": "מטא-נתונים",
+  "Image viewer": "מציג תמונות",
+  "Previous Image": "תמונה הקודמת",
+  "Next Image": "תמונה הבאה",
+  "Zoomed": "בזום",
+  "Zoom level": "רמת זום",
+  "Table viewer": "מציג טבלאות"
 }

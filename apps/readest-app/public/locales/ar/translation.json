@@ -1079,5 +1079,11 @@
   "Books": "الكتب",
   "Groups": "المجموعات",
   "Back to TTS Location": "العودة إلى موقع القراءة الآلية",
-  "Metadata": "بيانات وصفية"
+  "Metadata": "بيانات وصفية",
+  "Image viewer": "عارض الصور",
+  "Previous Image": "الصورة السابقة",
+  "Next Image": "الصورة التالية",
+  "Zoomed": "مكبّر",
+  "Zoom level": "مستوى التكبير",
+  "Table viewer": "عارض الجداول"
 }

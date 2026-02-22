@@ -1,11 +1,15 @@
 import clsx from 'clsx';
 import React, { useState, useRef, useEffect } from 'react';
-import { IoClose, IoExpand } from 'react-icons/io5';
 import Image from 'next/image';
+import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { useTranslation } from '@/hooks/useTranslation';
+import ZoomControls from './ZoomControls';
 
 interface ImageViewerProps {
   src: string | null;
   onClose: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
 }
 
 const MIN_SCALE = 0.5;
@@ -14,21 +18,106 @@ const ZOOM_SPEED = 0.1;
 const MOBILE_ZOOM_SPEED = 0.001;
 const ZOOM_BIAS = 1.05;
 
-const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
+const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose, onPrevious, onNext }) => {
+  const _ = useTranslation();
   const [scale, setScale] = useState(1);
   const [zoomSpeed, setZoomSpeed] = useState(0.1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [showZoomLabel, setShowZoomLabel] = useState(true);
   const lastTouchDistance = useRef<number>(0);
   const dragStart = useRef({ x: 0, y: 0 });
+  const wasDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hideZoomLabelAfterDelay = () => {
+    if (zoomLabelTimeoutRef.current) {
+      clearTimeout(zoomLabelTimeoutRef.current);
+    }
+    setShowZoomLabel(true);
+    zoomLabelTimeoutRef.current = setTimeout(() => {
+      setShowZoomLabel(false);
+    }, 2000);
+  };
+
+  const handleZoomIn = () => {
+    const newScale = Math.min(scale + ZOOM_SPEED, MAX_SCALE);
+    setScale(newScale);
+    setZoomSpeed(ZOOM_SPEED * ZOOM_BIAS * newScale);
+    hideZoomLabelAfterDelay();
+  };
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(scale - ZOOM_SPEED, MIN_SCALE);
+    if (newScale <= 1) {
+      setPosition({ x: 0, y: 0 });
+      setScale(newScale);
+      setZoomSpeed(ZOOM_SPEED);
+    } else {
+      setScale(newScale);
+      setZoomSpeed(ZOOM_SPEED * ZOOM_BIAS * newScale);
+    }
+    hideZoomLabelAfterDelay();
+  };
+
+  const handleResetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setZoomSpeed(ZOOM_SPEED);
+    hideZoomLabelAfterDelay();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
+
     if (e.key === 'Escape') {
       onClose();
+      return;
+    }
+
+    // Arrow key navigation
+    if (e.key === 'ArrowLeft' && onPrevious) {
+      e.preventDefault();
+      handlePreviousImage();
+      return;
+    }
+
+    if (e.key === 'ArrowRight' && onNext) {
+      e.preventDefault();
+      handleNextImage();
+      return;
+    }
+
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+    if (isCtrlOrCmd) {
+      e.preventDefault();
+
+      if (e.key === '=' || e.key === '+') {
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        handleZoomOut();
+      } else if (e.key === '0') {
+        handleResetZoom();
+      }
     }
   };
-  const imageRef = useRef<HTMLImageElement>(null);
+
+  const handlePreviousImage = () => {
+    if (onPrevious) {
+      onPrevious();
+      hideZoomLabelAfterDelay();
+    }
+  };
+
+  const handleNextImage = () => {
+    if (onNext) {
+      onNext();
+      hideZoomLabelAfterDelay();
+    }
+  };
 
   const getZoomedOffset = (
     anchorX: number,
@@ -44,12 +133,29 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
     };
   };
 
-  // Grab Focus of modal
+  // Grab Focus of modal and set up initial zoom label timeout
   useEffect(() => {
     containerRef.current?.focus();
+    setTimeout(() => {
+      hideZoomLabelAfterDelay();
+    }, 0);
+
+    return () => {
+      if (zoomLabelTimeoutRef.current) {
+        clearTimeout(zoomLabelTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleWheel = (e: React.WheelEvent) => {
+    // Only zoom when Ctrl/Cmd is pressed for consistency with browser behavior
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+    if (!isCtrlOrCmd) {
+      // Allow default behavior (no zoom without modifier)
+      return;
+    }
+
     e.preventDefault();
 
     const rect = containerRef.current?.getBoundingClientRect();
@@ -63,6 +169,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
       setPosition({ x: 0, y: 0 });
       setScale(newScale);
       setZoomSpeed(ZOOM_SPEED);
+      hideZoomLabelAfterDelay();
       return;
     }
 
@@ -76,27 +183,36 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
 
     setScale(newScale);
     setZoomSpeed(newZoom);
+    hideZoomLabelAfterDelay();
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleImageMouseDown = (e: React.MouseEvent) => {
     if (isDragging || scale <= 1) return;
+    e.stopPropagation();
     e.preventDefault();
 
     setIsDragging(true);
+    wasDragging.current = false;
     dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleImageMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || scale <= 1) return;
     e.preventDefault();
 
+    wasDragging.current = true;
     const newX = e.clientX - dragStart.current.x;
     const newY = e.clientY - dragStart.current.y;
 
     setPosition({ x: newX, y: newY });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleImageMouseUp = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.stopPropagation();
+    }
+    setIsDragging(false);
+  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touches = e.touches;
@@ -104,6 +220,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
     if (touches.length === 1 && scale > 1) {
       // Pan Start
       setIsDragging(true);
+      wasDragging.current = false;
       const touch = touches[0];
       if (!touch) return;
       dragStart.current = {
@@ -113,6 +230,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
     } else if (touches.length === 2) {
       // Pinch Start
       setIsDragging(true);
+      wasDragging.current = false;
       const touch1 = touches[0];
       const touch2 = touches[1];
       if (!touch1 || !touch2) return;
@@ -128,6 +246,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
 
     if (touches.length === 1 && scale > 1 && isDragging) {
       // Pan
+      wasDragging.current = true;
       const touch = touches[0];
       if (!touch) return;
 
@@ -139,6 +258,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
       });
     } else if (touches.length === 2) {
       // Pinch
+      wasDragging.current = true;
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
@@ -197,10 +317,12 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
     setZoomSpeed(ZOOM_SPEED);
+    hideZoomLabelAfterDelay();
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
 
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -214,9 +336,31 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
         return getZoomedOffset(mouseX, mouseY, scale, newScale, prevPos);
       });
       setScale(newScale);
+      hideZoomLabelAfterDelay();
     } else {
       handleReset();
     }
+  };
+
+  const handleContainerClick = () => {
+    if (wasDragging.current) {
+      wasDragging.current = false;
+      return;
+    }
+    onClose();
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent closing when clicking on the image
+    e.stopPropagation();
+
+    // Don't toggle label if user was dragging
+    if (wasDragging.current) {
+      wasDragging.current = false;
+      return;
+    }
+
+    setShowZoomLabel((prev) => !prev);
   };
 
   const cursorStyle = scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default';
@@ -228,15 +372,10 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
       ref={containerRef}
       tabIndex={-1}
       role='button'
-      aria-label='Image viewer'
+      aria-label={_('Image viewer')}
       className='fixed inset-0 z-50 flex items-center justify-center outline-none'
       onKeyDown={handleKeyDown}
       onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onDoubleClick={onDoubleClick}
       onTouchMove={onTouchMove}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -244,48 +383,73 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
       <div
         role='button'
         tabIndex={0}
-        className='absolute inset-0 bg-black/50 backdrop-blur-md'
-        onClick={onClose}
+        className='not-eink:bg-black/50 eink:bg-base-100 not-eink:backdrop-blur-md absolute inset-0'
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             onClose();
           }
         }}
       />
-      <div className='absolute right-4 top-4 z-10 grid grid-cols-1 gap-4 text-white'>
-        <button
-          onClick={onClose}
-          className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/50 transition-colors hover:bg-black/70'
-          aria-label='Close'
-        >
-          <IoClose className='h-6 w-6' />
-        </button>
+      <ZoomControls
+        onClose={onClose}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onReset={handleReset}
+      />
 
+      {onPrevious && showZoomLabel && (
         <button
-          onClick={handleReset}
-          className='flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/50 transition-colors hover:bg-black/70'
-          aria-label='Reset'
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePreviousImage();
+          }}
+          className='eink-bordered absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white transition-all duration-300 hover:bg-black/70'
+          aria-label={_('Previous Image')}
+          title={_('Previous Image')}
         >
-          <IoExpand className='h-6 w-6' />
+          <IoChevronBack className='h-8 w-8' />
         </button>
-      </div>
+      )}
+
+      {onNext && showZoomLabel && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNextImage();
+          }}
+          className='eink-bordered absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white transition-all duration-300 hover:bg-black/70'
+          aria-label={_('Next Image')}
+          title={_('Next Image')}
+        >
+          <IoChevronForward className='h-8 w-8' />
+        </button>
+      )}
 
       <div
-        className={clsx(
-          'relative flex max-h-[90vh] max-w-[90vw] items-center justify-center overflow-hidden',
-        )}
+        role='none'
+        className={clsx('relative flex h-full w-full items-center justify-center overflow-hidden')}
+        onClick={handleContainerClick}
       >
         <Image
           src={decodeURIComponent(src)}
           ref={imageRef}
-          alt='Zoomed'
-          className='h-[90vh] max-h-[90vh] w-[90vw] max-w-[90vw] transform-gpu select-none object-contain'
+          alt={_('Zoomed')}
+          className='transform-gpu select-none object-contain'
           draggable={false}
-          // Image from nextJS doesnt work with width={null}
           width={0}
           height={0}
           sizes='100vw'
+          onClick={handleImageClick}
+          onMouseDown={handleImageMouseDown}
+          onMouseMove={handleImageMouseMove}
+          onMouseUp={handleImageMouseUp}
+          onMouseLeave={handleImageMouseUp}
+          onDoubleClick={onDoubleClick}
           style={{
+            width: 'auto',
+            height: 'auto',
+            maxWidth: '100%',
+            maxHeight: '100%',
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
             transition: 'transform 0.05s ease-out',
             cursor: cursorStyle,
@@ -293,9 +457,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose }) => {
         />
       </div>
 
-      <div className='absolute left-1/2 top-12 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-sm text-white'>
-        {Math.round((scale * 100) / 5) * 5}%
-      </div>
+      {showZoomLabel && (
+        <div
+          aria-label={_('Zoom level')}
+          className='zoom-level-label eink-bordered not-eink:text-white not-eink:bg-black/50 pointer-events-none absolute left-1/2 top-12 -translate-x-1/2 rounded-full px-3 py-1 text-sm transition-opacity duration-300'
+        >
+          {Math.round((scale * 100) / 5) * 5}%
+        </div>
+      )}
     </div>
   );
 };

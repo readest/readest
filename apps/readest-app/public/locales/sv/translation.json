@@ -1031,5 +1031,11 @@
   "Books": "Böcker",
   "Groups": "Grupper",
   "Back to TTS Location": "Tillbaka till TTS-plats",
-  "Metadata": "Metadata"
+  "Metadata": "Metadata",
+  "Image viewer": "Bildvisare",
+  "Previous Image": "Föregående bild",
+  "Next Image": "Nästa bild",
+  "Zoomed": "Zoomad",
+  "Zoom level": "Zoomnivå",
+  "Table viewer": "Tabellvisare"
 }

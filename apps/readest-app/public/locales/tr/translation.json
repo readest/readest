@@ -1031,5 +1031,11 @@
   "Books": "Kitaplar",
   "Groups": "Gruplar",
   "Back to TTS Location": "TTS Konumuna Geri Dön",
-  "Metadata": "Meta veriler"
+  "Metadata": "Meta veriler",
+  "Image viewer": "Resim görüntüleyici",
+  "Previous Image": "Önceki Resim",
+  "Next Image": "Sonraki Resim",
+  "Zoomed": "Yakınlaştırıldı",
+  "Zoom level": "Yakınlaştırma düzeyi",
+  "Table viewer": "Tablo görüntüleyici"
 }

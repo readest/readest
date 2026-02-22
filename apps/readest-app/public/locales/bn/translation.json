@@ -1031,5 +1031,11 @@
   "Books": "বই",
   "Groups": "দল",
   "Back to TTS Location": "টিটিএস অবস্থানে ফিরে যান",
-  "Metadata": "মেটাডেটা"
+  "Metadata": "মেটাডেটা",
+  "Image viewer": "চিত্র প্রদর্শক",
+  "Previous Image": "পূর্ববর্তী চিত্র",
+  "Next Image": "পরবর্তী চিত্র",
+  "Zoomed": "জুম করা হয়েছে",
+  "Zoom level": "জুম স্তর",
+  "Table viewer": "টেবিল প্রদর্শক"
 }

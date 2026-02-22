@@ -1019,5 +1019,11 @@
   "Books": "書籍",
   "Groups": "分組",
   "Back to TTS Location": "回到朗讀位置",
-  "Metadata": "元數據"
+  "Metadata": "元數據",
+  "Image viewer": "圖片檢視器",
+  "Previous Image": "上一張圖片",
+  "Next Image": "下一張圖片",
+  "Zoomed": "已縮放",
+  "Zoom level": "縮放級別",
+  "Table viewer": "表格檢視器"
 }

@@ -1031,5 +1031,11 @@
   "Books": "کتاب‌ها",
   "Groups": "گروه‌ها",
   "Back to TTS Location": "بازگشت به مکان TTS",
-  "Metadata": "فراداده"
+  "Metadata": "فراداده",
+  "Image viewer": "نمایشگر تصویر",
+  "Previous Image": "تصویر قبلی",
+  "Next Image": "تصویر بعدی",
+  "Zoomed": "بزرگنمایی شده",
+  "Zoom level": "سطح بزرگنمایی",
+  "Table viewer": "نمایشگر جدول"
 }

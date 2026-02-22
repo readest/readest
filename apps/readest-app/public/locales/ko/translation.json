@@ -1019,5 +1019,11 @@
   "Books": "도서",
   "Groups": "그룹",
   "Back to TTS Location": "TTS 위치로 돌아가기",
-  "Metadata": "메타데이터"
+  "Metadata": "메타데이터",
+  "Image viewer": "이미지 뷰어",
+  "Previous Image": "이전 이미지",
+  "Next Image": "다음 이미지",
+  "Zoomed": "확대됨",
+  "Zoom level": "확대 수준",
+  "Table viewer": "테이블 뷰어"
 }

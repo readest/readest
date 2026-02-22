@@ -284,7 +284,7 @@ export const getMimeTypeFromFileExt = (ext: string): string => {
   return 'application/octet-stream';
 };
 
-export const blobToDataURL = async (blobUrl: string): Promise<string> => {
+export const convertBlobUrlToDataUrl = async (blobUrl: string): Promise<string> => {
   try {
     const response = await fetch(blobUrl);
     if (!response.ok) {

@@ -1043,5 +1043,11 @@
   "Books": "Livros",
   "Groups": "Grupos",
   "Back to TTS Location": "Voltar para a localização do TTS",
-  "Metadata": "Metadados"
+  "Metadata": "Metadados",
+  "Image viewer": "Visualizador de imagens",
+  "Previous Image": "Imagem anterior",
+  "Next Image": "Próxima imagem",
+  "Zoomed": "Com zoom",
+  "Zoom level": "Nível de zoom",
+  "Table viewer": "Visualizador de tabelas"
 }

@@ -1019,5 +1019,11 @@
   "Books": "Buku",
   "Groups": "Grup",
   "Back to TTS Location": "Kembali ke Lokasi TTS",
-  "Metadata": "Metadata"
+  "Metadata": "Metadata",
+  "Image viewer": "Penampil gambar",
+  "Previous Image": "Gambar Sebelumnya",
+  "Next Image": "Gambar Berikutnya",
+  "Zoomed": "Diperbesar",
+  "Zoom level": "Tingkat zoom",
+  "Table viewer": "Penampil tabel"
 }

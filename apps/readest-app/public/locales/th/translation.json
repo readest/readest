@@ -1019,5 +1019,11 @@
   "Books": "หนังสือ",
   "Groups": "กลุ่ม",
   "Back to TTS Location": "กลับไปยังตำแหน่ง TTS",
-  "Metadata": "เมทาดาตา"
+  "Metadata": "เมทาดาตา",
+  "Image viewer": "ตัวดูรูปภาพ",
+  "Previous Image": "รูปภาพก่อนหน้า",
+  "Next Image": "รูปภาพถัดไป",
+  "Zoomed": "ซูมแล้ว",
+  "Zoom level": "ระดับการซูม",
+  "Table viewer": "ตัวดูตาราง"
 }

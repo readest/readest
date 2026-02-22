@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { blobToDataURL, BookDoc, getDirection } from '@/libs/document';
+import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
@@ -10,7 +10,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent } from '../hooks/useIframeEvents';
+import { useMouseEvent, useTouchEvent, useLongPressEvent } from '../hooks/useIframeEvents';
 import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
@@ -44,6 +44,7 @@ import {
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
+  addLongPressListeners,
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
@@ -59,10 +60,11 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
-import { ParagraphControl } from './paragraph';
 import ImageViewer from './ImageViewer';
+import TableViewer from './TableViewer';
 
 declare global {
   interface Window {
@@ -248,7 +250,7 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
-        addImageLongPressListeners(detail.doc);
+        addLongPressListeners(bookKey, detail.doc);
       }
     }
   };
@@ -291,80 +293,86 @@ const FoliateViewer: React.FC<{
   const touchHandlers = useTouchEvent(bookKey, handlePageFlip, handleContinuousScroll);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
+  const [imageList, setImageList] = useState<{ src: string; cfi: string | null }[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
   const handleImagePress = useCallback(async (src: string) => {
     try {
-      const dataUrl = await blobToDataURL(src);
+      // Get all images from the current document
+      const docs = viewRef.current?.renderer.getContents();
+      const allImages: { src: string; cfi: string | null }[] = [];
+
+      docs?.forEach(({ doc, index }) => {
+        const images = doc.querySelectorAll('img');
+        images.forEach((img) => {
+          if (img.src && index !== undefined && img.parentNode) {
+            const range = doc.createRange();
+            range.selectNodeContents(img);
+            const cfi = viewRef.current?.getCFI(index, range) || null;
+            allImages.push({ src: img.src, cfi });
+          }
+        });
+      });
+
+      // Find the index of the pressed image
+      const index = allImages.findIndex((img) => img.src === src);
+
+      setImageList(allImages);
+      setCurrentImageIndex(index >= 0 ? index : 0);
+
+      const dataUrl = await convertBlobUrlToDataUrl(src);
       setSelectedImage(dataUrl);
     } catch (error) {
       console.error('Failed to load image:', error);
     }
-  }, []); // No dependencies needed if blobToDataURL is static
+  }, []);
 
-  const addImageLongPressListeners = useCallback(
-    (doc: Document) => {
-      const longPressDuration = 500;
-      const pressTimers = new Map<Element, ReturnType<typeof setTimeout>>();
+  const handleTablePress = useCallback((html: string) => {
+    setSelectedTableHtml(html);
+  }, []);
 
-      const handleLongPress = (event: Event) => {
-        event.preventDefault?.();
-        const target = event.target as HTMLImageElement;
-        if (target.tagName === 'IMG') {
-          handleImagePress(target.src);
+  const handlePreviousImage = useCallback(async () => {
+    if (currentImageIndex > 0 && imageList.length > 0) {
+      const newIndex = currentImageIndex - 1;
+      setCurrentImageIndex(newIndex);
+      try {
+        const { src, cfi } = imageList[newIndex]!;
+        const dataUrl = await convertBlobUrlToDataUrl(src);
+        setSelectedImage(dataUrl);
+        if (cfi && viewRef.current) {
+          viewRef.current?.goTo(cfi);
         }
-      };
+      } catch (error) {
+        console.error('Failed to load previous image:', error);
+      }
+    }
+  }, [currentImageIndex, imageList]);
 
-      const startPress = (event: Event) => {
-        const target = event.target as HTMLImageElement;
-        if (target.tagName !== 'IMG') return;
-
-        clearTimeout(pressTimers.get(target));
-        const timer = setTimeout(() => handleLongPress(event), longPressDuration);
-        pressTimers.set(target, timer);
-      };
-
-      const cancelPress = (event: Event) => {
-        const target = event.target as HTMLImageElement;
-        if (target.tagName !== 'IMG') return;
-
-        clearTimeout(pressTimers.get(target));
-        pressTimers.delete(target);
-      };
-
-      const processImages = () => {
-        const images = doc.querySelectorAll('img');
-        images.forEach((img) => {
-          if (!img.hasAttribute('data-long-press-added')) {
-            img.setAttribute('data-long-press-added', 'true');
-            img.addEventListener('mousedown', startPress);
-            img.addEventListener('mouseup', cancelPress);
-            img.addEventListener('mouseleave', cancelPress);
-            img.addEventListener('touchstart', startPress, { passive: true });
-            img.addEventListener('touchend', cancelPress);
-            img.addEventListener('touchmove', cancelPress);
-          }
-        });
-      };
-
-      processImages();
-
-      const observer = new MutationObserver((mutations) => {
-        const hasNewImages = mutations.some(
-          (m) => m.type === 'childList' && m.addedNodes.length > 0,
-        );
-        if (hasNewImages) {
-          processImages();
+  const handleNextImage = useCallback(async () => {
+    if (currentImageIndex < imageList.length - 1 && imageList.length > 0) {
+      const newIndex = currentImageIndex + 1;
+      setCurrentImageIndex(newIndex);
+      try {
+        const { src, cfi } = imageList[newIndex]!;
+        const dataUrl = await convertBlobUrlToDataUrl(src);
+        setSelectedImage(dataUrl);
+        if (cfi && viewRef.current) {
+          viewRef.current?.goTo(cfi);
         }
-      });
+      } catch (error) {
+        console.error('Failed to load next image:', error);
+      }
+    }
+  }, [currentImageIndex, imageList]);
 
-      observer.observe(doc.body, { childList: true, subtree: true });
+  const handleCloseImage = useCallback(() => {
+    setSelectedImage(null);
+    setImageList([]);
+    setCurrentImageIndex(0);
+  }, []);
 
-      return () => {
-        observer.disconnect();
-        pressTimers.forEach((timer) => clearTimeout(timer));
-      };
-    },
-    [handleImagePress],
-  );
+  useLongPressEvent(bookKey, handleImagePress, handleTablePress);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
@@ -579,7 +587,21 @@ const FoliateViewer: React.FC<{
 
   return (
     <>
-      <ImageViewer src={selectedImage} key={selectedImage} onClose={() => setSelectedImage(null)} />
+      {selectedImage && (
+        <ImageViewer
+          src={selectedImage}
+          onClose={handleCloseImage}
+          onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
+          onNext={currentImageIndex < imageList.length - 1 ? handleNextImage : undefined}
+        />
+      )}
+      {selectedTableHtml && (
+        <TableViewer
+          html={selectedTableHtml}
+          isDarkMode={isDarkMode}
+          onClose={() => setSelectedTableHtml(null)}
+        />
+      )}
       <div
         ref={containerRef}
         tabIndex={-1}

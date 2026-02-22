@@ -1031,5 +1031,11 @@
   "Books": "पुस्तकें",
   "Groups": "समूह",
   "Back to TTS Location": "टीटीएस स्थान पर वापस जाएं",
-  "Metadata": "मेटाडाटा"
+  "Metadata": "मेटाडाटा",
+  "Image viewer": "छवि दर्शक",
+  "Previous Image": "पिछली छवि",
+  "Next Image": "अगली छवि",
+  "Zoomed": "ज़ूम किया गया",
+  "Zoom level": "ज़ूम स्तर",
+  "Table viewer": "तालिका दर्शक"
 }
