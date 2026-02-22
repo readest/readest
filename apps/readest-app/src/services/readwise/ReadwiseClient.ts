@@ -32,12 +32,12 @@ export class ReadwiseClient {
     });
   }
 
-  async validateToken(): Promise<boolean> {
+  async validateToken(): Promise<{ valid: boolean; isNetworkError?: boolean }> {
     try {
       const res = await this.request('/auth/');
-      return res.status === 204;
+      return { valid: res.status === 204 };
     } catch {
-      return false;
+      return { valid: false, isNetworkError: true };
     }
   }
 

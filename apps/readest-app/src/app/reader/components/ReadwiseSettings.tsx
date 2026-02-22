@@ -43,27 +43,35 @@ export const ReadwiseSettingsWindow: React.FC = () => {
 
   const handleConnect = async () => {
     setIsConnecting(true);
-    const client = new ReadwiseClient({ enabled: true, accessToken, lastSyncedAt: 0 });
-    const valid = await client.validateToken();
-    if (valid) {
-      const newSettings = {
-        ...settings,
-        readwise: {
-          enabled: true,
-          accessToken,
-          lastSyncedAt: settings.readwise?.lastSyncedAt ?? 0,
-        },
-      };
-      setSettings(newSettings);
-      await saveSettings(envConfig, newSettings);
-    } else {
-      eventDispatcher.dispatch('toast', {
-        message: _('Invalid Readwise access token'),
-        type: 'error',
-      });
+    try {
+      const client = new ReadwiseClient({ enabled: true, accessToken, lastSyncedAt: 0 });
+      const { valid, isNetworkError } = await client.validateToken();
+      if (valid) {
+        const newSettings = {
+          ...settings,
+          readwise: {
+            enabled: true,
+            accessToken,
+            lastSyncedAt: settings.readwise?.lastSyncedAt ?? 0,
+          },
+        };
+        setSettings(newSettings);
+        await saveSettings(envConfig, newSettings);
+      } else if (isNetworkError) {
+        eventDispatcher.dispatch('toast', {
+          message: _('Unable to connect to Readwise. Please check your network connection.'),
+          type: 'error',
+        });
+      } else {
+        eventDispatcher.dispatch('toast', {
+          message: _('Invalid Readwise access token'),
+          type: 'error',
+        });
+      }
+    } finally {
+      setIsConnecting(false);
+      setAccessToken('');
     }
-    setIsConnecting(false);
-    setAccessToken('');
   };
 
   const handleDisconnect = async () => {

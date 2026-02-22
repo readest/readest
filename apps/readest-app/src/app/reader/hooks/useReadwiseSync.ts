@@ -81,11 +81,18 @@ export const useReadwiseSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, getBookData, getConfig, updateLastSyncedAt]);
 
+  // Cancel any pending debounced sync on unmount to avoid background network requests
+  useEffect(() => {
+    return () => {
+      debouncedPush.cancel();
+    };
+  }, [debouncedPush]);
+
   // Listen for manual push-all events dispatched from BookMenu / BooknoteView
   useEffect(() => {
-    const handlePushAll = (e: CustomEvent) => {
+    const handlePushAll = async (e: CustomEvent) => {
       if (e.detail.bookKey !== bookKey) return;
-      pushAllHighlights();
+      await pushAllHighlights();
     };
     eventDispatcher.on('readwise-push-all', handlePushAll);
     return () => {
