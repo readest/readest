@@ -547,7 +547,8 @@ foliate-fxl {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink='true'] .btn-primary {
+[data-eink='true'] .btn-primary,
+[data-eink='true'] .btn-outline {
   background-color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
   color: theme('colors.base-100') !important;

@@ -169,16 +169,26 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
           <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
         ))}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
-      {settings.kosync.enabled && (
-        <>
-          <MenuItem label={_('Push Progress')} onClick={handlePushKOSync} />
-          <MenuItem label={_('Pull Progress')} onClick={handlePullKOSync} />
-        </>
+      {settings.kosync.enabled ? (
+        <MenuItem label={_('KOReader Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Config')} noIcon onClick={showKoSyncSettingsWindow} />
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync} />
+            <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync} />
+          </ul>
+        </MenuItem>
+      ) : (
+        <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
       )}
-      <MenuItem label={_('Readwise Sync')} onClick={showReadwiseSettingsWindow} />
-      {settings.readwise?.enabled && (
-        <MenuItem label={_('Push Highlights to Readwise')} onClick={handlePushReadwise} />
+      {settings.readwise.enabled ? (
+        <MenuItem label={_('Readwise Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Config')} noIcon onClick={showReadwiseSettingsWindow} />
+            <MenuItem label={_('Push Highlights')} noIcon onClick={handlePushReadwise} />
+          </ul>
+        </MenuItem>
+      ) : (
+        <MenuItem label={_('Readwise Sync')} onClick={showReadwiseSettingsWindow} />
       )}
       {appService?.isDesktopApp && (
         <>

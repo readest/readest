@@ -64,7 +64,7 @@ export class ReadwiseClient {
       location: 0,
       location_type: 'none',
       highlighted_at: new Date(note.createdAt).toISOString(),
-      highlight_url: `readest://${book.hash}/${note.id}`,
+      highlight_url: `readest://annotation/${book.hash}/${note.id}`,
       color: note.color ? (READEST_TO_READWISE_COLOR[note.color] ?? 'yellow') : 'yellow',
     }));
 
