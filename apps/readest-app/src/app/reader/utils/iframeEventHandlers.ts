@@ -283,7 +283,7 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
       return;
     }
 
-    if (target.tagName === 'IMG') {
+    if (target.localName === 'img') {
       const imgTarget = target as HTMLImageElement;
       window.postMessage(
         {
@@ -294,9 +294,9 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
         },
         '*',
       );
-    } else if (target.tagName === 'TABLE' || target.closest('table')) {
+    } else if (target.localName === 'table' || target.closest('table')) {
       const tableTarget = (
-        target.tagName === 'TABLE' ? target : target.closest('table')
+        target.localName === 'table' ? target : target.closest('table')
       ) as HTMLTableElement;
       window.postMessage(
         {
@@ -312,14 +312,14 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
 
   const startPress = (event: Event) => {
     const target = event.target as HTMLElement;
-    const isImage = target.tagName === 'IMG';
-    const isTableOrInTable = target.tagName === 'TABLE' || target.closest('table');
+    const isImage = target.localName === 'img';
+    const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
     if (!isImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.tagName === 'TABLE' ? target : target.closest('table')) as HTMLElement);
+      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     // Store initial position for movement detection
     if ('clientX' in event && 'clientY' in event) {
@@ -340,14 +340,14 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
 
   const handleMove = (event: Event) => {
     const target = event.target as HTMLElement;
-    const isImage = target.tagName === 'IMG';
-    const isTableOrInTable = target.tagName === 'TABLE' || target.closest('table');
+    const isImage = target.localName === 'img';
+    const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
     if (!isImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.tagName === 'TABLE' ? target : target.closest('table')) as HTMLElement);
+      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     // Check if mouse/touch moved beyond threshold - if so, user is probably selecting text or dragging
     const startPos = pressStartPositions.get(elementToTrack);
@@ -383,14 +383,14 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
 
   const cancelPress = (event: Event) => {
     const target = event.target as HTMLElement;
-    const isImage = target.tagName === 'IMG';
-    const isTableOrInTable = target.tagName === 'TABLE' || target.closest('table');
+    const isImage = target.localName === 'img';
+    const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
     if (!isImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.tagName === 'TABLE' ? target : target.closest('table')) as HTMLElement);
+      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     clearTimeout(pressTimers.get(elementToTrack));
     pressTimers.delete(elementToTrack);
