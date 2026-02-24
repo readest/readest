@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React from 'react';
-import { GiBookshelf } from 'react-icons/gi';
 import { FiSearch } from 'react-icons/fi';
 import { MdOutlineMenu, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { MdArrowBackIosNew } from 'react-icons/md';
@@ -9,15 +8,16 @@ import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Dropdown from '@/components/Dropdown';
 import BookMenu from './BookMenu';
+import SidebarToggler from '../SidebarToggler';
 
 const SidebarHeader: React.FC<{
+  bookKey: string;
   isPinned: boolean;
   isSearchBarVisible: boolean;
-  onGoToLibrary: () => void;
   onClose: () => void;
   onTogglePin: () => void;
   onToggleSearchBar: () => void;
-}> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
+}> = ({ bookKey, isPinned, isSearchBarVisible, onClose, onTogglePin, onToggleSearchBar }) => {
   const _ = useTranslation();
   const { isTrafficLightVisible } = useTrafficLight();
   const iconSize14 = useResponsiveSize(14);
@@ -40,13 +40,9 @@ const SidebarHeader: React.FC<{
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
-        <button
-          title={_('Go to Library')}
-          className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
-          onClick={onGoToLibrary}
-        >
-          <GiBookshelf className='fill-base-content' />
-        </button>
+        <div className='hidden sm:flex'>
+          <SidebarToggler bookKey={bookKey} />
+        </div>
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:size-[70%]'>
         <button

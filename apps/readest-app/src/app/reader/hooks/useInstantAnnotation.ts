@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
-import { Point, TextSelection } from '@/utils/sel';
+import { Point, TextSelection, snapRangeToWords } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -120,6 +120,8 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
         if (newRange.collapsed) {
           return null;
         }
+
+        snapRangeToWords(newRange);
         return newRange;
       } catch (e) {
         console.warn('Failed to create range:', e);

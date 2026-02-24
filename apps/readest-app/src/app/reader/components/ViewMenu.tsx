@@ -22,6 +22,7 @@ import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
+import { formatLocaleDateTime } from '@/utils/book';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
@@ -299,7 +300,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
             ? _('Sign in to Sync')
             : lastSyncTime
               ? _('Synced at {{time}}', {
-                  time: new Date(lastSyncTime).toLocaleString(),
+                  time: formatLocaleDateTime(lastSyncTime),
                 })
               : _('Never synced')
         }

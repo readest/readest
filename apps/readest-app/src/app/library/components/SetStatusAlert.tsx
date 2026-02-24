@@ -26,17 +26,19 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
       label: _('Mark as Unread'),
       status: 'unread' as ReadingStatus,
       className:
-        'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/20',
+        'not-eink:bg-amber-500/15 not-eink:text-amber-600 dark:not-eink:text-amber-400 not-eink:border-amber-500/20 eink-bordered',
     },
     {
       label: _('Mark as Finished'),
       status: 'finished' as ReadingStatus,
-      className: 'bg-success/15 text-success hover:bg-success/25 border-success/20',
+      className:
+        'not-eink:bg-success/15 not-eink:text-success not-eink:border-success/20 eink-bordered',
     },
     {
       label: _('Clear Status'),
       status: undefined,
-      className: 'bg-base-300 text-base-content hover:bg-base-content/10 border-base-content/10',
+      className:
+        'not-eink:bg-base-300 not-eink:text-base-content not-eink:border-base-content/10 eink-bordered',
     },
   ];
 
@@ -89,9 +91,10 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
           ))}
           <button
             className={clsx(
-              'border-base-content/10 hidden items-center gap-2 rounded-full border px-4 py-2',
-              'bg-base-300 text-base-content shadow-sm',
-              'hover:bg-base-content/10 transition-all duration-200 ease-out active:scale-[0.97]',
+              'hidden items-center gap-2 rounded-full border px-4 py-2',
+              'not-eink:bg-base-300 not-eink:text-base-content not-eink:border-base-content/10 not-eink:shadow-sm',
+              'eink-bordered',
+              'transition-all duration-200 ease-out active:scale-[0.97]',
               'sm:flex',
             )}
             onClick={onCancel}

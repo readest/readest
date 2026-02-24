@@ -93,7 +93,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
         errorMsg.innerHTML = _('Unable to load the article. Try searching directly on {{link}}.', {
           link: `<a href="https://${language}.wikipedia.org/w/index.php?search=${encodeURIComponent(
             query,
-          )}" target="_blank" rel="noopener noreferrer" class="text-primary underline">Wikipedia</a>`,
+          )}" target="_blank" rel="noopener noreferrer" class="not-eink:text-primary underline">Wikipedia</a>`,
         });
 
         errorDiv.append(h1, errorMsg);
@@ -120,7 +120,7 @@ const WikipediaPopup: React.FC<WikipediaPopupProps> = ({
         <div className='text-base-content flex h-full flex-col pt-2'>
           <main className='flex-grow overflow-y-auto px-2 font-sans'></main>
           <footer className='mt-auto hidden data-[state=loaded]:block data-[state=error]:hidden data-[state=loading]:hidden'>
-            <div className='flex items-center px-4 py-2 text-sm opacity-60'>
+            <div className='not-eink:opacity-60 flex items-center px-4 py-2 text-sm'>
               Source: Wikipedia (CC BY-SA)
             </div>
           </footer>

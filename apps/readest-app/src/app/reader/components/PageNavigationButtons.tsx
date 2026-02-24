@@ -67,7 +67,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           'absolute left-2 -translate-y-1/2',
           'flex h-20 w-20 items-center justify-center',
           'transition-opacity duration-300 focus:outline-none',
-          isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-12 opacity-0',
+          isPageNavigationButtonsVisible ? 'top-1/2 z-10 opacity-100' : 'bottom-12 opacity-0',
         )}
         aria-label={getLeftPageLabel()}
         tabIndex={0}
@@ -90,7 +90,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           'absolute right-2 -translate-y-1/2',
           'flex h-20 w-20 items-center justify-center',
           'transition-opacity duration-300 focus:outline-none',
-          isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-12 opacity-0',
+          isPageNavigationButtonsVisible ? 'top-1/2 z-10 opacity-100' : 'bottom-12 opacity-0',
         )}
         aria-label={getRightPageLabel()}
         tabIndex={0}

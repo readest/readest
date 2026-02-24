@@ -11,8 +11,6 @@ target
 .gitignore
 
 # Build outputs
-dist
-**/dist
 .next
 **/.next
 out

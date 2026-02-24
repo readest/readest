@@ -23,7 +23,7 @@ export interface FoliateView extends HTMLElement {
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
   resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
-  resolveNavigation: (cfiOrHref: string) => { index: number; anchor?: RangeAnchor };
+  resolveNavigation: (cfiOrHrefOrIndex: string | number) => { index: number; anchor?: RangeAnchor };
   addAnnotation: (
     note: BookNote & { value?: string },
     remove?: boolean,
@@ -79,6 +79,12 @@ export interface FoliateView extends HTMLElement {
       option?: AddEventListenerOptions,
     ) => void;
     removeEventListener: (type: string, listener: EventListener) => void;
+    showLoupe?: (
+      x: number,
+      y: number,
+      options: { isVertical: boolean; color: string; radius: number },
+    ) => void;
+    hideLoupe?: () => void;
   };
 }
 

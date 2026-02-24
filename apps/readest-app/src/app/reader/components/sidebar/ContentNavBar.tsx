@@ -67,7 +67,7 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
         left: gridInsets.left,
       }}
     >
-      <div className='bg-base-100 mx-auto flex w-full items-center justify-center'>
+      <div className='bg-base-100 mx-auto flex w-full items-center justify-center px-4'>
         {/* Bottom bar: Navigation buttons and Info */}
         <div className='pointer-events-auto flex h-[52px] max-w-3xl items-center gap-2'>
           {/* Previous button */}

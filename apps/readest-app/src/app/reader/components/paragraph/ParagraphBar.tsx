@@ -182,9 +182,9 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
       >
         <div
           className={clsx(
-            'flex items-center gap-1 rounded-full px-3 py-1.5',
-            'bg-base-300 text-base-content',
-            'border-base-content/10 border',
+            'text-base-content flex items-center gap-1 rounded-full px-3 py-1.5',
+            'not-eink:bg-base-300 eink-bordered',
+            'not-eink:border-base-content/10 not-eink:border',
             'shadow-sm backdrop-blur-md',
             'transition-all duration-200 ease-out',
           )}
@@ -195,7 +195,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
-              'hover:bg-base-content/10 active:scale-90',
+              'not-eink:hover:bg-base-200 active:scale-90',
               isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Previous Paragraph')}
@@ -238,7 +238,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
-              'hover:bg-base-content/10 active:scale-90',
+              'not-eink:hover:bg-base-200 active:scale-90',
               isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Next Paragraph')}
@@ -253,7 +253,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             className={clsx(
               'flex items-center justify-center rounded-full p-1.5',
               'transition-all duration-200 ease-out',
-              'hover:bg-base-content/10 active:scale-90',
+              'not-eink:hover:bg-base-200 active:scale-90',
               isLoading && 'pointer-events-none opacity-50',
             )}
             title={_('Exit Paragraph Mode')}

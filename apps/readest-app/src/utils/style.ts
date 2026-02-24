@@ -107,6 +107,19 @@ const getFontStyles = (
   return fontStyles;
 };
 
+const getEinkSelectionStyles = () => {
+  return `
+    ::selection {
+      color: var(--theme-bg-color);
+      background: var(--theme-fg-color);
+    }
+    ::-moz-selection {
+      color: var(--theme-bg-color);
+      background: var(--theme-fg-color);
+    }
+  `;
+};
+
 const getColorStyles = (
   overrideColor: boolean,
   invertImgColorInDark: boolean,
@@ -127,6 +140,7 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
+    ${isEink ? getEinkSelectionStyles() : ''}
     html[has-background], body[has-background] {
       --background-set: var(--theme-bg-color);
     }
@@ -163,7 +177,7 @@ const getColorStyles = (
     }
     /* inline images */
     *:has(> img.has-text-siblings):not(body) {
-      background-color: ${bg};
+      ${overrideColor ? `background-color: ${bg};` : ''}
     }
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
@@ -171,6 +185,7 @@ const getColorStyles = (
     table {
       overflow: auto;
       table-layout: fixed;
+      display: table !important;
     }
     /* code */
     body.theme-dark code {
@@ -259,9 +274,13 @@ const getLayoutStyles = (
     zoom: ${zoomLevel};
   }
   svg, img {
-    height: auto;
-    width: auto;
     background-color: transparent !important;
+  }
+  svg:where(:not([width])), img:where(:not([width])) {
+    width: auto;
+  }
+  svg:where(:not([height])), img:where(:not([height])) {
+    height: auto;
   }
   figure > div:has(img) {
     height: auto !important;
@@ -718,6 +737,21 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     return selector + block;
   });
 
+  // unset font-family for body when set to serif or sans-serif
+  css = css.replace(ruleRegex, (_, selector, block) => {
+    if (/\bbody\b/i.test(selector)) {
+      const hasSerifFont = /font-family\s*:\s*serif\s*[;$]/.test(block);
+      const hasSansSerifFont = /font-family\s*:\s*sans-serif\s*[;$]/.test(block);
+      if (hasSerifFont) {
+        block = block.replace(/font-family\s*:\s*serif\s*([;$])/gi, 'font-family: unset$1');
+      }
+      if (hasSansSerifFont) {
+        block = block.replace(/font-family\s*:\s*sans-serif\s*([;$])/gi, 'font-family: unset$1');
+      }
+    }
+    return selector + block;
+  });
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
@@ -841,11 +875,22 @@ export const applyTableStyle = (document: Document) => {
     const computedTableStyle = window.getComputedStyle(table);
     const computedWidth = computedTableStyle.width;
     if (computedWidth && computedWidth !== 'auto' && computedWidth !== '0px') {
-      table.style.width = `calc(min(${computedWidth}, var(--available-width) * 1px))`;
+      const widthValue = parseFloat(computedWidth);
+      const widthUnit = computedWidth.replace(widthValue.toString(), '').trim();
+      if (widthUnit !== '%') {
+        // Workaround for hardcoded table layout, closes #3205
+        table.style.width = `calc(min(${computedWidth}, var(--available-width)))`;
+      }
     }
+    const parentWidth = window.getComputedStyle(parent as Element).width;
+    const parentContainerWidth = parseFloat(parentWidth) || 0;
     if (totalTableWidth > 0) {
       const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
       table.style.transformOrigin = 'left top';
+      table.style.transform = `scale(${scale})`;
+    } else if (parentContainerWidth > 0) {
+      const scale = `calc(min(1, var(--available-width) / ${parentContainerWidth}))`;
+      table.style.transformOrigin = 'center top';
       table.style.transform = `scale(${scale})`;
     }
   });
@@ -875,6 +920,7 @@ export const applyFixedlayoutStyles = (
     themeCode = getThemeCode();
   }
   const { bg, fg, primary, isDarkMode } = themeCode;
+  const isEink = viewSettings.isEink;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
@@ -896,6 +942,7 @@ export const applyFixedlayoutStyles = (
       position: relative;
       background-color: var(--theme-bg-color);
     }
+    ${isEink ? getEinkSelectionStyles() : ''}
     #canvas {
       display: inline-block;
       width: fit-content;

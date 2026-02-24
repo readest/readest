@@ -408,12 +408,22 @@ export abstract class BaseAppService implements AppService {
         sourceTitle: formatTitle(loadedBook.metadata.title),
         primaryLanguage,
         author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
+        metadata: loadedBook.metadata,
         createdAt: existingBook ? existingBook.createdAt : Date.now(),
         uploadedAt: existingBook ? existingBook.uploadedAt : null,
         deletedAt: transient ? Date.now() : null,
         downloadedAt: Date.now(),
         updatedAt: Date.now(),
       };
+      // update series info from metadata
+      if (book.metadata?.belongsTo?.series) {
+        const belongsTo = book.metadata.belongsTo.series;
+        const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
+        if (series) {
+          book.metadata.series = formatTitle(series.name);
+          book.metadata.seriesIndex = parseFloat(series.position || '0');
+        }
+      }
       // update book metadata when reimporting the same book
       if (existingBook) {
         existingBook.format = book.format;
@@ -421,6 +431,7 @@ export abstract class BaseAppService implements AppService {
         existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
         existingBook.author = existingBook.author ?? book.author;
         existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
+        existingBook.metadata = book.metadata;
         existingBook.downloadedAt = Date.now();
       }
 

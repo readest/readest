@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl =
+  process.env['SUPABASE_URL'] ||
   process.env['NEXT_PUBLIC_SUPABASE_URL'] ||
   atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64']!);
 const supabaseAnonKey =
+  process.env['SUPABASE_ANON_KEY'] ||
   process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
   atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64']!);
 

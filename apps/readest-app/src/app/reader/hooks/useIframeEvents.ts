@@ -55,6 +55,30 @@ export const useMouseEvent = (
   };
 };
 
+export const useLongPressEvent = (
+  bookKey: string,
+  handleImagePress: (src: string) => void,
+  handleTablePress: (html: string) => void,
+) => {
+  const handleLongPress = (msg: MessageEvent) => {
+    if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-long-press') {
+      if (msg.data.elementType === 'image') {
+        handleImagePress(msg.data.src);
+      } else if (msg.data.elementType === 'table') {
+        handleTablePress(msg.data.html);
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('message', handleLongPress);
+    return () => {
+      window.removeEventListener('message', handleLongPress);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
+};
+
 interface IframeTouch {
   clientX: number;
   clientY: number;

@@ -220,6 +220,53 @@ export const getPopupPosition = (
   return { point: popupPoint, dir: position.dir } as Position;
 };
 
+export const snapRangeToWords = (range: Range): void => {
+  if (typeof Intl === 'undefined' || !Intl.Segmenter) return;
+
+  const isPunctuation = (ch: string) => /^\p{P}|\p{S}$/u.test(ch);
+
+  const snapStartToWordBoundary = () => {
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const text = node.textContent ?? '';
+    const offset = range.startOffset;
+    if (offset === 0 || offset >= text.length) return;
+
+    const charAtOffset = text[offset] ?? '';
+    if (isPunctuation(charAtOffset)) return;
+
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+    for (const seg of segmenter.segment(text)) {
+      if (seg.isWordLike && seg.index < offset && seg.index + seg.segment.length > offset) {
+        range.setStart(node, seg.index);
+        break;
+      }
+    }
+  };
+
+  const snapEndToWordBoundary = () => {
+    const node = range.endContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const text = node.textContent ?? '';
+    const offset = range.endOffset;
+    if (offset === 0 || offset >= text.length) return;
+
+    const charBeforeOffset = text[offset - 1] ?? '';
+    if (isPunctuation(charBeforeOffset)) return;
+
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+    for (const seg of segmenter.segment(text)) {
+      if (seg.isWordLike && seg.index < offset && seg.index + seg.segment.length > offset) {
+        range.setEnd(node, seg.index + seg.segment.length);
+        break;
+      }
+    }
+  };
+
+  snapStartToWordBoundary();
+  snapEndToWordBoundary();
+};
+
 export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {
   const clonedRange = range.cloneRange();
   const fragment = clonedRange.cloneContents();

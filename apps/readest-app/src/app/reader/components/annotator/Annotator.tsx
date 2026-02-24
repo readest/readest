@@ -18,6 +18,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
+import { useReadwiseSync } from '../../hooks/useReadwiseSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { Position, TextSelection } from '@/utils/sel';
 import { getPopupPosition, getPosition, getTextFromRange } from '@/utils/sel';
@@ -51,6 +52,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { listenToNativeTouchEvents } = useDeviceControlStore();
 
   useNotesSync(bookKey);
+  useReadwiseSync(bookKey);
 
   const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;
@@ -161,12 +163,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   }, [selection, bookKey, viewSettings.vertical]);
 
   useEffect(() => {
-    setSelectedStyle(settings.globalReadSettings.highlightStyle);
+    const highlightStyle = settings.globalReadSettings.highlightStyle;
+    setSelectedStyle(highlightStyle);
+    setSelectedColor(settings.globalReadSettings.highlightStyles[highlightStyle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.globalReadSettings.highlightStyle]);
-
-  useEffect(() => {
-    setSelectedColor(settings.globalReadSettings.highlightStyles[selectedStyle]);
-  }, [settings.globalReadSettings.highlightStyles, selectedStyle]);
 
   const transformCtx: TransformContext = useMemo(
     () => ({
@@ -318,7 +319,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const { writingMode } = defaultView.getComputedStyle(el);
       draw(Overlayer.bubble, { writingMode });
     } else if (style === 'highlight') {
-      draw(Overlayer.highlight, { color: isBwEink ? einkBgColor : hexColor });
+      draw(Overlayer.highlight, {
+        color: isBwEink ? einkBgColor : hexColor,
+        vertical: viewSettings.vertical,
+      });
     } else if (['underline', 'squiggly'].includes(style as string)) {
       const { defaultView } = doc;
       const node = range.startContainer;
@@ -370,6 +374,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setHighlightOptionsVisible(false);
       setEditingAnnotation(null);
     } else {
+      setShowAnnotPopup(false);
+      setEditingAnnotation(null);
       setShowAnnotationNotes(false);
       setAnnotationNotes([]);
       if (style && color) {
@@ -609,6 +615,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!cfi) return;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
+    setSelectedStyle(style);
+    setSelectedColor(color);
     const annotation: BookNote = {
       id: uniqueId(),
       type: 'annotation',
@@ -693,6 +701,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleSpeakText = async (oneTime = false) => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setEditingAnnotation(null);
     eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range, oneTime });
   };
 

@@ -146,12 +146,7 @@ export class EdgeTTSClient implements TTSClient {
         } as TTSMessageEvent;
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
-          let safetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
           const cleanUp = () => {
-            if (safetyTimeoutId) {
-              clearTimeout(safetyTimeoutId);
-              safetyTimeoutId = null;
-            }
             audio.onended = null;
             audio.onerror = null;
             audio.src = '';
@@ -175,13 +170,6 @@ export class EdgeTTSClient implements TTSClient {
             signal.addEventListener('abort', abortHandler);
           }
           audio.onended = handleEnded;
-          audio.ontimeupdate = () => {
-            if (!safetyTimeoutId && audio.duration && isFinite(audio.duration)) {
-              const remainingTime = (audio.duration - audio.currentTime) / this.#rate;
-              const safetyMargin = 0.5;
-              safetyTimeoutId = setTimeout(handleEnded, (remainingTime + safetyMargin) * 1000);
-            }
-          };
           audio.onerror = (e) => {
             cleanUp();
             console.warn('Audio playback error:', e);

@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
+import { VscLibrary } from 'react-icons/vsc';
 
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -34,6 +35,7 @@ interface HeaderBarProps {
   isHoveredAnim: boolean;
   gridInsets: Insets;
   onCloseBook: (bookKey: string) => void;
+  onGoToLibrary: () => void;
   onDropdownOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -44,6 +46,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   isHoveredAnim,
   gridInsets,
   onCloseBook,
+  onGoToLibrary,
   onDropdownOpenChange,
 }) => {
   const _ = useTranslation();
@@ -60,6 +63,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const view = getView(bookKey);
   const iconSize16 = useResponsiveSize(16);
+  const iconSize18 = useResponsiveSize(18);
   const headerRef = useRef<HTMLDivElement>(null);
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
 
@@ -147,7 +151,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
           `shadow-xs transition-[opacity,margin-top] duration-300`,
-          trafficLightInHeader ? 'pl-20' : 'pl-4',
+          trafficLightInHeader ? 'pl-20' : isSideBarVisible ? 'ps-4' : 'ps-4 sm:ps-1.5',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
           isHoveredAnim && 'hover-bar-anim',
@@ -167,9 +171,18 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         }}
       >
         <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2 max-[350px]:gap-x-2'>
-          <div className='hidden sm:flex'>
-            <SidebarToggler bookKey={bookKey} />
-          </div>
+          {!isSideBarVisible && (
+            <div className='hidden sm:flex'>
+              <SidebarToggler bookKey={bookKey} />
+            </div>
+          )}
+          <button
+            title={_('Go to Library')}
+            className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
+            onClick={onGoToLibrary}
+          >
+            <VscLibrary size={iconSize18} className='fill-base-content' />
+          </button>
           <BookmarkToggler bookKey={bookKey} />
           <TranslationToggler bookKey={bookKey} />
           {enableAnnotationQuickActions && (

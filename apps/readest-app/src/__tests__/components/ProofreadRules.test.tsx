@@ -68,6 +68,7 @@ vi.mock('@/services/environment', async (importOriginal) => {
 
 import { EnvProvider } from '@/context/EnvContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 
 function renderWithProviders(ui: React.ReactNode) {
   return render(
@@ -81,12 +82,7 @@ describe('ProofreadRulesManager', () => {
   beforeEach(() => {
     // Reset stores
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
-      settings: {
-        globalViewSettings: { proofreadRules: [] },
-        kosync: {
-          enabled: false,
-        },
-      },
+      settings: DEFAULT_SYSTEM_SETTINGS,
     });
     (useReaderStore.setState as unknown as (state: unknown) => void)({ viewStates: {} });
     useSidebarStore.setState({ sideBarBookKey: null });
@@ -101,6 +97,7 @@ describe('ProofreadRulesManager', () => {
     // Arrange: populate stores
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: {
           proofreadRules: [
             {
@@ -127,7 +124,6 @@ describe('ProofreadRulesManager', () => {
             },
           ],
         },
-        kosync: { enabled: false },
       },
     });
 
@@ -164,8 +160,8 @@ describe('ProofreadRulesManager', () => {
     // Arrange: populate stores with a selection rule persisted in book config
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: { proofreadRules: [] },
-        kosync: { enabled: false },
       },
     });
 
@@ -284,10 +280,10 @@ describe('ProofreadRulesManager', () => {
 
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: {
           proofreadRules: [libraryRule],
         },
-        kosync: { enabled: false },
       },
     });
 
@@ -364,8 +360,8 @@ describe('ProofreadRulesManager', () => {
 
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: { proofreadRules: [] },
-        kosync: { enabled: false },
       },
     });
 
@@ -418,8 +414,8 @@ describe('ProofreadRulesManager', () => {
     // Arrange stores
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: { proofreadRules: [] },
-        kosync: { enabled: false },
       },
     });
     (useReaderStore.setState as unknown as (state: unknown) => void)({
@@ -453,8 +449,8 @@ describe('ProofreadRulesManager', () => {
   it('shows empty state messages when no rules exist', async () => {
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: { proofreadRules: [] },
-        kosync: { enabled: false },
       },
     });
 
@@ -509,10 +505,10 @@ describe('ProofreadRulesManager', () => {
 
     (useSettingsStore.setState as unknown as (state: unknown) => void)({
       settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
         globalViewSettings: {
           proofreadRules: [libraryRule],
         },
-        kosync: { enabled: false },
       },
     });
 

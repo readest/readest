@@ -13,6 +13,7 @@ export const LibrarySortByType = {
   Author: 'author',
   Updated: 'updated',
   Created: 'created',
+  Series: 'series',
   Size: 'size',
   Format: 'format',
   Published: 'published',
@@ -63,6 +64,12 @@ export interface KOSyncSettings {
   strategy: KOSyncStrategy;
 }
 
+export interface ReadwiseSettings {
+  enabled: boolean;
+  accessToken: string;
+  lastSyncedAt: number;
+}
+
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
@@ -95,8 +102,12 @@ export interface SystemSettings {
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
   opdsCatalogs: OPDSCatalog[];
+  metadataSeriesCollapsed: boolean;
+  metadataOthersCollapsed: boolean;
+  metadataDescriptionCollapsed: boolean;
 
   kosync: KOSyncSettings;
+  readwise: ReadwiseSettings;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;
