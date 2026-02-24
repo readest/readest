@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ViewTransitions } from 'next-view-transitions';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
 
@@ -72,9 +73,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name='twitter:image' content={previewImage} />
       </head>
       <body>
-        <EnvProvider>
-          <Providers>{children}</Providers>
-        </EnvProvider>
+        <ViewTransitions>
+          <EnvProvider>
+            <Providers>{children}</Providers>
+          </EnvProvider>
+        </ViewTransitions>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
+import { useTransitionRouter } from 'next-view-transitions';
+import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -99,6 +99,7 @@ interface BookshelfItemProps {
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handleLibraryNavigation: (targetGroup: string) => void;
   handleUpdateReadingStatus: (book: Book, status: ReadingStatus | undefined) => void;
 }
 
@@ -116,11 +117,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleBookDownload,
   handleSetSelectMode,
   handleShowDetailsBook,
+  handleLibraryNavigation,
   handleUpdateReadingStatus,
 }) => {
   const _ = useTranslation();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useTransitionRouter();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
@@ -179,15 +180,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       if (isSelectMode) {
         toggleSelection(group.id);
       } else {
-        const params = new URLSearchParams(searchParams?.toString());
-        params.set('group', group.id);
-        setTimeout(() => {
-          navigateToLibrary(router, `${params.toString()}`);
-        }, 0);
+        handleLibraryNavigation(group.id);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSelectMode, searchParams],
+    [isSelectMode, handleLibraryNavigation],
   );
 
   const bookContextMenuHandler = async (book: Book) => {

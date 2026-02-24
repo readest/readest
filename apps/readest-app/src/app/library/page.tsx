@@ -4,7 +4,8 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
+import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
+import { useTransitionRouter } from 'next-view-transitions';
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 
@@ -82,7 +83,7 @@ const LibraryPageWithSearchParams = () => {
 };
 
 const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
   const {
@@ -133,6 +134,53 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
   const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
   const pageRef = useRef<HTMLDivElement>(null);
+
+  const getScrollKey = (group: string) => `library-scroll-${group || 'all'}`;
+
+  const saveScrollPosition = (group: string) => {
+    const viewport = osRef.current?.osInstance()?.elements().viewport;
+    if (viewport) {
+      const scrollTop = viewport.scrollTop;
+      sessionStorage.setItem(getScrollKey(group), scrollTop.toString());
+    }
+  };
+
+  const restoreScrollPosition = useCallback((group: string) => {
+    const savedPosition = sessionStorage.getItem(getScrollKey(group));
+    if (savedPosition) {
+      const scrollTop = parseInt(savedPosition, 10);
+      const viewport = osRef.current?.osInstance()?.elements().viewport;
+      if (viewport) {
+        viewport.scrollTop = scrollTop;
+      }
+    }
+  }, []);
+
+  // Unified navigation function that handles scroll position and direction
+  const handleLibraryNavigation = useCallback(
+    (targetGroup: string) => {
+      const currentGroup = searchParams?.get('group') || '';
+
+      // Save current scroll position BEFORE navigation
+      saveScrollPosition(currentGroup);
+
+      // Detect and set navigation direction
+      const direction = currentGroup && !targetGroup ? 'back' : 'forward';
+      document.documentElement.setAttribute('data-nav-direction', direction);
+
+      // Build query params
+      const params = new URLSearchParams(searchParams?.toString());
+      if (targetGroup) {
+        params.set('group', targetGroup);
+      } else {
+        params.delete('group');
+      }
+
+      navigateToLibrary(router, `${params.toString()}`);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchParams, router],
+  );
 
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   useUICSS();
@@ -389,6 +437,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const groupName = getGroupName(group);
     setCurrentGroupPath(groupName);
   }, [libraryBooks, searchParams, getGroupName]);
+
+  useEffect(() => {
+    const group = searchParams?.get('group') || '';
+    restoreScrollPosition(group);
+  }, [searchParams, restoreScrollPosition]);
 
   // Track current series/author group for navigation header
   useEffect(() => {
@@ -746,19 +799,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleNavigateToPath = (path: string | undefined) => {
-    const group = path ? getGroupId(path) : '';
-    const params = new URLSearchParams(searchParams?.toString());
-    if (group) {
-      params.set('group', group);
-    } else {
-      params.delete('group');
-    }
+    const group = path ? getGroupId(path) || '' : '';
     setIsSelectAll(false);
     setIsSelectNone(false);
-    navigateToLibrary(router, `${params.toString()}`);
-    setTimeout(() => {
-      setCurrentGroupPath(path);
-    }, 300);
+    handleLibraryNavigation(group);
   };
 
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
@@ -890,6 +934,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleBookDelete={handleBookDelete('both')}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
+                handleLibraryNavigation={handleLibraryNavigation}
                 booksTransferProgress={booksTransferProgress}
                 handlePushLibrary={pushLibrary}
               />

@@ -54,6 +54,7 @@ interface BookshelfProps {
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handleLibraryNavigation: (targetGroup: string) => void;
   handlePushLibrary: () => Promise<void>;
   booksTransferProgress: { [key: string]: number | null };
 }
@@ -69,6 +70,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookDelete,
   handleSetSelectMode,
   handleShowDetailsBook,
+  handleLibraryNavigation,
   handlePushLibrary,
   booksTransferProgress,
 }) => {
@@ -426,6 +428,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             handleBookDelete={handleBookDelete}
             handleSetSelectMode={handleSetSelectMode}
             handleShowDetailsBook={handleShowDetailsBook}
+            handleLibraryNavigation={handleLibraryNavigation}
             handleUpdateReadingStatus={handleUpdateReadingStatus}
             transferProgress={
               'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null

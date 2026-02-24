@@ -631,3 +631,100 @@ foliate-fxl {
   animation: settings-highlight-pulse 0.5s ease-in-out 2;
   border-radius: 8px;
 }
+
+/* View Transitions for library navigation */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html[data-nav-direction='forward'] ::view-transition-old(root) {
+  animation-name: slide-fade-out-left;
+}
+
+html[data-nav-direction='forward'] ::view-transition-new(root) {
+  animation-name: slide-fade-in-right;
+}
+
+html[data-nav-direction='back'] ::view-transition-old(root) {
+  animation-name: slide-fade-out-right;
+}
+
+html[data-nav-direction='back'] ::view-transition-new(root) {
+  animation-name: slide-fade-in-left;
+}
+
+/* Forward animations */
+@keyframes slide-fade-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+@keyframes slide-fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Back animations */
+@keyframes slide-fade-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+@keyframes slide-fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Simpler fade for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.15s;
+  }
+
+  ::view-transition-old(root) {
+    animation-name: simple-fade-out !important;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: simple-fade-in !important;
+  }
+
+  @keyframes simple-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes simple-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}

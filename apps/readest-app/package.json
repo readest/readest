@@ -126,6 +126,7 @@
     "marked": "^15.0.12",
     "nanoid": "^5.1.6",
     "next": "16.1.6",
+    "next-view-transitions": "^0.3.5",
     "nunjucks": "^3.2.4",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
