@@ -185,6 +185,7 @@ const getColorStyles = (
     table {
       overflow: auto;
       table-layout: fixed;
+      display: table !important;
     }
     /* code */
     body.theme-dark code {
@@ -866,9 +867,15 @@ export const applyTableStyle = (document: Document) => {
         table.style.width = `calc(min(${computedWidth}, var(--available-width)))`;
       }
     }
+    const parentWidth = window.getComputedStyle(parent as Element).width;
+    const parentContainerWidth = parseFloat(parentWidth) || 0;
     if (totalTableWidth > 0) {
       const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
       table.style.transformOrigin = 'left top';
+      table.style.transform = `scale(${scale})`;
+    } else if (parentContainerWidth > 0) {
+      const scale = `calc(min(1, var(--available-width) / ${parentContainerWidth}))`;
+      table.style.transformOrigin = 'center top';
       table.style.transform = `scale(${scale})`;
     }
   });

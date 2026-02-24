@@ -171,9 +171,9 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
           <>
             {viewSettings.showRemainingTime ? (
-              <span className='text-start'>{timeLeftStr}</span>
+              <span className='time-left-label text-start'>{timeLeftStr}</span>
             ) : viewSettings.showRemainingPages ? (
-              <span className='text-start'>{pagesLeftStr}</span>
+              <span className='pages-left-label text-start'>{pagesLeftStr}</span>
             ) : null}
           </>
         )}
@@ -181,7 +181,9 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         {(progressInfoMode === 'all' || progressInfoMode === 'progress') && (
           <>
             {viewSettings.showProgressInfo && (
-              <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
+              <span
+                className={clsx('progress-info-label text-end', isVertical ? 'mt-auto' : 'ms-auto')}
+              >
                 {progressInfo}
               </span>
             )}
