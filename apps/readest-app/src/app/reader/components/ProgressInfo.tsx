@@ -171,33 +171,30 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           isVertical ? 'h-full' : 'h-[52px] w-full',
         )}
       >
-      {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
-        <>
-          {viewSettings.showRemainingTime ? (
-            <span className='time-left-label text-start'>{timeLeftStr}</span>
-          ) : viewSettings.showRemainingPages && showPagesLeft ? (
-            <span className='text-start'>
-              {localize ? (
-                <Trans
-                  i18nKey='{{number}} pages left in chapter'
-                  values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                >
-                  <span className='pages-left-number'>{'{{number}}'}</span>
-                  <span className='pages-left-label'>{' pages left in chapter'}</span>
-                </Trans>
-              ) : (
-                <Trans
-                  i18nKey='{{count}} pages left in chapter'
-                  count={pagesLeft}
-                >
-                  <span className='pages-left-number'>{'{{count}}'}</span>
-                  <span className='pages-left-label'>{' pages left in chapter'}</span>
-                </Trans>
-              )}
-            </span>
-          ) : null}
-        </>
-      )}
+        {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
+          <>
+            {viewSettings.showRemainingTime ? (
+              <span className='time-left-label text-start'>{timeLeftStr}</span>
+            ) : viewSettings.showRemainingPages && showPagesLeft ? (
+              <span className='text-start'>
+                {localize ? (
+                  <Trans
+                    i18nKey='{{number}} pages left in chapter'
+                    values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                  >
+                    <span className='pages-left-number'>{'{{number}}'}</span>
+                    <span className='pages-left-label'>{' pages left in chapter'}</span>
+                  </Trans>
+                ) : (
+                  <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
+                    <span className='pages-left-number'>{'{{count}}'}</span>
+                    <span className='pages-left-label'>{' pages left in chapter'}</span>
+                  </Trans>
+                )}
+              </span>
+            ) : null}
+          </>
+        )}
 
         {(progressInfoMode === 'all' || progressInfoMode === 'progress') && (
           <>
