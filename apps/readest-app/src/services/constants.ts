@@ -826,6 +826,7 @@ export const TRANSLATOR_LANGS: Record<string, string> = {
   da: 'Dansk',
   cs: 'Čeština',
   hu: 'Magyar',
+  km: 'ខ្មែរ',
   ro: 'Română',
   bg: 'Български',
   hr: 'Hrvatski',
