@@ -185,6 +185,7 @@ const getColorStyles = (
     table {
       overflow: auto;
       table-layout: fixed;
+      display: table !important;
     }
     /* code */
     body.theme-dark code {
