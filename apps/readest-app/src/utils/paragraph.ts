@@ -31,16 +31,19 @@ const blockTags = new Set([
 
 const MAX_BLOCKS = 5000;
 
+const INVISIBLE_TEXT_PATTERN =
+  /[\s\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\u200b-\u200d\u2060\ufeff]/g;
+const MEDIA_SELECTOR = 'img, svg, video, audio, canvas, math, iframe, object, embed, hr';
+
+const hasMeaningfulText = (text?: string | null): boolean =>
+  (text ?? '').replace(INVISIBLE_TEXT_PATTERN, '').length > 0;
+
 const rangeHasContent = (range: Range): boolean => {
   try {
-    const container = range.commonAncestorContainer;
-    if (container.nodeType === Node.TEXT_NODE) {
-      return (container.textContent?.trim().length ?? 0) > 0;
-    }
-    if (container.nodeType === Node.ELEMENT_NODE) {
-      return (container as Element).textContent?.trim().length !== 0;
-    }
-    return true;
+    const text = range.toString();
+    if (hasMeaningfulText(text)) return true;
+    const fragment = range.cloneContents();
+    return !!fragment.querySelector?.(MEDIA_SELECTOR);
   } catch {
     return false;
   }
@@ -48,7 +51,7 @@ const rangeHasContent = (range: Range): boolean => {
 
 const hasDirectText = (node: Element): boolean =>
   Array.from(node.childNodes).some(
-    (child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
+    (child) => child.nodeType === Node.TEXT_NODE && hasMeaningfulText(child.textContent),
   );
 
 const hasBlockChild = (node: Element): boolean =>
