@@ -177,7 +177,7 @@ const getColorStyles = (
     }
     /* inline images */
     *:has(> img.has-text-siblings):not(body) {
-      background-color: ${bg};
+      ${overrideColor ? `background-color: ${bg};` : ''}
     }
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
@@ -732,6 +732,21 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
             ' height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important; }',
           )
           .replace(/}$/, ' max-height: calc(var(--full-height) * 1px) !important; }');
+      }
+    }
+    return selector + block;
+  });
+
+  // unset font-family for body when set to serif or sans-serif
+  css = css.replace(ruleRegex, (_, selector, block) => {
+    if (/\bbody\b/i.test(selector)) {
+      const hasSerifFont = /font-family\s*:\s*serif\s*[;$]/.test(block);
+      const hasSansSerifFont = /font-family\s*:\s*sans-serif\s*[;$]/.test(block);
+      if (hasSerifFont) {
+        block = block.replace(/font-family\s*:\s*serif\s*([;$])/gi, 'font-family: unset$1');
+      }
+      if (hasSansSerifFont) {
+        block = block.replace(/font-family\s*:\s*sans-serif\s*([;$])/gi, 'font-family: unset$1');
       }
     }
     return selector + block;
