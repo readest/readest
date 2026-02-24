@@ -256,6 +256,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         toggleButton={<PiDotsThreeVerticalBold />}
       >
         <DialogMenu
+          bookKey={bookKey}
           activePanel={activePanel}
           onReset={handleResetCurrentPanel}
           resetLabel={
