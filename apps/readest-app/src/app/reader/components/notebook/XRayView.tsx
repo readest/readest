@@ -91,6 +91,20 @@ interface RelationshipPair {
   lastSeenPage: number;
 }
 
+interface RelationshipGroup {
+  entityId: string;
+  entity: XRayEntity;
+  connections: Array<{
+    target: XRayEntity;
+    labels: string[];
+    evidence?: XRayEvidence;
+    lastSeenPage: number;
+    isInferred: boolean;
+  }>;
+  totalConnections: number;
+  lastSeenPage: number;
+}
+
 const uniqueStrings = (values: string[]): string[] => {
   const seen = new Set<string>();
   const output: string[] = [];
@@ -162,6 +176,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRebuilding, setIsRebuilding] = useState(false);
   const [isXRayProcessing, setIsXRayProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    pageStart: number;
+    pageEnd: number;
+    targetPage: number;
+  } | null>(null);
   const [isIndexed, setIsIndexed] = useState<boolean | null>(null);
   const [entitySearch, setEntitySearch] = useState('');
   const [entitySort, setEntitySort] = useState<'relevance' | 'alphabetical'>('relevance');
@@ -198,6 +217,59 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     const start = typeof from === 'number' ? from + 1 : to + 1;
     return start === to + 1 ? `${start}` : `${start}-${to + 1}`;
   }, [snapshot?.state?.pendingFromPage, snapshot?.state?.pendingToPage]);
+
+  const lastAnalyzedPage = useMemo(() => {
+    return Math.max(0, snapshot?.state?.lastAnalyzedPage ?? 0);
+  }, [snapshot?.state?.lastAnalyzedPage]);
+
+  const progressTotals = useMemo(() => {
+    const pendingTotal = snapshot?.state?.pendingToPage ?? -1;
+    const batchTarget = batchProgress?.targetPage ?? -1;
+    const persistedTarget = snapshot?.state?.processingTargetPage ?? -1;
+    const totalPages = Math.max(
+      currentPage + 1,
+      pendingTotal + 1,
+      batchTarget + 1,
+      persistedTarget + 1,
+      1,
+    );
+    const batchProcessed = batchProgress?.pageEnd ?? -1;
+    const processedPages = Math.min(Math.max(lastAnalyzedPage, batchProcessed) + 1, totalPages);
+    const percent = Math.min(100, Math.round((processedPages / totalPages) * 100));
+    return { totalPages, processedPages, percent };
+  }, [
+    currentPage,
+    lastAnalyzedPage,
+    snapshot?.state?.pendingToPage,
+    snapshot?.state?.processingTargetPage,
+    batchProgress?.targetPage,
+    batchProgress?.pageEnd,
+  ]);
+
+  const processingLabel = useMemo(() => {
+    const total = progressTotals.totalPages;
+    const endPage = batchProgress?.pageEnd ?? snapshot?.state?.pendingToPage ?? lastAnalyzedPage;
+    const startPage =
+      batchProgress?.pageStart ??
+      snapshot?.state?.pendingFromPage ??
+      Math.min(lastAnalyzedPage, endPage);
+    const clampedEnd = Math.min(endPage + 1, total);
+    const clampedStart = Math.min(startPage + 1, clampedEnd);
+    return {
+      range: _('Processing p. {{start}}-{{end}} of {{total}}', {
+        start: clampedStart,
+        end: clampedEnd,
+        total,
+      }),
+    };
+  }, [
+    _,
+    batchProgress,
+    lastAnalyzedPage,
+    progressTotals,
+    snapshot?.state?.pendingFromPage,
+    snapshot?.state?.pendingToPage,
+  ]);
 
   const notIndexed = useMemo(
     () => isIndexed === false || snapshot?.state?.lastError === 'not_indexed',
@@ -322,6 +394,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   const handleUpdate = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
+    if (snapshot?.state?.processing) {
+      setErrorMessage(_('X-Ray is currently processing.'));
+      return;
+    }
 
     if (aiSettings.provider !== 'ai-gateway') {
       setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
@@ -355,10 +431,24 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     } finally {
       setIsUpdating(false);
     }
-  }, [aiSettings, bookHash, currentPage, bookTitle, appService, bookData, loadSnapshot, _]);
+  }, [
+    aiSettings,
+    bookHash,
+    currentPage,
+    bookTitle,
+    appService,
+    bookData,
+    loadSnapshot,
+    _,
+    snapshot?.state?.processing,
+  ]);
 
   const handleRebuild = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
+    if (snapshot?.state?.processing) {
+      setErrorMessage(_('X-Ray is currently processing.'));
+      return;
+    }
 
     if (aiSettings.provider !== 'ai-gateway') {
       setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
@@ -383,6 +473,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         bookTitle,
         appService,
         bookMetadata: bookData?.book?.metadata,
+        keepExtractionCache: true,
       });
       await loadSnapshot({ silent: true });
     } catch (err) {
@@ -391,7 +482,17 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     } finally {
       setIsRebuilding(false);
     }
-  }, [aiSettings, bookHash, currentPage, bookTitle, appService, bookData, loadSnapshot, _]);
+  }, [
+    aiSettings,
+    bookHash,
+    currentPage,
+    bookTitle,
+    appService,
+    bookData,
+    loadSnapshot,
+    _,
+    snapshot?.state?.processing,
+  ]);
 
   const handleEvidenceJump = useCallback(
     async (evidence: XRayEvidence) => {
@@ -531,13 +632,60 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     [livingRelationships, entityById],
   );
 
-  const relationshipPairs = useMemo(
-    () =>
-      buildRelationshipPairs(filteredRelationships, entityById).sort(
-        (a, b) => b.lastSeenPage - a.lastSeenPage,
-      ),
-    [filteredRelationships, entityById],
-  );
+  const pickPairEvidence = useCallback((pair: RelationshipPair): XRayEvidence | null => {
+    if (pair.evidence.length === 0) return null;
+    const ordered = pair.evidence.slice().sort((a, b) => b.page - a.page);
+    return (
+      ordered.find((item) => !item.inferred && item.chunkId !== 'inferred') || ordered[0] || null
+    );
+  }, []);
+
+  const relationshipGroups = useMemo<RelationshipGroup[]>(() => {
+    if (relationshipPairsAll.length === 0) return [];
+    const groups: RelationshipGroup[] = [];
+    for (const entity of relationshipEntities) {
+      const connections: RelationshipGroup['connections'] = [];
+      let lastSeen = -1;
+      for (const pair of relationshipPairsAll) {
+        const isLeft = pair.leftId === entity.id;
+        const isRight = pair.rightId === entity.id;
+        if (!isLeft && !isRight) continue;
+        const targetId = isLeft ? pair.rightId : pair.leftId;
+        const target = entityById.get(targetId);
+        if (!target) continue;
+        const labels = uniqueStrings(
+          pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
+        );
+        const evidence = pickPairEvidence(pair) ?? undefined;
+        const isInferred = pair.relationships.every((rel) => rel.inferred);
+        lastSeen = Math.max(lastSeen, pair.lastSeenPage);
+        connections.push({
+          target,
+          labels,
+          evidence,
+          lastSeenPage: pair.lastSeenPage,
+          isInferred,
+        });
+      }
+      if (connections.length === 0) continue;
+      connections.sort((a, b) => b.lastSeenPage - a.lastSeenPage);
+      groups.push({
+        entityId: entity.id,
+        entity,
+        connections,
+        totalConnections: connections.length,
+        lastSeenPage: lastSeen,
+      });
+    }
+    return groups.sort(
+      (a, b) => b.totalConnections - a.totalConnections || b.lastSeenPage - a.lastSeenPage,
+    );
+  }, [relationshipEntities, relationshipPairsAll, entityById, pickPairEvidence]);
+
+  const groupedRelationshipView = useMemo(() => {
+    if (relationshipFilter === 'all') return relationshipGroups;
+    return relationshipGroups.filter((group) => group.entityId === relationshipFilter);
+  }, [relationshipFilter, relationshipGroups]);
 
   const buildPairSummary = useCallback((pair: RelationshipPair): string => {
     const descriptions = uniqueStrings(
@@ -622,14 +770,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     () => relationshipEntities.find((entity) => entity.id === relationshipFilter) || null,
     [relationshipEntities, relationshipFilter],
   );
-
-  const pickPairEvidence = useCallback((pair: RelationshipPair): XRayEvidence | null => {
-    if (pair.evidence.length === 0) return null;
-    const ordered = pair.evidence.slice().sort((a, b) => b.page - a.page);
-    return (
-      ordered.find((item) => !item.inferred && item.chunkId !== 'inferred') || ordered[0] || null
-    );
-  }, []);
 
   const mentionStats = useMemo(() => {
     const stats = new Map<string, EntityMentionStats>();
@@ -1080,6 +1220,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       }
       if (event.detail?.status === 'end') {
         setIsXRayProcessing(false);
+        setBatchProgress(null);
       }
     };
     eventDispatcher.on('xray-processing', handler);
@@ -1087,6 +1228,45 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       eventDispatcher.off('xray-processing', handler);
     };
   }, [bookHash]);
+
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      if (event.detail?.bookHash !== bookHash) return;
+      const status = event.detail?.status;
+      if (status === 'start') {
+        setBatchProgress({
+          pageStart: event.detail?.pageStart ?? 0,
+          pageEnd: event.detail?.pageEnd ?? 0,
+          targetPage: event.detail?.targetPage ?? currentPage,
+        });
+        return;
+      }
+      if (status === 'end') {
+        setBatchProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                pageEnd: Math.max(prev.pageEnd, event.detail?.pageEnd ?? prev.pageEnd),
+              }
+            : null,
+        );
+        return;
+      }
+      if (status === 'error') {
+        setBatchProgress(null);
+      }
+    };
+    eventDispatcher.on('xray-batch', handler);
+    return () => {
+      eventDispatcher.off('xray-batch', handler);
+    };
+  }, [bookHash, currentPage]);
+
+  useEffect(() => {
+    if (snapshot?.state?.processing) {
+      setIsXRayProcessing(true);
+    }
+  }, [snapshot?.state?.processing]);
 
   if (!aiSettings?.enabled) {
     return (
@@ -1104,16 +1284,28 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     );
   }
 
-  const showProcessing = isXRayProcessing || isUpdating || isRebuilding;
+  const showProcessing =
+    isXRayProcessing || isUpdating || isRebuilding || Boolean(snapshot?.state?.processing);
 
   return (
     <div className='relative flex h-full flex-col'>
       {showProcessing && (
         <div className='absolute inset-0 z-20 flex items-center justify-center'>
           <div className='bg-base-100/40 absolute inset-0 backdrop-blur-sm' />
-          <div className='border-base-300/60 bg-base-100/80 text-base-content relative z-10 flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow-sm'>
-            <span className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
-            {_('xray-ing')}
+          <div className='border-base-300/60 bg-base-100/90 text-base-content relative z-10 flex flex-col gap-2 rounded-2xl border px-4 py-3 text-[11px] font-semibold uppercase tracking-wide shadow-sm'>
+            <div className='flex items-center gap-2'>
+              <span className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
+              <span>{_('xray-ing')}</span>
+            </div>
+            <span className='text-base-content/70 text-[10px] font-medium uppercase tracking-wide'>
+              {processingLabel.range}
+            </span>
+            <div className='bg-base-200/70 h-1.5 w-48 overflow-hidden rounded-full'>
+              <div
+                className='bg-primary h-full transition-all duration-300'
+                style={{ width: `${progressTotals.percent}%` }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -1145,7 +1337,13 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 <button
                   type='button'
                   onClick={handleUpdate}
-                  disabled={isUpdating || isRebuilding || providerUnsupported || notIndexed}
+                  disabled={
+                    isUpdating ||
+                    isRebuilding ||
+                    providerUnsupported ||
+                    notIndexed ||
+                    Boolean(snapshot?.state?.processing)
+                  }
                   title={_('Incremental update to current page')}
                 >
                   {isUpdating ? _('Loading...') : _('Update X-Ray')}
@@ -1155,8 +1353,14 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 <button
                   type='button'
                   onClick={handleRebuild}
-                  disabled={isUpdating || isRebuilding || providerUnsupported || notIndexed}
-                  title={_('Reprocess from scratch to current page')}
+                  disabled={
+                    isUpdating ||
+                    isRebuilding ||
+                    providerUnsupported ||
+                    notIndexed ||
+                    Boolean(snapshot?.state?.processing)
+                  }
+                  title={_('Reprocess from scratch to current page (keeps cache)')}
                 >
                   {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
                 </button>
@@ -1501,7 +1705,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   <XRayGraph
                     entities={relationshipEntities}
                     relationships={filteredRelationships}
-                    events={[]}
                     onNodeClick={(entity) => setSelectedGraphEntity(entity)}
                     selectedEntityId={selectedGraphEntity?.id}
                   />
@@ -1532,7 +1735,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   </p>
                 )}
               </div>
-            ) : relationshipPairs.length === 0 ? (
+            ) : groupedRelationshipView.length === 0 ? (
               <p className='text-base-content/60 text-sm'>{_('No relationships yet')}</p>
             ) : (
               <div className='space-y-3'>
@@ -1546,61 +1749,100 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     </p>
                   </div>
                 )}
-                {relationshipPairs.map((pair) => {
-                  const typeLabels = uniqueStrings(
-                    pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
-                  );
-                  const description = buildPairSummary(pair);
-                  const evidence = pickPairEvidence(pair);
-                  const isInferred = pair.relationships.every((rel) => rel.inferred);
+                {groupedRelationshipView.map((group) => {
+                  const preview = group.connections.slice(0, 4);
                   return (
                     <div
-                      key={pair.key}
+                      key={group.entityId}
                       className='border-base-300/60 hover:border-base-300 rounded-md border p-3 transition-colors'
                     >
                       <div className='flex flex-wrap items-center gap-2 text-xs'>
-                        <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
-                          {pair.leftName}
+                        <span className='text-sm font-semibold'>{group.entity.canonicalName}</span>
+                        <span className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
+                          {_('Connections')}: {group.totalConnections}
                         </span>
-                        <span className='text-base-content/40'>↔</span>
-                        <span className='bg-base-200/70 text-base-content/80 rounded-full px-2 py-1 font-medium'>
-                          {pair.rightName}
+                        <span className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
+                          {_('Last Seen')}: {_('p.')}
+                          {group.lastSeenPage + 1}
                         </span>
-                        <div className='ml-auto flex flex-wrap gap-1'>
-                          {typeLabels.map((label) => (
-                            <span
-                              key={`${pair.key}-${label}`}
-                              className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
-                            >
-                              {label}
-                            </span>
-                          ))}
-                        </div>
                       </div>
                       <p className='text-base-content/70 mt-2 text-xs'>
-                        {description}
-                        {isInferred && (
-                          <span className='text-base-content/50 ml-2 text-[10px]'>
-                            {_('Inferred')}
-                          </span>
-                        )}
+                        {getRelationshipSummaryText(group.entity)}
                       </p>
-                      {evidence && (
-                        <button
-                          type='button'
-                          className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
-                          onClick={() => handleEvidenceJump(evidence)}
-                          disabled={
-                            evidence.inferred ||
-                            evidence.chunkId === 'inferred' ||
-                            jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`
-                          }
-                          title={_('Jump to quote')}
-                        >
-                          &ldquo;{formatQuote(evidence.quote, 120)}&rdquo; (p.
-                          {evidence.page + 1})
-                        </button>
+                      {preview.length > 0 && (
+                        <div className='mt-2 flex flex-wrap gap-1'>
+                          {preview.map((connection) => (
+                            <span
+                              key={`${group.entityId}-${connection.target.id}`}
+                              className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
+                            >
+                              {connection.target.canonicalName}
+                            </span>
+                          ))}
+                          {group.totalConnections > preview.length && (
+                            <span className='text-base-content/50 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
+                              +{group.totalConnections - preview.length}
+                            </span>
+                          )}
+                        </div>
                       )}
+                      <details className='mt-2'>
+                        <summary className='text-base-content/60 cursor-pointer text-[11px]'>
+                          {_('Connections')} ({group.totalConnections})
+                        </summary>
+                        <div className='mt-2 space-y-2'>
+                          {group.connections.map((connection) => {
+                            const evidence = connection.evidence;
+                            return (
+                              <div
+                                key={`${group.entityId}-${connection.target.id}-detail`}
+                                className='border-base-300/60 rounded-md border p-2'
+                              >
+                                <div className='flex flex-wrap items-center gap-2 text-xs'>
+                                  <span className='text-base-content/80 font-medium'>
+                                    {connection.target.canonicalName}
+                                  </span>
+                                  <div className='flex flex-wrap gap-1'>
+                                    {connection.labels.map((label) => (
+                                      <span
+                                        key={`${group.entityId}-${connection.target.id}-${label}`}
+                                        className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
+                                      >
+                                        {label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {connection.isInferred && (
+                                    <span className='text-base-content/50 text-[10px]'>
+                                      {_('Inferred')}
+                                    </span>
+                                  )}
+                                  <span className='text-base-content/50 ml-auto text-[10px]'>
+                                    {_('Last Seen')}: {_('p.')}
+                                    {connection.lastSeenPage + 1}
+                                  </span>
+                                </div>
+                                {evidence && (
+                                  <button
+                                    type='button'
+                                    className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
+                                    onClick={() => handleEvidenceJump(evidence)}
+                                    disabled={
+                                      evidence.inferred ||
+                                      evidence.chunkId === 'inferred' ||
+                                      jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`
+                                    }
+                                    title={_('Jump to quote')}
+                                  >
+                                    &ldquo;{formatQuote(evidence.quote, 120)}&rdquo; (p.
+                                    {evidence.page + 1})
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </details>
                     </div>
                   );
                 })}
