@@ -119,6 +119,8 @@ export interface XRayState {
   bookTitle?: string;
   pendingFromPage?: number;
   pendingToPage?: number;
+  processing?: boolean;
+  processingTargetPage?: number;
   lastProvider?: string;
   lastError?: string;
 }
