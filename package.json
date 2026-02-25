@@ -6,6 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "tauri": "pnpm --filter @readest/readest-app tauri",
     "dev-web": "pnpm --filter @readest/readest-app dev-web",
+    "prepare": "husky",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\""
   },
@@ -17,9 +18,15 @@
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.6",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,css,json,md,html,yml}": [
+      "prettier --write"
+    ]
   },
   "pnpm": {
     "overrides": {

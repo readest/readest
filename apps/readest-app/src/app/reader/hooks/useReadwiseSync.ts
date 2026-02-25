@@ -29,7 +29,6 @@ export const useReadwiseSync = (bookKey: string) => {
   );
 
   // useMemo (not useCallback) so the debounce timer isn't reset on every render
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedPush = useMemo(
     () =>
       debounce(async () => {
