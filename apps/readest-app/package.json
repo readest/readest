@@ -154,6 +154,7 @@
     "tailwind-merge": "^3.4.0",
     "tinycolor2": "^1.6.0",
     "uuid": "^11.1.0",
+    "vis-network": "^10.0.2",
     "ws": "^8.18.3",
     "zod": "^4.0.8",
     "zustand": "5.0.10"
