@@ -1,7 +1,7 @@
 /* eslint-disable react/no-danger */
 'use client';
 
-import React, { useEffect, useMemo, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import tinycolor from 'tinycolor2';
 import {
   DataSet,
@@ -18,6 +18,13 @@ interface XRayGraphProps {
   onNodeClick?: (entity: XRayEntity) => void;
   selectedEntityId?: string | null;
 }
+
+const GRAPH_PHYSICS = {
+  centerForce: 0.05,
+  linkForce: 0.04,
+  linkLength: 160,
+  lineThickness: 2,
+};
 
 const XRayGraph: React.FC<XRayGraphProps> = ({
   entities,
@@ -37,46 +44,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   const hoverTimeoutRef = useRef<number | null>(null);
   const hoverPopupRef = useRef<HTMLDivElement | null>(null);
   const selectedNodeRef = useRef<string | null>(null);
-  const [physics, setPhysics] = useState(() => {
-    if (typeof window === 'undefined') {
-      return {
-        centerForce: 0.05,
-        linkForce: 0.03,
-        linkLength: 180,
-        lineThickness: 2,
-      };
-    }
-    const stored = window.localStorage.getItem('xray_graph_physics');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as {
-          centerForce: number;
-          linkForce: number;
-          linkLength: number;
-          lineThickness: number;
-        };
-        return {
-          centerForce: parsed.centerForce ?? 0.05,
-          linkForce: parsed.linkForce ?? 0.03,
-          linkLength: parsed.linkLength ?? 180,
-          lineThickness: parsed.lineThickness ?? 2,
-        };
-      } catch {
-        return {
-          centerForce: 0.05,
-          linkForce: 0.03,
-          linkLength: 180,
-          lineThickness: 2,
-        };
-      }
-    }
-    return {
-      centerForce: 0.05,
-      linkForce: 0.03,
-      linkLength: 180,
-      lineThickness: 2,
-    };
-  });
+  const physics = GRAPH_PHYSICS;
   const themeCode = useThemeStore((state) => state.themeCode);
 
   const themeColors = useMemo(() => {
@@ -84,9 +52,9 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
     return {
       label: palette['base-content'],
       labelActive: palette['base-content'],
-      labelBackground: tinycolor(palette['base-100']).setAlpha(0.9).toRgbString(),
-      edge: tinycolor(palette['base-content']).setAlpha(0.35).toRgbString(),
-      edgeInferred: tinycolor(palette['base-content']).setAlpha(0.2).toRgbString(),
+      labelBackground: tinycolor(palette['base-100']).setAlpha(0.95).toRgbString(),
+      edge: tinycolor(palette['base-content']).setAlpha(0.45).toRgbString(),
+      edgeInferred: tinycolor(palette['base-content']).setAlpha(0.18).toRgbString(),
       edgeActive: palette.primary,
       background: palette['base-100'],
       nodeDefault: palette.neutral,
@@ -118,7 +86,6 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   );
 
   const stopPhysicsTimeoutRef = useRef<number | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const applyPhysics = useCallback(
     (network: Network, enabled = true) => {
@@ -128,16 +95,17 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
           solver: 'forceAtlas2Based',
           stabilization: {
             enabled: true,
-            iterations: 80,
+            iterations: 90,
             updateInterval: 10,
+            fit: true,
           },
           adaptiveTimestep: true,
-          minVelocity: 0.02,
+          minVelocity: 0.03,
           forceAtlas2Based: {
             centralGravity: 0.1 * physics.centerForce,
             springConstant: physics.linkForce,
             springLength: physics.linkLength,
-            damping: 0.7,
+            damping: 0.72,
             avoidOverlap: 0.5,
           },
         },
@@ -152,6 +120,8 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
     }
     stopPhysicsTimeoutRef.current = window.setTimeout(() => {
       network.setOptions({ physics: { enabled: false } });
+      const stopSimulation = (network as unknown as { stopSimulation?: () => void }).stopSimulation;
+      stopSimulation?.();
     }, delay);
   }, []);
 
@@ -194,14 +164,23 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
           : active && isNeighbor
             ? themeColors.nodeHighlight
             : base;
+        const background = dimmed ? tinycolor(color).setAlpha(0.35).toRgbString() : color;
+        const border = isHovered
+          ? themeColors.labelActive
+          : tinycolor(themeColors.label).setAlpha(0.5).toRgbString();
 
         return {
           id: node.id,
-          color: dimmed ? tinycolor(color).setAlpha(0.3).toRgbString() : color,
+          color: {
+            background,
+            border,
+          },
           font: {
             color: isHovered || isNeighbor ? themeColors.labelActive : themeColors.label,
             size: isHovered ? 14 : 12,
             face: 'ui-sans-serif',
+            strokeWidth: isHovered || isNeighbor ? 3 : 1,
+            strokeColor: themeColors.labelBackground,
           },
         } as VisNode;
       });
@@ -216,9 +195,13 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
           return {
             id,
             color: {
-              color: isConnected ? themeColors.edgeActive : edgeColor,
+              color: isConnected
+                ? themeColors.edgeActive
+                : active
+                  ? tinycolor(edgeColor).setAlpha(0.2).toRgbString()
+                  : edgeColor,
             },
-            width: isConnected ? physics.lineThickness + 0.8 : physics.lineThickness,
+            width: isConnected ? physics.lineThickness + 1 : physics.lineThickness,
           } as VisEdge;
         });
         edgeset.update(edgeUpdates);
@@ -282,7 +265,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
       color: {
         color: entry.inferred ? themeColors.edgeInferred : themeColors.edge,
       },
-      width: Math.max(1, Math.min(6, entry.weight * 0.6)),
+      width: Math.max(1, Math.min(4, entry.weight * 0.5)),
       smooth: {
         enabled: true,
         type: 'continuous',
@@ -323,16 +306,17 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
           solver: 'forceAtlas2Based',
           stabilization: {
             enabled: true,
-            iterations: 80,
+            iterations: 90,
             updateInterval: 10,
+            fit: true,
           },
           adaptiveTimestep: true,
-          minVelocity: 0.02,
+          minVelocity: 0.03,
           forceAtlas2Based: {
             centralGravity: 0.1 * physics.centerForce,
             springConstant: physics.linkForce,
             springLength: physics.linkLength,
-            damping: 0.7,
+            damping: 0.72,
             avoidOverlap: 0.5,
           },
         },
@@ -373,6 +357,9 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
 
     network.on('dragStart', () => {
       applyPhysics(network, true);
+      const startSimulation = (network as unknown as { startSimulation?: () => void })
+        .startSimulation;
+      startSimulation?.();
     });
 
     network.on('dragEnd', () => {
@@ -515,11 +502,6 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   }, [themeCode, entities, applyPhysics, applyEdges, updateNodeColors]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('xray_graph_physics', JSON.stringify(physics));
-  }, [physics]);
-
-  useEffect(() => {
     return () => {
       if (stopPhysicsTimeoutRef.current) {
         window.clearTimeout(stopPhysicsTimeoutRef.current);
@@ -542,86 +524,6 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
         className='absolute inset-0'
         style={{ background: themeColors.background }}
       />
-      <button
-        type='button'
-        className='bg-base-100/90 border-base-300/60 text-base-content/70 hover:text-base-content absolute right-2 top-2 z-20 rounded-md border px-2 py-1 text-[11px] shadow-sm'
-        onClick={() => setSettingsOpen((prev) => !prev)}
-      >
-        Graph Settings
-      </button>
-      {settingsOpen && (
-        <div className='border-base-300/60 bg-base-100/95 absolute right-2 top-10 z-20 rounded-md border px-3 py-2 text-[11px] shadow-lg'>
-          <div className='text-base-content/60 mb-2 text-[10px] font-semibold uppercase'>
-            Physics
-          </div>
-          <div className='space-y-2'>
-            <label className='flex flex-col gap-1'>
-              <span className='text-base-content/60 text-[10px]'>Center Force</span>
-              <input
-                type='range'
-                min='0'
-                max='0.5'
-                step='0.01'
-                value={physics.centerForce}
-                onChange={(event) =>
-                  setPhysics((prev) => ({
-                    ...prev,
-                    centerForce: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-            <label className='flex flex-col gap-1'>
-              <span className='text-base-content/60 text-[10px]'>Link Force</span>
-              <input
-                type='range'
-                min='0.01'
-                max='0.3'
-                step='0.01'
-                value={physics.linkForce}
-                onChange={(event) =>
-                  setPhysics((prev) => ({
-                    ...prev,
-                    linkForce: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-            <label className='flex flex-col gap-1'>
-              <span className='text-base-content/60 text-[10px]'>Link Length</span>
-              <input
-                type='range'
-                min='50'
-                max='400'
-                step='10'
-                value={physics.linkLength}
-                onChange={(event) =>
-                  setPhysics((prev) => ({
-                    ...prev,
-                    linkLength: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-            <label className='flex flex-col gap-1'>
-              <span className='text-base-content/60 text-[10px]'>Line Thickness</span>
-              <input
-                type='range'
-                min='0.5'
-                max='5'
-                step='0.5'
-                value={physics.lineThickness}
-                onChange={(event) =>
-                  setPhysics((prev) => ({
-                    ...prev,
-                    lineThickness: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
