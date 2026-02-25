@@ -44,7 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(access_token);
         setUser(user);
       } else {
-        console.log('Clearing session');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');

@@ -1,0 +1,2 @@
+pnpm -C apps/readest-app lint
+pnpm -C apps/readest-app test
