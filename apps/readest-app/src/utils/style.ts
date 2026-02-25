@@ -168,6 +168,9 @@ const getColorStyles = (
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
+    svg, img {
+      ${overrideColor ? `background-color: transparent !important;` : ''};
+    }
     /* horizontal rule #1649 */
     *:has(> hr.background-img):not(body) {
       background-color: ${bg};
@@ -272,9 +275,6 @@ const getLayoutStyles = (
   body {
     overflow: unset;
     zoom: ${zoomLevel};
-  }
-  svg, img {
-    background-color: transparent !important;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
