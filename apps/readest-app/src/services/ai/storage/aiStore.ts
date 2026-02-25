@@ -831,24 +831,30 @@ class AIStore {
     });
   }
 
-  async clearXRayBook(bookHash: string): Promise<void> {
+  async clearXRayBook(
+    bookHash: string,
+    options?: {
+      keepExtractionCache?: boolean;
+    },
+  ): Promise<void> {
     const db = await this.openDB();
+    const keepExtractionCache = options?.keepExtractionCache ?? false;
+    const storeNames = [
+      XRAY_ENTITIES_STORE,
+      XRAY_RELATIONSHIPS_STORE,
+      XRAY_EVENTS_STORE,
+      XRAY_CLAIMS_STORE,
+      XRAY_TEXT_UNITS_STORE,
+      XRAY_ALIASES_STORE,
+      XRAY_STATE_STORE,
+      XRAY_OVERRIDES_STORE,
+      XRAY_ENTITY_SUMMARIES_STORE,
+    ];
+    if (!keepExtractionCache) {
+      storeNames.push(XRAY_EXTRACTION_CACHE_STORE);
+    }
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(
-        [
-          XRAY_ENTITIES_STORE,
-          XRAY_RELATIONSHIPS_STORE,
-          XRAY_EVENTS_STORE,
-          XRAY_CLAIMS_STORE,
-          XRAY_TEXT_UNITS_STORE,
-          XRAY_ALIASES_STORE,
-          XRAY_STATE_STORE,
-          XRAY_EXTRACTION_CACHE_STORE,
-          XRAY_OVERRIDES_STORE,
-          XRAY_ENTITY_SUMMARIES_STORE,
-        ],
-        'readwrite',
-      );
+      const tx = db.transaction(storeNames, 'readwrite');
 
       const clearByIndex = (storeName: string) => {
         const store = tx.objectStore(storeName);
@@ -868,7 +874,9 @@ class AIStore {
       clearByIndex(XRAY_CLAIMS_STORE);
       clearByIndex(XRAY_TEXT_UNITS_STORE);
       clearByIndex(XRAY_ALIASES_STORE);
-      clearByIndex(XRAY_EXTRACTION_CACHE_STORE);
+      if (!keepExtractionCache) {
+        clearByIndex(XRAY_EXTRACTION_CACHE_STORE);
+      }
       clearByIndex(XRAY_OVERRIDES_STORE);
       clearByIndex(XRAY_ENTITY_SUMMARIES_STORE);
       tx.objectStore(XRAY_STATE_STORE).delete(bookHash);
@@ -887,10 +895,11 @@ class AIStore {
             this.xraySummaryCache.delete(key);
           }
         }
-        // Clear extraction cache entries for this book
-        for (const [key, entry] of this.xrayExtractionCache.entries()) {
-          if (entry.bookHash === bookHash) {
-            this.xrayExtractionCache.delete(key);
+        if (!keepExtractionCache) {
+          for (const [key, entry] of this.xrayExtractionCache.entries()) {
+            if (entry.bookHash === bookHash) {
+              this.xrayExtractionCache.delete(key);
+            }
           }
         }
         resolve();
