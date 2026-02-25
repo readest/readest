@@ -56,6 +56,8 @@ const XRAY_LOOKUP_TOPK = 6;
 const XRAY_SUMMARY_PROMPT_VERSION = 2;
 const XRAY_SUMMARY_MAX_PER_RUN = 10;
 const XRAY_SUMMARY_MAX_RUN_MS = 12000;
+const XRAY_TIMELINE_TARGET_PAGES = 10;
+const XRAY_TIMELINE_TARGET_CHARS = 14000;
 
 const XRAY_ALLOWED_ENTITY_TYPES: XRayEntityType[] = [
   'character',
@@ -261,7 +263,7 @@ const buildEventSummary = (params: { summary: string; involvedNames: string[] })
     if (involvedList)
       sentences.push(normalizeSentence(`${involvedList} are involved in this event`));
   }
-  return ensureSentenceRange(sentences, 0, 4).join(' ');
+  return ensureSentenceRange(sentences, 0, 5).join(' ');
 };
 
 const buildClaimDescription = (params: {
@@ -281,6 +283,48 @@ const buildClaimDescription = (params: {
     }
   }
   return ensureSentenceRange(sentences, 0, 4).join(' ');
+};
+
+const buildTimelineWindows = (textUnits: XRayTextUnit[], maxPage: number) => {
+  if (textUnits.length === 0)
+    return [] as Array<{ pageStart: number; pageEnd: number; units: XRayTextUnit[] }>;
+  const byPage = new Map<number, XRayTextUnit[]>();
+  textUnits.forEach((unit) => {
+    const list = byPage.get(unit.page) ?? [];
+    list.push(unit);
+    byPage.set(unit.page, list);
+  });
+  const pages = Array.from(byPage.keys()).sort((a, b) => a - b);
+  const windows: Array<{ pageStart: number; pageEnd: number; units: XRayTextUnit[] }> = [];
+  let buffer: XRayTextUnit[] = [];
+  let bufferChars = 0;
+  let startPage = pages[0] ?? 0;
+  let lastPage = startPage;
+
+  const pushWindow = () => {
+    if (buffer.length === 0) return;
+    windows.push({ pageStart: startPage, pageEnd: lastPage, units: buffer });
+    buffer = [];
+    bufferChars = 0;
+  };
+
+  for (const page of pages) {
+    if (page > maxPage) break;
+    const units = byPage.get(page) ?? [];
+    const pageChars = units.reduce((sum, unit) => sum + unit.text.length, 0);
+    const nextPageCount = page - startPage + 1;
+    const exceedsPageTarget = nextPageCount > XRAY_TIMELINE_TARGET_PAGES;
+    const exceedsCharTarget = bufferChars + pageChars > XRAY_TIMELINE_TARGET_CHARS;
+    if (buffer.length > 0 && (exceedsPageTarget || exceedsCharTarget)) {
+      pushWindow();
+      startPage = page;
+    }
+    buffer.push(...units);
+    bufferChars += pageChars;
+    lastPage = page;
+  }
+  pushWindow();
+  return windows;
 };
 
 const buildEntitySummarySentences = (context: {
@@ -1734,6 +1778,8 @@ export const ensureXRayState = async (bookHash: string): Promise<XRayState> => {
     lastAnalyzedPage: 0,
     lastUpdated: Date.now(),
     version: XRAY_VERSION,
+    processing: false,
+    processingTargetPage: 0,
   };
   await aiStore.saveXRayState(state);
   return state;
@@ -1915,13 +1961,15 @@ export const updateXRayForProgress = async (params: {
   }
 
   const state = await ensureXRayState(bookHash);
+  const pendingToPage = state.pendingToPage ?? 0;
+  const targetPage = Math.max(currentPage, pendingToPage);
   const baseState: XRayState = {
     ...state,
     bookTitle,
     lastProvider: settings.provider,
+    processing: true,
+    processingTargetPage: targetPage,
   };
-  const pendingToPage = state.pendingToPage ?? 0;
-  const targetPage = Math.max(currentPage, pendingToPage);
 
   const isIndexed = await isBookIndexed(bookHash);
 
@@ -1933,6 +1981,8 @@ export const updateXRayForProgress = async (params: {
       lastError: 'not_indexed',
       lastReadAt: Date.now(),
       lastUpdated: Date.now(),
+      processing: false,
+      processingTargetPage: targetPage,
     });
     await flushDebug();
     if (force) {
@@ -1964,6 +2014,8 @@ export const updateXRayForProgress = async (params: {
         lastError: 'provider_not_supported',
         lastReadAt: Date.now(),
         lastUpdated: Date.now(),
+        processing: false,
+        processingTargetPage: targetPage,
       });
       return;
     }
@@ -1976,6 +2028,8 @@ export const updateXRayForProgress = async (params: {
         lastError: 'missing_api_key',
         lastReadAt: Date.now(),
         lastUpdated: Date.now(),
+        processing: false,
+        processingTargetPage: targetPage,
       });
       return;
     }
@@ -1986,6 +2040,8 @@ export const updateXRayForProgress = async (params: {
         ...baseState,
         lastReadAt: Date.now(),
         lastUpdated: Date.now(),
+        processing: false,
+        processingTargetPage: targetPage,
       });
       return;
     }
@@ -1996,6 +2052,8 @@ export const updateXRayForProgress = async (params: {
         ...baseState,
         lastReadAt: Date.now(),
         lastUpdated: Date.now(),
+        processing: false,
+        processingTargetPage: targetPage,
       });
       return;
     }
@@ -2193,6 +2251,13 @@ export const updateXRayForProgress = async (params: {
       await logDebug(
         `xray_batch start=${pageStart} end=${pageEnd} units=${textUnits.length} chars=${textChars} windows=${windows.length}`,
       );
+      void eventDispatcher.dispatch('xray-batch', {
+        bookHash,
+        status: 'start',
+        pageStart,
+        pageEnd,
+        targetPage,
+      });
 
       if (textUnits.length === 0) {
         lastAnalyzed = pageEnd;
@@ -2205,6 +2270,15 @@ export const updateXRayForProgress = async (params: {
           lastError: undefined,
           pendingFromPage: clearPending ? undefined : state.pendingFromPage,
           pendingToPage: clearPending ? undefined : state.pendingToPage,
+          processing: lastAnalyzed < targetPage,
+          processingTargetPage: targetPage,
+        });
+        void eventDispatcher.dispatch('xray-batch', {
+          bookHash,
+          status: 'end',
+          pageStart,
+          pageEnd,
+          targetPage,
         });
         await logDebug(`xray_batch skipped: no text units for ${pageStart}-${pageEnd}`);
         continue;
@@ -2249,12 +2323,21 @@ export const updateXRayForProgress = async (params: {
         if (force) {
           throw new Error('X-Ray extraction failed');
         }
+        void eventDispatcher.dispatch('xray-batch', {
+          bookHash,
+          status: 'error',
+          pageStart,
+          pageEnd,
+          targetPage,
+        });
         await aiStore.saveXRayState({
           ...baseState,
           ...markPendingRange(state, pageEnd),
           lastError: 'extraction_failed',
           lastUpdated: Date.now(),
           lastReadAt: Date.now(),
+          processing: true,
+          processingTargetPage: targetPage,
         });
         await logDebug('xray_batch stopped: all window extractions failed');
         break;
@@ -2286,18 +2369,22 @@ export const updateXRayForProgress = async (params: {
               knownEntities: knownEntitiesRelations,
             })
           : null;
-        const timelinePrompt = shouldTimelinePrompt
-          ? buildXRayTimelinePrompt({
-              maxPageIncluded: pageEnd,
-              pageStart,
-              pageEnd,
-              textUnits,
-            })
-          : null;
+        const timelineWindows = shouldTimelinePrompt
+          ? buildTimelineWindows(textUnits, pageEnd)
+          : [];
+        const timelinePrompts = timelineWindows.map((window) =>
+          buildXRayTimelinePrompt({
+            maxPageIncluded: window.pageEnd,
+            pageStart: window.pageStart,
+            pageEnd: window.pageEnd,
+            textUnits: window.units,
+          }),
+        );
+        const timelinePromises = timelinePrompts.map((prompt) => runExtraction(prompt, 'timeline'));
 
-        const [relExtraction, timelineExtraction] = await Promise.all([
+        const [relExtraction, ...timelineExtractions] = await Promise.all([
           relPrompt ? runExtraction(relPrompt, 'relationships') : Promise.resolve(null),
-          timelinePrompt ? runExtraction(timelinePrompt, 'timeline') : Promise.resolve(null),
+          ...timelinePromises,
         ]);
 
         if (relExtraction) {
@@ -2306,11 +2393,14 @@ export const updateXRayForProgress = async (params: {
             `xray_extract relationships fallback=${relExtraction.relationships.length}`,
           );
         }
-        if (timelineExtraction) {
-          if (timelineExtraction.events.length > 0) {
-            extraction = { ...extraction, events: timelineExtraction.events };
-          }
-          await logDebug(`xray_extract timeline fallback=${timelineExtraction.events.length}`);
+        const timelineEvents = timelineExtractions
+          .filter(Boolean)
+          .flatMap((result) => result?.events || []);
+        if (timelineEvents.length > 0) {
+          extraction = { ...extraction, events: timelineEvents };
+        }
+        if (timelineExtractions.length > 0) {
+          await logDebug(`xray_extract timeline fallback=${timelineEvents.length}`);
         }
       }
 
@@ -2436,6 +2526,8 @@ export const updateXRayForProgress = async (params: {
           lastError: undefined,
           pendingFromPage: clearPending ? undefined : state.pendingFromPage,
           pendingToPage: clearPending ? undefined : state.pendingToPage,
+          processing: nextAnalyzed < targetPage,
+          processingTargetPage: targetPage,
         }),
       ]);
 
@@ -2461,6 +2553,13 @@ export const updateXRayForProgress = async (params: {
       }
 
       await eventDispatcher.dispatch('xray-updated', { bookHash, maxPageIncluded: pageEnd });
+      void eventDispatcher.dispatch('xray-batch', {
+        bookHash,
+        status: 'end',
+        pageStart,
+        pageEnd,
+        targetPage,
+      });
       lastAnalyzed = nextAnalyzed;
 
       await logDebug(`xray_batch saved pageEnd=${pageEnd}`);
@@ -2479,7 +2578,22 @@ export const updateXRayForProgress = async (params: {
     }
 
     await logDebug(`xray_update complete lastAnalyzed=${lastAnalyzed}`);
+    await aiStore.saveXRayState({
+      ...baseState,
+      lastAnalyzedPage: Math.max(state.lastAnalyzedPage, lastAnalyzed),
+      lastUpdated: Date.now(),
+      lastReadAt: Date.now(),
+      lastError: undefined,
+      pendingFromPage: undefined,
+      pendingToPage: undefined,
+      processing: false,
+      processingTargetPage: targetPage,
+    });
   } catch (error) {
+    void eventDispatcher.dispatch('xray-batch', {
+      bookHash,
+      status: 'error',
+    });
     await logDebug(`xray_update error=${error instanceof Error ? error.message : 'unknown'}`);
     await aiStore.saveXRayState({
       ...baseState,
@@ -2487,6 +2601,8 @@ export const updateXRayForProgress = async (params: {
       lastError: error instanceof Error ? error.message : 'unknown',
       lastReadAt: Date.now(),
       lastUpdated: Date.now(),
+      processing: false,
+      processingTargetPage: targetPage,
     });
     throw error;
   } finally {
@@ -2505,8 +2621,17 @@ export const rebuildXRayToPage = async (params: {
   bookTitle: string;
   appService?: AppService | null;
   bookMetadata?: BookMetadata;
+  keepExtractionCache?: boolean;
 }): Promise<void> => {
-  const { bookHash, currentPage, settings, bookTitle, appService, bookMetadata } = params;
+  const {
+    bookHash,
+    currentPage,
+    settings,
+    bookTitle,
+    appService,
+    bookMetadata,
+    keepExtractionCache = true,
+  } = params;
   if (!settings.enabled) return;
   if (processingBooks.has(bookHash)) return;
   if (appService) {
@@ -2518,7 +2643,7 @@ export const rebuildXRayToPage = async (params: {
     const stamp = new Date().toISOString();
     console.debug(`[X-Ray][${stamp}] xray_rebuild start currentPage=${currentPage}`);
   }
-  await aiStore.clearXRayBook(bookHash);
+  await aiStore.clearXRayBook(bookHash, { keepExtractionCache });
   await ensureXRayState(bookHash);
 
   let lastAnalyzed = 0;
