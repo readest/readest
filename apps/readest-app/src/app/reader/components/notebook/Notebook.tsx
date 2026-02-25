@@ -25,8 +25,10 @@ import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
-import XRayView from './XRayView';
+import dynamic from 'next/dynamic';
 import type { NotebookTab } from '@/store/notebookStore';
+
+const XRayView = dynamic(() => import('./XRayView'), { ssr: false });
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
