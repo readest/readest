@@ -603,7 +603,6 @@
   "Device": "Συσκευή",
   "E-Ink Mode": "Λειτουργία E-Ink",
   "Highlight Colors": "Χρώματα επισήμανσης",
-  "Auto Screen Brightness": "Αυτόματη φωτεινότητα οθόνης",
   "Pagination": "Σελιδοποίηση",
   "Disable Double Tap": "Απενεργοποίηση διπλού ταπ",
   "Tap to Paginate": "Ταπ για σελιδοποίηση",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "Προώθηση επισημάνσεων",
   "Highlights synced to Readwise": "Οι επισημάνσεις συγχρονίστηκαν στο Readwise",
   "Readwise sync failed: no internet connection": "Ο συγχρονισμός Readwise απέτυχε: δεν υπάρχει σύνδεση στο διαδίκτυο",
-  "Readwise sync failed: {{error}}": "Ο συγχρονισμός Readwise απέτυχε: {{error}}"
+  "Readwise sync failed: {{error}}": "Ο συγχρονισμός Readwise απέτυχε: {{error}}",
+  "System Screen Brightness": "Φωτεινότητα οθόνης συστήματος"
 }

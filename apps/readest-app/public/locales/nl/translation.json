@@ -603,7 +603,6 @@
   "Device": "Apparaat",
   "E-Ink Mode": "E-Ink Modus",
   "Highlight Colors": "Markeerkleuren",
-  "Auto Screen Brightness": "Automatische Schermhelderheid",
   "Pagination": "Paginering",
   "Disable Double Tap": "Schakel Dubbel Tikken Uit",
   "Tap to Paginate": "Tik om te Pagineren",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "Markeringen verzenden",
   "Highlights synced to Readwise": "Markeringen gesynchroniseerd met Readwise",
   "Readwise sync failed: no internet connection": "Readwise-synchronisatie mislukt: geen internetverbinding",
-  "Readwise sync failed: {{error}}": "Readwise-synchronisatie mislukt: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise-synchronisatie mislukt: {{error}}",
+  "System Screen Brightness": "Systeemhelderheid van het scherm"
 }

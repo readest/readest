@@ -603,7 +603,6 @@
   "Device": "دستگاه",
   "E-Ink Mode": "حالت E-Ink",
   "Highlight Colors": "رنگ‌های هایلایت",
-  "Auto Screen Brightness": "روشنایی خودکار صفحه",
   "Pagination": "صفحه‌بندی",
   "Disable Double Tap": "غیرفعال کردن کلیک دوبل",
   "Tap to Paginate": "ضربه برای صفحه‌بندی",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "ارسال هایلایت‌ها",
   "Highlights synced to Readwise": "هایلایت‌ها با Readwise همگام‌سازی شدند",
   "Readwise sync failed: no internet connection": "همگام‌سازی Readwise ناموفق بود: اتصال اینترنت برقرار نیست",
-  "Readwise sync failed: {{error}}": "همگام‌سازی Readwise ناموفق بود: {{error}}"
+  "Readwise sync failed: {{error}}": "همگام‌سازی Readwise ناموفق بود: {{error}}",
+  "System Screen Brightness": "روشنایی صفحه نمایش سیستم"
 }

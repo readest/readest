@@ -603,7 +603,6 @@
   "Device": "যন্ত্র",
   "E-Ink Mode": "ই-ইঙ্ক মোড",
   "Highlight Colors": "হাইলাইট রঙ",
-  "Auto Screen Brightness": "স্বয়ংক্রিয় স্ক্রিন উজ্জ্বলতা",
   "Pagination": "পৃষ্ঠা বিন্যাস",
   "Disable Double Tap": "ডাবল ট্যাপ অক্ষম করুন",
   "Tap to Paginate": "পৃষ্ঠায় যেতে ট্যাপ করুন",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "হাইলাইট পাঠান",
   "Highlights synced to Readwise": "হাইলাইটগুলি Readwise এ সিঙ্ক করা হয়েছে",
   "Readwise sync failed: no internet connection": "Readwise সিঙ্ক ব্যর্থ হয়েছে: ইন্টারনেট সংযোগ নেই",
-  "Readwise sync failed: {{error}}": "Readwise সিঙ্ক ব্যর্থ হয়েছে: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise সিঙ্ক ব্যর্থ হয়েছে: {{error}}",
+  "System Screen Brightness": "সিস্টেম স্ক্রিন উজ্জ্বলতা"
 }

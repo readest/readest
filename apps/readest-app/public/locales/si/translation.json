@@ -603,7 +603,6 @@
   "Device": "උපකරණය",
   "E-Ink Mode": "E-Ink ආකාරය",
   "Highlight Colors": "ඉස්මතු වර්ණ",
-  "Auto Screen Brightness": "ස්වයංක්‍රීය තිර දිදුලනුම",
   "Pagination": "පිටුගත කිරීම",
   "Disable Double Tap": "දෙවරක් ටැප් කිරීම අබල කරන්න",
   "Tap to Paginate": "පිටුගත කිරීමට ටැප් කරන්න",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "විශේෂ අවස්ථා යොමු කරන්න",
   "Highlights synced to Readwise": "විශේෂ අවස්ථා Readwise සමඟ සමමුහුර්ත විය",
   "Readwise sync failed: no internet connection": "Readwise සමමුහුර්තකරණය අසාර්ථක විය: අන්තර්ජාල සම්බන්ධතාවයක් නොමැත",
-  "Readwise sync failed: {{error}}": "Readwise සමමුහුර්තකරණය අසාර්ථක විය: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise සමමුහුර්තකරණය අසාර්ථක විය: {{error}}",
+  "System Screen Brightness": "පද්ධති තිර දීප්තිය"
 }

@@ -611,7 +611,6 @@
   "Device": "Устройство",
   "E-Ink Mode": "E-Ink режим",
   "Highlight Colors": "Цвета выделения",
-  "Auto Screen Brightness": "Автояркость экрана",
   "Pagination": "Пагинация",
   "Disable Double Tap": "Отключить двойной тап",
   "Tap to Paginate": "Тапните, чтобы разбить на страницы",
@@ -1080,5 +1079,6 @@
   "Push Highlights": "Отправить выделения",
   "Highlights synced to Readwise": "Выделения синхронизированы с Readwise",
   "Readwise sync failed: no internet connection": "Синхронизация Readwise не удалась: нет интернет-соединения",
-  "Readwise sync failed: {{error}}": "Синхронизация Readwise не удалась: {{error}}"
+  "Readwise sync failed: {{error}}": "Синхронизация Readwise не удалась: {{error}}",
+  "System Screen Brightness": "Систেমная яркость экрана"
 }

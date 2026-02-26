@@ -599,7 +599,6 @@
   "Device": "設備",
   "E-Ink Mode": "E-Ink 模式",
   "Highlight Colors": "高亮顏色",
-  "Auto Screen Brightness": "自動螢幕亮度",
   "Pagination": "翻頁",
   "Disable Double Tap": "禁用雙擊",
   "Tap to Paginate": "點擊翻頁",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "推送高亮內容",
   "Highlights synced to Readwise": "高亮內容已同步到 Readwise",
   "Readwise sync failed: no internet connection": "Readwise 同步失敗：無網路連線",
-  "Readwise sync failed: {{error}}": "Readwise 同步失敗：{{error}}"
+  "Readwise sync failed: {{error}}": "Readwise 同步失敗：{{error}}",
+  "System Screen Brightness": "系統螢幕亮度"
 }

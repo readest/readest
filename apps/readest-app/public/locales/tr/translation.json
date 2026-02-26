@@ -603,7 +603,6 @@
   "Device": "Cihaz",
   "E-Ink Mode": "E-Ink Modu",
   "Highlight Colors": "Vurgu Renkleri",
-  "Auto Screen Brightness": "Otomatik Ekran Parlaklığı",
   "Pagination": "Sayfalama",
   "Disable Double Tap": "Çift Dokunmayı Devre Dışı Bırak",
   "Tap to Paginate": "Sayfalamak için Dokunun",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "Vurguları Gönder",
   "Highlights synced to Readwise": "Vurgular Readwise ile senkronize edildi",
   "Readwise sync failed: no internet connection": "Readwise senkronizasyonu başarısız: internet bağlantısı yok",
-  "Readwise sync failed: {{error}}": "Readwise senkronizasyonu başarısız: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise senkronizasyonu başarısız: {{error}}",
+  "System Screen Brightness": "Sistem Ekran Parlaklığı"
 }

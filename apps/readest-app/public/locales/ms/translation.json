@@ -517,7 +517,6 @@
   "Paging Animation": "Animasi Halaman",
   "Device": "Peranti",
   "E-Ink Mode": "Mod E-Ink",
-  "Auto Screen Brightness": "Kecerahan Skrin Auto",
   "Security": "Keselamatan",
   "Allow JavaScript": "Benarkan JavaScript",
   "Enable only if you trust the file.": "Aktifkan hanya jika anda mempercayai fail.",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "Hantar Sorotan",
   "Highlights synced to Readwise": "Sorotan disinkronkan ke Readwise",
   "Readwise sync failed: no internet connection": "Penyinkronan Readwise gagal: tiada sambungan internet",
-  "Readwise sync failed: {{error}}": "Penyinkronan Readwise gagal: {{error}}"
+  "Readwise sync failed: {{error}}": "Penyinkronan Readwise gagal: {{error}}",
+  "System Screen Brightness": "Kecerahan Skrin Sistem"
 }

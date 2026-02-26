@@ -599,7 +599,6 @@
   "Device": "อุปกรณ์",
   "E-Ink Mode": "โหมด E-Ink",
   "Highlight Colors": "สีไฮไลต์",
-  "Auto Screen Brightness": "ความสว่างหน้าจออัตโนมัติ",
   "Pagination": "การแบ่งหน้า",
   "Disable Double Tap": "ปิดการแตะสองครั้ง",
   "Tap to Paginate": "แตะเพื่อแบ่งหน้า",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "พุชไฮไลต์",
   "Highlights synced to Readwise": "ซิงค์ไฮไลต์ไปยัง Readwise แล้ว",
   "Readwise sync failed: no internet connection": "การซิงค์ Readwise ล้มเหลว: ไม่มีการเชื่อมต่ออินเทอร์เน็ต",
-  "Readwise sync failed: {{error}}": "การซิงค์ Readwise ล้มเหลว: {{error}}"
+  "Readwise sync failed: {{error}}": "การซิงค์ Readwise ล้มเหลว: {{error}}",
+  "System Screen Brightness": "ความสว่างหน้าจอระบบ"
 }

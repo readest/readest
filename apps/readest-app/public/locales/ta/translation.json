@@ -603,7 +603,6 @@
   "Device": "சாதனம்",
   "E-Ink Mode": "E-Ink முறை",
   "Highlight Colors": "முத்திரை நிறங்கள்",
-  "Auto Screen Brightness": "தானியங்கி திரை பிரகாசம்",
   "Pagination": "பக்கமிடுதல்",
   "Disable Double Tap": "இரட்டை தொடுதலை முடக்கு",
   "Tap to Paginate": "பக்கம் மாற்ற தொடுங்கள்",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "சிறப்பம்சங்களை அனுப்பு",
   "Highlights synced to Readwise": "சிறப்பம்சங்கள் Readwise உடன் ஒத்திசைக்கப்பட்டன",
   "Readwise sync failed: no internet connection": "Readwise ஒத்திசைவு தோல்வியடைந்தது: இணைய இணைப்பு இல்லை",
-  "Readwise sync failed: {{error}}": "Readwise ஒத்திசைவு தோல்வியடைந்தது: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise ஒத்திசைவு தோல்வியடைந்தது: {{error}}",
+  "System Screen Brightness": "கணினித் திரை பிரகாசம்"
 }

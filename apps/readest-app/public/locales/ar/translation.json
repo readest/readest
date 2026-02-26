@@ -619,7 +619,6 @@
   "Device": "الجهاز",
   "E-Ink Mode": "وضع الحبر الإلكتروني",
   "Highlight Colors": "ألوان التمييز",
-  "Auto Screen Brightness": "سطوع الشاشة التلقائي",
   "Pagination": "التقسيم إلى صفحات",
   "Disable Double Tap": "تعطيل النقر المزدوج",
   "Tap to Paginate": "اضغط للتقسيم إلى صفحات",
@@ -1104,5 +1103,6 @@
   "Push Highlights": "إرسال التمييزات",
   "Highlights synced to Readwise": "تمت مزامنة التمييزات مع Readwise",
   "Readwise sync failed: no internet connection": "فشلت مزامنة Readwise: لا يوجد اتصال بالإنترنت",
-  "Readwise sync failed: {{error}}": "فشلت مزامنة Readwise: {{error}}"
+  "Readwise sync failed: {{error}}": "فشلت مزامنة Readwise: {{error}}",
+  "System Screen Brightness": "سطوع شاشة النظام"
 }

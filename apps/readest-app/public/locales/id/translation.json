@@ -599,7 +599,6 @@
   "Device": "Perangkat",
   "E-Ink Mode": "Mode E-Ink",
   "Highlight Colors": "Warna Sorotan",
-  "Auto Screen Brightness": "Auto Kecerahan Layar",
   "Pagination": "Paginasi",
   "Disable Double Tap": "Nonaktifkan Ketuk Ganda",
   "Tap to Paginate": "Ketuk untuk Paginasi",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "Kirim Sorotan",
   "Highlights synced to Readwise": "Sorotan disinkronkan ke Readwise",
   "Readwise sync failed: no internet connection": "Sinkronisasi Readwise gagal: tidak ada koneksi internet",
-  "Readwise sync failed: {{error}}": "Sinkronisasi Readwise gagal: {{error}}"
+  "Readwise sync failed: {{error}}": "Sinkronisasi Readwise gagal: {{error}}",
+  "System Screen Brightness": "Kecerahan Layar Sistem"
 }

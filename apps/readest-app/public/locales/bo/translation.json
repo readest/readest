@@ -599,7 +599,6 @@
   "Device": "རྐྱབ་སྐོར",
   "E-Ink Mode": "ཡིག་སྒྱུར་སྤོ་བ",
   "Highlight Colors": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
-  "Auto Screen Brightness": "རྒྱབ་སྐོར་གྱི་འོད་ཟེར་རང་འགུལ།",
   "Pagination": "ཤོག་གདོང་།",
   "Disable Double Tap": "བརྒྱབ་གདོང་གཉིས་མ་འགྱོད།",
   "Tap to Paginate": "ཤོག་གདོང་ལ་ཐོག་འགྲོ།",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "བཀོད་མཆན་སྐྱེལ་བ།",
   "Highlights synced to Readwise": "བཀོད་མཆན་ Readwise ལ་མཉམ་བྱུང་བྱས་ཟིན།",
   "Readwise sync failed: no internet connection": "Readwise མཉམ་བྱུང་མ་ཐུབ། དྲ་རྒྱའི་མཐུད་ལམ་མི་འདུག",
-  "Readwise sync failed: {{error}}": "Readwise མཉམ་བྱུང་མ་ཐུབ། {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise མཉམ་བྱུང་མ་ཐུབ། {{error}}",
+  "System Screen Brightness": "མ་ལག་ཤེལ་སྒོའི་གསལ་ཚད།"
 }

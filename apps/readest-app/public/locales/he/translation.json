@@ -878,7 +878,6 @@
   "Device": "מכשיר",
   "E-Ink Mode": "מצב E-Ink",
   "Color E-Ink Mode": "מצב E-Ink צבעוני",
-  "Auto Screen Brightness": "בהירות מסך אוטומטית",
   "Security": "אבטחה",
   "Allow JavaScript": "אפשר JavaScript",
   "Enable only if you trust the file.": "הפעל רק אם אתה בוטח בקובץ.",
@@ -1068,5 +1067,6 @@
   "Push Highlights": "שלח הדגשות",
   "Highlights synced to Readwise": "ההדגשות סונכרנו ל-Readwise",
   "Readwise sync failed: no internet connection": "סנכרון Readwise נכשל: אין חיבור לאינטרנט",
-  "Readwise sync failed: {{error}}": "סנכרון Readwise נכשל: {{error}}"
+  "Readwise sync failed: {{error}}": "סנכרון Readwise נכשל: {{error}}",
+  "System Screen Brightness": "בהירות מסך המערכת"
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
-import { BookConfig } from '@/types/book';
+import { BookConfig, PageInfo } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -124,12 +124,16 @@ const FoliateViewer: React.FC<{
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
+    const atEnd = viewRef.current?.renderer.atEnd || false;
+    const { current, next, total } = detail.location as PageInfo;
+    const currentPage = atEnd && total > 0 ? total - 1 : current;
+    const pageInfo = { current: currentPage, next, total };
     setProgress(
       bookKey,
       detail.cfi,
       detail.tocItem,
       detail.section,
-      detail.location,
+      pageInfo,
       detail.time,
       detail.range,
     );

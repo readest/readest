@@ -599,7 +599,6 @@
   "Device": "デバイス",
   "E-Ink Mode": "E-Inkモード",
   "Highlight Colors": "ハイライトカラー",
-  "Auto Screen Brightness": "自動画面の明るさ",
   "Pagination": "ページネーション",
   "Disable Double Tap": "ダブルタップを無効にする",
   "Tap to Paginate": "タップしてページを切り替える",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "ハイライトをプッシュ",
   "Highlights synced to Readwise": "ハイライトが Readwise に同期されました",
   "Readwise sync failed: no internet connection": "Readwise 同期失敗：インターネット接続がありません",
-  "Readwise sync failed: {{error}}": "Readwise 同期失敗：{{error}}"
+  "Readwise sync failed: {{error}}": "Readwise 同期失敗：{{error}}",
+  "System Screen Brightness": "システムの画面の明るさ"
 }

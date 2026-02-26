@@ -603,7 +603,6 @@
   "Device": "डिवाइस",
   "E-Ink Mode": "ई-इंक मोड",
   "Highlight Colors": "हाइलाइट रंग",
-  "Auto Screen Brightness": "स्वचालित स्क्रीन ब्राइटनेस",
   "Pagination": "पृष्ठांकन",
   "Disable Double Tap": "डबल टैप अक्षम करें",
   "Tap to Paginate": "पृष्ठांकन के लिए टैप करें",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "हाइलाइट्स भेजें",
   "Highlights synced to Readwise": "हाइलाइट्स Readwise में सिंक हो गए",
   "Readwise sync failed: no internet connection": "Readwise सिंक विफल रहा: कोई इंटरनेट कनेक्शन नहीं",
-  "Readwise sync failed: {{error}}": "Readwise सिंक विफल रहा: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise सिंक विफल रहा: {{error}}",
+  "System Screen Brightness": "सिस्टम स्क्रीन चमक"
 }

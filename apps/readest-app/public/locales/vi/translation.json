@@ -599,7 +599,6 @@
   "Device": "Thiết bị",
   "E-Ink Mode": "Chế độ E-Ink",
   "Highlight Colors": "Màu nổi bật",
-  "Auto Screen Brightness": "Độ sáng màn hình tự động",
   "Pagination": "Phân trang",
   "Disable Double Tap": "Vô hiệu hóa chạm hai lần",
   "Tap to Paginate": "Chạm để phân trang",
@@ -1044,5 +1043,6 @@
   "Push Highlights": "Đẩy các phần đánh dấu",
   "Highlights synced to Readwise": "Các phần đánh dấu đã được đồng bộ với Readwise",
   "Readwise sync failed: no internet connection": "Đồng bộ Readwise thất bại: không có kết nối internet",
-  "Readwise sync failed: {{error}}": "Đồng bộ Readwise thất bại: {{error}}"
+  "Readwise sync failed: {{error}}": "Đồng bộ Readwise thất bại: {{error}}",
+  "System Screen Brightness": "Độ sáng màn hình hệ thống"
 }

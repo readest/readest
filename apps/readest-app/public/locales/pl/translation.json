@@ -611,7 +611,6 @@
   "Device": "Urządzenie",
   "E-Ink Mode": "Tryb E-Ink",
   "Highlight Colors": "Kolory wyróżnień",
-  "Auto Screen Brightness": "Automatyczna jasność ekranu",
   "Pagination": "Stronicowanie",
   "Disable Double Tap": "Wyłącz podwójne dotknięcie",
   "Tap to Paginate": "Dotknij, aby stronicować",
@@ -1080,5 +1079,6 @@
   "Push Highlights": "Wyślij wyróżnienia",
   "Highlights synced to Readwise": "Wyróżnienia zsynchronizowane z Readwise",
   "Readwise sync failed: no internet connection": "Synchronizacja Readwise nie powiodła się: brak połączenia z Internetem",
-  "Readwise sync failed: {{error}}": "Synchronizacja Readwise nie powiodła się: {{error}}"
+  "Readwise sync failed: {{error}}": "Synchronizacja Readwise nie powiodła się: {{error}}",
+  "System Screen Brightness": "Jasność ekranu systemowego"
 }

@@ -603,7 +603,6 @@
   "Device": "Enhet",
   "E-Ink Mode": "E-Ink-läge",
   "Highlight Colors": "Markeringsfärger",
-  "Auto Screen Brightness": "Auto-skärmens ljusstyrka",
   "Pagination": "Pagination",
   "Disable Double Tap": "Inaktivera dubbeltryck",
   "Tap to Paginate": "Tryck för att bläddra",
@@ -1056,5 +1055,6 @@
   "Push Highlights": "Skicka markeringar",
   "Highlights synced to Readwise": "Markeringar synkroniserade till Readwise",
   "Readwise sync failed: no internet connection": "Readwise-synkronisering misslyckades: ingen internetanslutning",
-  "Readwise sync failed: {{error}}": "Readwise-synkronisering misslyckades: {{error}}"
+  "Readwise sync failed: {{error}}": "Readwise-synkronisering misslyckades: {{error}}",
+  "System Screen Brightness": "Systemets skärmljusstyrka"
 }
