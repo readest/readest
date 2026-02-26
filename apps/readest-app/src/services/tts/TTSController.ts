@@ -9,6 +9,7 @@ import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
+import { isValidLang } from '@/utils/lang';
 
 type TTSState =
   | 'stopped'
@@ -155,6 +156,12 @@ export class TTSController extends EventTarget {
       doc = currentSection.doc;
     } else {
       doc = await section.createDocument();
+      const html = doc.querySelector('html');
+      const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
+      if (html && !isValidLang(lang) && this.ttsLang) {
+        html.setAttribute('lang', this.ttsLang);
+        html.setAttribute('xml:lang', this.ttsLang);
+      }
     }
 
     if (this.view.tts && this.view.tts.doc === doc) {
