@@ -46,12 +46,13 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
         : '{current} / {total}'
       : '{percent}%';
 
+  const { page = 0, pages = 0, atEnd = false } = view?.renderer || {};
   const lang = localStorage?.getItem('i18nextLng') || '';
   const localize = isVertical && lang.toLowerCase().startsWith('zh');
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
-  const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+  const currentPage = atEnd && pageInfo?.total ? pageInfo.total - 1 : pageInfo?.current;
+  const progressInfo = formatProgress(currentPage, pageInfo?.total, template, localize, lang);
 
-  const { page = 0, pages = 0 } = view?.renderer || {};
   const current = page;
   const total = pages;
   const pagesLeft = Math.max(total - current - 1, 0);

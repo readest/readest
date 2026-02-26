@@ -61,6 +61,8 @@ export interface FoliateView extends HTMLElement {
     end: number;
     page: number;
     pages: number;
+    atStart: boolean;
+    atEnd: boolean;
     containerPosition: number;
     sideProp: 'width' | 'height';
     setAttribute: (name: string, value: string | number) => void;
