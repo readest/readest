@@ -140,7 +140,9 @@ export const useLongPress = (
       if (onContextMenu) {
         e.preventDefault();
         e.stopPropagation();
-        onContextMenu();
+        setTimeout(() => {
+          onContextMenu();
+        }, 100);
       }
       reset();
     },
