@@ -29,4 +29,5 @@ export interface FooterBarChildProps {
   actionTab: string;
   onSetActionTab: (tab: string) => void;
   onSpeakText: () => void;
+  currentTime: string;
 }

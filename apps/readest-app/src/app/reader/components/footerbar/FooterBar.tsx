@@ -188,6 +188,21 @@ const FooterBar: React.FC<FooterBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000 * 20);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = currentTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -197,6 +212,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     navigationHandlers,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
+    currentTime: formattedTime,
   };
 
   const needHorizontalScroll =

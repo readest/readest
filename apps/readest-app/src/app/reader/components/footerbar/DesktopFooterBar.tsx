@@ -18,6 +18,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   progressFraction,
   navigationHandlers,
   onSpeakText,
+  currentTime,
 }) => {
   const _ = useTranslation();
   const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
@@ -105,13 +106,20 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         disabled={!view?.history.canGoForward}
       />
       {progressValid && (
-        <span
-          title={_('Reading Progress')}
-          aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
-          className='mx-2 text-center text-sm'
-        >
-          <span aria-hidden='true'>{progressInfo}</span>
-        </span>
+        <div className="flex flex-col items-center mx-2">
+          <span
+            title={_('Reading Progress')}
+            aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
+            className='mx-2 text-center text-sm'
+          >
+            <span aria-hidden='true'>{progressInfo}</span>
+          </span>
+
+          <span className="text-[10px] opacity-60 font-medium uppercase">
+            {currentTime}
+          </span>
+        </div>
+
       )}
       <input
         ref={rangeInputRef}
