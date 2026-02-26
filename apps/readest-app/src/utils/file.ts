@@ -217,15 +217,29 @@ export class NativeFile extends File implements ClosableFile {
   override stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
     const CHUNK_SIZE = 1024 * 1024;
     let offset = 0;
+    let streamHandle: FileHandle | null = null;
+    let streamClosed = false;
+
+    const ensureHandle = async () => {
+      if (streamHandle) return streamHandle;
+      streamHandle = await open(this.#fp, this.#baseDir ? { baseDir: this.#baseDir } : undefined);
+      streamClosed = false;
+      return streamHandle;
+    };
+
+    const closeHandle = async () => {
+      if (!streamHandle || streamClosed) return;
+      await streamHandle.close();
+      streamClosed = true;
+      streamHandle = null;
+    };
 
     return new ReadableStream<Uint8Array<ArrayBuffer>>({
       pull: async (controller) => {
-        if (!this.#handle) {
-          controller.error(new Error('File handle is not open'));
-          return;
-        }
+        const handle = await ensureHandle();
 
         if (offset >= this.size) {
+          await closeHandle();
           controller.close();
           return;
         }
@@ -233,10 +247,11 @@ export class NativeFile extends File implements ClosableFile {
         const end = Math.min(offset + CHUNK_SIZE, this.size);
         const buffer = new Uint8Array(end - offset);
 
-        await this.#handle.seek(offset, SeekMode.Start);
-        const bytesRead = await this.#handle.read(buffer);
+        await handle.seek(offset, SeekMode.Start);
+        const bytesRead = await handle.read(buffer);
 
         if (bytesRead === null || bytesRead === 0) {
+          await closeHandle();
           controller.close();
           return;
         }
@@ -246,7 +261,7 @@ export class NativeFile extends File implements ClosableFile {
       },
 
       cancel: async () => {
-        await this.#handle?.close();
+        await closeHandle();
       },
     });
   }

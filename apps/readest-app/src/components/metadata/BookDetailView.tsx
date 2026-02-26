@@ -180,7 +180,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     {formatPublisher(metadata?.publisher || '') || _('Unknown')}
                   </p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='overflow-hidden pe-1 text-end sm:text-start'>
                   <span className='font-bold'>{_('Published')}</span>
                   <p className='text-neutral-content text-sm'>
                     {formatDate(metadata?.published, true) || _('Unknown')}
@@ -190,7 +190,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <span className='font-bold'>{_('Updated')}</span>
                   <p className='text-neutral-content text-sm'>{formatDate(book.updatedAt) || ''}</p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='overflow-hidden pe-1 text-end sm:text-start'>
                   <span className='font-bold'>{_('Added')}</span>
                   <p className='text-neutral-content text-sm'>{formatDate(book.createdAt) || ''}</p>
                 </div>
@@ -200,7 +200,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     {formatLanguage(metadata?.language) || _('Unknown')}
                   </p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='overflow-hidden pe-1 text-end sm:text-start'>
                   <span className='font-bold'>{_('Subjects')}</span>
                   <p className='text-neutral-content line-clamp-3 text-sm'>
                     {formatAuthors(metadata?.subject || '') || _('Unknown')}
@@ -210,13 +210,13 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <span className='font-bold'>{_('Format')}</span>
                   <p className='text-neutral-content text-sm'>{book.format || _('Unknown')}</p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='overflow-hidden pe-1 text-end sm:text-start'>
                   <span className='font-bold'>{_('File Size')}</span>
                   <p className='text-neutral-content text-sm'>
                     {formatBytes(fileSize) || _('Unknown')}
                   </p>
                 </div>
-                <div className='overflow-hidden'>
+                <div className='col-span-2 overflow-hidden sm:col-span-1'>
                   <span className='font-bold'>{_('Identifier')}</span>
                   <p className='text-neutral-content line-clamp-1 text-sm'>
                     {metadata?.identifier || _('Unknown')}
@@ -245,8 +245,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
           </button>
           {!settings.metadataSeriesCollapsed && (
             <div className='px-4 py-1'>
-              <div className='grid grid-cols-3 gap-4'>
-                <div className='col-span-2 overflow-hidden'>
+              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
+                <div className='overflow-hidden sm:col-span-2'>
                   <span className='font-bold'>{_('Series')}</span>
                   <p className='text-neutral-content text-sm'>{metadata?.series || _('Unknown')}</p>
                 </div>

@@ -457,6 +457,11 @@ foliate-fxl {
   inset: -8px;
 }
 
+input[type='range'].slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 @keyframes spin-counterclockwise {
   from {
     transform: rotate(0deg);
