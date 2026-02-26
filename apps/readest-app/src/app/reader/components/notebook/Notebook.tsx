@@ -92,6 +92,14 @@ const Notebook: React.FC = ({}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!isNotebookVisible || notebookNewAnnotation || notebookEditAnnotation) {
+      setIsSearchBarVisible(false);
+      setSearchResults(null);
+      setSearchTerm('');
+    }
+  }, [isNotebookVisible, notebookNewAnnotation, notebookEditAnnotation]);
+
   const handleNotebookResize = (newWidth: string) => {
     setNotebookWidth(newWidth);
     settings.globalReadSettings.notebookWidth = newWidth;

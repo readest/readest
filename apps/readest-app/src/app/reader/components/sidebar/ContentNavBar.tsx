@@ -59,7 +59,7 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
 
   return (
     <div
-      className='results-nav-bar pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-end'
+      className='results-nav-bar pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-end'
       style={{
         top: gridInsets.top,
         right: gridInsets.right,
@@ -67,7 +67,7 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
         left: gridInsets.left,
       }}
     >
-      <div className='bg-base-100 mx-auto flex w-full items-center justify-center px-4'>
+      <div className='mx-auto flex items-center justify-center px-4'>
         {/* Bottom bar: Navigation buttons and Info */}
         <div className='pointer-events-auto flex h-[52px] max-w-3xl items-center gap-2'>
           {/* Previous button */}
@@ -78,10 +78,12 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
             className={clsx(
               'flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all disabled:opacity-40',
               'bg-base-200 hover:bg-base-300 hover:disabled:bg-base-200',
-              !hasPrevious && 'opacity-40',
             )}
           >
-            <MdChevronLeft size={iconSize20} className='text-base-content' />
+            <MdChevronLeft
+              size={iconSize20}
+              className={clsx('text-base-content', !hasPrevious && 'opacity-40')}
+            />
           </button>
 
           {/* Info bar */}
@@ -129,10 +131,12 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
             className={clsx(
               'flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all',
               'bg-base-200 hover:bg-base-300 hover:disabled:bg-base-200',
-              !hasNext && 'opacity-40',
             )}
           >
-            <MdChevronRight size={iconSize20} className='text-base-content' />
+            <MdChevronRight
+              size={iconSize20}
+              className={clsx('text-base-content', !hasNext && 'opacity-40')}
+            />
           </button>
         </div>
       </div>

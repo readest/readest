@@ -13,7 +13,6 @@ interface Metadata {
 interface Chapter {
   title: string;
   content: string;
-  text: string;
   isVolume: boolean;
 }
 
@@ -28,7 +27,7 @@ interface ExtractChapterOptions {
   fallbackParagraphsPerChapter: number;
 }
 
-interface ConversionResult {
+export interface ConversionResult {
   file: File;
   bookTitle: string;
   chapterCount: number;
@@ -39,6 +38,12 @@ const zipWriteOptions = {
   lastAccessDate: new Date(0),
   lastModDate: new Date(0),
 };
+
+const LARGE_TXT_THRESHOLD_BYTES = 8 * 1024 * 1024;
+const HEADER_TEXT_MAX_CHARS = 1024;
+const HEADER_TEXT_MAX_BYTES = 128 * 1024;
+const ENCODING_HEAD_SAMPLE_BYTES = 64 * 1024;
+const ENCODING_MID_SAMPLE_BYTES = 8192;
 
 const escapeXml = (str: string) => {
   if (!str) return '';
@@ -52,12 +57,20 @@ const escapeXml = (str: string) => {
 
 export class TxtToEpubConverter {
   public async convert(options: Txt2EpubOptions): Promise<ConversionResult> {
+    if (options.file.size <= LARGE_TXT_THRESHOLD_BYTES) {
+      return await this.convertSmallFile(options);
+    }
+    return await this.convertLargeFile(options);
+  }
+
+  private async convertSmallFile(options: Txt2EpubOptions): Promise<ConversionResult> {
     const { file: txtFile, author: providedAuthor, language: providedLanguage } = options;
 
     const fileContent = await txtFile.arrayBuffer();
     const detectedEncoding = this.detectEncoding(fileContent) || 'utf-8';
-    console.log(`Detected encoding: ${detectedEncoding}`);
-    const decoder = new TextDecoder(detectedEncoding);
+    const runtimeEncoding = this.resolveSupportedEncoding(detectedEncoding);
+    // console.log(`Detected encoding: ${detectedEncoding}, runtime encoding: ${runtimeEncoding}`);
+    const decoder = new TextDecoder(runtimeEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
     const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
@@ -73,22 +86,93 @@ export class TxtToEpubConverter {
     } catch {}
     const author = matchedAuthor || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
-    console.log(`Detected language: ${language}`);
+    // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
     const metadata = { bookTitle, author, language, identifier };
 
-    let chapters: Chapter[] = [];
-    for (let i = 8; i >= 6; i--) {
-      chapters = this.extractChapters(txtContent, metadata, {
-        linesBetweenSegments: i,
-        fallbackParagraphsPerChapter: 100,
-      });
+    const fallbackParagraphsPerChapter = 100;
+    let chapters = this.extractChapters(txtContent, metadata, {
+      linesBetweenSegments: 8,
+      fallbackParagraphsPerChapter,
+    });
 
-      if (chapters.length === 0) {
-        throw new Error('No chapters detected.');
-      } else if (chapters.length > 1) {
-        break;
-      }
+    if (chapters.length === 0) {
+      throw new Error('No chapters detected.');
+    }
+
+    if (chapters.length <= 1) {
+      const probeChapterCount = this.probeChapterCount(txtContent, metadata, {
+        linesBetweenSegments: 7,
+        fallbackParagraphsPerChapter,
+      });
+      chapters = this.extractChapters(txtContent, metadata, {
+        linesBetweenSegments: probeChapterCount > 1 ? 7 : 6,
+        fallbackParagraphsPerChapter,
+      });
+    }
+
+    const blob = await this.createEpub(chapters, metadata);
+    return {
+      file: new File([blob], fileName),
+      bookTitle,
+      chapterCount: chapters.length,
+      language,
+    };
+  }
+
+  private async convertLargeFile(options: Txt2EpubOptions): Promise<ConversionResult> {
+    const { file: txtFile, author: providedAuthor, language: providedLanguage } = options;
+    const detectedEncoding = (await this.detectEncodingFromFile(txtFile)) || 'utf-8';
+    const runtimeEncoding = this.resolveSupportedEncoding(detectedEncoding);
+    // console.log(`Detected encoding: ${detectedEncoding}, runtime encoding: ${runtimeEncoding}`);
+
+    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
+    const fileName = `${bookTitle}.epub`;
+    const fileHeader = await this.readHeaderTextFromFile(
+      txtFile,
+      runtimeEncoding,
+      HEADER_TEXT_MAX_CHARS,
+      HEADER_TEXT_MAX_BYTES,
+    );
+
+    const { author, language } = this.extractAuthorAndLanguage(
+      fileHeader,
+      providedAuthor,
+      providedLanguage,
+    );
+    // console.log(`Detected language: ${language}`);
+    const identifier = await partialMD5(txtFile);
+    const metadata = { bookTitle, author, language, identifier };
+
+    const fallbackParagraphsPerChapter = 100;
+    let chapters = await this.extractChaptersFromFileBySegments(
+      txtFile,
+      runtimeEncoding,
+      metadata,
+      {
+        linesBetweenSegments: 8,
+        fallbackParagraphsPerChapter,
+      },
+    );
+
+    if (chapters.length === 0) {
+      throw new Error('No chapters detected.');
+    }
+
+    if (chapters.length <= 1) {
+      const probeChapterCount = await this.probeChapterCountFromFileBySegments(
+        txtFile,
+        runtimeEncoding,
+        metadata,
+        {
+          linesBetweenSegments: 7,
+          fallbackParagraphsPerChapter,
+        },
+      );
+      chapters = await this.extractChaptersFromFileBySegments(txtFile, runtimeEncoding, metadata, {
+        linesBetweenSegments: probeChapterCount > 1 ? 7 : 6,
+        fallbackParagraphsPerChapter,
+      });
     }
 
     const blob = await this.createEpub(chapters, metadata);
@@ -105,10 +189,433 @@ export class TxtToEpubConverter {
     metadata: Metadata,
     option: ExtractChapterOptions,
   ): Chapter[] {
+    const { linesBetweenSegments } = option;
+    const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
+    const chapters: Chapter[] = [];
+    const segments = txtContent.split(segmentRegex);
+    for (const segment of segments) {
+      const segmentChapters = this.extractChaptersFromSegment(
+        segment,
+        metadata,
+        option,
+        chapters.length,
+      );
+      chapters.push(...segmentChapters);
+    }
+
+    return chapters;
+  }
+
+  private probeChapterCount(
+    txtContent: string,
+    metadata: Metadata,
+    option: ExtractChapterOptions,
+  ): number {
+    const { linesBetweenSegments } = option;
+    const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
+    let chapterCount = 0;
+    const segments = txtContent.split(segmentRegex);
+    for (const segment of segments) {
+      chapterCount += this.probeChapterCountFromSegment(segment, metadata, option);
+
+      if (chapterCount > 1) {
+        return chapterCount;
+      }
+    }
+
+    return chapterCount;
+  }
+
+  private async extractChaptersFromFileBySegments(
+    txtFile: File,
+    encoding: string,
+    metadata: Metadata,
+    option: ExtractChapterOptions,
+  ): Promise<Chapter[]> {
+    const chapters: Chapter[] = [];
+    for await (const segment of this.iterateSegmentsFromFile(
+      txtFile,
+      encoding,
+      option.linesBetweenSegments,
+    )) {
+      const segmentChapters = this.extractChaptersFromSegment(
+        segment,
+        metadata,
+        option,
+        chapters.length,
+      );
+      chapters.push(...segmentChapters);
+    }
+    return chapters;
+  }
+
+  private async probeChapterCountFromFileBySegments(
+    txtFile: File,
+    encoding: string,
+    metadata: Metadata,
+    option: ExtractChapterOptions,
+  ): Promise<number> {
+    let chapterCount = 0;
+    for await (const segment of this.iterateSegmentsFromFile(
+      txtFile,
+      encoding,
+      option.linesBetweenSegments,
+    )) {
+      chapterCount += this.probeChapterCountFromSegment(segment, metadata, option);
+      if (chapterCount > 1) {
+        return chapterCount;
+      }
+    }
+    return chapterCount;
+  }
+
+  private async detectEncodingFromFile(file: File): Promise<string | undefined> {
+    const headSampleSize = Math.min(file.size, ENCODING_HEAD_SAMPLE_BYTES);
+    const headBuffer = await file.slice(0, headSampleSize).arrayBuffer();
+    const headSample = new Uint8Array(headBuffer);
+
+    try {
+      this.assertStrictUtf8Sample(headSample);
+      if (file.size > headSampleSize * 2) {
+        const midSampleSize = Math.min(ENCODING_MID_SAMPLE_BYTES, file.size - headSampleSize);
+        const midSampleStart = Math.floor((file.size - midSampleSize) / 2);
+        const midBuffer = await file
+          .slice(midSampleStart, midSampleStart + midSampleSize)
+          .arrayBuffer();
+        this.assertStrictUtf8Sample(new Uint8Array(midBuffer));
+      }
+      return 'utf-8';
+    } catch {
+      let validBytes = 0;
+      let checkedBytes = 0;
+      const sampleSize = Math.min(headSample.length, 10000);
+
+      for (let i = 0; i < sampleSize; i++) {
+        try {
+          new TextDecoder('utf-8', { fatal: true }).decode(headSample.slice(i, i + 100));
+          validBytes += 100;
+          checkedBytes += 100;
+          i += 99;
+        } catch {
+          checkedBytes++;
+        }
+      }
+
+      const validPercentage = checkedBytes > 0 ? (validBytes / checkedBytes) * 100 : 0;
+      console.log(`UTF-8 validity: ${validPercentage.toFixed(2)}%`);
+      if (validPercentage > 80) {
+        console.log('Treating as UTF-8 despite some invalid sequences');
+        return 'utf-8';
+      }
+    }
+
+    if (headSample[0] === 0xff && headSample[1] === 0xfe) {
+      return 'utf-16le';
+    }
+
+    if (headSample[0] === 0xfe && headSample[1] === 0xff) {
+      return 'utf-16be';
+    }
+
+    if (headSample[0] === 0xef && headSample[1] === 0xbb && headSample[2] === 0xbf) {
+      return 'utf-8';
+    }
+
+    const sample = headSample.slice(0, Math.min(1024, headSample.length));
+    let highByteCount = 0;
+    for (let i = 0; i < sample.length; i++) {
+      if (sample[i]! >= 0x80) {
+        highByteCount++;
+      }
+    }
+
+    const highByteRatio = sample.length > 0 ? highByteCount / sample.length : 0;
+    if (highByteRatio > 0.3) {
+      return 'gbk';
+    }
+
+    if (highByteRatio > 0.1) {
+      let sjisPattern = false;
+      for (let i = 0; i < sample.length - 1; i++) {
+        const b1 = sample[i]!;
+        const b2 = sample[i + 1]!;
+        if (
+          ((b1 >= 0x81 && b1 <= 0x9f) || (b1 >= 0xe0 && b1 <= 0xfc)) &&
+          ((b2 >= 0x40 && b2 <= 0x7e) || (b2 >= 0x80 && b2 <= 0xfc))
+        ) {
+          sjisPattern = true;
+          break;
+        }
+      }
+
+      if (sjisPattern) {
+        return 'shift-jis';
+      }
+
+      return 'gb18030';
+    }
+
+    return 'utf-8';
+  }
+
+  private async readHeaderTextFromFile(
+    file: File,
+    encoding: string,
+    maxChars: number,
+    maxBytes: number,
+  ): Promise<string> {
+    const decoder = new TextDecoder(encoding);
+    const headerBytes = await file.slice(0, Math.min(file.size, maxBytes)).arrayBuffer();
+    return decoder.decode(headerBytes).slice(0, maxChars).trim();
+  }
+
+  private async *iterateSegmentsFromFile(
+    file: File,
+    encoding: string,
+    linesBetweenSegments: number,
+  ): AsyncGenerator<string> {
+    const reader = file.stream().getReader();
+    const decoder = new TextDecoder(encoding);
+    const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
+    let pending = '';
+    let completed = false;
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          completed = true;
+          break;
+        }
+        if (!value) continue;
+        pending += decoder.decode(value, { stream: true });
+        const consumed = this.consumeCompleteSegments(pending, segmentRegex);
+        pending = consumed.pending;
+        for (const segment of consumed.segments) {
+          yield segment;
+        }
+      }
+
+      pending += decoder.decode();
+      const consumed = this.consumeCompleteSegments(pending, segmentRegex);
+      for (const segment of consumed.segments) {
+        yield segment;
+      }
+      if (consumed.pending) {
+        yield consumed.pending;
+      }
+    } finally {
+      if (!completed) {
+        try {
+          await reader.cancel();
+        } catch {}
+      }
+      reader.releaseLock();
+    }
+  }
+
+  *iterateSegmentsFromTextChunks(
+    chunks: Iterable<string>,
+    linesBetweenSegments: number,
+  ): Generator<string> {
+    const segmentRegex = this.createSegmentRegex(linesBetweenSegments);
+    let pending = '';
+
+    for (const chunk of chunks) {
+      pending += chunk;
+      const consumed = this.consumeCompleteSegments(pending, segmentRegex);
+      pending = consumed.pending;
+      for (const segment of consumed.segments) {
+        yield segment;
+      }
+    }
+
+    if (pending) {
+      yield pending;
+    }
+  }
+
+  private consumeCompleteSegments(
+    pending: string,
+    segmentRegex: RegExp,
+  ): { segments: string[]; pending: string } {
+    const segments: string[] = [];
+    let match = segmentRegex.exec(pending);
+    while (match) {
+      segments.push(pending.slice(0, match.index));
+      pending = pending.slice(match.index + match[0].length);
+      segmentRegex.lastIndex = 0;
+      match = segmentRegex.exec(pending);
+    }
+    return { segments, pending };
+  }
+
+  private extractAuthorAndLanguage(
+    fileHeader: string,
+    providedAuthor?: string,
+    providedLanguage?: string,
+  ): { author: string; language: string } {
+    const authorMatch =
+      fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
+      fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    try {
+      matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+    } catch {}
+    const author = matchedAuthor || providedAuthor || '';
+    const language = providedLanguage || detectLanguage(fileHeader);
+    return { author, language };
+  }
+
+  private extractChaptersFromSegment(
+    segment: string,
+    metadata: Metadata,
+    option: ExtractChapterOptions,
+    chapterOffset: number,
+  ): Chapter[] {
     const { language } = metadata;
-    const { linesBetweenSegments, fallbackParagraphsPerChapter } = option;
-    const segmentRegex = new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{8,}\r?\n`);
+    const { fallbackParagraphsPerChapter } = option;
+    const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
+    if (!trimmedSegment) return [];
+
+    const chapterRegexps = this.createChapterRegexps(language);
+    let matches: string[] = [];
+    for (const chapterRegex of chapterRegexps) {
+      const tryMatches = trimmedSegment.split(chapterRegex);
+      if (this.isGoodMatches(tryMatches)) {
+        matches = this.joinAroundUndefined(tryMatches);
+        break;
+      }
+    }
+
+    if (matches.length === 0 && fallbackParagraphsPerChapter > 0) {
+      const chapters: Chapter[] = [];
+      const paragraphs = trimmedSegment.split(/\n+/);
+      const totalParagraphs = paragraphs.length;
+      for (let i = 0; i < totalParagraphs; i += fallbackParagraphsPerChapter) {
+        const chunks = paragraphs.slice(i, i + fallbackParagraphsPerChapter);
+        const formattedSegment = this.formatSegment(chunks.join('\n'));
+        const title = `${chapterOffset + chapters.length + 1}`;
+        const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
+        chapters.push({ title, content, isVolume: false });
+      }
+      return chapters;
+    }
+
+    const segmentChapters: Chapter[] = [];
+    for (let j = 1; j < matches.length; j += 2) {
+      const title = matches[j]?.trim() || '';
+      const content = matches[j + 1]?.trim() || '';
+
+      let isVolume = false;
+      if (language === 'zh') {
+        isVolume = /第[零〇一二三四五六七八九十百千万0-9]+(卷|本|册|部)/.test(title);
+      } else {
+        isVolume = /\b(Part|Volume|Book)\b/i.test(title);
+      }
+
+      const headTitle = isVolume ? `<h1>${title}</h1>` : `<h2>${title}</h2>`;
+      const formattedSegment = this.formatSegment(content);
+      segmentChapters.push({
+        title: escapeXml(title),
+        content: `${headTitle}<p>${formattedSegment}</p>`,
+        isVolume,
+      });
+    }
+
+    if (matches[0] && matches[0].trim()) {
+      const initialContent = matches[0].trim();
+      const firstLine = initialContent.split('\n')[0]!.trim();
+      const segmentTitle =
+        (firstLine.length > 16 ? initialContent.split(/[\n\s\p{P}]/u)[0]!.trim() : firstLine) ||
+        initialContent.slice(0, 16);
+      const formattedSegment = this.formatSegment(initialContent);
+      segmentChapters.unshift({
+        title: escapeXml(segmentTitle),
+        content: `<h3></h3><p>${formattedSegment}</p>`,
+        isVolume: false,
+      });
+    }
+
+    return segmentChapters;
+  }
+
+  private probeChapterCountFromSegment(
+    segment: string,
+    metadata: Metadata,
+    option: ExtractChapterOptions,
+  ): number {
+    const { language } = metadata;
+    const { fallbackParagraphsPerChapter } = option;
+    const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
+    if (!trimmedSegment) return 0;
+
+    const chapterRegexps = this.createChapterRegexps(language);
+    let matches: string[] = [];
+    for (const chapterRegex of chapterRegexps) {
+      const tryMatches = trimmedSegment.split(chapterRegex);
+      if (this.isGoodMatches(tryMatches)) {
+        matches = this.joinAroundUndefined(tryMatches);
+        break;
+      }
+    }
+
+    if (matches.length === 0 && fallbackParagraphsPerChapter > 0) {
+      const paragraphs = trimmedSegment.split(/\n+/);
+      return Math.ceil(paragraphs.length / fallbackParagraphsPerChapter);
+    }
+
+    let chapterCount = Math.floor(matches.length / 2);
+    if (matches[0] && matches[0].trim()) {
+      chapterCount++;
+    }
+    return chapterCount;
+  }
+
+  private createSegmentRegex(linesBetweenSegments: number): RegExp {
+    return new RegExp(`(?:\\r?\\n){${linesBetweenSegments},}|-{8,}\r?\n`);
+  }
+
+  private formatSegment(segment: string): string {
+    segment = escapeXml(segment);
+    return segment
+      .replace(/-{8,}|_{8,}/g, '\n')
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter((line) => line)
+      .join('</p><p>');
+  }
+
+  private joinAroundUndefined(arr: (string | undefined)[]): string[] {
+    return arr.reduce<string[]>((acc, curr, i, src) => {
+      if (
+        curr === undefined &&
+        i > 0 &&
+        i < src.length - 1 &&
+        src[i - 1] !== undefined &&
+        src[i + 1] !== undefined
+      ) {
+        acc[acc.length - 1] += src[i + 1]!;
+        return acc;
+      }
+      if (curr !== undefined && (i === 0 || src[i - 1] !== undefined)) {
+        acc.push(curr);
+      }
+      return acc;
+    }, []);
+  }
+
+  private isGoodMatches(matches: string[], maxLength: number = 100000): boolean {
+    const meaningfulParts = matches.filter((part) => part && part.trim().length > 0);
+    if (meaningfulParts.length <= 1) return false;
+
+    const hasLongParts = meaningfulParts.some((part) => part.length > maxLength);
+    return !hasLongParts;
+  }
+
+  private createChapterRegexps(language: string): RegExp[] {
     const chapterRegexps: RegExp[] = [];
+
     if (language === 'zh') {
       chapterRegexps.push(
         new RegExp(
@@ -135,142 +642,38 @@ export class TxtToEpubConverter {
           'gu',
         ),
       );
-    } else {
-      const chapterKeywords = ['Chapter', 'Part', 'Section', 'Book', 'Volume', 'Act'];
-
-      const prefaceKeywords = [
-        'Prologue',
-        'Epilogue',
-        'Introduction',
-        'Foreword',
-        'Preface',
-        'Afterword',
-      ];
-
-      const numberPattern = String.raw`(\d+|(?:[IVXLCDM]{2,}|V|X|L|C|D|M)\b)`;
-      const dotNumberPattern = String.raw`\.\d{1,4}`;
-      const titlePattern = String.raw`[^\n]{0,50}`;
-
-      const normalChapterPattern = chapterKeywords
-        .map(
-          (k) =>
-            String.raw`${k}\s*(?:${numberPattern}|${dotNumberPattern})(?:[:.\-–—]?\s*${titlePattern})?`,
-        )
-        .join('|');
-
-      const prefacePattern = prefaceKeywords
-        .map((k) => String.raw`${k}(?:[:.\-–—]?\s*${titlePattern})?`)
-        .join('|');
-
-      const combinedPattern = String.raw`(?:^|\n|\s)(?:${normalChapterPattern}|${prefacePattern})(?=\s|$)`;
-
-      chapterRegexps.push(new RegExp(combinedPattern, 'gi'));
+      return chapterRegexps;
     }
 
-    const formatSegment = (segment: string): string => {
-      segment = escapeXml(segment);
-      return segment
-        .replace(/-{8,}|_{8,}/g, '\n')
-        .split(/\n+/)
-        .map((line) => line.trim())
-        .filter((line) => line)
-        .join('</p><p>');
-    };
+    const chapterKeywords = ['Chapter', 'Part', 'Section', 'Book', 'Volume', 'Act'];
+    const prefaceKeywords = [
+      'Prologue',
+      'Epilogue',
+      'Introduction',
+      'Foreword',
+      'Preface',
+      'Afterword',
+    ];
 
-    const joinAroundUndefined = (arr: (string | undefined)[]) =>
-      arr.reduce<string[]>((acc, curr, i, src) => {
-        if (
-          curr === undefined &&
-          i > 0 &&
-          i < src.length - 1 &&
-          src[i - 1] !== undefined &&
-          src[i + 1] !== undefined
-        ) {
-          acc[acc.length - 1] += src[i + 1]!;
-          return acc;
-        }
-        if (curr !== undefined && (i === 0 || src[i - 1] !== undefined)) {
-          acc.push(curr);
-        }
-        return acc;
-      }, []);
+    const numberPattern = String.raw`(\d+|(?:[IVXLCDM]{2,}|V|X|L|C|D|M)\b)`;
+    const dotNumberPattern = String.raw`\.\d{1,4}`;
+    const titlePattern = String.raw`[^\n]{0,50}`;
 
-    const isGoodMatches = (matches: string[], maxLength: number = 100000): boolean => {
-      const meaningfulParts = matches.filter((part) => part && part.trim().length > 0);
-      if (meaningfulParts.length <= 1) return false;
+    const normalChapterPattern = chapterKeywords
+      .map(
+        (k) =>
+          String.raw`${k}\s*(?:${numberPattern}|${dotNumberPattern})(?:[:.\-–—]?\s*${titlePattern})?`,
+      )
+      .join('|');
 
-      const hasLongParts = meaningfulParts.some((part) => part.length > maxLength);
-      return !hasLongParts;
-    };
+    const prefacePattern = prefaceKeywords
+      .map((k) => String.raw`${k}(?:[:.\-–—]?\s*${titlePattern})?`)
+      .join('|');
 
-    const chapters: Chapter[] = [];
-    const segments = txtContent.split(segmentRegex);
-    for (const segment of segments) {
-      const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
-      if (!trimmedSegment) continue;
+    const combinedPattern = String.raw`(?:^|\n|\s)(?:${normalChapterPattern}|${prefacePattern})(?=\s|$)`;
+    chapterRegexps.push(new RegExp(combinedPattern, 'gi'));
 
-      const segmentChapters: Chapter[] = [];
-      let matches: string[] = [];
-      for (const chapterRegex of chapterRegexps) {
-        const tryMatches = trimmedSegment.split(chapterRegex);
-        if (isGoodMatches(tryMatches)) {
-          matches = joinAroundUndefined(tryMatches);
-          break;
-        }
-      }
-
-      if (matches.length === 0 && fallbackParagraphsPerChapter > 0) {
-        const paragraphs = trimmedSegment.split(/\n+/);
-        const totalParagraphs = paragraphs.length;
-        for (let i = 0; i < totalParagraphs; i += fallbackParagraphsPerChapter) {
-          const chunks = paragraphs.slice(i, i + fallbackParagraphsPerChapter);
-          const formattedSegment = formatSegment(chunks.join('\n'));
-          const title = `${chapters.length + 1}`;
-          const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-          chapters.push({ title, content, text: chunks.join('\n'), isVolume: false });
-        }
-        continue;
-      }
-
-      for (let j = 1; j < matches.length; j += 2) {
-        const title = matches[j]?.trim() || '';
-        const content = matches[j + 1]?.trim() || '';
-
-        let isVolume = false;
-        if (language === 'zh') {
-          isVolume = /第[零〇一二三四五六七八九十百千万0-9]+(卷|本|册|部)/.test(title);
-        } else {
-          isVolume = /\b(Part|Volume|Book)\b/i.test(title);
-        }
-
-        const headTitle = isVolume ? `<h1>${title}</h1>` : `<h2>${title}</h2>`;
-        const formattedSegment = formatSegment(content);
-        segmentChapters.push({
-          title: escapeXml(title),
-          content: `${headTitle}<p>${formattedSegment}</p>`,
-          text: content,
-          isVolume: isVolume,
-        });
-      }
-
-      if (matches[0] && matches[0].trim()) {
-        const initialContent = matches[0].trim();
-        const firstLine = initialContent.split('\n')[0]!.trim();
-        const segmentTitle =
-          (firstLine.length > 16 ? initialContent.split(/[\n\s\p{P}]/u)[0]!.trim() : firstLine) ||
-          initialContent.slice(0, 16);
-        const formattedSegment = formatSegment(initialContent);
-        segmentChapters.unshift({
-          title: escapeXml(segmentTitle),
-          content: `<h3></h3><p>${formattedSegment}</p>`,
-          text: initialContent,
-          isVolume: false,
-        });
-      }
-      chapters.push(...segmentChapters);
-    }
-
-    return chapters;
+    return chapterRegexps;
   }
 
   private async createEpub(chapters: Chapter[], metadata: Metadata): Promise<Blob> {
@@ -368,7 +771,7 @@ export class TxtToEpubConverter {
     // Add chapter files
     for (let i = 0; i < chapters.length; i++) {
       const chapter = chapters[i]!;
-      const lang = detectLanguage(chapter.text);
+      const lang = language;
       const chapterContent = `<?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" lang="${lang}" xml:lang="${lang}">
@@ -414,8 +817,17 @@ export class TxtToEpubConverter {
   }
 
   private detectEncoding(buffer: ArrayBuffer): string | undefined {
+    const utf8HeadSampleSize = Math.min(buffer.byteLength, 64 * 1024);
+    const utf8HeadSample = buffer.slice(0, utf8HeadSampleSize);
+
     try {
-      new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+      this.assertStrictUtf8Sample(new Uint8Array(utf8HeadSample));
+      if (buffer.byteLength > utf8HeadSampleSize * 2) {
+        const midSampleSize = Math.min(8192, buffer.byteLength - utf8HeadSampleSize);
+        const midSampleStart = Math.floor((buffer.byteLength - midSampleSize) / 2);
+        const midSample = buffer.slice(midSampleStart, midSampleStart + midSampleSize);
+        this.assertStrictUtf8Sample(new Uint8Array(midSample));
+      }
       return 'utf-8';
     } catch {
       const uint8Array = new Uint8Array(buffer);
@@ -435,7 +847,7 @@ export class TxtToEpubConverter {
         }
       }
 
-      const validPercentage = (validBytes / checkedBytes) * 100;
+      const validPercentage = checkedBytes > 0 ? (validBytes / checkedBytes) * 100 : 0;
       console.log(`UTF-8 validity: ${validPercentage.toFixed(2)}%`);
 
       // If more than 80% is valid UTF-8, consider it UTF-8 with some corruption
@@ -503,5 +915,59 @@ export class TxtToEpubConverter {
   private extractBookTitle(filename: string): string {
     const match = filename.match(/《([^》]+)》/);
     return match ? match[1]! : filename.split('.')[0]!;
+  }
+
+  private assertStrictUtf8Sample(sample: Uint8Array): void {
+    const decoder = new TextDecoder('utf-8', { fatal: true });
+    try {
+      decoder.decode(sample);
+      return;
+    } catch {
+      // Sampling may start/end inside a multibyte code point.
+      // Retry a few boundary offsets while keeping most bytes untouched.
+      const maxOffset = Math.min(3, sample.length - 1);
+      for (let startOffset = 0; startOffset <= maxOffset; startOffset++) {
+        for (let endOffset = 0; endOffset <= maxOffset; endOffset++) {
+          if (startOffset === 0 && endOffset === 0) continue;
+          const end = sample.length - endOffset;
+          if (end - startOffset < 16) continue;
+          try {
+            decoder.decode(sample.subarray(startOffset, end));
+            return;
+          } catch {
+            // continue trying other offsets
+          }
+        }
+      }
+      throw new Error('invalid utf-8 sample');
+    }
+  }
+
+  private isEncodingSupported(encoding: string): boolean {
+    try {
+      new TextDecoder(encoding);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private resolveSupportedEncoding(detectedEncoding: string): string {
+    const normalized = detectedEncoding.toLowerCase();
+    const candidates = [
+      normalized,
+      ...(normalized === 'gbk' ? ['gb18030', 'gb2312'] : []),
+      ...(normalized === 'gb18030' ? ['gbk', 'gb2312'] : []),
+      ...(normalized === 'shift-jis' ? ['shift_jis', 'sjis'] : []),
+      ...(normalized === 'utf-16' ? ['utf-16le', 'utf-16be'] : []),
+      'utf-8',
+    ];
+
+    for (const encoding of candidates) {
+      if (this.isEncodingSupported(encoding)) {
+        return encoding;
+      }
+    }
+    return 'utf-8';
   }
 }

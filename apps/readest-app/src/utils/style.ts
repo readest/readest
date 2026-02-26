@@ -148,6 +148,9 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
+    body {
+      ${isEink ? `background-color: ${bg} !important;` : ''}
+    }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
@@ -167,6 +170,9 @@ const getColorStyles = (
     img {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
+    }
+    svg, img {
+      ${overrideColor ? `background-color: transparent !important;` : ''};
     }
     /* horizontal rule #1649 */
     *:has(> hr.background-img):not(body) {
@@ -272,9 +278,6 @@ const getLayoutStyles = (
   body {
     overflow: unset;
     zoom: ${zoomLevel};
-  }
-  svg, img {
-    background-color: transparent !important;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;

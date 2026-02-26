@@ -14,7 +14,12 @@ export function formatProgress(
     return template
       .replace('{current}', currentStr)
       .replace('{total}', totalStr)
-      .replace('{percent}', (((current + 1) / total) * 100).toFixed(fractionDigits));
+      .replace(
+        '{percent}',
+        (((current + 1) / total) * 100).toFixed(
+          current + 1 < total && total > 100 ? fractionDigits : 0,
+        ),
+      );
   } else {
     return '';
   }
