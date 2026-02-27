@@ -472,6 +472,10 @@ input[type='range'].slider-input {
   }
 }
 
+.btn-ghost.btn-active {
+  background-color: theme('colors.base-300');
+}
+
 .animate-reverse-spin {
   animation: spin-counterclockwise 1s linear;
 }

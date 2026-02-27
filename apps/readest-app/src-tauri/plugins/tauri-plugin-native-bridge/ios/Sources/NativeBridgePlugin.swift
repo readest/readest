@@ -889,6 +889,28 @@ class NativeBridgePlugin: Plugin {
       }
     }
   }
+
+  @objc public func get_safe_area_insets(_ invoke: Invoke) {
+    DispatchQueue.main.async {
+      if let window = UIApplication.shared.windows.first {
+        let insets = window.safeAreaInsets
+        invoke.resolve([
+          "top": insets.top,
+          "left": insets.left,
+          "bottom": insets.bottom,
+          "right": insets.right
+        ])
+      } else {
+        invoke.resolve([
+          "error": "No window found",
+          "top": 0,
+          "left": 0,
+          "bottom": 0,
+          "right": 0
+        ])
+      }
+    }
+  }
 }
 
 @_cdecl("init_plugin_native_bridge")
