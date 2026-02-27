@@ -9,6 +9,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import { useCurrentTime } from '../hooks/useCurrentTime';
 
 interface PageInfoProps {
   bookKey: string;
@@ -80,21 +81,10 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
   const showPagesLeft = total - 1 > current;
 
   const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
-  const currentTimeMode = useState(viewSettings.showCurrentTime)
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000 * 20);
+  const showCurrentTime = viewSettings.showCurrentTime;
+  const formattedTime = useCurrentTime(showCurrentTime)
 
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedTime = currentTime.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 
   const cycleProgressInfoModes = () => {
     if (!viewSettings.tapToToggleFooter) return;
@@ -212,7 +202,7 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           </>
         )}
 
-        {currentTimeMode && (
+        {showCurrentTime && (
           <span className={clsx('text-end', isVertical ? 'mt-auto' : 'ms-auto')}>
             {formattedTime}
           </span>

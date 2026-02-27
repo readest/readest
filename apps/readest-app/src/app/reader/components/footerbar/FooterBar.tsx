@@ -14,6 +14,7 @@ import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
 import { RSVPControl } from '../rsvp';
+import { useCurrentTime } from '../../hooks/useCurrentTime';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -188,20 +189,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000 * 20);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedTime = currentTime.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const formattedTime = useCurrentTime(true)
 
   const commonProps: FooterBarChildProps = {
     bookKey,
