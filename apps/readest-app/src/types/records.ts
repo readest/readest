@@ -41,6 +41,7 @@ export interface DBBookNote {
   id: string;
   type: string;
   cfi: string;
+  page?: number;
   text?: string;
   style?: string;
   color?: string;

@@ -585,6 +585,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       cfi,
       text: selection.text,
       note: '',
+      page: progress.page,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -625,6 +626,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       color,
       text: selection.text,
       note: '',
+      page: progress.page,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

@@ -40,7 +40,7 @@ const Notebook: React.FC = ({}) => {
     useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
   const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
   const { setNotebookNewAnnotation, setNotebookEditAnnotation, setNotebookActiveTab } =
@@ -129,6 +129,7 @@ const Notebook: React.FC = ({}) => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
+    const progress = getProgress(sideBarBookKey)!;
 
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
@@ -139,6 +140,7 @@ const Notebook: React.FC = ({}) => {
       type: 'annotation',
       cfi,
       note,
+      page: progress.page,
       text: selection.text,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -156,6 +158,7 @@ const Notebook: React.FC = ({}) => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
+    const progress = getProgress(sideBarBookKey)!;
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((item) => item.id === note.id);
     if (existingIndex === -1) return;
@@ -164,6 +167,7 @@ const Notebook: React.FC = ({}) => {
     } else {
       note.updatedAt = Date.now();
     }
+    note.page = progress.page;
     annotations[existingIndex] = note;
     view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);

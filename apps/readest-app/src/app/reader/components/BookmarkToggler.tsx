@@ -47,6 +47,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         cfi,
         text: truncatedText ? truncatedText : `${getCurrentPage(bookData.book!, progress)}`,
         note: '',
+        page: progress.page,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -57,6 +58,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         existingBookmark.deletedAt = null;
         existingBookmark.updatedAt = Date.now();
         existingBookmark.text = bookmark.text;
+        existingBookmark.page = bookmark.page;
       } else {
         bookmarks.push(bookmark);
       }
