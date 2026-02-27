@@ -70,7 +70,8 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
-  const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime)
+  const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime);
+  const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(viewSettings.showCurrentBatteryStatus);
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
@@ -108,6 +109,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
       showCurrentTime: setShowCurrentTime,
+      showCurrentBatteryStatus: setShowCurrentBatteryStatus,
       tapToToggleFooter: setTapToToggleFooter,
       showMarginsOnScroll: setShowMarginsOnScroll,
     });
@@ -343,9 +345,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showCurrentTime', showCurrentTime, false, false);
-    console.log(showCurrentTime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCurrentTime]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'showCurrentBatteryStatus', showCurrentBatteryStatus, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCurrentBatteryStatus]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
@@ -737,6 +743,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 checked={showCurrentTime}
                 disabled={!showFooter}
                 onChange={() => setShowCurrentTime(!showCurrentTime)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Current Battery Staus')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showCurrentBatteryStatus}
+                disabled={!showFooter}
+                onChange={() => setShowCurrentBatteryStatus(!showCurrentBatteryStatus)}
               />
             </div>
             <div className='config-item'>

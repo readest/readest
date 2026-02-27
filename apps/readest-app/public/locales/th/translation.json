@@ -823,6 +823,7 @@
   "Clear search history": "ล้างประวัติการค้นหา",
   "Tap to Toggle Footer": "แตะเพื่อสลับส่วนท้าย",
   "Show Current Time": "แสดงเวลาปัจจุบัน",
+  "Show Current Battery Status": "แสดงสถานะแบตเตอรี่ปัจจุบัน",
   "Exported successfully": "ส่งออกสำเร็จ",
   "Book exported successfully.": "ส่งออกหนังสือสำเร็จ",
   "Failed to export the book.": "ส่งออกหนังสือล้มเหลว",
