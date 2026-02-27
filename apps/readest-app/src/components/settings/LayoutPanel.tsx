@@ -71,6 +71,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
   const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime);
+  const [use24HourClock, setUse24HourClock] = useState(viewSettings.use24HourClock);
   const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(viewSettings.showCurrentBatteryStatus);
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
@@ -109,6 +110,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
       showCurrentTime: setShowCurrentTime,
+      use24HourClock: setUse24HourClock,
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
       tapToToggleFooter: setTapToToggleFooter,
       showMarginsOnScroll: setShowMarginsOnScroll,
@@ -347,6 +349,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'showCurrentTime', showCurrentTime, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCurrentTime]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'use24HourClock', use24HourClock, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [use24HourClock]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showCurrentBatteryStatus', showCurrentBatteryStatus, false, false);
@@ -745,6 +752,18 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 onChange={() => setShowCurrentTime(!showCurrentTime)}
               />
             </div>
+            {showCurrentTime && (
+              <div className='config-item'>
+                <span className=''>{_('Use 24 Hour Clock')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={use24HourClock}
+                  disabled={!showFooter}
+                  onChange={() => setUse24HourClock(!use24HourClock)}
+                />
+              </div>
+            )}
             <div className='config-item'>
               <span className=''>{_('Show Current Battery Staus')}</span>
               <input
