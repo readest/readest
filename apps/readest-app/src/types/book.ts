@@ -202,6 +202,7 @@ export interface ViewConfig {
   showRemainingTime: boolean;
   showRemainingPages: boolean;
   showProgressInfo: boolean;
+  showCurrentTime: boolean;
   tapToToggleFooter: boolean;
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
@@ -286,16 +287,16 @@ export interface ProofreadRulesConfig {
 
 export interface ViewSettings
   extends
-    BookLayout,
-    BookStyle,
-    BookFont,
-    BookLanguage,
-    ViewConfig,
-    TTSConfig,
-    TranslatorConfig,
-    ScreenConfig,
-    ProofreadRulesConfig,
-    AnnotatorConfig {
+  BookLayout,
+  BookStyle,
+  BookFont,
+  BookLanguage,
+  ViewConfig,
+  TTSConfig,
+  TranslatorConfig,
+  ScreenConfig,
+  ProofreadRulesConfig,
+  AnnotatorConfig {
   paragraphMode?: ParagraphModeConfig;
 }
 

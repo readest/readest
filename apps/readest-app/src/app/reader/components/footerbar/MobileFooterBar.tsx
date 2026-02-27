@@ -14,6 +14,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   progressFraction,
   navigationHandlers,
   onSetActionTab,
+  currentTime,
 }) => {
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
   const sliderHeight = useResponsiveSize(28);
@@ -32,6 +33,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         navigationHandlers={navigationHandlers}
         bottomOffset={bottomOffset}
         sliderHeight={sliderHeight}
+        currentTime={currentTime}
       />
       <FontLayoutPanel
         bookKey={bookKey}
