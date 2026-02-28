@@ -467,7 +467,7 @@ export const UpdaterContent = ({
                   </div>
                 )}
 
-                <div className='card-actions'>
+                <div className={clsx('card-actions', isDownloading && 'hidden sm:flex')}>
                   <button
                     className={clsx(
                       'btn btn-warning text-base-100 px-6 font-bold',
