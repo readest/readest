@@ -27,6 +27,13 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.web
+.env.tauri
+.env.development
+.env.production
+.env.test
+.env.local
+.env
 
 # certs and keys
 /private_keys
