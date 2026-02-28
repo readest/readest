@@ -1,17 +1,17 @@
 import clsx from 'clsx';
 import { useCallback } from 'react';
-import { useTransitionRouter } from 'next-view-transitions';
-import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
+import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -121,7 +121,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleUpdateReadingStatus,
 }) => {
   const _ = useTranslation();
-  const router = useTransitionRouter();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
