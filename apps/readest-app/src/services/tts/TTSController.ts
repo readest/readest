@@ -540,6 +540,7 @@ export class TTSController extends EventTarget {
     await this.stop();
     this.#clearHighlighter();
     this.#ttsSectionIndex = -1;
+    this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }
