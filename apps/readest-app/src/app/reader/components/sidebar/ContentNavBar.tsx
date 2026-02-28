@@ -59,7 +59,7 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
 
   return (
     <div
-      className='results-nav-bar pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-end'
+      className='results-nav-bar pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-end'
       style={{
         top: gridInsets.top,
         right: gridInsets.right,

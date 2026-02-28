@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "हाइलाइट्स Readwise में सिंक हो गए",
   "Readwise sync failed: no internet connection": "Readwise सिंक विफल रहा: कोई इंटरनेट कनेक्शन नहीं",
   "Readwise sync failed: {{error}}": "Readwise सिंक विफल रहा: {{error}}",
-  "System Screen Brightness": "सिस्टम स्क्रीन चमक"
+  "System Screen Brightness": "सिस्टम स्क्रीन चमक",
+  "Page:": "पृष्ठ:",
+  "Page: {{number}}": "पृष्ठ: {{number}}",
+  "Annotation page number": "व्याख्या पृष्ठ संख्या"
 }

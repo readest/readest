@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "高亮内容已同步到 Readwise",
   "Readwise sync failed: no internet connection": "Readwise 同步失败：无网络连接",
   "Readwise sync failed: {{error}}": "Readwise 同步失败：{{error}}",
-  "System Screen Brightness": "系统屏幕亮度"
+  "System Screen Brightness": "系统屏幕亮度",
+  "Page:": "页面:",
+  "Page: {{number}}": "页面: {{number}}",
+  "Annotation page number": "批注页码"
 }

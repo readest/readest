@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "විශේෂ අවස්ථා Readwise සමඟ සමමුහුර්ත විය",
   "Readwise sync failed: no internet connection": "Readwise සමමුහුර්තකරණය අසාර්ථක විය: අන්තර්ජාල සම්බන්ධතාවයක් නොමැත",
   "Readwise sync failed: {{error}}": "Readwise සමමුහුර්තකරණය අසාර්ථක විය: {{error}}",
-  "System Screen Brightness": "පද්ධති තිර දීප්තිය"
+  "System Screen Brightness": "පද්ධති තිර දීප්තිය",
+  "Page:": "පිටුව:",
+  "Page: {{number}}": "පිටුව: {{number}}",
+  "Annotation page number": "විවරණ පිටු අංකය"
 }

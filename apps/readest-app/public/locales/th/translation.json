@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "ซิงค์ไฮไลต์ไปยัง Readwise แล้ว",
   "Readwise sync failed: no internet connection": "การซิงค์ Readwise ล้มเหลว: ไม่มีการเชื่อมต่ออินเทอร์เน็ต",
   "Readwise sync failed: {{error}}": "การซิงค์ Readwise ล้มเหลว: {{error}}",
-  "System Screen Brightness": "ความสว่างหน้าจอระบบ"
+  "System Screen Brightness": "ความสว่างหน้าจอระบบ",
+  "Page:": "หน้า:",
+  "Page: {{number}}": "หน้า: {{number}}",
+  "Annotation page number": "หมายเลขหน้าคำอธิบายประกอบ"
 }

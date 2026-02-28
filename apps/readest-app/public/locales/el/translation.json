@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "Οι επισημάνσεις συγχρονίστηκαν στο Readwise",
   "Readwise sync failed: no internet connection": "Ο συγχρονισμός Readwise απέτυχε: δεν υπάρχει σύνδεση στο διαδίκτυο",
   "Readwise sync failed: {{error}}": "Ο συγχρονισμός Readwise απέτυχε: {{error}}",
-  "System Screen Brightness": "Φωτεινότητα οθόνης συστήματος"
+  "System Screen Brightness": "Φωτεινότητα οθόνης συστήματος",
+  "Page:": "Σελίδα:",
+  "Page: {{number}}": "Σελίδα: {{number}}",
+  "Annotation page number": "Αριθμός σελίδας σχολίου"
 }

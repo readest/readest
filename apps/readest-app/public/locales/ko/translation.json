@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "하이라이트가 Readwise에 동기화되었습니다",
   "Readwise sync failed: no internet connection": "Readwise 동기화 실패: 인터넷 연결 없음",
   "Readwise sync failed: {{error}}": "Readwise 동기화 실패: {{error}}",
-  "System Screen Brightness": "시스템 화면 밝기"
+  "System Screen Brightness": "시스템 화면 밝기",
+  "Page:": "페이지:",
+  "Page: {{number}}": "페이지: {{number}}",
+  "Annotation page number": "주석 페이지 번호"
 }

@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "Các phần đánh dấu đã được đồng bộ với Readwise",
   "Readwise sync failed: no internet connection": "Đồng bộ Readwise thất bại: không có kết nối internet",
   "Readwise sync failed: {{error}}": "Đồng bộ Readwise thất bại: {{error}}",
-  "System Screen Brightness": "Độ sáng màn hình hệ thống"
+  "System Screen Brightness": "Độ sáng màn hình hệ thống",
+  "Page:": "Trang:",
+  "Page: {{number}}": "Trang: {{number}}",
+  "Annotation page number": "Số trang chú thích"
 }

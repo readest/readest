@@ -1068,5 +1068,8 @@
   "Highlights synced to Readwise": "Destaques sincronizados com o Readwise",
   "Readwise sync failed: no internet connection": "Sincronização com o Readwise falhou: sem conexão com a internet",
   "Readwise sync failed: {{error}}": "Sincronização com o Readwise falhou: {{error}}",
-  "System Screen Brightness": "Brilho da tela do sistema"
+  "System Screen Brightness": "Brilho da tela do sistema",
+  "Page:": "Página:",
+  "Page: {{number}}": "Página: {{number}}",
+  "Annotation page number": "Número de página da anotação"
 }

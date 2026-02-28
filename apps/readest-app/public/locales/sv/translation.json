@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "Markeringar synkroniserade till Readwise",
   "Readwise sync failed: no internet connection": "Readwise-synkronisering misslyckades: ingen internetanslutning",
   "Readwise sync failed: {{error}}": "Readwise-synkronisering misslyckades: {{error}}",
-  "System Screen Brightness": "Systemets skärmljusstyrka"
+  "System Screen Brightness": "Systemets skärmljusstyrka",
+  "Page:": "Sida:",
+  "Page: {{number}}": "Sida: {{number}}",
+  "Annotation page number": "Annoteringssidnummer"
 }

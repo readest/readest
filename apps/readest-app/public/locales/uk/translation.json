@@ -1080,5 +1080,8 @@
   "Highlights synced to Readwise": "Виділення синхронізовано з Readwise",
   "Readwise sync failed: no internet connection": "Синхронізація Readwise не вдалася: немає інтернет-з'єднання",
   "Readwise sync failed: {{error}}": "Синхронізація Readwise не вдалася: {{error}}",
-  "System Screen Brightness": "Системна яскравість екрана"
+  "System Screen Brightness": "Системна яскравість екрана",
+  "Page:": "Сторінка:",
+  "Page: {{number}}": "Сторінка: {{number}}",
+  "Annotation page number": "Номер сторінки анотації"
 }

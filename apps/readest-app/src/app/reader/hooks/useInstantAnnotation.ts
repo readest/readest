@@ -16,7 +16,7 @@ interface UseInstantAnnotationProps {
 export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantAnnotationProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getView, getViewsById, getViewSettings, getProgress } = useReaderStore();
 
   const startPointRef = useRef<Point | null>(null);

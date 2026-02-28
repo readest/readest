@@ -421,6 +421,31 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const updateBooknotesPage = async () => {
+      const config = getConfig(bookKey);
+      const view = getView(bookKey);
+      if (!config || !view) return;
+      const { booknotes: annotations = [] } = config;
+      annotations.sort((a, b) => {
+        return CFI.compare(a.cfi, b.cfi);
+      });
+      for (const annotation of annotations) {
+        if (annotation.deletedAt || annotation.page || !annotation.cfi) continue;
+        const progress = await view.getCFIProgress(annotation.cfi);
+        if (progress) {
+          annotation.page = progress.location.current + 1;
+        }
+      }
+      const updatedConfig = updateBooknotes(bookKey, annotations);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    };
+    setTimeout(updateBooknotesPage, 3000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleQuickAction = () => {
     const action = viewSettings.annotationQuickAction;
     if (appService?.isAndroidApp && !androidTouchEndRef.current) return;

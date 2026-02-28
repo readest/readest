@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "சிறப்பம்சங்கள் Readwise உடன் ஒத்திசைக்கப்பட்டன",
   "Readwise sync failed: no internet connection": "Readwise ஒத்திசைவு தோல்வியடைந்தது: இணைய இணைப்பு இல்லை",
   "Readwise sync failed: {{error}}": "Readwise ஒத்திசைவு தோல்வியடைந்தது: {{error}}",
-  "System Screen Brightness": "கணினித் திரை பிரகாசம்"
+  "System Screen Brightness": "கணினித் திரை பிரகாசம்",
+  "Page:": "பக்கம்:",
+  "Page: {{number}}": "பக்கம்: {{number}}",
+  "Annotation page number": "சிறுகுறிப்புப் பக்க எண்"
 }

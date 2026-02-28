@@ -243,6 +243,7 @@ export interface NoteExportConfig {
   includeChapterTitles: boolean;
   includeQuotes: boolean;
   includeNotes: boolean;
+  includePageNumber: boolean;
   includeTimestamp: boolean;
   includeChapterSeparator: boolean;
   noteSeparator: string;

@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "ハイライトが Readwise に同期されました",
   "Readwise sync failed: no internet connection": "Readwise 同期失敗：インターネット接続がありません",
   "Readwise sync failed: {{error}}": "Readwise 同期失敗：{{error}}",
-  "System Screen Brightness": "システムの画面の明るさ"
+  "System Screen Brightness": "システムの画面の明るさ",
+  "Page:": "ページ:",
+  "Page: {{number}}": "ページ: {{number}}",
+  "Annotation page number": "注釈のページ番号"
 }

@@ -1068,5 +1068,8 @@
   "Highlights synced to Readwise": "Surlignages synchronisés avec Readwise",
   "Readwise sync failed: no internet connection": "Échec de la synchronisation Readwise : pas de connexion internet",
   "Readwise sync failed: {{error}}": "Échec de la synchronisation Readwise : {{error}}",
-  "System Screen Brightness": "Luminosité de l'écran système"
+  "System Screen Brightness": "Luminosité de l'écran système",
+  "Page:": "Page :",
+  "Page: {{number}}": "Page : {{number}}",
+  "Annotation page number": "Numéro de page de l'annotation"
 }

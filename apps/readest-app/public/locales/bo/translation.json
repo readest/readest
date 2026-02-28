@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "བཀོད་མཆན་ Readwise ལ་མཉམ་བྱུང་བྱས་ཟིན།",
   "Readwise sync failed: no internet connection": "Readwise མཉམ་བྱུང་མ་ཐུབ། དྲ་རྒྱའི་མཐུད་ལམ་མི་འདུག",
   "Readwise sync failed: {{error}}": "Readwise མཉམ་བྱུང་མ་ཐུབ། {{error}}",
-  "System Screen Brightness": "མ་ལག་ཤེལ་སྒོའི་གསལ་ཚད།"
+  "System Screen Brightness": "མ་ལག་ཤེལ་སྒོའི་གསལ་ཚད།",
+  "Page:": "ཤོག་ལྷེ།:",
+  "Page: {{number}}": "ཤོག་ལྷེ།: {{number}}",
+  "Annotation page number": "མཆན་འགྲེལ་ཤོག་ཨང་།"
 }

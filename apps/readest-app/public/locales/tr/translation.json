@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "Vurgular Readwise ile senkronize edildi",
   "Readwise sync failed: no internet connection": "Readwise senkronizasyonu başarısız: internet bağlantısı yok",
   "Readwise sync failed: {{error}}": "Readwise senkronizasyonu başarısız: {{error}}",
-  "System Screen Brightness": "Sistem Ekran Parlaklığı"
+  "System Screen Brightness": "Sistem Ekran Parlaklığı",
+  "Page:": "Sayfa:",
+  "Page: {{number}}": "Sayfa: {{number}}",
+  "Annotation page number": "Açıklama sayfa numarası"
 }

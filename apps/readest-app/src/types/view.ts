@@ -22,6 +22,12 @@ export interface FoliateView extends HTMLElement {
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range: Range) => string;
+  getCFIProgress: (cfi: string) => Promise<{
+    fraction: number;
+    section: { current: number; total: number };
+    location: { current: number; next: number; total: number };
+    time: { section: number; total: number };
+  } | null>;
   resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
   resolveNavigation: (cfiOrHrefOrIndex: string | number) => { index: number; anchor?: RangeAnchor };
   addAnnotation: (

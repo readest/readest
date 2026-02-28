@@ -1104,5 +1104,8 @@
   "Highlights synced to Readwise": "تمت مزامنة التمييزات مع Readwise",
   "Readwise sync failed: no internet connection": "فشلت مزامنة Readwise: لا يوجد اتصال بالإنترنت",
   "Readwise sync failed: {{error}}": "فشلت مزامنة Readwise: {{error}}",
-  "System Screen Brightness": "سطوع شاشة النظام"
+  "System Screen Brightness": "سطوع شاشة النظام",
+  "Page:": "صفحة:",
+  "Page: {{number}}": "صفحة: {{number}}",
+  "Annotation page number": "رقم صفحة التعליق"
 }

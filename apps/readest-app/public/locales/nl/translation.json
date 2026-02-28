@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "Markeringen gesynchroniseerd met Readwise",
   "Readwise sync failed: no internet connection": "Readwise-synchronisatie mislukt: geen internetverbinding",
   "Readwise sync failed: {{error}}": "Readwise-synchronisatie mislukt: {{error}}",
-  "System Screen Brightness": "Systeemhelderheid van het scherm"
+  "System Screen Brightness": "Systeemhelderheid van het scherm",
+  "Page:": "Pagina:",
+  "Page: {{number}}": "Pagina: {{number}}",
+  "Annotation page number": "Annotatiepaginanummer"
 }

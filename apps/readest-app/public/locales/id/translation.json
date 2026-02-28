@@ -1044,5 +1044,8 @@
   "Highlights synced to Readwise": "Sorotan disinkronkan ke Readwise",
   "Readwise sync failed: no internet connection": "Sinkronisasi Readwise gagal: tidak ada koneksi internet",
   "Readwise sync failed: {{error}}": "Sinkronisasi Readwise gagal: {{error}}",
-  "System Screen Brightness": "Kecerahan Layar Sistem"
+  "System Screen Brightness": "Kecerahan Layar Sistem",
+  "Page:": "Halaman:",
+  "Page: {{number}}": "Halaman: {{number}}",
+  "Annotation page number": "Nomor halaman anotasi"
 }

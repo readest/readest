@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "হাইলাইটগুলি Readwise এ সিঙ্ক করা হয়েছে",
   "Readwise sync failed: no internet connection": "Readwise সিঙ্ক ব্যর্থ হয়েছে: ইন্টারনেট সংযোগ নেই",
   "Readwise sync failed: {{error}}": "Readwise সিঙ্ক ব্যর্থ হয়েছে: {{error}}",
-  "System Screen Brightness": "সিস্টেম স্ক্রিন উজ্জ্বলতা"
+  "System Screen Brightness": "সিস্টেম স্ক্রিন উজ্জ্বলতা",
+  "Page:": "পৃষ্ঠা:",
+  "Page: {{number}}": "পৃষ্ঠা: {{number}}",
+  "Annotation page number": "টীকা পৃষ্ঠা নম্বর"
 }

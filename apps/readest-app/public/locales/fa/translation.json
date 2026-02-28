@@ -1056,5 +1056,8 @@
   "Highlights synced to Readwise": "هایلایت‌ها با Readwise همگام‌سازی شدند",
   "Readwise sync failed: no internet connection": "همگام‌سازی Readwise ناموفق بود: اتصال اینترنت برقرار نیست",
   "Readwise sync failed: {{error}}": "همگام‌سازی Readwise ناموفق بود: {{error}}",
-  "System Screen Brightness": "روشنایی صفحه نمایش سیستم"
+  "System Screen Brightness": "روشنایی صفحه نمایش سیستم",
+  "Page:": "صفحه:",
+  "Page: {{number}}": "صفحه: {{number}}",
+  "Annotation page number": "شماره صفحه یادداشت"
 }
