@@ -289,16 +289,16 @@ export interface ProofreadRulesConfig {
 
 export interface ViewSettings
   extends
-  BookLayout,
-  BookStyle,
-  BookFont,
-  BookLanguage,
-  ViewConfig,
-  TTSConfig,
-  TranslatorConfig,
-  ScreenConfig,
-  ProofreadRulesConfig,
-  AnnotatorConfig {
+    BookLayout,
+    BookStyle,
+    BookFont,
+    BookLanguage,
+    ViewConfig,
+    TTSConfig,
+    TranslatorConfig,
+    ScreenConfig,
+    ProofreadRulesConfig,
+    AnnotatorConfig {
   paragraphMode?: ParagraphModeConfig;
 }
 

@@ -72,7 +72,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
   const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime);
   const [use24HourClock, setUse24HourClock] = useState(viewSettings.use24HourClock);
-  const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(viewSettings.showCurrentBatteryStatus);
+  const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(
+    viewSettings.showCurrentBatteryStatus,
+  );
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
@@ -356,7 +358,14 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [use24HourClock]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showCurrentBatteryStatus', showCurrentBatteryStatus, false, false);
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'showCurrentBatteryStatus',
+      showCurrentBatteryStatus,
+      false,
+      false,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCurrentBatteryStatus]);
 

@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 
+interface BatteryManager extends EventTarget {
+  level: number;
+  charging: boolean;
+  chargingTime: number;
+  dischargingTime: number;
+}
 export function useCurrentBatteryStatus(enabled: boolean) {
   const [batteryLevel, setBatteryLevel] = useState<string | null>(null);
 
@@ -8,23 +14,28 @@ export function useCurrentBatteryStatus(enabled: boolean) {
       return;
     }
 
-    let battery: any = null;
+    let battery: BatteryManager | null = null;
 
-    const updateBatteryInfo = (batt: any) => {
+    const updateBatteryInfo = (batt: BatteryManager) => {
       const level = Math.round(batt.level * 100);
       setBatteryLevel(`${level}%`);
     };
 
-    (navigator as any).getBattery().then((batt: any) => {
-      battery = batt;
-      updateBatteryInfo(batt);
+    const handleLevelChange = (event: Event) => {
+      updateBatteryInfo(event.currentTarget as BatteryManager);
+    };
 
-      batt.addEventListener('levelchange', () => updateBatteryInfo(batt));
-    });
+    (navigator as unknown as { getBattery: () => Promise<BatteryManager> })
+      .getBattery()
+      .then((batt) => {
+        battery = batt;
+        updateBatteryInfo(batt);
+        batt.addEventListener('levelchange', handleLevelChange);
+      });
 
     return () => {
       if (battery) {
-        battery.removeEventListener('levelchange', () => updateBatteryInfo(battery));
+        battery.removeEventListener('levelchange', handleLevelChange);
       }
     };
   }, [enabled]);

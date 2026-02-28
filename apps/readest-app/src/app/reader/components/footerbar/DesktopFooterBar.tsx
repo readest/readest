@@ -106,7 +106,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         disabled={!view?.history.canGoForward}
       />
       {progressValid && (
-        <div className="flex flex-col items-center mx-2">
+        <div className='mx-2 flex flex-col items-center'>
           <span
             title={_('Reading Progress')}
             aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
@@ -115,11 +115,8 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
             <span aria-hidden='true'>{progressInfo}</span>
           </span>
 
-          <span className="text-[10px] opacity-60 font-medium uppercase">
-            {currentTime}
-          </span>
+          <span className='text-[10px] font-medium uppercase opacity-60'>{currentTime}</span>
         </div>
-
       )}
       <input
         ref={rangeInputRef}

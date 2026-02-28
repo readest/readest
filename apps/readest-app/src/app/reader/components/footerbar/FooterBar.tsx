@@ -189,8 +189,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
-
-  const formattedTime = useCurrentTime(true)
+  const formattedTime = useCurrentTime(true);
 
   const commonProps: FooterBarChildProps = {
     bookKey,
