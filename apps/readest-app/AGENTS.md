@@ -66,7 +66,6 @@ Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Cu
 - No lookbehind regex in build output — verified by `check:lookbehind-regex`.
 - Run `pnpm build-check` (builds both targets + runs all checks) before submitting.
 
-### Formatting
+### Safe Area Insets
 
-- Prettier is enforced via husky pre-commit hook + lint-staged.
-- Run `pnpm format` to auto-fix.
+See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.

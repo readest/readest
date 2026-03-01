@@ -594,6 +594,7 @@ const FoliateViewer: React.FC<{
     <>
       {selectedImage && (
         <ImageViewer
+          gridInsets={gridInsets}
           src={selectedImage}
           onClose={handleCloseImage}
           onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
@@ -602,6 +603,7 @@ const FoliateViewer: React.FC<{
       )}
       {selectedTableHtml && (
         <TableViewer
+          gridInsets={gridInsets}
           html={selectedTableHtml}
           isDarkMode={isDarkMode}
           onClose={() => setSelectedTableHtml(null)}
