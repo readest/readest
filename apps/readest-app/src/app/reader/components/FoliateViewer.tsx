@@ -309,13 +309,29 @@ const FoliateViewer: React.FC<{
       const allImages: { src: string; cfi: string | null }[] = [];
 
       docs?.forEach(({ doc, index }) => {
-        const images = doc.querySelectorAll('img');
-        images.forEach((img) => {
-          if (img.src && index !== undefined && img.parentNode) {
-            const range = doc.createRange();
-            range.selectNodeContents(img);
-            const cfi = viewRef.current?.getCFI(index, range) || null;
-            allImages.push({ src: img.src, cfi });
+        const elements = doc.querySelectorAll('img, svg');
+        elements.forEach((el) => {
+          if (index === undefined) return;
+          if (el.localName === 'img') {
+            const img = el as HTMLImageElement;
+            if (img.src && img.parentNode) {
+              const range = doc.createRange();
+              range.selectNodeContents(img);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: img.src, cfi });
+            }
+          } else if (el.localName === 'svg') {
+            const svg = el as unknown as SVGSVGElement;
+            const svgImage = svg.querySelector('image');
+            const href =
+              svgImage?.getAttribute('href') ||
+              svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+            if (href) {
+              const range = doc.createRange();
+              range.selectNodeContents(svg);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: href, cfi });
+            }
           }
         });
       });
