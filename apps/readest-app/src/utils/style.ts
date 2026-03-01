@@ -474,8 +474,6 @@ export const getFootnoteStyles = () => `
   }
 
   a:any-link {
-    cursor: default;
-    pointer-events: none;
     text-decoration: none;
     padding: unset;
     margin: unset;
