@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig, PageInfo } from '@/types/book';
@@ -611,7 +612,10 @@ const FoliateViewer: React.FC<{
         tabIndex={-1}
         role='document'
         aria-label={_('Book Content')}
-        className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
+        className={clsx(
+          'foliate-viewer h-[100%] w-[100%] focus:outline-none',
+          viewState?.loading && 'bg-base-100',
+        )}
         style={{
           paddingTop: showViewMargins ? insets.top : 0,
           paddingBottom: showViewMargins ? insets.bottom : 0,
@@ -620,7 +624,11 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
-      {!docLoaded.current && loading && <Spinner loading={true} />}
+      {((!docLoaded.current && loading) || viewState?.loading) && (
+        <div className='bg-base-100/85 absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
+          <Spinner loading={true} />
+        </div>
+      )}
       {syncState === 'conflict' && conflictDetails && (
         <KOSyncConflictResolver
           details={conflictDetails}

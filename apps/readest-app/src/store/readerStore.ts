@@ -51,6 +51,7 @@ interface ReaderStore {
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
+  setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
     key: string,
@@ -389,6 +390,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setIsLoading: (key: string, loading: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          loading,
         },
       },
     })),
