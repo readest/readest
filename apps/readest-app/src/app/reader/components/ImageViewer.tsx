@@ -3,9 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Insets } from '@/types/misc';
 import ZoomControls from './ZoomControls';
 
 interface ImageViewerProps {
+  gridInsets: Insets;
   src: string | null;
   onClose: () => void;
   onPrevious?: () => void;
@@ -18,7 +20,13 @@ const ZOOM_SPEED = 0.1;
 const MOBILE_ZOOM_SPEED = 0.001;
 const ZOOM_BIAS = 1.05;
 
-const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose, onPrevious, onNext }) => {
+const ImageViewer: React.FC<ImageViewerProps> = ({
+  src,
+  onClose,
+  onPrevious,
+  onNext,
+  gridInsets,
+}) => {
   const _ = useTranslation();
   const [scale, setScale] = useState(1);
   const [zoomSpeed, setZoomSpeed] = useState(0.1);
@@ -391,6 +399,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ src, onClose, onPrevious, onN
         }}
       />
       <ZoomControls
+        gridInsets={gridInsets}
         onClose={onClose}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}

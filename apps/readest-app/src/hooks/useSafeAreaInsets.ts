@@ -3,12 +3,11 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { Insets } from '@/types/misc';
 import { getSafeAreaInsets } from '@/utils/bridge';
+import { getOSPlatform } from '@/utils/misc';
 
 export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
   const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
-  const retryCount = useRef(0);
-  const maxRetries = 3;
 
   const { updateSafeAreaInsets } = useThemeStore();
 
@@ -36,9 +35,12 @@ export const useSafeAreaInsets = () => {
     const rootStyles = getComputedStyle(document.documentElement);
     const hasCustomProperties = rootStyles.getPropertyValue('--safe-area-inset-top');
     const isWebView139 = /Chrome\/139/.test(navigator.userAgent);
-    // safe-area-inset-* values in css are always 0px in some versions of webview 139
-    // due to https://issues.chromium.org/issues/40699457
-    if (appService.isAndroidApp && isWebView139) {
+    if (appService.isIOSApp && getOSPlatform() === 'macos') {
+      // for iPadOS use zero insets
+      updateInsets({ top: 0, right: 0, bottom: 0, left: 0 });
+    } else if ((appService.isAndroidApp && isWebView139) || appService.isIOSApp) {
+      // safe-area-inset-* values in css are always 0px in some versions of webview 139
+      // due to https://issues.chromium.org/issues/40699457
       getSafeAreaInsets().then((response) => {
         if (response.error) {
           console.error('Error getting safe area insets from native bridge:', response.error);
@@ -64,19 +66,6 @@ export const useSafeAreaInsets = () => {
         left: Math.round(left),
       };
 
-      const allZero = top === 0 && right === 0 && bottom === 0 && left === 0;
-      if (appService.isIOSApp && allZero && retryCount.current < maxRetries) {
-        retryCount.current++;
-        setTimeout(() => {
-          onUpdateInsets();
-        }, 50 * retryCount.current);
-        return;
-      }
-
-      if (!allZero) {
-        retryCount.current = 0;
-      }
-
       updateInsets(insets);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,7 +84,6 @@ export const useSafeAreaInsets = () => {
     // Listen for visibility changes (app returning from background)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        retryCount.current = 0;
         onUpdateInsets();
       }
     };
@@ -103,7 +91,6 @@ export const useSafeAreaInsets = () => {
 
     // Listen for window focus (additional safeguard for iOS)
     const handleFocus = () => {
-      retryCount.current = 0;
       onUpdateInsets();
     };
     window.addEventListener('focus', handleFocus);

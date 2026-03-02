@@ -115,7 +115,7 @@ export function PublicationView({
     return _('Download');
   };
 
-  const content = publication.metadata?.[SYMBOL.CONTENT];
+  const content = publication.metadata?.[SYMBOL.CONTENT] || publication.metadata?.content;
   const description = publication.metadata?.description;
 
   return (

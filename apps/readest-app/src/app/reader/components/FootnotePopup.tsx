@@ -1,10 +1,13 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
+import { MdArrowBack } from 'react-icons/md';
 
 import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
@@ -36,12 +39,20 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
-  const footnoteHandler = new FootnoteHandler();
+  const [footnoteHandler] = useState(() => new FootnoteHandler());
   const containerRef = useRef<HTMLDivElement>(null);
+  const footnoteHrefRef = useRef<string | null>(null);
+  const historyRef = useRef<{ items: Record<string, unknown>[]; index: number }>({
+    items: [],
+    index: -1,
+  });
+  const [canGoBack, setCanGoBack] = useState(false);
+  const canGoBackRef = useRef(canGoBack);
 
   const [gridRect, setGridRect] = useState<DOMRect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
+  const size18 = useResponsiveSize(18);
 
   const getResponsivePopupSize = (size: number, isVertical: boolean) => {
     const maxSize = isVertical ? window.innerWidth / 2 : window.innerHeight / 2;
@@ -57,16 +68,34 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   };
 
   useEffect(() => {
+    const getHashFromHref = (href: string | null) => {
+      if (!href) return null;
+      const hashIndex = href.indexOf('#');
+      if (hashIndex !== -1) {
+        return href.substring(hashIndex + 1);
+      }
+      return null;
+    };
     const handleBeforeRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const { view } = detail;
       view.addEventListener('link', (e: Event) => {
         e.preventDefault();
         const { detail: popupLinkDetail } = e as CustomEvent;
+        const footnoteAnchorId = getHashFromHref(footnoteHrefRef.current);
+        const linkAnchor = popupLinkDetail.a as HTMLAnchorElement;
+        if (linkAnchor && linkAnchor.getAttribute('id') === footnoteAnchorId) return;
+
         popupLinkDetail['follow'] = true;
+        const history = historyRef.current;
+        const items = [...history.items.slice(0, history.index + 1), popupLinkDetail];
+        historyRef.current = { items, index: items.length - 1 };
+        setCanGoBack(true);
+        canGoBackRef.current = true;
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
           getView(bookKey)?.goTo(popupLinkDetail.href);
+          setShowPopup(false);
         });
       });
       view.addEventListener('load', (e: CustomEvent) => {
@@ -80,13 +109,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       footnoteViewRef.current = view;
       footnoteRef.current?.replaceChildren(view);
       const { renderer } = view;
+      const viewSettings = getViewSettings(bookKey)!;
+      const backButtonMargin = canGoBackRef.current ? 32 : 0;
       renderer.setAttribute('flow', 'scrolled');
-      renderer.setAttribute('margin-top', '0px');
-      renderer.setAttribute('margin-right', '0px');
+      renderer.setAttribute('margin-top', `${viewSettings.vertical ? 0 : backButtonMargin}px`);
+      renderer.setAttribute('margin-right', `${viewSettings.vertical ? backButtonMargin : 0}px`);
       renderer.setAttribute('margin-bottom', '0px');
       renderer.setAttribute('margin-left', '0px');
       renderer.setAttribute('gap', '0%');
-      const viewSettings = getViewSettings(bookKey)!;
       const themeCode = getThemeCode();
       const popupTheme = { ...themeCode };
       const popupContainer = document.getElementById('popup-container');
@@ -102,7 +132,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const handleRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       // console.log('render footnote', detail);
-      const { view } = detail;
+      const { view, href } = detail;
+      footnoteHrefRef.current = href;
       view.addEventListener('relocate', () => {
         const { renderer } = view as FoliateView;
         const viewSettings = getViewSettings(bookKey)!;
@@ -169,11 +200,29 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
       detail['follow'] = true;
     }
+    historyRef.current = { items: [detail], index: 0 };
+    setCanGoBack(false);
+    canGoBackRef.current = false;
     footnoteHandler.handle(bookDoc, event)?.catch((err) => {
       console.warn(err);
       const detail = (event as CustomEvent).detail;
       view?.goTo(detail.href);
     });
+  };
+
+  const handleBack = () => {
+    const history = historyRef.current;
+    if (history.index <= 0) return;
+    const newIndex = history.index - 1;
+    historyRef.current = { ...history, index: newIndex };
+    setCanGoBack(newIndex > 0);
+    canGoBackRef.current = newIndex > 0;
+    const detail = history.items[newIndex]!;
+    const syntheticEvent = new CustomEvent('link', {
+      detail: { ...detail, follow: true },
+      cancelable: true,
+    });
+    footnoteHandler.handle(bookDoc, syntheticEvent);
   };
 
   const closePopup = () => {
@@ -184,6 +233,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
   const handleDismissPopup = () => {
     closePopup();
+    historyRef.current = { items: [], index: -1 };
+    setCanGoBack(false);
+    canGoBackRef.current = false;
     setGridRect(null);
     setPopupPosition(null);
     setTrianglePosition(null);
@@ -257,6 +309,25 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         className='select-text overflow-y-auto'
         onDismiss={handleDismissPopup}
       >
+        {canGoBack && (
+          <div
+            className={clsx(
+              'absolute flex h-8 w-full pt-2',
+              viewSettings.vertical ? 'justify-end pe-2' : 'justify-start ps-2',
+            )}
+          >
+            <button
+              type='button'
+              onClick={handleBack}
+              className={clsx(
+                'btn btn-ghost btn-circle eink-bordered text-base-content bg-base-200/80 hover:bg-base-200',
+                'z-10 h-8 min-h-8 w-8 p-0 shadow-sm',
+              )}
+            >
+              <MdArrowBack size={size18} />
+            </button>
+          </div>
+        )}
         <div
           className='footnote-content'
           ref={footnoteRef}

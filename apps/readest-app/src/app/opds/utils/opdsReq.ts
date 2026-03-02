@@ -176,8 +176,10 @@ export const createDigestAuth = async (
  * Create Basic Authorization header
  */
 export const createBasicAuth = (username: string, password: string): string => {
-  const credentials = btoa(`${username}:${password}`);
-  return `Basic ${credentials}`;
+  const credentials = `${username}:${password}`;
+  const utf8Bytes = new TextEncoder().encode(credentials);
+  const encoded = btoa(String.fromCharCode(...utf8Bytes));
+  return `Basic ${encoded}`;
 };
 
 /**

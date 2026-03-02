@@ -294,6 +294,23 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
         },
         '*',
       );
+    } else if (target.closest('svg')) {
+      const svg = target.closest('svg')!;
+      const svgImage = svg.querySelector('image');
+      const href =
+        svgImage?.getAttribute('href') ||
+        svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+      if (href) {
+        window.postMessage(
+          {
+            type: 'iframe-long-press',
+            bookKey,
+            elementType: 'image',
+            src: href,
+          },
+          '*',
+        );
+      }
     } else if (target.localName === 'table' || target.closest('table')) {
       const tableTarget = (
         target.localName === 'table' ? target : target.closest('table')
@@ -313,13 +330,16 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
   const startPress = (event: Event) => {
     const target = event.target as HTMLElement;
     const isImage = target.localName === 'img';
+    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
     const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
-    if (!isImage && !isTableOrInTable) return;
+    if (!isImage && !isSvgImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
+      : isSvgImage
+        ? (target.closest('svg') as unknown as HTMLElement)
+        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     // Store initial position for movement detection
     if ('clientX' in event && 'clientY' in event) {
@@ -341,13 +361,16 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
   const handleMove = (event: Event) => {
     const target = event.target as HTMLElement;
     const isImage = target.localName === 'img';
+    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
     const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
-    if (!isImage && !isTableOrInTable) return;
+    if (!isImage && !isSvgImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
+      : isSvgImage
+        ? (target.closest('svg') as unknown as HTMLElement)
+        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     // Check if mouse/touch moved beyond threshold - if so, user is probably selecting text or dragging
     const startPos = pressStartPositions.get(elementToTrack);
@@ -384,13 +407,16 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
   const cancelPress = (event: Event) => {
     const target = event.target as HTMLElement;
     const isImage = target.localName === 'img';
+    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
     const isTableOrInTable = target.localName === 'table' || target.closest('table');
 
-    if (!isImage && !isTableOrInTable) return;
+    if (!isImage && !isSvgImage && !isTableOrInTable) return;
 
     const elementToTrack = isImage
       ? target
-      : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
+      : isSvgImage
+        ? (target.closest('svg') as unknown as HTMLElement)
+        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
 
     clearTimeout(pressTimers.get(elementToTrack));
     pressTimers.delete(elementToTrack);
@@ -398,33 +424,21 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
   };
 
   const processElements = () => {
-    const images = doc.querySelectorAll('img');
-    const tables = doc.querySelectorAll('table');
+    const addLongPressListeners = (el: Element) => {
+      if (el.hasAttribute('data-long-press-added')) return;
+      el.setAttribute('data-long-press-added', 'true');
+      el.addEventListener('mousedown', startPress);
+      el.addEventListener('mousemove', handleMove);
+      el.addEventListener('mouseup', cancelPress);
+      el.addEventListener('mouseleave', cancelPress);
+      el.addEventListener('touchstart', startPress, { passive: true });
+      el.addEventListener('touchmove', handleMove, { passive: true });
+      el.addEventListener('touchend', cancelPress);
+    };
 
-    images.forEach((img) => {
-      if (!img.hasAttribute('data-long-press-added')) {
-        img.setAttribute('data-long-press-added', 'true');
-        img.addEventListener('mousedown', startPress);
-        img.addEventListener('mousemove', handleMove);
-        img.addEventListener('mouseup', cancelPress);
-        img.addEventListener('mouseleave', cancelPress);
-        img.addEventListener('touchstart', startPress, { passive: true });
-        img.addEventListener('touchmove', handleMove, { passive: true });
-        img.addEventListener('touchend', cancelPress);
-      }
-    });
-
-    tables.forEach((table) => {
-      if (!table.hasAttribute('data-long-press-added')) {
-        table.setAttribute('data-long-press-added', 'true');
-        table.addEventListener('mousedown', startPress);
-        table.addEventListener('mousemove', handleMove);
-        table.addEventListener('mouseup', cancelPress);
-        table.addEventListener('mouseleave', cancelPress);
-        table.addEventListener('touchstart', startPress, { passive: true });
-        table.addEventListener('touchmove', handleMove, { passive: true });
-        table.addEventListener('touchend', cancelPress);
-      }
+    doc.querySelectorAll('img, table').forEach(addLongPressListeners);
+    doc.querySelectorAll('svg').forEach((svg) => {
+      if (svg.querySelector('image')) addLongPressListeners(svg);
     });
   };
 

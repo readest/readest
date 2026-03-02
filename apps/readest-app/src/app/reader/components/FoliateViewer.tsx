@@ -1,6 +1,7 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
-import { BookConfig } from '@/types/book';
+import { BookConfig, PageInfo } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -62,6 +63,7 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { isFontType } from '@/utils/font';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
@@ -85,7 +87,7 @@ const FoliateViewer: React.FC<{
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
+  const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
   const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
@@ -128,12 +130,16 @@ const FoliateViewer: React.FC<{
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
+    const atEnd = viewRef.current?.renderer.atEnd || false;
+    const { current, next, total } = detail.location as PageInfo;
+    const currentPage = atEnd && total > 0 ? total - 1 : current;
+    const pageInfo = { current: currentPage, next, total };
     setProgress(
       bookKey,
       detail.cfi,
       detail.tocItem,
       detail.section,
-      detail.location,
+      pageInfo,
       detail.time,
       detail.range,
     );
@@ -308,13 +314,29 @@ const FoliateViewer: React.FC<{
       const allImages: { src: string; cfi: string | null }[] = [];
 
       docs?.forEach(({ doc, index }) => {
-        const images = doc.querySelectorAll('img');
-        images.forEach((img) => {
-          if (img.src && index !== undefined && img.parentNode) {
-            const range = doc.createRange();
-            range.selectNodeContents(img);
-            const cfi = viewRef.current?.getCFI(index, range) || null;
-            allImages.push({ src: img.src, cfi });
+        const elements = doc.querySelectorAll('img, svg');
+        elements.forEach((el) => {
+          if (index === undefined) return;
+          if (el.localName === 'img') {
+            const img = el as HTMLImageElement;
+            if (img.src && img.parentNode) {
+              const range = doc.createRange();
+              range.selectNodeContents(img);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: img.src, cfi });
+            }
+          } else if (el.localName === 'svg') {
+            const svg = el as unknown as SVGSVGElement;
+            const svgImage = svg.querySelector('image');
+            const href =
+              svgImage?.getAttribute('href') ||
+              svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+            if (href) {
+              const range = doc.createRange();
+              range.selectNodeContents(svg);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: href, cfi });
+            }
           }
         });
       });
@@ -422,10 +444,31 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
-      book.transformTarget?.addEventListener('load', (event: Event) => {
-        const { detail } = event as CustomEvent;
+      book.transformTarget?.addEventListener('load', async (event: Event) => {
+        const { detail } = event as CustomEvent<{
+          isScript: boolean;
+          type: string;
+          href: string;
+          url?: string;
+          allow?: boolean;
+        }>;
         if (detail.isScript) {
           detail.allow = viewSettings.allowScript ?? false;
+        }
+        if (isFontType(detail.type) && detail.href?.startsWith('fonts/')) {
+          const fontFileName = detail.href.split('/').pop()?.toLowerCase();
+          getAvailableFonts().forEach(async (font) => {
+            const customFontFileName = font.path.split('/').pop()?.toLowerCase();
+            if (fontFileName && fontFileName === customFontFileName) {
+              if (!font.loaded) {
+                const loadedFont = await loadFont(envConfig, font.id);
+                font.blobUrl = loadedFont?.blobUrl;
+              }
+              if (font.blobUrl) {
+                detail.url = font.blobUrl;
+              }
+            }
+          });
         }
       });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
@@ -593,6 +636,7 @@ const FoliateViewer: React.FC<{
     <>
       {selectedImage && (
         <ImageViewer
+          gridInsets={gridInsets}
           src={selectedImage}
           onClose={handleCloseImage}
           onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
@@ -601,6 +645,7 @@ const FoliateViewer: React.FC<{
       )}
       {selectedTableHtml && (
         <TableViewer
+          gridInsets={gridInsets}
           html={selectedTableHtml}
           isDarkMode={isDarkMode}
           onClose={() => setSelectedTableHtml(null)}
@@ -611,7 +656,10 @@ const FoliateViewer: React.FC<{
         tabIndex={-1}
         role='document'
         aria-label={_('Book Content')}
-        className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
+        className={clsx(
+          'foliate-viewer h-[100%] w-[100%] focus:outline-none',
+          viewState?.loading && 'bg-base-100',
+        )}
         style={{
           paddingTop: showViewMargins ? insets.top : 0,
           paddingBottom: showViewMargins ? insets.bottom : 0,
@@ -620,7 +668,11 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
-      {!docLoaded.current && loading && <Spinner loading={true} />}
+      {((!docLoaded.current && loading) || viewState?.loading) && (
+        <div className='bg-base-100/85 absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
+          <Spinner loading={true} />
+        </div>
+      )}
       {syncState === 'conflict' && conflictDetails && (
         <KOSyncConflictResolver
           details={conflictDetails}

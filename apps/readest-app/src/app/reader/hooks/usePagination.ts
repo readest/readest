@@ -187,9 +187,9 @@ export const usePagination = (
             viewPagination(viewRef.current, viewSettings, 'down');
           } else if (deltaY < 0) {
             viewPagination(viewRef.current, viewSettings, 'up');
-          } else if (deltaX > 0) {
-            viewPagination(viewRef.current, viewSettings, 'left');
           } else if (deltaX < 0) {
+            viewPagination(viewRef.current, viewSettings, 'left');
+          } else if (deltaX > 0) {
             viewPagination(viewRef.current, viewSettings, 'right');
           }
         } else if (msg.data.type === 'iframe-mouseup') {

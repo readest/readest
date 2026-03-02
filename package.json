@@ -32,8 +32,11 @@
     "overrides": {
       "glob": ">=11.1.0",
       "jws": ">=4.0.1",
-      "vite": ">=7.0.8",
+      "vite": ">=7.3.1",
+      "rollup": ">=4.59.0",
       "body-parser": ">=2.2.1",
+      "serialize-javascript": ">=7.0.3",
+      "fast-xml-parser": ">=5.3.8",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10",
       "mdast-util-gfm-autolink-literal": "2.0.1",

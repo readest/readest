@@ -51,6 +51,7 @@ interface ReaderStore {
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
+  setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
     key: string,
@@ -298,8 +299,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const viewState = state.viewStates[key];
       if (!viewState || !bookData) return state;
 
-      const pagePressInfo = bookData.isFixedLayout ? section : pageinfo;
-      const progress: [number, number] = [pagePressInfo.current + 1, pagePressInfo.total];
+      const pageInfo = bookData.isFixedLayout ? section : pageinfo;
+      const progress: [number, number] = [pageInfo.current + 1, pageInfo.total];
 
       // calculate progress percentage
       const progressPercentage = Math.round((progress[0] / progress[1]) * 100);
@@ -365,6 +366,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               pageinfo,
               timeinfo,
               range,
+              page: pageInfo.current + 1, // 1-based page number
             },
           },
         },
@@ -388,6 +390,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setIsLoading: (key: string, loading: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          loading,
         },
       },
     })),

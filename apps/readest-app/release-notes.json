@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.9.101": {
+      "date": "2026-02-28",
+      "notes": [
+        "Text-to-Speech: Fixed an issue where TTS could not continue to the next chapter",
+        "Reading: Fixed an issue importing very large TXT files on iOS",
+        "Reading: Fixed the layout of the reading ruler in scrolled mode",
+        "Reading: Smoother page-turn animations for a more fluid experience",
+        "Reading: Added a gallery mode to zoom and browse images within books",
+        "Annotations: Page numbers are now displayed and exported with highlights and notes",
+        "Annotations: Added support for exporting highlights to Readwise",
+        "OPDS: Fixed missing book descriptions in OPDS feeds",
+        "Android: Improved compatibility with older WebView versions on Android"
+      ]
+    },
     "0.9.100": {
       "date": "2026-02-13",
       "notes": [

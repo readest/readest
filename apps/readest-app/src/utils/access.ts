@@ -47,11 +47,18 @@ export const getStoragePlanData = (token: string) => {
   };
 };
 
+export const getTranslationQuota = (plan: UserPlan): number => {
+  const fixedQuota = parseInt(process.env['NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA'] || '0');
+  return (
+    fixedQuota || DEFAULT_DAILY_TRANSLATION_QUOTA[plan] || DEFAULT_DAILY_TRANSLATION_QUOTA['free']
+  );
+};
+
 export const getTranslationPlanData = (token: string) => {
   const data = jwtDecode<Token>(token) || {};
   const plan: UserPlan = data['plan'] || 'free';
   const usage = getDailyUsage() || 0;
-  const quota = DEFAULT_DAILY_TRANSLATION_QUOTA[plan];
+  const quota = getTranslationQuota(plan);
 
   return {
     plan,
@@ -63,9 +70,7 @@ export const getTranslationPlanData = (token: string) => {
 export const getDailyTranslationPlanData = (token: string) => {
   const data = jwtDecode<Token>(token) || {};
   const plan = data['plan'] || 'free';
-  const fixedQuota = parseInt(process.env['NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA'] || '0');
-  const quota =
-    fixedQuota || DEFAULT_DAILY_TRANSLATION_QUOTA[plan] || DEFAULT_DAILY_TRANSLATION_QUOTA['free'];
+  const quota = getTranslationQuota(plan);
 
   return {
     plan,

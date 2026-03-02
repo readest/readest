@@ -415,7 +415,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
               )}
               {appService?.isMobileApp && (
                 <div className='config-item'>
-                  <span className=''>{_('Auto Screen Brightness')}</span>
+                  <span className=''>{_('System Screen Brightness')}</span>
                   <input
                     type='checkbox'
                     className='toggle'

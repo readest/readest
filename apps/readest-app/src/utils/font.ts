@@ -358,3 +358,19 @@ export const parseFontInfo = (fontData: ArrayBuffer, filename: string) => {
     };
   }
 };
+
+export const isFontType = (mimeType: string) => {
+  const fontMimeTypes = [
+    'font/woff',
+    'font/woff2',
+    'font/ttf',
+    'font/otf',
+    'application/font-woff',
+    'application/font-woff2',
+    'application/x-font-woff',
+    'application/x-font-woff2',
+    'application/x-font-ttf',
+    'application/x-font-otf',
+  ];
+  return fontMimeTypes.includes(mimeType);
+};

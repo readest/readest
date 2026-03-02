@@ -59,6 +59,21 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.9.101" date="2026-02-28">
+      <description>
+        <ul>
+          <li>Text-to-Speech: Fixed an issue where TTS could not continue to the next chapter</li>
+          <li>Reading: Fixed an issue importing very large TXT files on iOS</li>
+          <li>Reading: Fixed the layout of the reading ruler in scrolled mode</li>
+          <li>Reading: Smoother page-turn animations for a more fluid experience</li>
+          <li>Reading: Added a gallery mode to zoom and browse images within books</li>
+          <li>Annotations: Page numbers are now displayed and exported with highlights and notes</li>
+          <li>Annotations: Added support for exporting highlights to Readwise</li>
+          <li>OPDS: Fixed missing book descriptions in OPDS feeds</li>
+          <li>Android: Improved compatibility with older WebView versions on Android</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.100" date="2026-02-13">
       <description>
         <ul>
@@ -221,18 +236,6 @@
           <li>Reader: You can now import files directly into the currently selected book group</li>
           <li>Account: You can now update the email address linked to your Readest account</li>
           <li>Footnotes: Added compatibility for more footnote formats</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.91" date="2025-10-29">
-      <description>
-        <ul>
-          <li>TTS: Fixed an issue where system voices were not working on Android</li>
-          <li>TTS: Added options to customize the highlight style during read-aloud</li>
-          <li>E-Ink: Disabled all shadows to improve display clarity</li>
-          <li>E-Ink: Added an option to save the last book cover on Android</li>
-          <li>Android: Fixed a crash that occurred when toggling 'Allow Script'</li>
-          <li>Android: Adjusted launcher icon size for better compatibility across devices</li>
         </ul>
       </description>
     </release>

@@ -29,8 +29,8 @@ const VELOCITY_THRESHOLD = 0.5;
 const SideBar = ({}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { settings } = useSettingsStore();
+  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight } = useThemeStore();
   const { sideBarBookKey, setSideBarBookKey, getSearchNavState, setSearchTerm, clearSearch } =
     useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
@@ -251,7 +251,9 @@ const SideBar = ({}) => {
           width: `${sideBarWidth}`,
           maxWidth: `${MAX_SIDEBAR_WIDTH * 100}%`,
           position: isSideBarPinned ? 'relative' : 'absolute',
-          paddingTop: `${safeAreaInsets?.top || 0}px`,
+          paddingTop: systemUIVisible
+            ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
+            : `${safeAreaInsets?.top || 0}px`,
         }}
       >
         <style jsx>{`
