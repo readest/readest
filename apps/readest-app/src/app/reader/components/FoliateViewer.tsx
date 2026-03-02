@@ -61,6 +61,7 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { isFontType } from '@/utils/font';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
@@ -84,7 +85,7 @@ const FoliateViewer: React.FC<{
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
+  const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
   const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
@@ -439,10 +440,31 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
-      book.transformTarget?.addEventListener('load', (event: Event) => {
-        const { detail } = event as CustomEvent;
+      book.transformTarget?.addEventListener('load', async (event: Event) => {
+        const { detail } = event as CustomEvent<{
+          isScript: boolean;
+          type: string;
+          href: string;
+          url?: string;
+          allow?: boolean;
+        }>;
         if (detail.isScript) {
           detail.allow = viewSettings.allowScript ?? false;
+        }
+        if (isFontType(detail.type) && detail.href?.startsWith('fonts/')) {
+          const fontFileName = detail.href.split('/').pop()?.toLowerCase();
+          getAvailableFonts().forEach(async (font) => {
+            const customFontFileName = font.path.split('/').pop()?.toLowerCase();
+            if (fontFileName && fontFileName === customFontFileName) {
+              if (!font.loaded) {
+                const loadedFont = await loadFont(envConfig, font.id);
+                font.blobUrl = loadedFont?.blobUrl;
+              }
+              if (font.blobUrl) {
+                detail.url = font.blobUrl;
+              }
+            }
+          });
         }
       });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
