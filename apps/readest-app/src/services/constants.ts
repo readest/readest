@@ -805,6 +805,7 @@ export const TRANSLATED_LANGS = {
   el: 'Ελληνικά',
   uk: 'Українська',
   pl: 'Polski',
+  sl: 'Slovenščina',
   tr: 'Türkçe',
   hi: 'हिन्दी',
   id: 'Indonesia',
