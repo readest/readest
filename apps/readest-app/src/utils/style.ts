@@ -227,6 +227,10 @@ const getColorStyles = (
       border-color: unset;
       background-color: ${bg} !important;
     }
+    .calibre {
+      color: unset;
+      background-color: unset;
+    }
   `;
   return colorStyles;
 };
@@ -390,10 +394,6 @@ const getLayoutStyles = (
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
-  }
-
-  .calibre {
-    color: unset;
   }
 
   div:has(> img, > svg) {
