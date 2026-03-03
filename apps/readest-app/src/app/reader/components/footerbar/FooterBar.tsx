@@ -14,7 +14,6 @@ import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
 import { RSVPControl } from '../rsvp';
-import { useCurrentTime } from '../../hooks/useCurrentTime';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -189,8 +188,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
-  const formattedTime = useCurrentTime(true);
-
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -200,7 +197,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
     navigationHandlers,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
-    currentTime: formattedTime,
   };
 
   const needHorizontalScroll =

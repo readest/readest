@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 
-export function useCurrentTime(enabled: boolean, use24Hour = true, intervalMs = 20000) {
+export function useCurrentTime(enabled: boolean, use24Hour = true, intervalMs = 10000) {
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   useEffect(() => {

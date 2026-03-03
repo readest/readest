@@ -269,6 +269,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showProgressInfo: true,
   showCurrentTime: false,
   showCurrentBatteryStatus: false,
+  showBatteryPercentage: true,
   use24HourClock: false,
   tapToToggleFooter: false,
   showMarginsOnScroll: false,

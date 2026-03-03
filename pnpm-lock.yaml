@@ -335,6 +335,9 @@ importers:
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
+      tauri-plugin-device-info-api:
+        specifier: ^1.0.1
+        version: 1.0.1
       tinycolor2:
         specifier: ^1.6.0
         version: 1.6.0
@@ -7759,6 +7762,9 @@ packages:
   tapable@2.3.0:
     resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
     engines: {node: '>=6'}
+
+  tauri-plugin-device-info-api@1.0.1:
+    resolution: {integrity: sha512-d2QoatWeQ6X09fdEDdWSKzBVSZv9x8LpksJP/gfv4WeRmZwJRsLLMf1++qOw7PdOmQlNoKHFcKXPZlr2n4irdg==}
 
   teex@1.0.1:
     resolution: {integrity: sha512-eYE6iEI62Ni1H8oIa7KlDU6uQBtqr4Eajni3wX7rpfXD8ysFx8z0+dri+KWEPWpBsxXfxu58x/0jvTVT1ekOSg==}
@@ -17352,6 +17358,10 @@ snapshots:
       - yaml
 
   tapable@2.3.0: {}
+
+  tauri-plugin-device-info-api@1.0.1:
+    dependencies:
+      '@tauri-apps/api': 2.9.1
 
   teex@1.0.1:
     dependencies:

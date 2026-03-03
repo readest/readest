@@ -824,7 +824,7 @@
   "Tap to Toggle Footer": "点击切换页脚",
   "Show Current Time": "显示当前时间",
   "Use 24 Hour Clock": "使用 24 小时制",
-  "Show Current Battery Status": "显示当前电池状态",
+  "Show Current Battery Status": "显示当前电量",
   "Exported successfully": "导出成功",
   "Book exported successfully.": "书籍导出成功。",
   "Failed to export the book.": "书籍导出失败。",
@@ -1051,5 +1051,6 @@
   "Page:": "页面:",
   "Page: {{number}}": "页面: {{number}}",
   "Annotation page number": "批注页码",
-  "Translating...": "翻译中..."
+  "Translating...": "翻译中...",
+  "Show Battery Percentage": "显示电量百分比"
 }

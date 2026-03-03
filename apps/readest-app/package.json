@@ -146,6 +146,7 @@
     "stripe": "^18.2.1",
     "styled-jsx": "^5.1.7",
     "tailwind-merge": "^3.4.0",
+    "tauri-plugin-device-info-api": "^1.0.1",
     "tinycolor2": "^1.6.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.3",

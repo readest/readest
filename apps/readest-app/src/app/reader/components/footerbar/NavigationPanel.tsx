@@ -20,7 +20,6 @@ interface NavigationPanelProps {
   viewSettings?: ViewSettings;
   bottomOffset: string;
   sliderHeight: number;
-  currentTime?: string;
 }
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({

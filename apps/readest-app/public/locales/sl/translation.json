@@ -1084,5 +1084,9 @@
   "Sunset": "Sončni zahod",
   "Reveal in Finder": "Prikaži v Finderju",
   "Reveal in File Explorer": "Prikaži v File Explorerju",
-  "Reveal in Folder": "Prikaži v mapi"
+  "Reveal in Folder": "Prikaži v mapi",
+  "Show Current Time": "Prikaži trenutni čas",
+  "Use 24 Hour Clock": "Uporabi 24-urni zapis časa",
+  "Show Current Battery Status": "Prikaži trenutno stanje baterije",
+  "Show Battery Percentage": "Prikaži odstotek baterije"
 }

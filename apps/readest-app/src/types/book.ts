@@ -189,6 +189,7 @@ export interface BookLanguage {
   convertChineseVariant: ConvertChineseVariant;
 }
 
+export type ProgressBarMode = 'remaining' | 'progress' | 'battery' | 'time' | 'all' | 'none';
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -205,12 +206,13 @@ export interface ViewConfig {
   showCurrentTime: boolean;
   use24HourClock: boolean;
   showCurrentBatteryStatus: boolean;
+  showBatteryPercentage: boolean;
   tapToToggleFooter: boolean;
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
-  progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
+  progressInfoMode: ProgressBarMode;
 
   animated: boolean;
   isEink: boolean;

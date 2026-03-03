@@ -75,6 +75,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(
     viewSettings.showCurrentBatteryStatus,
   );
+  const [showBatteryPercentage, setShowBatteryPercentage] = useState(
+    viewSettings.showBatteryPercentage,
+  );
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
@@ -114,6 +117,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showCurrentTime: setShowCurrentTime,
       use24HourClock: setUse24HourClock,
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
+      showBatteryPercentage: setShowBatteryPercentage,
       tapToToggleFooter: setTapToToggleFooter,
       showMarginsOnScroll: setShowMarginsOnScroll,
     });
@@ -368,6 +372,18 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCurrentBatteryStatus]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'showBatteryPercentage',
+      showBatteryPercentage,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showBatteryPercentage]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
@@ -774,13 +790,23 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               </div>
             )}
             <div className='config-item'>
-              <span className=''>{_('Show Current Battery Staus')}</span>
+              <span className=''>{_('Show Current Battery Status')}</span>
               <input
                 type='checkbox'
                 className='toggle'
                 checked={showCurrentBatteryStatus}
                 disabled={!showFooter}
                 onChange={() => setShowCurrentBatteryStatus(!showCurrentBatteryStatus)}
+              />
+            </div>
+            <div className='config-item'>
+              <span className=''>{_('Show Battery Percentage')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={showBatteryPercentage}
+                disabled={!showFooter || !showCurrentBatteryStatus}
+                onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
               />
             </div>
             <div className='config-item'>
