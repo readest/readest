@@ -75,6 +75,16 @@ jobs:
         run: |
           pnpm test -- --watch=false
 
+      - name: install playwright browsers
+        if: matrix.config.platform == 'web'
+        working-directory: apps/readest-app
+        run: npx playwright install --with-deps chromium
+
+      - name: run browser tests
+        if: matrix.config.platform == 'web'
+        working-directory: apps/readest-app
+        run: pnpm test:browser
+
       - name: run lint
         working-directory: apps/readest-app
         run: |

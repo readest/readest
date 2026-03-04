@@ -185,22 +185,28 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_sharekit::init())
         .plugin(tauri_plugin_device_info::init())
+        .plugin(tauri_plugin_libsql::init())
         .plugin(tauri_plugin_native_bridge::init())
         .plugin(tauri_plugin_native_tts::init());
 
     #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
-        let _ = app
-            .get_webview_window("main")
-            .expect("no main window")
-            .set_focus();
-        let files = get_files_from_argv(argv.clone());
-        if !files.is_empty() {
-            allow_file_in_scopes(app, files.clone());
-        }
-        app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
-            .unwrap();
-    }));
+    let builder = builder.plugin(
+        tauri_plugin_single_instance::Builder::new()
+            .callback(move |app, argv, cwd| {
+                let _ = app
+                    .get_webview_window("main")
+                    .expect("no main window")
+                    .set_focus();
+                let files = get_files_from_argv(argv.clone());
+                if !files.is_empty() {
+                    allow_file_in_scopes(app, files.clone());
+                }
+                app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
+                    .unwrap();
+            })
+            .dbus_id("com.bilingify.readest".to_owned())
+            .build(),
+    );
 
     let builder = builder.plugin(tauri_plugin_deep_link::init());
 

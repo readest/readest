@@ -10,6 +10,7 @@ import {
   SelectDirectoryMode,
 } from '@/types/system';
 import { FileSystem, BaseDir, DeleteAction } from '@/types/system';
+import { DatabaseService } from '@/types/database';
 import {
   Book,
   BookConfig,
@@ -132,6 +133,7 @@ export abstract class BaseAppService implements AppService {
     mimeType?: string,
   ): Promise<boolean>;
   abstract ask(message: string): Promise<boolean>;
+  abstract openDatabase(path: string, base: BaseDir): Promise<DatabaseService>;
 
   protected async runMigrations(lastMigrationVersion: number): Promise<void> {
     if (lastMigrationVersion < 20251124) {

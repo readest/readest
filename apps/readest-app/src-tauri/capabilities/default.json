@@ -179,6 +179,7 @@
     "deep-link:default",
     "sharekit:default",
     "device-info:default",
+    "libsql:default",
     "native-tts:default",
     "native-bridge:default"
   ]

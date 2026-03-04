@@ -25,6 +25,7 @@ packages
 # Vendored Assets (Generated/External Code)
 apps/readest-app/public/*.js
 apps/readest-app/public/vendor
+apps/readest-app/src-tauri/plugins/tauri-plugin-libsql
 
 # Environment & Editor
 .env
