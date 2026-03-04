@@ -832,6 +832,9 @@
   "Clear search": "Zoekopdracht wissen",
   "Clear search history": "Zoekgeschiedenis wissen",
   "Tap to Toggle Footer": "Tik om voettekst te wisselen",
+  "Show Current Time": "Huidige tijd weergeven",
+  "Use 24 Hour Clock": "24-uurs klok gebruike",
+  "Show Current Battery Status": "Toon huidige batterijstatus",
   "Exported successfully": "Succesvol geëxporteerd",
   "Book exported successfully.": "Boek succesvol geëxporteerd.",
   "Failed to export the book.": "Exporteren van het boek mislukt.",
@@ -1138,5 +1141,6 @@
   "Page:": "Pagina:",
   "Page: {{number}}": "Pagina: {{number}}",
   "Annotation page number": "Annotatiepaginanummer",
-  "Translating...": "Vertalen..."
+  "Translating...": "Vertalen...",
+  "Show Battery Percentage": "Batterijpercentage weergeven"
 }

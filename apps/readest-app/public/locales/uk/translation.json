@@ -852,6 +852,9 @@
   "Clear search": "Очистити пошук",
   "Clear search history": "Очистити історію пошуку",
   "Tap to Toggle Footer": "Нижній колонтитул",
+  "Show Current Time": "Показати поточний час",
+  "Use 24 Hour Clock": "Використовувати 24-годинний формат",
+  "Show Current Battery Status": "Показати поточний стан батареї",
   "Exported successfully": "Успішно експортовано",
   "Book exported successfully.": "Книгу успішно експортовано.",
   "Failed to export the book.": "Не вдалося експортувати книгу.",
@@ -1162,5 +1165,6 @@
   "Page:": "Сторінка:",
   "Page: {{number}}": "Сторінка: {{number}}",
   "Annotation page number": "Номер сторінки анотації",
-  "Translating...": "Переклад..."
+  "Translating...": "Переклад...",
+  "Show Battery Percentage": "Показувати відсоток заряду батареї"
 }

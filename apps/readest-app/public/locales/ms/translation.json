@@ -822,6 +822,9 @@
   "Clear search": "Kosongkan carian",
   "Clear search history": "Kosongkan sejarah carian",
   "Tap to Toggle Footer": "Ketik untuk togol pengaki",
+  "Show Current Time": "Tunjukkan Waktu Sekarang",
+  "Use 24 Hour Clock": "Gunakan Format 24 Jam",
+  "Show Current Battery Status": "Paparkan Status Bateri Semasa",
   "Exported successfully": "Berjaya dieksport",
   "Book exported successfully.": "Buku berjaya dieksport.",
   "Failed to export the book.": "Gagal mengeksport buku.",
@@ -1126,5 +1129,6 @@
   "Page:": "Halaman:",
   "Page: {{number}}": "Halaman: {{number}}",
   "Annotation page number": "Nombor halaman anotasi",
-  "Translating...": "Menterjemah..."
+  "Translating...": "Menterjemah...",
+  "Show Battery Percentage": "Tunjukkan Peratusan Bateri"
 }

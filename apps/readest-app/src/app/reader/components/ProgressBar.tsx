@@ -9,15 +9,17 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import type { ProgressBarMode } from '@/types/book.ts';
+import StatusInfo from './StatusInfo.tsx';
 
-interface PageInfoProps {
+interface ProgressBarProps {
   bookKey: string;
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
 }
 
-const ProgressInfoView: React.FC<PageInfoProps> = ({
+const ProgressBar: React.FC<ProgressBarProps> = ({
   bookKey,
   horizontalGap,
   contentInsets,
@@ -78,49 +80,73 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
 
   const showPagesLeft = total - 1 > current;
 
-  const [progressInfoMode, setProgressInfoMode] = useState(viewSettings.progressInfoMode);
+  const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
 
+  const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
+  const hasProgressInfo = viewSettings.showProgressInfo;
+  const hasTimeInfo = viewSettings.showCurrentTime;
+  const hasBatteryInfo = viewSettings.showCurrentBatteryStatus;
   const cycleProgressInfoModes = () => {
     if (!viewSettings.tapToToggleFooter) return;
 
-    const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
-    const hasProgressInfo = viewSettings.showProgressInfo;
-    const modeSequence: (typeof progressInfoMode)[] = ['all', 'remaining', 'progress', 'none'];
-    const currentIndex = modeSequence.indexOf(progressInfoMode);
+    const modeSequence: string[] = [
+      'all',
+      `${hasRemainingInfo ? 'remaining+' : ''}${hasProgressInfo ? 'progress' : ''}`,
+      `${hasRemainingInfo ? 'remaining' : ''}`,
+      `${hasProgressInfo ? 'progress' : ''}`,
+      `${hasBatteryInfo ? 'battery+' : ''}${hasTimeInfo ? 'time' : ''}`,
+      `${hasBatteryInfo ? 'battery' : ''}`,
+      `${hasTimeInfo ? 'time' : ''}`,
+      'none',
+    ]
+      .map((mode) => mode.replace(/^\+|\+$/g, ''))
+      .filter((mode) => mode !== '')
+      .filter((mode, index, self) => self.indexOf(mode) === index);
+
+    const currentMode = progressBarMode;
+    const currentIndex = modeSequence.indexOf(currentMode);
     for (let i = 1; i <= modeSequence.length; i++) {
       const nextIndex = (currentIndex + i) % modeSequence.length;
       const nextMode = modeSequence[nextIndex]!;
 
       const currentRenders = {
         remaining:
-          progressInfoMode === 'all' || progressInfoMode === 'remaining' ? hasRemainingInfo : false,
+          currentMode === 'all' || currentMode.includes('remaining') ? hasRemainingInfo : false,
         progress:
-          progressInfoMode === 'all' || progressInfoMode === 'progress' ? hasProgressInfo : false,
+          currentMode === 'all' || currentMode.includes('progress') ? hasProgressInfo : false,
+        battery: currentMode === 'all' || currentMode.includes('battery') ? hasBatteryInfo : false,
+        time: currentMode === 'all' || currentMode.includes('time') ? hasTimeInfo : false,
+        none: currentMode === 'none',
       };
 
       const nextRenders = {
-        remaining: nextMode === 'all' || nextMode === 'remaining' ? hasRemainingInfo : false,
-        progress: nextMode === 'all' || nextMode === 'progress' ? hasProgressInfo : false,
+        remaining: nextMode === 'all' || nextMode.includes('remaining') ? hasRemainingInfo : false,
+        progress: nextMode === 'all' || nextMode.includes('progress') ? hasProgressInfo : false,
+        battery: nextMode === 'all' || nextMode.includes('battery') ? hasBatteryInfo : false,
+        time: nextMode === 'all' || nextMode.includes('time') ? hasTimeInfo : false,
+        none: nextMode === 'none',
       };
 
       const isDifferent =
         currentRenders.remaining !== nextRenders.remaining ||
-        currentRenders.progress !== nextRenders.progress;
-
+        currentRenders.progress !== nextRenders.progress ||
+        currentRenders.battery !== nextRenders.battery ||
+        currentRenders.time !== nextRenders.time ||
+        currentRenders.none !== nextRenders.none;
       if (isDifferent) {
-        setProgressInfoMode(nextMode);
+        setProgressBarMode(nextMode);
         return;
       }
     }
 
     const nextIndex = (currentIndex + 1) % modeSequence.length;
-    setProgressInfoMode(modeSequence[nextIndex]!);
+    setProgressBarMode(modeSequence[nextIndex]!);
   };
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'progressInfoMode', progressInfoMode);
+    saveViewSettings(envConfig, bookKey, 'progressInfoMode', progressBarMode as ProgressBarMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progressInfoMode]);
+  }, [progressBarMode]);
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
 
@@ -171,45 +197,69 @@ const ProgressInfoView: React.FC<PageInfoProps> = ({
           isVertical ? 'h-full' : 'h-[52px] w-full',
         )}
       >
-        {(progressInfoMode === 'all' || progressInfoMode === 'remaining') && (
-          <>
-            {viewSettings.showRemainingTime ? (
-              <span className='time-left-label text-start'>{timeLeftStr}</span>
-            ) : viewSettings.showRemainingPages && showPagesLeft ? (
-              <span className='text-start'>
-                {localize ? (
-                  <Trans
-                    i18nKey='{{number}} pages left in chapter'
-                    values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                  >
-                    <span className='pages-left-number'>{'{{number}}'}</span>
-                    <span className='pages-left-label'>{' pages left in chapter'}</span>
-                  </Trans>
-                ) : (
-                  <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
-                    <span className='pages-left-number'>{'{{count}}'}</span>
-                    <span className='pages-left-label'>{' pages left in chapter'}</span>
-                  </Trans>
-                )}
-              </span>
-            ) : null}
-          </>
-        )}
+        {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
+          hasRemainingInfo && (
+            <div className='remaining-info flex-1 overflow-hidden whitespace-nowrap text-start'>
+              {viewSettings.showRemainingTime ? (
+                <span className='time-left-label text-start'>{timeLeftStr}</span>
+              ) : viewSettings.showRemainingPages && showPagesLeft ? (
+                <span className='text-start'>
+                  {localize ? (
+                    <Trans
+                      i18nKey='{{number}} pages left in chapter'
+                      values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                    >
+                      <span className='pages-left-number'>{'{{number}}'}</span>
+                      <span className='pages-left-label'>{' pages left in chapter'}</span>
+                    </Trans>
+                  ) : (
+                    <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
+                      <span className='pages-left-number'>{'{{count}}'}</span>
+                      <span className='pages-left-label'>{' pages left in chapter'}</span>
+                    </Trans>
+                  )}
+                </span>
+              ) : null}
+            </div>
+          )}
 
-        {(progressInfoMode === 'all' || progressInfoMode === 'progress') && (
-          <>
-            {viewSettings.showProgressInfo && (
-              <span
-                className={clsx('progress-info-label text-end', isVertical ? 'mt-auto' : 'ms-auto')}
-              >
-                {progressInfo}
-              </span>
-            )}
-          </>
-        )}
+        {(progressBarMode === 'all' ||
+          progressBarMode.includes('battery') ||
+          progressBarMode.includes('time')) &&
+          progressInfo && (
+            <StatusInfo
+              showTime={
+                (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
+              }
+              use24Hour={viewSettings.use24HourClock}
+              showBattery={
+                (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
+              }
+              showBatteryPercentage={viewSettings.showBatteryPercentage}
+              isVertical={isVertical}
+              isEink={isEink}
+            />
+          )}
+
+        <div className='progress-info flex-1 items-center overflow-hidden whitespace-nowrap text-end tabular-nums'>
+          {(progressBarMode === 'all' || progressBarMode.includes('progress')) && (
+            <>
+              {viewSettings.showProgressInfo && (
+                <span
+                  className={clsx(
+                    'progress-info-label text-end',
+                    isVertical ? 'mt-auto' : 'ms-auto',
+                  )}
+                >
+                  {progressInfo}
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProgressInfoView;
+export default ProgressBar;

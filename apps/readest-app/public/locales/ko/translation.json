@@ -822,6 +822,9 @@
   "Clear search": "검색 지우기",
   "Clear search history": "검색 기록 지우기",
   "Tap to Toggle Footer": "탭하여 바닥글 전환",
+  "Show Current Time": "현재 시간 표시",
+  "Use 24 Hour Clock": "24시간제 사용",
+  "Show Current Battery Status": "현재 배터리 상태 표시",
   "Exported successfully": "내보내기 성공",
   "Book exported successfully.": "책을 성공적으로 내보냈습니다.",
   "Failed to export the book.": "책 내보내기에 실패했습니다.",
@@ -1126,5 +1129,6 @@
   "Page:": "페이지:",
   "Page: {{number}}": "페이지: {{number}}",
   "Annotation page number": "주석 페이지 번호",
-  "Translating...": "번역 중..."
+  "Translating...": "번역 중...",
+  "Show Battery Percentage": "배터리 백분율 표시"
 }

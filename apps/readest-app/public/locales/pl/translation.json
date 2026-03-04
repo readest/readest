@@ -852,6 +852,9 @@
   "Clear search": "Wyczyść wyszukiwanie",
   "Clear search history": "Wyczyść historię wyszukiwania",
   "Tap to Toggle Footer": "Dotknij, aby przełączyć stopkę",
+  "Show Current Time": "Pokaż aktualny czas",
+  "Use 24 Hour Clock": "Używaj formatu 24-godzinnego",
+  "Show Current Battery Status": "Pokaż aktualny stan baterii",
   "Exported successfully": "Wyeksportowano pomyślnie",
   "Book exported successfully.": "Książka została wyeksportowana pomyślnie.",
   "Failed to export the book.": "Nie udało się wyeksportować książki.",
@@ -1162,5 +1165,6 @@
   "Page:": "Strona:",
   "Page: {{number}}": "Strona: {{number}}",
   "Annotation page number": "Numer strony adnotacji",
-  "Translating...": "Tłumaczenie..."
+  "Translating...": "Tłumaczenie...",
+  "Show Battery Percentage": "Pokaż procent baterii"
 }

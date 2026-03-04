@@ -832,6 +832,9 @@
   "Clear search": "Aramayı temizle",
   "Clear search history": "Arama geçmişini temizle",
   "Tap to Toggle Footer": "Altbilgiyi değiştirmek için dokunun",
+  "Show Current Time": "Şu anki saati göster",
+  "Use 24 Hour Clock": "24 Saatlik Saati Kullan",
+  "Show Current Battery Status": "Mevcut Pil Durumunu Göster",
   "Exported successfully": "Başarıyla dışa aktarıldı",
   "Book exported successfully.": "Kitap başarıyla dışa aktarıldı.",
   "Failed to export the book.": "Kitap dışa aktarılamadı.",
@@ -1138,5 +1141,6 @@
   "Page:": "Sayfa:",
   "Page: {{number}}": "Sayfa: {{number}}",
   "Annotation page number": "Açıklama sayfa numarası",
-  "Translating...": "Çevriliyor..."
+  "Translating...": "Çevriliyor...",
+  "Show Battery Percentage": "Pil Yüzdesini Göster"
 }

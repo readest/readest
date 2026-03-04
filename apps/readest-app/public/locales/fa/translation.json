@@ -832,6 +832,9 @@
   "Clear search": "پاک کردن جستجو",
   "Clear search history": "پاک کردن تاریخچه جستجو",
   "Tap to Toggle Footer": "برای تغییر پاورقی ضربه بزنید",
+  "Show Current Time": "نمایش زمان فعلی",
+  "Use 24 Hour Clock": "استفاده از ساعت ۲۴ ساعته",
+  "Show Current Battery Status": "نمایش وضعیت فعلی باتری",
   "Exported successfully": "صادرات موفق",
   "Book exported successfully.": "کتاب با موفقیت صادر شد.",
   "Failed to export the book.": "صادر کردن کتاب ناموفق بود.",
@@ -1138,5 +1141,6 @@
   "Page:": "صفحه:",
   "Page: {{number}}": "صفحه: {{number}}",
   "Annotation page number": "شماره صفحه یادداشت",
-  "Translating...": "در حال ترجمه..."
+  "Translating...": "در حال ترجمه...",
+  "Show Battery Percentage": "نمایش درصد باتری"
 }

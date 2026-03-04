@@ -832,6 +832,9 @@
   "Clear search": "Εκκαθάριση αναζήτησης",
   "Clear search history": "Εκκαθάριση ιστορικού αναζήτησης",
   "Tap to Toggle Footer": "Πατήστε για εναλλαγή υποσέλιδου",
+  "Show Current Time": "Εμφάνιση τρέχουσας ώρας",
+  "Use 24 Hour Clock": "Χρήση 24ωρης μορφής ώρας",
+  "Show Current Battery Status": "Εμφάνιση τρέχουσας κατάστασης μπαταρίας",
   "Exported successfully": "Εξαγωγή επιτυχής",
   "Book exported successfully.": "Το βιβλίο εξήχθη επιτυχώς.",
   "Failed to export the book.": "Αποτυχία εξαγωγής του βιβλίου.",
@@ -1138,5 +1141,6 @@
   "Page:": "Σελίδα:",
   "Page: {{number}}": "Σελίδα: {{number}}",
   "Annotation page number": "Αριθμός σελίδας σχολίου",
-  "Translating...": "Μετάφραση..."
+  "Translating...": "Μετάφραση...",
+  "Show Battery Percentage": "Εμφάνιση ποσοστού μπαταρίας"
 }

@@ -832,6 +832,9 @@
   "Clear search": "অনুসন্ধান সাফ করুন",
   "Clear search history": "অনুসন্ধান ইতিহাস সাফ করুন",
   "Tap to Toggle Footer": "ফুটার টগল করতে আলতো চাপুন",
+  "Show Current Time": "বর্তমান সময় দেখান",
+  "Use 24 Hour Clock": "২৪ ঘণ্টার ঘড়ি ব্যবহার করুন",
+  "Show Current Battery Status": "বর্তমান ব্যাটারি অবস্থা দেখান",
   "Exported successfully": "সফলভাবে রপ্তানি হয়েছে",
   "Book exported successfully.": "বইটি সফলভাবে রপ্তানি হয়েছে।",
   "Failed to export the book.": "বই রপ্তানি করতে ব্যর্থ।",
@@ -1138,5 +1141,6 @@
   "Page:": "পৃষ্ঠা:",
   "Page: {{number}}": "পৃষ্ঠা: {{number}}",
   "Annotation page number": "টীকা পৃষ্ঠা নম্বর",
-  "Translating...": "অনুবাদ করা হচ্ছে..."
+  "Translating...": "অনুবাদ করা হচ্ছে...",
+  "Show Battery Percentage": "ব্যাটারি শতাংশ দেখান"
 }

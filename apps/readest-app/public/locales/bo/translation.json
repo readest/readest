@@ -822,6 +822,9 @@
   "Clear search": "འཚོལ་བཤེར་གཙང་སེལ།",
   "Clear search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་གཙང་སེལ།",
   "Tap to Toggle Footer": "ཞབས་མཇུག་སྒོ་འབྱེད་བྱེད་པར་གནོན།",
+  "Show Current Time": "ད་ལྟའི་དུས་ཚོད་སྟོན་པ།",
+  "Use 24 Hour Clock": "ཆུ་ཚོད་ ༢༤ ཅན་གྱི་ཟློས་འཁོར་བཀོལ་བ།",
+  "Show Current Battery Status": "ད་ལྟའི་གློག་རྫས་གནས་བབ་སྟོན་པ།",
   "Exported successfully": "ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
   "Book exported successfully.": "དཔེ་དེབ་ཕྱིར་འདོན་ལེགས་གྲུབ་བྱུང་།",
   "Failed to export the book.": "དཔེ་དེབ་ཕྱིར་འདོན་མི་ཐུབ།",
@@ -1126,5 +1129,6 @@
   "Page:": "ཤོག་ལྷེ།:",
   "Page: {{number}}": "ཤོག་ལྷེ།: {{number}}",
   "Annotation page number": "མཆན་འགྲེལ་ཤོག་ཨང་།",
-  "Translating...": "ཡིག་བསྒྱུར་བྱེད་བཞིན་པ།..."
+  "Translating...": "ཡིག་བསྒྱུར་བྱེད་བཞིན་པ།...",
+  "Show Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ་སྟོན།"
 }

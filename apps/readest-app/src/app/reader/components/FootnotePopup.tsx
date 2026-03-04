@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MdArrowBack } from 'react-icons/md';
 
 import { BookDoc } from '@/libs/document';
@@ -25,11 +25,11 @@ interface FootnotePopupProps {
 
 const popupWidth = 360;
 const popupHeight = 88;
-const popupPadding = 10;
 
 const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const footnoteRef = useRef<HTMLDivElement>(null);
   const footnoteViewRef = useRef<FoliateView | null>(null);
+  const trianglePositionRef = useRef<Position | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position | null>();
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
@@ -52,10 +52,33 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const [gridRect, setGridRect] = useState<DOMRect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
+  const sizeAdjustCountRef = useRef(0);
+  const maxSizeAdjustCount = 3;
   const size18 = useResponsiveSize(18);
+  const popupPadding = useResponsiveSize(10);
+
+  const getMaxHeight = useCallback(() => {
+    let availableHeight = window.innerHeight - 2 * popupPadding;
+    if (trianglePositionRef.current?.dir === 'up') {
+      availableHeight = trianglePositionRef.current.point.y - popupPadding;
+    } else if (trianglePositionRef.current?.dir === 'down') {
+      availableHeight = window.innerHeight - trianglePositionRef.current.point.y - popupPadding;
+    }
+    return availableHeight;
+  }, [popupPadding]);
+
+  const getMaxWidth = useCallback(() => {
+    let availableWidth = Math.min(window.innerWidth - 2 * popupPadding, 720);
+    if (trianglePositionRef.current?.dir === 'left') {
+      availableWidth = trianglePositionRef.current.point.x - popupPadding;
+    } else if (trianglePositionRef.current?.dir === 'right') {
+      availableWidth = window.innerWidth - trianglePositionRef.current.point.x - popupPadding;
+    }
+    return availableWidth;
+  }, [popupPadding]);
 
   const getResponsivePopupSize = (size: number, isVertical: boolean) => {
-    const maxSize = isVertical ? window.innerWidth / 2 : window.innerHeight / 2;
+    const maxSize = isVertical ? window.innerWidth : window.innerHeight;
     return Math.min(size, maxSize - popupPadding - 12);
   };
 
@@ -134,13 +157,32 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       // console.log('render footnote', detail);
       const { view, href } = detail;
       footnoteHrefRef.current = href;
+      sizeAdjustCountRef.current = 0;
       view.addEventListener('relocate', () => {
+        if (sizeAdjustCountRef.current >= maxSizeAdjustCount) return;
+        sizeAdjustCountRef.current += 1;
         const { renderer } = view as FoliateView;
         const viewSettings = getViewSettings(bookKey)!;
         if (viewSettings.vertical) {
-          setResponsiveWidth(clipPopupWith(getResponsivePopupSize(renderer.viewSize, true)));
+          const responsiveWidth = clipPopupWith(
+            Math.min(getResponsivePopupSize(renderer.viewSize, true), getMaxWidth()),
+          );
+          setResponsiveWidth(responsiveWidth);
+          const scrollRatio = renderer.viewSize / responsiveWidth;
+          if (scrollRatio > 1.5) {
+            setResponsiveHeight(
+              clipPopupHeight(Math.min(popupWidth * scrollRatio, getMaxHeight())),
+            );
+          }
         } else {
-          setResponsiveHeight(clipPopupHeight(getResponsivePopupSize(renderer.viewSize, false)));
+          const responsiveHeight = clipPopupHeight(
+            Math.min(getResponsivePopupSize(renderer.viewSize, false), getMaxHeight()),
+          );
+          setResponsiveHeight(responsiveHeight);
+          const scrollRatio = renderer.viewSize / responsiveHeight;
+          if (scrollRatio > 1.5) {
+            setResponsiveWidth(clipPopupWith(Math.min(popupWidth * scrollRatio, getMaxWidth())));
+          }
         }
         setShowPopup(true);
       });
@@ -169,7 +211,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       setResponsiveWidth(clipPopupWith(Math.max(popupWidth, window.innerWidth / 4)));
       setResponsiveHeight(clipPopupHeight(popupHeight));
     }
-  }, [viewSettings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings, trianglePosition]);
 
   useEffect(() => {
     if (trianglePosition && gridRect) {
@@ -182,7 +225,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       );
       setPopupPosition(popupPos);
     }
-  }, [trianglePosition, gridRect, responsiveWidth, responsiveHeight]);
+  }, [trianglePosition, gridRect, responsiveWidth, responsiveHeight, popupPadding]);
 
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -194,6 +237,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
     setGridRect(rect);
     setTrianglePosition(triangPos);
+    trianglePositionRef.current = triangPos;
 
     const { a: anchor } = detail as { a: HTMLAnchorElement };
     const footnoteClasses = ['duokan-footnote', 'footnote-link', 'footnote'];
@@ -234,11 +278,15 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const handleDismissPopup = () => {
     closePopup();
     historyRef.current = { items: [], index: -1 };
-    setCanGoBack(false);
     canGoBackRef.current = false;
+    sizeAdjustCountRef.current = 0;
+    trianglePositionRef.current = null;
+    setCanGoBack(false);
     setGridRect(null);
     setPopupPosition(null);
     setTrianglePosition(null);
+    setResponsiveWidth(popupWidth);
+    setResponsiveHeight(popupHeight);
     setShowPopup(false);
   };
 
@@ -273,6 +321,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       footnoteRef.current.replaceChildren(elem);
       setGridRect(rect);
       setTrianglePosition(triangPos);
+      trianglePositionRef.current = triangPos;
       setShowPopup(true);
     }
   };

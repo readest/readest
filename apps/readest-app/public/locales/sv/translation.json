@@ -832,6 +832,9 @@
   "Clear search": "Rensa sökning",
   "Clear search history": "Rensa sökhistorik",
   "Tap to Toggle Footer": "Tryck för att växla sidfot",
+  "Show Current Time": "Visa aktuell tid",
+  "Use 24 Hour Clock": "Använd 24-timmarsklocka",
+  "Show Current Battery Status": "Visa aktuell batteristatus",
   "Exported successfully": "Exporterad",
   "Book exported successfully.": "Boken har exporterats.",
   "Failed to export the book.": "Det gick inte att exportera boken.",
@@ -1138,5 +1141,6 @@
   "Page:": "Sida:",
   "Page: {{number}}": "Sida: {{number}}",
   "Annotation page number": "Annoteringssidnummer",
-  "Translating...": "Översätter..."
+  "Translating...": "Översätter...",
+  "Show Battery Percentage": "Visa batteriprocent"
 }

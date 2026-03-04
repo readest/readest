@@ -832,6 +832,9 @@
   "Clear search": "தேடலை அழி",
   "Clear search history": "தேடல் வரலாற்றை அழி",
   "Tap to Toggle Footer": "அடிக்குறிப்பை மாற்ற தட்டவும்",
+  "Show Current Time": "தற்போதைய நேரத்தைக் காண்பி",
+  "Use 24 Hour Clock": "24 மணிநேர கடிகாரத்தைப் பயன்படுத்து",
+  "Show Current Battery Status": "தற்போதைய பேட்டரி நிலையைக் காண்பி",
   "Exported successfully": "ஏற்றுமதி வெற்றி",
   "Book exported successfully.": "புத்தகம் வெற்றிகரமாக ஏற்றுமதி செய்யப்பட்டது.",
   "Failed to export the book.": "புத்தகத்தை ஏற்றுமதி செய்ய இயலவில்லை.",
@@ -1138,5 +1141,6 @@
   "Page:": "பக்கம்:",
   "Page: {{number}}": "பக்கம்: {{number}}",
   "Annotation page number": "சிறுகுறிப்புப் பக்க எண்",
-  "Translating...": "மொழிபெயர்க்கிறது..."
+  "Translating...": "மொழிபெயர்க்கிறது...",
+  "Show Battery Percentage": "பேட்டரி சதவீதத்தைக் காண்பி"
 }

@@ -832,6 +832,9 @@
   "Clear search": "खोज साफ़ करें",
   "Clear search history": "खोज इतिहास साफ़ करें",
   "Tap to Toggle Footer": "फुटर टॉगल करने के लिए टैप करें",
+  "Show Current Time": "वर्तमान समय दिखाएं",
+  "Use 24 Hour Clock": "24 घंटे की घड़ी का उपयोग करें",
+  "Show Current Battery Status": "वर्तमान बैटरी स्थिति दिखाएं",
   "Exported successfully": "सफलतापूर्वक निर्यात किया गया",
   "Book exported successfully.": "पुस्तक सफलतापूर्वक निर्यात की गई।",
   "Failed to export the book.": "पुस्तक निर्यात करने में विफल।",
@@ -1138,5 +1141,6 @@
   "Page:": "पृष्ठ:",
   "Page: {{number}}": "पृष्ठ: {{number}}",
   "Annotation page number": "व्याख्या पृष्ठ संख्या",
-  "Translating...": "अनुवाद हो रहा है..."
+  "Translating...": "अनुवाद हो रहा है...",
+  "Show Battery Percentage": "बैटरी प्रतिशत दिखाएं"
 }

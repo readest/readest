@@ -872,6 +872,9 @@
   "Clear search": "مسح البحث",
   "Clear search history": "مسح سجل البحث",
   "Tap to Toggle Footer": "انقر لتبديل التذييل",
+  "Show Current Time": "عرض الوقت الحالي",
+  "Use 24 Hour Clock": "استخدام نظام 24 ساعة",
+  "Show Current Battery Status": "عرض حالة البطارية الحالية",
   "Exported successfully": "تم التصدير بنجاح",
   "Book exported successfully.": "تم تصدير الكتاب بنجاح.",
   "Failed to export the book.": "فشل تصدير الكتاب.",
@@ -1186,5 +1189,6 @@
   "Page:": "صفحة:",
   "Page: {{number}}": "صفحة: {{number}}",
   "Annotation page number": "رقم صفحة التعליق",
-  "Translating...": "جارٍ الترجمة..."
+  "Translating...": "جارٍ الترجمة...",
+  "Show Battery Percentage": "عرض نسبة البطارية"
 }

@@ -822,6 +822,9 @@
   "Clear search": "ล้างการค้นหา",
   "Clear search history": "ล้างประวัติการค้นหา",
   "Tap to Toggle Footer": "แตะเพื่อสลับส่วนท้าย",
+  "Show Current Time": "แสดงเวลาปัจจุบัน",
+  "Use 24 Hour Clock": "ใช้รูปแบบเวลา 24 ชั่วโมง",
+  "Show Current Battery Status": "แสดงสถานะแบตเตอรี่ปัจจุบัน",
   "Exported successfully": "ส่งออกสำเร็จ",
   "Book exported successfully.": "ส่งออกหนังสือสำเร็จ",
   "Failed to export the book.": "ส่งออกหนังสือล้มเหลว",
@@ -1126,5 +1129,6 @@
   "Page:": "หน้า:",
   "Page: {{number}}": "หน้า: {{number}}",
   "Annotation page number": "หมายเลขหน้าคำอธิบายประกอบ",
-  "Translating...": "กำลังแปล..."
+  "Translating...": "กำลังแปล...",
+  "Show Battery Percentage": "แสดงเปอร์เซ็นต์แบตเตอรี่"
 }

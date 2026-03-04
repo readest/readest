@@ -822,6 +822,9 @@
   "Clear search": "清除搜尋",
   "Clear search history": "清除搜尋歷史",
   "Tap to Toggle Footer": "點擊切換頁尾",
+  "Show Current Time": "顯示目前時間",
+  "Use 24 Hour Clock": "使用 24 小時制",
+  "Show Current Battery Status": "顯示當前電池狀態",
   "Exported successfully": "匯出成功",
   "Book exported successfully.": "書籍匯出成功。",
   "Failed to export the book.": "書籍匯出失敗。",
@@ -1126,5 +1129,6 @@
   "Page:": "頁面:",
   "Page: {{number}}": "頁面: {{number}}",
   "Annotation page number": "註解頁碼",
-  "Translating...": "翻譯中..."
+  "Translating...": "翻譯中...",
+  "Show Battery Percentage": "顯示電池百分比"
 }
