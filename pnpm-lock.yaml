@@ -192,8 +192,8 @@ importers:
         specifier: ~2.4.2
         version: 2.4.2
       '@tursodatabase/database-wasm':
-        specifier: ^0.4.4
-        version: 0.4.4
+        specifier: ^0.5.0
+        version: 0.5.0
       '@tybys/wasm-util':
         specifier: ^0.10.1
         version: 0.10.1
@@ -385,8 +385,8 @@ importers:
         specifier: ^16.3.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@tursodatabase/database':
-        specifier: ^0.4.4
-        version: 0.4.4
+        specifier: ^0.5.0
+        version: 0.5.0
       '@types/cors':
         specifier: ^2.8.17
         version: 2.8.19
@@ -3704,39 +3704,33 @@ packages:
   '@tsconfig/node18@1.0.3':
     resolution: {integrity: sha512-RbwvSJQsuN9TB04AQbGULYfOGE/RnSFk/FLQ5b0NmDf5Kx2q/lABZbHQPKCO1vZ6Fiwkplu+yb9pGdLy1iGseQ==}
 
-  '@tursodatabase/database-common@0.4.4':
-    resolution: {integrity: sha512-iuSYWgBQEETjwfWOmi3E4Q++jQTb+VOPXeaKozQqW8fXtgU6ZaYUMmWbqQVMGSS9sAWZlZi9qyPVz0rkT8zoqQ==}
+  '@tursodatabase/database-common@0.5.0':
+    resolution: {integrity: sha512-Yw1aJ7rw5Sshy7VvkLk3gZlHqNeM3nqs11G3qzhu1gjqLfVxT1MupVfB4AWLrvOwVMYWs560/Xfl9ITooJu5HQ==}
 
-  '@tursodatabase/database-darwin-arm64@0.4.4':
-    resolution: {integrity: sha512-nQMYrJY1X0sNgNWdbuPdbNCL9S/Ei9KLMwx3hFdyUDYJWU0h7o+kZv50QoNXB7vb7LmEBMeVWZaVEQbHd/Ionw==}
+  '@tursodatabase/database-darwin-arm64@0.5.0':
+    resolution: {integrity: sha512-WwgIlXeZ2/RKmQV/pBoduYIiY1t+gAG4zKyza6vq+ubYEV1eV9M/Ag0qxd3w8hVVbnIh3AFv/XA6NGU5fjWIww==}
     cpu: [arm64]
     os: [darwin]
 
-  '@tursodatabase/database-linux-arm64-gnu@0.4.4':
-    resolution: {integrity: sha512-6vnnKBgAgfKhspr+nScPevOSrrnZwNJKuUbiHMSagOqNDZCzOAGDcfeC83sKd2QvZquR17l6V3tFxcFN5FnByQ==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@tursodatabase/database-linux-x64-gnu@0.4.4':
-    resolution: {integrity: sha512-N63wK6ow6wPmD1/BjBhbrR8/Ifo6+A6zavpzgsT5YABVC4wGZBvJ1TvSz935R9n5E8eqQNY8jKiQPJLwpgOjdw==}
+  '@tursodatabase/database-linux-x64-gnu@0.5.0':
+    resolution: {integrity: sha512-m+th09HazKbuQwaj9C2hPBE/5TWvBn6bQ2/YghrXog+mvmjeq1W/GXEpUP0BDUCiQwj//2p30WaNvicLe2VMfg==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@tursodatabase/database-wasm-common@0.4.4':
-    resolution: {integrity: sha512-iLy4piISaNNIbE9viRDNZqRx/Z16JjTUh8Sa3D3icirSyHvXWlBggH+EJUjuCo+dtZgDYYGhmOcTGCIH4Q3h/g==}
+  '@tursodatabase/database-wasm-common@0.5.0':
+    resolution: {integrity: sha512-l7Tf7m52sS0mRWD584WBpFXACZtdcd2iGHXa5Jsjr3Ia3X9sRmDNy/SQkncLQIHXoQ+EPFUC951v9C79Hdgg/w==}
 
-  '@tursodatabase/database-wasm@0.4.4':
-    resolution: {integrity: sha512-U8tukY8BXjsnyF9vQz1p7tweJbnBzG66OJZ/BRyx3jpqa2j1Df/pewxok7SWWIGobnyQTMukvZ1q6GguS3Zskw==}
+  '@tursodatabase/database-wasm@0.5.0':
+    resolution: {integrity: sha512-94ax/1oENl9wfOyQGIzWkcLE16FwPnOtM5zVTSRJ5NkOC/+FqbIGxWYL+jS4M8dd+U8FXSB2soQXLOWvCSHosg==}
 
-  '@tursodatabase/database-win32-x64-msvc@0.4.4':
-    resolution: {integrity: sha512-TYEl5FaUAImgZew05FvxvcFWLb1AQ+Zeyw/ApEbBDqS7mQmbz8VGs4iq04ECzJG2esfBR+zrLdDEG3X1BnaDTg==}
+  '@tursodatabase/database-win32-x64-msvc@0.5.0':
+    resolution: {integrity: sha512-3nnbUe6Z0VerPeYhW3frPdiUV6wdDhz97Zg1iCwpl9xUp/CUP4z2KU2EiHKMxlCvPcIXB/U37hMpdgooQMj7dA==}
     cpu: [x64]
     os: [win32]
 
-  '@tursodatabase/database@0.4.4':
-    resolution: {integrity: sha512-QkQ0qLp0AY8dC9BOrIMyeyUXoFCvhlRaH+wcg013OvzYufSmDnnzg44U0tQkmnXYfUZEIp+IpADO/UeGNL0M2Q==}
+  '@tursodatabase/database@0.5.0':
+    resolution: {integrity: sha512-PDESKMpgBu9TJ25t6L0zfx5Vj9g0h8Wug38YS/mT+r/Yn+N0MBOFUlL3pR/qZHTVIEoXYWRPdGB/hfemvrcFxg==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -12556,37 +12550,33 @@ snapshots:
 
   '@tsconfig/node18@1.0.3': {}
 
-  '@tursodatabase/database-common@0.4.4': {}
+  '@tursodatabase/database-common@0.5.0': {}
 
-  '@tursodatabase/database-darwin-arm64@0.4.4':
+  '@tursodatabase/database-darwin-arm64@0.5.0':
     optional: true
 
-  '@tursodatabase/database-linux-arm64-gnu@0.4.4':
+  '@tursodatabase/database-linux-x64-gnu@0.5.0':
     optional: true
 
-  '@tursodatabase/database-linux-x64-gnu@0.4.4':
-    optional: true
-
-  '@tursodatabase/database-wasm-common@0.4.4':
+  '@tursodatabase/database-wasm-common@0.5.0':
     dependencies:
       '@napi-rs/wasm-runtime': 1.1.1
 
-  '@tursodatabase/database-wasm@0.4.4':
+  '@tursodatabase/database-wasm@0.5.0':
     dependencies:
-      '@tursodatabase/database-common': 0.4.4
-      '@tursodatabase/database-wasm-common': 0.4.4
+      '@tursodatabase/database-common': 0.5.0
+      '@tursodatabase/database-wasm-common': 0.5.0
 
-  '@tursodatabase/database-win32-x64-msvc@0.4.4':
+  '@tursodatabase/database-win32-x64-msvc@0.5.0':
     optional: true
 
-  '@tursodatabase/database@0.4.4':
+  '@tursodatabase/database@0.5.0':
     dependencies:
-      '@tursodatabase/database-common': 0.4.4
+      '@tursodatabase/database-common': 0.5.0
     optionalDependencies:
-      '@tursodatabase/database-darwin-arm64': 0.4.4
-      '@tursodatabase/database-linux-arm64-gnu': 0.4.4
-      '@tursodatabase/database-linux-x64-gnu': 0.4.4
-      '@tursodatabase/database-win32-x64-msvc': 0.4.4
+      '@tursodatabase/database-darwin-arm64': 0.5.0
+      '@tursodatabase/database-linux-x64-gnu': 0.5.0
+      '@tursodatabase/database-win32-x64-msvc': 0.5.0
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
