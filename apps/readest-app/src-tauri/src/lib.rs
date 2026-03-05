@@ -185,7 +185,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_sharekit::init())
         .plugin(tauri_plugin_device_info::init())
-        .plugin(tauri_plugin_libsql::init())
+        .plugin(tauri_plugin_turso::init())
         .plugin(tauri_plugin_native_bridge::init())
         .plugin(tauri_plugin_native_tts::init());
 

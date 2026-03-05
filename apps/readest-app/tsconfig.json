@@ -25,7 +25,7 @@
       "@/components/ui/*": ["./src/components/primitives/*"],
       "@pdfjs/*": ["./public/vendor/pdfjs/*"],
       "@simplecc/*": ["./public/vendor/simplecc/*"],
-      "tauri-plugin-libsql": ["./src-tauri/plugins/tauri-plugin-libsql/guest-js"]
+      "tauri-plugin-turso": ["./src-tauri/plugins/tauri-plugin-turso/guest-js"]
     }
   },
   "include": [

@@ -58,7 +58,7 @@ tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }
 tauri-plugin-websocket = "2"
 tauri-plugin-sharekit = "0.3"
 tauri-plugin-device-info = "1.0.1"
-tauri-plugin-libsql = { path = "./plugins/tauri-plugin-libsql" }
+tauri-plugin-turso = { path = "./plugins/tauri-plugin-turso" }
 tauri-plugin-webdriver = { version = "0.2", optional = true }
 
 [target."cfg(target_os = \"macos\")".dependencies]

@@ -5,7 +5,7 @@ import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/databa
 // Mock: NativeDatabaseService
 // ---------------------------------------------------------------------------
 
-vi.mock('tauri-plugin-libsql', () => {
+vi.mock('tauri-plugin-turso', () => {
   const rows = new Map<string, DatabaseRow[]>();
 
   const mockDb = {
@@ -99,7 +99,7 @@ describe('NativeDatabaseService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('tauri-plugin-libsql');
+    const mod = await import('tauri-plugin-turso');
     (mod as unknown as { __rows: Map<string, DatabaseRow[]> }).__rows.clear();
 
     const { NativeDatabaseService } = await import('@/services/database/nativeDatabaseService');
@@ -139,7 +139,7 @@ describe('NativeDatabaseService', () => {
 
   it('batch() delegates to underlying db.batch()', async () => {
     await db.batch(['CREATE TABLE t (id INTEGER)', 'INSERT INTO t VALUES (1)']);
-    const mod = await import('tauri-plugin-libsql');
+    const mod = await import('tauri-plugin-turso');
     const mockDb = (mod as unknown as { __mockDb: { batch: ReturnType<typeof vi.fn> } }).__mockDb;
     expect(mockDb.batch).toHaveBeenCalledWith([
       'CREATE TABLE t (id INTEGER)',
@@ -149,7 +149,7 @@ describe('NativeDatabaseService', () => {
 
   it('close() delegates to underlying db.close()', async () => {
     await db.close();
-    const mod = await import('tauri-plugin-libsql');
+    const mod = await import('tauri-plugin-turso');
     const mockDb = (mod as unknown as { __mockDb: { close: ReturnType<typeof vi.fn> } }).__mockDb;
     expect(mockDb.close).toHaveBeenCalled();
   });

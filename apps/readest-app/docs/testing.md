@@ -63,7 +63,7 @@ Vitest connects directly to the embedded WebDriver server (port 4445) in the run
 - **Config:** `vitest.tauri.config.mts`
 - **Pattern:** `src/**/*.tauri.test.ts`
 - **Browser provider:** `@vitest/browser-webdriverio` (connects to port 4445)
-- **Use for:** Tauri plugin commands (libsql, native-tts, etc.), native filesystem, Tauri IPC.
+- **Use for:** Tauri plugin commands (turso, native-tts, etc.), native filesystem, Tauri IPC.
 
 ### Writing Tauri Tests
 
@@ -73,7 +73,7 @@ Tests access Tauri IPC via a shared helper:
 import { invoke } from '../tauri/tauri-invoke';
 
 it('calls a plugin command', async () => {
-  const result = await invoke('plugin:libsql|load', { options: { path: 'sqlite::memory:' } });
+  const result = await invoke('plugin:turso|load', { options: { path: 'sqlite::memory:' } });
   expect(result).toBeDefined();
 });
 ```

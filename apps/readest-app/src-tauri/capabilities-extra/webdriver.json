@@ -16,7 +16,7 @@
     "log:default",
     "shell:default",
     "process:default",
-    "libsql:default",
+    "turso:default",
     "native-tts:default",
     "native-bridge:default"
   ]
