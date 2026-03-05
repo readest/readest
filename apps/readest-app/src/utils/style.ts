@@ -473,6 +473,7 @@ export const getFootnoteStyles = () => `
 
   body {
     padding: 1em !important;
+    overflow-wrap: break-word;
   }
 
   a:any-link {
