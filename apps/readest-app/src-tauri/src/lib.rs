@@ -228,8 +228,19 @@ pub fn run() {
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let builder = builder.plugin(tauri_plugin_haptics::init());
 
+    #[cfg(feature = "webdriver")]
+    let builder = builder.plugin(tauri_plugin_webdriver::init());
+
     builder
         .setup(|#[allow(unused_variables)] app| {
+            // When running with the webdriver feature (E2E/integration tests),
+            // grant all default permissions to remote URLs (http://127.0.0.1:*)
+            // so that Vitest browser-mode tests can call plugin commands.
+            #[cfg(feature = "webdriver")]
+            {
+                use tauri::Manager;
+                app.add_capability(include_str!("../capabilities-extra/webdriver.json"))?;
+            }
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             {
                 use std::sync::{Arc, Mutex};
