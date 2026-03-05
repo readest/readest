@@ -191,6 +191,9 @@ importers:
       '@tauri-apps/plugin-websocket':
         specifier: ~2.4.2
         version: 2.4.2
+      '@tursodatabase/database-common':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@tursodatabase/database-wasm':
         specifier: ^0.5.0
         version: 0.5.0

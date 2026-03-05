@@ -1,4 +1,4 @@
-import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/database';
+import { DatabaseService, DatabaseExecResult, DatabaseRow, DatabaseOpts } from '@/types/database';
 
 interface WasmRunResult {
   changes: number;
@@ -23,9 +23,9 @@ export class WebDatabaseService implements DatabaseService {
     this.db = db;
   }
 
-  static async open(path: string): Promise<WebDatabaseService> {
+  static async open(path: string, opts?: DatabaseOpts): Promise<WebDatabaseService> {
     const mod = await import('@tursodatabase/database-wasm');
-    const db = (await mod.connect(path)) as unknown as WasmDatabase;
+    const db = (await mod.connect(path, opts)) as unknown as WasmDatabase;
     return new WebDatabaseService(db);
   }
 

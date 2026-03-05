@@ -99,6 +99,7 @@
     "@tauri-apps/plugin-shell": "~2.3.5",
     "@tauri-apps/plugin-updater": "^2.10.0",
     "@tauri-apps/plugin-websocket": "~2.4.2",
+    "@tursodatabase/database-common": "^0.5.0",
     "@tursodatabase/database-wasm": "^0.5.0",
     "@tybys/wasm-util": "^0.10.1",
     "@zip.js/zip.js": "^2.8.16",

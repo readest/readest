@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { WebDatabaseService } from '@/services/database/webDatabaseService';
 import { DatabaseService, DatabaseExecResult } from '@/types/database';
+import { ftsTests } from './suites/fts-tests';
+import { vectorTests } from './suites/vector-tests';
 
 /**
  * Browser-based integration tests for WebDatabaseService using @tursodatabase/database-wasm.
@@ -11,7 +13,7 @@ describe('WebDatabaseService (browser WASM, in-memory SQLite)', () => {
   let db: DatabaseService;
 
   beforeEach(async () => {
-    db = await WebDatabaseService.open(':memory:');
+    db = await WebDatabaseService.open(':memory:', { experimental: ['index_method'] });
   });
 
   afterEach(async () => {
@@ -169,5 +171,21 @@ describe('WebDatabaseService (browser WASM, in-memory SQLite)', () => {
     const result = await db.execute('INSERT INTO t DEFAULT VALUES');
     expect(typeof result.rowsAffected).toBe('number');
     expect(typeof result.lastInsertId).toBe('number');
+  });
+
+  // -------------------------------------------------------------------------
+  // Full-text search (Turso native FTS, Tantivy-based)
+  // -------------------------------------------------------------------------
+
+  describe('Full-Text Search', () => {
+    ftsTests(() => db);
+  });
+
+  // -------------------------------------------------------------------------
+  // Vector search
+  // -------------------------------------------------------------------------
+
+  describe('Vector Search', () => {
+    vectorTests(() => db);
   });
 });

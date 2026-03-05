@@ -1,5 +1,5 @@
 import { Database, QueryResult } from 'tauri-plugin-libsql';
-import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/database';
+import { DatabaseService, DatabaseExecResult, DatabaseRow, DatabaseOpts } from '@/types/database';
 
 export class NativeDatabaseService implements DatabaseService {
   private db: Database;
@@ -8,7 +8,7 @@ export class NativeDatabaseService implements DatabaseService {
     this.db = db;
   }
 
-  static async open(path: string): Promise<NativeDatabaseService> {
+  static async open(path: string, _opts?: DatabaseOpts): Promise<NativeDatabaseService> {
     const db = await Database.load(path);
     return new NativeDatabaseService(db);
   }

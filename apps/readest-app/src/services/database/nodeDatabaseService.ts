@@ -1,4 +1,4 @@
-import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/database';
+import { DatabaseService, DatabaseExecResult, DatabaseRow, DatabaseOpts } from '@/types/database';
 
 interface TursoRunResult {
   changes: number;
@@ -28,9 +28,9 @@ export class NodeDatabaseService implements DatabaseService {
     this.db = db;
   }
 
-  static async open(path: string): Promise<NodeDatabaseService> {
+  static async open(path: string, opts?: DatabaseOpts): Promise<NodeDatabaseService> {
     const mod = await import('@tursodatabase/database');
-    const db = (await mod.connect(path)) as unknown as TursoDatabase;
+    const db = (await mod.connect(path, opts)) as unknown as TursoDatabase;
     return new NodeDatabaseService(db);
   }
 

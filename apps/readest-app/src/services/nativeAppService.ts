@@ -42,7 +42,7 @@ import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
 import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
-import { DatabaseService } from '@/types/database';
+import { DatabaseOpts, DatabaseService } from '@/types/database';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
@@ -565,10 +565,10 @@ export class NativeAppService extends BaseAppService {
     return await ask(message);
   }
 
-  async openDatabase(path: string, base: BaseDir): Promise<DatabaseService> {
+  async openDatabase(path: string, base: BaseDir, opts?: DatabaseOpts): Promise<DatabaseService> {
     const fullPath = await this.resolveFilePath(path, base);
     const { NativeDatabaseService } = await import('./database/nativeDatabaseService');
-    return NativeDatabaseService.open(`sqlite:${fullPath}`);
+    return NativeDatabaseService.open(`sqlite:${fullPath}`, opts);
   }
 
   async migrate20251029() {

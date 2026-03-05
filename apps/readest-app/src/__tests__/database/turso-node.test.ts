@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { DatabaseService, DatabaseExecResult } from '@/types/database';
+import { ftsTests } from './suites/fts-tests';
+import { vectorTests } from './suites/vector-tests';
 
 /**
  * Integration tests using a real in-memory SQLite database via @tursodatabase/database.
@@ -12,7 +14,7 @@ describe('NodeDatabaseService (real in-memory SQLite)', () => {
   let db: DatabaseService;
 
   beforeEach(async () => {
-    db = await NodeDatabaseService.open(':memory:');
+    db = await NodeDatabaseService.open(':memory:', { experimental: ['index_method'] });
   });
 
   afterEach(async () => {
@@ -170,5 +172,21 @@ describe('NodeDatabaseService (real in-memory SQLite)', () => {
     const result = await db.execute('INSERT INTO t DEFAULT VALUES');
     expect(typeof result.rowsAffected).toBe('number');
     expect(typeof result.lastInsertId).toBe('number');
+  });
+
+  // -------------------------------------------------------------------------
+  // Full-text search (Turso native FTS, Tantivy-based)
+  // -------------------------------------------------------------------------
+
+  describe('Full-Text Search', () => {
+    ftsTests(() => db);
+  });
+
+  // -------------------------------------------------------------------------
+  // Vector search
+  // -------------------------------------------------------------------------
+
+  describe('Vector Search', () => {
+    vectorTests(() => db);
   });
 });

@@ -1,3 +1,5 @@
+export type { DatabaseOpts } from '@tursodatabase/database-common';
+
 export interface DatabaseExecResult {
   rowsAffected: number;
   lastInsertId: number;
