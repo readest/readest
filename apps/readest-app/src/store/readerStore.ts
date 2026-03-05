@@ -182,13 +182,14 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
       book.metadata = book.metadata ?? bookDoc.metadata;
 
-      // Update series info from metadata
+      // Update series info from metadata if available and not already set on the book
       if (bookDoc.metadata.belongsTo?.series) {
         const belongsTo = bookDoc.metadata.belongsTo.series;
         const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
         if (series) {
-          book.metadata.series = formatTitle(series.name);
-          book.metadata.seriesIndex = parseFloat(series.position || '0');
+          book.metadata.series = book.metadata.series ?? formatTitle(series.name);
+          book.metadata.seriesIndex =
+            book.metadata.seriesIndex ?? parseFloat(series.position || '0');
         }
       }
       // TODO: uncomment this when we can ensure metaHash is correctly generated for all books
