@@ -132,6 +132,7 @@ export interface BookLayout {
   rtl: boolean;
   scrollingOverlap: number;
   allowScript: boolean;
+  hideScrollbar: boolean;
 }
 
 export interface BookStyle {

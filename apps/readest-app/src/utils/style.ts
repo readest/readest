@@ -808,6 +808,27 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
 };
 
+/**
+  @param document should be the global `document`
+*/
+export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) => {
+  const styleId = 'scrollbar-hide-style' as const;
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+  if (hideScrollbar) {
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: none; }';
+  } else {
+    if (styleEl) {
+      styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: thin; }';
+    }
+  }
+};
+
 export const applyImageStyle = (document: Document) => {
   document.querySelectorAll('img').forEach((img) => {
     const widthAttr = img.getAttribute('width');

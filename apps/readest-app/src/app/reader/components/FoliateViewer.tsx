@@ -24,6 +24,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyScrollbarStyle,
   applyScrollModeClass,
   applyTableStyle,
   applyThemeModeClass,
@@ -222,6 +223,7 @@ const FoliateViewer: React.FC<{
       applyTableStyle(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
+      applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, detail.index);
 
@@ -566,6 +568,7 @@ const FoliateViewer: React.FC<{
         }
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
+        applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -575,6 +578,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,
+    viewSettings?.hideScrollbar,
   ]);
 
   useEffect(() => {
