@@ -4,6 +4,7 @@ import { DatabaseService } from '@/types/database';
 import { baseTests } from './suites/base-tests';
 import { ftsTests } from './suites/fts-tests';
 import { vectorTests } from './suites/vector-tests';
+import { migrationTests } from './suites/migration-tests';
 
 /**
  * Browser-based integration tests for WebDatabaseService using @tursodatabase/database-wasm.
@@ -31,5 +32,9 @@ describe('WebDatabaseService (browser WASM, in-memory SQLite)', () => {
 
   describe('Vector Search', () => {
     vectorTests(() => db);
+  });
+
+  describe('Migrations', () => {
+    migrationTests(() => db);
   });
 });

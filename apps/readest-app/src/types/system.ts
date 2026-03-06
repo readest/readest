@@ -5,6 +5,7 @@ import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { CustomTextureInfo } from '@/styles/textures';
 import { DatabaseOpts, DatabaseService } from './database';
+import { SchemaType } from '@/services/database/migrate';
 
 export type AppPlatform = 'web' | 'tauri';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
@@ -159,5 +160,10 @@ export interface AppService {
   generateCoverImageUrl(book: Book): Promise<string>;
   updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void>;
   ask(message: string): Promise<boolean>;
-  openDatabase(path: string, base: BaseDir, opts?: DatabaseOpts): Promise<DatabaseService>;
+  openDatabase(
+    schema: SchemaType,
+    path: string,
+    base: BaseDir,
+    opts?: DatabaseOpts,
+  ): Promise<DatabaseService>;
 }

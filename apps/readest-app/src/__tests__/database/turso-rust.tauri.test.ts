@@ -4,6 +4,7 @@ import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/databa
 import { baseTests } from './suites/base-tests';
 import { ftsTests } from './suites/fts-tests';
 import { vectorTests } from './suites/vector-tests';
+import { migrationTests } from './suites/migration-tests';
 
 /**
  * Thin DatabaseService adapter over raw Tauri IPC invoke() calls.
@@ -102,5 +103,9 @@ describe('turso plugin (native Tauri)', () => {
 
   describe('Vector Search', () => {
     vectorTests(() => db);
+  });
+
+  describe('Migrations', () => {
+    migrationTests(() => db);
   });
 });

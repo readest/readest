@@ -4,6 +4,7 @@ import { DatabaseService } from '@/types/database';
 import { baseTests } from './suites/base-tests';
 import { ftsTests } from './suites/fts-tests';
 import { vectorTests } from './suites/vector-tests';
+import { migrationTests } from './suites/migration-tests';
 
 /**
  * Integration tests using a real in-memory SQLite database via @tursodatabase/database.
@@ -32,5 +33,9 @@ describe('NodeDatabaseService (real in-memory SQLite)', () => {
 
   describe('Vector Search', () => {
     vectorTests(() => db);
+  });
+
+  describe('Migrations', () => {
+    migrationTests(() => db);
   });
 });

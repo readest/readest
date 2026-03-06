@@ -153,6 +153,8 @@ pub fn run() {
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)
+                .level_for("tracing", log::LevelFilter::Warn)
+                .level_for("tantivy", log::LevelFilter::Warn)
                 .build(),
         )
         .plugin(tauri_plugin_websocket::init())
