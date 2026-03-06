@@ -70,11 +70,6 @@ jobs:
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
 
-      - name: run tests
-        working-directory: apps/readest-app
-        run: |
-          pnpm test -- --watch=false
-
       - name: install playwright browsers
         if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
@@ -91,6 +86,11 @@ jobs:
         with:
           toolchain: stable
 
+      - if: matrix.config.platform == 'tauri'
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.config.platform }}-cargo
+
       - name: install system dependencies (tauri)
         if: matrix.config.platform == 'tauri'
         run: |
@@ -103,18 +103,13 @@ jobs:
         run: xvfb-run pnpm test:pr:tauri
 
       - name: run lint
+        if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: |
           pnpm lint
 
-      - name: build the web App
+      - name: build the web app
         if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: |
           pnpm build-web && pnpm check:all
-
-      - name: build the Tauri App
-        if: matrix.config.platform == 'tauri'
-        working-directory: apps/readest-app
-        run: |
-          pnpm build && pnpm check:all

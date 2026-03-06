@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React from 'react';
-import Image from 'next/image';
 
 import { MdCheck } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
@@ -144,7 +143,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
               <MenuItem
                 key={book.hash}
                 Icon={
-                  <Image
+                  <img
                     src={book.coverImageUrl!}
                     alt={book.title}
                     width={56}

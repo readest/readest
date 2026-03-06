@@ -1,6 +1,5 @@
 import { md5 } from 'js-md5';
 import WebSocket from 'isomorphic-ws';
-import { createHash } from 'crypto';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
@@ -205,7 +204,7 @@ const EDGE_TTS_VOICES = {
  */
 const WIN_EPOCH_OFFSET = 11644473600; // Windows epoch offset in seconds (1601 to 1970)
 const S_TO_NS = 1000000000; // Seconds to nanoseconds conversion
-const generateSecMsGec = () => {
+const generateSecMsGec = async () => {
   let ticks = Math.floor(Date.now() / 1000);
   // Switch to Windows file time epoch (1601-01-01 00:00:00 UTC)
   ticks += WIN_EPOCH_OFFSET;
@@ -216,7 +215,14 @@ const generateSecMsGec = () => {
   // Create the string to hash by concatenating the ticks and the trusted client token
   const strToHash = `${ticks.toFixed(0)}${EDGE_API_TOKEN}`;
   // Compute the SHA256 hash and return the uppercased hex digest
-  return createHash('sha256').update(strToHash, 'ascii').digest('hex').toUpperCase();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(strToHash);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 };
 
 const generateMuid = () => {
@@ -298,7 +304,7 @@ export class EdgeSpeechTTS {
     const params = new URLSearchParams({
       ConnectionId: connectId,
       TrustedClientToken: EDGE_API_TOKEN,
-      'Sec-MS-GEC': generateSecMsGec(),
+      'Sec-MS-GEC': await generateSecMsGec(),
       'Sec-MS-GEC-Version': `1-${CHROMIUM_FULL_VERSION}`,
     });
     const url = `${EDGE_SPEECH_URL}?${params.toString()}`;
