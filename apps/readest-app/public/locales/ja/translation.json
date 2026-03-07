@@ -1052,5 +1052,6 @@
   "Page: {{number}}": "ページ: {{number}}",
   "Annotation page number": "注釈のページ番号",
   "Translating...": "翻訳中...",
-  "Show Battery Percentage": "バッテリー残量を表示"
+  "Show Battery Percentage": "バッテリー残量を表示",
+  "Hide Scrollbar": "スクロールバーを非表示"
 }

@@ -1052,5 +1052,6 @@
   "Page: {{number}}": "ཤོག་ལྷེ།: {{number}}",
   "Annotation page number": "མཆན་འགྲེལ་ཤོག་ཨང་།",
   "Translating...": "ཡིག་བསྒྱུར་བྱེད་བཞིན་པ།...",
-  "Show Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ་སྟོན།"
+  "Show Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ་སྟོན།",
+  "Hide Scrollbar": "འགྲིལ་ཤིང་སྦེད་པ།"
 }

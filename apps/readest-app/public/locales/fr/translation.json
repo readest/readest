@@ -1076,5 +1076,6 @@
   "Page: {{number}}": "Page : {{number}}",
   "Annotation page number": "Numéro de page de l'annotation",
   "Translating...": "Traduction en cours...",
-  "Show Battery Percentage": "Afficher le pourcentage de batterie"
+  "Show Battery Percentage": "Afficher le pourcentage de batterie",
+  "Hide Scrollbar": "Masquer la barre de défilement"
 }

@@ -268,6 +268,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 type='checkbox'
                 className='toggle'
                 checked={hideScrollbar}
+                disabled={!viewSettings.scrolled}
                 onChange={() => setHideScrollbar(!hideScrollbar)}
               />
             </div>

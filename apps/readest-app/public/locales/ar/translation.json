@@ -1112,5 +1112,6 @@
   "Page: {{number}}": "صفحة: {{number}}",
   "Annotation page number": "رقم صفحة التعליق",
   "Translating...": "جارٍ الترجمة...",
-  "Show Battery Percentage": "عرض نسبة البطارية"
+  "Show Battery Percentage": "عرض نسبة البطارية",
+  "Hide Scrollbar": "إخفاء شريط التمرير"
 }

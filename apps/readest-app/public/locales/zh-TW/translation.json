@@ -1052,5 +1052,6 @@
   "Page: {{number}}": "頁面: {{number}}",
   "Annotation page number": "註解頁碼",
   "Translating...": "翻譯中...",
-  "Show Battery Percentage": "顯示電池百分比"
+  "Show Battery Percentage": "顯示電池百分比",
+  "Hide Scrollbar": "隱藏滾動條"
 }

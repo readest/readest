@@ -1064,5 +1064,6 @@
   "Page: {{number}}": "පිටුව: {{number}}",
   "Annotation page number": "විවරණ පිටු අංකය",
   "Translating...": "පරිවර්තනය වෙමින් පවතී...",
-  "Show Battery Percentage": "බැටරි ප්‍රතිශතය පෙන්වන්න"
+  "Show Battery Percentage": "බැටරි ප්‍රතිශතය පෙන්වන්න",
+  "Hide Scrollbar": "අනුචලන තීරුව සඟවන්න"
 }

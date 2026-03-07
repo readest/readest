@@ -1088,5 +1088,6 @@
   "Page: {{number}}": "Сторінка: {{number}}",
   "Annotation page number": "Номер сторінки анотації",
   "Translating...": "Переклад...",
-  "Show Battery Percentage": "Показувати відсоток заряду батареї"
+  "Show Battery Percentage": "Показувати відсоток заряду батареї",
+  "Hide Scrollbar": "Сховати смугу прокрутки"
 }

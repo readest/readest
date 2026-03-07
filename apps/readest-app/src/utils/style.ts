@@ -812,7 +812,7 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
   @param document should be the global `document`
 */
 export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) => {
-  const styleId = 'scrollbar-hide-style' as const;
+  const styleId = 'scrollbar-hide-style';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement;
 
   if (hideScrollbar) {

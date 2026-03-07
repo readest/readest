@@ -1088,5 +1088,6 @@
   "Page: {{number}}": "Страница: {{number}}",
   "Annotation page number": "Номер страницы аннотации",
   "Translating...": "Перевод...",
-  "Show Battery Percentage": "Показывать процент заряда батареи"
+  "Show Battery Percentage": "Показывать процент заряда батареи",
+  "Hide Scrollbar": "Скрыть полосу прокрутки"
 }

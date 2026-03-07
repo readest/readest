@@ -1064,5 +1064,6 @@
   "Page: {{number}}": "Σελίδα: {{number}}",
   "Annotation page number": "Αριθμός σελίδας σχολίου",
   "Translating...": "Μετάφραση...",
-  "Show Battery Percentage": "Εμφάνιση ποσοστού μπαταρίας"
+  "Show Battery Percentage": "Εμφάνιση ποσοστού μπαταρίας",
+  "Hide Scrollbar": "Απόκρυψη γραμμής κύλισης"
 }

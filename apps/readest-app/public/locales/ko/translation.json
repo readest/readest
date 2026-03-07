@@ -1052,5 +1052,6 @@
   "Page: {{number}}": "페이지: {{number}}",
   "Annotation page number": "주석 페이지 번호",
   "Translating...": "번역 중...",
-  "Show Battery Percentage": "배터리 백분율 표시"
+  "Show Battery Percentage": "배터리 백분율 표시",
+  "Hide Scrollbar": "스크롤바 숨기기"
 }

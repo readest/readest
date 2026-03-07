@@ -1064,5 +1064,6 @@
   "Page: {{number}}": "صفحه: {{number}}",
   "Annotation page number": "شماره صفحه یادداشت",
   "Translating...": "در حال ترجمه...",
-  "Show Battery Percentage": "نمایش درصد باتری"
+  "Show Battery Percentage": "نمایش درصد باتری",
+  "Hide Scrollbar": "مخفی کردن نوار پیمایش"
 }

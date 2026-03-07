@@ -1088,5 +1088,6 @@
   "Show Current Time": "Prikaži trenutni čas",
   "Use 24 Hour Clock": "Uporabi 24-urni zapis časa",
   "Show Current Battery Status": "Prikaži trenutno stanje baterije",
-  "Show Battery Percentage": "Prikaži odstotek baterije"
+  "Show Battery Percentage": "Prikaži odstotek baterije",
+  "Hide Scrollbar": "Skrij drsni trak"
 }

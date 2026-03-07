@@ -1064,5 +1064,6 @@
   "Page: {{number}}": "Sida: {{number}}",
   "Annotation page number": "Annoteringssidnummer",
   "Translating...": "Översätter...",
-  "Show Battery Percentage": "Visa batteriprocent"
+  "Show Battery Percentage": "Visa batteriprocent",
+  "Hide Scrollbar": "Dölj rullningslist"
 }

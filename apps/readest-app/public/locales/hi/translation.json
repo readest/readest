@@ -1064,5 +1064,6 @@
   "Page: {{number}}": "पृष्ठ: {{number}}",
   "Annotation page number": "व्याख्या पृष्ठ संख्या",
   "Translating...": "अनुवाद हो रहा है...",
-  "Show Battery Percentage": "बैटरी प्रतिशत दिखाएं"
+  "Show Battery Percentage": "बैटरी प्रतिशत दिखाएं",
+  "Hide Scrollbar": "स्क्रॉलबार छुपाएँ"
 }

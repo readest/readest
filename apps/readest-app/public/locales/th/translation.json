@@ -1052,5 +1052,6 @@
   "Page: {{number}}": "หน้า: {{number}}",
   "Annotation page number": "หมายเลขหน้าคำอธิบายประกอบ",
   "Translating...": "กำลังแปล...",
-  "Show Battery Percentage": "แสดงเปอร์เซ็นต์แบตเตอรี่"
+  "Show Battery Percentage": "แสดงเปอร์เซ็นต์แบตเตอรี่",
+  "Hide Scrollbar": "ซ่อนแถบเลื่อน"
 }
