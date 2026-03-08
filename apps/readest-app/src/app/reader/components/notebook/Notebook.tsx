@@ -242,6 +242,7 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const isMobile = window.innerWidth < 640;
 
   return isNotebookVisible ? (
     <>
@@ -264,22 +265,14 @@ const Notebook: React.FC = ({}) => {
         aria-label={_('Notebook')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
-          width: `${notebookWidth}`,
-          maxWidth: `${MAX_NOTEBOOK_WIDTH * 100}%`,
-          position: isNotebookPinned ? 'relative' : 'absolute',
+          width: isMobile ? '100%' : `${notebookWidth}`,
+          maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
+          position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
           paddingTop: systemUIVisible
             ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
             : `${safeAreaInsets?.top || 0}px`,
         }}
       >
-        <style jsx>{`
-          @media (max-width: 640px) {
-            .notebook-container {
-              width: 100%;
-              min-width: 100%;
-            }
-          }
-        `}</style>
         <div
           className={clsx(
             'drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
