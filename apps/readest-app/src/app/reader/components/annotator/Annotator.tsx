@@ -27,7 +27,7 @@ import { findTocItemBS } from '@/utils/toc';
 import { throttle } from '@/utils/throttle';
 import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
-import { isCfiInLocation } from '@/utils/cfi';
+import { getIndexFromCfi, isCfiInLocation } from '@/utils/cfi';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
@@ -273,7 +273,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     detail.doc?.addEventListener('selectionchange', handleSelectionchange.bind(null, doc, index));
 
     // For PDF selections, enable right-click context menu to directly open translator popup.
-    if (bookData.book?.format === 'PDF') {
+    if (bookData.isFixedLayout) {
       detail.doc?.addEventListener('contextmenu', (e: Event) => {
         try {
           const sel = doc.getSelection?.();
@@ -281,7 +281,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             const range = sel.getRangeAt(0);
             const text = sel.toString();
             if (text.trim()) {
-              setSelection({ key: bookKey, text, range, index, cfi: view?.getCFI(index, range) });
+              setSelection({
+                key: bookKey,
+                text,
+                range,
+                index,
+                cfi: view?.getCFI(index, range),
+                page: index + 1,
+              });
               // Show translation popup preferentially for PDF right-click
               setShowAnnotPopup(false);
               setShowDeepLPopup(true);
@@ -301,6 +308,22 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     // Disable the default context menu on mobile devices (selection handles suffice)
     detail.doc?.addEventListener('contextmenu', handleContextmenu);
+  };
+
+  const onCreateOverlay = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    const { booknotes = [] } = getConfig(bookKey)!;
+    booknotes
+      .filter(
+        (booknote) =>
+          booknote.type === 'annotation' &&
+          !booknote.deletedAt &&
+          getIndexFromCfi(booknote.cfi) === detail.index,
+      )
+      .map((annotation) => {
+        console.log('Adding annotation to overlay', annotation);
+        view?.addAnnotation(annotation);
+      });
   };
 
   const onDrawAnnotation = (event: Event) => {
@@ -366,8 +389,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       note: note ?? '',
       rect: isNote ? detail.rect : undefined,
       cfi,
-      range,
       index,
+      range,
+      page: annotation.page || progress.page,
     };
     if (isNote) {
       setShowAnnotationNotes(true);
@@ -390,7 +414,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleUpToPopup();
   };
 
-  useFoliateEvents(view, { onLoad, onDrawAnnotation, onShowAnnotation });
+  useFoliateEvents(view, { onLoad, onCreateOverlay, onDrawAnnotation, onShowAnnotation });
 
   useEffect(() => {
     handleShowPopup(showingPopup);
@@ -608,9 +632,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       id: uniqueId(),
       type: 'excerpt',
       cfi,
-      text: selection.text,
       note: '',
-      page: progress.page,
+      text: selection.text,
+      page: selection.page,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -729,7 +753,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
     setEditingAnnotation(null);
-    eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range, oneTime });
+    eventDispatcher.dispatch('tts-speak', {
+      bookKey,
+      oneTime,
+      range: selection.range,
+      index: selection.index,
+    });
   };
 
   const handleProofread = () => {
@@ -867,14 +896,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           tooltipText: selectionAnnotated ? _('Delete Highlight') : _(label),
           Icon: selectionAnnotated ? RiDeleteBinLine : Icon,
           onClick: handleHighlight,
-          disabled: bookData.book?.format === 'PDF',
         };
       case 'annotate':
         return {
           tooltipText: _(label),
           Icon,
           onClick: handleAnnotate,
-          disabled: bookData.book?.format === 'PDF',
         };
       case 'search':
         return {
@@ -894,7 +921,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           tooltipText: _(label),
           Icon,
           onClick: handleSpeakText,
-          disabled: bookData.book?.format === 'PDF',
         };
       case 'proofread':
         return {

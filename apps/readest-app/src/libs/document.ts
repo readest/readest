@@ -65,14 +65,14 @@ export type BookMetadata = {
 
 export interface BookDoc {
   metadata: BookMetadata;
-  rendition?: {
+  rendition: {
     layout?: 'pre-paginated' | 'reflowable';
     spread?: 'auto' | 'none';
     viewport?: { width: number; height: number };
   };
   dir: string;
   toc?: Array<TOCItem>;
-  sections?: Array<SectionItem>;
+  sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;

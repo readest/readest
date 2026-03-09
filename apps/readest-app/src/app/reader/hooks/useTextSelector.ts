@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { isPointerInsideSelection, TextSelection } from '@/utils/sel';
@@ -13,8 +14,11 @@ export const useTextSelector = (
   handleDismissPopup: () => void,
 ) => {
   const { appService } = useEnv();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getBookData } = useBookDataStore();
+  const { getView, getViewSettings, getProgress } = useReaderStore();
   const view = getView(bookKey);
+  const bookData = getBookData(bookKey);
+  const progress = getProgress(bookKey)!;
   const osPlatform = getOSPlatform();
 
   const isPopuped = useRef(false);
@@ -49,6 +53,7 @@ export const useTextSelector = (
       key: bookKey,
       text: await getAnnotationText(range),
       cfi: view?.getCFI(index, range),
+      page: bookData?.isFixedLayout ? index + 1 : progress.page,
       range,
       index,
     });
@@ -66,6 +71,7 @@ export const useTextSelector = (
           key: bookKey,
           text: await getAnnotationText(range),
           cfi: view?.getCFI(index, range),
+          page: bookData?.isFixedLayout ? index + 1 : progress.page,
           range,
           index,
         });

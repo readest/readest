@@ -203,7 +203,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     if (docIndex !== undefined && renderer.goTo) {
       renderer.goTo({ index: docIndex, anchor: range });
     } else {
-      view.renderer.scrollToAnchor(range);
+      view.renderer.scrollToAnchor?.(range);
     }
     focusResetTimerRef.current = setTimeout(() => {
       isFocusingRef.current = false;
@@ -382,7 +382,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
                 docIndex,
               };
             }
-            view.renderer.scrollToAnchor(range);
+            view.renderer.scrollToAnchor?.(range);
           }
         }
         eventDispatcher.dispatch('paragraph-mode-disabled', { bookKey: bookKeyRef.current });

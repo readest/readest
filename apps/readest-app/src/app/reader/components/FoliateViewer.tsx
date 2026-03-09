@@ -657,7 +657,7 @@ const FoliateViewer: React.FC<{
         role='document'
         aria-label={_('Book Content')}
         className={clsx(
-          'foliate-viewer h-[100%] w-[100%] focus:outline-none',
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',
           viewState?.loading && 'bg-base-100',
         )}
         style={{

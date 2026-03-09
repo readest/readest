@@ -3,7 +3,7 @@ import nunjucks from 'nunjucks';
 export type NoteTemplateData = {
   title: string;
   author: string;
-  exportDate: number;
+  exportDate: number | string;
   chapters: {
     title: string;
     annotations: {

@@ -193,7 +193,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
               )}
               onClick={resetZoom}
             >
-              {zoomLevel}%
+              {Math.round(zoomLevel)}%
             </button>
             <button
               title={_('Zoom In')}
