@@ -13,10 +13,13 @@ pnpm tauri dev             # Desktop dev with Tauri (compiles Rust backend)
 pnpm build                 # Build Next.js for Tauri
 pnpm build-web             # Build Next.js for web deployment
 
-# Testing
-pnpm test                  # Run all tests (vitest + jsdom)
+# Testing (see [docs/testing.md](docs/testing.md) for full details)
+pnpm test                  # Unit tests (vitest + jsdom)
 pnpm test -- src/__tests__/utils/misc.test.ts  # Run a single test file
 pnpm test -- --watch       # Watch mode
+pnpm test:browser          # Browser tests (Chromium via Playwright)
+pnpm tauri:dev:test        # Start Tauri app with webdriver
+pnpm test:tauri            # Run Tauri integration tests
 
 # Linting & Formatting
 pnpm lint                  # ESLint

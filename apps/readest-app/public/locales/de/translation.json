@@ -1142,5 +1142,6 @@
   "Page: {{number}}": "Seite: {{number}}",
   "Annotation page number": "Seitenzahl der Anmerkung",
   "Translating...": "Übersetzen...",
-  "Show Battery Percentage": "Akkustand in Prozent anzeigen"
+  "Show Battery Percentage": "Akkustand in Prozent anzeigen",
+  "Hide Scrollbar": "Scrollleiste ausblenden"
 }

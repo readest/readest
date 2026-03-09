@@ -193,6 +193,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   rtl: false,
   scrollingOverlap: 0,
   allowScript: false,
+  hideScrollbar: false,
 };
 
 export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {

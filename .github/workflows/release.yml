@@ -159,7 +159,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: setup Java (for Android build only)

@@ -473,6 +473,7 @@ export const getFootnoteStyles = () => `
 
   body {
     padding: 1em !important;
+    overflow-wrap: break-word;
   }
 
   a:any-link {
@@ -805,6 +806,27 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+/**
+  @param document should be the global `document`
+*/
+export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) => {
+  const styleId = 'scrollbar-hide-style';
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+  if (hideScrollbar) {
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: none; }';
+  } else {
+    if (styleEl) {
+      styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: thin; }';
+    }
+  }
 };
 
 export const applyImageStyle = (document: Document) => {

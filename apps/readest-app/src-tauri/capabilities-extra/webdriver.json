@@ -1,0 +1,23 @@
+{
+  "identifier": "webdriver-testing",
+  "description": "Grants plugin permissions to remote URLs for Vitest browser-mode tests. Only loaded at runtime when the webdriver feature is enabled.",
+  "remote": {
+    "urls": ["http://127.0.0.1:*", "http://localhost:*"]
+  },
+  "local": false,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "fs:default",
+    "os:default",
+    "dialog:default",
+    "core:window:default",
+    "core:path:allow-resolve-directory",
+    "log:default",
+    "shell:default",
+    "process:default",
+    "turso:default",
+    "native-tts:default",
+    "native-bridge:default"
+  ]
+}

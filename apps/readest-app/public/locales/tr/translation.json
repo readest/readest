@@ -1142,5 +1142,6 @@
   "Page: {{number}}": "Sayfa: {{number}}",
   "Annotation page number": "Açıklama sayfa numarası",
   "Translating...": "Çevriliyor...",
-  "Show Battery Percentage": "Pil Yüzdesini Göster"
+  "Show Battery Percentage": "Pil Yüzdesini Göster",
+  "Hide Scrollbar": "Kaydırma çubuğunu gizle"
 }

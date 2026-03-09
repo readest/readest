@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Insets } from '@/types/misc';
@@ -439,7 +438,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         className={clsx('relative flex h-full w-full items-center justify-center overflow-hidden')}
         onClick={handleContainerClick}
       >
-        <Image
+        <img
+          role='none'
           src={decodeURIComponent(src)}
           ref={imageRef}
           alt={_('Zoomed')}

@@ -29,6 +29,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled);
   const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
+  const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
@@ -57,6 +58,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       scrolled: setScrolledMode,
       continuousScroll: setIsContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
+      hideScrollbar: setHideScrollbar,
       volumeKeysToFlip: setVolumeKeysToFlip,
       showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
@@ -87,6 +89,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'hideScrollbar', hideScrollbar, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideScrollbar]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll, false, false);
@@ -255,6 +262,16 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
               step={10}
               data-setting-id='settings.control.overlapPixels'
             />
+            <div className='config-item' data-setting-id='settings.control.scroll.hideScrollbar'>
+              <span className=''>{_('Hide Scrollbar')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={hideScrollbar}
+                disabled={!viewSettings.scrolled}
+                onChange={() => setHideScrollbar(!hideScrollbar)}
+              />
+            </div>
           </div>
         </div>
       </div>

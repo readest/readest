@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import Image from 'next/image';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
@@ -70,10 +69,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       >
         {coverFit === 'crop' ? (
           <>
-            <Image
+            <img
               src={book.metadata?.coverImageUrl || book.coverImageUrl!}
               alt={book.title}
-              fill={true}
               className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
               onLoad={handleImageLoad}
               onError={handleImageError}
@@ -90,7 +88,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
                 mode === 'grid' ? 'items-end' : 'items-center',
               )}
             >
-              <Image
+              <img
                 src={book.metadata?.coverImageUrl || book.coverImageUrl!}
                 alt={book.title}
                 width={0}

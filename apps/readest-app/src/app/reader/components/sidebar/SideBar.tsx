@@ -72,11 +72,16 @@ const SideBar = ({}) => {
     }
   };
 
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (isSideBarVisible) {
       updateAppTheme('base-200');
+      overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');
+      overlayRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSideBarVisible]);
@@ -102,18 +107,19 @@ const SideBar = ({}) => {
     const newTop = Math.max(0.0, Math.min(1, heightFraction));
     sidebarHeight.current = newTop;
 
-    const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
-    const overlay = document.querySelector('.overlay') as HTMLElement;
+    const sidebar = sidebarRef.current;
+    const overlay = overlayRef.current;
 
     if (sidebar && overlay) {
-      sidebar.style.top = `${newTop * 100}%`;
+      sidebar.style.transition = 'none';
+      sidebar.style.transform = `translateY(${newTop * 100}%)`;
       overlay.style.opacity = `${1 - heightFraction}`;
     }
   };
 
   const handleVerticalDragEnd = (data: { velocity: number; clientY: number }) => {
-    const sidebar = document.querySelector('.sidebar-container') as HTMLElement;
-    const overlay = document.querySelector('.overlay') as HTMLElement;
+    const sidebar = sidebarRef.current;
+    const overlay = overlayRef.current;
 
     if (!sidebar || !overlay) return;
 
@@ -122,8 +128,8 @@ const SideBar = ({}) => {
       (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
     ) {
       const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
-      sidebar.style.transition = `top ${transitionDuration}s ease-out`;
-      sidebar.style.top = '100%';
+      sidebar.style.transition = `transform ${transitionDuration}s ease-out`;
+      sidebar.style.transform = 'translateY(100%)';
       overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
       overlay.style.opacity = '0';
       setTimeout(() => setSideBarVisible(false), 300);
@@ -131,8 +137,8 @@ const SideBar = ({}) => {
         impactFeedback('medium');
       }
     } else {
-      sidebar.style.transition = 'top 0.3s ease-out';
-      sidebar.style.top = '0%';
+      sidebar.style.transition = 'transform 0.3s ease-out';
+      sidebar.style.transform = 'translateY(0%)';
       overlay.style.transition = 'opacity 0.3s ease-out';
       overlay.style.opacity = '0.8';
       if (appService?.hasHaptics) {
@@ -236,6 +242,7 @@ const SideBar = ({}) => {
         />
       )}
       <div
+        ref={sidebarRef}
         className={clsx(
           'sidebar-container flex min-w-60 select-none flex-col',
           'full-height transition-[padding-top] duration-300',
@@ -248,9 +255,9 @@ const SideBar = ({}) => {
         aria-label={_('Sidebar')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
-          width: `${sideBarWidth}`,
-          maxWidth: `${MAX_SIDEBAR_WIDTH * 100}%`,
-          position: isSideBarPinned ? 'relative' : 'absolute',
+          width: isMobile ? '100%' : `${sideBarWidth}`,
+          maxWidth: isMobile ? '100%' : `${MAX_SIDEBAR_WIDTH * 100}%`,
+          position: isMobile ? 'fixed' : isSideBarPinned ? 'relative' : 'absolute',
           paddingTop: systemUIVisible
             ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
             : `${safeAreaInsets?.top || 0}px`,
@@ -259,13 +266,8 @@ const SideBar = ({}) => {
         <style jsx>{`
           @media (max-width: 640px) {
             .sidebar-container {
-              width: 100%;
-              min-width: 100%;
               border-top-left-radius: 16px;
               border-top-right-radius: 16px;
-            }
-            .sidebar-container.open {
-              top: 0%;
             }
             .overlay {
               transition: opacity 0.3s ease-in-out;

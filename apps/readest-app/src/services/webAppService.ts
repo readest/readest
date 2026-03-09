@@ -1,4 +1,6 @@
 import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/types/system';
+import { DatabaseOpts, DatabaseService } from '@/types/database';
+import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { RemoteFile } from '@/utils/file';
 import { isPWA } from './environment';
@@ -346,5 +348,20 @@ export class WebAppService extends BaseAppService {
 
   async ask(message: string): Promise<boolean> {
     return window.confirm(message);
+  }
+
+  async openDatabase(
+    schema: SchemaType,
+    path: string,
+    base: BaseDir,
+    opts?: DatabaseOpts,
+  ): Promise<DatabaseService> {
+    const fullPath = await this.resolveFilePath(path, base);
+    const { WebDatabaseService } = await import('./database/webDatabaseService');
+    const db = await WebDatabaseService.open(fullPath, opts);
+    const { migrate } = await import('./database/migrate');
+    const { getMigrations } = await import('./database/migrations');
+    await migrate(db, getMigrations(schema));
+    return db;
   }
 }

@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
   {
     rules: {
       ...jsxA11y.configs.recommended.rules,
+      '@next/next/no-img-element': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -25,10 +26,14 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     '.next/**',
     '.open-next/**',
+    '.wrangler/**',
+    'dist/**',
     'out/**',
     'build/**',
     'public/**',
+    'src-tauri/**',
     'next-env.d.ts',
+    'i18next-scanner.config.cjs',
   ]),
 ]);
 
