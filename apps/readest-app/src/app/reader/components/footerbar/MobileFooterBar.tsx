@@ -19,7 +19,6 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   const sliderHeight = useResponsiveSize(28);
   const marginIconSize = useResponsiveSize(20);
   const bottomOffset = isMobile ? `${gridInsets.bottom * 0.33 + 64}px` : '64px';
-  const navPadding = isMobile ? `${gridInsets.bottom * 0.33 + 16}px` : '0px';
 
   return (
     <>
@@ -42,7 +41,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
       <NavigationBar
         bookKey={bookKey}
         actionTab={actionTab}
-        navPadding={navPadding}
+        gridInsets={gridInsets}
         onSetActionTab={onSetActionTab!}
       />
     </>

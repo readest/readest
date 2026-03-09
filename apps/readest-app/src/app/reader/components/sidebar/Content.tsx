@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
-import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -19,7 +18,6 @@ const SidebarContent: React.FC<{
   bookDoc: BookDoc;
   sideBarBookKey: string;
 }> = ({ bookDoc, sideBarBookKey }) => {
-  const { safeAreaInsets } = useThemeStore();
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
   const { getConfig, setConfig } = useBookDataStore();
@@ -109,7 +107,7 @@ const SidebarContent: React.FC<{
       <div
         className='flex-shrink-0'
         style={{
-          paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px`,
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) / 2)',
         }}
       >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
