@@ -68,4 +68,4 @@ while ! curl -sf "http://127.0.0.1:${WEBDRIVER_PORT}/status" >/dev/null 2>&1; do
 done
 
 echo "WebDriver is ready. Running Tauri tests..."
-pnpm test:tauri
+pnpm vitest --config vitest.tauri.config.mts --watch=false
