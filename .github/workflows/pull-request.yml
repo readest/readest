@@ -1,5 +1,7 @@
 name: PR checks
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 permissions:
@@ -33,11 +35,6 @@ jobs:
 
   build_web_app:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        config:
-          - platform: 'web'
-          - platform: 'tauri'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -56,10 +53,10 @@ jobs:
         uses: actions/cache@v5
         with:
           path: apps/readest-app/.next/cache
-          key: nextjs-${{ matrix.config.platform }}-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: nextjs-web-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            nextjs-${{ matrix.config.platform }}-${{ github.sha }}-
-            nextjs-${{ matrix.config.platform }}-
+            nextjs-web-${{ github.sha }}-
+            nextjs-web-
 
       - name: install Dependencies
         working-directory: apps/readest-app
@@ -71,45 +68,67 @@ jobs:
           pnpm format:check || (pnpm format && git diff && exit 1)
 
       - name: install playwright browsers
-        if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: npx playwright install --with-deps chromium
 
       - name: run web tests
-        if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: pnpm test:pr:web
 
-      - name: install Rust toolchain
-        if: matrix.config.platform == 'tauri'
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-
-      - if: matrix.config.platform == 'tauri'
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.config.platform }}-cargo
-
-      - name: install system dependencies (tauri)
-        if: matrix.config.platform == 'tauri'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev xvfb
-
-      - name: run tauri tests
-        if: matrix.config.platform == 'tauri'
-        working-directory: apps/readest-app
-        run: xvfb-run pnpm test:pr:tauri
-
       - name: run lint
-        if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: |
           pnpm lint
 
       - name: build the web app
-        if: matrix.config.platform == 'web'
         working-directory: apps/readest-app
         run: |
           pnpm build-web && pnpm check:all
+
+  build_tauri_app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'true'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: cache Next.js build
+        uses: actions/cache@v5
+        with:
+          path: apps/readest-app/.next/cache
+          key: nextjs-tauri-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            nextjs-tauri-${{ github.sha }}-
+            nextjs-tauri-
+
+      - name: install Dependencies
+        working-directory: apps/readest-app
+        run: |
+          pnpm install && pnpm setup-vendors
+
+      - name: install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: tauri-cargo
+
+      - name: install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev xvfb
+
+      - name: run tauri tests
+        working-directory: apps/readest-app
+        run: xvfb-run pnpm test:pr:tauri
