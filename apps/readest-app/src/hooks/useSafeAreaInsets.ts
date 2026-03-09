@@ -105,4 +105,6 @@ export const useSafeAreaInsets = () => {
       window.removeEventListener('focus', handleFocus);
     };
   }, [onUpdateInsets]);
+
+  return { onUpdateInsets };
 };

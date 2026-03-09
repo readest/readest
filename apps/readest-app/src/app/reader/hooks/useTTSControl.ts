@@ -378,9 +378,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         }
       }
     }
-    if (!ttsFromRange || !ttsFromIndex) {
-      ttsFromRange = progress.range;
+
+    if (!ttsFromIndex) {
       ttsFromIndex = progress.index;
+    }
+
+    if (!ttsFromRange && !bookData.isFixedLayout) {
+      ttsFromRange = progress.range;
     }
 
     const currentSection = view.renderer.getContents().find((x) => x.index === ttsFromIndex);
@@ -429,7 +433,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       const ssml =
         oneTime && ttsSpeakRange
           ? genSSMLRaw(ttsSpeakRange.toString().trim())
-          : view.tts?.from(ttsFromRange);
+          : ttsFromRange
+            ? view.tts?.from(ttsFromRange)
+            : view.tts?.start();
       if (ssml) {
         const lang = parseSSMLLang(ssml, primaryLang) || 'en';
         setIsPlaying(true);
