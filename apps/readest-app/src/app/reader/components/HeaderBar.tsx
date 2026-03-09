@@ -56,7 +56,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
   const { bookKeys, hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
-  const { isSideBarVisible } = useSidebarStore();
+  const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
 
@@ -94,17 +94,18 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   useEffect(() => {
     if (!appService?.hasTrafficLight) return;
-    if (isSideBarVisible) return;
 
     if (hoveredBookKey === bookKey && isTopLeft) {
       setTrafficLightVisibility(true, { x: 10, y: 20 });
     } else if (!hoveredBookKey) {
       setTimeout(() => {
-        setTrafficLightVisibility(false);
-      }, 200);
+        if (!getIsSideBarVisible()) {
+          setTrafficLightVisibility(false);
+        }
+      }, 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService, isSideBarVisible, hoveredBookKey, isTrafficLightVisible]);
+  }, [appService, hoveredBookKey]);
 
   // Check if mouse is outside header area to avoid false positive event of MouseLeave when clicking inside header on Windows
   const isMouseOutsideHeader = useCallback((clientX: number, clientY: number) => {
