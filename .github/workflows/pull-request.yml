@@ -123,6 +123,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: tauri-cargo
+          cache-all-crates: 'true'
 
       - name: install system dependencies
         run: |
