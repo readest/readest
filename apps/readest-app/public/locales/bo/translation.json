@@ -106,7 +106,6 @@
   "Wikipedia": "ཝེ་ཁི་པི་ཌི་ཡ།",
   "Writing Mode": "པར་སྒྲིག་གི་རྣམ་པ།",
   "Your Library": "དཔེ་མཛོད།",
-  "TTS not supported for PDF": "PDF ཡིག་ཆར་ TTS རྒྱབ་སྐྱོར་མི་བྱེད།",
   "Override Book Font": "དཔེ་དེབ་ཀྱི་ཡིག་གཟུགས་བརྗེ་བ།",
   "Apply to All Books": "དཔེ་དེབ་ཡོད་རྒུར་སྤྱོད་པ།",
   "Apply to This Book": "དཔེ་དེབ་འདིར་སྤྱོད་པ།",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "མཆན་འགྲེལ་ཤོག་ཨང་།",
   "Translating...": "ཡིག་བསྒྱུར་བྱེད་བཞིན་པ།...",
   "Show Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ་སྟོན།",
-  "Hide Scrollbar": "འགྲིལ་ཤིང་སྦེད་པ།"
+  "Hide Scrollbar": "འགྲིལ་ཤིང་སྦེད་པ།",
+  "Skip to last reading position": "མཐའ་མའི་ཀློག་གནས་སུ་མཆོང་"
 }

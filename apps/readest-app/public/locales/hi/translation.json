@@ -106,7 +106,6 @@
   "Wikipedia": "विकिपीडिया",
   "Writing Mode": "लेखन मोड",
   "Your Library": "आपकी लाइब्रेरी",
-  "TTS not supported for PDF": "PDF के लिए TTS समर्थित नहीं है",
   "Override Book Font": "पुस्तक फ़ॉन्ट ओवरराइड करें",
   "Apply to All Books": "सभी पुस्तकों पर लागू करें",
   "Apply to This Book": "इस पुस्तक पर लागू करें",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "व्याख्या पृष्ठ संख्या",
   "Translating...": "अनुवाद हो रहा है...",
   "Show Battery Percentage": "बैटरी प्रतिशत दिखाएं",
-  "Hide Scrollbar": "स्क्रॉलबार छुपाएँ"
+  "Hide Scrollbar": "स्क्रॉलबार छुपाएँ",
+  "Skip to last reading position": "अंतिम पढ़ने की स्थिति पर जाएँ"
 }

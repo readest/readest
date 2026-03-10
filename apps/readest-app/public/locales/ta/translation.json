@@ -319,7 +319,6 @@
   "Table of Contents": "உள்ளடக்கம்",
   "Sidebar": "பக்கப்பட்டி",
   "Disable Translation": "மொழிபெயர்ப்பை முடக்கவும்",
-  "TTS not supported for PDF": "PDF க்கு TTS ஆதரிக்கப்படவில்லை",
   "TTS not supported for this document": "இந்த ஆவணத்திற்கு TTS ஆதரிக்கப்படவில்லை",
   "No Timeout": "நேர வரம்பு இல்லை",
   "{{value}} minute": "{{value}} நிமிடம்",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "சிறுகுறிப்புப் பக்க எண்",
   "Translating...": "மொழிபெயர்க்கிறது...",
   "Show Battery Percentage": "பேட்டரி சதவீதத்தைக் காண்பி",
-  "Hide Scrollbar": "உருள்பட்டையை மறை"
+  "Hide Scrollbar": "உருள்பட்டையை மறை",
+  "Skip to last reading position": "கடைசி வாசிப்பு நிலைக்குச் செல்"
 }

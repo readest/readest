@@ -251,7 +251,7 @@ const SideBar = ({}) => {
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
           !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
         )}
-        role='group'
+        role='navigation'
         aria-label={_('Sidebar')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{

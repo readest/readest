@@ -106,7 +106,6 @@
   "Wikipedia": "Βικιπαίδεια",
   "Writing Mode": "Λειτουργία γραφής",
   "Your Library": "Η βιβλιοθήκη σας",
-  "TTS not supported for PDF": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται για αρχεία PDF",
   "Override Book Font": "Παράκαμψη γραμματοσειράς βιβλίου",
   "Apply to All Books": "Εφαρμογή σε όλα τα βιβλία",
   "Apply to This Book": "Εφαρμογή σε αυτό το βιβλίο",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "Αριθμός σελίδας σχολίου",
   "Translating...": "Μετάφραση...",
   "Show Battery Percentage": "Εμφάνιση ποσοστού μπαταρίας",
-  "Hide Scrollbar": "Απόκρυψη γραμμής κύλισης"
+  "Hide Scrollbar": "Απόκρυψη γραμμής κύλισης",
+  "Skip to last reading position": "Μετάβαση στην τελευταία θέση ανάγνωσης"
 }

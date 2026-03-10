@@ -293,7 +293,6 @@
   "Next Paragraph": "Perenggan Seterusnya",
   "Read Aloud": "Baca Dengan Kuat",
   "Ready to read aloud": "Bersedia untuk baca dengan kuat",
-  "TTS not supported for PDF": "TTS tidak disokong untuk PDF",
   "TTS not supported for this document": "TTS tidak disokong untuk dokumen ini",
   "No Timeout": "Tiada Had Masa",
   "{{value}} minute": "{{value}} minit",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "Nombor halaman anotasi",
   "Translating...": "Menterjemah...",
   "Show Battery Percentage": "Tunjukkan Peratusan Bateri",
-  "Hide Scrollbar": "Sembunyikan Bar Tatal"
+  "Hide Scrollbar": "Sembunyikan Bar Tatal",
+  "Skip to last reading position": "Lompat ke posisi bacaan terakhir"
 }

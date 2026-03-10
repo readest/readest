@@ -321,7 +321,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           getIndexFromCfi(booknote.cfi) === detail.index,
       )
       .map((annotation) => {
-        console.log('Adding annotation to overlay', annotation);
         view?.addAnnotation(annotation);
       });
   };

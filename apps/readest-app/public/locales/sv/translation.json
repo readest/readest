@@ -278,7 +278,6 @@
   "Next Paragraph": "Nästa stycke",
   "Read Aloud": "Läs upp",
   "Ready to read aloud": "Redo att läsa upp",
-  "TTS not supported for PDF": "Uppläsning stöds inte för PDF",
   "TTS not supported for this document": "Uppläsning stöds inte för detta dokument",
   "No Timeout": "Ingen timeout",
   "{{value}} minute": "{{value}} minut",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "Annoteringssidnummer",
   "Translating...": "Översätter...",
   "Show Battery Percentage": "Visa batteriprocent",
-  "Hide Scrollbar": "Dölj rullningslist"
+  "Hide Scrollbar": "Dölj rullningslist",
+  "Skip to last reading position": "Hoppa till senaste läsposition"
 }

@@ -106,7 +106,6 @@
   "Wikipedia": "Wikipédia",
   "Writing Mode": "Mode écriture",
   "Your Library": "Votre bibliothèque",
-  "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
   "Override Book Font": "Remplacer la police du livre",
   "Apply to All Books": "Appliquer à tous les livres",
   "Apply to This Book": "Appliquer à ce livre",
@@ -1077,5 +1076,6 @@
   "Annotation page number": "Numéro de page de l'annotation",
   "Translating...": "Traduction en cours...",
   "Show Battery Percentage": "Afficher le pourcentage de batterie",
-  "Hide Scrollbar": "Masquer la barre de défilement"
+  "Hide Scrollbar": "Masquer la barre de défilement",
+  "Skip to last reading position": "Aller à la dernière position de lecture"
 }

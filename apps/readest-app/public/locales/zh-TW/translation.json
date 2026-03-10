@@ -106,7 +106,6 @@
   "Wikipedia": "維基百科",
   "Writing Mode": "排版模式",
   "Your Library": "書庫",
-  "TTS not supported for PDF": "PDF 文檔暫不支持 TTS",
   "Override Book Font": "覆蓋書籍字體",
   "Apply to All Books": "應用於所有書籍",
   "Apply to This Book": "應用於此書籍",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "註解頁碼",
   "Translating...": "翻譯中...",
   "Show Battery Percentage": "顯示電池百分比",
-  "Hide Scrollbar": "隱藏滾動條"
+  "Hide Scrollbar": "隱藏滾動條",
+  "Skip to last reading position": "跳至上次閱讀位置"
 }

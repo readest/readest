@@ -53,7 +53,7 @@ export const useTextSelector = (
       key: bookKey,
       text: await getAnnotationText(range),
       cfi: view?.getCFI(index, range),
-      page: bookData?.isFixedLayout ? index + 1 : progress.page,
+      page: bookData?.isFixedLayout ? index + 1 : progress?.page || 0,
       range,
       index,
     });

@@ -105,7 +105,6 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Schreibmodus",
   "Your Library": "Ihre Bibliothek",
-  "TTS not supported for PDF": "TTS wird für PDF nicht unterstützt",
   "Override Book Font": "Buch-Schriftart überschreiben",
   "Apply to All Books": "Auf alle Bücher anwenden",
   "Apply to This Book": "Auf dieses Buch anwenden",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "Seitenzahl der Anmerkung",
   "Translating...": "Übersetzen...",
   "Show Battery Percentage": "Akkustand in Prozent anzeigen",
-  "Hide Scrollbar": "Scrollleiste ausblenden"
+  "Hide Scrollbar": "Scrollleiste ausblenden",
+  "Skip to last reading position": "Zur letzten Leseposition springen"
 }

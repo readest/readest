@@ -105,7 +105,6 @@
   "Wikipedia": "ویکی‌پدیا",
   "Writing Mode": "حالت نوشتن",
   "Your Library": "کتابخانه‌ی شما",
-  "TTS not supported for PDF": "قابلیت تبدیل متن به گفتار برای PDF پشتیبانی نمی‌شود",
   "Override Book Font": "جایگزینی فونت کتاب",
   "Apply to All Books": "اِعمال برای همه‌ی کتاب‌ها",
   "Apply to This Book": "اِعمال برای این کتاب",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "شماره صفحه یادداشت",
   "Translating...": "در حال ترجمه...",
   "Show Battery Percentage": "نمایش درصد باتری",
-  "Hide Scrollbar": "مخفی کردن نوار پیمایش"
+  "Hide Scrollbar": "مخفی کردن نوار پیمایش",
+  "Skip to last reading position": "رفتن به آخرین موقعیت مطالعه"
 }

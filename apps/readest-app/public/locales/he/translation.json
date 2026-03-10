@@ -570,7 +570,6 @@
   "Read Aloud": "הקרא בקול",
   "Ready to read aloud": "מוכן להקראה בקול",
   "Please log in to use advanced TTS features": "אנא התחבר כדי להשתמש בתכונות TTS מתקדמות",
-  "TTS not supported for PDF": "TTS אינו נתמך עבור PDF",
   "TTS not supported for this document": "TTS אינו נתמך עבור מסמך זה",
   "Back to TTS Location": "חזור למיקום ה-TTS",
   "No Timeout": "ללא הגבלת זמן",
@@ -1077,5 +1076,6 @@
   "Annotation page number": "מספר עמוד הערה",
   "Translating...": "מתרגם...",
   "Show Battery Percentage": "הצג אחוזי סוללה",
-  "Hide Scrollbar": "הסתר סרגל גלילה"
+  "Hide Scrollbar": "הסתר סרגל גלילה",
+  "Skip to last reading position": "דלג למיקום הקריאה האחרון"
 }

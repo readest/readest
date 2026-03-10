@@ -107,7 +107,6 @@
   "Wikipedia": "维基百科",
   "Writing Mode": "排版模式",
   "Your Library": "书库",
-  "TTS not supported for PDF": "PDF 文档暂不支持 TTS",
   "Override Book Font": "覆盖书籍字体",
   "Apply to All Books": "应用于所有书籍",
   "Apply to This Book": "应用于此书籍",
@@ -1053,5 +1052,6 @@
   "Page: {{number}}": "页面: {{number}}",
   "Annotation page number": "批注页码",
   "Translating...": "翻译中...",
-  "Show Battery Percentage": "显示电量百分比"
+  "Show Battery Percentage": "显示电量百分比",
+  "Skip to last reading position": "跳转到上次阅读位置"
 }

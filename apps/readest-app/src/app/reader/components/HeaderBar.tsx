@@ -147,7 +147,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       />
       <div
         ref={headerRef}
-        role='group'
+        role='banner'
         aria-label={_('Header Bar')}
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,

@@ -319,7 +319,6 @@
   "Table of Contents": "සූචිය",
   "Sidebar": "පැති තීරුව",
   "Disable Translation": "පරිවර්තනය අබල කරන්න",
-  "TTS not supported for PDF": "PDF සඳහා TTS සහාය නොදක්වයි",
   "TTS not supported for this document": "මෙම ලේඛනය සඳහා TTS සහාය නොදක්වයි",
   "No Timeout": "කාල සීමාවක් නැත",
   "{{value}} minute": "මිනිත්තු {{value}}",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "විවරණ පිටු අංකය",
   "Translating...": "පරිවර්තනය වෙමින් පවතී...",
   "Show Battery Percentage": "බැටරි ප්‍රතිශතය පෙන්වන්න",
-  "Hide Scrollbar": "අනුචලන තීරුව සඟවන්න"
+  "Hide Scrollbar": "අනුචලන තීරුව සඟවන්න",
+  "Skip to last reading position": "අවසන් කියවීමේ ස්ථානයට යන්න"
 }

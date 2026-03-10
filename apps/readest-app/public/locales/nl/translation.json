@@ -206,7 +206,6 @@
   "TOC": "Inhoudsopgave",
   "Table of Contents": "Inhoudsopgave",
   "Sidebar": "Zijbalk",
-  "TTS not supported for PDF": "TTS niet ondersteund voor PDF",
   "No Timeout": "Geen time-out",
   "{{value}} minute": "{{value}} minuut",
   "{{value}} minutes": "{{value}} minuten",
@@ -1065,5 +1064,6 @@
   "Annotation page number": "Annotatiepaginanummer",
   "Translating...": "Vertalen...",
   "Show Battery Percentage": "Batterijpercentage weergeven",
-  "Hide Scrollbar": "Schuifbalk verbergen"
+  "Hide Scrollbar": "Schuifbalk verbergen",
+  "Skip to last reading position": "Ga naar laatste leespositie"
 }

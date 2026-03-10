@@ -105,7 +105,6 @@
   "Wikipedia": "ويكيبيديا",
   "Writing Mode": "وضع الكتابة",
   "Your Library": "المكتبة الخاصة بك",
-  "TTS not supported for PDF": "القراءة الصوتية غير مدعومة لملفات PDF",
   "Override Book Font": "تجاوز خط الكتاب",
   "Apply to All Books": "تطبيق على جميع الكتب",
   "Apply to This Book": "تطبيق على هذا الكتاب",
@@ -1113,5 +1112,6 @@
   "Annotation page number": "رقم صفحة التعליق",
   "Translating...": "جارٍ الترجمة...",
   "Show Battery Percentage": "عرض نسبة البطارية",
-  "Hide Scrollbar": "إخفاء شريط التمرير"
+  "Hide Scrollbar": "إخفاء شريط التمرير",
+  "Skip to last reading position": "انتقل إلى آخر موضع قراءة"
 }

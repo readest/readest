@@ -269,7 +269,6 @@
   "Table of Contents": "สารบัญ",
   "Sidebar": "แถบข้าง",
   "Disable Translation": "ปิดการแปล",
-  "TTS not supported for PDF": "ไม่รองรับ TTS สำหรับ PDF",
   "No Timeout": "ไม่จำกัดเวลา",
   "{{value}} minute": "{{value}} นาที",
   "{{value}} minutes": "{{value}} นาที",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "หมายเลขหน้าคำอธิบายประกอบ",
   "Translating...": "กำลังแปล...",
   "Show Battery Percentage": "แสดงเปอร์เซ็นต์แบตเตอรี่",
-  "Hide Scrollbar": "ซ่อนแถบเลื่อน"
+  "Hide Scrollbar": "ซ่อนแถบเลื่อน",
+  "Skip to last reading position": "ข้ามไปตำแหน่งอ่านล่าสุด"
 }

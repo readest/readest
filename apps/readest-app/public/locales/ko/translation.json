@@ -106,7 +106,6 @@
   "Wikipedia": "위키피디아",
   "Writing Mode": "글쓰기 모드",
   "Your Library": "내 서재",
-  "TTS not supported for PDF": "PDF에서 TTS가 지원되지 않음",
   "Override Book Font": "책 글꼴 덮어쓰기",
   "Apply to All Books": "모든 책에 적용",
   "Apply to This Book": "이 책에 적용",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "주석 페이지 번호",
   "Translating...": "번역 중...",
   "Show Battery Percentage": "배터리 백분율 표시",
-  "Hide Scrollbar": "스크롤바 숨기기"
+  "Hide Scrollbar": "스크롤바 숨기기",
+  "Skip to last reading position": "마지막 읽기 위치로 이동"
 }

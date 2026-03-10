@@ -88,7 +88,7 @@ const FoliateViewer: React.FC<{
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
-  const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
+  const { getViewState, getProgress, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -185,6 +185,14 @@ const FoliateViewer: React.FC<{
     };
   };
 
+  const skipToReadingPosition = useCallback(() => {
+    const view = getView(bookKey);
+    const progress = getProgress(bookKey);
+    if (view && progress) {
+      view.renderer.scrollToAnchor?.(progress.range);
+    }
+  }, [getView, getProgress, bookKey]);
+
   const docLoadHandler = (event: Event) => {
     setLoading(false);
     docLoaded.current = true;
@@ -226,7 +234,10 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      handleA11yNavigation(viewRef.current, detail.doc, detail.index);
+      handleA11yNavigation(viewRef.current, detail.doc, detail.index, {
+        skipToLastPosCallback: skipToReadingPosition,
+        skipToLastPosLabel: _('Skip to last reading position'),
+      });
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
@@ -667,8 +678,7 @@ const FoliateViewer: React.FC<{
       )}
       <div
         ref={containerRef}
-        tabIndex={-1}
-        role='document'
+        role='main'
         aria-label={_('Book Content')}
         className={clsx(
           'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',

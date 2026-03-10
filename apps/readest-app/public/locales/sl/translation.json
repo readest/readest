@@ -642,7 +642,6 @@
   "Readwise sync failed: {{error}}": "Sinhronizacija z Readwise ni uspela: {{error}}",
   "Translating...": "Prevajanje...",
   "Please log in to use advanced TTS features": "Prosimo, prijavite se za uporabo naprednih TTS funkcij",
-  "TTS not supported for PDF": "TTS ni podprt za PDF",
   "TTS not supported for this document": "TTS ni podprt za ta dokument",
   "Read Aloud": "Branje na glas",
   "Ready to read aloud": "Pripravljeno na branje na glas",
@@ -1089,5 +1088,6 @@
   "Use 24 Hour Clock": "Uporabi 24-urni zapis časa",
   "Show Current Battery Status": "Prikaži trenutno stanje baterije",
   "Show Battery Percentage": "Prikaži odstotek baterije",
-  "Hide Scrollbar": "Skrij drsni trak"
+  "Hide Scrollbar": "Skrij drsni trak",
+  "Skip to last reading position": "Skoči na zadnji položaj branja"
 }

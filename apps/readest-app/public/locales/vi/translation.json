@@ -106,7 +106,6 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Chế độ viết",
   "Your Library": "Thư viện của bạn",
-  "TTS not supported for PDF": "TTS không được hỗ trợ cho PDF",
   "Override Book Font": "Ghi đè phông chữ sách",
   "Apply to All Books": "Áp dụng cho tất cả sách",
   "Apply to This Book": "Áp dụng cho sách này",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "Số trang chú thích",
   "Translating...": "Đang dịch...",
   "Show Battery Percentage": "Hiển thị phần trăm pin",
-  "Hide Scrollbar": "Ẩn thanh cuộn"
+  "Hide Scrollbar": "Ẩn thanh cuộn",
+  "Skip to last reading position": "Chuyển đến vị trí đọc cuối"
 }

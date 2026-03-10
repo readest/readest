@@ -106,7 +106,6 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Mode Menulis",
   "Your Library": "Perpustakaan Anda",
-  "TTS not supported for PDF": "TTS tidak didukung untuk PDF",
   "Override Book Font": "Ganti Font Buku",
   "Apply to All Books": "Terapkan ke semua buku",
   "Apply to This Book": "Terapkan ke buku ini",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "Nomor halaman anotasi",
   "Translating...": "Menerjemahkan...",
   "Show Battery Percentage": "Tampilkan Persentase Baterai",
-  "Hide Scrollbar": "Sembunyikan Bilah Gulir"
+  "Hide Scrollbar": "Sembunyikan Bilah Gulir",
+  "Skip to last reading position": "Lompat ke posisi baca terakhir"
 }

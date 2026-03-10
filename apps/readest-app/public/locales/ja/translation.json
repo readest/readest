@@ -106,7 +106,6 @@
   "Wikipedia": "ウィキペディア",
   "Writing Mode": "書き込みモード",
   "Your Library": "ライブラリー",
-  "TTS not supported for PDF": "PDFではTTSがサポートされていません",
   "Override Book Font": "書籍フォントを上書き",
   "Apply to All Books": "すべての書籍に適用",
   "Apply to This Book": "この書籍に適用",
@@ -1053,5 +1052,6 @@
   "Annotation page number": "注釈のページ番号",
   "Translating...": "翻訳中...",
   "Show Battery Percentage": "バッテリー残量を表示",
-  "Hide Scrollbar": "スクロールバーを非表示"
+  "Hide Scrollbar": "スクロールバーを非表示",
+  "Skip to last reading position": "最後の読書位置へ移動"
 }

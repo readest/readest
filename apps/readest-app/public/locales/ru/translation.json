@@ -106,7 +106,6 @@
   "Wikipedia": "Википедия",
   "Writing Mode": "Режим записи",
   "Your Library": "Ваша библиотека",
-  "TTS not supported for PDF": "TTS не поддерживается для PDF",
   "Override Book Font": "Переопределить шрифт книги",
   "Apply to All Books": "Применить ко всем книгам",
   "Apply to This Book": "Применить к этой книге",
@@ -1089,5 +1088,6 @@
   "Annotation page number": "Номер страницы аннотации",
   "Translating...": "Перевод...",
   "Show Battery Percentage": "Показывать процент заряда батареи",
-  "Hide Scrollbar": "Скрыть полосу прокрутки"
+  "Hide Scrollbar": "Скрыть полосу прокрутки",
+  "Skip to last reading position": "Перейти к последней позиции чтения"
 }
