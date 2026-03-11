@@ -81,7 +81,7 @@ export interface FoliateView extends HTMLElement {
     goTo?: (params: { index: number; anchor?: number | RangeAnchor }) => void;
     setStyles?: (css: string) => void;
     getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
-    scrollToAnchor?: (anchor: number | Range) => void;
+    scrollToAnchor?: (anchor: number | Range, reason?: string, smooth?: boolean) => void;
     addEventListener: (
       type: string,
       listener: EventListener,
