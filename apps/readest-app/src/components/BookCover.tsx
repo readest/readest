@@ -72,7 +72,10 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
             <img
               src={book.metadata?.coverImageUrl || book.coverImageUrl!}
               alt={book.title}
-              className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
+              className={clsx(
+                'cover-image crop-cover-img h-full w-full object-cover',
+                imageClassName,
+              )}
               onLoad={handleImageLoad}
               onError={handleImageError}
             />
