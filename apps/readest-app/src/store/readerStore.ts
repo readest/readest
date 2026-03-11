@@ -18,7 +18,7 @@ import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
 import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
-import { useBookDataStore } from './bookDataStore';
+import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 import { uniqueId } from '@/utils/misc';
 
@@ -196,11 +196,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
       book.metaHash = getMetadataHash(bookDoc.metadata);
 
-      const isFixedLayout = FIXED_LAYOUT_FORMATS.has(book.format);
+      const isFixedLayout =
+        bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(book.format);
+      const newBookData: BookData = { id, book, file, config, bookDoc, isFixedLayout };
       useBookDataStore.setState((state) => ({
         booksData: {
           ...state.booksData,
-          [id]: { id, book, file, config, bookDoc, isFixedLayout },
+          [id]: newBookData,
         },
       }));
       const configViewSettings = config.viewSettings!;

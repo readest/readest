@@ -5,7 +5,7 @@ import { EnvConfigType } from '@/services/environment';
 import { BookDoc } from '@/libs/document';
 import { useLibraryStore } from './libraryStore';
 
-interface BookData {
+export interface BookData {
   /* Persistent data shared with different views of the same book */
   id: string;
   book: Book | null;

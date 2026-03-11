@@ -159,6 +159,7 @@ const FoliateViewer: React.FC<{
               viewSettings,
               width,
               height,
+              isFixedLayout: bookData.isFixedLayout,
               primaryLanguage: bookData.book?.primaryLanguage,
               userLocale: getLocale(),
               content: data,

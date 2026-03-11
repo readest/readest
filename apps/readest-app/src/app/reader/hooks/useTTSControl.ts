@@ -225,6 +225,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   };
 
   const viewSettings = getViewSettings(bookKey);
+  const bookData = getBookData(bookKey);
   const ttsTime = useMemo(() => {
     const rate = viewSettings?.ttsRate ?? 1;
     return estimateTTSTime(progress, rate);
@@ -236,7 +237,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     if (vs?.translationEnabled && ttsReadAloudText === 'translated') {
       return vs?.translateTargetLang || getLocale();
     } else if (vs?.translationEnabled && ttsReadAloudText === 'source') {
-      const bookData = getBookData(bookKey);
       return bookData?.book?.primaryLanguage || '';
     }
     return null;
@@ -260,6 +260,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       bookKey,
       viewSettings: getViewSettings(bookKey)!,
       userLocale: getLocale(),
+      isFixedLayout: bookData?.isFixedLayout || false,
       content: '',
       transformers: [],
       reversePunctuationTransform: true,

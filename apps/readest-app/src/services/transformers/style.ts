@@ -6,6 +6,8 @@ export const styleTransformer: Transformer = {
 
   transform: async (ctx) => {
     let result = ctx.content;
+    if (ctx.isFixedLayout) return result;
+
     const styleMatches = [...result.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)];
 
     for (const match of styleMatches) {

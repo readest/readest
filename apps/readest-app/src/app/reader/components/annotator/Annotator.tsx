@@ -175,6 +175,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       viewSettings: getViewSettings(bookKey)!,
       userLocale: getLocale(),
       content: '',
+      isFixedLayout: bookData.isFixedLayout,
       transformers: ['punctuation'],
       reversePunctuationTransform: true,
     }),
