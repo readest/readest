@@ -29,9 +29,10 @@ const PlanCard: React.FC<PlanCardProps> = ({
 }) => {
   const _ = useTranslation();
   const { price, currency } = plan;
-  const formattedPrice = new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(
-    price / 100,
-  );
+  const formattedPrice = new Intl.NumberFormat(getLocale(), {
+    style: 'currency',
+    currency,
+  }).format(price / 100);
 
   return (
     <div
