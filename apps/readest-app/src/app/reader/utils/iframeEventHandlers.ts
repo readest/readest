@@ -187,7 +187,13 @@ export const handleClick = (
     ) {
       return;
     }
-    const footnote = element?.closest('.js_readerFooterNote, .zhangyue-footnote, .duokan-footnote');
+    const footnoteSelector = [
+      '.js_readerFooterNote',
+      '.zhangyue-footnote',
+      '.duokan-footnote',
+      '.qqreader-footnote',
+    ].join(', ');
+    const footnote = element?.closest(footnoteSelector);
     if (footnote) {
       eventDispatcher.dispatch('footnote-popup', {
         bookKey,
