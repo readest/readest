@@ -908,7 +908,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           tooltipText: _(label),
           Icon,
           onClick: handleSearch,
-          disabled: bookData.book?.format === 'PDF',
         };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };

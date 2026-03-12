@@ -234,15 +234,21 @@ export const handleClick = (
 };
 
 const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
-  const touch = event.targetTouches[0];
+  // Use event.touches (all active touches) instead of event.targetTouches
+  // so that multi-finger gestures work even when fingers land on different
+  // elements within the iframe (e.g. canvas vs textLayer spans in PDF)
+  const touchList = type === 'iframe-touchend' ? event.targetTouches : event.touches;
   const touches = [];
-  if (touch) {
-    touches.push({
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      screenX: touch.screenX,
-      screenY: touch.screenY,
-    });
+  for (let i = 0; i < touchList.length; i++) {
+    const touch = touchList[i];
+    if (touch) {
+      touches.push({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        screenX: touch.screenX,
+        screenY: touch.screenY,
+      });
+    }
   }
   window.postMessage(
     {
