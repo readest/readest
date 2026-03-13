@@ -9,6 +9,19 @@
   "permissions": [
     "core:default",
     "fs:default",
+    "fs:read-all",
+    "fs:write-all",
+    "fs:scope-appconfig-recursive",
+    "fs:scope-appdata-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "**/.readest-test-sandbox-tauri" },
+        { "path": "**/.readest-test-sandbox-tauri/**" },
+        { "path": "**/Readest" },
+        { "path": "**/Readest/**" }
+      ]
+    },
     "os:default",
     "dialog:default",
     "core:window:default",

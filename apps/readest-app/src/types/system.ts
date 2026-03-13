@@ -7,7 +7,7 @@ import { CustomTextureInfo } from '@/styles/textures';
 import { DatabaseOpts, DatabaseService } from './database';
 import { SchemaType } from '@/services/database/migrate';
 
-export type AppPlatform = 'web' | 'tauri';
+export type AppPlatform = 'web' | 'tauri' | 'node';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 // prettier-ignore
 export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Log' | 'Cache' | 'Temp' | 'None';

@@ -197,6 +197,7 @@ const indexedDBFileSystem: FileSystem = {
   },
   async readDir(path: string, base: BaseDir) {
     const { fp } = this.resolvePath(path, base);
+    const prefix = fp.endsWith('/') ? fp : `${fp}/`;
     const db = await openIndexedDB();
 
     return new Promise<FileItem[]>((resolve, reject) => {
@@ -208,9 +209,9 @@ const indexedDBFileSystem: FileSystem = {
         const files = request.result as { path: string; content: string | ArrayBuffer | Blob }[];
         resolve(
           files
-            .filter((file) => file.path.startsWith(fp))
+            .filter((file) => file.path.startsWith(prefix))
             .map((file) => ({
-              path: file.path.slice(fp.length + 1),
+              path: file.path.slice(prefix.length),
               size:
                 file.content instanceof Blob
                   ? file.content.size
