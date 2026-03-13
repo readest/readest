@@ -1093,5 +1093,6 @@
   "Decrease font size": "Pomanjšaj pisavo",
   "Increase font size": "Povečaj pisavo",
   "Focus": "Fokus",
-  "Theme color": "Barva teme"
+  "Theme color": "Barva teme",
+  "Import failed": "Uvoz ni uspel"
 }

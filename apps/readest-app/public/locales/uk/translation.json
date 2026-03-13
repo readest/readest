@@ -1093,5 +1093,6 @@
   "Decrease font size": "Зменшити розмір шрифту",
   "Increase font size": "Збільшити розмір шрифту",
   "Focus": "Фокус",
-  "Theme color": "Колір теми"
+  "Theme color": "Колір теми",
+  "Import failed": "Помилка імпорту"
 }

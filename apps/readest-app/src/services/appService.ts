@@ -80,7 +80,7 @@ import {
 import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { TxtToEpubConverter } from '@/utils/txt';
-import { BOOK_FILE_NOT_FOUND_ERROR } from './errors';
+import { BookFileNotFoundError } from './errors';
 import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { parseFontInfo } from '@/utils/font';
@@ -395,7 +395,7 @@ export abstract class BaseAppService implements AppService {
           loadedBook.metadata.title = getBaseFilename(filename);
         }
       } catch (error) {
-        throw new Error(`Failed to open the book: ${(error as Error).message || error}`);
+        throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
       }
 
       const hash = await partialMD5(fileobj);
@@ -769,10 +769,10 @@ export abstract class BaseAppService implements AppService {
         if (bookFile) {
           file = await this.fs.openFile(`${bookDir}/${bookFile.path}`, 'Books');
         } else {
-          throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
+          throw new BookFileNotFoundError();
         }
       } else {
-        throw new Error(BOOK_FILE_NOT_FOUND_ERROR);
+        throw new BookFileNotFoundError();
       }
     }
     return { book, file };

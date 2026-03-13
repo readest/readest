@@ -1069,5 +1069,6 @@
   "Decrease font size": "Yazı tipi boyutunu küçült",
   "Increase font size": "Yazı tipi boyutunu büyüt",
   "Focus": "Odak",
-  "Theme color": "Tema rengi"
+  "Theme color": "Tema rengi",
+  "Import failed": "İçe aktarma başarısız"
 }

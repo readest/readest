@@ -1057,5 +1057,6 @@
   "Decrease font size": "글꼴 크기 줄이기",
   "Increase font size": "글꼴 크기 늘리기",
   "Focus": "초점",
-  "Theme color": "테마 색상"
+  "Theme color": "테마 색상",
+  "Import failed": "가져오기 실패"
 }

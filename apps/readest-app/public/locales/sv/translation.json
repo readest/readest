@@ -1069,5 +1069,6 @@
   "Decrease font size": "Minska teckenstorlek",
   "Increase font size": "Öka teckenstorlek",
   "Focus": "Fokus",
-  "Theme color": "Temafärg"
+  "Theme color": "Temafärg",
+  "Import failed": "Importen misslyckades"
 }

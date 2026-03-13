@@ -1057,5 +1057,6 @@
   "Decrease font size": "缩小字号",
   "Increase font size": "放大字号",
   "Focus": "焦点",
-  "Theme color": "主题颜色"
+  "Theme color": "主题颜色",
+  "Import failed": "导入失败"
 }

@@ -9,6 +9,7 @@ import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { formatDate, formatLanguage } from '@/utils/book';
+import { getImportErrorMessage, ImportError } from '@/services/errors';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { CachedImage } from '@/components/CachedImage';
@@ -96,10 +97,19 @@ export function PublicationView({
       eventDispatcher.dispatch('toast', { type: 'success', message: _('Download completed') });
     } catch (error) {
       console.error('Download failed:', error);
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: _('Download failed') + `:\n${href}`,
-      });
+      if (error instanceof ImportError) {
+        const friendlyMsg = _(getImportErrorMessage(error.message));
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Import failed') + `:\n${friendlyMsg}`,
+          timeout: 5000,
+        });
+      } else {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Download failed') + `:\n${href}`,
+        });
+      }
     } finally {
       setDownloading(false);
       setProgress(null);

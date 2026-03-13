@@ -1093,5 +1093,6 @@
   "Decrease font size": "Zmniejsz rozmiar czcionki",
   "Increase font size": "Zwiększ rozmiar czcionki",
   "Focus": "Fokus",
-  "Theme color": "Kolor motywu"
+  "Theme color": "Kolor motywu",
+  "Import failed": "Import nie powiódł się"
 }

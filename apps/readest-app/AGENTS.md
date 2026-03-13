@@ -75,6 +75,10 @@ Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Cu
 - No lookbehind regex in build output — verified by `check:lookbehind-regex`.
 - Run `pnpm build-check` (builds both targets + runs all checks) before submitting.
 
+### i18n
+
+See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `stubTranslation` usage in non-React modules, and extraction workflow.
+
 ### Safe Area Insets
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.

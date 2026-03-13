@@ -1069,5 +1069,6 @@
   "Decrease font size": "Lettergrootte verkleinen",
   "Increase font size": "Lettergrootte vergroten",
   "Focus": "Focus",
-  "Theme color": "Themakleur"
+  "Theme color": "Themakleur",
+  "Import failed": "Import mislukt"
 }

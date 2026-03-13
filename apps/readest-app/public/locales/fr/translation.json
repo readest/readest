@@ -1081,5 +1081,6 @@
   "Decrease font size": "Réduire la taille de police",
   "Increase font size": "Augmenter la taille de police",
   "Focus": "Focus",
-  "Theme color": "Couleur du thème"
+  "Theme color": "Couleur du thème",
+  "Import failed": "Échec de l'importation"
 }

@@ -1069,5 +1069,6 @@
   "Decrease font size": "Μείωση μεγέθους γραμματοσειράς",
   "Increase font size": "Αύξηση μεγέθους γραμματοσειράς",
   "Focus": "Εστίαση",
-  "Theme color": "Χρώμα θέματος"
+  "Theme color": "Χρώμα θέματος",
+  "Import failed": "Η εισαγωγή απέτυχε"
 }

@@ -1117,5 +1117,6 @@
   "Decrease font size": "تصغير حجم الخط",
   "Increase font size": "تكبير حجم الخط",
   "Focus": "تركيز",
-  "Theme color": "لون السمة"
+  "Theme color": "لون السمة",
+  "Import failed": "فشل الاستيراد"
 }

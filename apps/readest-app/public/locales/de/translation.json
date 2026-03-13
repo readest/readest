@@ -1069,5 +1069,6 @@
   "Decrease font size": "Schriftgröße verkleinern",
   "Increase font size": "Schriftgröße vergrößern",
   "Focus": "Fokus",
-  "Theme color": "Themenfarbe"
+  "Theme color": "Themenfarbe",
+  "Import failed": "Import fehlgeschlagen"
 }

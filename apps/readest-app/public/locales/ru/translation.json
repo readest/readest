@@ -1093,5 +1093,6 @@
   "Decrease font size": "Уменьшить размер шрифта",
   "Increase font size": "Увеличить размер шрифта",
   "Focus": "Фокус",
-  "Theme color": "Цвет темы"
+  "Theme color": "Цвет темы",
+  "Import failed": "Ошибка импорта"
 }

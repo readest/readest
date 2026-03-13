@@ -1057,5 +1057,6 @@
   "Decrease font size": "文字サイズを縮小",
   "Increase font size": "文字サイズを拡大",
   "Focus": "フォーカス",
-  "Theme color": "テーマカラー"
+  "Theme color": "テーマカラー",
+  "Import failed": "インポートに失敗しました"
 }

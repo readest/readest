@@ -1057,5 +1057,6 @@
   "Decrease font size": "ลดขนาดตัวอักษร",
   "Increase font size": "เพิ่มขนาดตัวอักษร",
   "Focus": "โฟกัส",
-  "Theme color": "สีธีม"
+  "Theme color": "สีธีม",
+  "Import failed": "นำเข้าล้มเหลว"
 }

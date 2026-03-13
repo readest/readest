@@ -1081,5 +1081,6 @@
   "Decrease font size": "Reducir tamaño de fuente",
   "Increase font size": "Aumentar tamaño de fuente",
   "Focus": "Enfoque",
-  "Theme color": "Color del tema"
+  "Theme color": "Color del tema",
+  "Import failed": "Error de importación"
 }
