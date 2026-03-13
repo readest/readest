@@ -34,7 +34,7 @@ DEV_PID=$!
 
 echo "Waiting for dev server on port $DEV_PORT..."
 elapsed=0
-while ! curl -sf "http://127.0.0.1:${DEV_PORT}" >/dev/null 2>&1; do
+while ! curl -sf "http://localhost:${DEV_PORT}" >/dev/null 2>&1; do
   if ! kill -0 "$DEV_PID" 2>/dev/null; then
     echo "ERROR: Dev server exited unexpectedly."
     exit 1

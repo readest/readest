@@ -48,6 +48,9 @@ tauri.*.conf.json
 *.tsbuildinfo
 next-env.d.ts
 
+# eslint
+.eslintcache
+
 #generated
 src-tauri/gen
 
