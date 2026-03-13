@@ -502,10 +502,8 @@
   "Play (Space)": "נגן (רווח)",
   "Skip forward 15 words": "קפוץ 15 מילים קדימה",
   "Forward 15 words (Shift+Right)": "15 מילים קדימה (Shift+Right)",
-  "Pause:": "השהה:",
   "Decrease speed": "הפחת מהירות",
   "Slower (Left/Down)": "איטי יותר (חץ שמאלה/למטה)",
-  "Current speed": "מהירות נוכחית",
   "Increase speed": "הגבר מהירות",
   "Faster (Right/Up)": "מהיר יותר (חץ ימינה/למעלה)",
   "Start RSVP Reading": "התחל קריאת RSVP",
@@ -1077,5 +1075,11 @@
   "Translating...": "מתרגם...",
   "Show Battery Percentage": "הצג אחוזי סוללה",
   "Hide Scrollbar": "הסתר סרגל גלילה",
-  "Skip to last reading position": "דלג למיקום הקריאה האחרון"
+  "Skip to last reading position": "דלג למיקום הקריאה האחרון",
+  "Show context": "הצג הקשר",
+  "Hide context": "הסתר הקשר",
+  "Decrease font size": "הקטן גודל גופן",
+  "Increase font size": "הגדל גודל גופן",
+  "Focus": "מיקוד",
+  "Theme color": "צבע ערכת נושא"
 }

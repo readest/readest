@@ -990,10 +990,8 @@
   "Play (Space)": "Spela (Mellanslag)",
   "Skip forward 15 words": "Hoppa framåt 15 ord",
   "Forward 15 words (Shift+Right)": "Framåt 15 ord (Shift+Höger)",
-  "Pause:": "Paus:",
   "Decrease speed": "Sänk hastigheten",
   "Slower (Left/Down)": "Långsammare (Vänster/Nedåt)",
-  "Current speed": "Nuvarande hastighet",
   "Increase speed": "Höj hastigheten",
   "Faster (Right/Up)": "Snabbare (Höger/Uppåt)",
   "Start RSVP Reading": "Starta RSVP-läsning",
@@ -1065,5 +1063,11 @@
   "Translating...": "Översätter...",
   "Show Battery Percentage": "Visa batteriprocent",
   "Hide Scrollbar": "Dölj rullningslist",
-  "Skip to last reading position": "Hoppa till senaste läsposition"
+  "Skip to last reading position": "Hoppa till senaste läsposition",
+  "Show context": "Visa kontext",
+  "Hide context": "Dölj kontext",
+  "Decrease font size": "Minska teckenstorlek",
+  "Increase font size": "Öka teckenstorlek",
+  "Focus": "Fokus",
+  "Theme color": "Temafärg"
 }

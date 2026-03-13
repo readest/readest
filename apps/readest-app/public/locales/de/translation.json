@@ -990,10 +990,8 @@
   "Play (Space)": "Abspielen (Leertaste)",
   "Skip forward 15 words": "15 Wörter vor",
   "Forward 15 words (Shift+Right)": "15 Wörter vor (Shift+Rechts)",
-  "Pause:": "Pause:",
   "Decrease speed": "Geschwindigkeit verringern",
   "Slower (Left/Down)": "Langsamer (Links/Unten)",
-  "Current speed": "Aktuelle Geschwindigkeit",
   "Increase speed": "Geschwindigkeit erhöhen",
   "Faster (Right/Up)": "Schneller (Rechts/Oben)",
   "Start RSVP Reading": "RSVP-Lesen starten",
@@ -1065,5 +1063,11 @@
   "Translating...": "Übersetzen...",
   "Show Battery Percentage": "Akkustand in Prozent anzeigen",
   "Hide Scrollbar": "Scrollleiste ausblenden",
-  "Skip to last reading position": "Zur letzten Leseposition springen"
+  "Skip to last reading position": "Zur letzten Leseposition springen",
+  "Show context": "Kontext anzeigen",
+  "Hide context": "Kontext ausblenden",
+  "Decrease font size": "Schriftgröße verkleinern",
+  "Increase font size": "Schriftgröße vergrößern",
+  "Focus": "Fokus",
+  "Theme color": "Themenfarbe"
 }

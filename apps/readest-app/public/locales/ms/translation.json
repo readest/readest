@@ -978,10 +978,8 @@
   "Play (Space)": "Main (Ruang)",
   "Skip forward 15 words": "Langkau depan 15 perkataan",
   "Forward 15 words (Shift+Right)": "Depan 15 perkataan (Shift+Kanan)",
-  "Pause:": "Jeda:",
   "Decrease speed": "Kurangkan kelajuan",
   "Slower (Left/Down)": "Lebih perlahan (Kiri/Bawah)",
-  "Current speed": "Kelajuan semasa",
   "Increase speed": "Tingkatkan kelajuan",
   "Faster (Right/Up)": "Lebih cepat (Kanan/Atas)",
   "Start RSVP Reading": "Mulakan Pembacaan RSVP",
@@ -1053,5 +1051,11 @@
   "Translating...": "Menterjemah...",
   "Show Battery Percentage": "Tunjukkan Peratusan Bateri",
   "Hide Scrollbar": "Sembunyikan Bar Tatal",
-  "Skip to last reading position": "Lompat ke posisi bacaan terakhir"
+  "Skip to last reading position": "Lompat ke posisi bacaan terakhir",
+  "Show context": "Tunjukkan konteks",
+  "Hide context": "Sembunyikan konteks",
+  "Decrease font size": "Kecilkan saiz fon",
+  "Increase font size": "Besarkan saiz fon",
+  "Focus": "Fokus",
+  "Theme color": "Warna tema"
 }

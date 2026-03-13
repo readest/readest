@@ -978,10 +978,8 @@
   "Play (Space)": "재생 (스페이스바)",
   "Skip forward 15 words": "15단어 앞으로",
   "Forward 15 words (Shift+Right)": "15단어 앞으로 (Shift+오른쪽 화살표)",
-  "Pause:": "일시정지:",
   "Decrease speed": "속도 줄이기",
   "Slower (Left/Down)": "느리게 (왼쪽/아래 화살표)",
-  "Current speed": "현재 속도",
   "Increase speed": "속도 높이기",
   "Faster (Right/Up)": "빠르게 (오른쪽/위 화살표)",
   "Start RSVP Reading": "RSVP 독서 시작",
@@ -1053,5 +1051,11 @@
   "Translating...": "번역 중...",
   "Show Battery Percentage": "배터리 백분율 표시",
   "Hide Scrollbar": "스크롤바 숨기기",
-  "Skip to last reading position": "마지막 읽기 위치로 이동"
+  "Skip to last reading position": "마지막 읽기 위치로 이동",
+  "Show context": "맥락 표시",
+  "Hide context": "맥락 숨기기",
+  "Decrease font size": "글꼴 크기 줄이기",
+  "Increase font size": "글꼴 크기 늘리기",
+  "Focus": "초점",
+  "Theme color": "테마 색상"
 }

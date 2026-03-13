@@ -990,10 +990,8 @@
   "Play (Space)": "இயக்கு (Space)",
   "Skip forward 15 words": "15 வார்த்தைகள் முன்னால் செல்",
   "Forward 15 words (Shift+Right)": "15 வார்த்தைகள் முன்னால் செல் (Shift+Right)",
-  "Pause:": "நிறுத்து:",
   "Decrease speed": "வேகத்தைக் குறை",
   "Slower (Left/Down)": "மெதுவாக (Left/Down)",
-  "Current speed": "தற்போதைய வேகம்",
   "Increase speed": "வேகத்தை அதிகரி",
   "Faster (Right/Up)": "வேகமாக (Right/Up)",
   "Start RSVP Reading": "RSVP வாசிப்பைத் தொடங்கு",
@@ -1065,5 +1063,11 @@
   "Translating...": "மொழிபெயர்க்கிறது...",
   "Show Battery Percentage": "பேட்டரி சதவீதத்தைக் காண்பி",
   "Hide Scrollbar": "உருள்பட்டையை மறை",
-  "Skip to last reading position": "கடைசி வாசிப்பு நிலைக்குச் செல்"
+  "Skip to last reading position": "கடைசி வாசிப்பு நிலைக்குச் செல்",
+  "Show context": "சூழலைக் காட்டு",
+  "Hide context": "சூழலை மறை",
+  "Decrease font size": "எழுத்துரு அளவைக் குறை",
+  "Increase font size": "எழுத்துரு அளவை அதிகரி",
+  "Focus": "குவியம்",
+  "Theme color": "தீம் நிறம்"
 }

@@ -990,10 +990,8 @@
   "Play (Space)": "চালান (Space)",
   "Skip forward 15 words": "১৫ শব্দ এগিয়ে যান",
   "Forward 15 words (Shift+Right)": "১৫ শব্দ এগিয়ে যান (Shift+Right)",
-  "Pause:": "বিরতি:",
   "Decrease speed": "গতি কমান",
   "Slower (Left/Down)": "ধীর (Left/Down)",
-  "Current speed": "বর্তমান গতি",
   "Increase speed": "গতি বাড়ান",
   "Faster (Right/Up)": "দ্রুত (Right/Up)",
   "Start RSVP Reading": "RSVP পড়া শুরু করুন",
@@ -1065,5 +1063,11 @@
   "Translating...": "অনুবাদ করা হচ্ছে...",
   "Show Battery Percentage": "ব্যাটারি শতাংশ দেখান",
   "Hide Scrollbar": "স্ক্রলবার লুকান",
-  "Skip to last reading position": "শেষ পড়ার অবস্থানে যান"
+  "Skip to last reading position": "শেষ পড়ার অবস্থানে যান",
+  "Show context": "প্রসঙ্গ দেখান",
+  "Hide context": "প্রসঙ্গ লুকান",
+  "Decrease font size": "ফন্টের আকার কমান",
+  "Increase font size": "ফন্টের আকার বাড়ান",
+  "Focus": "ফোকাস",
+  "Theme color": "থিম রঙ"
 }

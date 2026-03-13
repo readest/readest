@@ -978,10 +978,8 @@
   "Play (Space)": "เล่น (Space)",
   "Skip forward 15 words": "ไปข้างหน้า 15 คำ",
   "Forward 15 words (Shift+Right)": "ไปข้างหน้า 15 คำ (Shift+ขวา)",
-  "Pause:": "หยุดชั่วคราว:",
   "Decrease speed": "ลดความเร็ว",
   "Slower (Left/Down)": "ช้าลง (ซ้าย/ลง)",
-  "Current speed": "ความเร็วปัจจุบัน",
   "Increase speed": "เพิ่มความเร็ว",
   "Faster (Right/Up)": "เร็วขึ้น (ขวา/ขึ้น)",
   "Start RSVP Reading": "เริ่มการอ่านแบบ RSVP",
@@ -1053,5 +1051,11 @@
   "Translating...": "กำลังแปล...",
   "Show Battery Percentage": "แสดงเปอร์เซ็นต์แบตเตอรี่",
   "Hide Scrollbar": "ซ่อนแถบเลื่อน",
-  "Skip to last reading position": "ข้ามไปตำแหน่งอ่านล่าสุด"
+  "Skip to last reading position": "ข้ามไปตำแหน่งอ่านล่าสุด",
+  "Show context": "แสดงบริบท",
+  "Hide context": "ซ่อนบริบท",
+  "Decrease font size": "ลดขนาดตัวอักษร",
+  "Increase font size": "เพิ่มขนาดตัวอักษร",
+  "Focus": "โฟกัส",
+  "Theme color": "สีธีม"
 }

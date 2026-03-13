@@ -1014,10 +1014,8 @@
   "Play (Space)": "Odtwarzaj (Spacja)",
   "Skip forward 15 words": "Naprzód o 15 słów",
   "Forward 15 words (Shift+Right)": "Naprzód o 15 słów (Shift+Prawo)",
-  "Pause:": "Pauza:",
   "Decrease speed": "Zmniejsz prędkość",
   "Slower (Left/Down)": "Wolniej (Lewo/Dół)",
-  "Current speed": "Aktualna prędkość",
   "Increase speed": "Zwiększ prędkość",
   "Faster (Right/Up)": "Szybciej (Prawo/Góra)",
   "Start RSVP Reading": "Uruchom czytanie RSVP",
@@ -1089,5 +1087,11 @@
   "Translating...": "Tłumaczenie...",
   "Show Battery Percentage": "Pokaż procent baterii",
   "Hide Scrollbar": "Ukryj pasek przewijania",
-  "Skip to last reading position": "Przejdź do ostatniej pozycji czytania"
+  "Skip to last reading position": "Przejdź do ostatniej pozycji czytania",
+  "Show context": "Pokaż kontekst",
+  "Hide context": "Ukryj kontekst",
+  "Decrease font size": "Zmniejsz rozmiar czcionki",
+  "Increase font size": "Zwiększ rozmiar czcionki",
+  "Focus": "Fokus",
+  "Theme color": "Kolor motywu"
 }

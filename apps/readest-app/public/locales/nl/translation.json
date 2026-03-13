@@ -990,10 +990,8 @@
   "Play (Space)": "Afspelen (Spatie)",
   "Skip forward 15 words": "15 woorden vooruit",
   "Forward 15 words (Shift+Right)": "15 woorden vooruit (Shift+Rechts)",
-  "Pause:": "Pauze:",
   "Decrease speed": "Snelheid verlagen",
   "Slower (Left/Down)": "Langzamer (Links/Omlaag)",
-  "Current speed": "Huidige snelheid",
   "Increase speed": "Snelheid verhogen",
   "Faster (Right/Up)": "Sneller (Rechts/Omhoog)",
   "Start RSVP Reading": "Start RSVP-lezen",
@@ -1065,5 +1063,11 @@
   "Translating...": "Vertalen...",
   "Show Battery Percentage": "Batterijpercentage weergeven",
   "Hide Scrollbar": "Schuifbalk verbergen",
-  "Skip to last reading position": "Ga naar laatste leespositie"
+  "Skip to last reading position": "Ga naar laatste leespositie",
+  "Show context": "Context tonen",
+  "Hide context": "Context verbergen",
+  "Decrease font size": "Lettergrootte verkleinen",
+  "Increase font size": "Lettergrootte vergroten",
+  "Focus": "Focus",
+  "Theme color": "Themakleur"
 }

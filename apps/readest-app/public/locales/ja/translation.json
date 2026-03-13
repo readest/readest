@@ -978,10 +978,8 @@
   "Play (Space)": "再生 (Space)",
   "Skip forward 15 words": "15単語進む",
   "Forward 15 words (Shift+Right)": "15単語進む (Shift+右)",
-  "Pause:": "一時停止:",
   "Decrease speed": "速度を下げる",
   "Slower (Left/Down)": "低速 (左/下)",
-  "Current speed": "現在の速度",
   "Increase speed": "速度を上げる",
   "Faster (Right/Up)": "高速 (右/上)",
   "Start RSVP Reading": "RSVP読書を開始",
@@ -1053,5 +1051,11 @@
   "Translating...": "翻訳中...",
   "Show Battery Percentage": "バッテリー残量を表示",
   "Hide Scrollbar": "スクロールバーを非表示",
-  "Skip to last reading position": "最後の読書位置へ移動"
+  "Skip to last reading position": "最後の読書位置へ移動",
+  "Show context": "コンテキストを表示",
+  "Hide context": "コンテキストを非表示",
+  "Decrease font size": "文字サイズを縮小",
+  "Increase font size": "文字サイズを拡大",
+  "Focus": "フォーカス",
+  "Theme color": "テーマカラー"
 }

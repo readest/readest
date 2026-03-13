@@ -1014,10 +1014,8 @@
   "Play (Space)": "Відтворити (Пробіл)",
   "Skip forward 15 words": "Вперед на 15 слів",
   "Forward 15 words (Shift+Right)": "Вперед на 15 слів (Shift+Стрілка вправо)",
-  "Pause:": "Пауза:",
   "Decrease speed": "Зменшити швидкість",
   "Slower (Left/Down)": "Повільніше (стрілки Вліво/Вниз)",
-  "Current speed": "Поточна швидкість",
   "Increase speed": "Збільшити швидкість",
   "Faster (Right/Up)": "Швидше (стрілки Вправо/Вгору)",
   "Start RSVP Reading": "Почати читання RSVP",
@@ -1089,5 +1087,11 @@
   "Translating...": "Переклад...",
   "Show Battery Percentage": "Показувати відсоток заряду батареї",
   "Hide Scrollbar": "Сховати смугу прокрутки",
-  "Skip to last reading position": "Перейти до останньої позиції читання"
+  "Skip to last reading position": "Перейти до останньої позиції читання",
+  "Show context": "Показати контекст",
+  "Hide context": "Сховати контекст",
+  "Decrease font size": "Зменшити розмір шрифту",
+  "Increase font size": "Збільшити розмір шрифту",
+  "Focus": "Фокус",
+  "Theme color": "Колір теми"
 }

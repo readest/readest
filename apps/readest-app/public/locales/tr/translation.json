@@ -990,10 +990,8 @@
   "Play (Space)": "Oynat (Boşluk)",
   "Skip forward 15 words": "15 kelime ileri atla",
   "Forward 15 words (Shift+Right)": "15 kelime ileri (Shift+Sağ)",
-  "Pause:": "Duraklat:",
   "Decrease speed": "Hızı azalt",
   "Slower (Left/Down)": "Daha yavaş (Sol/Aşağı)",
-  "Current speed": "Mevcut hız",
   "Increase speed": "Hızı artır",
   "Faster (Right/Up)": "Daha hızlı (Sağ/Yukarı)",
   "Start RSVP Reading": "RSVP Okumasını Başlat",
@@ -1065,5 +1063,11 @@
   "Translating...": "Çevriliyor...",
   "Show Battery Percentage": "Pil Yüzdesini Göster",
   "Hide Scrollbar": "Kaydırma çubuğunu gizle",
-  "Skip to last reading position": "Son okuma konumuna atla"
+  "Skip to last reading position": "Son okuma konumuna atla",
+  "Show context": "Bağlamı göster",
+  "Hide context": "Bağlamı gizle",
+  "Decrease font size": "Yazı tipi boyutunu küçült",
+  "Increase font size": "Yazı tipi boyutunu büyüt",
+  "Focus": "Odak",
+  "Theme color": "Tema rengi"
 }

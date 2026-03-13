@@ -1002,10 +1002,8 @@
   "Play (Space)": "Riproduci (Spazio)",
   "Skip forward 15 words": "Avanti di 15 parole",
   "Forward 15 words (Shift+Right)": "Avanti di 15 parole (Shift+Destra)",
-  "Pause:": "Pausa:",
   "Decrease speed": "Diminuisci velocità",
   "Slower (Left/Down)": "Più lento (Sinistra/Giù)",
-  "Current speed": "Velocità attuale",
   "Increase speed": "Aumenta velocità",
   "Faster (Right/Up)": "Più veloce (Destra/Su)",
   "Start RSVP Reading": "Avvia lettura RSVP",
@@ -1077,5 +1075,11 @@
   "Translating...": "Traduzione...",
   "Show Battery Percentage": "Mostra percentuale batteria",
   "Hide Scrollbar": "Nascondi barra di scorrimento",
-  "Skip to last reading position": "Vai all'ultima posizione di lettura"
+  "Skip to last reading position": "Vai all'ultima posizione di lettura",
+  "Show context": "Mostra contesto",
+  "Hide context": "Nascondi contesto",
+  "Decrease font size": "Riduci dimensione carattere",
+  "Increase font size": "Aumenta dimensione carattere",
+  "Focus": "Messa a fuoco",
+  "Theme color": "Colore del tema"
 }

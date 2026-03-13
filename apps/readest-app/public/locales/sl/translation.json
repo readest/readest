@@ -532,10 +532,8 @@
   "Play (Space)": "Predvajaj (Preslednica)",
   "Skip forward 15 words": "Skoči naprej za 15 besed",
   "Forward 15 words (Shift+Right)": "Naprej za 15 besed (Shift+Desno)",
-  "Pause:": "Premor:",
   "Decrease speed": "Zmanjšaj hitrost",
   "Slower (Left/Down)": "Počasneje (Levo/Dol)",
-  "Current speed": "Trenutna hitrost",
   "Increase speed": "Povečaj hitrost",
   "Faster (Right/Up)": "Hitreje (Desno/Gor)",
   "Start RSVP Reading": "Začni RSVP branje",
@@ -1089,5 +1087,11 @@
   "Show Current Battery Status": "Prikaži trenutno stanje baterije",
   "Show Battery Percentage": "Prikaži odstotek baterije",
   "Hide Scrollbar": "Skrij drsni trak",
-  "Skip to last reading position": "Skoči na zadnji položaj branja"
+  "Skip to last reading position": "Skoči na zadnji položaj branja",
+  "Show context": "Prikaži kontekst",
+  "Hide context": "Skrij kontekst",
+  "Decrease font size": "Pomanjšaj pisavo",
+  "Increase font size": "Povečaj pisavo",
+  "Focus": "Fokus",
+  "Theme color": "Barva teme"
 }

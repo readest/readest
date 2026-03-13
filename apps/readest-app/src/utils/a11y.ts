@@ -72,9 +72,9 @@ export const handleA11yNavigation = (
     const skipLink = document.createElement('div');
     skipLink.id = skipLinkId;
     skipLink.setAttribute('cfi-inert', '');
-    skipLink.setAttribute('aria-hidden', 'false');
     skipLink.setAttribute('tabindex', '0');
-    skipLink.textContent = options?.skipToLastPosLabel ?? '';
+    skipLink.setAttribute('aria-hidden', 'false');
+    skipLink.setAttribute('aria-label', options?.skipToLastPosLabel ?? '');
     Object.assign(skipLink.style, {
       position: 'absolute',
       left: '0px',

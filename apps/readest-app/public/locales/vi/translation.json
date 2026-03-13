@@ -978,10 +978,8 @@
   "Play (Space)": "Phát (Khoảng trắng)",
   "Skip forward 15 words": "Tiến tới 15 từ",
   "Forward 15 words (Shift+Right)": "Tiến tới 15 từ (Shift+Phải)",
-  "Pause:": "Tạm dừng:",
   "Decrease speed": "Giảm tốc độ",
   "Slower (Left/Down)": "Chậm hơn (Trái/Xuống)",
-  "Current speed": "Tốc độ hiện tại",
   "Increase speed": "Tăng tốc độ",
   "Faster (Right/Up)": "Nhanh hơn (Phải/Lên)",
   "Start RSVP Reading": "Bắt đầu đọc RSVP",
@@ -1053,5 +1051,11 @@
   "Translating...": "Đang dịch...",
   "Show Battery Percentage": "Hiển thị phần trăm pin",
   "Hide Scrollbar": "Ẩn thanh cuộn",
-  "Skip to last reading position": "Chuyển đến vị trí đọc cuối"
+  "Skip to last reading position": "Chuyển đến vị trí đọc cuối",
+  "Show context": "Hiển thị ngữ cảnh",
+  "Hide context": "Ẩn ngữ cảnh",
+  "Decrease font size": "Giảm cỡ chữ",
+  "Increase font size": "Tăng cỡ chữ",
+  "Focus": "Tiêu điểm",
+  "Theme color": "Màu chủ đề"
 }

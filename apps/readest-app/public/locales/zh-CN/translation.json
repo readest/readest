@@ -979,10 +979,8 @@
   "Play (Space)": "播放 (空格)",
   "Skip forward 15 words": "前进 15 词",
   "Forward 15 words (Shift+Right)": "前进 15 词 (Shift+Right)",
-  "Pause:": "暂停：",
   "Decrease speed": "减速",
   "Slower (Left/Down)": "较慢 (左/下)",
-  "Current speed": "当前速度",
   "Increase speed": "加速",
   "Faster (Right/Up)": "较快 (右/上)",
   "Start RSVP Reading": "开始 RSVP 阅读",
@@ -1053,5 +1051,11 @@
   "Annotation page number": "批注页码",
   "Translating...": "翻译中...",
   "Show Battery Percentage": "显示电量百分比",
-  "Skip to last reading position": "跳转到上次阅读位置"
+  "Skip to last reading position": "跳转到上次阅读位置",
+  "Show context": "显示上下文",
+  "Hide context": "隐藏上下文",
+  "Decrease font size": "缩小字号",
+  "Increase font size": "放大字号",
+  "Focus": "焦点",
+  "Theme color": "主题颜色"
 }

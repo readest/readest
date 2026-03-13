@@ -1038,10 +1038,8 @@
   "Play (Space)": "تشغيل (المسافة)",
   "Skip forward 15 words": "تخطي للأمام 15 كلمة",
   "Forward 15 words (Shift+Right)": "للأمام 15 كلمة (Shift+اليمين)",
-  "Pause:": "إيقاف مؤقت:",
   "Decrease speed": "تقليل السرعة",
   "Slower (Left/Down)": "أبطأ (اليسار/الأسفل)",
-  "Current speed": "السرعة الحالية",
   "Increase speed": "زيادة السرعة",
   "Faster (Right/Up)": "أسرع (اليمين/الأعلى)",
   "Start RSVP Reading": "بدء قراءة RSVP",
@@ -1113,5 +1111,11 @@
   "Translating...": "جارٍ الترجمة...",
   "Show Battery Percentage": "عرض نسبة البطارية",
   "Hide Scrollbar": "إخفاء شريط التمرير",
-  "Skip to last reading position": "انتقل إلى آخر موضع قراءة"
+  "Skip to last reading position": "انتقل إلى آخر موضع قراءة",
+  "Show context": "إظهار السياق",
+  "Hide context": "إخفاء السياق",
+  "Decrease font size": "تصغير حجم الخط",
+  "Increase font size": "تكبير حجم الخط",
+  "Focus": "تركيز",
+  "Theme color": "لون السمة"
 }
