@@ -84,6 +84,7 @@ CREATE TABLE public.files (
   file_key text NOT NULL,
   file_size bigint NOT NULL,
   created_at timestamp with time zone NULL DEFAULT now(),
+  updated_at timestamp with time zone NULL DEFAULT now(),
   deleted_at timestamp with time zone NULL,
   CONSTRAINT files_pkey PRIMARY KEY (id),
   CONSTRAINT files_file_key_key UNIQUE (file_key),
