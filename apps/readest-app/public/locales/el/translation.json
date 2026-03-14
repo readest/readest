@@ -1070,5 +1070,17 @@
   "Increase font size": "Αύξηση μεγέθους γραμματοσειράς",
   "Focus": "Εστίαση",
   "Theme color": "Χρώμα θέματος",
-  "Import failed": "Η εισαγωγή απέτυχε"
+  "Import failed": "Η εισαγωγή απέτυχε",
+  "Available Formatters:": "Διαθέσιμοι μορφοποιητές:",
+  "Format date": "Μορφοποίηση ημερομηνίας",
+  "Markdown block quote (> per line)": "Παράθεση Markdown (> ανά γραμμή)",
+  "Newlines to <br>": "Αλλαγές γραμμής σε <br>",
+  "Change case": "Αλλαγή πεζών/κεφαλαίων",
+  "Trim whitespace": "Αφαίρεση κενών",
+  "Truncate to n characters": "Περικοπή σε n χαρακτήρες",
+  "Replace text": "Αντικατάσταση κειμένου",
+  "Fallback value": "Εναλλακτική τιμή",
+  "Get length": "Λήψη μήκους",
+  "First/last element": "Πρώτο/τελευταίο στοιχείο",
+  "Join array": "Ένωση πίνακα"
 }

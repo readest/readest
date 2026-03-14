@@ -1070,5 +1070,17 @@
   "Increase font size": "افزایش اندازه قلم",
   "Focus": "تمرکز",
   "Theme color": "رنگ پوسته",
-  "Import failed": "وارد کردن ناموفق بود"
+  "Import failed": "وارد کردن ناموفق بود",
+  "Available Formatters:": "قالب‌بندهای موجود:",
+  "Format date": "قالب‌بندی تاریخ",
+  "Markdown block quote (> per line)": "نقل‌قول Markdown (> در هر خط)",
+  "Newlines to <br>": "خطوط جدید به <br>",
+  "Change case": "تغییر بزرگی/کوچکی حروف",
+  "Trim whitespace": "حذف فاصله‌ها",
+  "Truncate to n characters": "کوتاه کردن به n نویسه",
+  "Replace text": "جایگزینی متن",
+  "Fallback value": "مقدار پیش‌فرض",
+  "Get length": "دریافت طول",
+  "First/last element": "عنصر اول/آخر",
+  "Join array": "پیوستن آرایه"
 }

@@ -1058,5 +1058,17 @@
   "Increase font size": "放大字型",
   "Focus": "焦點",
   "Theme color": "主題顏色",
-  "Import failed": "匯入失敗"
+  "Import failed": "匯入失敗",
+  "Available Formatters:": "可用格式化器：",
+  "Format date": "格式化日期",
+  "Markdown block quote (> per line)": "Markdown 引用區塊（每行 >）",
+  "Newlines to <br>": "換行轉為 <br>",
+  "Change case": "變更大小寫",
+  "Trim whitespace": "去除空格",
+  "Truncate to n characters": "截斷為 n 個字元",
+  "Replace text": "取代文字",
+  "Fallback value": "預設值",
+  "Get length": "取得長度",
+  "First/last element": "第一個/最後一個元素",
+  "Join array": "合併陣列"
 }

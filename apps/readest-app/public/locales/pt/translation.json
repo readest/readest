@@ -1082,5 +1082,17 @@
   "Increase font size": "Aumentar tamanho da fonte",
   "Focus": "Foco",
   "Theme color": "Cor do tema",
-  "Import failed": "Falha na importação"
+  "Import failed": "Falha na importação",
+  "Available Formatters:": "Formatadores disponíveis:",
+  "Format date": "Formatar data",
+  "Markdown block quote (> per line)": "Citação Markdown (> por linha)",
+  "Newlines to <br>": "Quebras de linha para <br>",
+  "Change case": "Alterar maiúsculas/minúsculas",
+  "Trim whitespace": "Remover espaços",
+  "Truncate to n characters": "Truncar para n caracteres",
+  "Replace text": "Substituir texto",
+  "Fallback value": "Valor padrão",
+  "Get length": "Obter comprimento",
+  "First/last element": "Primeiro/último elemento",
+  "Join array": "Juntar array"
 }

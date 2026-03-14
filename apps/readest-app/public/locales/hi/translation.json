@@ -1070,5 +1070,17 @@
   "Increase font size": "फ़ॉन्ट आकार बढ़ाएँ",
   "Focus": "फ़ोकस",
   "Theme color": "थीम रंग",
-  "Import failed": "आयात विफल"
+  "Import failed": "आयात विफल",
+  "Available Formatters:": "उपलब्ध फ़ॉर्मेटर:",
+  "Format date": "तारीख फ़ॉर्मेट करें",
+  "Markdown block quote (> per line)": "Markdown ब्लॉक कोट (> प्रति पंक्ति)",
+  "Newlines to <br>": "नई पंक्तियाँ <br> में",
+  "Change case": "केस बदलें",
+  "Trim whitespace": "रिक्त स्थान हटाएँ",
+  "Truncate to n characters": "n अक्षरों तक छोटा करें",
+  "Replace text": "टेक्स्ट बदलें",
+  "Fallback value": "फ़ॉलबैक मान",
+  "Get length": "लंबाई प्राप्त करें",
+  "First/last element": "पहला/अंतिम तत्व",
+  "Join array": "ऐरे जोड़ें"
 }

@@ -1058,5 +1058,17 @@
   "Increase font size": "放大字号",
   "Focus": "焦点",
   "Theme color": "主题颜色",
-  "Import failed": "导入失败"
+  "Import failed": "导入失败",
+  "Available Formatters:": "可用格式化器：",
+  "Format date": "格式化日期",
+  "Markdown block quote (> per line)": "Markdown 引用块（每行 >）",
+  "Newlines to <br>": "换行转为 <br>",
+  "Change case": "更改大小写",
+  "Trim whitespace": "去除空格",
+  "Truncate to n characters": "截断为 n 个字符",
+  "Replace text": "替换文本",
+  "Fallback value": "默认值",
+  "Get length": "获取长度",
+  "First/last element": "第一个/最后一个元素",
+  "Join array": "合并数组"
 }

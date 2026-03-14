@@ -1070,5 +1070,17 @@
   "Increase font size": "අකුරු ප්‍රමාණය වැඩි කරන්න",
   "Focus": "අවධානය",
   "Theme color": "තේමා වර්ණය",
-  "Import failed": "ආයාත කිරීම අසාර්ථකයි"
+  "Import failed": "ආයාත කිරීම අසාර්ථකයි",
+  "Available Formatters:": "ලබාගත හැකි ආකෘතිකරණ:",
+  "Format date": "දිනය ආකෘතිකරණය",
+  "Markdown block quote (> per line)": "Markdown බ්ලොක් උද්ධෘතය (පේළියකට >)",
+  "Newlines to <br>": "නව පේළි <br> වෙත",
+  "Change case": "අකුරු ප්‍රමාණය වෙනස් කරන්න",
+  "Trim whitespace": "හිස්තැන් කපන්න",
+  "Truncate to n characters": "n අක්ෂර දක්වා කෙටි කරන්න",
+  "Replace text": "පෙළ ප්‍රතිස්ථාපනය",
+  "Fallback value": "විකල්ප අගය",
+  "Get length": "දිග ලබාගන්න",
+  "First/last element": "පළමු/අවසාන මූලද්‍රව්‍යය",
+  "Join array": "අරාව සම්බන්ධ කරන්න"
 }

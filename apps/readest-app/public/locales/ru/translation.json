@@ -1094,5 +1094,17 @@
   "Increase font size": "Увеличить размер шрифта",
   "Focus": "Фокус",
   "Theme color": "Цвет темы",
-  "Import failed": "Ошибка импорта"
+  "Import failed": "Ошибка импорта",
+  "Available Formatters:": "Доступные форматеры:",
+  "Format date": "Форматировать дату",
+  "Markdown block quote (> per line)": "Цитата Markdown (> для каждой строки)",
+  "Newlines to <br>": "Переносы строк в <br>",
+  "Change case": "Изменить регистр",
+  "Trim whitespace": "Удалить пробелы",
+  "Truncate to n characters": "Обрезать до n символов",
+  "Replace text": "Заменить текст",
+  "Fallback value": "Значение по умолчанию",
+  "Get length": "Получить длину",
+  "First/last element": "Первый/последний элемент",
+  "Join array": "Объединить массив"
 }

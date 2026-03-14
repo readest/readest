@@ -1070,5 +1070,17 @@
   "Increase font size": "Lettergrootte vergroten",
   "Focus": "Focus",
   "Theme color": "Themakleur",
-  "Import failed": "Import mislukt"
+  "Import failed": "Import mislukt",
+  "Available Formatters:": "Beschikbare opmaak:",
+  "Format date": "Datum opmaken",
+  "Markdown block quote (> per line)": "Markdown-blokcitaat (> per regel)",
+  "Newlines to <br>": "Regeleinden naar <br>",
+  "Change case": "Hoofdlettergebruik wijzigen",
+  "Trim whitespace": "Witruimte verwijderen",
+  "Truncate to n characters": "Inkorten tot n tekens",
+  "Replace text": "Tekst vervangen",
+  "Fallback value": "Terugvalwaarde",
+  "Get length": "Lengte ophalen",
+  "First/last element": "Eerste/laatste element",
+  "Join array": "Array samenvoegen"
 }

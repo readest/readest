@@ -214,6 +214,22 @@ env.addFilter('nl2br', (value: string) => {
 });
 
 /**
+ * Formats text as a markdown block quote, prefixing every line with `> `.
+ */
+export function formatBlockQuote(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => `> ${line}`)
+    .join('\n');
+}
+
+// Add 'blockquote' filter (prefix every line with > for markdown block quotes)
+env.addFilter('blockquote', (value: string) => {
+  if (!value || typeof value !== 'string') return '';
+  return formatBlockQuote(value);
+});
+
+/**
  * Renders a Jinja2/Nunjucks template with the given data
  * @param template The template string in Jinja2/Nunjucks syntax
  * @param data The data to render the template with

@@ -1070,5 +1070,17 @@
   "Increase font size": "Öka teckenstorlek",
   "Focus": "Fokus",
   "Theme color": "Temafärg",
-  "Import failed": "Importen misslyckades"
+  "Import failed": "Importen misslyckades",
+  "Available Formatters:": "Tillgängliga formaterare:",
+  "Format date": "Formatera datum",
+  "Markdown block quote (> per line)": "Markdown-blockcitat (> per rad)",
+  "Newlines to <br>": "Radbrytningar till <br>",
+  "Change case": "Ändra skiftläge",
+  "Trim whitespace": "Ta bort blanksteg",
+  "Truncate to n characters": "Korta till n tecken",
+  "Replace text": "Ersätt text",
+  "Fallback value": "Standardvärde",
+  "Get length": "Hämta längd",
+  "First/last element": "Första/sista elementet",
+  "Join array": "Sammanfoga array"
 }

@@ -1058,5 +1058,17 @@
   "Increase font size": "Perbesar ukuran font",
   "Focus": "Fokus",
   "Theme color": "Warna tema",
-  "Import failed": "Impor gagal"
+  "Import failed": "Impor gagal",
+  "Available Formatters:": "Formatter Tersedia:",
+  "Format date": "Format tanggal",
+  "Markdown block quote (> per line)": "Kutipan blok Markdown (> per baris)",
+  "Newlines to <br>": "Baris baru ke <br>",
+  "Change case": "Ubah huruf besar/kecil",
+  "Trim whitespace": "Pangkas spasi",
+  "Truncate to n characters": "Potong ke n karakter",
+  "Replace text": "Ganti teks",
+  "Fallback value": "Nilai cadangan",
+  "Get length": "Dapatkan panjang",
+  "First/last element": "Elemen pertama/terakhir",
+  "Join array": "Gabungkan array"
 }

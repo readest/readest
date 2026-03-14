@@ -1058,5 +1058,17 @@
   "Increase font size": "文字サイズを拡大",
   "Focus": "フォーカス",
   "Theme color": "テーマカラー",
-  "Import failed": "インポートに失敗しました"
+  "Import failed": "インポートに失敗しました",
+  "Available Formatters:": "利用可能なフォーマッター:",
+  "Format date": "日付のフォーマット",
+  "Markdown block quote (> per line)": "Markdown引用ブロック (行ごとに >)",
+  "Newlines to <br>": "改行を <br> に変換",
+  "Change case": "大文字/小文字の変更",
+  "Trim whitespace": "空白を除去",
+  "Truncate to n characters": "n文字に切り詰め",
+  "Replace text": "テキストを置換",
+  "Fallback value": "フォールバック値",
+  "Get length": "長さを取得",
+  "First/last element": "最初/最後の要素",
+  "Join array": "配列を結合"
 }

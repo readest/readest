@@ -1094,5 +1094,17 @@
   "Increase font size": "Povečaj pisavo",
   "Focus": "Fokus",
   "Theme color": "Barva teme",
-  "Import failed": "Uvoz ni uspel"
+  "Import failed": "Uvoz ni uspel",
+  "Available Formatters:": "Razpoložljivi oblikovalci:",
+  "Format date": "Oblikuj datum",
+  "Markdown block quote (> per line)": "Markdown citatni blok (> na vrstico)",
+  "Newlines to <br>": "Nove vrstice v <br>",
+  "Change case": "Spremeni velikost črk",
+  "Trim whitespace": "Odstrani presledke",
+  "Truncate to n characters": "Skrajšaj na n znakov",
+  "Replace text": "Zamenjaj besedilo",
+  "Fallback value": "Nadomestna vrednost",
+  "Get length": "Pridobi dolžino",
+  "First/last element": "Prvi/zadnji element",
+  "Join array": "Združi polje"
 }

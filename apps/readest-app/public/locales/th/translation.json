@@ -1058,5 +1058,17 @@
   "Increase font size": "เพิ่มขนาดตัวอักษร",
   "Focus": "โฟกัส",
   "Theme color": "สีธีม",
-  "Import failed": "นำเข้าล้มเหลว"
+  "Import failed": "นำเข้าล้มเหลว",
+  "Available Formatters:": "ตัวจัดรูปแบบที่ใช้ได้:",
+  "Format date": "จัดรูปแบบวันที่",
+  "Markdown block quote (> per line)": "บล็อกอ้างอิง Markdown (> ต่อบรรทัด)",
+  "Newlines to <br>": "ขึ้นบรรทัดใหม่เป็น <br>",
+  "Change case": "เปลี่ยนตัวพิมพ์",
+  "Trim whitespace": "ตัดช่องว่าง",
+  "Truncate to n characters": "ตัดให้เหลือ n ตัวอักษร",
+  "Replace text": "แทนที่ข้อความ",
+  "Fallback value": "ค่าสำรอง",
+  "Get length": "ดึงความยาว",
+  "First/last element": "องค์ประกอบแรก/สุดท้าย",
+  "Join array": "รวมอาร์เรย์"
 }

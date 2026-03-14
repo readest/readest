@@ -1070,5 +1070,17 @@
   "Increase font size": "ফন্টের আকার বাড়ান",
   "Focus": "ফোকাস",
   "Theme color": "থিম রঙ",
-  "Import failed": "আমদানি ব্যর্থ"
+  "Import failed": "আমদানি ব্যর্থ",
+  "Available Formatters:": "উপলব্ধ ফরম্যাটার:",
+  "Format date": "তারিখ ফরম্যাট",
+  "Markdown block quote (> per line)": "Markdown ব্লক কোট (প্রতি লাইনে >)",
+  "Newlines to <br>": "নতুন লাইন থেকে <br>",
+  "Change case": "অক্ষরের কেস পরিবর্তন",
+  "Trim whitespace": "শূন্যস্থান ছাঁটা",
+  "Truncate to n characters": "n অক্ষরে সংক্ষিপ্ত করুন",
+  "Replace text": "টেক্সট প্রতিস্থাপন",
+  "Fallback value": "ফলব্যাক মান",
+  "Get length": "দৈর্ঘ্য নিন",
+  "First/last element": "প্রথম/শেষ উপাদান",
+  "Join array": "অ্যারে যুক্ত করুন"
 }

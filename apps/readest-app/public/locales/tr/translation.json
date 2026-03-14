@@ -1070,5 +1070,17 @@
   "Increase font size": "Yazı tipi boyutunu büyüt",
   "Focus": "Odak",
   "Theme color": "Tema rengi",
-  "Import failed": "İçe aktarma başarısız"
+  "Import failed": "İçe aktarma başarısız",
+  "Available Formatters:": "Kullanılabilir Biçimlendiriciler:",
+  "Format date": "Tarih biçimlendir",
+  "Markdown block quote (> per line)": "Markdown blok alıntı (satır başına >)",
+  "Newlines to <br>": "Satır sonlarını <br> yap",
+  "Change case": "Büyük/küçük harf değiştir",
+  "Trim whitespace": "Boşlukları kırp",
+  "Truncate to n characters": "n karaktere kısalt",
+  "Replace text": "Metni değiştir",
+  "Fallback value": "Yedek değer",
+  "Get length": "Uzunluk al",
+  "First/last element": "İlk/son öğe",
+  "Join array": "Diziyi birleştir"
 }

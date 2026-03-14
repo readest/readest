@@ -1070,5 +1070,17 @@
   "Increase font size": "எழுத்துரு அளவை அதிகரி",
   "Focus": "குவியம்",
   "Theme color": "தீம் நிறம்",
-  "Import failed": "இறக்குமதி தோல்வி"
+  "Import failed": "இறக்குமதி தோல்வி",
+  "Available Formatters:": "கிடைக்கும் வடிவமைப்பிகள்:",
+  "Format date": "தேதி வடிவமைப்பு",
+  "Markdown block quote (> per line)": "Markdown மேற்கோள் தொகுதி (ஒவ்வொரு வரிக்கும் >)",
+  "Newlines to <br>": "புதிய வரிகளை <br> ஆக",
+  "Change case": "எழுத்து வகை மாற்றம்",
+  "Trim whitespace": "வெற்றிடங்களை நீக்கு",
+  "Truncate to n characters": "n எழுத்துகளுக்கு சுருக்கு",
+  "Replace text": "உரையை மாற்று",
+  "Fallback value": "இயல்புநிலை மதிப்பு",
+  "Get length": "நீளத்தைப் பெறு",
+  "First/last element": "முதல்/கடைசி உறுப்பு",
+  "Join array": "அணியை இணை"
 }

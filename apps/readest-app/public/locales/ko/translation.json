@@ -1058,5 +1058,17 @@
   "Increase font size": "글꼴 크기 늘리기",
   "Focus": "초점",
   "Theme color": "테마 색상",
-  "Import failed": "가져오기 실패"
+  "Import failed": "가져오기 실패",
+  "Available Formatters:": "사용 가능한 포맷터:",
+  "Format date": "날짜 형식",
+  "Markdown block quote (> per line)": "Markdown 인용 블록 (줄마다 >)",
+  "Newlines to <br>": "줄바꿈을 <br>로 변환",
+  "Change case": "대소문자 변경",
+  "Trim whitespace": "공백 제거",
+  "Truncate to n characters": "n자로 자르기",
+  "Replace text": "텍스트 바꾸기",
+  "Fallback value": "기본값",
+  "Get length": "길이 가져오기",
+  "First/last element": "첫 번째/마지막 요소",
+  "Join array": "배열 합치기"
 }

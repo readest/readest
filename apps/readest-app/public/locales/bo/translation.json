@@ -1058,5 +1058,17 @@
   "Increase font size": "ཡིག་གཟུགས་ཆེ་རུ་གཏོང་བ",
   "Focus": "དམིགས་གཏད",
   "Theme color": "བརྗོད་དོན་ཚོན་མདོག",
-  "Import failed": "ནང་འདྲེན་མི་ཐུབ།"
+  "Import failed": "ནང་འདྲེན་མི་ཐུབ།",
+  "Available Formatters:": "སྒྲིག་བཟོ་ཆས་ཡོད་པ།:",
+  "Format date": "ཚེས་གྲངས་སྒྲིག་བཟོ",
+  "Markdown block quote (> per line)": "Markdown དྲིལ་བསྡུ་འདྲེན་ (མི་ལྟར་ > )",
+  "Newlines to <br>": "གསར་བརྗེ་ <br> ལ་བསྒྱུར",
+  "Change case": "ཡིག་གཟུགས་བསྒྱུར",
+  "Trim whitespace": "སྟོང་ཆ་གཙང་བཟོ",
+  "Truncate to n characters": "n ཡི་གེར་ཐུང་དུ་བཅད",
+  "Replace text": "ཡི་གེ་བརྗེ་བ",
+  "Fallback value": "ཚབ་ཀྱི་གྲངས་ཀ",
+  "Get length": "རིང་ཚད་ལེན",
+  "First/last element": "དང་པོ/མཇུག་གི་རྒྱུ་ཆ",
+  "Join array": "ཚོ་སྒྲིག་སྦྲེལ"
 }

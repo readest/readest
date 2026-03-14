@@ -1118,5 +1118,17 @@
   "Increase font size": "تكبير حجم الخط",
   "Focus": "تركيز",
   "Theme color": "لون السمة",
-  "Import failed": "فشل الاستيراد"
+  "Import failed": "فشل الاستيراد",
+  "Available Formatters:": "المُنسّقات المتاحة:",
+  "Format date": "تنسيق التاريخ",
+  "Markdown block quote (> per line)": "اقتباس Markdown (> لكل سطر)",
+  "Newlines to <br>": "أسطر جديدة إلى <br>",
+  "Change case": "تغيير حالة الأحرف",
+  "Trim whitespace": "إزالة المسافات",
+  "Truncate to n characters": "اقتطاع إلى n حرف",
+  "Replace text": "استبدال النص",
+  "Fallback value": "القيمة الاحتياطية",
+  "Get length": "الحصول على الطول",
+  "First/last element": "العنصر الأول/الأخير",
+  "Join array": "دمج المصفوفة"
 }

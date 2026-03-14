@@ -1094,5 +1094,17 @@
   "Increase font size": "Збільшити розмір шрифту",
   "Focus": "Фокус",
   "Theme color": "Колір теми",
-  "Import failed": "Помилка імпорту"
+  "Import failed": "Помилка імпорту",
+  "Available Formatters:": "Доступні форматери:",
+  "Format date": "Форматувати дату",
+  "Markdown block quote (> per line)": "Цитата Markdown (> для кожного рядка)",
+  "Newlines to <br>": "Переноси рядків у <br>",
+  "Change case": "Змінити регістр",
+  "Trim whitespace": "Видалити пробіли",
+  "Truncate to n characters": "Обрізати до n символів",
+  "Replace text": "Замінити текст",
+  "Fallback value": "Значення за замовчуванням",
+  "Get length": "Отримати довжину",
+  "First/last element": "Перший/останній елемент",
+  "Join array": "Об'єднати масив"
 }

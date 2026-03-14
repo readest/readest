@@ -1058,5 +1058,17 @@
   "Increase font size": "Tăng cỡ chữ",
   "Focus": "Tiêu điểm",
   "Theme color": "Màu chủ đề",
-  "Import failed": "Nhập thất bại"
+  "Import failed": "Nhập thất bại",
+  "Available Formatters:": "Bộ định dạng có sẵn:",
+  "Format date": "Định dạng ngày",
+  "Markdown block quote (> per line)": "Trích dẫn khối Markdown (> mỗi dòng)",
+  "Newlines to <br>": "Xuống dòng thành <br>",
+  "Change case": "Đổi chữ hoa/thường",
+  "Trim whitespace": "Cắt khoảng trắng",
+  "Truncate to n characters": "Cắt ngắn còn n ký tự",
+  "Replace text": "Thay thế văn bản",
+  "Fallback value": "Giá trị dự phòng",
+  "Get length": "Lấy độ dài",
+  "First/last element": "Phần tử đầu/cuối",
+  "Join array": "Nối mảng"
 }
