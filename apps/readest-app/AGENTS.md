@@ -6,7 +6,7 @@ Readest is a cross-platform ebook reader built as a **Next.js 16 + Tauri v2** hy
 
 ```bash
 # Development
-pnpm dev-web              # Web-only dev server (no Rust compilation needed)
+pnpm dev-web               # Web-only dev server (no Rust compilation needed)
 pnpm tauri dev             # Desktop dev with Tauri (compiles Rust backend)
 
 # Building
@@ -27,7 +27,8 @@ pnpm format                # Prettier (runs from monorepo root)
 pnpm format:check          # Check formatting without writing
 
 # Rust
-pnpm clippy                # Lint Rust code (src-tauri)
+pnpm fmt:check             # Check formatting Rust code (src-tauri)
+pnpm clippy:check          # Lint Rust code (src-tauri)
 ```
 
 ### Source Layout
@@ -57,23 +58,7 @@ Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Cu
 
 ## Project Rules
 
-### Test-First Development
-
-- Always write a failing unit test **before** implementing a fix.
-- Run the test to confirm it reproduces the bug or fails as expected, then apply the fix and verify the test passes.
-- Run the full test suite (`pnpm test`) after changes to ensure no regressions.
-
-### TypeScript
-
-- Never use the `any` type. Use `unknown`, proper types, or generics instead.
-- Strict mode is enabled. Target is ES2022.
-- Unused vars prefixed with `_` are allowed (ESLint configured).
-
-### Build Constraints
-
-- No optional chaining (`?.`) in build output — verified by `check:optional-chaining`.
-- No lookbehind regex in build output — verified by `check:lookbehind-regex`.
-- Run `pnpm build-check` (builds both targets + runs all checks) before submitting.
+Rules are in `.claude/rules/`: test-first, typescript, build-constraints, verification.
 
 ### i18n
 

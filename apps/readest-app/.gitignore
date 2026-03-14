@@ -64,3 +64,5 @@ src-tauri/gen
 /public/swe-worker-*.js
 
 /dist/
+
+.claude/settings.local.json

@@ -47,7 +47,8 @@ fastlane/report.xml
 # nix
 result*
 
-
 .playwright-mcp/
-.claude/
+
+.claude/worktrees
+.claude/settings.local.json
 
