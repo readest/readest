@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { WebAppService } from '@/services/webAppService';
 import { fsTests } from './suites/fs-tests';
 import { libraryTests } from './suites/library-tests';
+import { bookTests } from './suites/book-tests';
+
+async function getBookFile(name: string): Promise<File> {
+  const url = new URL(`../fixtures/data/${name}`, import.meta.url).href;
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new File([blob], name, { type: blob.type });
+}
 
 /** Clear all records from the IndexedDB object store without deleting the database. */
 async function clearStore() {
@@ -55,4 +63,5 @@ describe('WebAppService', () => {
 
   fsTests(() => service);
   libraryTests(() => service);
+  bookTests(() => service, getBookFile);
 });

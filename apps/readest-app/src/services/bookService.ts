@@ -1,6 +1,13 @@
 import { SystemSettings } from '@/types/settings';
 import { FileSystem, AppPlatform, BaseDir } from '@/types/system';
-import { Book, BookConfig, BookContent, BookFormat, FIXED_LAYOUT_FORMATS } from '@/types/book';
+import {
+  Book,
+  BookConfig,
+  BookContent,
+  BookFormat,
+  BookNote,
+  FIXED_LAYOUT_FORMATS,
+} from '@/types/book';
 import {
   getDir,
   getLocalBookFilename,
@@ -23,8 +30,6 @@ import { TxtToEpubConverter } from '@/utils/txt';
 import { svg2png } from '@/utils/svg';
 import { BookFileNotFoundError } from './errors';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-
-// --- Cover Image ---
 
 export interface CoverContext {
   fs: FileSystem;
@@ -105,6 +110,76 @@ export async function updateCoverImage(
   }
 }
 
+// --- Book Merge ---
+
+/**
+ * Merge duplicate book entries that share the same metaHash and format as `book`.
+ * Finds all other matching books in the array, selects the base config with the
+ * largest reading progress page number, merges booknotes from all configs
+ * (deduplicating by id, latest updatedAt wins), soft-deletes duplicates
+ * (sets deletedAt), and cleans up their directories.
+ *
+ * @returns The merged config as a JSON string, or undefined if no duplicates were found.
+ */
+export async function mergeBooks(
+  fs: FileSystem,
+  books: Book[],
+  book: Book,
+): Promise<string | undefined> {
+  if (!book.metaHash) return undefined;
+
+  const duplicates = books.filter(
+    (b) => b.metaHash === book.metaHash && b.format === book.format && !b.deletedAt && b !== book,
+  );
+  if (duplicates.length === 0) return undefined;
+
+  const allCandidates = [book, ...duplicates];
+  const configs: Partial<BookConfig>[] = [];
+  for (const candidate of allCandidates) {
+    const configPath = getConfigFilename(candidate);
+    if (await fs.exists(configPath, 'Books')) {
+      try {
+        const str = (await fs.readFile(configPath, 'Books', 'text')) as string;
+        configs.push(JSON.parse(str));
+      } catch {
+        /* ignore corrupt configs */
+      }
+    }
+  }
+
+  let mergedConfigData: string | undefined;
+  if (configs.length > 0) {
+    const base = configs.reduce((best, cfg) => {
+      const bestPage = best.progress?.[0] ?? 0;
+      const cfgPage = cfg.progress?.[0] ?? 0;
+      return cfgPage > bestPage ? cfg : best;
+    });
+
+    const noteMap = new Map<string, BookNote>();
+    for (const cfg of configs) {
+      for (const note of cfg.booknotes ?? []) {
+        const existing = noteMap.get(note.id);
+        if (!existing || (note.updatedAt || 0) > (existing.updatedAt || 0)) {
+          noteMap.set(note.id, note);
+        }
+      }
+    }
+    base.booknotes = [...noteMap.values()];
+
+    mergedConfigData = JSON.stringify(base);
+  }
+
+  for (const dup of duplicates) {
+    dup.deletedAt = Date.now();
+    const dupDir = getDir(dup);
+    if (await fs.exists(dupDir, 'Books')) {
+      await fs.removeDir(dupDir, 'Books', true);
+    }
+  }
+
+  return mergedConfigData;
+}
+
 // --- Book Import ---
 
 export async function importBook(
@@ -174,15 +249,23 @@ export async function importBook(
       existingBook.updatedAt = Date.now();
     }
 
-    // Check for metaHash match if no exact file match (different file, same book metadata)
-    if (!existingBook && !transient && metaHash) {
-      const metaHashBook = books.find((b) => b.metaHash === metaHash && !b.deletedAt);
-      if (metaHashBook) {
-        oldBookDir = getDir(metaHashBook);
-        existingBook = metaHashBook;
-        metaHashMatch = true;
-        existingBook.createdAt = Date.now();
-        existingBook.updatedAt = Date.now();
+    // Aggregate all books with same metaHash and format, deduplicating into one entry
+    let bestConfigData: string | undefined;
+    if (!transient && metaHash) {
+      if (!existingBook) {
+        const firstMatch = books.find(
+          (b) => b.metaHash === metaHash && b.format === format && !b.deletedAt,
+        );
+        if (firstMatch) {
+          oldBookDir = getDir(firstMatch);
+          existingBook = firstMatch;
+          metaHashMatch = true;
+          existingBook.createdAt = Date.now();
+          existingBook.updatedAt = Date.now();
+        }
+      }
+      if (existingBook) {
+        bestConfigData = await mergeBooks(fs, books, existingBook);
       }
     }
 
@@ -276,20 +359,34 @@ export async function importBook(
       books.splice(0, 0, book);
     } else if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
       // Migrate config from old directory to new directory, updating bookHash and metaHash
-      const oldConfigPath = `${oldBookDir}/config.json`;
-      if (await fs.exists(oldConfigPath, 'Books')) {
-        const configData = (await fs.readFile(oldConfigPath, 'Books', 'text')) as string;
-        const config: Partial<BookConfig> = JSON.parse(configData);
+      // Use aggregated best config when available from deduplication
+      if (bestConfigData) {
+        const config: Partial<BookConfig> = JSON.parse(bestConfigData);
         config.bookHash = hash;
         config.metaHash = metaHash;
         await fs.writeFile(getConfigFilename(book), 'Books', JSON.stringify(config));
       } else {
-        await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+        const oldConfigPath = `${oldBookDir}/config.json`;
+        if (await fs.exists(oldConfigPath, 'Books')) {
+          const configData = (await fs.readFile(oldConfigPath, 'Books', 'text')) as string;
+          const config: Partial<BookConfig> = JSON.parse(configData);
+          config.bookHash = hash;
+          config.metaHash = metaHash;
+          await fs.writeFile(getConfigFilename(book), 'Books', JSON.stringify(config));
+        } else {
+          await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+        }
       }
       // Clean up old directory
       if (await fs.exists(oldBookDir, 'Books')) {
         await fs.removeDir(oldBookDir, 'Books', true);
       }
+    } else if (bestConfigData) {
+      // Exact hash match with duplicates removed — adopt the best config
+      const config: Partial<BookConfig> = JSON.parse(bestConfigData);
+      config.bookHash = hash;
+      config.metaHash = metaHash;
+      await fs.writeFile(getConfigFilename(book), 'Books', JSON.stringify(config));
     }
 
     // update file links with url or path or content uri
