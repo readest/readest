@@ -385,7 +385,30 @@ describe('getGroupSortValue', () => {
     expect(getGroupSortValue(group, LibrarySortByType.Title)).toBe('My Series');
   });
 
-  it('should return group name for author sort', () => {
+  it('should return last-name-first for author group sorted by author', () => {
+    const group = createMockGroup({
+      name: 'Terry Pratchett',
+      books: [createMockBook({ author: 'Terry Pratchett' })],
+    });
+    expect(getGroupSortValue(group, LibrarySortByType.Author, LibraryGroupByType.Author)).toBe(
+      'Pratchett, Terry',
+    );
+  });
+
+  it('should return book author for series group sorted by author', () => {
+    const group = createMockGroup({
+      name: 'Discworld',
+      books: [
+        createMockBook({ author: 'Terry Pratchett', primaryLanguage: 'en' }),
+        createMockBook({ author: 'Terry Pratchett', primaryLanguage: 'en' }),
+      ],
+    });
+    expect(getGroupSortValue(group, LibrarySortByType.Author, LibraryGroupByType.Series)).toBe(
+      'Pratchett, Terry',
+    );
+  });
+
+  it('should fallback to group name for author sort without groupBy', () => {
     const group = createMockGroup({ name: 'John Smith' });
     expect(getGroupSortValue(group, LibrarySortByType.Author)).toBe('John Smith');
   });
@@ -535,6 +558,51 @@ describe('createGroupSorter', () => {
 
     expect(sorted[0]!.name).toBe('Group A');
     expect(sorted[1]!.name).toBe('Group B');
+  });
+
+  it('should sort series groups by book author when sorting by author', () => {
+    const groups = [
+      createMockGroup({
+        name: 'Discworld',
+        books: [createMockBook({ author: 'Terry Pratchett', primaryLanguage: 'en' })],
+      }),
+      createMockGroup({
+        name: 'Foundation',
+        books: [createMockBook({ author: 'Isaac Asimov', primaryLanguage: 'en' })],
+      }),
+    ];
+
+    const sorter = createGroupSorter(LibrarySortByType.Author, 'en', LibraryGroupByType.Series);
+    const sorted = [...groups].sort(sorter);
+
+    // Asimov < Pratchett (by last name)
+    expect(sorted[0]!.name).toBe('Foundation');
+    expect(sorted[1]!.name).toBe('Discworld');
+  });
+
+  it('should sort author groups by last name when sorting by author', () => {
+    const groups = [
+      createMockGroup({
+        name: 'Terry Pratchett',
+        books: [createMockBook({ author: 'Terry Pratchett' })],
+      }),
+      createMockGroup({
+        name: 'Umberto Eco',
+        books: [createMockBook({ author: 'Umberto Eco' })],
+      }),
+      createMockGroup({
+        name: 'Isaac Asimov',
+        books: [createMockBook({ author: 'Isaac Asimov' })],
+      }),
+    ];
+
+    const sorter = createGroupSorter(LibrarySortByType.Author, 'en', LibraryGroupByType.Author);
+    const sorted = [...groups].sort(sorter);
+
+    // Last names: Asimov, Eco, Pratchett
+    expect(sorted[0]!.name).toBe('Isaac Asimov');
+    expect(sorted[1]!.name).toBe('Umberto Eco');
+    expect(sorted[2]!.name).toBe('Terry Pratchett');
   });
 });
 

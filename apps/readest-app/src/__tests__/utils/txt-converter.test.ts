@@ -171,9 +171,11 @@ describe('TxtToEpubConverter', () => {
     const reader = new ZipReader(new BlobReader(blob));
     try {
       const entries = await reader.getEntries();
-      const chapterEntry = entries.find((entry) => entry.filename === 'OEBPS/chapter1.xhtml');
+      const chapterEntry = entries.find((entry) => entry.filename === 'OEBPS/chapter1.xhtml') as {
+        getData?: (writer: unknown) => Promise<string>;
+      };
       expect(chapterEntry).toBeDefined();
-      const chapterContent = await chapterEntry!.getData(new TextWriter());
+      const chapterContent = await chapterEntry?.getData?.(new TextWriter());
       expect(chapterContent).toContain('lang="zh"');
       expect(chapterContent).toContain('xml:lang="zh"');
     } finally {
@@ -256,6 +258,60 @@ describe('TxtToEpubConverter', () => {
 
     expect(arrayBufferCalled).toBe(false);
     expect(result.chapterCount).toBe(2);
+  });
+
+  it('convert large file should work when stream() is built from slice() like RemoteFile', async () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const content = '第一章 开始\n这是第一章的内容。\n\n第二章 继续\n这是第二章的内容。';
+    const backingBlob = new Blob([content]);
+
+    // Simulate a fixed RemoteFile: stream() reads data via slice(), not from base File([])
+    const fixedFile = new File([], 'large.txt');
+    const fileSize = 9 * 1024 * 1024;
+    Object.defineProperty(fixedFile, 'size', { value: fileSize });
+    Object.defineProperty(fixedFile, 'slice', {
+      value: (start?: number, end?: number) => backingBlob.slice(start, end),
+    });
+    Object.defineProperty(fixedFile, 'stream', {
+      value: () => {
+        const CHUNK_SIZE = 1024 * 1024;
+        let offset = 0;
+        return new ReadableStream<Uint8Array>({
+          pull: async (controller) => {
+            if (offset >= fileSize) {
+              controller.close();
+              return;
+            }
+            const end = Math.min(offset + CHUNK_SIZE, fileSize);
+            const buf = await backingBlob.slice(offset, end).arrayBuffer();
+            controller.enqueue(new Uint8Array(buf));
+            offset = end;
+          },
+        });
+      },
+    });
+
+    converter.createEpub = async () => new Blob();
+
+    const result = await converter.convert({ file: fixedFile });
+    expect(result.chapterCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('convert large file should fail when stream() returns empty data (unfixed RemoteFile)', async () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+
+    // Simulate the bug: RemoteFile with unoverridden stream() returns empty data
+    const brokenFile = new File([], 'large.txt');
+    Object.defineProperty(brokenFile, 'size', { value: 9 * 1024 * 1024 });
+    Object.defineProperty(brokenFile, 'slice', {
+      value: (start?: number, end?: number) =>
+        new Blob(['第一章 开始\n内容\n\n第二章 继续\n内容']).slice(start, end),
+    });
+    // stream() is NOT overridden — inherits base File's empty stream
+
+    converter.createEpub = async () => new Blob();
+
+    await expect(converter.convert({ file: brokenFile })).rejects.toThrow('No chapters detected');
   });
 
   it('iterateSegmentsFromFile should cancel stream on early return', async () => {

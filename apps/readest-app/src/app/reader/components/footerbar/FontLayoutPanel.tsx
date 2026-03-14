@@ -41,7 +41,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   marginIconSize,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
   const view = getView(bookKey);
@@ -98,7 +98,14 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   );
 
   return (
-    <div className={classes} style={{ bottom: bottomOffset }}>
+    <div
+      className={classes}
+      style={{
+        bottom: appService?.isAndroidApp
+          ? `calc(env(safe-area-inset-bottom) + 64px)`
+          : bottomOffset,
+      }}
+    >
       <Slider
         label={_('Font Size')}
         initialValue={viewSettings?.defaultFontSize ?? FONT_SIZE_LIMITS.DEFAULT}

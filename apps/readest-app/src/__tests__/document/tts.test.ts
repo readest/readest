@@ -1,17 +1,6 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { textWalker } from 'foliate-js/text-walker.js';
 import { TTS } from 'foliate-js/tts.js';
-
-beforeAll(() => {
-  if (typeof CSS === 'undefined' || !CSS.escape) {
-    Object.defineProperty(globalThis, 'CSS', {
-      value: {
-        escape: (s: string) => s.replace(/([^\w-])/g, '\\$1'),
-      },
-      writable: true,
-    });
-  }
-});
 
 const createHTMLDoc = (bodyHTML: string, attrs: Record<string, string> = {}): Document => {
   const parser = new DOMParser();

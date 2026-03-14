@@ -106,7 +106,6 @@
   "Wikipedia": "Википедия",
   "Writing Mode": "Режим записи",
   "Your Library": "Ваша библиотека",
-  "TTS not supported for PDF": "TTS не поддерживается для PDF",
   "Override Book Font": "Переопределить шрифт книги",
   "Apply to All Books": "Применить ко всем книгам",
   "Apply to This Book": "Применить к этой книге",
@@ -1042,10 +1041,8 @@
   "Play (Space)": "Воспроизведение (Пробел)",
   "Skip forward 15 words": "Вперед на 15 слов",
   "Forward 15 words (Shift+Right)": "Вперед на 15 слов (Shift+Вправо)",
-  "Pause:": "Пауза:",
   "Decrease speed": "Уменьшить скорость",
   "Slower (Left/Down)": "Медленнее (Влево/Вниз)",
-  "Current speed": "Текущая скорость",
   "Increase speed": "Увеличить скорость",
   "Faster (Right/Up)": "Быстрее (Вправо/Вверх)",
   "Start RSVP Reading": "Начать чтение RSVP",
@@ -1167,5 +1164,13 @@
   "Annotation page number": "Номер страницы аннотации",
   "Translating...": "Перевод...",
   "Show Battery Percentage": "Показывать процент заряда батареи",
-  "Hide Scrollbar": "Скрыть полосу прокрутки"
+  "Hide Scrollbar": "Скрыть полосу прокрутки",
+  "Skip to last reading position": "Перейти к последней позиции чтения",
+  "Show context": "Показать контекст",
+  "Hide context": "Скрыть контекст",
+  "Decrease font size": "Уменьшить размер шрифта",
+  "Increase font size": "Увеличить размер шрифта",
+  "Focus": "Фокус",
+  "Theme color": "Цвет темы",
+  "Import failed": "Ошибка импорта"
 }

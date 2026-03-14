@@ -12,6 +12,7 @@ import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
+import { getImportErrorMessage } from '@/services/errors';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
@@ -495,14 +496,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const { library } = useLibraryStore.getState();
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const successfulImports: string[] = [];
-    const errorMap: [string, string][] = [
-      ['No chapters detected', _('No chapters detected')],
-      ['Failed to parse EPUB', _('Failed to parse the EPUB file')],
-      ['Unsupported format', _('This book format is not supported')],
-      ['Failed to open file', _('Failed to open the book file')],
-      ['Invalid or empty book file', _('The book file is empty')],
-      ['Unsupported or corrupted book file', _('The book file is corrupted')],
-    ];
 
     const processFile = async (selectedFile: SelectedFile): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
@@ -530,10 +523,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
         const baseFilename = getFilename(filename);
-        const errorMessage =
-          error instanceof Error
-            ? errorMap.find(([str]) => error.message.includes(str))?.[1] || error.message
-            : '';
+        const errorMessage = error instanceof Error ? _(getImportErrorMessage(error.message)) : '';
         failedImports.push({ filename: baseFilename, errorMessage });
         console.error('Failed to import book:', filename, error);
         return null;

@@ -179,9 +179,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const viewSettings = getViewSettings(sideBarBookKey)!;
     viewSettings!.zoomLevel = zoomLevel;
     setViewSettings(sideBarBookKey, viewSettings!);
-    view?.renderer.setStyles?.(getStyles(viewSettings!));
-    if (bookData?.bookDoc?.rendition?.layout === 'pre-paginated') {
+    if (bookData?.isFixedLayout) {
       view?.renderer.setAttribute('scale-factor', zoomLevel);
+    } else {
+      view?.renderer.setStyles?.(getStyles(viewSettings!));
     }
   };
 
@@ -246,14 +247,23 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     return true;
   };
 
+  const handlePinchZoom = (event: CustomEvent) => {
+    const zoomLevel = event.detail?.zoomLevel;
+    if (zoomLevel != null) {
+      applyZoomLevel(zoomLevel);
+    }
+  };
+
   useEffect(() => {
     eventDispatcher.on('zoom-in', handleZoomIn);
     eventDispatcher.on('zoom-out', handleZoomOut);
     eventDispatcher.on('reset-zoom', resetZoom);
+    eventDispatcher.on('pinch-zoom', handlePinchZoom);
     return () => {
       eventDispatcher.off('zoom-in', handleZoomIn);
       eventDispatcher.off('zoom-out', handleZoomOut);
       eventDispatcher.off('reset-zoom', resetZoom);
+      eventDispatcher.off('pinch-zoom', handlePinchZoom);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);

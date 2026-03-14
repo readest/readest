@@ -213,6 +213,7 @@ export const usePagination = (
       } else if (
         msg.type === 'touch-swipe' &&
         bookData.isFixedLayout &&
+        !viewSettings?.scrolled &&
         !isPanningView(viewRef.current, viewSettings)
       ) {
         const { deltaX, deltaY, deltaT } = msg.detail;
@@ -245,8 +246,8 @@ export const usePagination = (
     const renderer = viewRef.current?.renderer;
     const viewSettings = getViewSettings(bookKey)!;
     const bookData = getBookData(bookKey)!;
-    // Currently continuous scroll is not supported in pre-paginated layout
-    if (bookData.bookDoc?.rendition?.layout === 'pre-paginated') return;
+    // Continuous scroll is not supported in pre-paginated layout unless scrolled mode is active
+    if (bookData.bookDoc?.rendition?.layout === 'pre-paginated' && !viewSettings.scrolled) return;
 
     if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
       const doScroll = () => {

@@ -45,6 +45,7 @@ export interface FoliateView extends HTMLElement {
   ) => Promise<void>;
   book: BookDoc;
   tts: TTS | null;
+  isFixedLayout: boolean;
   language: {
     locale?: LocaleWithTextInfo;
     isCJK?: boolean;
@@ -80,7 +81,7 @@ export interface FoliateView extends HTMLElement {
     goTo?: (params: { index: number; anchor?: number | RangeAnchor }) => void;
     setStyles?: (css: string) => void;
     getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
-    scrollToAnchor: (anchor: number | Range) => void;
+    scrollToAnchor?: (anchor: number | Range, reason?: string, smooth?: boolean) => void;
     addEventListener: (
       type: string,
       listener: EventListener,
@@ -93,6 +94,8 @@ export interface FoliateView extends HTMLElement {
       options: { isVertical: boolean; color: string; radius: number },
     ) => void;
     hideLoupe?: () => void;
+    pinchZoom?: (ratio: number) => void;
+    pinchEnd?: () => void;
   };
 }
 

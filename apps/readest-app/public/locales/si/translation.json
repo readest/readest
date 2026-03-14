@@ -319,7 +319,6 @@
   "Table of Contents": "සූචිය",
   "Sidebar": "පැති තීරුව",
   "Disable Translation": "පරිවර්තනය අබල කරන්න",
-  "TTS not supported for PDF": "PDF සඳහා TTS සහාය නොදක්වයි",
   "TTS not supported for this document": "මෙම ලේඛනය සඳහා TTS සහාය නොදක්වයි",
   "No Timeout": "කාල සීමාවක් නැත",
   "{{value}} minute": "මිනිත්තු {{value}}",
@@ -1018,10 +1017,8 @@
   "Play (Space)": "ධාවනය (Space)",
   "Skip forward 15 words": "වචන 15ක් ඉදිරියට",
   "Forward 15 words (Shift+Right)": "වචන 15ක් ඉදිරියට (Shift+Right)",
-  "Pause:": "විරාමය:",
   "Decrease speed": "වේගය අඩු කරන්න",
   "Slower (Left/Down)": "මන්දගාමී (Left/Down)",
-  "Current speed": "වත්මන් වේගය",
   "Increase speed": "වේගය වැඩි කරන්න",
   "Faster (Right/Up)": "වේගවත් (Right/Up)",
   "Start RSVP Reading": "RSVP කියවීම ආරම්භ කරන්න",
@@ -1143,5 +1140,13 @@
   "Annotation page number": "විවරණ පිටු අංකය",
   "Translating...": "පරිවර්තනය වෙමින් පවතී...",
   "Show Battery Percentage": "බැටරි ප්‍රතිශතය පෙන්වන්න",
-  "Hide Scrollbar": "අනුචලන තීරුව සඟවන්න"
+  "Hide Scrollbar": "අනුචලන තීරුව සඟවන්න",
+  "Skip to last reading position": "අවසන් කියවීමේ ස්ථානයට යන්න",
+  "Show context": "සන්දර්භය පෙන්වන්න",
+  "Hide context": "සන්දර්භය සඟවන්න",
+  "Decrease font size": "අකුරු ප්‍රමාණය අඩු කරන්න",
+  "Increase font size": "අකුරු ප්‍රමාණය වැඩි කරන්න",
+  "Focus": "අවධානය",
+  "Theme color": "තේමා වර්ණය",
+  "Import failed": "ආයාත කිරීම අසාර්ථකයි"
 }

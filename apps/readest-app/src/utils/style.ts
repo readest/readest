@@ -316,6 +316,11 @@ const getLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  li {
+    line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
+    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
+    hyphens: ${hyphenate ? 'auto' : 'manual'};
+  }
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};

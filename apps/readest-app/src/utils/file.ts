@@ -453,6 +453,26 @@ export class RemoteFile extends File implements ClosableFile {
     return new DeferredBlob(dataPromise, contentType);
   }
 
+  override stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
+    const CHUNK_SIZE = 1024 * 1024;
+    let offset = 0;
+
+    return new ReadableStream<Uint8Array<ArrayBuffer>>({
+      pull: async (controller) => {
+        if (offset >= this.size) {
+          controller.close();
+          return;
+        }
+
+        const end = Math.min(offset + CHUNK_SIZE, this.size);
+        const buffer = await this.fetchRange(offset, end - 1);
+
+        controller.enqueue(new Uint8Array(buffer));
+        offset = end;
+      },
+    });
+  }
+
   override async text() {
     const blob = this.slice(0, this.size);
     return blob.text();

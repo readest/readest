@@ -4,6 +4,7 @@ import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { getNavigationIcon, getNavigationLabel, getNavigationHandler } from './utils';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ViewSettings } from '@/types/book';
@@ -29,10 +30,11 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   progressValid,
   navigationHandlers,
   viewSettings,
-  bottomOffset: mobileBottomOffset,
+  bottomOffset,
   sliderHeight,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { getView } = useReaderStore();
   const view = getView(bookKey);
 
@@ -63,7 +65,14 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   );
 
   return (
-    <div className={classes} style={{ bottom: mobileBottomOffset }}>
+    <div
+      className={classes}
+      style={{
+        bottom: appService?.isAndroidApp
+          ? `calc(env(safe-area-inset-bottom) + 64px)`
+          : bottomOffset,
+      }}
+    >
       <div className='flex w-full items-center justify-between gap-x-6'>
         <Slider
           label={_('Reading Progress')}

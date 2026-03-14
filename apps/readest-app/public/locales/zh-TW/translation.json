@@ -106,7 +106,6 @@
   "Wikipedia": "維基百科",
   "Writing Mode": "排版模式",
   "Your Library": "書庫",
-  "TTS not supported for PDF": "PDF 文檔暫不支持 TTS",
   "Override Book Font": "覆蓋書籍字體",
   "Apply to All Books": "應用於所有書籍",
   "Apply to This Book": "應用於此書籍",
@@ -1006,10 +1005,8 @@
   "Play (Space)": "播放 (空格)",
   "Skip forward 15 words": "前進 15 詞",
   "Forward 15 words (Shift+Right)": "前進 15 詞 (Shift+Right)",
-  "Pause:": "暫停：",
   "Decrease speed": "減速",
   "Slower (Left/Down)": "較慢 (左/下)",
-  "Current speed": "當前速度",
   "Increase speed": "加速",
   "Faster (Right/Up)": "較快 (右/上)",
   "Start RSVP Reading": "開始 RSVP 閱讀",
@@ -1131,5 +1128,13 @@
   "Annotation page number": "註解頁碼",
   "Translating...": "翻譯中...",
   "Show Battery Percentage": "顯示電池百分比",
-  "Hide Scrollbar": "隱藏滾動條"
+  "Hide Scrollbar": "隱藏滾動條",
+  "Skip to last reading position": "跳至上次閱讀位置",
+  "Show context": "顯示上下文",
+  "Hide context": "隱藏上下文",
+  "Decrease font size": "縮小字型",
+  "Increase font size": "放大字型",
+  "Focus": "焦點",
+  "Theme color": "主題顏色",
+  "Import failed": "匯入失敗"
 }

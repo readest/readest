@@ -105,7 +105,6 @@
   "Wikipedia": "ویکی‌پدیا",
   "Writing Mode": "حالت نوشتن",
   "Your Library": "کتابخانه‌ی شما",
-  "TTS not supported for PDF": "قابلیت تبدیل متن به گفتار برای PDF پشتیبانی نمی‌شود",
   "Override Book Font": "جایگزینی فونت کتاب",
   "Apply to All Books": "اِعمال برای همه‌ی کتاب‌ها",
   "Apply to This Book": "اِعمال برای این کتاب",
@@ -1018,10 +1017,8 @@
   "Play (Space)": "پخش (Space)",
   "Skip forward 15 words": "۱۵ کلمه به جلو",
   "Forward 15 words (Shift+Right)": "۱۵ کلمه به جلو (Shift+Right)",
-  "Pause:": "توقف:",
   "Decrease speed": "کاهش سرعت",
   "Slower (Left/Down)": "کندتر (Left/Down)",
-  "Current speed": "سرعت فعلی",
   "Increase speed": "افزایش سرعت",
   "Faster (Right/Up)": "سریع‌تر (Right/Up)",
   "Start RSVP Reading": "شروع مطالعه RSVP",
@@ -1143,5 +1140,13 @@
   "Annotation page number": "شماره صفحه یادداشت",
   "Translating...": "در حال ترجمه...",
   "Show Battery Percentage": "نمایش درصد باتری",
-  "Hide Scrollbar": "مخفی کردن نوار پیمایش"
+  "Hide Scrollbar": "مخفی کردن نوار پیمایش",
+  "Skip to last reading position": "رفتن به آخرین موقعیت مطالعه",
+  "Show context": "نمایش زمینه",
+  "Hide context": "پنهان کردن زمینه",
+  "Decrease font size": "کاهش اندازه قلم",
+  "Increase font size": "افزایش اندازه قلم",
+  "Focus": "تمرکز",
+  "Theme color": "رنگ پوسته",
+  "Import failed": "وارد کردن ناموفق بود"
 }

@@ -113,7 +113,9 @@ export class TTSController extends EventTarget {
         const { style, color } = this.options;
         overlayer?.remove(HIGHLIGHT_KEY);
         overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
-      } catch {}
+      } catch (e) {
+        console.error('Failed to highlight range', e);
+      }
     };
   }
 
@@ -122,14 +124,15 @@ export class TTSController extends EventTarget {
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 
-  async initViewTTS(options?: TTSHighlightOptions) {
-    if (options) {
-      this.options.style = options.style;
-      this.options.color = options.color;
-    }
-    const currentSectionIndex = this.view.renderer.getContents()[0]?.index ?? 0;
+  updateHighlightOptions(options: TTSHighlightOptions) {
+    this.options.style = options.style;
+    this.options.color = options.color;
+  }
+
+  async initViewTTS(index?: number) {
     if (this.#ttsSectionIndex === -1) {
-      await this.#initTTSForSection(currentSectionIndex);
+      const fromSectionIndex = (index || this.view.renderer.getContents()[0]?.index) ?? 0;
+      await this.#initTTSForSection(fromSectionIndex);
     }
   }
 

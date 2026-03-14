@@ -32,7 +32,11 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
 };
 
 export const getLocale = () => {
-  return localStorage?.getItem('i18nextLng') || navigator?.language || '';
+  const locale = localStorage?.getItem('i18nextLng') || navigator?.language || '';
+  // POSIX locale values (e.g. 'C', 'C.UTF-8', 'POSIX') are not valid BCP 47
+  // tags and would cause Intl/toLocaleString to throw — fall back to en-US
+  if (!locale || /^(C|POSIX)(\..*)?$/i.test(locale)) return 'en-US';
+  return locale;
 };
 
 export const getUserLang = () => {

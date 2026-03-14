@@ -6,18 +6,6 @@ import type { BookDoc } from '@/libs/document';
 import type { FoliateView } from '@/types/view';
 import { wrappedFoliateView } from '@/types/view';
 
-// jsdom's Blob doesn't implement arrayBuffer(), polyfill it via FileReader
-if (typeof Blob.prototype.arrayBuffer !== 'function') {
-  Blob.prototype.arrayBuffer = function () {
-    return new Promise((res, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsArrayBuffer(this);
-    });
-  };
-}
-
 // Register a stub paginator custom element so View.open() doesn't fail in jsdom
 if (!customElements.get('foliate-paginator')) {
   customElements.define(
@@ -38,7 +26,7 @@ let view: FoliateView;
 let totalSections: number;
 
 const loadEPUB = async () => {
-  const epubPath = resolve(__dirname, '../fixtures/sample-alice.epub');
+  const epubPath = resolve(__dirname, '../fixtures/data/sample-alice.epub');
   const buffer = readFileSync(epubPath);
   const file = new File([buffer], 'sample-alice.epub', { type: 'application/epub+zip' });
   const loader = new DocumentLoader(file);

@@ -106,7 +106,6 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Modalità scrittura",
   "Your Library": "La tua biblioteca",
-  "TTS not supported for PDF": "TTS non supportato per PDF",
   "Override Book Font": "Sovrascrivi font libro",
   "Apply to All Books": "Applica a tutti i libri",
   "Apply to This Book": "Applica a questo libro",
@@ -1030,10 +1029,8 @@
   "Play (Space)": "Riproduci (Spazio)",
   "Skip forward 15 words": "Avanti di 15 parole",
   "Forward 15 words (Shift+Right)": "Avanti di 15 parole (Shift+Destra)",
-  "Pause:": "Pausa:",
   "Decrease speed": "Diminuisci velocità",
   "Slower (Left/Down)": "Più lento (Sinistra/Giù)",
-  "Current speed": "Velocità attuale",
   "Increase speed": "Aumenta velocità",
   "Faster (Right/Up)": "Più veloce (Destra/Su)",
   "Start RSVP Reading": "Avvia lettura RSVP",
@@ -1155,5 +1152,13 @@
   "Annotation page number": "Numero di pagina dell'annotazione",
   "Translating...": "Traduzione...",
   "Show Battery Percentage": "Mostra percentuale batteria",
-  "Hide Scrollbar": "Nascondi barra di scorrimento"
+  "Hide Scrollbar": "Nascondi barra di scorrimento",
+  "Skip to last reading position": "Vai all'ultima posizione di lettura",
+  "Show context": "Mostra contesto",
+  "Hide context": "Nascondi contesto",
+  "Decrease font size": "Riduci dimensione carattere",
+  "Increase font size": "Aumenta dimensione carattere",
+  "Focus": "Messa a fuoco",
+  "Theme color": "Colore del tema",
+  "Import failed": "Importazione fallita"
 }

@@ -335,6 +335,7 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
 export const getGroupSortValue = (
   group: BooksGroup,
   sortBy: LibrarySortByType,
+  groupBy?: LibraryGroupByType,
 ): number | string => {
   const books = group.books;
 
@@ -348,11 +349,22 @@ export const getGroupSortValue = (
 
   switch (sortBy) {
     case LibrarySortByType.Title:
-    case LibrarySortByType.Author:
     case LibrarySortByType.Format:
-      // For text-based sorts, use the group name
-      // This isn't perfect, especially with the
       return group.name;
+
+    case LibrarySortByType.Author: {
+      if (groupBy === LibraryGroupByType.Author) {
+        // Author group: format the group name (single author) with last-name-first
+        return formatAuthors(group.name, 'en', true);
+      }
+      if (groupBy === LibraryGroupByType.Series) {
+        // Series group: use the first book's author for sorting
+        const firstBook = books[0]!;
+        return formatAuthors(firstBook.author, firstBook.primaryLanguage || 'en', true);
+      }
+      // Custom/other groups: fall back to group name
+      return group.name;
+    }
 
     case LibrarySortByType.Updated:
       // Return the most recent updatedAt
@@ -403,10 +415,10 @@ export const compareSortValues = (
  * Create a sorter for groups themselves based on sort criteria.
  */
 export const createGroupSorter =
-  (sortBy: LibrarySortByType, uiLanguage: string) =>
+  (sortBy: LibrarySortByType, uiLanguage: string, groupBy?: LibraryGroupByType) =>
   (a: BooksGroup, b: BooksGroup): number => {
-    const aValue = getGroupSortValue(a, sortBy);
-    const bValue = getGroupSortValue(b, sortBy);
+    const aValue = getGroupSortValue(a, sortBy, groupBy);
+    const bValue = getGroupSortValue(b, sortBy, groupBy);
 
     // String comparison for text-based sorts
     if (typeof aValue === 'string' && typeof bValue === 'string') {

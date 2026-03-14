@@ -99,6 +99,7 @@ describe('proofreadTransformer', () => {
       viewSettings,
       userLocale: 'en',
       content,
+      isFixedLayout: false,
       sectionHref,
       transformers: ['proofread'],
     };

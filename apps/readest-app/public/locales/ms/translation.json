@@ -293,7 +293,6 @@
   "Next Paragraph": "Perenggan Seterusnya",
   "Read Aloud": "Baca Dengan Kuat",
   "Ready to read aloud": "Bersedia untuk baca dengan kuat",
-  "TTS not supported for PDF": "TTS tidak disokong untuk PDF",
   "TTS not supported for this document": "TTS tidak disokong untuk dokumen ini",
   "No Timeout": "Tiada Had Masa",
   "{{value}} minute": "{{value}} minit",
@@ -1006,10 +1005,8 @@
   "Play (Space)": "Main (Ruang)",
   "Skip forward 15 words": "Langkau depan 15 perkataan",
   "Forward 15 words (Shift+Right)": "Depan 15 perkataan (Shift+Kanan)",
-  "Pause:": "Jeda:",
   "Decrease speed": "Kurangkan kelajuan",
   "Slower (Left/Down)": "Lebih perlahan (Kiri/Bawah)",
-  "Current speed": "Kelajuan semasa",
   "Increase speed": "Tingkatkan kelajuan",
   "Faster (Right/Up)": "Lebih cepat (Kanan/Atas)",
   "Start RSVP Reading": "Mulakan Pembacaan RSVP",
@@ -1131,5 +1128,13 @@
   "Annotation page number": "Nombor halaman anotasi",
   "Translating...": "Menterjemah...",
   "Show Battery Percentage": "Tunjukkan Peratusan Bateri",
-  "Hide Scrollbar": "Sembunyikan Bar Tatal"
+  "Hide Scrollbar": "Sembunyikan Bar Tatal",
+  "Skip to last reading position": "Lompat ke posisi bacaan terakhir",
+  "Show context": "Tunjukkan konteks",
+  "Hide context": "Sembunyikan konteks",
+  "Decrease font size": "Kecilkan saiz fon",
+  "Increase font size": "Besarkan saiz fon",
+  "Focus": "Fokus",
+  "Theme color": "Warna tema",
+  "Import failed": "Import gagal"
 }

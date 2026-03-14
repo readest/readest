@@ -5,34 +5,43 @@ import { RxSlider as SliderIcon } from 'react-icons/rx';
 import { RiFontFamily as FontIcon } from 'react-icons/ri';
 import { PiSun as ColorIcon } from 'react-icons/pi';
 import { MdOutlineHeadphones as TTSIcon } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Button from '@/components/Button';
+import { Insets } from '@/types/misc';
 
 interface NavigationBarProps {
   bookKey: string;
   actionTab: string;
-  navPadding: string;
+  gridInsets: Insets;
   onSetActionTab: (tab: string) => void;
 }
 
 export const NavigationBar: React.FC<NavigationBarProps> = ({
   bookKey,
   actionTab,
-  navPadding: mobileNavPadding,
+  gridInsets,
   onSetActionTab,
 }) => {
+  const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { getViewState } = useReaderStore();
   const viewState = getViewState(bookKey);
   const tocIconSize = useResponsiveSize(23);
   const fontIconSize = useResponsiveSize(18);
+  const navPadding = isMobile ? `${gridInsets.bottom * 0.33 + 16}px` : '0px';
 
   return (
     <div
       className={clsx('bg-base-200 z-30 mt-auto flex w-full justify-between px-8 py-4 sm:hidden')}
-      style={{ paddingBottom: mobileNavPadding }}
+      style={{
+        paddingBottom: appService?.isAndroidApp
+          ? `calc(env(safe-area-inset-bottom) + 16px)`
+          : navPadding,
+      }}
     >
       <Button
         label={_('Table of Contents')}

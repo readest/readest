@@ -202,7 +202,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
     // Merge groups and ungrouped books, then sort them together
     const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
-    const groupSorter = createGroupSorter(sortBy, uiLanguage);
+    const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
 
     allItems.sort((a, b) => {
       const isAGroup = 'books' in a;
@@ -218,14 +218,20 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         return bookSorter(a, b) * sortOrderMultiplier;
       }
 
-      // One is a group, one is a book - compare their sort values
+      // One is a group, one is a book
+      if (groupBy === LibraryGroupByType.Group) {
+        // For custom groups: always place ungrouped books before groups
+        return isAGroup ? 1 : -1;
+      }
+
+      // For series/author groups: compare sort values to interleave properly
       if (isAGroup && !isBGroup) {
-        const groupValue = getGroupSortValue(a, sortBy);
+        const groupValue = getGroupSortValue(a, sortBy, groupBy);
         const bookValue = getBookSortValue(b, sortBy);
         return compareSortValues(groupValue, bookValue, uiLanguage) * sortOrderMultiplier;
       } else if (!isAGroup && isBGroup) {
         const bookValue = getBookSortValue(a, sortBy);
-        const groupValue = getGroupSortValue(b, sortBy);
+        const groupValue = getGroupSortValue(b, sortBy, groupBy);
         return compareSortValues(bookValue, groupValue, uiLanguage) * sortOrderMultiplier;
       }
       return 0;

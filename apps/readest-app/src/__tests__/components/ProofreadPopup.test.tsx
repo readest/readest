@@ -41,6 +41,7 @@ describe('ProofreadPopup Component', () => {
       key: 'test-book',
       text: 'test word',
       cfi: 'epubcfi(/6/2[chapter1]!/4/1:0)',
+      index: 0,
       range: {
         deleteContents: vi.fn(),
         insertNode: vi.fn(),
@@ -49,7 +50,7 @@ describe('ProofreadPopup Component', () => {
         startOffset: 5,
         endOffset: 9,
       } as unknown as Range,
-      index: 0,
+      page: 1,
     },
     position: { point: { x: 100, y: 100 } },
     trianglePosition: { point: { x: 100, y: 100 } },

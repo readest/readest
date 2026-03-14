@@ -8,3 +8,12 @@ export function isCfiInLocation(cfi: string, location: string | null | undefined
 
   return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
 }
+
+export function getIndexFromCfi(cfi: string): number | null {
+  try {
+    const parts = CFI.parse(cfi);
+    return CFI.fake.toIndex((parts.parent ?? parts).shift());
+  } catch {
+    return null;
+  }
+}

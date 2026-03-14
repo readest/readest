@@ -106,7 +106,6 @@
   "Wikipedia": "Wikipédia",
   "Writing Mode": "Mode écriture",
   "Your Library": "Votre bibliothèque",
-  "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
   "Override Book Font": "Remplacer la police du livre",
   "Apply to All Books": "Appliquer à tous les livres",
   "Apply to This Book": "Appliquer à ce livre",
@@ -1030,10 +1029,8 @@
   "Play (Space)": "Lecture (Espace)",
   "Skip forward 15 words": "Avancer de 15 mots",
   "Forward 15 words (Shift+Right)": "Avancer de 15 mots (Shift+Right)",
-  "Pause:": "Pause :",
   "Decrease speed": "Diminuer la vitesse",
   "Slower (Left/Down)": "Plus lent (Gauche/Bas)",
-  "Current speed": "Vitesse actuelle",
   "Increase speed": "Augmenter la vitesse",
   "Faster (Right/Up)": "Plus rapide (Droite/Haut)",
   "Start RSVP Reading": "Démarrer la lecture RSVP",
@@ -1155,5 +1152,13 @@
   "Annotation page number": "Numéro de page de l'annotation",
   "Translating...": "Traduction en cours...",
   "Show Battery Percentage": "Afficher le pourcentage de batterie",
-  "Hide Scrollbar": "Masquer la barre de défilement"
+  "Hide Scrollbar": "Masquer la barre de défilement",
+  "Skip to last reading position": "Aller à la dernière position de lecture",
+  "Show context": "Afficher le contexte",
+  "Hide context": "Masquer le contexte",
+  "Decrease font size": "Réduire la taille de police",
+  "Increase font size": "Augmenter la taille de police",
+  "Focus": "Focus",
+  "Theme color": "Couleur du thème",
+  "Import failed": "Échec de l'importation"
 }

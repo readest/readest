@@ -90,7 +90,7 @@ const FoliateViewer: React.FC<{
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
-  const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
+  const { getViewState, getProgress, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -105,6 +105,7 @@ const FoliateViewer: React.FC<{
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
@@ -162,6 +163,7 @@ const FoliateViewer: React.FC<{
               viewSettings,
               width,
               height,
+              isFixedLayout: bookData.isFixedLayout,
               primaryLanguage: bookData.book?.primaryLanguage,
               userLocale: getLocale(),
               content: data,
@@ -187,6 +189,14 @@ const FoliateViewer: React.FC<{
         });
     };
   };
+
+  const skipToReadingPosition = useCallback(() => {
+    const view = getView(bookKey);
+    const progress = getProgress(bookKey);
+    if (view && progress) {
+      view.renderer.scrollToAnchor?.(progress.range);
+    }
+  }, [getView, getProgress, bookKey]);
 
   const docLoadHandler = (event: Event) => {
     setLoading(false);
@@ -229,7 +239,10 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      handleA11yNavigation(viewRef.current, detail.doc, detail.index);
+      handleA11yNavigation(viewRef.current, detail.doc, detail.index, {
+        skipToLastPosCallback: skipToReadingPosition,
+        skipToLastPosLabel: _('Skip to last reading position'),
+      });
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
@@ -541,7 +554,7 @@ const FoliateViewer: React.FC<{
     const ttsBarHeight =
       viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(ttsBarHeight, 44) - insets.bottom)
+      ? Math.max(0, Math.max(ttsBarHeight, 52) - insets.bottom)
       : Math.max(0, ttsBarHeight);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
@@ -555,6 +568,18 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
+    if (viewMargins) {
+      const showBarsOnScroll = viewSettings.showBarsOnScroll;
+      const headerVisible = showTopHeader && showBarsOnScroll;
+      const footerVisible = showBottomFooter && showBarsOnScroll;
+      const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+      const footerBarHeight = 52 + safeBottomPadding;
+      const scrollTop = headerVisible ? gridInsets.top + 44 : 0;
+      const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
+      setScrollMargins({ top: scrollTop, bottom: scrollBottom });
+    } else {
+      setScrollMargins({ top: 0, bottom: 0 });
+    }
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
@@ -631,10 +656,11 @@ const FoliateViewer: React.FC<{
     viewSettings?.showHeader,
     viewSettings?.showFooter,
     viewSettings?.showTTSBar,
+    viewSettings?.showBarsOnScroll,
+    viewSettings?.showMarginsOnScroll,
+    viewSettings?.scrolled,
     viewState?.ttsEnabled,
   ]);
-
-  const showViewMargins = viewSettings?.showMarginsOnScroll && viewSettings?.scrolled;
 
   return (
     <>
@@ -657,16 +683,15 @@ const FoliateViewer: React.FC<{
       )}
       <div
         ref={containerRef}
-        tabIndex={-1}
-        role='document'
+        role='main'
         aria-label={_('Book Content')}
         className={clsx(
-          'foliate-viewer h-[100%] w-[100%] focus:outline-none',
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',
           viewState?.loading && 'bg-base-100',
         )}
         style={{
-          paddingTop: showViewMargins ? insets.top : 0,
-          paddingBottom: showViewMargins ? insets.bottom : 0,
+          paddingTop: scrollMargins.top,
+          paddingBottom: scrollMargins.bottom,
         }}
         {...mouseHandlers}
         {...touchHandlers}
