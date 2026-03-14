@@ -339,6 +339,25 @@ foliate-fxl {
   line-height: 1em;
 }
 
+.xray-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--bc) / 0.35) transparent;
+}
+
+.xray-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.xray-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--bc) / 0.35);
+  border-radius: 999px;
+}
+
+.xray-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .writing-vertical-rl {
   writing-mode: vertical-rl;
 }
