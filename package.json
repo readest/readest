@@ -39,6 +39,8 @@
       "body-parser": ">=2.2.1",
       "serialize-javascript": ">=7.0.3",
       "fast-xml-parser": ">=5.3.8",
+      "undici": ">=7.24.0",
+      "flatted": ">=3.4.0",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10",
       "mdast-util-gfm-autolink-literal": "2.0.1",
