@@ -1082,5 +1082,17 @@
   "Increase font size": "הגדל גודל גופן",
   "Focus": "מיקוד",
   "Theme color": "צבע ערכת נושא",
-  "Import failed": "הייבוא נכשל"
+  "Import failed": "הייבוא נכשל",
+  "Available Formatters:": "מעצבים זמינים:",
+  "Format date": "עיצוב תאריך",
+  "Markdown block quote (> per line)": "ציטוט Markdown (> בכל שורה)",
+  "Newlines to <br>": "שורות חדשות ל-<br>",
+  "Change case": "שינוי רישיות",
+  "Trim whitespace": "חיתוך רווחים",
+  "Truncate to n characters": "קיצוץ ל-n תווים",
+  "Replace text": "החלפת טקסט",
+  "Fallback value": "ערך חלופי",
+  "Get length": "קבלת אורך",
+  "First/last element": "אלמנט ראשון/אחרון",
+  "Join array": "חיבור מערך"
 }

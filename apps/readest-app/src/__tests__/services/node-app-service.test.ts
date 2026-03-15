@@ -4,6 +4,14 @@ import * as path from 'node:path';
 import { NodeAppService } from '@/services/nodeAppService';
 import { fsTests } from './suites/fs-tests';
 import { libraryTests } from './suites/library-tests';
+import { bookTests } from './suites/book-tests';
+
+const FIXTURES_DIR = path.join(process.cwd(), 'src/__tests__/fixtures/data');
+
+async function getBookFile(name: string): Promise<File> {
+  const buf = await fsp.readFile(path.join(FIXTURES_DIR, name));
+  return new File([buf], name);
+}
 
 const SANDBOX_DIR = path.join(process.cwd(), '.test-sandbox-node');
 
@@ -82,4 +90,5 @@ describe('NodeAppService', () => {
 
   fsTests(() => service);
   libraryTests(() => service);
+  bookTests(() => service, getBookFile);
 });

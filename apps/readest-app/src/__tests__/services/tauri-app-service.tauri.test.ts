@@ -4,6 +4,11 @@ import { mkdir, remove, writeTextFile, readTextFile } from '@tauri-apps/plugin-f
 import { NativeAppService } from '@/services/nativeAppService';
 import { fsTests } from './suites/fs-tests';
 import { libraryTests } from './suites/library-tests';
+import { bookTests } from './suites/book-tests';
+
+async function getBookFile(name: string): Promise<string> {
+  return await join(process.env['CWD']!, 'src/__tests__/fixtures/data', name);
+}
 
 const SANDBOX_DIR = `${process.env['CWD']}/.readest-test-sandbox-tauri`;
 let tmpCounter = 0;
@@ -60,4 +65,5 @@ describe('NativeAppService', () => {
 
   fsTests(() => service);
   libraryTests(() => service);
+  bookTests(() => service, getBookFile);
 });
