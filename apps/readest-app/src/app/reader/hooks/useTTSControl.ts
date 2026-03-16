@@ -131,7 +131,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         return;
       }
 
-      const { doc, index: viewSectionIndex } = view.renderer.getContents()[0] as {
+      const hlContents = view.renderer.getContents();
+      const hlPrimaryIdx = view.renderer.primaryIndex;
+      const { doc, index: viewSectionIndex } = (hlContents.find((x) => x.index === hlPrimaryIdx) ??
+        hlContents[0]) as {
         doc: Document;
         index?: number;
       };

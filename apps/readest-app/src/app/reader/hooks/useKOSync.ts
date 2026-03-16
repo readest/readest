@@ -52,12 +52,12 @@ export const useKOSync = (bookKey: string) => {
 
   const generateKOProgress = useCallback(() => {
     const progress = getProgress(bookKey);
-    const book = getBookData(bookKey)?.book;
-    if (!progress || !book) return null;
+    const bookData = getBookData(bookKey);
+    if (!progress || !bookData) return null;
 
     let koProgress = '';
     let percentage: number;
-    if (FIXED_LAYOUT_FORMATS.has(book.format)) {
+    if (bookData.isFixedLayout) {
       const page = progress.section?.current ?? 0;
       const totalPages = progress.section?.total ?? 0;
       koProgress = page.toString();
@@ -67,7 +67,9 @@ export const useKOSync = (bookKey: string) => {
       const cfi = progress.location;
       if (!view || !cfi) return null;
       try {
-        const content = view.renderer.getContents()[0];
+        const koContents = view.renderer.getContents();
+        const koPrimaryIdx = view.renderer.primaryIndex;
+        const content = koContents.find((x) => x.index === koPrimaryIdx) ?? koContents[0];
         if (content) {
           const { doc, index: spineIndex } = content;
           const converter = new XCFI(doc, spineIndex || 0);
@@ -95,7 +97,9 @@ export const useKOSync = (bookKey: string) => {
     } else {
       if (!remote.progress?.startsWith('/body')) return;
       try {
-        const content = view?.renderer.getContents()[0];
+        const apContents = view?.renderer.getContents() ?? [];
+        const apPrimaryIdx = view?.renderer.primaryIndex;
+        const content = apContents.find((x) => x.index === apPrimaryIdx) ?? apContents[0];
         const koProgress = normalizeProgressXPointer(remote.progress);
         const cfi = await getCFIFromXPointer(koProgress, content?.doc, content?.index, bookDoc);
         view?.goTo(cfi);

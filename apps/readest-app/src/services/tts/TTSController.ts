@@ -97,13 +97,23 @@ export class TTSController extends EventTarget {
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
   }
 
+  #getPrimaryContent() {
+    const contents = this.view.renderer.getContents();
+    const primaryIndex = this.view.renderer.primaryIndex;
+    return (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
+      | {
+          doc: Document;
+          index?: number;
+          overlayer?: Overlayer;
+        }
+      | undefined;
+  }
+
   #getHighlighter() {
     return (range: Range) => {
-      const { doc, index, overlayer } = this.view.renderer.getContents()[0] as {
-        doc: Document;
-        index?: number;
-        overlayer?: Overlayer;
-      };
+      const content = this.#getPrimaryContent();
+      if (!content) return;
+      const { doc, index, overlayer } = content;
       if (!doc || index === undefined || index !== this.#ttsSectionIndex) {
         return;
       }
@@ -120,7 +130,8 @@ export class TTSController extends EventTarget {
   }
 
   #clearHighlighter() {
-    const { overlayer } = (this.view.renderer.getContents()?.[0] || {}) as { overlayer: Overlayer };
+    const content = this.#getPrimaryContent();
+    const overlayer = content?.overlayer as Overlayer | undefined;
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 
@@ -131,7 +142,7 @@ export class TTSController extends EventTarget {
 
   async initViewTTS(index?: number) {
     if (this.#ttsSectionIndex === -1) {
-      const fromSectionIndex = (index || this.view.renderer.getContents()[0]?.index) ?? 0;
+      const fromSectionIndex = (index || this.#getPrimaryContent()?.index) ?? 0;
       await this.#initTTSForSection(fromSectionIndex);
     }
   }
@@ -149,7 +160,7 @@ export class TTSController extends EventTarget {
 
     this.#ttsSectionIndex = sectionIndex;
 
-    const currentSection = this.view.renderer.getContents()[0];
+    const currentSection = this.#getPrimaryContent();
     if (currentSection?.index !== sectionIndex) {
       await this.onSectionChange?.(sectionIndex);
     }
