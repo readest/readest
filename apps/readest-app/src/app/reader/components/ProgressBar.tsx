@@ -53,32 +53,30 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  const { page = 0, pages = 0 } = view?.renderer || {};
-  const current = page;
-  const total = pages;
-  const pagesLeft = Math.max(total - current - 1, 0);
-  const timeLeftStr =
-    total - 1 > current
-      ? _('{{time}} min left in chapter', {
-          time: formatNumber(
-            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
-            localize,
-            lang,
-          ),
+  const { sectionPage: current = 0, sectionPages: total = 0 } = view?.renderer || {};
+  const pagesLeft = Math.min(
+    Math.max(total - current, 1),
+    pageInfo ? pageInfo.total - pageInfo.current : total,
+  );
+  const showPagesLeft = total > 0;
+  const timeLeftStr = showPagesLeft
+    ? _('{{time}} min left in chapter', {
+        time: formatNumber(
+          Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+          localize,
+          lang,
+        ),
+      })
+    : '';
+  const pagesLeftStr = showPagesLeft
+    ? localize
+      ? _('{{number}} pages left in chapter', {
+          number: formatNumber(pagesLeft, localize, lang),
         })
-      : '';
-  const pagesLeftStr =
-    total - 1 > current
-      ? localize
-        ? _('{{number}} pages left in chapter', {
-            number: formatNumber(pagesLeft, localize, lang),
-          })
-        : _('{{count}} pages left in chapter', {
-            count: pagesLeft,
-          })
-      : '';
-
-  const showPagesLeft = total - 1 > current;
+      : _('{{count}} pages left in chapter', {
+          count: pagesLeft,
+        })
+    : '';
 
   const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
 
