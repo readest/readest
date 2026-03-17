@@ -121,12 +121,13 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
             {isBookmarked && !hoveredBookKey && <Ribbon width={`${horizontalGapPercent}%`} />}
             <HeaderBar
               bookKey={bookKey}
+              gridInsets={gridInsets}
+              screenInsets={screenInsets}
               bookTitle={book.title}
               isTopLeft={index === 0}
               isHoveredAnim={bookKeys.length > 2}
               onCloseBook={onCloseBook}
               onGoToLibrary={onGoToLibrary}
-              gridInsets={gridInsets}
               onDropdownOpenChange={(isOpen) => setDropdownOpenBook(isOpen ? bookKey : '')}
             />
             <PageNavigationButtons

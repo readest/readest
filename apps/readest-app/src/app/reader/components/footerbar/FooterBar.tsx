@@ -204,7 +204,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
-    'footer-bar shadow-xs bottom-0 z-10 flex w-full flex-col sm:h-[52px]',
+    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col sm:h-[52px]',
     'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
     'transition-[opacity,transform] duration-300',
     window.innerWidth < 640 ? 'fixed' : 'absolute',
