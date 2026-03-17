@@ -58,7 +58,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     Math.max(total - current, 1),
     pageInfo ? pageInfo.total - pageInfo.current : total,
   );
-  const showPagesLeft = total > 0;
+  const showPagesLeft = total > 0 || bookData?.isFixedLayout;
   const timeLeftStr = showPagesLeft
     ? _('{{time}} min left in chapter', {
         time: formatNumber(

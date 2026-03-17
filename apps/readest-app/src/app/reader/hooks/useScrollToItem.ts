@@ -2,15 +2,19 @@ import { useEffect, useMemo, useRef } from 'react';
 import { BookProgress } from '@/types/book';
 import { isCfiInLocation } from '@/utils/cfi';
 
-const useScrollToItem = (cfi: string, progress: BookProgress | null) => {
+const useScrollToItem = (
+  cfi: string,
+  progress: BookProgress | null,
+  isNearest: boolean = false,
+) => {
   const viewRef = useRef<HTMLLIElement | null>(null);
 
   const isCurrent = useMemo(() => isCfiInLocation(cfi, progress?.location), [cfi, progress]);
+  const shouldScroll = isCurrent || isNearest;
 
   useEffect(() => {
-    if (!viewRef.current || !isCurrent) return;
+    if (!viewRef.current || !shouldScroll) return;
 
-    // Scroll to the item if it's the current one and not visible
     const element = viewRef.current;
     const rect = element.getBoundingClientRect();
     const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
@@ -19,8 +23,10 @@ const useScrollToItem = (cfi: string, progress: BookProgress | null) => {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    element.setAttribute('aria-current', 'page');
-  }, [isCurrent]);
+    if (isCurrent) {
+      element.setAttribute('aria-current', 'page');
+    }
+  }, [shouldScroll, isCurrent]);
 
   return { isCurrent, viewRef };
 };
