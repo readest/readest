@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -10,7 +9,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
-import { DragKey, useDrag } from '@/hooks/useDrag';
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
+import { usePanelResize } from '@/hooks/usePanelResize';
 import { useThemeStore } from '@/store/themeStore';
 import { Overlay } from '@/components/Overlay';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -23,8 +23,6 @@ import SearchResults from './SearchResults';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
-
-const VELOCITY_THRESHOLD = 0.5;
 
 const SideBar = ({}) => {
   const _ = useTranslation();
@@ -39,7 +37,6 @@ const SideBar = ({}) => {
   const { getView, getViewSettings } = useReaderStore();
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const searchTermRef = useRef(searchTerm);
-  const sidebarHeight = useRef(1.0);
   const isMobile = window.innerWidth < 640;
   const {
     sideBarWidth,
@@ -72,8 +69,12 @@ const SideBar = ({}) => {
     }
   };
 
-  const sidebarRef = useRef<HTMLDivElement | null>(null);
-  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const {
+    panelRef: sidebarRef,
+    overlayRef,
+    panelHeight: sidebarHeight,
+    handleVerticalDragStart,
+  } = useSwipeToDismiss(() => setSideBarVisible(false));
 
   useEffect(() => {
     if (isSideBarVisible) {
@@ -100,82 +101,14 @@ const SideBar = ({}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleVerticalDragMove = (data: { clientY: number }) => {
-    if (!isMobile) return;
-
-    const heightFraction = data.clientY / window.innerHeight;
-    const newTop = Math.max(0.0, Math.min(1, heightFraction));
-    sidebarHeight.current = newTop;
-
-    const sidebar = sidebarRef.current;
-    const overlay = overlayRef.current;
-
-    if (sidebar && overlay) {
-      sidebar.style.transition = 'none';
-      sidebar.style.transform = `translateY(${newTop * 100}%)`;
-      overlay.style.opacity = `${1 - heightFraction}`;
-    }
-  };
-
-  const handleVerticalDragEnd = (data: { velocity: number; clientY: number }) => {
-    const sidebar = sidebarRef.current;
-    const overlay = overlayRef.current;
-
-    if (!sidebar || !overlay) return;
-
-    if (
-      data.velocity > VELOCITY_THRESHOLD ||
-      (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
-    ) {
-      const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
-      sidebar.style.transition = `transform ${transitionDuration}s ease-out`;
-      sidebar.style.transform = 'translateY(100%)';
-      overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
-      overlay.style.opacity = '0';
-      setTimeout(() => setSideBarVisible(false), 300);
-      if (appService?.hasHaptics) {
-        impactFeedback('medium');
-      }
-    } else {
-      sidebar.style.transition = 'transform 0.3s ease-out';
-      sidebar.style.transform = 'translateY(0%)';
-      overlay.style.transition = 'opacity 0.3s ease-out';
-      overlay.style.opacity = '0.8';
-      if (appService?.hasHaptics) {
-        impactFeedback('medium');
-      }
-    }
-  };
-
-  const handleHorizontalDragMove = (data: { clientX: number }) => {
-    const widthFraction = data.clientX / window.innerWidth;
-    const newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, widthFraction));
-    handleSideBarResize(`${Math.round(newWidth * 10000) / 100}%`);
-  };
-
-  const handleHorizontalDragKeyDown = (data: { key: DragKey; step: number }) => {
-    const currentWidth = parseFloat(getSideBarWidth()) / 100;
-    let newWidth = currentWidth;
-
-    if (data.key === 'ArrowLeft') {
-      newWidth = Math.max(MIN_SIDEBAR_WIDTH, currentWidth - data.step);
-    } else if (data.key === 'ArrowRight') {
-      newWidth = Math.min(MAX_SIDEBAR_WIDTH, currentWidth + data.step);
-    }
-    handleSideBarResize(`${Math.round(newWidth * 10000) / 100}%`);
-  };
-
-  const handleVerticalDragKeyDown = () => {};
-
-  const { handleDragStart: handleVerticalDragStart } = useDrag(
-    handleVerticalDragMove,
-    handleVerticalDragKeyDown,
-    handleVerticalDragEnd,
-  );
-  const { handleDragStart: handleHorizontalDragStart, handleDragKeyDown } = useDrag(
-    handleHorizontalDragMove,
-    handleHorizontalDragKeyDown,
-  );
+  const { handleResizeStart: handleHorizontalDragStart, handleResizeKeyDown: handleDragKeyDown } =
+    usePanelResize({
+      side: 'start',
+      minWidth: MIN_SIDEBAR_WIDTH,
+      maxWidth: MAX_SIDEBAR_WIDTH,
+      getWidth: getSideBarWidth,
+      onResize: handleSideBarResize,
+    });
 
   const handleClickOverlay = () => {
     setSideBarVisible(false);

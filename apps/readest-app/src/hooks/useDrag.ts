@@ -13,6 +13,7 @@ export const useDrag = (
     deltaX: number;
     deltaY: number;
   }) => void,
+  cursor: string = 'col-resize',
 ) => {
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -36,7 +37,7 @@ export const useDrag = (
 
       document.body.style.pointerEvents = 'none';
       document.body.style.userSelect = 'none';
-      document.documentElement.style.cursor = 'col-resize';
+      document.documentElement.style.cursor = cursor;
 
       const handleMove = (event: MouseEvent | TouchEvent) => {
         if (isDragging.current) {
@@ -105,7 +106,7 @@ export const useDrag = (
       window.addEventListener('touchmove', handleMove, { passive: true });
       window.addEventListener('touchend', handleEnd);
     },
-    [onDragMove, onDragEnd],
+    [onDragMove, onDragEnd, cursor],
   );
 
   const handleDragKeyDown = useCallback(

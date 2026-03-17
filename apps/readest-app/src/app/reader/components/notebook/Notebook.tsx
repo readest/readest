@@ -10,7 +10,8 @@ import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
-import { DragKey, useDrag } from '@/hooks/useDrag';
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
+import { usePanelResize } from '@/hooks/usePanelResize';
 import { TextSelection } from '@/utils/sel';
 import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
@@ -51,6 +52,14 @@ const Notebook: React.FC = ({}) => {
   const [searchResults, setSearchResults] = useState<BookNote[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const {
+    panelRef: notebookRef,
+    overlayRef,
+    panelHeight: notebookHeight,
+    handleVerticalDragStart,
+  } = useSwipeToDismiss(() => setNotebookVisible(false));
+  const isMobile = window.innerWidth < 640;
+
   const onNavigateEvent = async () => {
     const pinButton = document.querySelector('.sidebar-pin-btn');
     const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
@@ -71,8 +80,10 @@ const Notebook: React.FC = ({}) => {
   useEffect(() => {
     if (isNotebookVisible) {
       updateAppTheme('base-200');
+      overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');
+      overlayRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNotebookVisible]);
@@ -176,25 +187,14 @@ const Notebook: React.FC = ({}) => {
     setNotebookEditAnnotation(null);
   };
 
-  const onDragMove = (data: { clientX: number }) => {
-    const widthFraction = 1 - data.clientX / window.innerWidth;
-    const newWidth = Math.max(MIN_NOTEBOOK_WIDTH, Math.min(MAX_NOTEBOOK_WIDTH, widthFraction));
-    handleNotebookResize(`${Math.round(newWidth * 10000) / 100}%`);
-  };
-
-  const onDragKeyDown = (data: { key: DragKey; step: number }) => {
-    const currentWidth = parseFloat(getNotebookWidth()) / 100;
-    let newWidth = currentWidth;
-
-    if (data.key === 'ArrowLeft') {
-      newWidth = Math.max(MIN_NOTEBOOK_WIDTH, currentWidth + data.step);
-    } else if (data.key === 'ArrowRight') {
-      newWidth = Math.min(MAX_NOTEBOOK_WIDTH, currentWidth - data.step);
-    }
-    handleNotebookResize(`${Math.round(newWidth * 10000) / 100}%`);
-  };
-
-  const { handleDragStart, handleDragKeyDown } = useDrag(onDragMove, onDragKeyDown);
+  const { handleResizeStart: handleDragStart, handleResizeKeyDown: handleDragKeyDown } =
+    usePanelResize({
+      side: 'end',
+      minWidth: MIN_NOTEBOOK_WIDTH,
+      maxWidth: MAX_NOTEBOOK_WIDTH,
+      getWidth: getNotebookWidth,
+      onResize: handleNotebookResize,
+    });
 
   const config = getConfig(sideBarBookKey);
   const { booknotes: allNotes = [] } = config || {};
@@ -241,17 +241,17 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
-  const isMobile = window.innerWidth < 640;
 
   return isNotebookVisible ? (
     <>
       {!isNotebookPinned && (
         <Overlay
-          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/20')}
+          className={clsx('z-[45]', viewSettings?.isEink ? '' : 'bg-black/50 sm:bg-black/20')}
           onDismiss={handleClickOverlay}
         />
       )}
       <div
+        ref={notebookRef}
         className={clsx(
           'notebook-container right-0 flex min-w-60 select-none flex-col',
           'full-height font-sans text-base font-normal sm:text-sm',
@@ -272,9 +272,21 @@ const Notebook: React.FC = ({}) => {
             : `${safeAreaInsets?.top || 0}px`,
         }}
       >
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .notebook-container {
+              border-top-left-radius: 16px;
+              border-top-right-radius: 16px;
+            }
+            .overlay {
+              transition: opacity 0.3s ease-in-out;
+            }
+          }
+        `}</style>
         <div
           className={clsx(
             'drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
+            isMobile && 'hidden',
           )}
           role='slider'
           tabIndex={0}
@@ -286,6 +298,20 @@ const Notebook: React.FC = ({}) => {
           onKeyDown={handleDragKeyDown}
         />
         <div className='flex-shrink-0'>
+          {isMobile && (
+            <div
+              role='slider'
+              tabIndex={0}
+              aria-label={_('Resize Notebook')}
+              aria-orientation='vertical'
+              aria-valuenow={notebookHeight.current}
+              className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+              onMouseDown={handleVerticalDragStart}
+              onTouchStart={handleVerticalDragStart}
+            >
+              <div className='bg-base-content/50 h-1 w-10 rounded-full'></div>
+            </div>
+          )}
           <NotebookHeader
             isPinned={isNotebookPinned}
             isSearchBarVisible={isSearchBarVisible && notebookActiveTab === 'notes'}
