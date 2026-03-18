@@ -13,3 +13,6 @@
 [submodule "apps/readest-app/src-tauri/plugins/tauri-plugin-turso"]
 	path = apps/readest-app/src-tauri/plugins/tauri-plugin-turso
 	url = https://github.com/readest/tauri-plugin-turso.git
+[submodule "apps/readest-app/.claude/skills/gstack"]
+	path = apps/readest-app/.claude/skills/gstack
+	url = https://github.com/garrytan/gstack.git

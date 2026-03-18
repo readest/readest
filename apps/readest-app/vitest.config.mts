@@ -16,6 +16,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.browser.test.ts', '**/*.tauri.test.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.claude/**',
+      '**/*.browser.test.ts',
+      '**/*.tauri.test.ts',
+    ],
   },
 });

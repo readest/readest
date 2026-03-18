@@ -66,3 +66,5 @@ src-tauri/gen
 /dist/
 
 .claude/settings.local.json
+.claude/skills
+
