@@ -428,7 +428,7 @@ const FoliateViewer: React.FC<{
     if (isViewCreated.current) return;
     isViewCreated.current = true;
 
-    setLoading(true);
+    setTimeout(() => setLoading(true), 200);
 
     const openBook = async () => {
       console.log('Opening book', bookKey);
