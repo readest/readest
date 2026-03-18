@@ -139,7 +139,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <div
       className={clsx(
-        'bg-base-100 left-0 top-0 w-full',
+        'left-0 top-0 w-full',
+        isHeaderVisible && 'bg-base-100',
         window.innerWidth < 640 ? 'fixed z-20' : 'absolute',
       )}
       style={{
