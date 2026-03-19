@@ -1,61 +1,42 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  getEffectiveLoupePoint,
-  getExternalDragHandle,
-  toParentViewportPoint,
-} from '@/app/reader/utils/annotatorUtil';
+import { getExternalDragHandle, toParentViewportPoint } from '@/app/reader/utils/annotatorUtil';
 import { Point } from '@/utils/sel';
-
-describe('getEffectiveLoupePoint', () => {
-  it('returns loupePoint when set (internal handle drag takes priority)', () => {
-    const loupePoint: Point = { x: 150, y: 180 };
-    const externalDragPoint: Point = { x: 280, y: 200 };
-    const result = getEffectiveLoupePoint(loupePoint, externalDragPoint);
-    expect(result).toBe(loupePoint);
-  });
-
-  it('returns externalDragPoint when loupePoint is null (smooth pointer tracking)', () => {
-    const externalDragPoint: Point = { x: 280, y: 200 };
-    const result = getEffectiveLoupePoint(null, externalDragPoint);
-    expect(result).toBe(externalDragPoint);
-  });
-
-  it('returns null when both loupePoint and externalDragPoint are null', () => {
-    const result = getEffectiveLoupePoint(null, null);
-    expect(result).toBeNull();
-  });
-
-  it('returns null when externalDragPoint is undefined', () => {
-    const result = getEffectiveLoupePoint(null, undefined);
-    expect(result).toBeNull();
-  });
-});
 
 describe('getExternalDragHandle', () => {
   const currentStart: Point = { x: 100, y: 200 };
   const currentEnd: Point = { x: 300, y: 200 };
 
   it('forward drag — externalDragPoint closer to end → returns end', () => {
-    const result = getExternalDragHandle({ x: 280, y: 200 }, currentStart, currentEnd);
+    const result = getExternalDragHandle(currentStart, currentEnd, { x: 280, y: 200 });
     expect(result).toBe('end');
   });
 
   it('backward drag — externalDragPoint closer to start → returns start', () => {
-    const result = getExternalDragHandle({ x: 120, y: 200 }, currentStart, currentEnd);
+    const result = getExternalDragHandle(currentStart, currentEnd, { x: 120, y: 200 });
     expect(result).toBe('start');
+  });
+
+  it('returns null when externalDragPoint is null', () => {
+    const result = getExternalDragHandle(currentStart, currentEnd, null);
+    expect(result).toBeNull();
+  });
+
+  it('returns null when externalDragPoint is undefined', () => {
+    const result = getExternalDragHandle(currentStart, currentEnd);
+    expect(result).toBeNull();
   });
 
   it('vertical text — works with vertical coordinates', () => {
     const vStart: Point = { x: 200, y: 100 };
     const vEnd: Point = { x: 200, y: 400 };
-    const result = getExternalDragHandle({ x: 200, y: 350 }, vStart, vEnd);
+    const result = getExternalDragHandle(vStart, vEnd, { x: 200, y: 350 });
     expect(result).toBe('end');
   });
 
   it('equal distance — returns end (deterministic tie-breaking)', () => {
     // Midpoint between start(100,200) and end(300,200) is (200,200)
     // distToStart === distToEnd, so !(distToStart < distToEnd) → returns 'end'
-    const result = getExternalDragHandle({ x: 200, y: 200 }, currentStart, currentEnd);
+    const result = getExternalDragHandle(currentStart, currentEnd, { x: 200, y: 200 });
     expect(result).toBe('end');
   });
 });

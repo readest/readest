@@ -134,6 +134,10 @@ export const useTextSelector = (
       stopInstantAnnotating(ev);
       const handled = await handleInstantAnnotationPointerUp(doc, index, ev);
       if (handled) {
+        isTextSelected.current = true;
+        setTimeout(() => {
+          isTextSelected.current = false;
+        }, 200);
         return;
       } else {
         // If instant annotation was not created, we let the event propagate

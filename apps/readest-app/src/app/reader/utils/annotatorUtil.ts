@@ -13,18 +13,12 @@ export const getHighlightColorHex = (
   return customColors?.[color] ?? HIGHLIGHT_COLOR_HEX[color];
 };
 
-export function getEffectiveLoupePoint(
-  loupePoint: Point | null,
-  externalDragPoint: Point | null | undefined,
-): Point | null {
-  return loupePoint ?? externalDragPoint ?? null;
-}
-
 export function getExternalDragHandle(
-  externalDragPoint: Point,
   currentStart: Point,
   currentEnd: Point,
-): 'start' | 'end' {
+  externalDragPoint?: Point | null,
+): 'start' | 'end' | null {
+  if (!externalDragPoint) return null;
   const distToStart = Math.hypot(
     externalDragPoint.x - currentStart.x,
     externalDragPoint.y - currentStart.y,

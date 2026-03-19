@@ -9,11 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
-import {
-  getEffectiveLoupePoint,
-  getExternalDragHandle,
-  getHighlightColorHex,
-} from '../../utils/annotatorUtil';
+import { getExternalDragHandle, getHighlightColorHex } from '../../utils/annotatorUtil';
 import MagnifierLoupe from './MagnifierLoupe';
 
 interface HandleProps {
@@ -253,17 +249,17 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     return null;
   }
 
-  const effectiveLoupePoint = getEffectiveLoupePoint(loupePoint, externalDragPoint);
+  const loupeDragPoint = externalDragPoint;
+  const effectiveLoupePoint = loupePoint ?? loupeDragPoint;
   const activeHandle =
-    draggingHandle ??
-    (externalDragPoint ? getExternalDragHandle(externalDragPoint, currentStart, currentEnd) : null);
+    draggingHandle ?? getExternalDragHandle(currentStart, currentEnd, loupeDragPoint);
 
   const showLoupe = effectiveLoupePoint !== null && appService?.isMobile && !viewSettings?.vertical;
 
   return (
     <div className='pointer-events-none fixed inset-0 z-50'>
       <Handle
-        hidden={activeHandle === 'end'}
+        hidden={activeHandle === 'end' || loupeDragPoint !== null}
         position={currentStart}
         isVertical={isVertical}
         type='start'
@@ -273,7 +269,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
         onDragEnd={handleDragEnd}
       />
       <Handle
-        hidden={activeHandle === 'start'}
+        hidden={activeHandle === 'start' || loupeDragPoint !== null}
         position={currentEnd}
         isVertical={isVertical}
         type='end'
