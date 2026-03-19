@@ -154,7 +154,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: setup node
         uses: actions/setup-node@v6
