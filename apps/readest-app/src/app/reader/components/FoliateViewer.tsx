@@ -35,6 +35,7 @@ import {
 } from '@/utils/style';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
+import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
   handleKeydown,
@@ -253,9 +254,16 @@ const FoliateViewer: React.FC<{
       }
 
       setTimeout(() => {
+        const sectionIndex = detail.index;
         const booknotes = config.booknotes || [];
         booknotes
-          .filter((item) => !item.deletedAt && item.type === 'annotation' && item.style)
+          .filter(
+            (item) =>
+              !item.deletedAt &&
+              item.type === 'annotation' &&
+              item.style &&
+              getIndexFromCfi(item.cfi) === sectionIndex,
+          )
           .forEach((annotation) => viewRef.current?.addAnnotation(annotation));
       }, 100);
 

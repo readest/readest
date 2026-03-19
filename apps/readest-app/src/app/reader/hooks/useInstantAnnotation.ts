@@ -2,18 +2,27 @@ import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
 import { Point, TextSelection, snapRangeToWords } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
+import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useReaderStore } from '@/store/readerStore';
+import { toParentViewportPoint } from '../utils/annotatorUtil';
 import { uniqueId } from '@/utils/misc';
 
 interface UseInstantAnnotationProps {
   bookKey: string;
   getAnnotationText: (range: Range) => Promise<string>;
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>;
+  setEditingAnnotation: React.Dispatch<React.SetStateAction<BookNote | null>>;
+  setExternalDragPoint: React.Dispatch<React.SetStateAction<Point | null>>;
 }
 
-export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantAnnotationProps) => {
+export const useInstantAnnotation = ({
+  bookKey,
+  getAnnotationText,
+  setSelection,
+  setEditingAnnotation,
+  setExternalDragPoint,
+}: UseInstantAnnotationProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
@@ -40,6 +49,13 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       previewAnnotationRef.current = null;
     }
   }, [bookKey, getViewsById]);
+
+  const clearInstantAnnotationState = useCallback(() => {
+    clearPreviewAnnotation();
+    setEditingAnnotation(null);
+    setSelection(null);
+    setExternalDragPoint(null);
+  }, [clearPreviewAnnotation, setEditingAnnotation, setSelection, setExternalDragPoint]);
 
   const findPositionAtPoint = useCallback((doc: Document, x: number, y: number) => {
     if (doc.caretPositionFromPoint) {
@@ -200,6 +216,21 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       views.forEach((v) => v?.addAnnotation(annotation));
       previewAnnotationRef.current = annotation;
 
+      const progress = getProgress(bookKey);
+      setEditingAnnotation(annotation);
+      setSelection({
+        key: bookKey,
+        text: '',
+        cfi,
+        page: progress?.page || 0,
+        range: newRange,
+        index,
+        annotated: true,
+      });
+
+      // Convert iframe pointer coords to parent viewport coords for the loupe
+      setExternalDragPoint(toParentViewportPoint(doc, ev.clientX, ev.clientY));
+
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -211,9 +242,9 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
 
     startPointRef.current = null;
     startDocRef.current = null;
-    clearPreviewAnnotation();
+    clearInstantAnnotationState();
     return true;
-  }, [isInstantAnnotationEnabled, clearPreviewAnnotation]);
+  }, [isInstantAnnotationEnabled, clearInstantAnnotationState]);
 
   const handleInstantAnnotationPointerUp = useCallback(
     async (doc: Document, index: number, ev: PointerEvent) => {
@@ -223,7 +254,7 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       if (!startPointRef.current || !view) {
         startPointRef.current = null;
         startDocRef.current = null;
-        clearPreviewAnnotation();
+        clearInstantAnnotationState();
         return false;
       }
 
@@ -237,13 +268,13 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
         Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2),
       );
       if (distance < 10) {
-        clearPreviewAnnotation();
+        clearInstantAnnotationState();
         return false;
       }
 
       const newRange = createRangeFromPoints(doc, startPoint, endPoint);
       if (!newRange) {
-        clearPreviewAnnotation();
+        clearInstantAnnotationState();
         return false;
       }
 
@@ -251,11 +282,11 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       const cfi = view.getCFI(index, newRange);
 
       if (!text || !cfi || text.trim().length === 0) {
-        clearPreviewAnnotation();
+        clearInstantAnnotationState();
         return false;
       }
 
-      clearPreviewAnnotation();
+      clearInstantAnnotationState();
       const annotation = createAnnotation(cfi, text);
       const views = getViewsById(bookKey.split('-')[0]!);
       views.forEach((v) => v?.addAnnotation(annotation));
@@ -286,14 +317,19 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isInstantAnnotationEnabled, createRangeFromPoints, getAnnotationText, clearPreviewAnnotation],
+    [
+      isInstantAnnotationEnabled,
+      createRangeFromPoints,
+      getAnnotationText,
+      clearInstantAnnotationState,
+    ],
   );
 
   const cancelInstantAnnotation = useCallback(() => {
     startPointRef.current = null;
     startDocRef.current = null;
-    clearPreviewAnnotation();
-  }, [clearPreviewAnnotation]);
+    clearInstantAnnotationState();
+  }, [clearInstantAnnotationState]);
 
   return {
     isInstantAnnotationEnabled,

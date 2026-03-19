@@ -94,9 +94,17 @@ export interface FoliateView extends HTMLElement {
     showLoupe?: (
       x: number,
       y: number,
-      options: { isVertical: boolean; color: string; radius: number },
+      options: {
+        isVertical: boolean;
+        color: string;
+        gap: number;
+        margin: number;
+        radius: number;
+        magnification: number;
+      },
     ) => void;
     hideLoupe?: () => void;
+    destroyLoupe?: () => void;
     pinchZoom?: (ratio: number) => void;
     pinchEnd?: () => void;
   };
