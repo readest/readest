@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "Geri yükleme başarıyla tamamlandı!",
   "Your library has been saved to the selected location.": "Kütüphaneniz seçilen konuma kaydedildi.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} kitap eklendi, {{updated}} kitap güncellendi.",
-  "Operation failed": "İşlem başarısız"
+  "Operation failed": "İşlem başarısız",
+  "Loading library...": "Kütüphane yükleniyor...",
+  "{{count}} books refreshed_one": "{{count}} kitap yenilendi",
+  "{{count}} books refreshed_other": "{{count}} kitap yenilendi",
+  "Failed to refresh metadata": "Meta veri yenileme başarısız",
+  "Refresh Metadata": "Meta Verileri Yenile"
 }

@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "بازیابی با موفقیت انجام شد!",
   "Your library has been saved to the selected location.": "کتابخانه شما در مکان انتخاب‌شده ذخیره شد.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} کتاب اضافه شد، {{updated}} کتاب به‌روزرسانی شد.",
-  "Operation failed": "عملیات ناموفق"
+  "Operation failed": "عملیات ناموفق",
+  "Loading library...": "در حال بارگذاری کتابخانه...",
+  "{{count}} books refreshed_one": "{{count}} کتاب به‌روزرسانی شد",
+  "{{count}} books refreshed_other": "{{count}} کتاب به‌روزرسانی شد",
+  "Failed to refresh metadata": "به‌روزرسانی فراداده ناموفق",
+  "Refresh Metadata": "به‌روزرسانی فراداده"
 }

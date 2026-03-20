@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "ප්‍රතිසාධනය සාර්ථකව සම්පූර්ණයි!",
   "Your library has been saved to the selected location.": "ඔබේ පුස්තකාලය තෝරාගත් ස්ථානයේ සුරැකිණි.",
   "{{added}} books added, {{updated}} books updated.": "පොත් {{added}}ක් එකතු විය, {{updated}}ක් යාවත්කාලීන විය.",
-  "Operation failed": "මෙහෙයුම අසාර්ථකයි"
+  "Operation failed": "මෙහෙයුම අසාර්ථකයි",
+  "Loading library...": "පුස්තකාලය පූරණය වෙමින්...",
+  "{{count}} books refreshed_one": "පොත් {{count}}ක් යාවත්කාලීන විය",
+  "{{count}} books refreshed_other": "පොත් {{count}}ක් යාවත්කාලීන විය",
+  "Failed to refresh metadata": "පාරදත්ත යාවත්කාලීන කිරීම අසාර්ථකයි",
+  "Refresh Metadata": "පාරදත්ත යාවත්කාලීන කරන්න"
 }

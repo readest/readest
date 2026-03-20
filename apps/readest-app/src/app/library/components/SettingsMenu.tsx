@@ -67,7 +67,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   );
   const iconSize = useResponsiveSize(16);
 
-  const { isSyncing } = useLibraryStore();
+  const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
+  const [refreshMetadataProgress, setRefreshMetadataProgress] = useState('');
+  const { isSyncing, setLibrary } = useLibraryStore();
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -187,6 +189,42 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const handleBackupRestore = () => {
     setIsDropdownOpen?.(false);
     setBackupDialogVisible(true);
+  };
+
+  const handleRefreshMetadata = async () => {
+    if (!appService || isRefreshingMetadata) return;
+    setIsRefreshingMetadata(true);
+    setRefreshMetadataProgress(_('Loading library...'));
+    try {
+      const books = await appService.loadLibraryBooks();
+      const activeBooks = books.filter((b) => !b.deletedAt);
+      let refreshed = 0;
+      for (let i = 0; i < activeBooks.length; i++) {
+        setRefreshMetadataProgress(`${i + 1} / ${activeBooks.length}`);
+        try {
+          if (await appService.refreshBookMetadata(activeBooks[i]!)) {
+            refreshed++;
+          }
+        } catch {
+          // Skip books whose files can't be opened
+        }
+      }
+      setLibrary(books);
+      await appService.saveLibraryBooks(books);
+      setRefreshMetadataProgress(_('{{count}} books refreshed', { count: refreshed }));
+      onPullLibrary(true);
+      setTimeout(() => {
+        setIsRefreshingMetadata(false);
+        setRefreshMetadataProgress('');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to refresh metadata:', error);
+      setRefreshMetadataProgress(_('Failed to refresh metadata'));
+      setTimeout(() => {
+        setIsRefreshingMetadata(false);
+        setRefreshMetadataProgress('');
+      }, 2000);
+    }
   };
 
   const openSettingsDialog = () => {
@@ -381,6 +419,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
           )}
           <MenuItem label={_('Backup & Restore')} onClick={handleBackupRestore} />
+          <MenuItem
+            label={_('Refresh Metadata')}
+            description={refreshMetadataProgress}
+            onClick={handleRefreshMetadata}
+            disabled={isRefreshingMetadata}
+          />
           {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
             <MenuItem
               label={_('Save Book Cover')}

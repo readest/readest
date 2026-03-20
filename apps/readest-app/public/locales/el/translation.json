@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "Η επαναφορά ολοκληρώθηκε!",
   "Your library has been saved to the selected location.": "Η βιβλιοθήκη σας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} βιβλία προστέθηκαν, {{updated}} βιβλία ενημερώθηκαν.",
-  "Operation failed": "Η λειτουργία απέτυχε"
+  "Operation failed": "Η λειτουργία απέτυχε",
+  "Loading library...": "Φόρτωση βιβλιοθήκης...",
+  "{{count}} books refreshed_one": "{{count}} βιβλίο ανανεώθηκε",
+  "{{count}} books refreshed_other": "{{count}} βιβλία ανανεώθηκαν",
+  "Failed to refresh metadata": "Αποτυχία ανανέωσης μεταδεδομένων",
+  "Refresh Metadata": "Ανανέωση μεταδεδομένων"
 }

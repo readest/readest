@@ -1109,5 +1109,11 @@
   "Restore completed successfully!": "¡Restauración completada!",
   "Your library has been saved to the selected location.": "Tu biblioteca se ha guardado en la ubicación seleccionada.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} libros añadidos, {{updated}} libros actualizados.",
-  "Operation failed": "La operación falló"
+  "Operation failed": "La operación falló",
+  "Loading library...": "Cargando biblioteca...",
+  "{{count}} books refreshed_one": "{{count}} libro actualizado",
+  "{{count}} books refreshed_many": "{{count}} libros actualizados",
+  "{{count}} books refreshed_other": "{{count}} libros actualizados",
+  "Failed to refresh metadata": "Error al actualizar metadatos",
+  "Refresh Metadata": "Actualizar metadatos"
 }

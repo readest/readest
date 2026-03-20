@@ -1121,5 +1121,12 @@
   "Restore completed successfully!": "Obnovitev uspešno zaključena!",
   "Your library has been saved to the selected location.": "Vaša knjižnica je shranjena na izbrani lokaciji.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} knjig dodanih, {{updated}} knjig posodobljenih.",
-  "Operation failed": "Operacija ni uspela"
+  "Operation failed": "Operacija ni uspela",
+  "Loading library...": "Nalaganje knjižnice...",
+  "{{count}} books refreshed_one": "Osvežena {{count}} knjiga",
+  "{{count}} books refreshed_two": "Osveženi {{count}} knjigi",
+  "{{count}} books refreshed_few": "Osvežene {{count}} knjige",
+  "{{count}} books refreshed_other": "Osveženih {{count}} knjig",
+  "Failed to refresh metadata": "Osveževanje metapodatkov ni uspelo",
+  "Refresh Metadata": "Osveži metapodatke"
 }

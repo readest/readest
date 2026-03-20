@@ -1121,5 +1121,12 @@
   "Restore completed successfully!": "Przywracanie ukończone!",
   "Your library has been saved to the selected location.": "Biblioteka została zapisana w wybranej lokalizacji.",
   "{{added}} books added, {{updated}} books updated.": "Dodano {{added}} książek, zaktualizowano {{updated}} książek.",
-  "Operation failed": "Operacja nie powiodła się"
+  "Operation failed": "Operacja nie powiodła się",
+  "Loading library...": "Wczytywanie biblioteki...",
+  "{{count}} books refreshed_one": "Odświeżono {{count}} książkę",
+  "{{count}} books refreshed_few": "Odświeżono {{count}} książki",
+  "{{count}} books refreshed_many": "Odświeżono {{count}} książek",
+  "{{count}} books refreshed_other": "Odświeżono {{count}} książek",
+  "Failed to refresh metadata": "Nie udało się odświeżyć metadanych",
+  "Refresh Metadata": "Odśwież metadane"
 }

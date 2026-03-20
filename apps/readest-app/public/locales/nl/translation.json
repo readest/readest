@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "Herstel succesvol voltooid!",
   "Your library has been saved to the selected location.": "Uw bibliotheek is opgeslagen op de geselecteerde locatie.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} boeken toegevoegd, {{updated}} boeken bijgewerkt.",
-  "Operation failed": "Bewerking mislukt"
+  "Operation failed": "Bewerking mislukt",
+  "Loading library...": "Bibliotheek laden...",
+  "{{count}} books refreshed_one": "{{count}} boek vernieuwd",
+  "{{count}} books refreshed_other": "{{count}} boeken vernieuwd",
+  "Failed to refresh metadata": "Metadata vernieuwen mislukt",
+  "Refresh Metadata": "Metadata vernieuwen"
 }

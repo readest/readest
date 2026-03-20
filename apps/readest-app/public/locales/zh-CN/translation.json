@@ -1085,5 +1085,9 @@
   "Restore completed successfully!": "恢复成功！",
   "Your library has been saved to the selected location.": "您的书库已保存到所选位置。",
   "{{added}} books added, {{updated}} books updated.": "新增 {{added}} 本书，更新 {{updated}} 本书。",
-  "Operation failed": "操作失败"
+  "Operation failed": "操作失败",
+  "Loading library...": "正在加载书库...",
+  "{{count}} books refreshed_other": "已刷新 {{count}} 本书",
+  "Failed to refresh metadata": "刷新元数据失败",
+  "Refresh Metadata": "刷新元数据"
 }

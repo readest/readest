@@ -1109,5 +1109,11 @@
   "Restore completed successfully!": "Ripristino completato con successo!",
   "Your library has been saved to the selected location.": "La tua libreria è stata salvata nella posizione selezionata.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} libri aggiunti, {{updated}} libri aggiornati.",
-  "Operation failed": "Operazione fallita"
+  "Operation failed": "Operazione fallita",
+  "Loading library...": "Caricamento libreria...",
+  "{{count}} books refreshed_one": "{{count}} libro aggiornato",
+  "{{count}} books refreshed_many": "{{count}} libri aggiornati",
+  "{{count}} books refreshed_other": "{{count}} libri aggiornati",
+  "Failed to refresh metadata": "Aggiornamento metadati fallito",
+  "Refresh Metadata": "Aggiorna metadati"
 }

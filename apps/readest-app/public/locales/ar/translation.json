@@ -1145,5 +1145,14 @@
   "Restore completed successfully!": "تمت الاستعادة بنجاح!",
   "Your library has been saved to the selected location.": "تم حفظ مكتبتك في الموقع المحدد.",
   "{{added}} books added, {{updated}} books updated.": "تمت إضافة {{added}} كتب، وتحديث {{updated}} كتب.",
-  "Operation failed": "فشلت العملية"
+  "Operation failed": "فشلت العملية",
+  "Loading library...": "جارٍ تحميل المكتبة...",
+  "{{count}} books refreshed_zero": "لم يتم تحديث أي كتاب",
+  "{{count}} books refreshed_one": "تم تحديث كتاب واحد",
+  "{{count}} books refreshed_two": "تم تحديث كتابين",
+  "{{count}} books refreshed_few": "تم تحديث {{count}} كتب",
+  "{{count}} books refreshed_many": "تم تحديث {{count}} كتابًا",
+  "{{count}} books refreshed_other": "تم تحديث {{count}} كتاب",
+  "Failed to refresh metadata": "فشل تحديث البيانات الوصفية",
+  "Refresh Metadata": "تحديث البيانات الوصفية"
 }

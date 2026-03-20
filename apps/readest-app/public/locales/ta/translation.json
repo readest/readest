@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "மீட்டமைப்பு வெற்றிகரமாக முடிந்தது!",
   "Your library has been saved to the selected location.": "உங்கள் நூலகம் தேர்ந்தெடுக்கப்பட்ட இடத்தில் சேமிக்கப்பட்டது.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} புத்தகங்கள் சேர்க்கப்பட்டன, {{updated}} புத்தகங்கள் புதுப்பிக்கப்பட்டன.",
-  "Operation failed": "செயல்பாடு தோல்வி"
+  "Operation failed": "செயல்பாடு தோல்வி",
+  "Loading library...": "நூலகம் ஏற்றப்படுகிறது...",
+  "{{count}} books refreshed_one": "{{count}} புத்தகம் புதுப்பிக்கப்பட்டது",
+  "{{count}} books refreshed_other": "{{count}} புத்தகங்கள் புதுப்பிக்கப்பட்டன",
+  "Failed to refresh metadata": "மெட்டாடேட்டா புதுப்பிப்பு தோல்வி",
+  "Refresh Metadata": "மெட்டாடேட்டா புதுப்பிக்கவும்"
 }

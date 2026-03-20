@@ -1085,5 +1085,9 @@
   "Restore completed successfully!": "སླར་གསོ་ལེགས་གྲུབ་བྱུང་!",
   "Your library has been saved to the selected location.": "ཁྱོད་ཀྱི་དཔེ་མཛོད་འདེམས་ས་དེར་ཉར་ཟིན།",
   "{{added}} books added, {{updated}} books updated.": "དཔེ་དེབ {{added}} བསྣན་ཟིན, {{updated}} གསར་བསྒྱུར་བྱས་ཟིན།",
-  "Operation failed": "བཀོལ་སྤྱོད་བྱེད་མ་ཐུབ"
+  "Operation failed": "བཀོལ་སྤྱོད་བྱེད་མ་ཐུབ",
+  "Loading library...": "དཔེ་མཛོད་འཇུག་བཞིན་པ...",
+  "{{count}} books refreshed_other": "تم تحديث {{count}} كتب",
+  "Failed to refresh metadata": "མེ་ཊ་ཌེ་ཊ་གསར་བསྒྱུར་བྱེད་མ་ཐུབ",
+  "Refresh Metadata": "མེ་ཊ་ཌེ་ཊ་གསར་བསྒྱུར"
 }

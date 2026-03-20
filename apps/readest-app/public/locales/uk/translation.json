@@ -1121,5 +1121,12 @@
   "Restore completed successfully!": "Відновлення завершено!",
   "Your library has been saved to the selected location.": "Вашу бібліотеку збережено у вибраному місці.",
   "{{added}} books added, {{updated}} books updated.": "Додано {{added}} книг, оновлено {{updated}} книг.",
-  "Operation failed": "Операція не вдалася"
+  "Operation failed": "Операція не вдалася",
+  "Loading library...": "Завантаження бібліотеки...",
+  "{{count}} books refreshed_one": "Оновлено {{count}} книгу",
+  "{{count}} books refreshed_few": "Оновлено {{count}} книги",
+  "{{count}} books refreshed_many": "Оновлено {{count}} книг",
+  "{{count}} books refreshed_other": "Оновлено {{count}} книг",
+  "Failed to refresh metadata": "Не вдалося оновити метадані",
+  "Refresh Metadata": "Оновити метадані"
 }

@@ -133,6 +133,7 @@ export interface AppService {
     overwrite?: boolean,
     transient?: boolean,
   ): Promise<Book | null>;
+  refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
   downloadBook(

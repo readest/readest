@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "Återställningen slutförd!",
   "Your library has been saved to the selected location.": "Ditt bibliotek har sparats på den valda platsen.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} böcker tillagda, {{updated}} böcker uppdaterade.",
-  "Operation failed": "Åtgärden misslyckades"
+  "Operation failed": "Åtgärden misslyckades",
+  "Loading library...": "Laddar bibliotek...",
+  "{{count}} books refreshed_one": "{{count}} bok uppdaterad",
+  "{{count}} books refreshed_other": "{{count}} böcker uppdaterade",
+  "Failed to refresh metadata": "Kunde inte uppdatera metadata",
+  "Refresh Metadata": "Uppdatera metadata"
 }

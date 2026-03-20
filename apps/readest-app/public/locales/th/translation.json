@@ -1085,5 +1085,9 @@
   "Restore completed successfully!": "กู้คืนสำเร็จ!",
   "Your library has been saved to the selected location.": "ห้องสมุดของคุณถูกบันทึกไปยังตำแหน่งที่เลือก",
   "{{added}} books added, {{updated}} books updated.": "เพิ่ม {{added}} เล่ม, อัปเดต {{updated}} เล่ม",
-  "Operation failed": "การดำเนินการล้มเหลว"
+  "Operation failed": "การดำเนินการล้มเหลว",
+  "Loading library...": "กำลังโหลดห้องสมุด...",
+  "{{count}} books refreshed_other": "รีเฟรชแล้ว {{count}} เล่ม",
+  "Failed to refresh metadata": "รีเฟรชข้อมูลเมตาล้มเหลว",
+  "Refresh Metadata": "รีเฟรชข้อมูลเมตา"
 }

@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "पुनर्स्थापना सफलतापूर्वक पूर्ण!",
   "Your library has been saved to the selected location.": "आपकी लाइब्रेरी चयनित स्थान पर सहेजी गई है।",
   "{{added}} books added, {{updated}} books updated.": "{{added}} पुस्तकें जोड़ी गईं, {{updated}} पुस्तकें अपडेट की गईं।",
-  "Operation failed": "ऑपरेशन विफल"
+  "Operation failed": "ऑपरेशन विफल",
+  "Loading library...": "लाइब्रेरी लोड हो रही है...",
+  "{{count}} books refreshed_one": "{{count}} पुस्तक रिफ्रेश हुई",
+  "{{count}} books refreshed_other": "{{count}} पुस्तकें रिफ्रेश हुईं",
+  "Failed to refresh metadata": "मेटाडेटा रिफ्रेश विफल",
+  "Refresh Metadata": "मेटाडेटा रिफ्रेश करें"
 }

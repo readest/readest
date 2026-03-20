@@ -1085,5 +1085,9 @@
   "Restore completed successfully!": "復元が完了しました！",
   "Your library has been saved to the selected location.": "ライブラリが選択した場所に保存されました。",
   "{{added}} books added, {{updated}} books updated.": "{{added}}冊追加、{{updated}}冊更新されました。",
-  "Operation failed": "操作に失敗しました"
+  "Operation failed": "操作に失敗しました",
+  "Loading library...": "ライブラリを読み込み中...",
+  "{{count}} books refreshed_other": "{{count}}冊のメタデータを更新しました",
+  "Failed to refresh metadata": "メタデータの更新に失敗しました",
+  "Refresh Metadata": "メタデータを更新"
 }

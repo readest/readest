@@ -1097,5 +1097,10 @@
   "Restore completed successfully!": "পুনরুদ্ধার সফলভাবে সম্পন্ন!",
   "Your library has been saved to the selected location.": "আপনার লাইব্রেরি নির্বাচিত স্থানে সংরক্ষিত হয়েছে।",
   "{{added}} books added, {{updated}} books updated.": "{{added}}টি বই যোগ হয়েছে, {{updated}}টি বই আপডেট হয়েছে।",
-  "Operation failed": "অপারেশন ব্যর্থ"
+  "Operation failed": "অপারেশন ব্যর্থ",
+  "Loading library...": "লাইব্রেরি লোড হচ্ছে...",
+  "{{count}} books refreshed_one": "{{count}}টি বইয়ের মেটাডেটা রিফ্রেশ হয়েছে",
+  "{{count}} books refreshed_other": "{{count}}টি বইয়ের মেটাডেটা রিফ্রেশ হয়েছে",
+  "Failed to refresh metadata": "মেটাডেটা রিফ্রেশ ব্যর্থ",
+  "Refresh Metadata": "মেটাডেটা রিফ্রেশ"
 }

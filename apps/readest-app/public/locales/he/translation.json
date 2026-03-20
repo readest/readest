@@ -1109,5 +1109,11 @@
   "Restore completed successfully!": "השחזור הושלם בהצלחה!",
   "Your library has been saved to the selected location.": "הספרייה שלך נשמרה במיקום שנבחר.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} ספרים נוספו, {{updated}} ספרים עודכנו.",
-  "Operation failed": "הפעולה נכשלה"
+  "Operation failed": "הפעולה נכשלה",
+  "Loading library...": "טוען ספרייה...",
+  "{{count}} books refreshed_one": "ספר {{count}} רוענן",
+  "{{count}} books refreshed_two": "{{count}} ספרים רועננו",
+  "{{count}} books refreshed_other": "{{count}} ספרים רועננו",
+  "Failed to refresh metadata": "רענון המטא-נתונים נכשל",
+  "Refresh Metadata": "רענון מטא-נתונים"
 }

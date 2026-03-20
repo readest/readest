@@ -1085,5 +1085,9 @@
   "Restore completed successfully!": "Pemulihan berhasil!",
   "Your library has been saved to the selected location.": "Perpustakaan Anda telah disimpan di lokasi yang dipilih.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} buku ditambahkan, {{updated}} buku diperbarui.",
-  "Operation failed": "Operasi gagal"
+  "Operation failed": "Operasi gagal",
+  "Loading library...": "Memuat perpustakaan...",
+  "{{count}} books refreshed_other": "{{count}} buku diperbarui",
+  "Failed to refresh metadata": "Gagal memperbarui metadata",
+  "Refresh Metadata": "Perbarui Metadata"
 }

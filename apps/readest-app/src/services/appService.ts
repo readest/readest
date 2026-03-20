@@ -301,6 +301,10 @@ export abstract class BaseAppService implements AppService {
     );
   }
 
+  async refreshBookMetadata(book: Book): Promise<boolean> {
+    return BookSvc.refreshBookMetadata(this.fs, book);
+  }
+
   async isBookAvailable(book: Book): Promise<boolean> {
     return BookSvc.isBookAvailable(this.fs, book);
   }
