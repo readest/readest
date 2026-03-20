@@ -1070,5 +1070,20 @@
   "Fallback value": "ཚབ་ཀྱི་གྲངས་ཀ",
   "Get length": "རིང་ཚད་ལེན",
   "First/last element": "དང་པོ/མཇུག་གི་རྒྱུ་ཆ",
-  "Join array": "ཚོ་སྒྲིག་སྦྲེལ"
+  "Join array": "ཚོ་སྒྲིག་སྦྲེལ",
+  "Backup failed: {{error}}": "གྲབས་ཉར་བྱེད་མ་ཐུབ: {{error}}",
+  "Select Backup": "གྲབས་ཉར་འདེམས་པ",
+  "Restore failed: {{error}}": "སླར་གསོ་བྱེད་མ་ཐུབ: {{error}}",
+  "Backup & Restore": "གྲབས་ཉར་དང་སླར་གསོ",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "ཁྱོད་ཀྱི་དཔེ་མཛོད་ཀྱི་གྲབས་ཉར་བཟོ་བའམ་སྔོན་གྱི་གྲབས་ཉར་ནས་སླར་གསོ་བྱོས། སླར་གསོ་བྱས་ན་ཁྱོད་ཀྱི་ད་ལྟའི་དཔེ་མཛོད་དང་སྤྲོད་རེས་བྱེད།",
+  "Backup Library": "དཔེ་མཛོད་གྲབས་ཉར",
+  "Restore Library": "དཔེ་མཛོད་སླར་གསོ",
+  "Creating backup...": "གྲབས་ཉར་བཟོ་བཞིན་པ...",
+  "Restoring library...": "དཔེ་མཛོད་སླར་གསོ་བྱེད་བཞིན་པ...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} རྣམ་གྲངས",
+  "Backup completed successfully!": "གྲབས་ཉར་ལེགས་གྲུབ་བྱུང་!",
+  "Restore completed successfully!": "སླར་གསོ་ལེགས་གྲུབ་བྱུང་!",
+  "Your library has been saved to the selected location.": "ཁྱོད་ཀྱི་དཔེ་མཛོད་འདེམས་ས་དེར་ཉར་ཟིན།",
+  "{{added}} books added, {{updated}} books updated.": "དཔེ་དེབ {{added}} བསྣན་ཟིན, {{updated}} གསར་བསྒྱུར་བྱས་ཟིན།",
+  "Operation failed": "བཀོལ་སྤྱོད་བྱེད་མ་ཐུབ"
 }

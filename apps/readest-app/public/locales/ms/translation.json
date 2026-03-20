@@ -1070,5 +1070,20 @@
   "Fallback value": "Nilai lalai",
   "Get length": "Dapatkan panjang",
   "First/last element": "Elemen pertama/terakhir",
-  "Join array": "Gabung tatasusunan"
+  "Join array": "Gabung tatasusunan",
+  "Backup failed: {{error}}": "Sandaran gagal: {{error}}",
+  "Select Backup": "Pilih Sandaran",
+  "Restore failed: {{error}}": "Pemulihan gagal: {{error}}",
+  "Backup & Restore": "Sandaran & Pemulihan",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Buat sandaran perpustakaan anda atau pulihkan daripada sandaran sebelumnya. Pemulihan akan digabungkan dengan perpustakaan semasa anda.",
+  "Backup Library": "Sandarkan Perpustakaan",
+  "Restore Library": "Pulihkan Perpustakaan",
+  "Creating backup...": "Membuat sandaran...",
+  "Restoring library...": "Memulihkan perpustakaan...",
+  "{{current}} of {{total}} items": "{{current}} daripada {{total}} item",
+  "Backup completed successfully!": "Sandaran berjaya!",
+  "Restore completed successfully!": "Pemulihan berjaya!",
+  "Your library has been saved to the selected location.": "Perpustakaan anda telah disimpan di lokasi yang dipilih.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} buku ditambah, {{updated}} buku dikemas kini.",
+  "Operation failed": "Operasi gagal"
 }

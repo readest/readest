@@ -1082,5 +1082,20 @@
   "Fallback value": "ফলব্যাক মান",
   "Get length": "দৈর্ঘ্য নিন",
   "First/last element": "প্রথম/শেষ উপাদান",
-  "Join array": "অ্যারে যুক্ত করুন"
+  "Join array": "অ্যারে যুক্ত করুন",
+  "Backup failed: {{error}}": "ব্যাকআপ ব্যর্থ: {{error}}",
+  "Select Backup": "ব্যাকআপ নির্বাচন করুন",
+  "Restore failed: {{error}}": "পুনরুদ্ধার ব্যর্থ: {{error}}",
+  "Backup & Restore": "ব্যাকআপ ও পুনরুদ্ধার",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "আপনার লাইব্রেরির ব্যাকআপ তৈরি করুন বা পূর্ববর্তী ব্যাকআপ থেকে পুনরুদ্ধার করুন। পুনরুদ্ধার আপনার বর্তমান লাইব্রেরির সাথে মার্জ হবে।",
+  "Backup Library": "লাইব্রেরি ব্যাকআপ",
+  "Restore Library": "লাইব্রেরি পুনরুদ্ধার",
+  "Creating backup...": "ব্যাকআপ তৈরি হচ্ছে...",
+  "Restoring library...": "লাইব্রেরি পুনরুদ্ধার হচ্ছে...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} আইটেম",
+  "Backup completed successfully!": "ব্যাকআপ সফলভাবে সম্পন্ন!",
+  "Restore completed successfully!": "পুনরুদ্ধার সফলভাবে সম্পন্ন!",
+  "Your library has been saved to the selected location.": "আপনার লাইব্রেরি নির্বাচিত স্থানে সংরক্ষিত হয়েছে।",
+  "{{added}} books added, {{updated}} books updated.": "{{added}}টি বই যোগ হয়েছে, {{updated}}টি বই আপডেট হয়েছে।",
+  "Operation failed": "অপারেশন ব্যর্থ"
 }

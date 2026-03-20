@@ -6,6 +6,16 @@
   "permissions": [
     "core:default",
     "fs:default",
+    "fs:read-meta",
+    "fs:allow-open",
+    "fs:allow-write",
+    "fs:allow-read",
+    "fs:allow-rename",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    "fs:allow-stat",
+    "fs:allow-fstat",
+    "fs:allow-lstat",
     {
       "identifier": "fs:scope-appconfig-recursive",
       "allow": [

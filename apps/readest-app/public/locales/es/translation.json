@@ -1094,5 +1094,20 @@
   "Fallback value": "Valor alternativo",
   "Get length": "Obtener longitud",
   "First/last element": "Primer/último elemento",
-  "Join array": "Unir array"
+  "Join array": "Unir array",
+  "Backup failed: {{error}}": "Error en la copia de seguridad: {{error}}",
+  "Select Backup": "Seleccionar copia de seguridad",
+  "Restore failed: {{error}}": "Error en la restauración: {{error}}",
+  "Backup & Restore": "Copia de seguridad y restauración",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Crea una copia de seguridad de tu biblioteca o restaura desde una copia anterior. La restauración se fusionará con tu biblioteca actual.",
+  "Backup Library": "Hacer copia de seguridad",
+  "Restore Library": "Restaurar biblioteca",
+  "Creating backup...": "Creando copia de seguridad...",
+  "Restoring library...": "Restaurando biblioteca...",
+  "{{current}} of {{total}} items": "{{current}} de {{total}} elementos",
+  "Backup completed successfully!": "¡Copia de seguridad completada!",
+  "Restore completed successfully!": "¡Restauración completada!",
+  "Your library has been saved to the selected location.": "Tu biblioteca se ha guardado en la ubicación seleccionada.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} libros añadidos, {{updated}} libros actualizados.",
+  "Operation failed": "La operación falló"
 }

@@ -1070,5 +1070,20 @@
   "Fallback value": "Nilai cadangan",
   "Get length": "Dapatkan panjang",
   "First/last element": "Elemen pertama/terakhir",
-  "Join array": "Gabungkan array"
+  "Join array": "Gabungkan array",
+  "Backup failed: {{error}}": "Pencadangan gagal: {{error}}",
+  "Select Backup": "Pilih Cadangan",
+  "Restore failed: {{error}}": "Pemulihan gagal: {{error}}",
+  "Backup & Restore": "Cadangkan & Pulihkan",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Buat cadangan perpustakaan Anda atau pulihkan dari cadangan sebelumnya. Pemulihan akan digabungkan dengan perpustakaan Anda saat ini.",
+  "Backup Library": "Cadangkan Perpustakaan",
+  "Restore Library": "Pulihkan Perpustakaan",
+  "Creating backup...": "Membuat cadangan...",
+  "Restoring library...": "Memulihkan perpustakaan...",
+  "{{current}} of {{total}} items": "{{current}} dari {{total}} item",
+  "Backup completed successfully!": "Pencadangan berhasil!",
+  "Restore completed successfully!": "Pemulihan berhasil!",
+  "Your library has been saved to the selected location.": "Perpustakaan Anda telah disimpan di lokasi yang dipilih.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} buku ditambahkan, {{updated}} buku diperbarui.",
+  "Operation failed": "Operasi gagal"
 }

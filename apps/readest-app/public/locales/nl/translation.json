@@ -1082,5 +1082,20 @@
   "Fallback value": "Terugvalwaarde",
   "Get length": "Lengte ophalen",
   "First/last element": "Eerste/laatste element",
-  "Join array": "Array samenvoegen"
+  "Join array": "Array samenvoegen",
+  "Backup failed: {{error}}": "Back-up mislukt: {{error}}",
+  "Select Backup": "Selecteer back-up",
+  "Restore failed: {{error}}": "Herstel mislukt: {{error}}",
+  "Backup & Restore": "Back-up & Herstel",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Maak een back-up van uw bibliotheek of herstel vanuit een eerdere back-up. Herstel wordt samengevoegd met uw huidige bibliotheek.",
+  "Backup Library": "Bibliotheek back-uppen",
+  "Restore Library": "Bibliotheek herstellen",
+  "Creating backup...": "Back-up maken...",
+  "Restoring library...": "Bibliotheek herstellen...",
+  "{{current}} of {{total}} items": "{{current}} van {{total}} items",
+  "Backup completed successfully!": "Back-up succesvol voltooid!",
+  "Restore completed successfully!": "Herstel succesvol voltooid!",
+  "Your library has been saved to the selected location.": "Uw bibliotheek is opgeslagen op de geselecteerde locatie.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} boeken toegevoegd, {{updated}} boeken bijgewerkt.",
+  "Operation failed": "Bewerking mislukt"
 }

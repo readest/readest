@@ -364,9 +364,10 @@ export class NodeAppService extends BaseAppService {
   async saveFile(
     _filename: string,
     content: string | ArrayBuffer,
-    filepath: string,
+    options?: { filePath?: string; mimeType?: string },
   ): Promise<boolean> {
     try {
+      const filepath = options?.filePath ?? '';
       await fsp.mkdir(nodePath.dirname(filepath), { recursive: true });
       if (typeof content === 'string') {
         await fsp.writeFile(filepath, content, 'utf-8');

@@ -881,7 +881,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }, 100);
 
     const filename = `${makeSafeFilename(book.title)}.md`;
-    const saved = await appService?.saveFile(filename, markdownContent, 'text/markdown');
+    const saved = await appService?.saveFile(filename, markdownContent, {
+      mimeType: 'text/markdown',
+    });
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: saved ? _('Exported successfully') : _('Copied to clipboard'),

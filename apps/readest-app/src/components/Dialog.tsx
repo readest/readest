@@ -20,6 +20,7 @@ interface DialogProps {
   isOpen: boolean;
   children: ReactNode;
   snapHeight?: number;
+  dismissible?: boolean;
   header?: ReactNode;
   title?: string;
   className?: string;
@@ -34,6 +35,7 @@ const Dialog: React.FC<DialogProps> = ({
   isOpen,
   children,
   snapHeight,
+  dismissible = true,
   header,
   title,
   className,
@@ -106,7 +108,7 @@ const Dialog: React.FC<DialogProps> = ({
   }, [isOpen]);
 
   const handleDragMove = (data: { clientY: number; deltaY: number }) => {
-    if (!isMobile || !dialogRef.current) return;
+    if (!dismissible || !isMobile || !dialogRef.current) return;
 
     const modal = dialogRef.current.querySelector('.modal-box') as HTMLElement;
     const overlay = dialogRef.current.querySelector('.overlay') as HTMLElement;
@@ -125,7 +127,7 @@ const Dialog: React.FC<DialogProps> = ({
   };
 
   const handleDragEnd = (data: { velocity: number; clientY: number }) => {
-    if (!isMobile || !dialogRef.current) return;
+    if (!dismissible || !isMobile || !dialogRef.current) return;
     const modal = dialogRef.current.querySelector('.modal-box') as HTMLElement;
     const overlay = dialogRef.current.querySelector('.overlay') as HTMLElement;
     if (!modal || !overlay) return;
@@ -212,7 +214,11 @@ const Dialog: React.FC<DialogProps> = ({
             appService?.hasSafeAreaInset && isFullHeightInMobile
               ? `${Math.max(safeAreaInsets?.top || 0, systemUIVisible ? statusBarHeight : 0)}px`
               : '0px',
-          ...(isMobile ? { height: snapHeight ? `${snapHeight * 100}%` : '100%', bottom: 0 } : {}),
+          ...(isMobile
+            ? snapHeight
+              ? { height: `${snapHeight * 100}%`, top: 'auto', bottom: 0 }
+              : { height: '100%', bottom: 0 }
+            : {}),
         }}
       >
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
@@ -233,9 +239,11 @@ const Dialog: React.FC<DialogProps> = ({
             <div className='flex h-11 w-full items-center justify-between'>
               <button
                 aria-label={_('Close')}
+                aria-hidden={!isOpen}
                 onClick={onClose}
+                disabled={!dismissible}
                 className={
-                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none sm:hidden'
+                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none disabled:bg-transparent sm:hidden'
                 }
               >
                 {isRtl ? (
@@ -249,7 +257,9 @@ const Dialog: React.FC<DialogProps> = ({
               </div>
               <button
                 aria-label={_('Close')}
+                aria-hidden={!isOpen}
                 onClick={onClose}
+                disabled={!dismissible}
                 className={
                   'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 focus:outline-none sm:flex'
                 }

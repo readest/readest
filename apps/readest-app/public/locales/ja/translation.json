@@ -1070,5 +1070,20 @@
   "Fallback value": "フォールバック値",
   "Get length": "長さを取得",
   "First/last element": "最初/最後の要素",
-  "Join array": "配列を結合"
+  "Join array": "配列を結合",
+  "Backup failed: {{error}}": "バックアップに失敗しました: {{error}}",
+  "Select Backup": "バックアップを選択",
+  "Restore failed: {{error}}": "復元に失敗しました: {{error}}",
+  "Backup & Restore": "バックアップと復元",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "ライブラリのバックアップを作成するか、以前のバックアップから復元します。復元は現在のライブラリとマージされます。",
+  "Backup Library": "ライブラリをバックアップ",
+  "Restore Library": "ライブラリを復元",
+  "Creating backup...": "バックアップを作成中...",
+  "Restoring library...": "ライブラリを復元中...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} 件",
+  "Backup completed successfully!": "バックアップが完了しました！",
+  "Restore completed successfully!": "復元が完了しました！",
+  "Your library has been saved to the selected location.": "ライブラリが選択した場所に保存されました。",
+  "{{added}} books added, {{updated}} books updated.": "{{added}}冊追加、{{updated}}冊更新されました。",
+  "Operation failed": "操作に失敗しました"
 }

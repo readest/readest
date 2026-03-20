@@ -1082,5 +1082,20 @@
   "Fallback value": "Yedek değer",
   "Get length": "Uzunluk al",
   "First/last element": "İlk/son öğe",
-  "Join array": "Diziyi birleştir"
+  "Join array": "Diziyi birleştir",
+  "Backup failed: {{error}}": "Yedekleme başarısız: {{error}}",
+  "Select Backup": "Yedek Seç",
+  "Restore failed: {{error}}": "Geri yükleme başarısız: {{error}}",
+  "Backup & Restore": "Yedekleme & Geri Yükleme",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Kütüphanenizin yedeğini oluşturun veya önceki bir yedekten geri yükleyin. Geri yükleme mevcut kütüphanenizle birleştirilecektir.",
+  "Backup Library": "Kütüphaneyi Yedekle",
+  "Restore Library": "Kütüphaneyi Geri Yükle",
+  "Creating backup...": "Yedek oluşturuluyor...",
+  "Restoring library...": "Kütüphane geri yükleniyor...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} öğe",
+  "Backup completed successfully!": "Yedekleme başarıyla tamamlandı!",
+  "Restore completed successfully!": "Geri yükleme başarıyla tamamlandı!",
+  "Your library has been saved to the selected location.": "Kütüphaneniz seçilen konuma kaydedildi.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} kitap eklendi, {{updated}} kitap güncellendi.",
+  "Operation failed": "İşlem başarısız"
 }

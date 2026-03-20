@@ -1082,5 +1082,20 @@
   "Fallback value": "විකල්ප අගය",
   "Get length": "දිග ලබාගන්න",
   "First/last element": "පළමු/අවසාන මූලද්‍රව්‍යය",
-  "Join array": "අරාව සම්බන්ධ කරන්න"
+  "Join array": "අරාව සම්බන්ධ කරන්න",
+  "Backup failed: {{error}}": "උපස්ථ කිරීම අසාර්ථකයි: {{error}}",
+  "Select Backup": "උපස්ථයක් තෝරන්න",
+  "Restore failed: {{error}}": "ප්‍රතිසාධනය අසාර්ථකයි: {{error}}",
+  "Backup & Restore": "උපස්ථ සහ ප්‍රතිසාධනය",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "ඔබේ පුස්තකාලයේ උපස්ථයක් සාදන්න හෝ පෙර උපස්ථයකින් ප්‍රතිසාධනය කරන්න. ප්‍රතිසාධනය ඔබේ වත්මන් පුස්තකාලය සමග ඒකාබද්ධ වේ.",
+  "Backup Library": "පුස්තකාලය උපස්ථ කරන්න",
+  "Restore Library": "පුස්තකාලය ප්‍රතිසාධනය කරන්න",
+  "Creating backup...": "උපස්ථය සාදමින්...",
+  "Restoring library...": "පුස්තකාලය ප්‍රතිසාධනය කරමින්...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} අයිතම",
+  "Backup completed successfully!": "උපස්ථය සාර්ථකව සම්පූර්ණයි!",
+  "Restore completed successfully!": "ප්‍රතිසාධනය සාර්ථකව සම්පූර්ණයි!",
+  "Your library has been saved to the selected location.": "ඔබේ පුස්තකාලය තෝරාගත් ස්ථානයේ සුරැකිණි.",
+  "{{added}} books added, {{updated}} books updated.": "පොත් {{added}}ක් එකතු විය, {{updated}}ක් යාවත්කාලීන විය.",
+  "Operation failed": "මෙහෙයුම අසාර්ථකයි"
 }

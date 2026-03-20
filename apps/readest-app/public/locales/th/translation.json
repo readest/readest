@@ -1070,5 +1070,20 @@
   "Fallback value": "ค่าสำรอง",
   "Get length": "ดึงความยาว",
   "First/last element": "องค์ประกอบแรก/สุดท้าย",
-  "Join array": "รวมอาร์เรย์"
+  "Join array": "รวมอาร์เรย์",
+  "Backup failed: {{error}}": "การสำรองข้อมูลล้มเหลว: {{error}}",
+  "Select Backup": "เลือกข้อมูลสำรอง",
+  "Restore failed: {{error}}": "การกู้คืนล้มเหลว: {{error}}",
+  "Backup & Restore": "สำรองและกู้คืน",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "สร้างข้อมูลสำรองของห้องสมุดหรือกู้คืนจากข้อมูลสำรองก่อนหน้า การกู้คืนจะรวมกับห้องสมุดปัจจุบันของคุณ",
+  "Backup Library": "สำรองห้องสมุด",
+  "Restore Library": "กู้คืนห้องสมุด",
+  "Creating backup...": "กำลังสร้างข้อมูลสำรอง...",
+  "Restoring library...": "กำลังกู้คืนห้องสมุด...",
+  "{{current}} of {{total}} items": "{{current}} จาก {{total}} รายการ",
+  "Backup completed successfully!": "สำรองข้อมูลสำเร็จ!",
+  "Restore completed successfully!": "กู้คืนสำเร็จ!",
+  "Your library has been saved to the selected location.": "ห้องสมุดของคุณถูกบันทึกไปยังตำแหน่งที่เลือก",
+  "{{added}} books added, {{updated}} books updated.": "เพิ่ม {{added}} เล่ม, อัปเดต {{updated}} เล่ม",
+  "Operation failed": "การดำเนินการล้มเหลว"
 }

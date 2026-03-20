@@ -1106,5 +1106,20 @@
   "Fallback value": "Nadomestna vrednost",
   "Get length": "Pridobi dolžino",
   "First/last element": "Prvi/zadnji element",
-  "Join array": "Združi polje"
+  "Join array": "Združi polje",
+  "Backup failed: {{error}}": "Varnostno kopiranje ni uspelo: {{error}}",
+  "Select Backup": "Izberi varnostno kopijo",
+  "Restore failed: {{error}}": "Obnovitev ni uspela: {{error}}",
+  "Backup & Restore": "Varnostno kopiranje in obnovitev",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Ustvarite varnostno kopijo knjižnice ali obnovite iz prejšnje kopije. Obnovitev bo združena z vašo trenutno knjižnico.",
+  "Backup Library": "Varnostno kopiraj knjižnico",
+  "Restore Library": "Obnovi knjižnico",
+  "Creating backup...": "Ustvarjanje varnostne kopije...",
+  "Restoring library...": "Obnavljanje knjižnice...",
+  "{{current}} of {{total}} items": "{{current}} od {{total}} elementov",
+  "Backup completed successfully!": "Varnostno kopiranje uspešno!",
+  "Restore completed successfully!": "Obnovitev uspešno zaključena!",
+  "Your library has been saved to the selected location.": "Vaša knjižnica je shranjena na izbrani lokaciji.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} knjig dodanih, {{updated}} knjig posodobljenih.",
+  "Operation failed": "Operacija ni uspela"
 }

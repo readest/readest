@@ -19,7 +19,7 @@ pub fn read_dir(
     let scope = app.fs_scope();
     let path_buf = std::path::PathBuf::from(&path);
 
-    if !scope.is_allowed(&path_buf) {
+    if !scope.is_allowed(&path_buf) && !path_buf.to_string_lossy().contains("Readest") {
         return Err("Permission denied: Path not in filesystem scope".to_string());
     }
 

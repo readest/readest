@@ -47,7 +47,7 @@ describe('NodeAppService', () => {
 
   it('should save files via saveFile', async () => {
     const filepath = path.join(tmpDir, 'saved.txt');
-    const result = await service.saveFile('saved.txt', 'saved content', filepath);
+    const result = await service.saveFile('saved.txt', 'saved content', { filePath: filepath });
     expect(result).toBe(true);
     const content = await fsp.readFile(filepath, 'utf-8');
     expect(content).toBe('saved content');

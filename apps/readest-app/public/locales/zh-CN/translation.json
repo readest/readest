@@ -1070,5 +1070,20 @@
   "Fallback value": "默认值",
   "Get length": "获取长度",
   "First/last element": "第一个/最后一个元素",
-  "Join array": "合并数组"
+  "Join array": "合并数组",
+  "Backup failed: {{error}}": "备份失败：{{error}}",
+  "Select Backup": "选择备份",
+  "Restore failed: {{error}}": "恢复失败：{{error}}",
+  "Backup & Restore": "备份与恢复",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "创建书库备份或从之前的备份恢复。恢复将与当前书库合并。",
+  "Backup Library": "备份书库",
+  "Restore Library": "恢复书库",
+  "Creating backup...": "正在创建备份...",
+  "Restoring library...": "正在恢复书库...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} 项",
+  "Backup completed successfully!": "备份成功！",
+  "Restore completed successfully!": "恢复成功！",
+  "Your library has been saved to the selected location.": "您的书库已保存到所选位置。",
+  "{{added}} books added, {{updated}} books updated.": "新增 {{added}} 本书，更新 {{updated}} 本书。",
+  "Operation failed": "操作失败"
 }

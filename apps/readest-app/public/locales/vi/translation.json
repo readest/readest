@@ -1070,5 +1070,20 @@
   "Fallback value": "Giá trị dự phòng",
   "Get length": "Lấy độ dài",
   "First/last element": "Phần tử đầu/cuối",
-  "Join array": "Nối mảng"
+  "Join array": "Nối mảng",
+  "Backup failed: {{error}}": "Sao lưu thất bại: {{error}}",
+  "Select Backup": "Chọn bản sao lưu",
+  "Restore failed: {{error}}": "Khôi phục thất bại: {{error}}",
+  "Backup & Restore": "Sao lưu & Khôi phục",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Tạo bản sao lưu thư viện hoặc khôi phục từ bản sao lưu trước đó. Khôi phục sẽ hợp nhất với thư viện hiện tại của bạn.",
+  "Backup Library": "Sao lưu thư viện",
+  "Restore Library": "Khôi phục thư viện",
+  "Creating backup...": "Đang tạo bản sao lưu...",
+  "Restoring library...": "Đang khôi phục thư viện...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} mục",
+  "Backup completed successfully!": "Sao lưu thành công!",
+  "Restore completed successfully!": "Khôi phục thành công!",
+  "Your library has been saved to the selected location.": "Thư viện của bạn đã được lưu tại vị trí đã chọn.",
+  "{{added}} books added, {{updated}} books updated.": "Đã thêm {{added}} sách, cập nhật {{updated}} sách.",
+  "Operation failed": "Thao tác thất bại"
 }

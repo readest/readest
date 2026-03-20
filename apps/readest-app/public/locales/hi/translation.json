@@ -1082,5 +1082,20 @@
   "Fallback value": "फ़ॉलबैक मान",
   "Get length": "लंबाई प्राप्त करें",
   "First/last element": "पहला/अंतिम तत्व",
-  "Join array": "ऐरे जोड़ें"
+  "Join array": "ऐरे जोड़ें",
+  "Backup failed: {{error}}": "बैकअप विफल: {{error}}",
+  "Select Backup": "बैकअप चुनें",
+  "Restore failed: {{error}}": "पुनर्स्थापना विफल: {{error}}",
+  "Backup & Restore": "बैकअप और पुनर्स्थापना",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "अपनी लाइब्रेरी का बैकअप बनाएं या पिछले बैकअप से पुनर्स्थापित करें। पुनर्स्थापना आपकी वर्तमान लाइब्रेरी के साथ मर्ज होगी।",
+  "Backup Library": "लाइब्रेरी बैकअप",
+  "Restore Library": "लाइब्रेरी पुनर्स्थापित करें",
+  "Creating backup...": "बैकअप बनाया जा रहा है...",
+  "Restoring library...": "लाइब्रेरी पुनर्स्थापित हो रही है...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} आइटम",
+  "Backup completed successfully!": "बैकअप सफलतापूर्वक पूर्ण!",
+  "Restore completed successfully!": "पुनर्स्थापना सफलतापूर्वक पूर्ण!",
+  "Your library has been saved to the selected location.": "आपकी लाइब्रेरी चयनित स्थान पर सहेजी गई है।",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} पुस्तकें जोड़ी गईं, {{updated}} पुस्तकें अपडेट की गईं।",
+  "Operation failed": "ऑपरेशन विफल"
 }

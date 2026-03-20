@@ -1082,5 +1082,20 @@
   "Fallback value": "Εναλλακτική τιμή",
   "Get length": "Λήψη μήκους",
   "First/last element": "Πρώτο/τελευταίο στοιχείο",
-  "Join array": "Ένωση πίνακα"
+  "Join array": "Ένωση πίνακα",
+  "Backup failed: {{error}}": "Η δημιουργία αντιγράφου ασφαλείας απέτυχε: {{error}}",
+  "Select Backup": "Επιλογή αντιγράφου ασφαλείας",
+  "Restore failed: {{error}}": "Η επαναφορά απέτυχε: {{error}}",
+  "Backup & Restore": "Αντίγραφα ασφαλείας & Επαναφορά",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Δημιουργήστε αντίγραφο ασφαλείας της βιβλιοθήκης σας ή επαναφέρετε από προηγούμενο αντίγραφο. Η επαναφορά θα συγχωνευθεί με την τρέχουσα βιβλιοθήκη σας.",
+  "Backup Library": "Αντίγραφο βιβλιοθήκης",
+  "Restore Library": "Επαναφορά βιβλιοθήκης",
+  "Creating backup...": "Δημιουργία αντιγράφου ασφαλείας...",
+  "Restoring library...": "Επαναφορά βιβλιοθήκης...",
+  "{{current}} of {{total}} items": "{{current}} από {{total}} στοιχεία",
+  "Backup completed successfully!": "Το αντίγραφο ασφαλείας ολοκληρώθηκε!",
+  "Restore completed successfully!": "Η επαναφορά ολοκληρώθηκε!",
+  "Your library has been saved to the selected location.": "Η βιβλιοθήκη σας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} βιβλία προστέθηκαν, {{updated}} βιβλία ενημερώθηκαν.",
+  "Operation failed": "Η λειτουργία απέτυχε"
 }

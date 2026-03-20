@@ -1082,5 +1082,20 @@
   "Fallback value": "Standardvärde",
   "Get length": "Hämta längd",
   "First/last element": "Första/sista elementet",
-  "Join array": "Sammanfoga array"
+  "Join array": "Sammanfoga array",
+  "Backup failed: {{error}}": "Säkerhetskopiering misslyckades: {{error}}",
+  "Select Backup": "Välj säkerhetskopia",
+  "Restore failed: {{error}}": "Återställning misslyckades: {{error}}",
+  "Backup & Restore": "Säkerhetskopiera & Återställ",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Skapa en säkerhetskopia av ditt bibliotek eller återställ från en tidigare kopia. Återställningen slås samman med ditt nuvarande bibliotek.",
+  "Backup Library": "Säkerhetskopiera bibliotek",
+  "Restore Library": "Återställ bibliotek",
+  "Creating backup...": "Skapar säkerhetskopia...",
+  "Restoring library...": "Återställer bibliotek...",
+  "{{current}} of {{total}} items": "{{current}} av {{total}} objekt",
+  "Backup completed successfully!": "Säkerhetskopieringen slutförd!",
+  "Restore completed successfully!": "Återställningen slutförd!",
+  "Your library has been saved to the selected location.": "Ditt bibliotek har sparats på den valda platsen.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} böcker tillagda, {{updated}} böcker uppdaterade.",
+  "Operation failed": "Åtgärden misslyckades"
 }

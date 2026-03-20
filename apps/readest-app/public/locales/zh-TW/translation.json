@@ -1070,5 +1070,20 @@
   "Fallback value": "預設值",
   "Get length": "取得長度",
   "First/last element": "第一個/最後一個元素",
-  "Join array": "合併陣列"
+  "Join array": "合併陣列",
+  "Backup failed: {{error}}": "備份失敗：{{error}}",
+  "Select Backup": "選擇備份",
+  "Restore failed: {{error}}": "還原失敗：{{error}}",
+  "Backup & Restore": "備份與還原",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "建立書庫備份或從先前的備份還原。還原將與目前的書庫合併。",
+  "Backup Library": "備份書庫",
+  "Restore Library": "還原書庫",
+  "Creating backup...": "正在建立備份...",
+  "Restoring library...": "正在還原書庫...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} 項",
+  "Backup completed successfully!": "備份成功！",
+  "Restore completed successfully!": "還原成功！",
+  "Your library has been saved to the selected location.": "您的書庫已儲存至所選位置。",
+  "{{added}} books added, {{updated}} books updated.": "新增 {{added}} 本書，更新 {{updated}} 本書。",
+  "Operation failed": "操作失敗"
 }

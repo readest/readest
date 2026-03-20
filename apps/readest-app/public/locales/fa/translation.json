@@ -1082,5 +1082,20 @@
   "Fallback value": "مقدار پیش‌فرض",
   "Get length": "دریافت طول",
   "First/last element": "عنصر اول/آخر",
-  "Join array": "پیوستن آرایه"
+  "Join array": "پیوستن آرایه",
+  "Backup failed: {{error}}": "پشتیبان‌گیری ناموفق: {{error}}",
+  "Select Backup": "انتخاب پشتیبان",
+  "Restore failed: {{error}}": "بازیابی ناموفق: {{error}}",
+  "Backup & Restore": "پشتیبان‌گیری و بازیابی",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "از کتابخانه خود پشتیبان بگیرید یا از پشتیبان قبلی بازیابی کنید. بازیابی با کتابخانه فعلی شما ادغام خواهد شد.",
+  "Backup Library": "پشتیبان‌گیری کتابخانه",
+  "Restore Library": "بازیابی کتابخانه",
+  "Creating backup...": "در حال ایجاد پشتیبان...",
+  "Restoring library...": "در حال بازیابی کتابخانه...",
+  "{{current}} of {{total}} items": "{{current}} از {{total}} مورد",
+  "Backup completed successfully!": "پشتیبان‌گیری با موفقیت انجام شد!",
+  "Restore completed successfully!": "بازیابی با موفقیت انجام شد!",
+  "Your library has been saved to the selected location.": "کتابخانه شما در مکان انتخاب‌شده ذخیره شد.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} کتاب اضافه شد، {{updated}} کتاب به‌روزرسانی شد.",
+  "Operation failed": "عملیات ناموفق"
 }

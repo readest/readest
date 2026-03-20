@@ -1070,5 +1070,20 @@
   "Fallback value": "기본값",
   "Get length": "길이 가져오기",
   "First/last element": "첫 번째/마지막 요소",
-  "Join array": "배열 합치기"
+  "Join array": "배열 합치기",
+  "Backup failed: {{error}}": "백업 실패: {{error}}",
+  "Select Backup": "백업 선택",
+  "Restore failed: {{error}}": "복원 실패: {{error}}",
+  "Backup & Restore": "백업 및 복원",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "라이브러리를 백업하거나 이전 백업에서 복원하세요. 복원 시 현재 라이브러리와 병합됩니다.",
+  "Backup Library": "라이브러리 백업",
+  "Restore Library": "라이브러리 복원",
+  "Creating backup...": "백업 생성 중...",
+  "Restoring library...": "라이브러리 복원 중...",
+  "{{current}} of {{total}} items": "{{current}} / {{total}} 항목",
+  "Backup completed successfully!": "백업이 완료되었습니다!",
+  "Restore completed successfully!": "복원이 완료되었습니다!",
+  "Your library has been saved to the selected location.": "라이브러리가 선택한 위치에 저장되었습니다.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}}권 추가, {{updated}}권 업데이트되었습니다.",
+  "Operation failed": "작업 실패"
 }

@@ -1094,5 +1094,20 @@
   "Fallback value": "Valeur par défaut",
   "Get length": "Obtenir la longueur",
   "First/last element": "Premier/dernier élément",
-  "Join array": "Joindre le tableau"
+  "Join array": "Joindre le tableau",
+  "Backup failed: {{error}}": "Échec de la sauvegarde : {{error}}",
+  "Select Backup": "Sélectionner une sauvegarde",
+  "Restore failed: {{error}}": "Échec de la restauration : {{error}}",
+  "Backup & Restore": "Sauvegarde et restauration",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Créez une sauvegarde de votre bibliothèque ou restaurez à partir d'une sauvegarde précédente. La restauration fusionnera avec votre bibliothèque actuelle.",
+  "Backup Library": "Sauvegarder la bibliothèque",
+  "Restore Library": "Restaurer la bibliothèque",
+  "Creating backup...": "Création de la sauvegarde...",
+  "Restoring library...": "Restauration de la bibliothèque...",
+  "{{current}} of {{total}} items": "{{current}} sur {{total}} éléments",
+  "Backup completed successfully!": "Sauvegarde terminée avec succès !",
+  "Restore completed successfully!": "Restauration terminée avec succès !",
+  "Your library has been saved to the selected location.": "Votre bibliothèque a été enregistrée à l'emplacement sélectionné.",
+  "{{added}} books added, {{updated}} books updated.": "{{added}} livres ajoutés, {{updated}} livres mis à jour.",
+  "Operation failed": "L'opération a échoué"
 }

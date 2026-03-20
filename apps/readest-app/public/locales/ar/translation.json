@@ -1130,5 +1130,20 @@
   "Fallback value": "القيمة الاحتياطية",
   "Get length": "الحصول على الطول",
   "First/last element": "العنصر الأول/الأخير",
-  "Join array": "دمج المصفوفة"
+  "Join array": "دمج المصفوفة",
+  "Backup failed: {{error}}": "فشل النسخ الاحتياطي: {{error}}",
+  "Select Backup": "اختر نسخة احتياطية",
+  "Restore failed: {{error}}": "فشل الاستعادة: {{error}}",
+  "Backup & Restore": "النسخ الاحتياطي والاستعادة",
+  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "أنشئ نسخة احتياطية من مكتبتك أو استعد من نسخة احتياطية سابقة. ستدمج الاستعادة مع مكتبتك الحالية.",
+  "Backup Library": "نسخ المكتبة احتياطيًا",
+  "Restore Library": "استعادة المكتبة",
+  "Creating backup...": "جارٍ إنشاء النسخة الاحتياطية...",
+  "Restoring library...": "جارٍ استعادة المكتبة...",
+  "{{current}} of {{total}} items": "{{current}} من {{total}} عنصر",
+  "Backup completed successfully!": "تم النسخ الاحتياطي بنجاح!",
+  "Restore completed successfully!": "تمت الاستعادة بنجاح!",
+  "Your library has been saved to the selected location.": "تم حفظ مكتبتك في الموقع المحدد.",
+  "{{added}} books added, {{updated}} books updated.": "تمت إضافة {{added}} كتب، وتحديث {{updated}} كتب.",
+  "Operation failed": "فشلت العملية"
 }
