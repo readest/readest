@@ -58,7 +58,7 @@ Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Cu
 
 ## Project Rules
 
-Rules are in `.claude/rules/`: test-first, typescript, build-constraints, verification.
+Rules are in `.claude/rules/`: test-first, typescript, verification.
 
 ### i18n
 

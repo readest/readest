@@ -360,6 +360,7 @@ export interface BookConfig {
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
+  foliateImportedAt?: number;
 
   updatedAt: number;
 }
