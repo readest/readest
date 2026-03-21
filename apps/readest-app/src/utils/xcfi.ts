@@ -187,8 +187,30 @@ export class XCFI {
 
   /**
    * Parse XPointer string to extract element and text offset
+   *
+   * Supports two KOReader text reference formats:
+   * - `/text().N`     — cumulative character offset across all text in the element
+   * - `/text()[K].N`  — Kth direct text node child (1-based), offset N within that node
    */
   private parseXPointer(xpointer: string): { element: Element; textOffset?: number } {
+    // Format: /text()[K].N — indexed text node with offset
+    const indexedTextMatch = xpointer.match(/\/text\(\)\[(\d+)\]\.(\d+)$/);
+    if (indexedTextMatch) {
+      const textNodeIndex = parseInt(indexedTextMatch[1]!, 10); // 1-based
+      const offsetInNode = parseInt(indexedTextMatch[2]!, 10);
+      const elementPath = xpointer.replace(/\/text\(\)\[\d+\]\.\d+$/, '');
+
+      const element = this.resolveXPointerPath(elementPath);
+      if (!element) {
+        throw new Error(`Cannot resolve XPointer path: ${elementPath}`);
+      }
+
+      // Find the Kth direct text node child and compute cumulative offset
+      const textOffset = this.resolveIndexedTextNode(element, textNodeIndex, offsetInNode);
+      return { element, textOffset };
+    }
+
+    // Format: /text().N — cumulative character offset
     const textOffsetMatch = xpointer.match(/\/text\(\)\.(\d+)$/);
     const textOffset = textOffsetMatch ? parseInt(textOffsetMatch[1]!, 10) : undefined;
 
@@ -201,6 +223,38 @@ export class XCFI {
     }
 
     return { element, textOffset };
+  }
+
+  /**
+   * Resolve text()[K].N to a cumulative character offset within the element.
+   * K is the 1-based index of direct text node children of the element
+   * (counting only Text nodes that are immediate children, skipping element children).
+   * N is the character offset within that specific text node.
+   */
+  private resolveIndexedTextNode(
+    element: Element,
+    textNodeIndex: number,
+    offsetInNode: number,
+  ): number {
+    let directTextCount = 0;
+    let cumulativeOffset = 0;
+
+    for (const child of Array.from(element.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        directTextCount++;
+        if (directTextCount === textNodeIndex) {
+          return cumulativeOffset + offsetInNode;
+        }
+        cumulativeOffset += (child.textContent || '').length;
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        // Count text length inside child elements for cumulative offset
+        cumulativeOffset += (child.textContent || '').length;
+      }
+    }
+
+    throw new Error(
+      `Text node index ${textNodeIndex} out of bounds (found ${directTextCount} direct text nodes)`,
+    );
   }
 
   private resolveXPointerPath(path: string): Element | null {
@@ -239,9 +293,10 @@ export class XCFI {
         throw new Error(`Invalid XPointer segment: ${segment}`);
       }
 
-      // Find child elements with matching tag name
+      // Find child elements with matching tag name, skipping cfi-inert elements
       const children = Array.from(current.children).filter(
-        (child) => child.tagName.toLowerCase() === tagName?.toLowerCase(),
+        (child) =>
+          !XCFI.isCfiInert(child) && child.tagName.toLowerCase() === tagName?.toLowerCase(),
       );
 
       if (index >= children.length) {
@@ -352,6 +407,14 @@ export class XCFI {
   }
 
   /**
+   * Check if an element is injected by Readest at runtime and should be
+   * invisible to XPointer path building / resolution (e.g. skip-link div).
+   */
+  private static isCfiInert(element: Element): boolean {
+    return element.hasAttribute('cfi-inert');
+  }
+
+  /**
    * Build XPointer path from DOM element
    */
   private buildXPointerPath(targetElement: Element): string {
@@ -364,10 +427,11 @@ export class XCFI {
       if (!parent) break;
 
       const tagName = current.tagName.toLowerCase();
-      // Count preceding siblings with same tag name (0-based for CREngine)
+      // Count preceding siblings with same tag name, skipping cfi-inert elements
       let siblingIndex = 0;
       let totalSameTagSiblings = 0;
       for (const sibling of Array.from(parent.children)) {
+        if (XCFI.isCfiInert(sibling)) continue;
         if (sibling.tagName.toLowerCase() === tagName) {
           if (sibling === current) {
             siblingIndex = totalSameTagSiblings;
@@ -400,7 +464,9 @@ export class XCFI {
   }
 
   /**
-   * Handle text offset within an element by finding character position
+   * Handle text offset within an element by finding character position.
+   * Produces KOReader-compatible text()[K].N format where K is the 1-based
+   * index of the direct text node child within its parent element.
    */
   private handleTextOffset(element: Element, cfiOffset: number): string {
     const textNodes: Text[] = [];
@@ -428,18 +494,29 @@ export class XCFI {
       return this.buildXPointerPath(element);
     }
 
-    // Find the containing element for this text node
-    let textParent = targetTextNode.parentElement;
-    while (textParent && !this.isSignificantElement(textParent)) {
-      textParent = textParent.parentElement;
-    }
-
-    if (!textParent) {
-      textParent = element as HTMLElement;
-    }
-
+    // Use the text node's direct parent for both path and indexing.
+    // This produces correct XPointers even when inline elements (like <a>)
+    // split text into multiple direct text node children.
+    const textParent = targetTextNode.parentElement || element;
     const basePath = this.buildXPointerPath(textParent);
-    return `${basePath}/text().${offsetInNode}`;
+
+    // Count direct text node children and find which one the target is
+    let directTextCount = 0;
+    let directTextIndex = 0;
+    for (const child of Array.from(textParent.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE && (child.textContent || '').length > 0) {
+        directTextCount++;
+        if (child === targetTextNode) {
+          directTextIndex = directTextCount;
+        }
+      }
+    }
+
+    // Omit [1] when there is only one direct text node (matches KOReader format)
+    if (directTextCount <= 1) {
+      return `${basePath}/text().${offsetInNode}`;
+    }
+    return `${basePath}/text()[${directTextIndex || 1}].${offsetInNode}`;
   }
 
   /**
@@ -476,29 +553,6 @@ export class XCFI {
         this.collectTextNodes(child as Element, textNodes);
       }
     }
-  }
-
-  /**
-   * Check if an element is significant for XPointer path building
-   */
-  private isSignificantElement(element: Element): boolean {
-    const tagName = element.tagName.toLowerCase();
-
-    // Skip inline formatting elements that don't affect structure
-    const inlineElements = new Set([
-      'span',
-      'em',
-      'strong',
-      'i',
-      'b',
-      'u',
-      'small',
-      'mark',
-      'sup',
-      'sub',
-    ]);
-
-    return !inlineElements.has(tagName);
   }
 }
 

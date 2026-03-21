@@ -84,7 +84,9 @@ export interface BookNote {
   metaHash?: string;
   id: string;
   type: BookNoteType;
-  cfi: string;
+  cfi: string; // Canonicalized CFI for the note location
+  xpointer0?: string; // Start XPointer for the note location
+  xpointer1?: string; // End XPointer for the note location
   page?: number;
   text?: string;
   style?: HighlightStyle;

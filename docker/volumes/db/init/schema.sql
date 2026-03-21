@@ -59,6 +59,8 @@ CREATE TABLE public.book_notes (
   id text NOT NULL,
   type text NULL,
   cfi text NULL,
+  xpointer0 text NULL,
+  xpointer1 text NULL,
   text text NULL,
   style text NULL,
   color text NULL,

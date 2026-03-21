@@ -40,7 +40,9 @@ export interface DBBookNote {
   meta_hash?: string;
   id: string;
   type: string;
-  cfi: string;
+  cfi?: string;
+  xpointer0?: string;
+  xpointer1?: string;
   page?: number;
   text?: string;
   style?: string;
