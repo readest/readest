@@ -66,10 +66,8 @@ export interface FoliateView extends HTMLElement {
     viewSize: number; // whole document view height
     start: number;
     end: number;
-    page: number; // rendered page index (0-based)
-    pages: number; // rendered page count
-    sectionPage: number; // current page index in the current section
-    sectionPages: number; // page count in the current section
+    page: number; // section page index (0-based)
+    pages: number; // section page count
     atStart: boolean;
     atEnd: boolean;
     containerPosition: number;

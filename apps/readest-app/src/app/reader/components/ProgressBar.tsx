@@ -53,7 +53,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  const { sectionPage: current = 0, sectionPages: total = 0 } = view?.renderer || {};
+  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const pagesLeft = Math.min(
     Math.max(total - current, 1),
     pageInfo ? pageInfo.total - pageInfo.current : total,
