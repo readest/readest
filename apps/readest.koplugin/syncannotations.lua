@@ -60,18 +60,18 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
 
     local notes = {}
     for _, item in ipairs(annotations) do
+        local updated_at = self:parseDatetimeToMs(item.datetime_updated or item.datetime)
+        if updated_at <= last_sync then
+            goto skip
+        end
+
         local pos0 = item.pos0
         local pos1 = item.pos1
         if type(pos0) == "table" then pos0 = nil end
         if type(pos1) == "table" then pos1 = nil end
-        if pos0 then
-            local updated_at = self:parseDatetimeToMs(item.datetime_updated or item.datetime)
-            if updated_at <= last_sync then
-                goto skip
-            end
 
-            local note_type = item.drawer and "annotation" or "bookmark"
-            local id = self:generateNoteId(book_hash, note_type, tostring(pos0), pos1 and tostring(pos1))
+        if item.drawer and pos0 then
+            -- Annotation (highlight/underline/strikeout): has drawer and pos0/pos1
             local style = "highlight"
             if item.drawer == "underscore" then
                 style = "underline"
@@ -79,23 +79,38 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
                 style = "squiggly"
             end
 
-            local note = {
+            local id = self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
+            table.insert(notes, {
                 bookHash = book_hash,
                 metaHash = meta_hash,
                 id = id,
-                type = note_type,
+                type = "annotation",
                 xpointer0 = tostring(pos0),
                 xpointer1 = pos1 and tostring(pos1) or nil,
                 text = item.text or "",
                 note = item.note or "",
-                style = note_type == "annotation" and style or nil,
-                color = note_type == "annotation" and KO_TO_READEST_COLOR[item.color or "yellow"] or nil,
+                style = style,
+                color = KO_TO_READEST_COLOR[item.color or "yellow"],
                 page = item.pageno,
                 createdAt = self:parseDatetimeToMs(item.datetime),
                 updatedAt = updated_at,
-            }
-
-            table.insert(notes, note)
+            })
+        elseif not item.drawer and type(item.page) == "string" then
+            -- Bookmark: no drawer, position in page field (xpointer string)
+            local page_xp = item.page
+            local id = self:generateNoteId(book_hash, "bookmark", page_xp)
+            table.insert(notes, {
+                bookHash = book_hash,
+                metaHash = meta_hash,
+                id = id,
+                type = "bookmark",
+                xpointer0 = page_xp,
+                text = item.text or "",
+                note = item.note or "",
+                page = item.pageno,
+                createdAt = self:parseDatetimeToMs(item.datetime),
+                updatedAt = updated_at,
+            })
         end
         ::skip::
     end
@@ -208,10 +223,16 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
             local annotation_mgr = ui.annotation
             if not annotation_mgr then return end
 
-            local existing_positions = {}
+            -- Build dedup sets: annotations by pos0|pos1, bookmarks by page xpointer
+            local existing_annotations = {}
+            local existing_bookmarks = {}
             for _, item in ipairs(annotation_mgr.annotations) do
-                local key = tostring(item.pos0) .. "|" .. tostring(item.pos1 or "")
-                existing_positions[key] = true
+                if item.drawer then
+                    local key = tostring(item.pos0) .. "|" .. tostring(item.pos1 or "")
+                    existing_annotations[key] = true
+                elseif type(item.page) == "string" then
+                    existing_bookmarks[item.page] = true
+                end
             end
 
             local added = 0
@@ -221,37 +242,51 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 end
 
                 local xp0 = note.xpointer0
-                local xp1 = note.xpointer1
                 if not xp0 then goto continue end
 
-                local key = xp0 .. "|" .. (xp1 or "")
-                if existing_positions[key] then goto continue end
-
-                local drawer = "lighten"
                 local note_type = note.type
+                local item
+
                 if note_type == "bookmark" then
-                    drawer = nil
-                elseif note.style == "underline" then
-                    drawer = "underscore"
-                elseif note.style == "squiggly" then
-                    drawer = "strikeout"
+                    if existing_bookmarks[xp0] then goto continue end
+
+                    item = {
+                        page = xp0,
+                        text = note.text or "",
+                        note = note.note or "",
+                        pageno = note.page,
+                        datetime = os.date("%Y-%m-%d %H:%M:%S"),
+                    }
+                    existing_bookmarks[xp0] = true
+                else
+                    local xp1 = note.xpointer1
+                    local key = xp0 .. "|" .. (xp1 or "")
+                    if existing_annotations[key] then goto continue end
+
+                    local drawer = "lighten"
+                    if note.style == "underline" then
+                        drawer = "underscore"
+                    elseif note.style == "squiggly" then
+                        drawer = "strikeout"
+                    end
+
+                    item = {
+                        pos0 = xp0,
+                        pos1 = xp1 or xp0,
+                        page = xp0,
+                        text = note.text or "",
+                        note = note.note or "",
+                        drawer = drawer,
+                        color = READEST_TO_KO_COLOR[note.color] or "yellow",
+                        pageno = note.page,
+                        datetime = os.date("%Y-%m-%d %H:%M:%S"),
+                    }
+                    existing_annotations[key] = true
                 end
 
-                local item = {
-                    pos0 = xp0,
-                    pos1 = xp1 or xp0,
-                    page = xp0,
-                    text = note.text or "",
-                    note = note.note or "",
-                    drawer = drawer,
-                    color = READEST_TO_KO_COLOR[note.color] or "yellow",
-                    pageno = note.page,
-                    datetime = os.date("%Y-%m-%d %H:%M:%S"),
-                }
                 local index = annotation_mgr:addItem(item)
                 ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
                 logger.dbg("ReadestSync: Added annotation from sync:", item)
-                existing_positions[key] = true
                 added = added + 1
 
                 ::continue::
