@@ -1,7 +1,7 @@
 import { BookConfig, BookNote, HighlightColor, HighlightStyle } from '@/types/book';
-import { AppService } from '@/types/system';
 import { mergeBookConfigs } from '@/services/backupService';
-import { uniqueId } from '@/utils/misc';
+import { md5 } from 'js-md5';
+import { AnnotationImportProvider } from '../types';
 
 /** Shape of a single Foliate annotation entry. */
 export interface FoliateAnnotation {
@@ -44,9 +44,9 @@ export function mapFoliateColor(color: string | undefined): {
     case 'lime':
       return { style: 'highlight', color: 'green' };
     case 'underline':
-      return { style: 'underline', color: 'yellow' };
+      return { style: 'underline', color: 'red' };
     case 'squiggly':
-      return { style: 'squiggly', color: 'yellow' };
+      return { style: 'squiggly', color: 'red' };
     case 'strikethrough':
       return { style: 'highlight', color: 'red' };
     case undefined:
@@ -64,13 +64,18 @@ function parseDate(dateStr: string | undefined): number {
   return Number.isNaN(ts) ? Date.now() : ts;
 }
 
+/** Generate a stable ID for a Foliate-imported note so re-imports deduplicate. */
+function foliateNoteId(hash: string, type: string, cfi: string): string {
+  return md5(`foliate:${hash}:${type}:${cfi}`).slice(0, 7);
+}
+
 /** Convert a single Foliate annotation to a BookNote. */
-export function convertFoliateAnnotation(annotation: FoliateAnnotation): BookNote {
+export function convertFoliateAnnotation(hash: string, annotation: FoliateAnnotation): BookNote {
   const { style, color } = mapFoliateColor(annotation.color);
   const created = parseDate(annotation.created);
   const modified = parseDate(annotation.modified);
   return {
-    id: uniqueId(),
+    id: foliateNoteId(hash, 'annotation', annotation.value),
     type: 'annotation',
     cfi: annotation.value,
     text: annotation.text ?? '',
@@ -83,10 +88,10 @@ export function convertFoliateAnnotation(annotation: FoliateAnnotation): BookNot
 }
 
 /** Convert a Foliate bookmark CFI to a BookNote. */
-export function convertFoliateBookmark(cfi: string): BookNote {
+export function convertFoliateBookmark(hash: string, cfi: string): BookNote {
   const now = Date.now();
   return {
-    id: uniqueId(),
+    id: foliateNoteId(hash, 'bookmark', cfi),
     type: 'bookmark',
     cfi,
     note: '',
@@ -96,13 +101,13 @@ export function convertFoliateBookmark(cfi: string): BookNote {
 }
 
 /** Convert the full Foliate data structure to a partial BookConfig. */
-export function convertFoliateData(data: FoliateData): Partial<BookConfig> {
+export function convertFoliateData(hash: string, data: FoliateData): Partial<BookConfig> {
   const booknotes: BookNote[] = [];
   for (const annotation of data.annotations ?? []) {
-    booknotes.push(convertFoliateAnnotation(annotation));
+    booknotes.push(convertFoliateAnnotation(hash, annotation));
   }
   for (const cfi of data.bookmarks ?? []) {
-    booknotes.push(convertFoliateBookmark(cfi));
+    booknotes.push(convertFoliateBookmark(hash, cfi));
   }
 
   const result: Partial<BookConfig> = { booknotes };
@@ -130,36 +135,33 @@ export function parseFoliateData(json: string): FoliateData | null {
   }
 }
 
-/**
- * Import Foliate annotations for a book, merging with the current config.
- * Returns the merged config if data was imported, or the original config unchanged.
- */
-export async function importFoliateData(
-  appService: AppService,
-  identifier: string,
-  config: BookConfig,
-): Promise<BookConfig> {
-  try {
-    const { dataDir } = await import('@tauri-apps/api/path');
-    const dir = await dataDir();
-    const path = getFoliateDataPath(dir, identifier);
+export const foliateProvider: AnnotationImportProvider = {
+  name: 'foliate',
+  isAvailable: (appService) => appService.isLinuxApp,
+  importAnnotations: async (appService, identifier, config) => {
+    if (config.foliateImportedAt) return config;
+    try {
+      const { dataDir } = await import('@tauri-apps/api/path');
+      const dir = await dataDir();
+      const path = getFoliateDataPath(dir, identifier);
 
-    if (!(await appService.exists(path, 'None'))) {
+      if (!(await appService.exists(path, 'None'))) {
+        return config;
+      }
+
+      const json = (await appService.readFile(path, 'None', 'text')) as string;
+      const foliateData = parseFoliateData(json);
+      if (!foliateData) {
+        return config;
+      }
+
+      const converted = convertFoliateData(config.bookHash ?? '', foliateData);
+      const merged = mergeBookConfigs(config, converted) as BookConfig;
+      merged.foliateImportedAt = Date.now();
+      return merged;
+    } catch (error) {
+      console.warn('Failed to import Foliate data:', error);
       return config;
     }
-
-    const json = (await appService.readFile(path, 'None', 'text')) as string;
-    const foliateData = parseFoliateData(json);
-    if (!foliateData) {
-      return config;
-    }
-
-    const converted = convertFoliateData(foliateData);
-    const merged = mergeBookConfigs(config, converted) as BookConfig;
-    merged.foliateImportedAt = Date.now();
-    return merged;
-  } catch (error) {
-    console.warn('Failed to import Foliate data:', error);
-    return config;
-  }
-}
+  },
+};

@@ -81,6 +81,9 @@
           "path": "**/Readest/**/*"
         },
         {
+          "path": "**/com.github.johnfactotum.Foliate/**/*"
+        },
+        {
           "path": "**/last-book-cover.png"
         }
       ]

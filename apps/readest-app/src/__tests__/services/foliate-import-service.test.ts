@@ -8,9 +8,11 @@ import {
   parseFoliateData,
   FoliateAnnotation,
   FoliateData,
-} from '@/services/foliateImportService';
+} from '@/services/annotation/providers/foliate';
 import { mergeBookConfigs } from '@/services/backupService';
 import { BookConfig, BookNote } from '@/types/book';
+
+const BOOK_HASH = 'abc123';
 
 // Freeze Date.now for deterministic tests
 const NOW = 1700000000000;
@@ -64,12 +66,12 @@ describe('mapFoliateColor', () => {
     expect(mapFoliateColor('lime')).toEqual({ style: 'highlight', color: 'green' });
   });
 
-  it('should map underline to underline/yellow', () => {
-    expect(mapFoliateColor('underline')).toEqual({ style: 'underline', color: 'yellow' });
+  it('should map underline to underline/red', () => {
+    expect(mapFoliateColor('underline')).toEqual({ style: 'underline', color: 'red' });
   });
 
-  it('should map squiggly to squiggly/yellow', () => {
-    expect(mapFoliateColor('squiggly')).toEqual({ style: 'squiggly', color: 'yellow' });
+  it('should map squiggly to squiggly/red', () => {
+    expect(mapFoliateColor('squiggly')).toEqual({ style: 'squiggly', color: 'red' });
   });
 
   it('should map strikethrough to highlight/red', () => {
@@ -95,7 +97,7 @@ describe('convertFoliateAnnotation', () => {
       created: '2024-01-15T10:30:00Z',
       modified: '2024-01-16T12:00:00Z',
     };
-    const result = convertFoliateAnnotation(annotation);
+    const result = convertFoliateAnnotation(BOOK_HASH, annotation);
 
     expect(result.type).toBe('annotation');
     expect(result.cfi).toBe('epubcfi(/6/4!/4/2,/1:0,/1:10)');
@@ -108,11 +110,24 @@ describe('convertFoliateAnnotation', () => {
     expect(result.id).toBeTruthy();
   });
 
+  it('should produce stable IDs for the same CFI', () => {
+    const annotation: FoliateAnnotation = { value: 'epubcfi(/6/4!/4/2,/1:0,/1:10)' };
+    const first = convertFoliateAnnotation(BOOK_HASH, annotation);
+    const second = convertFoliateAnnotation(BOOK_HASH, annotation);
+    expect(first.id).toBe(second.id);
+  });
+
+  it('should produce different IDs for different CFIs', () => {
+    const a = convertFoliateAnnotation(BOOK_HASH, { value: 'cfi-a' });
+    const b = convertFoliateAnnotation(BOOK_HASH, { value: 'cfi-b' });
+    expect(a.id).not.toBe(b.id);
+  });
+
   it('should handle missing optional fields', () => {
     const annotation: FoliateAnnotation = {
       value: 'epubcfi(/6/4)',
     };
-    const result = convertFoliateAnnotation(annotation);
+    const result = convertFoliateAnnotation(BOOK_HASH, annotation);
 
     expect(result.text).toBe('');
     expect(result.note).toBe('');
@@ -128,7 +143,7 @@ describe('convertFoliateAnnotation', () => {
       created: 'not-a-date',
       modified: 'also-invalid',
     };
-    const result = convertFoliateAnnotation(annotation);
+    const result = convertFoliateAnnotation(BOOK_HASH, annotation);
 
     expect(result.createdAt).toBe(NOW);
     expect(result.updatedAt).toBe(NOW);
@@ -137,7 +152,7 @@ describe('convertFoliateAnnotation', () => {
 
 describe('convertFoliateBookmark', () => {
   it('should create a bookmark-type note', () => {
-    const result = convertFoliateBookmark('epubcfi(/6/8!/4/2)');
+    const result = convertFoliateBookmark(BOOK_HASH, 'epubcfi(/6/8!/4/2)');
 
     expect(result.type).toBe('bookmark');
     expect(result.cfi).toBe('epubcfi(/6/8!/4/2)');
@@ -145,6 +160,18 @@ describe('convertFoliateBookmark', () => {
     expect(result.createdAt).toBe(NOW);
     expect(result.updatedAt).toBe(NOW);
     expect(result.id).toBeTruthy();
+  });
+
+  it('should produce stable IDs for the same CFI', () => {
+    const first = convertFoliateBookmark(BOOK_HASH, 'epubcfi(/6/8!/4/2)');
+    const second = convertFoliateBookmark(BOOK_HASH, 'epubcfi(/6/8!/4/2)');
+    expect(first.id).toBe(second.id);
+  });
+
+  it('should produce different IDs from annotations with the same CFI', () => {
+    const bookmark = convertFoliateBookmark(BOOK_HASH, 'cfi-same');
+    const annotation = convertFoliateAnnotation(BOOK_HASH, { value: 'cfi-same' });
+    expect(bookmark.id).not.toBe(annotation.id);
   });
 });
 
@@ -159,7 +186,7 @@ describe('convertFoliateData', () => {
       progress: [42, 100],
       lastLocation: 'cfi-last',
     };
-    const result = convertFoliateData(data);
+    const result = convertFoliateData(BOOK_HASH, data);
 
     expect(result.booknotes).toHaveLength(4);
     expect(result.booknotes!.filter((n) => n.type === 'annotation')).toHaveLength(2);
@@ -173,7 +200,7 @@ describe('convertFoliateData', () => {
       annotations: [],
       bookmarks: [],
     };
-    const result = convertFoliateData(data);
+    const result = convertFoliateData(BOOK_HASH, data);
 
     expect(result.booknotes).toEqual([]);
     expect(result.progress).toBeUndefined();
@@ -182,7 +209,7 @@ describe('convertFoliateData', () => {
 
   it('should handle missing fields', () => {
     const data: FoliateData = {};
-    const result = convertFoliateData(data);
+    const result = convertFoliateData(BOOK_HASH, data);
 
     expect(result.booknotes).toEqual([]);
     expect(result.progress).toBeUndefined();
@@ -191,7 +218,7 @@ describe('convertFoliateData', () => {
 
   it('should handle only bookmarks', () => {
     const data: FoliateData = { bookmarks: ['cfi-1'] };
-    const result = convertFoliateData(data);
+    const result = convertFoliateData(BOOK_HASH, data);
 
     expect(result.booknotes).toHaveLength(1);
     expect(result.booknotes![0]!.type).toBe('bookmark');
@@ -199,7 +226,7 @@ describe('convertFoliateData', () => {
 
   it('should handle only progress', () => {
     const data: FoliateData = { progress: [10, 200] };
-    const result = convertFoliateData(data);
+    const result = convertFoliateData(BOOK_HASH, data);
 
     expect(result.booknotes).toEqual([]);
     expect(result.progress).toEqual([10, 200]);
@@ -265,7 +292,7 @@ describe('integration: merge converted Foliate data with existing config', () =>
       bookmarks: ['bookmark-cfi'],
       progress: [30, 200],
     };
-    const converted = convertFoliateData(foliateData);
+    const converted = convertFoliateData(BOOK_HASH, foliateData);
     const merged = mergeBookConfigs(currentConfig, converted);
 
     // Should keep higher progress from current (50 > 30)
@@ -285,7 +312,7 @@ describe('integration: merge converted Foliate data with existing config', () =>
       progress: [80, 200],
       lastLocation: 'foliate-loc',
     };
-    const converted = convertFoliateData(foliateData);
+    const converted = convertFoliateData(BOOK_HASH, foliateData);
     const merged = mergeBookConfigs(currentConfig, converted);
 
     expect(merged.progress).toEqual([80, 200]);
