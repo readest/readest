@@ -18,6 +18,12 @@ describe('isCfiInLocation', () => {
     expect(isCfiInLocation('epubcfi(/6/6)', null)).toBe(false);
     expect(isCfiInLocation('epubcfi(/6/6)', undefined)).toBe(false);
   });
+
+  it('should return false for null/undefined/empty cfi', () => {
+    expect(isCfiInLocation(null as unknown as string, 'epubcfi(/6/6)')).toBe(false);
+    expect(isCfiInLocation(undefined as unknown as string, 'epubcfi(/6/6)')).toBe(false);
+    expect(isCfiInLocation('', 'epubcfi(/6/6)')).toBe(false);
+  });
 });
 
 describe('findNearestCfi', () => {

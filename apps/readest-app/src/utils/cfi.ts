@@ -6,14 +6,19 @@ const unwrapCfi = (cfi: string): string => {
 };
 
 export function isCfiInLocation(cfi: string, location: string | null | undefined): boolean {
-  if (!location) return false;
+  if (!cfi || !location) return false;
   if (cfi === location) return true;
   if (cfi && unwrapCfi(cfi).startsWith(unwrapCfi(location))) return true;
 
   const start = CFI.collapse(location);
   const end = CFI.collapse(location, true);
 
-  return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
+  try {
+    return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
+  } catch (err) {
+    console.warn('Failed to compare CFIs', { cfi, location, error: err });
+    return false;
+  }
 }
 
 /**

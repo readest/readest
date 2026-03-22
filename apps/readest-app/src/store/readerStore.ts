@@ -179,6 +179,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
         }
       }
+      // Filter out invalid booknotes
+      config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
       await updateToc(
         bookDoc,
         config.viewSettings?.sortedTOC ?? false,
