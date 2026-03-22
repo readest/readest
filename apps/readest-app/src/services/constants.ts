@@ -184,7 +184,6 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   swapClickArea: false,
   disableDoubleClick: false,
   volumeKeysToFlip: false,
-  continuousScroll: false,
   maxColumnCount: 2,
   maxInlineSize: getDefaultMaxInlineSize(),
   maxBlockSize: getDefaultMaxBlockSize(),

@@ -2,24 +2,18 @@ import { useEffect, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
-import { ScrollSource } from './usePagination';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from '@/services/constants';
 
 export const useMouseEvent = (
   bookKey: string,
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
-  handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
   const { hoveredBookKey } = useReaderStore();
-  const debounceScroll = debounce(handleContinuousScroll, 500);
   const debounceFlip = debounce(handlePageFlip, 100);
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
-        if (msg.data.type === 'iframe-wheel') {
-          debounceScroll('mouse', -msg.data.deltaY, 0);
-        }
         if (msg.data.type === 'iframe-wheel') {
           if (msg.data.ctrlKey) {
             if (msg.data.deltaY > 0) {
@@ -34,10 +28,7 @@ export const useMouseEvent = (
           handlePageFlip(msg);
         }
       }
-    } else if (msg.type === 'wheel') {
-      const event = msg as React.WheelEvent<HTMLDivElement>;
-      debounceScroll('mouse', -event.deltaY, 0);
-    } else {
+    } else if (msg.type !== 'wheel') {
       handlePageFlip(msg);
     }
   };
@@ -92,11 +83,7 @@ interface IframeTouchEvent {
   targetTouches: IframeTouch[];
 }
 
-export const useTouchEvent = (
-  bookKey: string,
-  handlePageFlip: (msg: CustomEvent) => void,
-  handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
-) => {
+export const useTouchEvent = (bookKey: string, handlePageFlip: (msg: CustomEvent) => void) => {
   const { getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey, getViewSettings, getView } = useReaderStore();
 
@@ -241,7 +228,6 @@ export const useTouchEvent = (
           },
         }),
       );
-      handleContinuousScroll('touch', deltaY, 30);
     }
 
     touchStartRef.current = null;

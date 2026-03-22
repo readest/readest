@@ -393,12 +393,6 @@ const controlPanelItems = [
     section: 'Scroll',
   },
   {
-    id: 'settings.control.continuousScroll',
-    labelKey: _('Continuous Scroll'),
-    keywords: ['continuous', 'scroll', 'endless', 'infinite'],
-    section: 'Scroll',
-  },
-  {
     id: 'settings.control.overlapPixels',
     labelKey: _('Overlap Pixels'),
     keywords: ['overlap', 'pixels', 'scroll', 'offset'],

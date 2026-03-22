@@ -242,45 +242,6 @@ export const usePagination = (
     }
   };
 
-  const handleContinuousScroll = (mode: ScrollSource, scrollDelta: number, threshold: number) => {
-    const renderer = viewRef.current?.renderer;
-    const viewSettings = getViewSettings(bookKey)!;
-    const bookData = getBookData(bookKey)!;
-    // Continuous scroll is not supported in pre-paginated layout unless scrolled mode is active
-    if (bookData.bookDoc?.rendition?.layout === 'pre-paginated' && !viewSettings.scrolled) return;
-
-    if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
-      const doScroll = () => {
-        // may have overscroll where the start is greater than 0
-        if (renderer.start <= scrollDelta && scrollDelta > threshold) {
-          setTimeout(() => {
-            viewRef.current?.prev(renderer.start + 1);
-          }, 100);
-          // sometimes viewSize has subpixel value that the end never reaches
-        } else if (
-          Math.ceil(renderer.end) - scrollDelta >= renderer.viewSize &&
-          scrollDelta < -threshold
-        ) {
-          setTimeout(() => {
-            viewRef.current?.next(renderer.viewSize - Math.floor(renderer.end) + 1);
-          }, 100);
-        }
-      };
-      if (mode === 'mouse') {
-        // we can always get mouse wheel events
-        doScroll();
-      } else if (mode === 'touch') {
-        // when the document height is less than the viewport height, we can't get the relocate event
-        if (renderer.size >= renderer.viewSize) {
-          doScroll();
-        } else {
-          // scroll after the relocate event
-          renderer.addEventListener('relocate', () => doScroll(), { once: true });
-        }
-      }
-    }
-  };
-
   useEffect(() => {
     if (!appService?.isMobileApp) return;
 
@@ -301,6 +262,5 @@ export const usePagination = (
 
   return {
     handlePageFlip,
-    handleContinuousScroll,
   };
 };

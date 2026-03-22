@@ -27,7 +27,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled);
-  const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
@@ -56,7 +55,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
-      continuousScroll: setIsContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       volumeKeysToFlip: setVolumeKeysToFlip,
@@ -94,11 +92,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'hideScrollbar', hideScrollbar, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hideScrollbar]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isContinuousScroll]);
 
   useEffect(() => {
     if (scrollingOverlap === viewSettings.scrollingOverlap) return;
@@ -240,16 +233,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 checked={isScrolledMode}
                 disabled={bookData?.isFixedLayout}
                 onChange={() => setScrolledMode(!isScrolledMode)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.continuousScroll'>
-              <span className=''>{_('Continuous Scroll')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={isContinuousScroll}
-                disabled={bookData?.isFixedLayout}
-                onChange={() => setIsContinuousScroll(!isContinuousScroll)}
               />
             </div>
             <NumberInput
