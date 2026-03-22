@@ -1,5 +1,18 @@
 {
   "releases": {
+    "0.10.1": {
+      "date": "2026-03-22",
+      "notes": [
+        "Reading: Added continuous scroll and spread layout support for EPUBs",
+        "Reading: Added current time and battery display in footer",
+        "Reading: Added TTS, annotation support, pinch-to-zoom, and scroll mode for PDFs",
+        "Library: Added backup/restore to a zip file and batch metadata refresh",
+        "KOReader: Added bookmark and annotation sync between KOReader and Readest devices",
+        "Footnotes: Added back navigation with link history and more responsive popup sizing",
+        "Annotations: Added loupe display when selecting text in instant annotation mode",
+        "Text-to-Speech: Fixed TTS reading position tracking in scrolled mode"
+      ]
+    },
     "0.9.101": {
       "date": "2026-02-28",
       "notes": [
