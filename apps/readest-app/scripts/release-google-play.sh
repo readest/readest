@@ -39,7 +39,7 @@ if grep -q 'MANAGE_EXTERNAL_STORAGE' "$MANIFEST"; then
 fi
 
 echo "🚀 Running: pnpm tauri android build"
-pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
+# pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
 
 # --- ADD PERMISSION BACK AFTER BUILD ---
 if ! grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then
@@ -61,6 +61,23 @@ if [[ -z "$GOOGLE_PLAY_JSON_KEY_FILE" ]]; then
   echo "❌ GOOGLE_PLAY_JSON_KEY_FILE is not set"
   exit 1
 fi
+
+# --- GENERATE CHANGELOG FOR GOOGLE PLAY ---
+CHANGELOG_DIR="../../fastlane/metadata/android/en-US/changelogs"
+mkdir -p "$CHANGELOG_DIR"
+
+NOTES=$(jq -r --arg ver "$VERSION" '.releases[$ver].notes // empty | map("• " + .) | join("\n")' release-notes.json)
+if [[ -n "$NOTES" ]]; then
+  # Google Play has a 500-character limit for release notes per language
+  if [[ ${#NOTES} -gt 480 ]]; then
+    NOTES="${NOTES:0:477}..."
+  fi
+  echo "$NOTES" > "$CHANGELOG_DIR/default.txt"
+  echo "📝 Release notes for v$VERSION written to changelogs/default.txt"
+else
+  echo "⚠️  No release notes found for v$VERSION in release-notes.json"
+fi
+
 cd ../../
 
 fastlane android upload_production

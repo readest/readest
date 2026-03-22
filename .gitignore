@@ -41,6 +41,7 @@ next-env.d.ts
 target
 
 fastlane/report.xml
+fastlane/metadata/android/en-US/changelogs
 
 *.koplugin.zip
 
