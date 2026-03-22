@@ -23,6 +23,7 @@ if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' &&
     posthog.init(posthogKey, {
       api_host: posthogUrl,
       person_profiles: 'always',
+      autocapture: false,
     });
   }
 }

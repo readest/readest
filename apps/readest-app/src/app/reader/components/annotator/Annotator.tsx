@@ -333,7 +333,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           getIndexFromCfi(booknote.cfi) === detail.index,
       )
       .map((annotation) => {
-        view?.addAnnotation(annotation);
+        try {
+          view?.addAnnotation(annotation);
+        } catch (err) {
+          console.warn('Failed to add annotation', { annotation, error: err });
+        }
       });
   };
 

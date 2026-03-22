@@ -32,7 +32,7 @@ export class TTSController extends EventTarget {
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
-  #isPreloading: boolean = false;
+
   #ttsSectionIndex: number = -1;
 
   state: TTSState = 'stopped';
@@ -261,7 +261,6 @@ export class TTSController extends EventTarget {
     const tts = this.view.tts;
     if (!tts) return;
 
-    this.#isPreloading = true;
     const ssmls: string[] = [];
     for (let i = 0; i < count; i++) {
       const ssml = await this.#preprocessSSML(tts.next());
@@ -271,7 +270,6 @@ export class TTSController extends EventTarget {
     for (let i = 0; i < ssmls.length; i++) {
       tts.prev();
     }
-    this.#isPreloading = false;
     await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
   }
 
@@ -533,15 +531,11 @@ export class TTSController extends EventTarget {
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (mark && mark.name !== '-1') {
-      if (this.#isPreloading) {
-        setTimeout(() => this.dispatchSpeakMark(mark), 500);
-      } else {
+      try {
         const range = this.view.tts?.setMark(mark.name);
-        try {
-          const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
-          this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
-        } catch {}
-      }
+        const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+      } catch {}
     }
   }
 

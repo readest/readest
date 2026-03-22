@@ -264,7 +264,13 @@ const FoliateViewer: React.FC<{
               item.style &&
               getIndexFromCfi(item.cfi) === sectionIndex,
           )
-          .forEach((annotation) => viewRef.current?.addAnnotation(annotation));
+          .map((annotation) => {
+            try {
+              viewRef.current?.addAnnotation(annotation);
+            } catch (err) {
+              console.warn('Failed to add annotation', { annotation, error: err });
+            }
+          });
       }, 100);
 
       if (!detail.doc.isEventListenersAdded) {

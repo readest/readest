@@ -15,7 +15,8 @@ export const useProgressAutoSave = (bookKey: string) => {
   const saveBookConfig = useCallback(
     debounce(() => {
       setTimeout(async () => {
-        const config = getConfig(bookKey)!;
+        const config = getConfig(bookKey);
+        if (!config) return;
         const settings = useSettingsStore.getState().settings;
         await saveConfig(envConfig, bookKey, config, settings);
       }, 500);
