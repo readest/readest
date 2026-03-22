@@ -162,7 +162,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   return (
     <Menu
       className={clsx(
-        'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1 border',
+        'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1.5 border',
         'bgcolor-base-200 shadow-2xl',
       )}
       style={{
