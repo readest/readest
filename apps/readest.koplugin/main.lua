@@ -87,7 +87,7 @@ function ReadestSync:addToMainMenu(menu_items)
                         end
                     else
                         return function(menu)
-                            SyncAuth:logout(self.settings, menu)
+                            SyncAuth:logout(self.settings, self.path, menu)
                         end
                     end
                 end,
@@ -221,7 +221,7 @@ function ReadestSync:pullBookConfig(interactive)
 
     SyncConfig:pull(
         self.ui, self.settings, client, book_hash, meta_hash, interactive,
-        function() SyncAuth:logout(self.settings) end
+        function() SyncAuth:logout(self.settings, self.path) end
     )
 end
 

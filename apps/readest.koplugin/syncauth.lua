@@ -152,9 +152,9 @@ function SyncAuth:doLogin(settings, path, email, password, menu)
     end
 end
 
-function SyncAuth:logout(settings, menu)
+function SyncAuth:logout(settings, path, menu)
     if settings.access_token then
-        local client = self:getSupabaseAuthClient(settings, "")
+        local client = self:getSupabaseAuthClient(settings, path)
         if client then
             client:sign_out(settings.access_token, function(success, _response)
                 logger.dbg("ReadestSync: Sign out result:", success)
