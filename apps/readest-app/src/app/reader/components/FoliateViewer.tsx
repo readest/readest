@@ -30,6 +30,7 @@ import {
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
+  getThemeCode,
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
@@ -203,7 +204,8 @@ const FoliateViewer: React.FC<{
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
     if (detail.doc) {
-      const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
+      const renderer = viewRef.current?.renderer;
+      const writingDir = renderer?.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
       const bookData = getBookData(bookKey)!;
 
@@ -230,6 +232,13 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings);
+        const themeCode = getThemeCode();
+        if (themeCode && renderer) {
+          renderer.pageColors = {
+            background: themeCode.bg,
+            foreground: themeCode.fg,
+          };
+        }
       }
 
       applyImageStyle(detail.doc);
@@ -616,6 +625,15 @@ const FoliateViewer: React.FC<{
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
+
+      if (bookDoc.rendition?.layout === 'pre-paginated') {
+        if (themeCode && viewRef.current?.renderer) {
+          viewRef.current.renderer.pageColors = {
+            background: themeCode.bg,
+            foreground: themeCode.fg,
+          };
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
