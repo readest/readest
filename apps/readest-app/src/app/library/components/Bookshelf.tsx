@@ -218,12 +218,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         return bookSorter(a, b) * sortOrderMultiplier;
       }
 
-      // One is a group, one is a book
-      if (groupBy === LibraryGroupByType.Group) {
-        // For custom groups: always place ungrouped books before groups
-        return isAGroup ? 1 : -1;
-      }
-
       // For series/author groups: compare sort values to interleave properly
       if (isAGroup && !isBGroup) {
         const groupValue = getGroupSortValue(a, sortBy, groupBy);
