@@ -177,7 +177,7 @@ export const useNotesSync = (bookKey: string) => {
       convertedNotes.forEach((note) => {
         if (note.cfi) {
           const index = getIndexFromCfi(note.cfi);
-          if (index === view?.renderer.primaryIndex) {
+          if (!note.deletedAt && index === view?.renderer.primaryIndex) {
             view.addAnnotation(note);
           }
         }

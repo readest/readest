@@ -682,7 +682,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const color = settings.globalReadSettings.highlightStyles[style];
     setSelectedStyle(style);
     setSelectedColor(color);
-    console.log('Adding annotation:', cfi, 'style:', style, 'color:', color);
     const annotation: BookNote = {
       id: uniqueId(),
       type: 'annotation',
