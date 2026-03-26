@@ -430,18 +430,25 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     // RSVP extracts ALL words from the current section via renderer.getContents().
     // When RSVP runs out of words and calls this function, it means the entire
     // chapter/section has been read, so we need to go to the next section.
+    const indexBefore = view.renderer.primaryIndex;
     await view.renderer.nextSection?.();
 
     // Wait for section change, then load new content
     setTimeout(() => {
       const controller = controllerRef.current;
-      if (controller) {
-        const progress = getProgress(bookKey);
-        if (progress?.location) {
-          controller.setCurrentCfi(progress.location);
-        }
-        controller.loadNextPageContent();
+      if (!controller) return;
+
+      // Pause at the end of the book instead of restarting
+      if (view.renderer.primaryIndex === indexBefore) {
+        controller.pause();
+        return;
       }
+
+      const progress = getProgress(bookKey);
+      if (progress?.location) {
+        controller.setCurrentCfi(progress.location);
+      }
+      controller.loadNextPageContent();
     }, 500);
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
