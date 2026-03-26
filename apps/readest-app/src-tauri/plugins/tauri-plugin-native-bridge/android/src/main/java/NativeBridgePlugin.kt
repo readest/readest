@@ -285,7 +285,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     }
                     if (visible) {
                         controller.show(WindowInsets.Type.statusBars())
-                        controller.show(WindowInsets.Type.navigationBars())
+                        controller.hide(WindowInsets.Type.navigationBars())
                     } else {
                         controller.hide(WindowInsets.Type.systemBars())
                     }
@@ -301,7 +301,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     }
                     if (visible) {
                         it.show(WindowInsetsCompat.Type.statusBars())
-                        it.show(WindowInsetsCompat.Type.navigationBars())
+                        it.hide(WindowInsetsCompat.Type.navigationBars())
                     } else {
                         it.hide(WindowInsetsCompat.Type.systemBars())
                     }
