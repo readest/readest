@@ -203,6 +203,18 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
 
       const controller = controllerRef.current;
 
+      // Pass flat TOC hrefs so controller can tell when TOC section changes
+      if (bookData.bookDoc?.toc) {
+        const flattenHrefs = (items: typeof bookData.bookDoc.toc): string[] =>
+          items
+            .flatMap((item) => [
+              item.href || '',
+              ...(item.subitems ? flattenHrefs(item.subitems) : []),
+            ])
+            .filter(Boolean);
+        controller.setChapters(flattenHrefs(bookData.bookDoc.toc));
+      }
+
       // Set current CFI for position tracking
       if (progress?.location) {
         controller.setCurrentCfi(progress.location);

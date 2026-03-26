@@ -31,6 +31,9 @@ export class RSVPController extends EventTarget {
     resumedFromIndex: null,
   };
 
+  private anchorToHref: Map<string, string> = new Map();
+  private _chapterMarkers: Array<{ index: number; href: string }> = [];
+
   private playbackTimer: ReturnType<typeof setTimeout> | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private pendingStartWordIndex: number | null = null;
@@ -70,6 +73,35 @@ export class RSVPController extends EventTarget {
 
   get currentCountdown(): number | null {
     return this.countdown;
+  }
+
+  get chapterMarkers(): Array<{ index: number; href: string }> {
+    return this._chapterMarkers;
+  }
+
+  getChapterHrefAtIndex(currentIndex: number): string | undefined {
+    const markers = this._chapterMarkers;
+    let lo = 0,
+      hi = markers.length - 1,
+      result: string | undefined;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (markers[mid]!.index <= currentIndex) {
+        result = markers[mid]!.href;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return result;
+  }
+
+  setChapters(hrefs: string[]): void {
+    this.anchorToHref.clear();
+    for (const href of hrefs) {
+      const fragment = href.split('#')[1];
+      if (fragment) this.anchorToHref.set(fragment, href);
+    }
   }
 
   getPunctuationPauseOptions(): number[] {
@@ -615,14 +647,17 @@ export class RSVPController extends EventTarget {
     const contents = renderer.getContents?.();
     if (!contents || contents.length === 0) return [];
 
+    this._chapterMarkers = [];
     const allWords: RsvpWord[] = [];
+    let runningIndex = 0;
 
     for (const content of contents) {
       const { doc, index: docIndex } = content as { doc: Document; index: number };
       if (!doc?.body) continue;
 
-      const words = this.extractWordsFromElement(doc.body, doc, docIndex);
+      const words = this.extractWordsFromElement(doc.body, doc, docIndex, runningIndex);
       allWords.push(...words);
+      runningIndex += words.length;
     }
 
     return allWords;
@@ -632,6 +667,7 @@ export class RSVPController extends EventTarget {
     element: HTMLElement,
     doc: Document,
     docIndex: number,
+    baseIndex: number = 0,
   ): RsvpWord[] {
     const excludeTags = new Set(['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'ASIDE']);
     const words: RsvpWord[] = [];
@@ -695,6 +731,14 @@ export class RSVPController extends EventTarget {
       const style = el.ownerDocument.defaultView?.getComputedStyle(el);
       if (style?.display === 'none' || style?.visibility === 'hidden') {
         return;
+      }
+
+      const id = el.getAttribute('id');
+      if (id && this.anchorToHref.has(id)) {
+        this._chapterMarkers.push({
+          index: baseIndex + words.length,
+          href: this.anchorToHref.get(id)!,
+        });
       }
 
       for (const child of Array.from(el.childNodes)) {

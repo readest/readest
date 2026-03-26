@@ -223,6 +223,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
   }, [state.active, controller, onClose]);
 
+  // Derive the current chapter from markers as playback advances through TOC sections
+  const effectiveChapterHref =
+    controller.getChapterHrefAtIndex(state.currentIndex) || currentChapterHref;
+
   // Word display helpers
   const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
   const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
@@ -305,23 +309,26 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
-    if (!currentChapterHref) return _('Select Chapter');
-    const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
+    if (!effectiveChapterHref) return _('Select Chapter');
+    const exactMatch = flatChapters.find((c) => c.href === effectiveChapterHref);
+    if (exactMatch) return exactMatch.label;
+    const normalizedCurrent = effectiveChapterHref.split('#')[0]?.replace(/^\//, '') || '';
     const chapter = flatChapters.find((c) => {
       const normalizedHref = c.href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     });
     return chapter?.label || _('Select Chapter');
-  }, [_, currentChapterHref, flatChapters]);
+  }, [_, effectiveChapterHref, flatChapters]);
 
   const isChapterActive = useCallback(
     (href: string): boolean => {
-      if (!currentChapterHref) return false;
-      const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
+      if (!effectiveChapterHref) return false;
+      if (href === effectiveChapterHref) return true;
+      const normalizedCurrent = effectiveChapterHref.split('#')[0]?.replace(/^\//, '') || '';
       const normalizedHref = href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     },
-    [currentChapterHref],
+    [effectiveChapterHref],
   );
 
   // Touch handlers
