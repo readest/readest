@@ -79,7 +79,7 @@
     "@emnapi/runtime": "^1.7.1",
     "@fabianlars/tauri-plugin-oauth": "2",
     "@napi-rs/wasm-runtime": "^1.1.1",
-    "@opennextjs/cloudflare": "^1.17.1",
+    "@opennextjs/cloudflare": "^1.17.3",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -145,7 +145,7 @@
     "lunr": "^2.3.9",
     "marked": "^15.0.12",
     "nanoid": "^5.1.6",
-    "next": "16.1.7",
+    "next": "16.2.1",
     "next-view-transitions": "^0.3.5",
     "nunjucks": "^3.2.4",
     "overlayscrollbars": "^2.11.4",
@@ -231,6 +231,6 @@
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18",
-    "wrangler": "^4.73.0"
+    "wrangler": "^4.77.0"
   }
 }
