@@ -712,7 +712,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div className='mt-3 flex flex-wrap items-center justify-evenly gap-x-8 gap-y-4 text-xs md:justify-center'>
             {/* Punctuation pause */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Pause')}</span>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
                 className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
