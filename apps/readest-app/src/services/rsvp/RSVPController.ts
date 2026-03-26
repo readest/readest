@@ -108,6 +108,14 @@ export class RSVPController extends EventTarget {
     return PUNCTUATION_PAUSE_OPTIONS;
   }
 
+  getWpmOptions(): number[] {
+    const options: number[] = [];
+    for (let wpm = MIN_WPM; wpm <= MAX_WPM; wpm += WPM_STEP) {
+      options.push(wpm);
+    }
+    return options;
+  }
+
   setPunctuationPause(pauseMs: number): void {
     if (PUNCTUATION_PAUSE_OPTIONS.includes(pauseMs)) {
       this.state.punctuationPauseMs = pauseMs;

@@ -59,6 +59,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
+  const [showWpmDropdown, setShowWpmDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(() => {
     try {
@@ -486,10 +487,53 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           )}
         </div>
 
-        {/* WPM badge */}
-        <div className='shrink-0 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums'>
-          <span className='font-semibold'>{state.wpm}</span>
-          <span className='ml-0.5 text-xs opacity-50'>WPM</span>
+        {/* WPM selector */}
+        <div className='relative shrink-0'>
+          <button
+            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20 active:scale-[0.98]'
+            onClick={() => setShowWpmDropdown(!showWpmDropdown)}
+            aria-label={_('Select reading speed')}
+            title={_('Select reading speed')}
+          >
+            <span className='font-semibold'>{state.wpm}</span>
+            <span className='ml-0.5 text-xs opacity-50'>WPM</span>
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2.5'
+              className='ml-0.5 h-3 w-3 shrink-0 opacity-50'
+            >
+              <path d='M6 9l6 6 6-6' />
+            </svg>
+          </button>
+          {showWpmDropdown && (
+            <>
+              <Overlay onDismiss={() => setShowWpmDropdown(false)} />
+              <div
+                className='absolute right-0 top-full z-[100] mt-1.5 max-h-64 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
+                style={{ backgroundColor: bgColor }}
+              >
+                {controller.getWpmOptions().map((wpm) => (
+                  <button
+                    key={wpm}
+                    className={clsx(
+                      'flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md border-none bg-transparent px-4 py-1.5 text-sm tabular-nums transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
+                      state.wpm === wpm &&
+                        'bg-[color-mix(in_srgb,var(--rsvp-accent)_15%,transparent)] font-semibold',
+                    )}
+                    onClick={() => {
+                      controller.setWpm(wpm);
+                      setShowWpmDropdown(false);
+                    }}
+                  >
+                    <span>{wpm}</span>
+                    <span className='text-xs opacity-40'>WPM</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
