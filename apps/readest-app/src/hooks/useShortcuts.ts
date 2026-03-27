@@ -61,11 +61,11 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
       const handler = actionHandler as
         | ((event?: KeyboardEvent | MessageEvent) => void | boolean)
         | undefined;
-      const shortcutList = shortcuts[shortcutKey as keyof ShortcutConfig];
+      const shortcutEntry = shortcuts[shortcutKey as keyof ShortcutConfig];
       // console.log('Checking action:', shortcutKey);
       if (
         handler &&
-        shortcutList?.some((shortcut) =>
+        shortcutEntry?.keys?.some((shortcut) =>
           isShortcutMatch(shortcut, key, ctrlKey, altKey, metaKey, shiftKey),
         )
       ) {
