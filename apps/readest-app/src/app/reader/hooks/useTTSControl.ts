@@ -59,12 +59,56 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     deinitMediaSession,
   } = useTTSMediaSession({ bookKey });
 
+  const handleTTSForward = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; byMark?: boolean } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      await ttsController.forward(detail?.byMark ?? false);
+    }
+  };
+
+  const handleTTSBackward = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; byMark?: boolean } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      await ttsController.backward(detail?.byMark ?? false);
+    }
+  };
+
+  const handleTTSTogglePlay = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (!ttsController) return;
+    if (ttsController.state === 'playing') {
+      setIsPlaying(false);
+      setIsPaused(true);
+      await ttsController.pause();
+    } else {
+      setIsPlaying(true);
+      setIsPaused(false);
+      if (ttsController.state === 'paused') {
+        await ttsController.resume();
+      } else {
+        await ttsController.start();
+      }
+    }
+  };
+
   useEffect(() => {
     eventDispatcher.on('tts-speak', handleTTSSpeak);
     eventDispatcher.on('tts-stop', handleTTSStop);
+    eventDispatcher.on('tts-forward', handleTTSForward);
+    eventDispatcher.on('tts-backward', handleTTSBackward);
+    eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
       eventDispatcher.off('tts-stop', handleTTSStop);
+      eventDispatcher.off('tts-forward', handleTTSForward);
+      eventDispatcher.off('tts-backward', handleTTSBackward);
+      eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
       if (ttsControllerRef.current) {
         ttsControllerRef.current.shutdown();
         ttsControllerRef.current = null;
