@@ -1,0 +1,58 @@
+Categories:
+  - Reading
+License: AGPL-3.0-or-later
+AuthorName: Bilingify LLC
+AuthorWebSite: https://readest.com
+SourceCode: https://github.com/readest/readest
+IssueTracker: https://github.com/readest/readest/issues
+Changelog: https://github.com/readest/readest/releases
+
+AutoName: Readest
+
+RepoType: git
+Repo: https://github.com/readest/readest.git
+
+Builds:
+  - versionName: 0.10.1
+    versionCode: 100100
+    commit: v0.10.1
+    subdir: apps/readest-app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y build-essential libssl-dev pkg-config
+      - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+      - apt-get install -y nodejs
+      - npm install -g pnpm
+      - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+      - source $HOME/.cargo/env
+      - rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+    init:
+      - pnpm install --frozen-lockfile
+      - pnpm --filter @readest/readest-app setup-vendors
+    prebuild:
+      # Regenerate Android project (CI does this on every build)
+      - rm -rf src-tauri/gen/android
+      - cargo install tauri-cli@2.10.1 --locked
+      - pnpm tauri android init
+      - pnpm tauri icon ../../data/icons/readest-book.png
+      # Restore customizations (Tauri init overwrites some committed files)
+      - git checkout src-tauri/gen/android
+      # Strip Google Play billing permission for FOSS build
+      - sed -i '/com.android.vending.BILLING/d' src-tauri/gen/android/app/src/main/AndroidManifest.xml
+      - source $HOME/.cargo/env
+    build:
+      - pnpm tauri android build
+    output: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+    scandelete:
+      - node_modules
+    ndk: 28.2.13676358
+
+AntiFeatures:
+  NonFreeNet:
+    en-US: Connects to DeepL servers.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.10.1
+CurrentVersionCode: 100100
