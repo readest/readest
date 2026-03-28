@@ -38,8 +38,9 @@ if grep -q 'MANAGE_EXTERNAL_STORAGE' "$MANIFEST"; then
   fi
 fi
 
-echo "🚀 Running: pnpm tauri android build"
-# pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
+source .env.google-play.local
+echo "🚀 Running: pnpm tauri android build (googleplay flavor)"
+ORG_GRADLE_PROJECT_storeFlavor=googleplay pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
 
 # --- ADD PERMISSION BACK AFTER BUILD ---
 if ! grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then
@@ -56,7 +57,6 @@ if ! grep -q 'MANAGE_EXTERNAL_STORAGE' "$MANIFEST"; then
   " "$MANIFEST"
 fi
 
-source .env.google-play.local
 if [[ -z "$GOOGLE_PLAY_JSON_KEY_FILE" ]]; then
   echo "❌ GOOGLE_PLAY_JSON_KEY_FILE is not set"
   exit 1
