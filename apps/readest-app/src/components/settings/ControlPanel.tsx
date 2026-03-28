@@ -27,6 +27,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled);
+  const [noContinuousScroll, setNoContinuousScroll] = useState(viewSettings.noContinuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
@@ -55,6 +56,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
+      noContinuousScroll: setNoContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       volumeKeysToFlip: setVolumeKeysToFlip,
@@ -87,6 +89,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
+
+  useEffect(() => {
+    if (noContinuousScroll === viewSettings.noContinuousScroll) return;
+    saveViewSettings(envConfig, bookKey, 'noContinuousScroll', noContinuousScroll);
+    if (noContinuousScroll) {
+      getView(bookKey)?.renderer.setAttribute('no-continuous-scroll', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('no-continuous-scroll');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noContinuousScroll]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'hideScrollbar', hideScrollbar, false, false);
@@ -233,6 +246,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 checked={isScrolledMode}
                 disabled={bookData?.isFixedLayout}
                 onChange={() => setScrolledMode(!isScrolledMode)}
+              />
+            </div>
+            <div
+              className='config-item'
+              data-setting-id='settings.control.scroll.noContinuousScroll'
+            >
+              <span className=''>{_('Single Section Scroll')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={noContinuousScroll}
+                disabled={!viewSettings.scrolled}
+                onChange={() => setNoContinuousScroll(!noContinuousScroll)}
               />
             </div>
             <NumberInput
