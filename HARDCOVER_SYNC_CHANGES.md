@@ -70,14 +70,12 @@ Base: `84349ab1` (`main` at start of work)
   - Payload-hash mapping reuse across unstable local note IDs.
   - Suppress exporting standalone excerpt quote when matching annotation-with-note exists.
 
-## Current Known Debug Instrumentation
+## Performance & Privacy Refactoring (Latest Changes)
 
-- Temporary runtime logs and start toast were added to help diagnose note-sync flow:
-  - `apps/readest-app/src/app/reader/hooks/useHardcoverSync.ts`
-  - `apps/readest-app/src/app/api/hardcover/graphql/route.ts`
-  - `apps/readest-app/src/app/reader/components/sidebar/BookMenu.tsx`
-
-If desired, these debug logs/toasts can be removed in a cleanup commit once behavior is verified.
+- **Removed Debug Instrumentation**: Extraneous toast messages and noisy console logs tracking the sync-state have been flushed out.
+- **Privacy Hardened**: The GraphQL proxy in Next.js no longer leaks the raw text of user journal entries into server console logs.
+- **SQLite Performance Optimized**: The `HardcoverSyncMapStore` now caches data in-memory and flushes changes in a single database transaction, resolving UI-freezing disk thrashing.
+- **Rate Limiting Implemented**: The `HardcoverClient` now implements global pacing to stay under the 55 requests/minute API threshold, automatically catching `429 Too Many Requests` status codes and recovering with an exponential backoff sleep mechanism.
 
 ## Changed Files (full list)
 

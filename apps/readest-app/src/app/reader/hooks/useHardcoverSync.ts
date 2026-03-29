@@ -38,21 +38,7 @@ export const useHardcoverSync = (bookKey: string) => {
   const pushNotes = useCallback(async () => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    console.log('[Hardcover] pushNotes triggered', {
-      bookKey,
-      hasConfig: !!config,
-      hasBook: !!book,
-      noteCount: config?.booknotes?.length ?? 0,
-      hardcoverSyncEnabled: config?.hardcoverSyncEnabled ?? false,
-    });
-
-    if (!config || !book) {
-      eventDispatcher.dispatch('toast', {
-        message: _('This book is still loading. Try pushing notes again in a moment.'),
-        type: 'info',
-      });
-      return;
-    }
+    if (!config || !book) return;
     if (!config.hardcoverSyncEnabled) {
       eventDispatcher.dispatch('toast', {
         message: _('Enable Hardcover sync for this book first.'),
@@ -65,6 +51,9 @@ export const useHardcoverSync = (bookKey: string) => {
       (note: BookNote) =>
         (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
     );
+
+
+
     if (eligibleNotes.length === 0) {
       eventDispatcher.dispatch('toast', {
         message: _('No annotations or excerpts to sync for this book.'),
@@ -84,7 +73,7 @@ export const useHardcoverSync = (bookKey: string) => {
 
     try {
       const result = await client.syncBookNotes(book, config);
-      console.log('[Hardcover] pushNotes result', { bookKey, result });
+
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {
         message:
@@ -111,20 +100,7 @@ export const useHardcoverSync = (bookKey: string) => {
   const pushProgress = useCallback(async () => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    console.log('[Hardcover] pushProgress triggered', {
-      bookKey,
-      hasConfig: !!config,
-      hasBook: !!book,
-      hardcoverSyncEnabled: config?.hardcoverSyncEnabled ?? false,
-    });
-
-    if (!config || !book) {
-      eventDispatcher.dispatch('toast', {
-        message: _('This book is still loading. Try pushing progress again in a moment.'),
-        type: 'info',
-      });
-      return;
-    }
+    if (!config || !book) return;
     if (!config.hardcoverSyncEnabled) {
       eventDispatcher.dispatch('toast', {
         message: _('Enable Hardcover sync for this book first.'),

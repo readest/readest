@@ -13,6 +13,8 @@ import {
   MUTATION_UPDATE_JOURNAL,
 } from './hardcover-graphql';
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type HardcoverSettingsLike = {
   accessToken: string;
 };
@@ -37,6 +39,7 @@ export class HardcoverClient {
   private token: string;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
+  private lastRequestTime = 0;
 
   constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
     // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
@@ -49,7 +52,23 @@ export class HardcoverClient {
     return isTauriEnv() ? this.directEndpoint : this.proxyEndpoint;
   }
 
-  private async request<TVariables, TData>(query: string, variables: TVariables): Promise<TData> {
+  private async paceRequest() {
+    const now = Date.now();
+    const elapsed = now - this.lastRequestTime;
+    if (elapsed < 1150) { // Keep just under 55 req / minute
+      await sleep(1150 - elapsed);
+    }
+    this.lastRequestTime = Date.now();
+  }
+
+  private async request<TVariables, TData>(
+    query: string,
+    variables: TVariables,
+    retries = 3,
+    backoffMs = 2000,
+  ): Promise<TData> {
+    await this.paceRequest();
+
     const res = await fetch(this.endpoint, {
       method: 'POST',
       headers: {
@@ -60,7 +79,12 @@ export class HardcoverClient {
     });
 
     if (res.status === 429) {
-      throw new Error('Hardcover Rate Limit (429) Exceeded');
+      if (retries > 0) {
+        console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${backoffMs}ms...`);
+        await sleep(backoffMs);
+        return this.request(query, variables, retries - 1, backoffMs * 2);
+      }
+      throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
     }
 
     if (!res.ok) {
@@ -414,11 +438,12 @@ export class HardcoverClient {
       return `${cfiNode}|${text}`;
     };
 
-    const annotationWithNoteKeys = new Set(
-      rawNotes
-        .filter((note) => note.type === 'annotation' && !!note.note?.trim())
-        .map((note) => getDedupKey(note)),
-    );
+    const annotationWithNoteKeys = new Set<string>();
+    for (const note of rawNotes) {
+      if (note.type === 'annotation' && note.note?.trim()) {
+        annotationWithNoteKeys.add(getDedupKey(note));
+      }
+    }
 
     const notes = rawNotes.filter((note) => {
       const key = getDedupKey(note);
@@ -437,57 +462,61 @@ export class HardcoverClient {
     let updated = 0;
     let skipped = 0;
 
-    for (const note of notes) {
-      const payload = this.buildJournalPayload(note, config, context);
-      if (!payload.entry) {
-        skipped += 1;
-        continue;
-      }
-
-      const payloadHash = getContentMd5(payload);
-      const existing = await this.mapStore.getMapping(book.hash, note.id);
-
-      if (!existing) {
-        const samePayload = await this.mapStore.getMappingByPayloadHash(book.hash, payloadHash);
-        if (samePayload) {
-          await this.mapStore.upsertMapping(
-            book.hash,
-            note.id,
-            samePayload.hardcover_journal_id,
-            payloadHash,
-          );
+    try {
+      for (const note of notes) {
+        const payload = this.buildJournalPayload(note, config, context);
+        if (!payload.entry) {
           skipped += 1;
           continue;
         }
 
-        const journalId = await this.insertJournal(context, payload);
-        await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-        inserted += 1;
-        continue;
-      }
+        const payloadHash = getContentMd5(payload);
+        const existing = await this.mapStore.getMapping(book.hash, note.id);
 
-      if (existing.payload_hash === payloadHash) {
-        skipped += 1;
-        continue;
-      }
+        if (!existing) {
+          const samePayload = await this.mapStore.getMappingByPayloadHash(book.hash, payloadHash);
+          if (samePayload) {
+            await this.mapStore.upsertMapping(
+              book.hash,
+              note.id,
+              samePayload.hardcover_journal_id,
+              payloadHash,
+            );
+            skipped += 1;
+            continue;
+          }
 
-      try {
-        await this.updateJournal(existing.hardcover_journal_id, payload);
-        await this.mapStore.upsertMapping(
-          book.hash,
-          note.id,
-          existing.hardcover_journal_id,
-          payloadHash,
-        );
-        updated += 1;
-      } catch (error) {
-        if (!this.isMissingJournalError(error)) {
-          throw error;
+          const journalId = await this.insertJournal(context, payload);
+          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
+          inserted += 1;
+          continue;
         }
-        const journalId = await this.insertJournal(context, payload);
-        await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-        inserted += 1;
+
+        if (existing.payload_hash === payloadHash) {
+          skipped += 1;
+          continue;
+        }
+
+        try {
+          await this.updateJournal(existing.hardcover_journal_id, payload);
+          await this.mapStore.upsertMapping(
+            book.hash,
+            note.id,
+            existing.hardcover_journal_id,
+            payloadHash,
+          );
+          updated += 1;
+        } catch (error) {
+          if (!this.isMissingJournalError(error)) {
+            throw error;
+          }
+          const journalId = await this.insertJournal(context, payload);
+          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
+          inserted += 1;
+        }
       }
+    } finally {
+      await this.mapStore.flush();
     }
 
     return { inserted, updated, skipped };

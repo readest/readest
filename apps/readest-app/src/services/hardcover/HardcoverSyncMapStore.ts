@@ -14,6 +14,9 @@ const STORAGE_PREFIX = 'hardcover-note-mapping';
 
 export class HardcoverSyncMapStore {
   private appService: AppService;
+  private loadedBookHash: string | null = null;
+  private mappings: Map<string, HardcoverSyncMapRow> = new Map();
+  private modified: boolean = false;
 
   constructor(appService: AppService) {
     this.appService = appService;
@@ -36,66 +39,98 @@ export class HardcoverSyncMapStore {
     }
   }
 
-  async getMapping(bookHash: string, noteId: string): Promise<HardcoverSyncMapRow | null> {
+  async loadForBook(bookHash: string): Promise<void> {
+    this.loadedBookHash = bookHash;
+    this.mappings.clear();
+    this.modified = false;
+
     if (this.isWebStorageAvailable()) {
       try {
-        const raw = window.localStorage.getItem(this.getStorageKey(bookHash, noteId));
-        return raw ? (JSON.parse(raw) as HardcoverSyncMapRow) : null;
+        const prefix = `${STORAGE_PREFIX}:${bookHash}:`;
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && key.startsWith(prefix)) {
+            const raw = window.localStorage.getItem(key);
+            if (raw) {
+              const row = JSON.parse(raw) as HardcoverSyncMapRow;
+              this.mappings.set(row.note_id, row);
+            }
+          }
+        }
       } catch (error) {
         console.error('Failed to read Hardcover note mapping from localStorage:', error);
-        return null;
       }
+      return;
     }
 
-    return this.withDb(async (db) => {
+    await this.withDb(async (db) => {
       const rows = await db.select<HardcoverSyncMapRow>(
         `SELECT book_hash, note_id, hardcover_journal_id, payload_hash, synced_at
          FROM hardcover_note_mappings
-         WHERE book_hash = ? AND note_id = ?
-         LIMIT 1`,
-        [bookHash, noteId],
+         WHERE book_hash = ?`,
+        [bookHash],
       );
-      return rows[0] ?? null;
+      for (const row of rows) {
+        this.mappings.set(row.note_id, row);
+      }
     });
+  }
+
+  async flush(): Promise<void> {
+    if (!this.modified || !this.loadedBookHash) return;
+
+    if (this.isWebStorageAvailable()) {
+      try {
+        for (const row of this.mappings.values()) {
+          window.localStorage.setItem(this.getStorageKey(row.book_hash, row.note_id), JSON.stringify(row));
+        }
+        this.modified = false;
+      } catch (error) {
+        console.error('Failed to write Hardcover note mapping to localStorage:', error);
+      }
+      return;
+    }
+
+    await this.withDb(async (db) => {
+      // Execute inserts sequentially but within a single DB connection
+      for (const row of this.mappings.values()) {
+        await db.execute(
+          `INSERT INTO hardcover_note_mappings
+            (book_hash, note_id, hardcover_journal_id, payload_hash, synced_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(book_hash, note_id)
+           DO UPDATE SET
+             hardcover_journal_id = excluded.hardcover_journal_id,
+             payload_hash = excluded.payload_hash,
+             synced_at = excluded.synced_at`,
+          [row.book_hash, row.note_id, row.hardcover_journal_id, row.payload_hash, row.synced_at],
+        );
+      }
+    });
+    this.modified = false;
+  }
+
+  async getMapping(bookHash: string, noteId: string): Promise<HardcoverSyncMapRow | null> {
+    if (this.loadedBookHash !== bookHash) {
+      await this.loadForBook(bookHash);
+    }
+    return this.mappings.get(noteId) || null;
   }
 
   async getMappingByPayloadHash(
     bookHash: string,
     payloadHash: string,
   ): Promise<HardcoverSyncMapRow | null> {
-    if (this.isWebStorageAvailable()) {
-      try {
-        const prefix = `${STORAGE_PREFIX}:${bookHash}:`;
-        let best: HardcoverSyncMapRow | null = null;
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (!key || !key.startsWith(prefix)) continue;
-          const raw = window.localStorage.getItem(key);
-          if (!raw) continue;
-          const row = JSON.parse(raw) as HardcoverSyncMapRow;
-          if (row.payload_hash !== payloadHash) continue;
-          if (!best || row.synced_at > best.synced_at) {
-            best = row;
-          }
-        }
-        return best;
-      } catch (error) {
-        console.error('Failed to read Hardcover payload mapping from localStorage:', error);
-        return null;
+    if (this.loadedBookHash !== bookHash) {
+      await this.loadForBook(bookHash);
+    }
+    let best: HardcoverSyncMapRow | null = null;
+    for (const row of this.mappings.values()) {
+      if (row.payload_hash === payloadHash) {
+        if (!best || row.synced_at > best.synced_at) best = row;
       }
     }
-
-    return this.withDb(async (db) => {
-      const rows = await db.select<HardcoverSyncMapRow>(
-        `SELECT book_hash, note_id, hardcover_journal_id, payload_hash, synced_at
-         FROM hardcover_note_mappings
-         WHERE book_hash = ? AND payload_hash = ?
-         ORDER BY synced_at DESC
-         LIMIT 1`,
-        [bookHash, payloadHash],
-      );
-      return rows[0] ?? null;
-    });
+    return best;
   }
 
   async upsertMapping(
@@ -104,36 +139,16 @@ export class HardcoverSyncMapStore {
     journalId: number,
     payloadHash: string,
   ): Promise<void> {
-    const now = Date.now();
-
-    if (this.isWebStorageAvailable()) {
-      try {
-        const row: HardcoverSyncMapRow = {
-          book_hash: bookHash,
-          note_id: noteId,
-          hardcover_journal_id: journalId,
-          payload_hash: payloadHash,
-          synced_at: now,
-        };
-        window.localStorage.setItem(this.getStorageKey(bookHash, noteId), JSON.stringify(row));
-        return;
-      } catch (error) {
-        console.error('Failed to write Hardcover note mapping to localStorage:', error);
-      }
+    if (this.loadedBookHash !== bookHash) {
+      await this.loadForBook(bookHash);
     }
-
-    await this.withDb(async (db) => {
-      await db.execute(
-        `INSERT INTO hardcover_note_mappings
-          (book_hash, note_id, hardcover_journal_id, payload_hash, synced_at)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(book_hash, note_id)
-         DO UPDATE SET
-           hardcover_journal_id = excluded.hardcover_journal_id,
-           payload_hash = excluded.payload_hash,
-           synced_at = excluded.synced_at`,
-        [bookHash, noteId, journalId, payloadHash, now],
-      );
+    this.mappings.set(noteId, {
+      book_hash: bookHash,
+      note_id: noteId,
+      hardcover_journal_id: journalId,
+      payload_hash: payloadHash,
+      synced_at: Date.now(),
     });
+    this.modified = true;
   }
 }

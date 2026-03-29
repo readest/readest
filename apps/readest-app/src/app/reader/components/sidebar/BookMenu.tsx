@@ -117,11 +117,6 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setIsDropdownOpen?.(false);
   };
   const handlePushHardcoverNotes = () => {
-    eventDispatcher.dispatch('toast', {
-      message: _('Starting Hardcover notes sync...'),
-      type: 'success',
-      timeout: 2000,
-    });
     eventDispatcher.dispatch('hardcover-push-notes', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
