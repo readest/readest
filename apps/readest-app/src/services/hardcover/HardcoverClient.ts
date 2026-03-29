@@ -52,6 +52,10 @@ export class HardcoverClient {
     return isTauriEnv() ? this.directEndpoint : this.proxyEndpoint;
   }
 
+  private formatDate(date: Date): string {
+    return date.toISOString().replace(/\.\d+/, '').replace('Z', '+00:00');
+  }
+
   private async paceRequest() {
     const now = Date.now();
     const elapsed = now - this.lastRequestTime;
@@ -378,7 +382,7 @@ export class HardcoverClient {
       page: boundedPage,
       possible: totalPages || Math.max(boundedPage, 1),
       percent,
-      action_at: new Date(note.updatedAt || note.createdAt || Date.now()).toISOString(),
+      action_at: this.formatDate(new Date(note.updatedAt || note.createdAt || Date.now())),
       privacy_setting_id: 3,
     };
   }

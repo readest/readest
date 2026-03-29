@@ -88,7 +88,7 @@ mutation UpdateRead($id: Int!, $progress_pages: Int!, $edition_id: Int!, $starte
 export const MUTATION_INSERT_JOURNAL = `
 mutation InsertReadingJournal(
   $book_id: Int!, $edition_id: Int!, $event: String!, $entry: String!,
-  $action_at: timestamptz, $page: Int!, $possible: Int!, $percent: Float!, $privacy_setting_id: Int!
+  $action_at: date, $page: Int!, $possible: Int!, $percent: Float!, $privacy_setting_id: Int!
 ) {
   insert_reading_journal(
     object: {
@@ -112,7 +112,7 @@ mutation UpdateReadingJournal(
   $id: Int!,
   $event: String!,
   $entry: String!,
-  $action_at: timestamptz,
+  $action_at: date,
   $page: Int!,
   $possible: Int!,
   $percent: Float!,
