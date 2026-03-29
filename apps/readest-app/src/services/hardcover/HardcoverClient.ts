@@ -415,8 +415,15 @@ export class HardcoverClient {
     );
 
     const notes = rawNotes.filter((note) => {
-      if (note.type !== 'excerpt') return true;
-      return !annotationWithNoteCfis.has(note.cfi);
+      if (!annotationWithNoteCfis.has(note.cfi)) return true;
+
+      // When a note-bearing annotation exists for the same location,
+      // suppress quote-like duplicates from both excerpt rows and
+      // empty-note annotation rows.
+      if (note.type === 'excerpt') return false;
+      if (note.type === 'annotation' && !note.note?.trim()) return false;
+
+      return true;
     });
 
     let inserted = 0;
