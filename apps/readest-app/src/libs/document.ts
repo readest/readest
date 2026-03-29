@@ -47,6 +47,7 @@ export type BookMetadata = {
   description?: string;
   subject?: string | string[] | Contributor;
   identifier?: string;
+  isbn?: string;
   altIdentifier?: string | string[] | Identifier;
   belongsTo?: {
     collection?: Array<Collection> | Collection;

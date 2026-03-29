@@ -13,22 +13,24 @@ import { MigrationEntry, SchemaType } from '../migrate';
  *   2. Add a new key here with its migration array.
  */
 const migrations: Record<SchemaType, MigrationEntry[]> = {
-  // Example schema — replace with real migrations when ready:
-  //
-  // library: [
-  //   {
-  //     name: '2026030601_initial_schema',
-  //     sql: `
-  //       CREATE TABLE IF NOT EXISTS books (
-  //         id INTEGER PRIMARY KEY AUTOINCREMENT,
-  //         title TEXT NOT NULL,
-  //         author TEXT,
-  //         path TEXT NOT NULL UNIQUE,
-  //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  //       );
-  //     `,
-  //   },
-  // ],
+  'hardcover-sync': [
+    {
+      name: '2026032901_hardcover_note_mappings',
+      sql: `
+        CREATE TABLE IF NOT EXISTS hardcover_note_mappings (
+          book_hash TEXT NOT NULL,
+          note_id TEXT NOT NULL,
+          hardcover_journal_id INTEGER NOT NULL,
+          payload_hash TEXT NOT NULL,
+          synced_at INTEGER NOT NULL,
+          PRIMARY KEY (book_hash, note_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_hardcover_note_mappings_synced_at
+        ON hardcover_note_mappings (synced_at);
+      `,
+    },
+  ],
 };
 
 export function getMigrations(schema: SchemaType): MigrationEntry[] {

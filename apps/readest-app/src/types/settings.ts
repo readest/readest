@@ -70,6 +70,12 @@ export interface ReadwiseSettings {
   lastSyncedAt: number;
 }
 
+export interface HardcoverSettings {
+  enabled: boolean;
+  accessToken: string;
+  lastSyncedAt: number;
+}
+
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
@@ -108,6 +114,7 @@ export interface SystemSettings {
 
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
+  hardcover: HardcoverSettings;
 
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;

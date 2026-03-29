@@ -89,8 +89,10 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
                       {source.data.publisher ? `${source.data.publisher} • ` : ''}
                       {source.data.published}
                     </div>
-                    {source.data.identifier && (
-                      <div className='text-gray-500'>Identifier: {source.data.identifier}</div>
+                    {(source.data.isbn || source.data.identifier) && (
+                      <div className='text-gray-500'>
+                        ISBN: {source.data.isbn || source.data.identifier}
+                      </div>
                     )}
                     {source.data.description && (
                       <div className='line-clamp-3 text-xs text-gray-500'>
