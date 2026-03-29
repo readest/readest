@@ -408,16 +408,15 @@ export class HardcoverClient {
     // Readest can keep both an excerpt (quote) and an annotation (quote + note)
     // for the same highlight. Prefer the richer annotation and suppress the
     // duplicate quote export.
-    const annotationWithNoteKeys = new Set(
+    const annotationWithNoteCfis = new Set(
       rawNotes
         .filter((note) => note.type === 'annotation' && !!note.note?.trim())
-        .map((note) => `${note.cfi}::${(note.text ?? '').trim()}`),
+        .map((note) => note.cfi),
     );
 
     const notes = rawNotes.filter((note) => {
       if (note.type !== 'excerpt') return true;
-      const key = `${note.cfi}::${(note.text ?? '').trim()}`;
-      return !annotationWithNoteKeys.has(key);
+      return !annotationWithNoteCfis.has(note.cfi);
     });
 
     let inserted = 0;
