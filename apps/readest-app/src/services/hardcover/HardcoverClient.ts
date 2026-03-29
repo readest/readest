@@ -115,6 +115,13 @@ export class HardcoverClient {
     const metadata = book.metadata;
     if (!metadata) return null;
 
+    if (metadata.isbn) {
+      const normalizedIsbn = metadata.isbn.replace(/[-\s]/g, '');
+      if (/^\d{10}(\d{3})?$/.test(normalizedIsbn)) {
+        return normalizedIsbn;
+      }
+    }
+
     const identifiers: Array<{ scheme?: string; value: string }> = [];
     const pushMaybe = (value?: string, scheme?: string) => {
       if (!value) return;
