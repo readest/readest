@@ -325,7 +325,7 @@ export class HardcoverClient {
     const pagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (pagesRead / total) * 100 : 0;
     const activeRead = context.userBook.user_book_reads?.[0];
-    const startedAt = new Date(book.createdAt || Date.now()).toISOString().split('T')[0];
+    const startedAt = new Date(book.createdAt || Date.now()).toISOString();
 
     if (activeRead?.id) {
       await this.request(MUTATION_UPDATE_READ, {
@@ -378,7 +378,7 @@ export class HardcoverClient {
       page: boundedPage,
       possible: totalPages || Math.max(boundedPage, 1),
       percent,
-      action_at: new Date(note.updatedAt || note.createdAt || Date.now()).toISOString().split('T')[0],
+      action_at: new Date(note.updatedAt || note.createdAt || Date.now()).toISOString(),
       privacy_setting_id: 3,
     };
   }
