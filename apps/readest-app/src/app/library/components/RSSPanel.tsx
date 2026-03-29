@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RSSCatalog, RSSFeed, RSSItem } from '@/types/rss';
 import { fetchRSSFeed } from '@/services/rss/rssFetcher';
+import { applyArticleStates } from '@/services/rss/articleManager';
 import { FeedView } from '@/app/rss/components/FeedView';
 import { ItemView } from '@/app/rss/components/ItemView';
 import { RSSManager } from '@/app/rss/components/RSSManager';
@@ -32,6 +33,8 @@ export function RSSPanel({ isOpen, onClose }: RSSPanelProps) {
     setLoading(true);
     try {
       const fetchedFeed = await fetchRSSFeed(catalog.url, catalog.fileContent);
+      // Apply saved article states to the fetched items
+      applyArticleStates(fetchedFeed.items, catalog.id);
       setFeed(fetchedFeed);
       setSelectedFeed(catalog);
       setViewMode('feeds');

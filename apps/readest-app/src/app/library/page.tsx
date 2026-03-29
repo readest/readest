@@ -198,6 +198,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useTransferQueue(libraryLoaded);
 
   const { pullLibrary, pushLibrary } = useBooksSync();
+  
+  // Listen for library data changes (e.g., when articles are saved)
+  const handleLibraryChange = useCallback(async () => {
+    console.log('[Library] Data changed, reloading...');
+    setLoading(true);
+    try {
+      const appService = await envConfig.getAppService();
+      const newLibrary = await appService.loadLibraryBooks();
+      setLibrary(newLibrary);
+      refreshGroups();
+      eventDispatcher.dispatch('toast', {
+        message: _('Library updated'),
+        timeout: 2000,
+        type: 'info',
+      });
+    } catch (error) {
+      console.error('Failed to reload library:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [envConfig, setLibrary, refreshGroups]);
+  
+  useEffect(() => {
+    window.addEventListener('library-data-changed', handleLibraryChange);
+    return () => window.removeEventListener('library-data-changed', handleLibraryChange);
+  }, [handleLibraryChange]);
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(

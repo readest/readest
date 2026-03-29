@@ -117,6 +117,8 @@ export function RSSManager({ onFeedSelect, onClose }: RSSManagerProps) {
   const saveFeeds = async (updatedFeeds: RSSCatalog[]) => {
     try {
       await saveSysSettings(envConfig, 'rssFeeds', updatedFeeds);
+      // Update Zustand after saving
+      setSettings({ ...settings, rssFeeds: updatedFeeds });
     } catch (e) {
       console.error('[RSS Manager] Failed to save feeds:', e);
     }

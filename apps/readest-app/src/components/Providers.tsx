@@ -52,6 +52,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     if (appService) {
       initSystemThemeListener(appService);
       appService.loadSettings().then((settings) => {
+        // Store loaded settings in Zustand store
+        useSettingsStore.getState().setSettings(settings);
+        
         const globalViewSettings = settings.globalViewSettings;
         applyUILanguage(globalViewSettings.uiLanguage);
         applyBackgroundTexture(envConfig, globalViewSettings);

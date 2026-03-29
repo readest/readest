@@ -55,10 +55,20 @@ export const saveSysSettings = async <K extends keyof SystemSettings>(
   value: SystemSettings[K],
 ) => {
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+  console.log('[saveSysSettings] Called with key:', key);
+  console.log('[saveSysSettings] Old value:', settings[key]);
+  console.log('[saveSysSettings] New value:', value);
+  console.log('[saveSysSettings] Are they different?', settings[key] !== value);
+  
   if (settings[key] !== value) {
     // Create a new object to ensure Zustand detects the change
     const updatedSettings = { ...settings, [key]: value };
+    console.log('[saveSysSettings] Updated settings object created');
     setSettings(updatedSettings);
+    console.log('[saveSysSettings] Calling saveSettings...');
     await saveSettings(envConfig, updatedSettings);
+    console.log('[saveSysSettings] saveSettings completed');
+  } else {
+    console.log('[saveSysSettings] Skipping save - values are the same');
   }
 };

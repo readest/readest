@@ -33,8 +33,19 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   activeSettingsItemId: null,
   setSettings: (settings) => set({ settings }),
   saveSettings: async (envConfig: EnvConfigType, settings: SystemSettings) => {
-    const appService = await envConfig.getAppService();
-    await appService.saveSettings(settings);
+    console.log('[settingsStore.saveSettings] Called with settings:', {
+      articleManagement: settings.articleManagement,
+      rssFeeds: settings.rssFeeds?.length,
+    });
+    try {
+      const appService = await envConfig.getAppService();
+      console.log('[settingsStore.saveSettings] Got appService, calling saveSettings...');
+      await appService.saveSettings(settings);
+      console.log('[settingsStore.saveSettings] saveSettings completed successfully');
+    } catch (error) {
+      console.error('[settingsStore.saveSettings] Error:', error);
+      throw error;
+    }
   },
   setSettingsDialogBookKey: (bookKey) => set({ settingsDialogBookKey: bookKey }),
   setSettingsDialogOpen: (open) => set({ isSettingsDialogOpen: open }),

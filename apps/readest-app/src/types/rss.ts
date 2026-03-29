@@ -27,9 +27,45 @@ export interface RSSItem {
     journal?: string;
     publisher?: string;
     subject?: string[];
+    // Fetched article content (from Readability)
+    fetchedContent?: {
+      title: string;
+      content: string;
+      author?: string;
+      publishedTime?: string;
+      excerpt?: string;
+      siteName?: string;
+      fetchedAt?: number;
+    };
   };
   enclosures?: RSSEnclosure[];
   links: RSSLink[];
+  // Article state management
+  state?: ArticleState;
+}
+
+export interface ArticleState {
+  guid: string;           // Unique article identifier (from RSS guid or generated hash)
+  feedId: string;         // Which feed this belongs to
+  savedAt?: number;       // Timestamp when saved to library
+  bookmarkedAt?: number;  // Timestamp when bookmarked
+  deletedAt?: number;     // Timestamp when marked for deletion
+  readAt?: number;        // Timestamp when read
+  bookHash?: string;      // If saved, the hash of the imported book
+}
+
+export interface ArticleManagementSettings {
+  // Auto-cleanup settings
+  autoCleanupEnabled: boolean;
+  cleanupAfterDays: number;  // Delete articles older than X days
+  excludeBookmarked: boolean; // Don't delete bookmarked articles
+  excludeSaved: boolean;      // Don't delete saved articles (they're in library)
+  
+  // Storage format preference
+  defaultSaveFormat: 'epub' | 'html';  // How to save articles to library
+  
+  // Article states (keyed by article GUID)
+  articleStates: Record<string, ArticleState>;
 }
 
 export interface RSSLink {

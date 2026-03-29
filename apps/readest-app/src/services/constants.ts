@@ -98,6 +98,14 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryColumns: 6,
   opdsCatalogs: [],
   rssFeeds: [],
+  articleManagement: {
+    autoCleanupEnabled: true,
+    cleanupAfterDays: 7,
+    excludeBookmarked: true,
+    excludeSaved: true,
+    defaultSaveFormat: 'html',
+    articleStates: {},
+  },
 
   metadataSeriesCollapsed: false,
   metadataOthersCollapsed: false,
