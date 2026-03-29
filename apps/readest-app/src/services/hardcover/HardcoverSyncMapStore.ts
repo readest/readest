@@ -10,12 +10,21 @@ type HardcoverSyncMapRow = {
 
 const DB_SCHEMA = 'hardcover-sync';
 const DB_PATH = 'hardcover-sync.db';
+const STORAGE_PREFIX = 'hardcover-note-mapping';
 
 export class HardcoverSyncMapStore {
   private appService: AppService;
 
   constructor(appService: AppService) {
     this.appService = appService;
+  }
+
+  private isWebStorageAvailable(): boolean {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  }
+
+  private getStorageKey(bookHash: string, noteId: string): string {
+    return `${STORAGE_PREFIX}:${bookHash}:${noteId}`;
   }
 
   private async withDb<T>(fn: (db: Awaited<ReturnType<AppService['openDatabase']>>) => Promise<T>) {
@@ -28,6 +37,16 @@ export class HardcoverSyncMapStore {
   }
 
   async getMapping(bookHash: string, noteId: string): Promise<HardcoverSyncMapRow | null> {
+    if (this.isWebStorageAvailable()) {
+      try {
+        const raw = window.localStorage.getItem(this.getStorageKey(bookHash, noteId));
+        return raw ? (JSON.parse(raw) as HardcoverSyncMapRow) : null;
+      } catch (error) {
+        console.error('Failed to read Hardcover note mapping from localStorage:', error);
+        return null;
+      }
+    }
+
     return this.withDb(async (db) => {
       const rows = await db.select<HardcoverSyncMapRow>(
         `SELECT book_hash, note_id, hardcover_journal_id, payload_hash, synced_at
@@ -47,6 +66,23 @@ export class HardcoverSyncMapStore {
     payloadHash: string,
   ): Promise<void> {
     const now = Date.now();
+
+    if (this.isWebStorageAvailable()) {
+      try {
+        const row: HardcoverSyncMapRow = {
+          book_hash: bookHash,
+          note_id: noteId,
+          hardcover_journal_id: journalId,
+          payload_hash: payloadHash,
+          synced_at: now,
+        };
+        window.localStorage.setItem(this.getStorageKey(bookHash, noteId), JSON.stringify(row));
+        return;
+      } catch (error) {
+        console.error('Failed to write Hardcover note mapping to localStorage:', error);
+      }
+    }
+
     await this.withDb(async (db) => {
       await db.execute(
         `INSERT INTO hardcover_note_mappings
