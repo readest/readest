@@ -420,6 +420,18 @@ export class HardcoverClient {
       const existing = await this.mapStore.getMapping(book.hash, note.id);
 
       if (!existing) {
+        const samePayload = await this.mapStore.getMappingByPayloadHash(book.hash, payloadHash);
+        if (samePayload) {
+          await this.mapStore.upsertMapping(
+            book.hash,
+            note.id,
+            samePayload.hardcover_journal_id,
+            payloadHash,
+          );
+          skipped += 1;
+          continue;
+        }
+
         const journalId = await this.insertJournal(context, payload);
         await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
         inserted += 1;

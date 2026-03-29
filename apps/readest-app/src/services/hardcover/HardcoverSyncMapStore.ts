@@ -59,6 +59,45 @@ export class HardcoverSyncMapStore {
     });
   }
 
+  async getMappingByPayloadHash(
+    bookHash: string,
+    payloadHash: string,
+  ): Promise<HardcoverSyncMapRow | null> {
+    if (this.isWebStorageAvailable()) {
+      try {
+        const prefix = `${STORAGE_PREFIX}:${bookHash}:`;
+        let best: HardcoverSyncMapRow | null = null;
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (!key || !key.startsWith(prefix)) continue;
+          const raw = window.localStorage.getItem(key);
+          if (!raw) continue;
+          const row = JSON.parse(raw) as HardcoverSyncMapRow;
+          if (row.payload_hash !== payloadHash) continue;
+          if (!best || row.synced_at > best.synced_at) {
+            best = row;
+          }
+        }
+        return best;
+      } catch (error) {
+        console.error('Failed to read Hardcover payload mapping from localStorage:', error);
+        return null;
+      }
+    }
+
+    return this.withDb(async (db) => {
+      const rows = await db.select<HardcoverSyncMapRow>(
+        `SELECT book_hash, note_id, hardcover_journal_id, payload_hash, synced_at
+         FROM hardcover_note_mappings
+         WHERE book_hash = ? AND payload_hash = ?
+         ORDER BY synced_at DESC
+         LIMIT 1`,
+        [bookHash, payloadHash],
+      );
+      return rows[0] ?? null;
+    });
+  }
+
   async upsertMapping(
     bookHash: string,
     noteId: string,
