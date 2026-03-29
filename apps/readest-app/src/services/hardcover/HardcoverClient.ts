@@ -401,9 +401,24 @@ export class HardcoverClient {
       throw new Error('Unable to resolve this book in Hardcover');
     }
 
-    const notes = (config.booknotes ?? []).filter(
+    const rawNotes = (config.booknotes ?? []).filter(
       (note) => (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
     );
+
+    // Readest can keep both an excerpt (quote) and an annotation (quote + note)
+    // for the same highlight. Prefer the richer annotation and suppress the
+    // duplicate quote export.
+    const annotationWithNoteKeys = new Set(
+      rawNotes
+        .filter((note) => note.type === 'annotation' && !!note.note?.trim())
+        .map((note) => `${note.cfi}::${(note.text ?? '').trim()}`),
+    );
+
+    const notes = rawNotes.filter((note) => {
+      if (note.type !== 'excerpt') return true;
+      const key = `${note.cfi}::${(note.text ?? '').trim()}`;
+      return !annotationWithNoteKeys.has(key);
+    });
 
     let inserted = 0;
     let updated = 0;
