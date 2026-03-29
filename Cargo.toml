@@ -4,6 +4,9 @@ members = [
   "packages/tauri/crates/tauri",
   "packages/tauri-plugins/plugins/fs"
 ]
+exclude = [
+  "packages/qcms"
+]
 resolver = "2"
 
 [workspace.dependencies]
