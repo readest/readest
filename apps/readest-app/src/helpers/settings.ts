@@ -56,8 +56,9 @@ export const saveSysSettings = async <K extends keyof SystemSettings>(
 ) => {
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
   if (settings[key] !== value) {
-    settings[key] = value;
-    setSettings(settings);
-    await saveSettings(envConfig, settings);
+    // Create a new object to ensure Zustand detects the change
+    const updatedSettings = { ...settings, [key]: value };
+    setSettings(updatedSettings);
+    await saveSettings(envConfig, updatedSettings);
   }
 };

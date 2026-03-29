@@ -94,11 +94,19 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     ...settings.aiSettings,
   };
 
+  // Preserve rssFeeds during migrations (critical user data)
+  const preservedRssFeeds = settings.rssFeeds || [];
+
   settings.localBooksDir = await ctx.fs.getPrefix('Books');
 
   if (!settings.kosync.deviceId) {
     settings.kosync.deviceId = uuidv4();
     await saveSettings(ctx.fs, settings);
+  }
+
+  // Restore rssFeeds after all migrations (ensure they're never lost)
+  if (preservedRssFeeds.length > 0) {
+    settings.rssFeeds = preservedRssFeeds;
   }
 
   return settings;

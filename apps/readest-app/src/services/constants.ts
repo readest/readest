@@ -96,6 +96,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,
+  opdsCatalogs: [],
+  rssFeeds: [],
 
   metadataSeriesCollapsed: false,
   metadataOthersCollapsed: false,

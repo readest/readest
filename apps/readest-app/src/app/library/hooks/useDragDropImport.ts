@@ -28,13 +28,30 @@ export const useDragDropImport = () => {
       }
       return BOOK_ACCEPT_FORMATS.includes(`.${fileExt}`);
     });
-    if (supportedFiles.length === 0) {
+    
+    // Skip error for RSS/OPML files - they're handled by RSS manager
+    const rssFiles = files.filter((file) => {
+      let fileExt;
+      if (typeof file === 'string') {
+        fileExt = file.split('.').pop()?.toLowerCase();
+      } else {
+        fileExt = file.name.split('.').pop()?.toLowerCase();
+      }
+      return ['opml', 'rss'].includes(fileExt || '');
+    });
+    
+    if (supportedFiles.length === 0 && rssFiles.length === 0) {
       eventDispatcher.dispatch('toast', {
         message: _('No supported files found. Supported formats: {{formats}}', {
           formats: BOOK_ACCEPT_FORMATS,
         }),
         type: 'error',
       });
+      return;
+    }
+    
+    // Don't process RSS/OPML files in library - let RSS manager handle them
+    if (rssFiles.length > 0 && supportedFiles.length === 0) {
       return;
     }
 

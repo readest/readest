@@ -11,6 +11,7 @@ interface ImportMenuProps {
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
   onOpenCatalogManager: () => void;
+  onOpenRSSManager?: () => void;
 }
 
 const ImportMenu: React.FC<ImportMenuProps> = ({
@@ -18,6 +19,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   onImportBooksFromFiles,
   onImportBooksFromDirectory,
   onOpenCatalogManager,
+  onOpenRSSManager,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -34,6 +36,11 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
 
   const handleOpenCatalogManager = () => {
     onOpenCatalogManager();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleOpenRSSManager = () => {
+    onOpenRSSManager?.();
     setIsDropdownOpen?.(false);
   };
 
@@ -59,6 +66,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         Icon={<MdRssFeed className='h-5 w-5' />}
         onClick={handleOpenCatalogManager}
       />
+      {onOpenRSSManager && (
+        <MenuItem
+          label={_('RSS Feeds')}
+          Icon={<MdRssFeed className='h-5 w-5' />}
+          onClick={handleOpenRSSManager}
+        />
+      )}
     </Menu>
   );
 };

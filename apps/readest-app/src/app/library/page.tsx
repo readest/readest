@@ -58,6 +58,10 @@ import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
+import { RSSManagerDialog } from './components/RSSManagerDialog';
+import { RSSPanel } from './components/RSSPanel';
+import { NavigationRail, NavigationView } from './components/NavigationRail';
+import { FeedsView } from './components/FeedsView';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
@@ -114,6 +118,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
+  const [currentView, setCurrentView] = useState<NavigationView>('library');
+  const [showRSSPanel, setShowRSSPanel] = useState(false);
   const [loading, setLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -362,6 +368,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const params = new URLSearchParams(searchParams?.toString());
     params.delete('opds');
     navigateToLibrary(router, `${params.toString()}`);
+  };
+
+  const handleShowRSSManager = () => {
+    setShowRSSPanel(true);
+  };
+
+  const handleDismissRSSManager = () => {
+    setShowRSSPanel(false);
   };
 
   useEffect(() => {
@@ -813,25 +827,34 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
-      <div
-        className='relative top-0 z-40 w-full'
-        role='banner'
-        tabIndex={-1}
-        aria-label={_('Library Header')}
-      >
-        <LibraryHeader
-          isSelectMode={isSelectMode}
-          isSelectAll={isSelectAll}
-          onPullLibrary={pullLibrary}
-          onImportBooksFromFiles={handleImportBooksFromFiles}
-          onImportBooksFromDirectory={
-            appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
-          }
-          onOpenCatalogManager={handleShowOPDSDialog}
-          onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
-          onSelectAll={handleSelectAll}
-          onDeselectAll={handleDeselectAll}
-        />
+      <div className="flex h-full">
+        {/* Navigation Rail */}
+        <NavigationRail activeView={currentView} onChangeView={setCurrentView} />
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {currentView === 'library' && (
+            <>
+              <div
+                className='relative top-0 z-40 w-full'
+                role='banner'
+                tabIndex={-1}
+                aria-label={_('Library Header')}
+              >
+                <LibraryHeader
+                  isSelectMode={isSelectMode}
+                  isSelectAll={isSelectAll}
+                  onPullLibrary={pullLibrary}
+                  onImportBooksFromFiles={handleImportBooksFromFiles}
+                  onImportBooksFromDirectory={
+                    appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
+                  }
+                  onOpenCatalogManager={handleShowOPDSDialog}
+                  onOpenRSSManager={handleShowRSSManager}
+                  onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
+                />
         <progress
           aria-label={_('Library Sync Progress')}
           aria-hidden={isSyncing ? 'false' : 'true'}
@@ -950,6 +973,28 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             </div>
           </div>
         ))}
+            </>
+          )}
+          
+          {currentView === 'feeds' && (
+            <div className="flex-1 overflow-hidden">
+              <FeedsView />
+            </div>
+          )}
+          
+          {currentView === 'dashboard' && (
+            <div className="flex-1 overflow-hidden p-8">
+              <div className="flex h-full items-center justify-center">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🚧</div>
+                  <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
+                  <p className="text-base-content/60">Coming soon - your reading overview and stats</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       {showDetailsBook && (
         <BookDetailModal
           isOpen={!!showDetailsBook}
@@ -975,6 +1020,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {showRSSPanel && (
+        <div className='fixed right-0 top-0 z-40 h-full w-96 shadow-xl'>
+          <RSSPanel isOpen={showRSSPanel} onClose={handleDismissRSSManager} />
+        </div>
+      )}
       <Toast />
     </div>
   );
