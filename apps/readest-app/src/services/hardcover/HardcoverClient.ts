@@ -406,18 +406,25 @@ export class HardcoverClient {
     );
 
     // Readest can keep both an excerpt (quote) and an annotation (quote + note)
-    // for the same highlight. Prefer the richer annotation and suppress the
-    // duplicate quote export.
-    const annotationWithNoteCfis = new Set(
+    // for the same highlight, sometimes with slight CFI trailing offset differences.
+    // We group by the CFI base node and text to safely dedupe.
+    const getDedupKey = (n: BookNote) => {
+      const text = n.text?.trim() || '';
+      const cfiNode = n.cfi ? n.cfi.split(',')[0] : '';
+      return `${cfiNode}|${text}`;
+    };
+
+    const annotationWithNoteKeys = new Set(
       rawNotes
         .filter((note) => note.type === 'annotation' && !!note.note?.trim())
-        .map((note) => note.cfi),
+        .map((note) => getDedupKey(note)),
     );
 
     const notes = rawNotes.filter((note) => {
-      if (!annotationWithNoteCfis.has(note.cfi)) return true;
+      const key = getDedupKey(note);
+      if (!annotationWithNoteKeys.has(key)) return true;
 
-      // When a note-bearing annotation exists for the same location,
+      // When a note-bearing annotation exists for the same location and text,
       // suppress quote-like duplicates from both excerpt rows and
       // empty-note annotation rows.
       if (note.type === 'excerpt') return false;
