@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const query =
+      body && typeof body === 'object' && 'query' in body ? String((body as { query?: unknown }).query) : '';
+    console.log('[Hardcover Proxy] forwarding request', {
+      hasAuthorization: !!authorization,
+      operationPreview: query.split('\n').find((line) => line.trim()) || query.slice(0, 80),
+    });
+
     const res = await fetch(HARDCOVER_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -26,6 +33,7 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await res.json();
+    console.log('[Hardcover Proxy] response status', res.status);
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     console.error('[Hardcover Proxy] fetch error:', error);

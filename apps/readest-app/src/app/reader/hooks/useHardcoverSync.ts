@@ -38,6 +38,13 @@ export const useHardcoverSync = (bookKey: string) => {
   const pushNotes = useCallback(async () => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
+    console.log('[Hardcover] pushNotes triggered', {
+      bookKey,
+      hasConfig: !!config,
+      hasBook: !!book,
+      noteCount: config?.booknotes?.length ?? 0,
+      hardcoverSyncEnabled: config?.hardcoverSyncEnabled ?? false,
+    });
 
     if (!config || !book) {
       eventDispatcher.dispatch('toast', {
@@ -77,6 +84,7 @@ export const useHardcoverSync = (bookKey: string) => {
 
     try {
       const result = await client.syncBookNotes(book, config);
+      console.log('[Hardcover] pushNotes result', { bookKey, result });
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {
         message:
@@ -103,6 +111,12 @@ export const useHardcoverSync = (bookKey: string) => {
   const pushProgress = useCallback(async () => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
+    console.log('[Hardcover] pushProgress triggered', {
+      bookKey,
+      hasConfig: !!config,
+      hasBook: !!book,
+      hardcoverSyncEnabled: config?.hardcoverSyncEnabled ?? false,
+    });
 
     if (!config || !book) {
       eventDispatcher.dispatch('toast', {
