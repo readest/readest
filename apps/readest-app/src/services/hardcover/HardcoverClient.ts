@@ -29,15 +29,24 @@ type BookContext = {
   } | null;
 };
 
+const isTauriEnv = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 export class HardcoverClient {
-  private endpoint = 'https://api.hardcover.app/v1/graphql';
+  private directEndpoint = 'https://api.hardcover.app/v1/graphql';
+  private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
 
   constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
-    this.token = settings.accessToken;
+    // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
+    const raw = settings.accessToken.trim();
+    this.token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
     this.mapStore = mapStore;
+  }
+
+  private get endpoint() {
+    return isTauriEnv() ? this.directEndpoint : this.proxyEndpoint;
   }
 
   private async request<TVariables, TData>(query: string, variables: TVariables): Promise<TData> {

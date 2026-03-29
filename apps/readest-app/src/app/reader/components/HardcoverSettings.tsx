@@ -138,7 +138,7 @@ export const HardcoverSettingsWindow: React.FC = () => {
                 {_('Connect your Hardcover account to sync reading progress and notes.')}
               </p>
               <p className='text-base-content/60 text-center text-xs'>
-                {_('Get your API token from your Hardcover account settings.')}
+                {_('Get your API token from hardcover.app → Settings → API.')}
               </p>
               <div className='form-control w-full'>
                 <label className='label py-1'>
