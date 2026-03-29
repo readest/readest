@@ -92,7 +92,7 @@ services:
     image: minio/minio
     restart: unless-stopped
     ports:
-      - "9000:9000"
+      - "9010:9000"
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -123,10 +123,10 @@ services:
       context: ..
       target: production-stage
       args:
-        NEXT_PUBLIC_SUPABASE_URL: http://${HOST_IP}:7000
+        NEXT_PUBLIC_SUPABASE_URL: ${PUBLIC_KONG_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
         NEXT_PUBLIC_APP_PLATFORM: web
-        NEXT_PUBLIC_API_BASE_URL: http://${HOST_IP}:3000
+        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_APP_URL}
         NEXT_PUBLIC_OBJECT_STORAGE_TYPE: s3
         NEXT_PUBLIC_STORAGE_FIXED_QUOTA: ${STORAGE_FIXED_QUOTA}
         NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA: ${TRANSLATION_FIXED_QUOTA}
@@ -145,7 +145,7 @@ services:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_ADMIN_KEY: ${SERVICE_ROLE_KEY}
-      S3_ENDPOINT: http://${HOST_IP}:9000
+      S3_ENDPOINT: ${PUBLIC_S3_URL}
       S3_REGION: us-east-1
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
