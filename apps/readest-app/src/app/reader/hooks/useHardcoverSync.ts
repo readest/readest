@@ -5,6 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
+import { BookNote } from '@/types/book';
 
 export const useHardcoverSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -38,7 +39,13 @@ export const useHardcoverSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
 
-    if (!config || !book) return;
+    if (!config || !book) {
+      eventDispatcher.dispatch('toast', {
+        message: _('This book is still loading. Try pushing notes again in a moment.'),
+        type: 'info',
+      });
+      return;
+    }
     if (!config.hardcoverSyncEnabled) {
       eventDispatcher.dispatch('toast', {
         message: _('Enable Hardcover sync for this book first.'),
@@ -47,21 +54,43 @@ export const useHardcoverSync = (bookKey: string) => {
       return;
     }
 
+    const eligibleNotes = (config.booknotes ?? []).filter(
+      (note: BookNote) =>
+        (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
+    );
+    if (eligibleNotes.length === 0) {
+      eventDispatcher.dispatch('toast', {
+        message: _('No annotations or excerpts to sync for this book.'),
+        type: 'info',
+      });
+      return;
+    }
+
     const client = await getClient();
-    if (!client) return;
+    if (!client) {
+      eventDispatcher.dispatch('toast', {
+        message: _('Configure Hardcover in Settings first.'),
+        type: 'info',
+      });
+      return;
+    }
 
     try {
       const result = await client.syncBookNotes(book, config);
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {
-        message: _('Hardcover synced: {{inserted}} new, {{updated}} updated, {{skipped}} unchanged', {
-          inserted: result.inserted,
-          updated: result.updated,
-          skipped: result.skipped,
-        }),
-        type: 'success',
+        message:
+          result.inserted === 0 && result.updated === 0
+            ? _('No new Hardcover note changes to sync.')
+            : _('Hardcover synced: {{inserted}} new, {{updated}} updated, {{skipped}} unchanged', {
+                inserted: result.inserted,
+                updated: result.updated,
+                skipped: result.skipped,
+              }),
+        type: result.inserted === 0 && result.updated === 0 ? 'info' : 'success',
       });
     } catch (error) {
+      console.error('Hardcover notes sync failed:', error);
       eventDispatcher.dispatch('toast', {
         message: _('Hardcover notes sync failed: {{error}}', {
           error: (error as Error).message,
@@ -75,7 +104,13 @@ export const useHardcoverSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
 
-    if (!config || !book) return;
+    if (!config || !book) {
+      eventDispatcher.dispatch('toast', {
+        message: _('This book is still loading. Try pushing progress again in a moment.'),
+        type: 'info',
+      });
+      return;
+    }
     if (!config.hardcoverSyncEnabled) {
       eventDispatcher.dispatch('toast', {
         message: _('Enable Hardcover sync for this book first.'),
@@ -85,7 +120,13 @@ export const useHardcoverSync = (bookKey: string) => {
     }
 
     const client = await getClient();
-    if (!client) return;
+    if (!client) {
+      eventDispatcher.dispatch('toast', {
+        message: _('Configure Hardcover in Settings first.'),
+        type: 'info',
+      });
+      return;
+    }
 
     try {
       await client.pushProgress(book, config);
@@ -95,6 +136,7 @@ export const useHardcoverSync = (bookKey: string) => {
         type: 'success',
       });
     } catch (error) {
+      console.error('Hardcover progress sync failed:', error);
       eventDispatcher.dispatch('toast', {
         message: _('Hardcover progress sync failed: {{error}}', {
           error: (error as Error).message,

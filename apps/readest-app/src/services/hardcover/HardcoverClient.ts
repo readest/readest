@@ -171,6 +171,13 @@ export class HardcoverClient {
       } catch {
         hits = [];
       }
+    } else if (
+      rawResults &&
+      typeof rawResults === 'object' &&
+      'hits' in rawResults &&
+      Array.isArray((rawResults as { hits?: unknown[] }).hits)
+    ) {
+      hits = (rawResults as { hits: unknown[] }).hits;
     } else if (Array.isArray(rawResults)) {
       hits = rawResults;
     }
@@ -382,7 +389,7 @@ export class HardcoverClient {
     book: Book,
     config: BookConfig,
   ): Promise<{ inserted: number; updated: number; skipped: number }> {
-    const context = await this.fetchBookContext(book);
+    const context = await this.ensureBookInLibrary(book, true);
     if (!context) {
       throw new Error('Unable to resolve this book in Hardcover');
     }
