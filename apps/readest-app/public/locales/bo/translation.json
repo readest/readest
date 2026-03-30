@@ -1126,5 +1126,9 @@
   "Scroll Half Page Down": "ཤོག་ངོས་ཕྱེད་ཀ་འོག་ཏུ།",
   "Scroll Half Page Up": "ཤོག་ངོས་ཕྱེད་ཀ་གོང་དུ།",
   "Save Note": "ཟིན་བྲིས་ཉར་བ།",
-  "Single Section Scroll": "དོན་ཚན་གཅིག་འགུལ་བ།"
+  "Single Section Scroll": "དོན་ཚན་གཅིག་འགུལ་བ།",
+  "General": "སྤྱིར་བཏང་།",
+  "Text to Speech": "ཡི་གེ་ནས་སྒྲ།",
+  "Zoom": "ཆེ་རུ་གཏོང་།",
+  "Window": "སྒེའུ་ཁུང་།"
 }

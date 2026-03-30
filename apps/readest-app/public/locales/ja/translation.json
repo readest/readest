@@ -1126,5 +1126,9 @@
   "Scroll Half Page Down": "半ページ下にスクロール",
   "Scroll Half Page Up": "半ページ上にスクロール",
   "Save Note": "メモを保存",
-  "Single Section Scroll": "単一セクションスクロール"
+  "Single Section Scroll": "単一セクションスクロール",
+  "General": "一般",
+  "Text to Speech": "テキスト読み上げ",
+  "Zoom": "ズーム",
+  "Window": "ウィンドウ"
 }
