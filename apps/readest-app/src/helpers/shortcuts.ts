@@ -39,7 +39,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'General',
   },
   onToggleBookmark: {
-    keys: ['ctrl+d', 'cmd+d'],
+    keys: ['ctrl+b', 'cmd+b'],
     description: _('Toggle Bookmark'),
     section: 'General',
   },
