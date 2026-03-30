@@ -36,5 +36,3 @@ workerContext.onmessage = async (event: MessageEvent<TxtConverterWorkerRequest>)
     workerContext.postMessage(response);
   }
 };
-
-export {};

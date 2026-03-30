@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RiTranslateAi } from 'react-icons/ri';
 
 import { useEnv } from '@/context/EnvContext';

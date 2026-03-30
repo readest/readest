@@ -43,7 +43,7 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.browser.test.ts'],
-    onConsoleLog(log, type) {
+    onConsoleLog(_log, type) {
       if (type === 'stdout') return false;
     },
     browser: {

@@ -211,7 +211,7 @@ describe('createBookGroups', () => {
 
       expect(john?.books).toHaveLength(1);
       expect(jane?.books).toHaveLength(1);
-      expect(john?.books[0]!.hash).toBe(jane?.books[0]!.hash);
+      expect(john?.books[0]?.hash).toBe(jane?.books[0]?.hash);
     });
 
     it('should leave books without author as ungrouped', () => {

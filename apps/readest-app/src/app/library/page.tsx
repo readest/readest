@@ -892,7 +892,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         (libraryBooks.some((book) => !book.deletedAt) ? (
           <OverlayScrollbarsComponent
             defer
-            aria-label=''
+            aria-label='Library bookshelf'
             ref={osRef}
             className='flex-grow'
             options={{ scrollbars: { autoHide: 'scroll' } }}

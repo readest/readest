@@ -483,7 +483,6 @@ export default function BrowserPage() {
         console.error('Download error:', e);
         throw e;
       }
-      return;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, state.baseURL, appService, libraryLoaded],

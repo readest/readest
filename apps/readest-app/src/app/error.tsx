@@ -12,7 +12,7 @@ interface ErrorPageProps {
   reset: () => void;
 }
 
-export default function Error({ error, reset }: ErrorPageProps) {
+export default function ErrorPage({ error, reset }: ErrorPageProps) {
   const _ = useTranslation();
   const { appService } = useEnv();
   const [browserInfo, setBrowserInfo] = useState('');
