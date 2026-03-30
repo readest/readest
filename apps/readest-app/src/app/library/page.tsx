@@ -806,7 +806,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   return (
     <div
       ref={pageRef}
-      aria-label='Your Library'
+      aria-label={_('Your Library')}
       className={clsx(
         'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
         viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
@@ -892,7 +892,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         (libraryBooks.some((book) => !book.deletedAt) ? (
           <OverlayScrollbarsComponent
             defer
-            aria-label='Library bookshelf'
+            aria-label={_('Your Bookshelf')}
             ref={osRef}
             className='flex-grow'
             options={{ scrollbars: { autoHide: 'scroll' } }}
