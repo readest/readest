@@ -146,6 +146,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   }, [progressBarMode]);
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
+  const showStatusInfo =
+    (progressBarMode === 'all' ||
+      progressBarMode.includes('battery') ||
+      progressBarMode.includes('time')) &&
+    (hasTimeInfo || hasBatteryInfo);
 
   return (
     <div
@@ -196,7 +201,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       >
         {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
           hasRemainingInfo && (
-            <div className='remaining-info flex-1 overflow-hidden whitespace-nowrap text-start'>
+            <div
+              className={clsx(
+                'remaining-info flex-1 whitespace-nowrap text-start',
+                showStatusInfo && 'overflow-hidden',
+              )}
+            >
               {viewSettings.showRemainingTime ? (
                 <span className='time-left-label text-start'>{timeLeftStr}</span>
               ) : viewSettings.showRemainingPages && showPagesLeft ? (
@@ -220,23 +230,20 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             </div>
           )}
 
-        {(progressBarMode === 'all' ||
-          progressBarMode.includes('battery') ||
-          progressBarMode.includes('time')) &&
-          progressInfo && (
-            <StatusInfo
-              showTime={
-                (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
-              }
-              use24Hour={viewSettings.use24HourClock}
-              showBattery={
-                (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
-              }
-              showBatteryPercentage={viewSettings.showBatteryPercentage}
-              isVertical={isVertical}
-              isEink={isEink}
-            />
-          )}
+        {showStatusInfo && (
+          <StatusInfo
+            showTime={
+              (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
+            }
+            use24Hour={viewSettings.use24HourClock}
+            showBattery={
+              (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
+            }
+            showBatteryPercentage={viewSettings.showBatteryPercentage}
+            isVertical={isVertical}
+            isEink={isEink}
+          />
+        )}
 
         <div className='progress-info flex-1 items-center overflow-hidden whitespace-nowrap text-end tabular-nums'>
           {(progressBarMode === 'all' || progressBarMode.includes('progress')) && (
